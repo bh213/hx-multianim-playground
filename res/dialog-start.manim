@@ -1,0 +1,21 @@
+version: 0.1
+
+
+#ui programmable() {
+      pos:400,200
+      
+      
+      point {
+      
+        placeholder(generated(cross(20, 20)), builderParameter("dialog1"));
+        placeholder(generated(cross(200, 20)), builderParameter("dialog2")):250,0;
+        
+      }
+}
+
+
+      
+
+
+
+    

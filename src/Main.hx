@@ -62,8 +62,12 @@ class Main extends hxd.App {
 	}
 
 	override function init() {
-		hxd.res.Resource.LIVE_UPDATE = true;
-		hxd.Res.initLocal();
+		#if hl
+			hxd.Res.initLocal();
+			hxd.res.Resource.LIVE_UPDATE = true;
+		#elseif js
+			hxd.Res.initEmbed();
+		#end
 
 		// Register all fonts
 		FontManager.registerFont("default", hxd.res.DefaultFont.get());
@@ -118,12 +122,15 @@ class Main extends hxd.App {
 		screenManager.onReload = (?res)->reload();
 		screenManager.addScreen("master", new screens.MasterScreen(screenManager));
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
-		
+		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
-		screenManager.addScreen("room1", new screens.Room1Screen(screenManager));
 		screenManager.addScreen("dialogStart", new DialogStartScreen(screenManager));
-		screenManager.addScreen("examples1", new Examples1Screen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));
+		#end
+		screenManager.addScreen("room1", new screens.Room1Screen(screenManager));
+		
+		screenManager.addScreen("examples1", new Examples1Screen(screenManager));
+
 		screenManager.addScreen("paths", new PathsScreen(screenManager));
 		screenManager.addScreen("particles", new ParticlesScreen(screenManager));
 		screenManager.addScreen("fonts", new FontsScreen(screenManager));
@@ -144,7 +151,10 @@ class Main extends hxd.App {
 		// window.currentMonitorIndex = 1;
 		window.addEventTarget(event -> {
 			switch event.kind {
-				case EKeyDown if (event.keyCode == Key.Q): Sys.exit(0);
+				case EKeyDown if (event.keyCode == Key.Q): 
+					#if hl
+					Sys.exit(0);
+					#end
 				case EKeyDown if (event.keyCode == Key.R): reload();
 					
 				default:

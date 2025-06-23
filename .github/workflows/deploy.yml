@@ -40,6 +40,8 @@ jobs:
     - name: Create public directory structure
       run: |
         mkdir -p public
+        mkdir -p public/build
+        mkdir -p public/res
         
     - name: Copy files to public directory
       run: |

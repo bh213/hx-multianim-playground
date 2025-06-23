@@ -45,6 +45,7 @@ jobs:
         mkdir -p public
         mkdir -p public/build
         mkdir -p public/res
+        mkdir -p public/files
         
     - name: Copy files to public directory
       run: |
@@ -58,6 +59,7 @@ jobs:
         
         # Copy resource files
         cp -r res/*.manim public/res/
+        cp -r files/* public/files/
         
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

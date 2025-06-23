@@ -71,7 +71,7 @@ class ManimLoader {
             textarea.value = 'Loading...';
             textarea.disabled = true;
             
-            // Load the file from the res directory
+            // Load the file from the res directory (works for both local and GitHub Pages)
             const response = await fetch(`res/${filename}`);
             if (!response.ok) {
                 throw new Error(`Failed to load ${filename}: ${response.status} ${response.statusText}`);

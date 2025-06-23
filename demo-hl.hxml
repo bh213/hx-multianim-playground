@@ -1,6 +1,0 @@
-common.hxml
--lib hldx
--hl build/demo.hl
--D windowSize=1280x720
-
-

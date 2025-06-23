@@ -4,14 +4,121 @@
     <meta charset="utf-8"/>
     <title>hx-multianim demo</title>
     <style>
-        body { margin:0;padding:0;background-color:black; }
-        canvas#webgl { width:100%;height:100%; } 
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #1e1e1e; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        .left-panel {
+            width: 40%;
+            background-color: #2d2d2d;
+            border-right: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        
+        .right-panel {
+            width: 60%;
+            background-color: #000000;
+            position: relative;
+        }
+        
+        .combo-container {
+            margin-bottom: 10px;
+        }
+        
+        .combo-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #cccccc;
+        }
+        
+        .example-combo {
+            width: 100%;
+            padding: 8px;
+            background-color: #3d3d3d;
+            border: 1px solid #555555;
+            color: #ffffff;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        
+        .example-combo:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        .text-area-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .text-area-label {
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #cccccc;
+        }
+        
+        .manim-textarea {
+            flex: 1;
+            background-color: #1e1e1e;
+            border: 1px solid #555555;
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: none;
+            border-radius: 4px;
+        }
+        
+        .manim-textarea:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        canvas#webgl { 
+            width: 100%; 
+            height: 100%; 
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <canvas id="webgl"></canvas>
+    <div class="container">
+        <div class="left-panel">
+            <div class="combo-container">
+                <label class="combo-label" for="example-combo">Select Example:</label>
+                <select id="example-combo" class="example-combo">
+                    <option value="">Choose an example...</option>
+                </select>
+            </div>
+            <div class="text-area-container">
+                <label class="text-area-label" for="manim-textarea">Manim File Content:</label>
+                <textarea id="manim-textarea" class="manim-textarea" placeholder="Select an example to load its content here..."></textarea>
+            </div>
+        </div>
+        <div class="right-panel">
+            <canvas id="webgl"></canvas>
+        </div>
+    </div>
     
     <script type="text/javascript" src="fileloader.js"></script>
+    <script type="text/javascript" src="manim-loader.js"></script>
     <script type="text/javascript" src="build/demo.js"></script>
 </body>
 </html>

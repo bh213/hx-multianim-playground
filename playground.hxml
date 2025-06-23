@@ -7,6 +7,9 @@
 -main Main
 --macro bh.base.AtlasMacroInit.init()
 -D message.reporting=pretty
+-js build/demo.js
+-dce full
+
 
 
 

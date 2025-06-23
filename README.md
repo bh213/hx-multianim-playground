@@ -1,4 +1,4 @@
-# hx-multianim Demo
+# hx-multianim Playground
 
 A comprehensive demonstration of the [hx-multianim](https://github.com/bh213/hx-multianim) library, showcasing its powerful multi-animation system for Haxe/Heaps applications.
 

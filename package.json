@@ -1,0 +1,36 @@
+{
+  "name": "hx-multianim-playground",
+  "version": "1.0.0",
+  "description": "Interactive playground for hx-multianim library",
+  "main": "index.html",
+  "scripts": {
+    "build": "haxe playground.hxml",
+    "build:gh-pages": "haxe playground.hxml -D gh-pages",
+    "watch": "nodemon --watch src --watch res --ext hx,manim,js,html,css --exec \"npm run build\"",
+    "watch:gh-pages": "nodemon --watch src --watch res --ext hx,manim,js,html,css --exec \"npm run build:gh-pages\"",
+    "serve": "http-server . -p 8080 -c-1",
+    "dev": "concurrently \"npm run watch\" \"npm run serve\"",
+    "dev:gh-pages": "concurrently \"npm run watch:gh-pages\" \"npm run serve\"",
+    "clean": "rimraf build",
+    "prebuild": "npm run clean",
+    "prebuild:gh-pages": "npm run clean"
+  },
+  "keywords": [
+    "haxe",
+    "heaps",
+    "animation",
+    "playground",
+    "webgl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1",
+    "nodemon": "^3.0.2",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

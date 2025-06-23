@@ -46,6 +46,7 @@ This demo showcases the capabilities of the hx-multianim library, which provides
 - [Heaps](https://heaps.io/) library
 - [HashLink](https://hashlink.haxe.org/) (for native builds)
 - [lix](https://github.com/lix-pm/lix.client) (for dependency management)
+- [Node.js](https://nodejs.org/) (16.0 or later, for development tools)
 
 ## Installation
 
@@ -60,25 +61,83 @@ cd hx-multianim-demo
 lix install
 ```
 
+3. Install Node.js development dependencies:
+```bash
+npm install
+```
+
 ## Building and Running
 
-### JavaScript Target
+### Quick Start (Development Mode)
+For the best development experience with live reloading:
+
 ```bash
+npm run dev
+```
+
+This will:
+- Start a local server at `http://localhost:8080`
+- Watch for changes in source files and automatically rebuild
+- Reload the browser when changes are detected
+
+### Manual Building
+
+#### JavaScript Target
+```bash
+# Standard build
+npm run build
+
+# Or the old way
 js.bat
 ```
 
 Or manually:
 ```bash
-haxe demo-js.hxml
+haxe playground.hxml
 ```
 
-Then open `index.html` in a web browser, or serve the directory with a local web server.
-
-### HashLink Target (Native)
+#### HashLink Target (Native)
 ```bash
 haxe demo-hl.hxml
 hl build/demo.hl
 ```
+
+### GitHub Pages Deployment
+
+To build specifically for GitHub Pages:
+```bash
+npm run build:gh-pages
+```
+
+The project includes automatic GitHub Actions deployment. When you push to the main branch, it will automatically build and deploy to GitHub Pages.
+
+## Development Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Build the project for development |
+| `npm run build:gh-pages` | Build the project for GitHub Pages deployment |
+| `npm run watch` | Watch for changes and rebuild automatically |
+| `npm run watch:gh-pages` | Watch for changes and rebuild for GitHub Pages |
+| `npm run serve` | Start a local development server |
+| `npm run dev` | Start development mode (watch + serve) |
+| `npm run dev:gh-pages` | Start development mode for GitHub Pages |
+| `npm run clean` | Clean build directory |
+
+## Interactive Playground
+
+The playground now includes an interactive editor with:
+
+- **Left Panel**: Dropdown to select manim examples and text editor for modifying content
+- **Right Panel**: Live preview canvas showing the changes
+- **Real-time Updates**: Changes in the text editor can be applied to see immediate results
+
+### Using the Playground
+
+1. Select an example from the dropdown
+2. The manim file content will load in the text area
+3. Edit the content to experiment with different animations
+4. Use the 'R' key to reload resources and see changes
 
 ## Controls
 
@@ -101,7 +160,6 @@ The demo includes various fonts for testing the font rendering system. See [ATTR
 ## Contributing
 
 This is a demo project for the hx-multianim library. For contributions to the core library, please visit the [hx-multianim repository](https://github.com/gorazd/hx-multianim).
-
 
 ## Related Projects
 

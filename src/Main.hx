@@ -1,33 +1,21 @@
-
 import screens.*;
-import bh.ui.DefaultUIElementItemBuilder;
-import bh.ui.UIMultiAnimScrollableList;
-import bh.ui.UIElement.UIScreenEvent;
-import bh.ui.UIElement;
-import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
-import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
-import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
-import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
-import bh.ui.controllers.UIController;
-import bh.ui.DefaultUIController;
-import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
-import haxe.io.Path;
-import bh.stateanim.AnimParser;
-import bh.base.ResourceLoader.CachingResourceLoader;
-import bh.multianim.MultiAnimBuilder.MultiAnimBuilder;
-import haxe.format.JsonPrinter;
-import haxe.format.JsonParser;
 import hxd.Key;
-import hxparse.ParserError;
-import byte.ByteData;
 import bh.base.FontManager;
+import bh.base.ResourceLoader;
+import bh.stateanim.AnimParser;
+import bh.multianim.MultiAnimBuilder;
+import byte.ByteData;
+import haxe.io.Bytes;
+import h2d.Tile;
 
 using StringTools;
+using bh.base.Atlas2;
 
+@:expose("PlaygroundMain")
 class Main extends hxd.App {
+	public static var instance:Main = null;
 	var errorText:h2d.Text;
-	var gotoMain = true;
 
 	var screenManager:ScreenManager;
 
@@ -40,20 +28,19 @@ class Main extends hxd.App {
 		errorText.text = text;
 		s2d.add(errorText, 100);
 		errorText.setPosition(30,30);
-		
-
 	}
 
-	function reload() {
+	
+
+	public function reload(?screen:String) {
+		trace('haxe Reloading with screen: $screen');
 		try {
 			screenManager.reload();
 			errorText.remove();
-			if (gotoMain) screenManager.updateScreenMode(MasterAndSingle(screenManager.getScreen("master"), screenManager.getScreen("particles")));
-			gotoMain = false;
+			screenManager.updateScreenMode(Single(screenManager.getScreen(screen ?? "particles")));
 			return true;
 		} catch (e) {
 			// TODO: display error
-			gotoMain = true;
 			trace('error loading main: ${e}');
 			error(e.toString());
 
@@ -62,11 +49,13 @@ class Main extends hxd.App {
 	}
 
 	override function init() {
+		
 		#if hl
 			hxd.Res.initLocal();
 			hxd.res.Resource.LIVE_UPDATE = true;
 		#elseif js
 			hxd.Res.initEmbed();
+			
 		#end
 
 		// Register all fonts
@@ -118,9 +107,8 @@ class Main extends hxd.App {
 			color: 0
 		};
 
-		screenManager = new ScreenManager(this);
+		screenManager = new ScreenManager(this, createJSLoader());
 		screenManager.onReload = (?res)->reload();
-		screenManager.addScreen("master", new screens.MasterScreen(screenManager));
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
@@ -137,6 +125,7 @@ class Main extends hxd.App {
 		
 	
 		
+
 		// screenManager.updateScreenMode(MasterAndSingle(masterScreen, screenManager.getScreen("main")));
 //		screenManager.gotoScreen(NormalStage, "dialog1");
 		// screenManager.gotoScreen(NormalStage, "room1");
@@ -165,8 +154,102 @@ class Main extends hxd.App {
 		
 		
 		engine.backgroundColor = 0x507050;
-		reload();
+		reload("particles");
 	}
+
+	#if js
+	static function createJSLoader() {
+		final loader = new bh.base.ResourceLoader.CachingResourceLoader();
+		
+		loader.loadSheet2Impl = sheetName -> {
+			var resourceName = '${sheetName}.atlas2';
+			try {
+				var bytes = FileLoader.load(resourceName);
+				var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+				return resource.toAtlas2();
+			} catch (e) {
+				if (hxd.Res.loader.exists(resourceName)) {
+					return hxd.Res.load(resourceName).toAtlas2();
+				} else {
+					throw e;
+				}
+			}
+		};
+
+		loader.loadSheetImpl = sheetName -> {
+			var resourceName = '${sheetName}.atlas';
+			try {
+				var bytes = FileLoader.load(resourceName);
+				var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+				return resource.to(hxd.res.Atlas);
+			} catch (e) {
+				if (hxd.Res.loader.exists(resourceName)) {
+					return hxd.Res.loader.loadCache(resourceName, hxd.res.Atlas);
+				} else {
+					throw e;
+				}
+			}
+		};
+
+		loader.loadHXDResourceImpl = filename -> {
+			try {
+				var bytes = FileLoader.load(filename);
+				return hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+			} catch (e) {
+				if (hxd.Res.loader.exists(filename)) {
+					return hxd.Res.load(filename);
+				} else {
+					throw e;
+				}
+			}
+		};
+
+		loader.loadAnimSMImpl = filename -> {
+			try {
+				var bytes = FileLoader.load(filename);
+				var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+				return bh.stateanim.AnimParser.parseFile(byteData, loader);
+			} catch (e) {
+				throw 'loadAnimSMImpl failed for filename: $filename - ${e}';
+			}
+		};
+
+		loader.loadFontImpl = filename -> bh.base.FontManager.getFontByName(filename);
+
+		loader.loadMultiAnimImpl = s -> {
+			try {
+				var bytes = FileLoader.load(s);
+				var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+				return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
+			} catch (e) {
+				if (hxd.Res.loader.exists(s)) {
+					var r = hxd.Res.load(s);
+					if (r == null) throw 'failed to load multianim ${s}';
+					var byteData = byte.ByteData.ofBytes(r.entry.getBytes());
+					return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
+				} else {
+					throw e;
+				}
+			}
+		};
+
+		loader.loadTileImpl = filename -> {
+			try {
+				var bytes = FileLoader.load(filename);
+				var resource = hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+				return resource.toTile();
+			} catch (e) {
+				if (hxd.Res.loader.exists(filename)) {
+					return hxd.Res.load(filename).toTile();
+				} else {
+					throw e;
+				}
+			}
+		};
+
+		return loader;
+	}
+	#end
 
 	override  function update(dt:Float) {
 		super.update(dt);
@@ -175,6 +258,6 @@ class Main extends hxd.App {
 
 
 	public static function main() {
-		new Main();
+		Main.instance = new Main();
 	}
 }

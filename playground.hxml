@@ -9,7 +9,7 @@
 -D message.reporting=pretty
 -js build/playground.js
 -dce full
-
+-D MULTIANIM_TRACE
 
 
 

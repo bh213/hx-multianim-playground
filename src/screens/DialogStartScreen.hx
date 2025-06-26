@@ -20,8 +20,8 @@ class DialogStartScreen extends UIScreenBase {
 
 	public function load() {
 
-			this.builder = this.screenManager.buildFromResource(hxd.Res.dialog_start, true);
-			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, true);
+			this.builder = this.screenManager.buildFromResource(hxd.Res.dialog_start, false);
+			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, false);
 
 			var yesNoDialog = UIStandardMultiAnimButton.create(stdBuilder, "button", 'Yes/No Dialog');
 			yesNoDialog.onClick = () -> {

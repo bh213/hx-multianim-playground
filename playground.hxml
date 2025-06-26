@@ -7,7 +7,7 @@
 -main Main
 --macro bh.base.AtlasMacroInit.init()
 -D message.reporting=pretty
--js build/playground.js
+-js public/playground.js
 -dce full
 -D MULTIANIM_TRACE
 

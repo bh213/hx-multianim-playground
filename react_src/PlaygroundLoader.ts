@@ -1,13 +1,5 @@
 import { Screen, ManimFile } from './types';
-
-// Preload all .manim and .anim files as text using Vite's import.meta.glob
-const manimFileModules = import.meta.glob('./assets/*.manim', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
-const animFileModules = import.meta.glob('./assets/*.anim', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
-
-function filenameFromPath(path: string): string {
-  // Vite returns './assets/filename.manim' or './assets/filename.anim'
-  return path.split('/').pop()!;
-}
+import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 
 /**
  * PlaygroundLoader - Combined file and manim loader for the hx-multianim playground
@@ -131,6 +123,12 @@ export class PlaygroundLoader {
             displayName: 'State Animation',
             description: 'Complex state-based animations demonstrating transitions between different UI states and conditional animations.',
             content: null
+        },
+        { 
+            filename: 'std.manim', 
+            displayName: 'Standard Library',
+            description: 'Standard library components and utilities for hx-multianim including common animations, effects, and helper functions.',
+            content: null
         }
     ];
     
@@ -147,33 +145,24 @@ export class PlaygroundLoader {
     
     init(): void {
         this.setupFileLoader();
-        this.preloadFiles();
+        this.loadFilesFromMap();
         this.waitForMainApp();
     }
     
-    preloadFiles(): void {
-        // Preload manim files
-        for (const [path, content] of Object.entries(manimFileModules)) {
-            const filename = filenameFromPath(path);
-            const manimFile = this.manimFiles.find(f => f.filename === filename);
-            if (manimFile) {
-                manimFile.content = content;
-                console.log(`Preloaded manim file: ${filename}`);
+    loadFilesFromMap(): void {
+        // Load content from fileMap into manimFiles array
+        this.manimFiles.forEach(file => {
+            const content = getFileContent(file.filename);
+            if (content) {
+                file.content = content;
             }
-        }
-        
-        // Preload anim files (for reference, these are available in animFileModules)
-        for (const [path] of Object.entries(animFileModules)) {
-            const filename = filenameFromPath(path);
-            console.log(`Preloaded anim file: ${filename}`);
-        }
+        });
     }
     
     // Wait for the main app to be available
     waitForMainApp(): void {
         if (typeof window.PlaygroundMain !== 'undefined' && window.PlaygroundMain.instance) {
             this.mainApp = window.PlaygroundMain.instance;
-            console.log("Main app loaded successfully:", this.mainApp);
         } else {
             setTimeout(() => this.waitForMainApp(), 100);
         }
@@ -230,61 +219,72 @@ export class PlaygroundLoader {
     }
     
     loadFile(url: string): ArrayBuffer {
-        console.log("Loading file: ", url);
+        const filename = this.extractFilenameFromUrl(url);
         
-        // First, try to use hxd.res.load if available
+        if (filename && fileExists(filename)) {
+            const content = getFileContent(filename);
+            if (content) {
+                return this.stringToArrayBuffer(content);
+            }
+        }
+        
+        // Try Haxe loader as fallback
         if (typeof window.hxd !== 'undefined' && window.hxd.res && window.hxd.res.load) {
             try {
                 const resource = window.hxd.res.load(url);
                 if (resource && resource.entry && resource.entry.getBytes) {
                     const bytes = resource.entry.getBytes();
-                    console.log(`Loaded via hxd.res.load: ${url}`);
                     return this.stringToArrayBuffer(bytes.toString());
                 }
             } catch (e) {
-                console.log(`hxd.res.load failed for ${url}, falling back to loader`);
+                // Haxe loader failed, continue to HTTP fallback
             }
         }
-        
-        // Check if this is a preloaded manim file
-        const manimFile = this.manimFiles.find(file => url.includes(file.filename));
-        if (manimFile && manimFile.content !== null) {
-            console.log(`Loading preloaded manim content for ${manimFile.filename}`);
-            return this.stringToArrayBuffer(manimFile.content);
-        }
-        
-        // Check if this is a preloaded anim file
-        const animFilename = url.split('/').pop();
-        if (animFilename && animFileModules[`./assets/${animFilename}`]) {
-            const content = animFileModules[`./assets/${animFilename}`];
-            console.log(`Loading preloaded anim content for ${animFilename}`);
-            return this.stringToArrayBuffer(content);
-        }
-        
-        // Fall back to HTTP loading for other files
+
+        // Fall back to HTTP loading
         const resolvedUrl = this.resolveUrl(url);
-        
         const xhr = new XMLHttpRequest();
         xhr.open('GET', resolvedUrl, false);
         xhr.send();
-        
         if (xhr.status === 200) {
-            console.log(`Loaded via HTTP: ${url}`);
             return this.stringToArrayBuffer(xhr.response);
         } else {
-            console.log(`HTTP loading failed for ${url}`);
             return new ArrayBuffer(0);
         }
     }
     
-    onContentChanged(content: string): void {
-        console.log('Content changed:', this.currentFile);
+    private extractFilenameFromUrl(url: string): string | null {
+        // Handle various URL formats:
+        // - "assets/filename.manim"
+        // - "/assets/filename.manim"
+        // - "filename.manim"
+        // - "http://.../filename.manim"
         
+        // Remove query parameters and hash
+        const cleanUrl = url.split('?')[0].split('#')[0];
+        
+        // Extract filename from path
+        const pathParts = cleanUrl.split('/');
+        const filename = pathParts[pathParts.length - 1];
+        
+        // Validate it's a supported file type
+        if (filename && (filename.endsWith('.manim') || filename.endsWith('.anim') || 
+                        filename.endsWith('.png') || filename.endsWith('.atlas2') || 
+                        filename.endsWith('.fnt') || filename.endsWith('.tps'))) {
+            return filename;
+        }
+        
+        return null;
+    }
+    
+    onContentChanged(content: string): void {
         // Update the content in manimFiles array
         if (this.currentFile) {
             const manimFile = this.manimFiles.find(file => file.filename === this.currentFile);
             if (manimFile) {
                 manimFile.content = content;
+                // Also update the file map
+                updateFileContent(this.currentFile, content);
             }
         }
         
@@ -300,8 +300,6 @@ export class PlaygroundLoader {
     }
     
     reloadPlayground(screenName?: string): void {
-        console.log('Reloading playground...');
-        
         // Get the screen name - use parameter if provided, otherwise get from dropdown
         let selectedScreen = screenName;
         if (!selectedScreen) {
@@ -310,14 +308,8 @@ export class PlaygroundLoader {
         }
         
         // Call reload with the selected screen
-        console.log("Reloading with screen: ", selectedScreen);
         if (window.PlaygroundMain?.instance) {
             window.PlaygroundMain.instance.reload(selectedScreen);
-        }
-        
-        // Log the current example being used
-        if (this.currentExample) {
-            console.log(`Reloading with screen: ${selectedScreen}, current example: ${this.currentExample}`);
         }
     }
     
@@ -334,6 +326,16 @@ export class PlaygroundLoader {
     getEditedContent(filename: string): string | null {
         const manimFile = this.manimFiles.find(file => file.filename === filename);
         return manimFile ? manimFile.content : null;
+    }
+    
+    // Public method to update content without triggering reload (for Save button)
+    updateContent(filename: string, content: string): void {
+        const manimFile = this.manimFiles.find(file => file.filename === filename);
+        if (manimFile) {
+            manimFile.content = content;
+            // Also update the file map
+            updateFileContent(filename, content);
+        }
     }
     
     // Public method to dispose the playground

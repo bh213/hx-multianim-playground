@@ -17,8 +17,8 @@ class FontsScreen extends UIScreenBase {
 	var builder:Null<MultiAnimBuilder>;
 
 	public function load() {
-			this.builder = this.screenManager.buildFromResource(hxd.Res.std, true);
-			var fontsBuilder = this.screenManager.buildFromResource(hxd.Res.fonts_manim, true);
+			this.builder = this.screenManager.buildFromResource(hxd.Res.std, false);
+			var fontsBuilder = this.screenManager.buildFromResource(hxd.Res.fonts_manim, false);
 
 			var fontsIterator = fontsBuilder.getLayouts().getIterator("fonts");
 			var fontNamesIterator = fontsBuilder.getLayouts().getIterator("fontNames");

@@ -51,8 +51,8 @@ class ComponentsTestScreen extends UIScreenBase {
 
 			
 
-			this.builder = this.screenManager.buildFromResource(hxd.Res.std, true);
-			var componentsBuilder = this.screenManager.buildFromResource(hxd.Res.components, true);
+			this.builder = this.screenManager.buildFromResource(hxd.Res.std, false);
+			var componentsBuilder = this.screenManager.buildFromResource(hxd.Res.components, false);
 
 
 			var tileGroupTest1 = componentsBuilder.buildWithParameters("testTileGroup1", []);

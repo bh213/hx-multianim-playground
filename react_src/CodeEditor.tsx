@@ -1,0 +1,182 @@
+import { forwardRef, useRef, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
+import animGrammar from './anim.tmLanguage.json';
+import manimGrammar from './manim.tmLanguage.json';
+
+interface CodeEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  language?: string;
+  disabled?: boolean;
+  placeholder?: string;
+  onSave?: () => void;
+}
+
+// Convert TextMate grammar patterns to Monaco tokenizer rules
+const convertTextMateToMonaco = (grammar: any) => {
+  const tokenizer: any = {
+    root: []
+  };
+
+  // Convert patterns to Monaco format
+  if (grammar.patterns) {
+    grammar.patterns.forEach((pattern: any) => {
+      if (pattern.include) {
+        // Handle includes
+        const includeName = pattern.include.replace('#', '');
+        if (grammar.repository && grammar.repository[includeName]) {
+          const includePatterns = grammar.repository[includeName].patterns;
+          includePatterns.forEach((includePattern: any) => {
+            if (includePattern.match) {
+              tokenizer.root.push([new RegExp(includePattern.match), includePattern.name || 'identifier']);
+            }
+          });
+        }
+      } else if (pattern.match) {
+        tokenizer.root.push([new RegExp(pattern.match), pattern.name || 'identifier']);
+      }
+    });
+  }
+
+  // Add repository patterns
+  if (grammar.repository) {
+    Object.keys(grammar.repository).forEach(key => {
+      const repo = grammar.repository[key];
+      if (repo.patterns) {
+        tokenizer[key] = repo.patterns.map((pattern: any) => {
+          if (pattern.match) {
+            return [new RegExp(pattern.match), pattern.name || 'identifier'];
+          }
+          return ['', ''];
+        }).filter(([regex]: any) => regex !== '');
+      }
+    });
+  }
+
+  return tokenizer;
+};
+
+const CodeEditor = forwardRef<HTMLDivElement, CodeEditorProps>(
+  ({ value, onChange, language = 'text', disabled = false, placeholder, onSave }, ref) => {
+    const editorRef = useRef<any>(null);
+    const saveHandlerRef = useRef<() => void>();
+
+    // Store the save handler in a ref so it can be accessed by the event listener
+    useEffect(() => {
+      saveHandlerRef.current = onSave;
+    }, [onSave]);
+
+    const handleEditorDidMount = (editor: any, monaco: any) => {
+      editorRef.current = editor;
+      
+      // Register Haxe languages
+      monaco.languages.register({ id: 'haxe-anim' });
+      monaco.languages.register({ id: 'haxe-manim' });
+      
+      // Convert and set TextMate grammar for Haxe animation files
+      const animTokenizer = convertTextMateToMonaco(animGrammar);
+      monaco.languages.setMonarchTokensProvider('haxe-anim', {
+        tokenizer: animTokenizer
+      });
+      
+      // Convert and set TextMate grammar for Haxe manim files
+      const manimTokenizer = convertTextMateToMonaco(manimGrammar);
+      monaco.languages.setMonarchTokensProvider('haxe-manim', {
+        tokenizer: manimTokenizer
+      });
+      
+      // Add the save action with Ctrl+S keybinding
+      editor.addAction({
+        id: 'save-file',
+        label: 'Save File',
+        keybindings: [
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS
+        ],
+        run: () => {
+          if (saveHandlerRef.current) {
+            saveHandlerRef.current();
+          }
+        }
+      });
+      
+      // Focus the editor
+      editor.focus();
+    };
+
+    const handleEditorChange = (value: string | undefined) => {
+      if (value !== undefined) {
+        onChange(value);
+      }
+    };
+
+    // Determine the language based on the content or file type
+    const getLanguage = () => {
+      if (language === 'typescript') {
+        // Check if this looks like Haxe code
+        if (value.includes('class') || value.includes('function') || value.includes('var')) {
+          // You can add more sophisticated detection here
+          return 'haxe-manim'; // Default to manim for now
+        }
+      }
+      return language;
+    };
+
+    return (
+      <div 
+        ref={ref}
+        className="w-full h-full min-h-[200px] border border-zinc-700 rounded overflow-hidden"
+        style={{ minHeight: 200 }}
+      >
+        <Editor
+          height="100%"
+          defaultLanguage={getLanguage()}
+          value={value}
+          onChange={handleEditorChange}
+          onMount={handleEditorDidMount}
+          options={{
+            readOnly: disabled,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 12,
+            fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+            lineNumbers: 'on',
+            roundedSelection: false,
+            scrollbar: {
+              vertical: 'visible',
+              horizontal: 'visible',
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            },
+            automaticLayout: true,
+            wordWrap: 'on',
+            theme: 'vs-dark',
+            tabSize: 2,
+            insertSpaces: true,
+            detectIndentation: false,
+            trimAutoWhitespace: true,
+            largeFileOptimizations: false,
+            placeholder: placeholder,
+            // Haxe-specific options
+            suggest: {
+              showKeywords: true,
+              showSnippets: true,
+              showClasses: true,
+              showFunctions: true,
+              showVariables: true,
+            },
+            quickSuggestions: {
+              other: true,
+              comments: false,
+              strings: false,
+            },
+          }}
+          theme="vs-dark"
+        />
+      </div>
+    );
+  }
+);
+
+CodeEditor.displayName = 'CodeEditor';
+
+export default CodeEditor; 

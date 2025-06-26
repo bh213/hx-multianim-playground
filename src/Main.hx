@@ -35,9 +35,13 @@ class Main extends hxd.App {
 	public function reload(?screen:String) {
 		trace('haxe Reloading with screen: $screen');
 		try {
+			trace('1');
 			screenManager.reload();
+			trace('2');
 			errorText.remove();
+			trace('3');
 			screenManager.updateScreenMode(Single(screenManager.getScreen(screen ?? "particles")));
+			trace('4');
 			return true;
 		} catch (e) {
 			// TODO: display error
@@ -108,7 +112,13 @@ class Main extends hxd.App {
 		};
 
 		screenManager = new ScreenManager(this, createJSLoader());
-		screenManager.onReload = (?res)->reload();
+		screenManager.onReload = (?res)->{
+			// Don't call reload() again to prevent infinite recursion
+			// Just update the error text if needed
+			if (errorText != null) {
+				errorText.remove();
+			}
+		};
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
@@ -160,89 +170,193 @@ class Main extends hxd.App {
 	#if js
 	static function createJSLoader() {
 		final loader = new bh.base.ResourceLoader.CachingResourceLoader();
-		
+
+		function isManimOrAnim(filename:String):Bool {
+			return StringTools.endsWith(filename, ".manim") || StringTools.endsWith(filename, ".anim");
+		}
+
 		loader.loadSheet2Impl = sheetName -> {
 			var resourceName = '${sheetName}.atlas2';
-			try {
-				var bytes = FileLoader.load(resourceName);
-				var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
-				return resource.toAtlas2();
-			} catch (e) {
+			if (isManimOrAnim(resourceName)) {
+				// JS first, then Haxe
+				try {
+					var bytes = FileLoader.load(resourceName);
+					var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+					return resource.toAtlas2();
+				} catch (e) {
+					if (hxd.Res.loader.exists(resourceName)) {
+						return hxd.Res.load(resourceName).toAtlas2();
+					} else {
+						throw e;
+					}
+				}
+			} else {
+				// Haxe first, then JS
 				if (hxd.Res.loader.exists(resourceName)) {
 					return hxd.Res.load(resourceName).toAtlas2();
 				} else {
-					throw e;
+					try {
+						var bytes = FileLoader.load(resourceName);
+						var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+						return resource.toAtlas2();
+					} catch (e) {
+						throw e;
+					}
 				}
 			}
 		};
 
 		loader.loadSheetImpl = sheetName -> {
 			var resourceName = '${sheetName}.atlas';
-			try {
-				var bytes = FileLoader.load(resourceName);
-				var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
-				return resource.to(hxd.res.Atlas);
-			} catch (e) {
+			if (isManimOrAnim(resourceName)) {
+				// JS first, then Haxe
+				try {
+					var bytes = FileLoader.load(resourceName);
+					var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+					return resource.to(hxd.res.Atlas);
+				} catch (e) {
+					if (hxd.Res.loader.exists(resourceName)) {
+						return hxd.Res.loader.loadCache(resourceName, hxd.res.Atlas);
+					} else {
+						throw e;
+					}
+				}
+			} else {
+				// Haxe first, then JS
 				if (hxd.Res.loader.exists(resourceName)) {
 					return hxd.Res.loader.loadCache(resourceName, hxd.res.Atlas);
 				} else {
-					throw e;
+					try {
+						var bytes = FileLoader.load(resourceName);
+						var resource = hxd.res.Any.fromBytes(resourceName, haxe.io.Bytes.ofData(bytes));
+						return resource.to(hxd.res.Atlas);
+					} catch (e) {
+						throw e;
+					}
 				}
 			}
 		};
 
 		loader.loadHXDResourceImpl = filename -> {
-			try {
-				var bytes = FileLoader.load(filename);
-				return hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
-			} catch (e) {
+			if (isManimOrAnim(filename)) {
+				// JS first, then Haxe
+				try {
+					var bytes = FileLoader.load(filename);
+					return hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+				} catch (e) {
+					if (hxd.Res.loader.exists(filename)) {
+						return hxd.Res.load(filename);
+					} else {
+						throw e;
+					}
+				}
+			} else {
+				// Haxe first, then JS
 				if (hxd.Res.loader.exists(filename)) {
 					return hxd.Res.load(filename);
 				} else {
-					throw e;
+					try {
+						var bytes = FileLoader.load(filename);
+						return hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+					} catch (e) {
+						throw e;
+					}
 				}
 			}
 		};
 
 		loader.loadAnimSMImpl = filename -> {
-			try {
-				var bytes = FileLoader.load(filename);
-				var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
-				return bh.stateanim.AnimParser.parseFile(byteData, loader);
-			} catch (e) {
-				throw 'loadAnimSMImpl failed for filename: $filename - ${e}';
+			// Always JS first for .anim/.manim
+			if (isManimOrAnim(filename)) {
+				try {
+					var bytes = FileLoader.load(filename);
+					var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+					return bh.stateanim.AnimParser.parseFile(byteData, loader);
+				} catch (e) {
+					throw 'loadAnimSMImpl failed for filename: $filename - ${e}';
+				}
+			} else {
+				// Haxe first, then JS (shouldn't happen for anim, but for completeness)
+				if (hxd.Res.loader.exists(filename)) {
+					var resource = hxd.Res.load(filename);
+					var byteData = byte.ByteData.ofBytes(resource.entry.getBytes());
+					return bh.stateanim.AnimParser.parseFile(byteData, loader);
+				} else {
+					try {
+						var bytes = FileLoader.load(filename);
+						var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+						return bh.stateanim.AnimParser.parseFile(byteData, loader);
+					} catch (e) {
+						throw 'loadAnimSMImpl failed for filename: $filename - ${e}';
+					}
+				}
 			}
 		};
 
 		loader.loadFontImpl = filename -> bh.base.FontManager.getFontByName(filename);
 
 		loader.loadMultiAnimImpl = s -> {
-			try {
-				var bytes = FileLoader.load(s);
-				var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
-				return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
-			} catch (e) {
+			if (isManimOrAnim(s)) {
+				// JS first, then Haxe
+				try {
+					var bytes = FileLoader.load(s);
+					var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+					return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
+				} catch (e) {
+					if (hxd.Res.loader.exists(s)) {
+						var r = hxd.Res.load(s);
+						if (r == null) throw 'failed to load multianim ${s}';
+						var byteData = byte.ByteData.ofBytes(r.entry.getBytes());
+						return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
+					} else {
+						throw e;
+					}
+				}
+			} else {
+				// Haxe first, then JS
 				if (hxd.Res.loader.exists(s)) {
 					var r = hxd.Res.load(s);
 					if (r == null) throw 'failed to load multianim ${s}';
 					var byteData = byte.ByteData.ofBytes(r.entry.getBytes());
 					return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
 				} else {
-					throw e;
+					try {
+						var bytes = FileLoader.load(s);
+						var byteData = byte.ByteData.ofBytes(haxe.io.Bytes.ofData(bytes));
+						return bh.multianim.MultiAnimBuilder.load(byteData, loader, s);
+					} catch (e) {
+						throw e;
+					}
 				}
 			}
 		};
 
 		loader.loadTileImpl = filename -> {
-			try {
-				var bytes = FileLoader.load(filename);
-				var resource = hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
-				return resource.toTile();
-			} catch (e) {
+			if (isManimOrAnim(filename)) {
+				// JS first, then Haxe
+				try {
+					var bytes = FileLoader.load(filename);
+					var resource = hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+					return resource.toTile();
+				} catch (e) {
+					if (hxd.Res.loader.exists(filename)) {
+						return hxd.Res.load(filename).toTile();
+					} else {
+						throw e;
+					}
+				}
+			} else {
+				// Haxe first, then JS
 				if (hxd.Res.loader.exists(filename)) {
 					return hxd.Res.load(filename).toTile();
 				} else {
-					throw e;
+					try {
+						var bytes = FileLoader.load(filename);
+						var resource = hxd.res.Any.fromBytes(filename, haxe.io.Bytes.ofData(bytes));
+						return resource.toTile();
+					} catch (e) {
+						throw e;
+					}
 				}
 			}
 		};

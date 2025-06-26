@@ -17,8 +17,8 @@ class ParticlesScreen extends UIScreenBase {
 	var builder:Null<MultiAnimBuilder>;
 
 	public function load() {
-			this.builder = this.screenManager.buildFromResource(hxd.Res.std, true);
-			var particlesBuilder = this.screenManager.buildFromResource(hxd.Res.particles, true);
+			this.builder = this.screenManager.buildFromResource(hxd.Res.std, false);
+			var particlesBuilder = this.screenManager.buildFromResource(hxd.Res.particles, false);
 
 			var res = particlesBuilder.buildWithParameters("ui", []);
 

@@ -24,8 +24,8 @@ class SettingsScreen extends UIScreenBase {
 	public function load() {
 
 			final window = hxd.Window.getInstance();
-			this.builder = this.screenManager.buildFromResource(hxd.Res.settings, true);
-			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, true);
+			this.builder = this.screenManager.buildFromResource(hxd.Res.settings, false);
+			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, false);
 
 
 			var ui = addBuilderResult(builder.buildWithParameters("ui", []));

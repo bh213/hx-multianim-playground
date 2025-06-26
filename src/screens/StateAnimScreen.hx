@@ -284,8 +284,8 @@ class StateAnimScreen extends UIScreenBase {
 
 	public function load() {
 		createGroup(groupNameAnimStates, false);
-		this.stateAnimBuilder = this.screenManager.buildFromResource(hxd.Res.stateanim, true);
-		this.builder = this.screenManager.buildFromResource(hxd.Res.std, true);
+		this.stateAnimBuilder = this.screenManager.buildFromResource(hxd.Res.stateanim, false);
+		this.builder = this.screenManager.buildFromResource(hxd.Res.std, false);
 		this.stateAnimLayouts = stateAnimBuilder.getLayouts();
 
 		this.pausedCheckbox = UIStandardMultiCheckbox.create(builder, "checkbox", false);

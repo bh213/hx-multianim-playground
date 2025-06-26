@@ -29,8 +29,8 @@ class Examples1Screen extends UIScreenBase {
 	public function load() {
 
 			rand = new Rand(17);
-			this.builder = this.screenManager.buildFromResource(hxd.Res.examples1, false);
-			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, false);
+			this.builder = this.screenManager.buildFromResourceName("examples1.manim", false);
+			var stdBuilder = this.screenManager.buildFromResourceName("std.manim", false);
 			var ui = addBuilderResult(builder.buildWithParameters("ui", []));
 			updatableText = ui.getUpdatable("textToUpdate");
 			updatableTile = ui.getUpdatable("bitmapToUpdate");

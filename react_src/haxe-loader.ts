@@ -19,7 +19,7 @@ class HaxeLoader {
   constructor(config: LoadjsConfig = {}) {
     this.maxRetries = config.maxRetries || 5;
     this.retryDelay = config.retryDelay || 2000;
-    this.timeout = config.timeout || 10000;par
+    this.timeout = config.timeout || 10000;
   }
 
   // Wait for the React app to be ready

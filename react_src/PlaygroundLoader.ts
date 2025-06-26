@@ -1,5 +1,5 @@
 import { Screen, ManimFile } from './types';
-import { getFileContent, updateFileContent, fileExists } from './fileLoader';
+import fileMap, { getFileContent, updateFileContent, fileExists } from './fileLoader';
 
 /**
  * PlaygroundLoader - Combined file and manim loader for the hx-multianim playground
@@ -181,8 +181,6 @@ export class PlaygroundLoader {
         // Make FileLoader methods available globally
         window.FileLoader = {
             baseUrl: this.baseUrl,
-            setBaseUrl: (url: string) => { this.baseUrl = url; },
-            getBaseUrl: () => this.baseUrl,
             resolveUrl: (url: string) => this.resolveUrl(url),
             load: (url: string) => this.loadFile(url),
             stringToArrayBuffer: this.stringToArrayBuffer
@@ -190,6 +188,7 @@ export class PlaygroundLoader {
     }
     
     resolveUrl(url: string): string {
+        console.log('resolveUrl', url, this.baseUrl);
         if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//') || url.startsWith('file://')) {
             return url;
         }
@@ -219,10 +218,12 @@ export class PlaygroundLoader {
     }
     
     loadFile(url: string): ArrayBuffer {
+        console.log('loadFile xxx', url, fileMap);
         const filename = this.extractFilenameFromUrl(url);
         
-        if (filename && fileExists(filename)) {
+        if (filename && fileExists(filename)) { 
             const content = getFileContent(filename);
+            console.log('loadFile', filename, content);
             if (content) {
                 return this.stringToArrayBuffer(content);
             }

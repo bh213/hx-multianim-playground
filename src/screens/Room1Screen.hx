@@ -21,8 +21,8 @@ class Room1Screen extends UIScreenBase {
 	var updatableText:Null<Updatable>;
 	public function load() {
 
-			this.builder = this.screenManager.buildFromResource(hxd.Res.room1, false);
-			var stdBuilder = this.screenManager.buildFromResource(hxd.Res.std, false);
+			this.builder = this.screenManager.buildFromResourceName("room1.manim", false);
+			var stdBuilder = this.screenManager.buildFromResourceName("std.manim", false);
 
 			final layouts = builder.getLayouts();
 			var itRoom = layouts.getIterator("roomCheckboxes");

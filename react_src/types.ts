@@ -25,8 +25,6 @@ export interface PlaygroundLoader {
 
 export interface FileLoader {
     baseUrl: string;
-    setBaseUrl: (url: string) => void;
-    getBaseUrl: () => string;
     resolveUrl: (url: string) => string;
     load: (url: string) => ArrayBuffer;
     stringToArrayBuffer: (str: string) => ArrayBuffer;

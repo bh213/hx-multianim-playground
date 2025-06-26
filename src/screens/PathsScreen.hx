@@ -42,8 +42,8 @@ class PathsScreen extends UIScreenBase {
 	
 
 	public function load() {
-			this.builder = this.screenManager.buildFromResource(hxd.Res.std, false);
-			var pathsBuilder = this.screenManager.buildFromResource(hxd.Res.paths, false);
+			this.builder = this.screenManager.buildFromResourceName("std.manim", false);
+			var pathsBuilder = this.screenManager.buildFromResourceName("paths.manim", false);
 			
 			
 			this.cross1 = pathsBuilder.buildWithParameters("cross1", []).object;

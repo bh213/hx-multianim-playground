@@ -1,6 +1,6 @@
 // Load all anim and manim files into a single map
-const manimFiles = import.meta.glob('../public/assets/*.manim', { as: 'raw', eager: true });
-const animFiles = import.meta.glob('../public/assets/*.anim', { as: 'raw', eager: true });
+const manimFiles = import.meta.glob('../public/assets/*.manim', { query: '?raw', import: 'default', eager: true });
+const animFiles = import.meta.glob('../public/assets/*.anim', { query: '?raw', import: 'default', eager: true });
 
 // Combine all files into a single map
 const fileMap = Object.fromEntries([
@@ -13,8 +13,6 @@ const fileMap = Object.fromEntries([
     return [filename, content];
   })
 ]);
-// Log all available files
-console.log('Available files:', Object.keys(fileMap));
 
 export default fileMap;
 

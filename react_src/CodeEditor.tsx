@@ -73,30 +73,61 @@ const CodeEditor = forwardRef<HTMLDivElement, CodeEditorProps>(
 
     // Handle error marking
     useEffect(() => {
-      if (editorRef.current && errorLine) {
+      if (editorRef.current) {
         // Remove previous error decorations
         if (errorDecorationRef.current.length > 0) {
           editorRef.current.deltaDecorations(errorDecorationRef.current, []);
           errorDecorationRef.current = [];
         }
 
-        // Add new error decoration for the whole line
-        const decorations = [{
-          range: {
-            startLineNumber: errorLine,
-            startColumn: 1,
-            endLineNumber: errorLine,
-            endColumn: 1
-          },
-          options: {
-            isWholeLine: true,
-            className: 'error-line',
-            glyphMarginClassName: 'error-glyph',
-            linesDecorationsClassName: 'error-line-decoration'
-          }
-        }];
+        // Only add new decorations if there's an error
+        if (errorLine) {
+          const decorations = [];
 
-        errorDecorationRef.current = editorRef.current.deltaDecorations([], decorations);
+          // Add line decoration
+          decorations.push({
+            range: {
+              startLineNumber: errorLine,
+              startColumn: 1,
+              endLineNumber: errorLine,
+              endColumn: 1
+            },
+            options: {
+              isWholeLine: true,
+              className: 'error-line',
+              glyphMarginClassName: 'error-glyph',
+              linesDecorationsClassName: 'error-line-decoration'
+            }
+          });
+
+          // Add character-level decoration if we have start and end positions
+          if (errorStart !== undefined && errorEnd !== undefined) {
+            const model = editorRef.current.getModel();
+            if (model) {
+              try {
+                const startPos = model.getPositionAt(errorStart);
+                const endPos = model.getPositionAt(errorEnd);
+                
+                decorations.push({
+                  range: {
+                    startLineNumber: startPos.lineNumber,
+                    startColumn: startPos.column,
+                    endLineNumber: endPos.lineNumber,
+                    endColumn: endPos.column
+                  },
+                  options: {
+                    className: 'error-token',
+                    hoverMessage: { value: 'Parse error at this position' }
+                  }
+                });
+              } catch (e) {
+                console.log('Error calculating character position:', e);
+              }
+            }
+          }
+
+          errorDecorationRef.current = editorRef.current.deltaDecorations([], decorations);
+        }
       }
     }, [errorLine, errorColumn, errorStart, errorEnd]);
 
@@ -173,8 +204,9 @@ const CodeEditor = forwardRef<HTMLDivElement, CodeEditorProps>(
             background-color: #ef4444 !important;
           }
           .error-token {
-            background-color: rgba(239, 68, 68, 0.3) !important;
+            background-color: rgba(239, 68, 68, 0.4) !important;
             border-bottom: 2px solid #ef4444 !important;
+            text-decoration: underline wavy #ef4444 !important;
           }
         `}</style>
         <Editor

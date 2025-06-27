@@ -34,9 +34,8 @@ class Main extends hxd.App {
 
 	public function reload(?screen:String) {
 		trace('haxe Reloading with screen: $screen');
-		
 			
-			final res = screenManager.reload(screen, false);
+			final res = screenManager.reload(null, false);
 			if (!res.success) {
 				trace('error loading main: ${res.error}');
 				error('Error loading screen: ${res.error}');
@@ -117,9 +116,10 @@ class Main extends hxd.App {
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
-		screenManager.addScreen("dialogStart", new DialogStartScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));
+		screenManager.addScreen("dialogStart", new DialogStartScreen(screenManager));
 		#end
+		
 		screenManager.addScreen("room1", new screens.Room1Screen(screenManager));
 		
 		screenManager.addScreen("examples1", new Examples1Screen(screenManager));
@@ -159,7 +159,7 @@ class Main extends hxd.App {
 		
 		
 		engine.backgroundColor = 0x507050;
-		reload("particles");
+		reload("components");
 	}
 
 	#if js

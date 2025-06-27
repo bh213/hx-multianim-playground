@@ -22,7 +22,7 @@ class ComponentsTestScreen extends UIScreenBase {
 	var checkbox2:UIStandardMultiCheckbox;
 	var checkbox3:UIStandardMultiCheckbox;
 	var slider:UIStandardMultiAnimSlider;
-	var drop1:UIStandardMultiAnimDropdown;
+	// var drop1:UIStandardMultiAnimDropdown;
 
 
 	public function createCross(color):h2d.Object {
@@ -94,11 +94,11 @@ class ComponentsTestScreen extends UIScreenBase {
 				scroll4=>addScrollableList(builder, 100, 120, list20disabled, 3),
 				checkboxWithLabel=>addCheckboxWithText(builder, "my label", true),
 				//function addDropdown(providedBuilder, items, settings:ResolvedSettings, initialIndex = 0) {
-				dropdown1 => addDropdown(builder, list100, 0)
+				//dropdown1 => addDropdown(builder, list100, 0)
 			]);
 			var ui = res.builderResults;
 			
-			this.drop1 = res.dropdown1;
+			//this.drop1 = res.dropdown1;
 			
 			addBuilderResult(res.builderResults);
 
@@ -108,7 +108,7 @@ class ComponentsTestScreen extends UIScreenBase {
 			
 			
 			
-			drop1.autoCloseOnLeave = false;
+			// drop1.autoCloseOnLeave = false;
 			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"item A"}, {name:"item B"}, {name:"item C"}]), dropDownIterator);
 			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"Krava"}, {name:"Trava"}, {name:"Zelena Jama"}, {name:"XXXXX"}]), dropDownIterator);
 			var dd3 = addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"10"}, {name:"50"}, {name:"100"}, {name:"1000"}]), dropDownIterator);
@@ -144,13 +144,13 @@ class ComponentsTestScreen extends UIScreenBase {
 						checkbox2.selected = true;					
 						checkbox3.selected = true;					
 						slider.setIntValue( 20);
-						drop1.setSelectedIndex(2);
+						// drop1.setSelectedIndex(2);
 					}
 					if (source == disable) {
 						checkbox1.disabled = !checkbox1.disabled;
 						checkbox2.selected = !checkbox2.selected;
 						checkbox3.selected = !checkbox3.selected;
-						drop1.disabled = !drop1.disabled;
+						// drop1.disabled = !drop1.disabled;
 						slider.disabled = !slider.disabled;
 						reset.disabled = !reset.disabled;
 					}

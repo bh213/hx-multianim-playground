@@ -476,8 +476,8 @@ Main.prototype = $extend(hxd_App.prototype,{
 		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 36, className : "Main", methodName : "reload"});
 		var res = this.screenManager.reload(null,false);
 		if(!res.success) {
-			haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 41, className : "Main", methodName : "reload"});
-			this.error(res.error);
+			haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 40, className : "Main", methodName : "reload"});
+			this.error("Error loading screen: " + res.error);
 			return res;
 		}
 		var _this = this.errorText;
@@ -559,7 +559,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			}
 		});
 		this.engine.backgroundColor = 5271632;
-		this.reload("particles");
+		this.reload("components");
 	}
 	,update: function(dt) {
 		hxd_App.prototype.update.call(this,dt);
@@ -6431,7 +6431,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var gridCoordinateSystem = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
 			var hexCoordinateSystem = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
-			var result = new bh_multianim_MultiAnimMultiResult(allCombos);
+			var result = new bh_multianim_MultiAnimMultiResult(name,allCombos);
 			var _g = 0;
 			var _g1 = totalStates;
 			while(_g < _g1) {
@@ -6514,8 +6514,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	}
 	,__class__: bh_multianim_MultiAnimBuilder
 };
-var bh_multianim_MultiAnimMultiResult = function(allCombos) {
+var bh_multianim_MultiAnimMultiResult = function(name,allCombos) {
 	this.results = new haxe_ds_StringMap();
+	this.name = name;
 	this.allCombos = allCombos;
 };
 $hxClasses["bh.multianim.MultiAnimMultiResult"] = bh_multianim_MultiAnimMultiResult;
@@ -6575,7 +6576,7 @@ bh_multianim_MultiAnimMultiResult.prototype = {
 		var multiKey = this.toMultiKey(values.slice());
 		var retVal = this.results.h[multiKey];
 		if(retVal == null) {
-			throw haxe_Exception.thrown("could not find result for " + (values == null ? "null" : "[" + values.toString() + "]"));
+			throw haxe_Exception.thrown("could not find result for name " + this.name + " with combo " + (values == null ? "null" : "[" + values.toString() + "]") + ", all combos: " + Std.string(this.allCombos));
 		} else {
 			return retVal;
 		}
@@ -29651,6 +29652,7 @@ function bh_ui_UIElement_standardUIElementStatusToString(status) {
 }
 var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText) {
 	this.requestRedraw = true;
+	this.disabled = false;
 	this.status = bh_ui_StandardUIElementStates.SUINormal;
 	var _g = new haxe_ds_StringMap();
 	_g.h["buttonText"] = buttonText;
@@ -29941,13 +29943,6 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		}
 		return value;
 	}
-	,set_disabled: function(value) {
-		if(this.disabled != value) {
-			this.disabled = value;
-			this.requestRedraw = true;
-		}
-		return value;
-	}
 	,isOpen: function() {
 		switch(this.panelStatus._hx_index) {
 		case 0:case 2:
@@ -30194,9 +30189,6 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	}
 	,onItemChanged: function(newIndex,items) {
 	}
-	,setSelectedIndex: function(idx) {
-		this.set_currentItemIndex(idx);
-	}
 	,getSubElements: function(type) {
 		switch(type._hx_index) {
 		case 0:
@@ -30339,6 +30331,7 @@ var bh_ui_UIMultiAnimScrollableList = function(builder,itemBuilder,panelName,wid
 	this.keyScrollingUp = false;
 	this.requestRedraw = true;
 	this.interactives = [];
+	this.scrollbar = null;
 	this.panelBuilder = builder;
 	this.panelName = panelName;
 	this.itemBuilder = itemBuilder;
@@ -30653,7 +30646,9 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 	,__class__: bh_ui_UIMultiAnimScrollableList
 };
 var bh_ui_UIStandardMultiAnimSlider = function(builder,name,size,initialValue) {
+	this.disabled = false;
 	this.requestRedraw = true;
+	this.currentResult = null;
 	this.status = bh_ui_StandardUIElementStates.SUINormal;
 	this.root = new h2d_Object();
 	this.builder = builder;
@@ -31068,13 +31063,12 @@ bh_ui_screens_ScreenManager.prototype = {
 				if(resource != null && key1 != resource) {
 					continue;
 				}
-				haxe_Log.trace("rebuild " + Std.string(key1),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 204, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+				haxe_Log.trace("rebuild " + Std.string(key1),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 203, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 				this.buildFromResource(key1,true);
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace("buga buga x2",{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 210, className : "bh.ui.screens.ScreenManager", methodName : "reload", customParams : [throwOnError,e]});
-			haxe_Log.trace(e,{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 211, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+			haxe_Log.trace(e,{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 209, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 			this.loader.clearCache();
 			this.builders = oldBuilders;
 			if(throwOnError) {
@@ -31104,7 +31098,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			reloadedScreenNames.push(name);
 		}
 		this.updateScreenMode(this.mode);
-		haxe_Log.trace("reloaded " + reloadedScreenNames.join(","),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 248, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+		haxe_Log.trace("reloaded " + reloadedScreenNames.join(","),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 245, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 		return { success : true, error : null, file : null, pmin : 0, pmax : 0};
 	}
 	,addScreen: function(name,screen) {
@@ -31709,7 +31703,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 				}
 			}
 		}
-		throw haxe_Exception.thrown("layer not found for object " + Std.string(obj));
+		throw haxe_Exception.thrown("layer not found for object " + Std.string(obj) + ". layers " + (this.layers == null ? "null" : this.layers.toString()));
 	}
 	,__class__: bh_ui_screens_UIScreenBase
 };
@@ -87266,12 +87260,11 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 		var buttonsIterator = mainLayout.getIterator("buttons");
 		var dropDownIterator = mainLayout.getIterator("mainDropDown");
 		var checkboxesIterator = mainLayout.getIterator("checkboxes");
-		var generatedByMacroBuildWithParametersload2735Builder = function() {
+		var generatedByMacroBuildWithParametersload2738Builder = function() {
 			var scroll4;
 			var scroll3;
 			var scroll2;
 			var scroll1;
-			var dropdown1;
 			var checkboxWithLabel;
 			var checkbox5;
 			var checkbox4;
@@ -87309,13 +87302,6 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 				return element.getObject();
 			});
 			_g.h["scroll1"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var element = _gthis.addDropdown(_gthis.builder,list100,settings,0);
-				_gthis.addElement(element,null);
-				dropdown1 = element;
-				return element.getObject();
-			});
-			_g.h["dropdown1"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var element = _gthis.addCheckboxWithText(_gthis.builder,settings,"my label",true);
 				_gthis.addElement(element,null);
@@ -87359,7 +87345,7 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 			});
 			_g.h["checkbox1"] = value;
 			var builderResults1 = componentsBuilder1.buildWithParameters("ui",builderResults,{ placeholderObjects : _g});
-			var retVal = { scroll4 : scroll4, scroll3 : scroll3, scroll2 : scroll2, scroll1 : scroll1, dropdown1 : dropdown1, checkboxWithLabel : checkboxWithLabel, checkbox5 : checkbox5, checkbox4 : checkbox4, checkbox3 : checkbox3, checkbox2 : checkbox2, checkbox1 : checkbox1, builderResults : builderResults1};
+			var retVal = { scroll4 : scroll4, scroll3 : scroll3, scroll2 : scroll2, scroll1 : scroll1, checkboxWithLabel : checkboxWithLabel, checkbox5 : checkbox5, checkbox4 : checkbox4, checkbox3 : checkbox3, checkbox2 : checkbox2, checkbox1 : checkbox1, builderResults : builderResults1};
 			if(retVal.scroll4 == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "scroll4" + " is null (check if placeholder object is named correctly)");
 			}
@@ -87371,9 +87357,6 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 			}
 			if(retVal.scroll1 == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "scroll1" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.dropdown1 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdown1" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.checkboxWithLabel == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "checkboxWithLabel" + " is null (check if placeholder object is named correctly)");
@@ -87395,14 +87378,12 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 			}
 			return retVal;
 		};
-		var res = generatedByMacroBuildWithParametersload2735Builder();
+		var res = generatedByMacroBuildWithParametersload2738Builder();
 		var ui = res.builderResults;
-		this.drop1 = res.dropdown1;
 		this.addBuilderResult(res.builderResults);
 		this.reset = this.addElementWithIterator(bh_ui_UIStandardMultiAnimButton.create(this.builder,"button","Reset"),buttonsIterator);
 		this.disable = this.addElementWithIterator(bh_ui_UIStandardMultiAnimButton.create(this.builder,"button","disable"),buttonsIterator);
 		this.slider = this.addElementWithPos(bh_ui_UIStandardMultiAnimSlider.create(this.builder,"slider",200),1000,200);
-		this.drop1.autoCloseOnLeave = false;
 		this.addElementWithIterator(bh_ui_UIStandardMultiAnimDropdown.create(this.builder,"dropdown","list-panel","list-item-120",[{ name : "item A"},{ name : "item B"},{ name : "item C"}]),dropDownIterator);
 		this.addElementWithIterator(bh_ui_UIStandardMultiAnimDropdown.create(this.builder,"dropdown","list-panel","list-item-120",[{ name : "Krava"},{ name : "Trava"},{ name : "Zelena Jama"},{ name : "XXXXX"}]),dropDownIterator);
 		var dd3 = this.addElementWithIterator(bh_ui_UIStandardMultiAnimDropdown.create(this.builder,"dropdown","list-panel","list-item-120",[{ name : "10"},{ name : "50"},{ name : "100"},{ name : "1000"}]),dropDownIterator);
@@ -87414,7 +87395,7 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 		this.addElementWithPos(radioBox,300,300);
 		var h2dObj = this.createCross(-65536);
 		var testCheckbox = bh_ui_UIStandardMultiCheckbox.create(this.builder,"checkbox",true);
-		var generatedByMacroBuildWithParametersload5326Builder = function() {
+		var generatedByMacroBuildWithParametersload5336Builder = function() {
 			var factoryElement;
 			var h2dObjectFactory;
 			var componentsBuilder1 = componentsBuilder;
@@ -87447,7 +87428,7 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 			}
 			return retVal;
 		};
-		var macroRes = generatedByMacroBuildWithParametersload5326Builder();
+		var macroRes = generatedByMacroBuildWithParametersload5336Builder();
 		this.addBuilderResult(macroRes.builderResults);
 	}
 	,onScreenEvent: function(event,source) {
@@ -87459,13 +87440,11 @@ screens_ComponentsTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prot
 				this.checkbox2.set_selected(true);
 				this.checkbox3.set_selected(true);
 				this.slider.setIntValue(20);
-				this.drop1.setSelectedIndex(2);
 			}
 			if(source == this.disable) {
 				this.checkbox1.set_disabled(!this.checkbox1.disabled);
 				this.checkbox2.set_selected(!this.checkbox2.selected);
 				this.checkbox3.set_selected(!this.checkbox3.selected);
-				this.drop1.set_disabled(!this.drop1.disabled);
 				this.slider.set_disabled(!this.slider.disabled);
 				this.reset.set_disabled(!this.reset.disabled);
 			}

@@ -53,7 +53,7 @@ function App() {
           loader.currentFile = screen.manimFile;
           loader.currentExample = screen.manimFile;
           setHasUnsavedChanges(false);
-          setReloadError(null); // Clear any previous errors
+          // Don't clear errors here - let them persist
         }
       }
     }
@@ -74,7 +74,7 @@ function App() {
         loader.currentFile = screen.manimFile;
         loader.currentExample = screen.manimFile;
         setHasUnsavedChanges(false);
-        setReloadError(null); // Clear any previous errors
+        // Don't clear errors here - let them persist
       }
     }
   }, [selectedScreen, loader]);
@@ -132,14 +132,14 @@ function App() {
   const handleScreenChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const screenName = event.target.value;
     setSelectedScreen(screenName);
-    setReloadError(null); // Clear errors when changing screen
+    // Don't clear errors when changing screen - let them persist
     loader.reloadPlayground(screenName);
   };
 
   const handleManimFileChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const filename = event.target.value;
     setSelectedManimFile(filename);
-    setReloadError(null); // Clear errors when changing file
+    // Don't clear errors when changing file - let them persist
     
     if (filename) {
       const manimFile = loader.manimFiles.find(file => file.filename === filename);
@@ -164,7 +164,10 @@ function App() {
   const handleEditorChange = (content: string) => {
     setManimContent(content);
     setHasUnsavedChanges(true);
-    setReloadError(null); // Clear errors when editing
+    // Clear errors when editing - user might be fixing the error
+    if (reloadError) {
+      setReloadError(null);
+    }
   };
 
   const handleApplyChanges = () => {
@@ -318,7 +321,16 @@ function App() {
           {/* Error display */}
           {reloadError && (
             <div className="text-xs text-red-400 mb-1 p-2 bg-red-900/20 border border-red-700 rounded">
-              <div className="font-bold">❌ Parse Error:</div>
+              <div className="flex justify-between items-start">
+                <div className="font-bold">❌ Parse Error:</div>
+                <button 
+                  className="text-red-300 hover:text-red-100 ml-2"
+                  onClick={() => setReloadError(null)}
+                  title="Clear error"
+                >
+                  ✕
+                </button>
+              </div>
               <div>{reloadError.message}</div>
               {errorLineInfo && (
                 <div className="mt-1 text-red-300">

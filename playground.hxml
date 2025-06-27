@@ -10,7 +10,7 @@
 -js public/playground.js
 -dce full
 -D MULTIANIM_TRACE
-
+-D js-source-map
 
 
 

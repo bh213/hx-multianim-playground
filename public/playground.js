@@ -474,25 +474,19 @@ Main.prototype = $extend(hxd_App.prototype,{
 	}
 	,reload: function(screen) {
 		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 36, className : "Main", methodName : "reload"});
-		try {
-			haxe_Log.trace("1",{ fileName : "src/Main.hx", lineNumber : 38, className : "Main", methodName : "reload"});
-			this.screenManager.reload();
-			haxe_Log.trace("2",{ fileName : "src/Main.hx", lineNumber : 40, className : "Main", methodName : "reload"});
-			var _this = this.errorText;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-			haxe_Log.trace("3",{ fileName : "src/Main.hx", lineNumber : 42, className : "Main", methodName : "reload"});
-			var tmp = screen;
-			this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(this.screenManager.getScreen(tmp != null ? tmp : "particles")));
-			haxe_Log.trace("4",{ fileName : "src/Main.hx", lineNumber : 44, className : "Main", methodName : "reload"});
-			return true;
-		} catch( _g ) {
-			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace("error loading main: " + Std.string(e),{ fileName : "src/Main.hx", lineNumber : 48, className : "Main", methodName : "reload"});
-			this.error(e.toString());
-			return false;
+		var res = this.screenManager.reload(null,false);
+		if(!res.success) {
+			haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 41, className : "Main", methodName : "reload"});
+			this.error(res.error);
+			return res;
 		}
+		var _this = this.errorText;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		var tmp = screen;
+		this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(this.screenManager.getScreen(tmp != null ? tmp : "particles")));
+		return res;
 	}
 	,init: function() {
 		var _gthis = this;
@@ -6781,7 +6775,10 @@ var hxparse_ParserError = function(pos) {
 $hxClasses["hxparse.ParserError"] = hxparse_ParserError;
 hxparse_ParserError.__name__ = "hxparse.ParserError";
 hxparse_ParserError.prototype = {
-	__class__: hxparse_ParserError
+	toString: function() {
+		return "Parser error";
+	}
+	,__class__: hxparse_ParserError
 };
 var hxparse_Unexpected = function(token,pos) {
 	hxparse_ParserError.call(this,pos);
@@ -31048,11 +31045,14 @@ bh_ui_screens_ScreenManager.prototype = {
 		if(built == null) {
 			throw haxe_Exception.thrown("failed to load multianim " + resource.entry.name);
 		}
-		haxe_Log.trace("Built " + resource.entry.name + " with reload " + (enableReload == null ? "null" : "" + enableReload),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 186, className : "bh.ui.screens.ScreenManager", methodName : "buildFromResource"});
+		haxe_Log.trace("Built " + resource.entry.name + " with reload " + (enableReload == null ? "null" : "" + enableReload),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 187, className : "bh.ui.screens.ScreenManager", methodName : "buildFromResource"});
 		this.builders.set(resource,built);
 		return built;
 	}
-	,reload: function(resource) {
+	,reload: function(resource,throwOnError) {
+		if(throwOnError == null) {
+			throwOnError = true;
+		}
 		var oldBuilders = this.builders.copy();
 		this.builders.h = { __keys__ : { }};
 		try {
@@ -31073,10 +31073,18 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace(e,{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 210, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+			haxe_Log.trace("buga buga x2",{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 210, className : "bh.ui.screens.ScreenManager", methodName : "reload", customParams : [throwOnError,e]});
+			haxe_Log.trace(e,{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 211, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 			this.loader.clearCache();
 			this.builders = oldBuilders;
-			throw haxe_Exception.thrown(e);
+			if(throwOnError) {
+				throw haxe_Exception.thrown(e);
+			}
+			if(((e) instanceof hxparse_ParserError)) {
+				var parserError = js_Boot.__cast(e , hxparse_ParserError);
+				return { success : false, error : parserError.toString(), file : parserError.pos.psource, pmin : parserError.pos.pmin, pmax : parserError.pos.pmax};
+			}
+			return { success : false, error : e.toString(), file : null, pmin : 0, pmax : 0};
 		}
 		var reloadedScreenNames = [];
 		this.loader.clearCache();
@@ -31096,7 +31104,8 @@ bh_ui_screens_ScreenManager.prototype = {
 			reloadedScreenNames.push(name);
 		}
 		this.updateScreenMode(this.mode);
-		haxe_Log.trace("reloaded " + reloadedScreenNames.join(","),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 230, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+		haxe_Log.trace("reloaded " + reloadedScreenNames.join(","),{ fileName : "bh/ui/screens/ScreenManager.hx", lineNumber : 248, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+		return { success : true, error : null, file : null, pmin : 0, pmax : 0};
 	}
 	,addScreen: function(name,screen) {
 		if(Object.prototype.hasOwnProperty.call(this.configuredScreens.h,name)) {
@@ -88749,3 +88758,5 @@ hxsl_SharedShader.SHADER_RESOLVE = new haxe_ds_StringMap();
 	haxe_EntryPoint.run();
 }
 })(typeof exports != "undefined" ? exports : typeof window != "undefined" ? window : typeof self != "undefined" ? self : this, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
+
+//# sourceMappingURL=playground.js.map

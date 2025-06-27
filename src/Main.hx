@@ -34,22 +34,17 @@ class Main extends hxd.App {
 
 	public function reload(?screen:String) {
 		trace('haxe Reloading with screen: $screen');
-		try {
-			trace('1');
-			screenManager.reload();
-			trace('2');
+		
+			
+			final res = screenManager.reload(screen, false);
+			if (!res.success) {
+				trace('error loading main: ${res.error}');
+				error('Error loading screen: ${res.error}');
+				return res;
+			}
 			errorText.remove();
-			trace('3');
 			screenManager.updateScreenMode(Single(screenManager.getScreen(screen ?? "particles")));
-			trace('4');
-			return true;
-		} catch (e) {
-			// TODO: display error
-			trace('error loading main: ${e}');
-			error(e.toString());
-
-			return false;
-		}
+			return res;
 	}
 
 	override function init() {

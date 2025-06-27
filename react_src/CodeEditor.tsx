@@ -10,6 +10,10 @@ interface CodeEditorProps {
   disabled?: boolean;
   placeholder?: string;
   onSave?: () => void;
+  errorLine?: number;
+  errorColumn?: number;
+  errorStart?: number;
+  errorEnd?: number;
 }
 
 // Convert TextMate grammar patterns to Monaco tokenizer rules
@@ -57,14 +61,44 @@ const convertTextMateToMonaco = (grammar: any) => {
 };
 
 const CodeEditor = forwardRef<HTMLDivElement, CodeEditorProps>(
-  ({ value, onChange, language = 'text', disabled = false, placeholder, onSave }, ref) => {
+  ({ value, onChange, language = 'text', disabled = false, placeholder, onSave, errorLine, errorColumn, errorStart, errorEnd }, ref) => {
     const editorRef = useRef<any>(null);
     const saveHandlerRef = useRef<() => void>();
+    const errorDecorationRef = useRef<string[]>([]);
 
     // Store the save handler in a ref so it can be accessed by the event listener
     useEffect(() => {
       saveHandlerRef.current = onSave;
     }, [onSave]);
+
+    // Handle error marking
+    useEffect(() => {
+      if (editorRef.current && errorLine) {
+        // Remove previous error decorations
+        if (errorDecorationRef.current.length > 0) {
+          editorRef.current.deltaDecorations(errorDecorationRef.current, []);
+          errorDecorationRef.current = [];
+        }
+
+        // Add new error decoration for the whole line
+        const decorations = [{
+          range: {
+            startLineNumber: errorLine,
+            startColumn: 1,
+            endLineNumber: errorLine,
+            endColumn: 1
+          },
+          options: {
+            isWholeLine: true,
+            className: 'error-line',
+            glyphMarginClassName: 'error-glyph',
+            linesDecorationsClassName: 'error-line-decoration'
+          }
+        }];
+
+        errorDecorationRef.current = editorRef.current.deltaDecorations([], decorations);
+      }
+    }, [errorLine, errorColumn, errorStart, errorEnd]);
 
     const handleEditorDidMount = (editor: any, monaco: any) => {
       editorRef.current = editor;
@@ -127,6 +161,22 @@ const CodeEditor = forwardRef<HTMLDivElement, CodeEditorProps>(
         className="w-full h-full min-h-[200px] border border-zinc-700 rounded overflow-hidden"
         style={{ minHeight: 200 }}
       >
+        <style>{`
+          .error-line {
+            background-color: rgba(239, 68, 68, 0.1) !important;
+            border-left: 3px solid #ef4444 !important;
+          }
+          .error-glyph {
+            background-color: #ef4444 !important;
+          }
+          .error-line-decoration {
+            background-color: #ef4444 !important;
+          }
+          .error-token {
+            background-color: rgba(239, 68, 68, 0.3) !important;
+            border-bottom: 2px solid #ef4444 !important;
+          }
+        `}</style>
         <Editor
           height="100%"
           defaultLanguage={getLanguage()}

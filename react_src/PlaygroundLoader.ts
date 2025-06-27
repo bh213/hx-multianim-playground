@@ -1,5 +1,5 @@
 import { Screen, ManimFile } from './types';
-import fileMap, { getFileContent, updateFileContent, fileExists } from './fileLoader';
+import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 
 /**
  * PlaygroundLoader - Combined file and manim loader for the hx-multianim playground
@@ -188,7 +188,6 @@ export class PlaygroundLoader {
     }
     
     resolveUrl(url: string): string {
-        console.log('resolveUrl', url, this.baseUrl);
         if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//') || url.startsWith('file://')) {
             return url;
         }
@@ -218,12 +217,10 @@ export class PlaygroundLoader {
     }
     
     loadFile(url: string): ArrayBuffer {
-        console.log('loadFile xxx', url, fileMap);
         const filename = this.extractFilenameFromUrl(url);
         
         if (filename && fileExists(filename)) { 
             const content = getFileContent(filename);
-            console.log('loadFile', filename, content);
             if (content) {
                 return this.stringToArrayBuffer(content);
             }
@@ -300,7 +297,7 @@ export class PlaygroundLoader {
         }, this.reloadDelay);
     }
     
-    reloadPlayground(screenName?: string): void {
+    reloadPlayground(screenName?: string): any {
         // Get the screen name - use parameter if provided, otherwise get from dropdown
         let selectedScreen = screenName;
         if (!selectedScreen) {
@@ -310,8 +307,21 @@ export class PlaygroundLoader {
         
         // Call reload with the selected screen
         if (window.PlaygroundMain?.instance) {
-            window.PlaygroundMain.instance.reload(selectedScreen);
+            try {
+                const res = window.PlaygroundMain.instance.reload(selectedScreen, true);
+                console.log('PlaygroundLoader reload result:', res);
+                console.log('Result type:', typeof res);
+                console.log('Result keys:', res ? Object.keys(res) : 'null');
+                if (res && res.__nativeException) {
+                    console.log('Error in reload result:', res.__nativeException);
+                }
+                return res;
+            } catch (error) {
+                console.log('Exception during reload:', error);
+                return { __nativeException: error };
+            }
         }
+        return null;
     }
     
     getCurrentContent(): string {

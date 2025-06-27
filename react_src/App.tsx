@@ -5,6 +5,16 @@ import CodeEditor from './CodeEditor';
 import { updateFileContent } from './fileLoader';
 import './index.css'
 
+interface ReloadError {
+  message: string;
+  pos?: {
+    psource: string;
+    pmin: number;
+    pmax: number;
+  };
+  token?: any;
+}
+
 function App() {
   const [selectedScreen, setSelectedScreen] = useState<string>('particles');
   const [selectedManimFile, setSelectedManimFile] = useState<string>('');
@@ -12,6 +22,7 @@ function App() {
   const [showDescription, setShowDescription] = useState<boolean>(false);
   const [description, setDescription] = useState<string>('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [reloadError, setReloadError] = useState<ReloadError | null>(null);
   const [loader] = useState(() => new PlaygroundLoader());
 
   useEffect(() => {
@@ -42,6 +53,7 @@ function App() {
           loader.currentFile = screen.manimFile;
           loader.currentExample = screen.manimFile;
           setHasUnsavedChanges(false);
+          setReloadError(null); // Clear any previous errors
         }
       }
     }
@@ -62,6 +74,7 @@ function App() {
         loader.currentFile = screen.manimFile;
         loader.currentExample = screen.manimFile;
         setHasUnsavedChanges(false);
+        setReloadError(null); // Clear any previous errors
       }
     }
   }, [selectedScreen, loader]);
@@ -119,12 +132,14 @@ function App() {
   const handleScreenChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const screenName = event.target.value;
     setSelectedScreen(screenName);
+    setReloadError(null); // Clear errors when changing screen
     loader.reloadPlayground(screenName);
   };
 
   const handleManimFileChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const filename = event.target.value;
     setSelectedManimFile(filename);
+    setReloadError(null); // Clear errors when changing file
     
     if (filename) {
       const manimFile = loader.manimFiles.find(file => file.filename === filename);
@@ -149,6 +164,7 @@ function App() {
   const handleEditorChange = (content: string) => {
     setManimContent(content);
     setHasUnsavedChanges(true);
+    setReloadError(null); // Clear errors when editing
   };
 
   const handleApplyChanges = () => {
@@ -161,7 +177,36 @@ function App() {
       setHasUnsavedChanges(false);
       
       if (selectedScreen) {
-        loader.reloadPlayground(selectedScreen);
+        const result = loader.reloadPlayground(selectedScreen);
+        console.log('Reload result:', result);
+        console.log('Result type:', typeof result);
+        console.log('Result keys:', result ? Object.keys(result) : 'null');
+        
+        // Check for errors in the result
+        if (result && result.__nativeException) {
+          console.log('Found __nativeException:', result.__nativeException);
+          const error = result.__nativeException;
+          const errorInfo: ReloadError = {
+            message: error.message || 'Unknown error occurred',
+            pos: error.value?.pos,
+            token: error.value?.token
+          };
+          console.log('Setting error info:', errorInfo);
+          setReloadError(errorInfo);
+        } else if (result && result.value && result.value.__nativeException) {
+          console.log('Found nested __nativeException:', result.value.__nativeException);
+          const error = result.value.__nativeException;
+          const errorInfo: ReloadError = {
+            message: error.message || 'Unknown error occurred',
+            pos: error.value?.pos,
+            token: error.value?.token
+          };
+          console.log('Setting error info:', errorInfo);
+          setReloadError(errorInfo);
+        } else {
+          console.log('No error found, clearing error state');
+          setReloadError(null);
+        }
       }
     }
   };
@@ -170,6 +215,31 @@ function App() {
   const saveHandler = React.useCallback(() => {
     handleApplyChanges();
   }, [selectedManimFile, manimContent, selectedScreen, loader]);
+
+  // Calculate error line and column from position
+  const getErrorLineInfo = () => {
+    if (!reloadError?.pos) return null;
+    
+    const { pmin, pmax } = reloadError.pos;
+    const content = manimContent;
+    
+    // Find the line number by counting newlines before the error position
+    let line = 1;
+    let column = 1;
+    
+    for (let i = 0; i < pmin && i < content.length; i++) {
+      if (content[i] === '\n') {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    
+    return { line, column, start: pmin, end: pmax };
+  };
+
+  const errorLineInfo = getErrorLineInfo();
 
   return (
     <div className="flex h-screen w-screen">
@@ -233,7 +303,32 @@ function App() {
             )}
           </div>
           <div className="text-xs text-zinc-400 mb-1">💡 Tip: Use Ctrl+S to apply changes, Tab for indentation</div>
-          {hasUnsavedChanges && (
+          
+          {/* Test error button */}
+          <button 
+            className="text-xs text-yellow-400 mb-1"
+            onClick={() => setReloadError({
+              message: 'Test error message',
+              pos: { psource: 'test.manim', pmin: 67, pmax: 71 }
+            })}
+          >
+            Test Error Display
+          </button>
+          
+          {/* Error display */}
+          {reloadError && (
+            <div className="text-xs text-red-400 mb-1 p-2 bg-red-900/20 border border-red-700 rounded">
+              <div className="font-bold">❌ Parse Error:</div>
+              <div>{reloadError.message}</div>
+              {errorLineInfo && (
+                <div className="mt-1 text-red-300">
+                  Line {errorLineInfo.line}, Column {errorLineInfo.column}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {hasUnsavedChanges && !reloadError && (
             <div className="text-xs text-orange-400">⚠️ Unsaved changes - Click "Apply Changes" to save and reload</div>
           )}
         </div>
@@ -245,6 +340,10 @@ function App() {
             disabled={!selectedManimFile}
             placeholder="Select a manim file to load its content here..."
             onSave={saveHandler}
+            errorLine={errorLineInfo?.line}
+            errorColumn={errorLineInfo?.column}
+            errorStart={errorLineInfo?.start}
+            errorEnd={errorLineInfo?.end}
           />
         </div>
       </div>

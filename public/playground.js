@@ -540,6 +540,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			}
 		};
 		this.screenManager.addScreen("components",new screens_ComponentsTestScreen(this.screenManager));
+		this.screenManager.addScreen("slider",new screens_SliderTestScreen(this.screenManager));
 		this.screenManager.addScreen("room1",new screens_Room1Screen(this.screenManager));
 		this.screenManager.addScreen("examples1",new screens_Examples1Screen(this.screenManager));
 		this.screenManager.addScreen("paths",new screens_PathsScreen(this.screenManager));
@@ -559,7 +560,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			}
 		});
 		this.engine.backgroundColor = 5271632;
-		this.reload("components");
+		this.reload("slider");
 	}
 	,update: function(dt) {
 		hxd_App.prototype.update.call(this,dt);
@@ -88077,6 +88078,48 @@ screens_Room1Screen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	,onScreenEvent: function(event,source) {
 	}
 	,__class__: screens_Room1Screen
+});
+var screens_SliderTestScreen = function(screenManager,layers) {
+	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.SliderTestScreen"] = screens_SliderTestScreen;
+screens_SliderTestScreen.__name__ = "screens.SliderTestScreen";
+screens_SliderTestScreen.__super__ = bh_ui_screens_UIScreenBase;
+screens_SliderTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
+		var sliderBuilder = this.screenManager.buildFromResourceName("slider.manim",false);
+		var generatedByMacroBuildWithParametersload762Builder = function() {
+			var slider;
+			var sliderBuilder1 = sliderBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var element = _gthis.addSlider(_gthis.builder,settings,0);
+				_gthis.addElement(element,null);
+				slider = element;
+				return element.getObject();
+			});
+			_g.h["slider"] = value;
+			var builderResults1 = sliderBuilder1.buildWithParameters("ui",builderResults,{ placeholderObjects : _g});
+			var retVal = { slider : slider, builderResults : builderResults1};
+			if(retVal.slider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "slider" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload762Builder();
+		this.updatableText = ui.builderResults.getUpdatable("sliderVal");
+		this.addBuilderResult(ui.builderResults);
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 3) {
+			var value = event.value;
+			this.updatableText.updateText(value == null ? "null" : "" + value);
+		}
+	}
+	,__class__: screens_SliderTestScreen
 });
 function $getIterator(o) { if( o instanceof Array ) return new haxe_iterators_ArrayIterator(o); else return o.iterator(); }
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; }

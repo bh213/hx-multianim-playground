@@ -114,6 +114,7 @@ class Main extends hxd.App {
 			}
 		};
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
+		screenManager.addScreen("slider", new screens.SliderTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));
@@ -159,7 +160,7 @@ class Main extends hxd.App {
 		
 		
 		engine.backgroundColor = 0x507050;
-		reload("components");
+		reload("slider");
 	}
 
 	#if js

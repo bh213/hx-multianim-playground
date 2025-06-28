@@ -8,6 +8,12 @@ import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 export class PlaygroundLoader {
     public screens: Screen[] = [
         { 
+            name: 'slider', 
+            displayName: 'Slider Test',
+            description: 'Slider component test screen with interactive slider controls and screen selection functionality.',
+            manimFile: 'slider.manim'
+        },
+        { 
             name: 'particles', 
             displayName: 'Particles',
             description: 'Particle system examples with various particle effects, explosions, trails, and dynamic particle animations.',
@@ -64,6 +70,12 @@ export class PlaygroundLoader {
     ];
     
     public manimFiles: ManimFile[] = [
+        { 
+            filename: 'slider.manim', 
+            displayName: 'Slider Test',
+            description: 'Slider component test screen with interactive slider controls and screen selection functionality.',
+            content: null
+        },
         { 
             filename: 'examples1.manim', 
             displayName: 'Examples 1',

@@ -5,6 +5,9 @@ import CodeEditor from './CodeEditor';
 import { updateFileContent } from './fileLoader';
 import './index.css'
 
+// Default configuration - single source of truth from Haxe backend
+const DEFAULT_SCREEN = 'button'; // fallback default
+
 interface ReloadError {
   message: string;
   pos?: {
@@ -16,7 +19,7 @@ interface ReloadError {
 }
 
 function App() {
-  const [selectedScreen, setSelectedScreen] = useState<string>('checkbox');
+  const [selectedScreen, setSelectedScreen] = useState<string>(DEFAULT_SCREEN);
   const [selectedManimFile, setSelectedManimFile] = useState<string>('');
   const [manimContent, setManimContent] = useState<string>('');
   const [showDescription, setShowDescription] = useState<boolean>(false);
@@ -25,9 +28,28 @@ function App() {
   const [reloadError, setReloadError] = useState<ReloadError | null>(null);
   const [loader] = useState(() => new PlaygroundLoader());
 
+  // Get default screen from Haxe backend when available
+  useEffect(() => {
+    const getDefaultScreen = () => {
+      if ((window as any).PlaygroundMain?.defaultScreen) {
+        setSelectedScreen((window as any).PlaygroundMain.defaultScreen);
+      }
+    };
+    
+    // Try immediately
+    getDefaultScreen();
+    
+    // Also try after a short delay in case Haxe backend loads later
+    const timer = setTimeout(getDefaultScreen, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     // Initialize the loader and make it available globally
     window.playgroundLoader = loader;
+    
+    // Make default screen available globally for Haxe backend
+    (window as any).defaultScreen = DEFAULT_SCREEN;
     
     // Set up event listeners for the loader
     loader.onContentChanged = (content: string) => {

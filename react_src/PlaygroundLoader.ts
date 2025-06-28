@@ -1,12 +1,21 @@
 import { Screen, ManimFile } from './types';
 import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 
+// Default configuration - single source of truth
+const DEFAULT_SCREEN = 'button';
+
 /**
  * PlaygroundLoader - Combined file and manim loader for the hx-multianim playground
  * Handles loading manim files, editing them, and reloading the playground application
  */
 export class PlaygroundLoader {
     public screens: Screen[] = [
+        { 
+            name: 'button', 
+            displayName: 'Button Test',
+            description: 'Button component test screen with interactive button controls and click feedback.',
+            manimFile: 'button.manim'
+        },
         { 
             name: 'checkbox', 
             displayName: 'Checkbox Test',
@@ -76,6 +85,12 @@ export class PlaygroundLoader {
     ];
     
     public manimFiles: ManimFile[] = [
+        { 
+            filename: 'button.manim', 
+            displayName: 'Button Test',
+            description: 'Button component test screen with interactive button controls and click feedback.',
+            content: null
+        },
         { 
             filename: 'checkbox.manim', 
             displayName: 'Checkbox Test',
@@ -378,5 +393,9 @@ export class PlaygroundLoader {
         if (this.mainApp && typeof this.mainApp.dispose === 'function') {
             this.mainApp.dispose();
         }
+    }
+
+    public static getDefaultScreen(): string {
+        return DEFAULT_SCREEN;
     }
 } 

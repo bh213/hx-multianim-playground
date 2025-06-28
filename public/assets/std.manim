@@ -51,7 +51,7 @@ version: 0.1
   }
 
 
- #button  programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button") {
+ #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button") {
       //filter:pixelOutline(knockout, blue, 0.3)
       //filter:replacePalette(file, 0, 1)
       

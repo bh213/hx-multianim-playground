@@ -541,6 +541,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		};
 		this.screenManager.addScreen("components",new screens_ComponentsTestScreen(this.screenManager));
 		this.screenManager.addScreen("slider",new screens_SliderTestScreen(this.screenManager));
+		this.screenManager.addScreen("checkbox",new screens_CheckboxTestScreen(this.screenManager));
 		this.screenManager.addScreen("room1",new screens_Room1Screen(this.screenManager));
 		this.screenManager.addScreen("examples1",new screens_Examples1Screen(this.screenManager));
 		this.screenManager.addScreen("paths",new screens_PathsScreen(this.screenManager));
@@ -31479,7 +31480,24 @@ bh_ui_screens_UIScreenBase.prototype = {
 			throw haxe_Exception.thrown("could not parse setting \"" + val + "\" as bool");
 		}
 	}
+	,validateSettings: function(settings,allowedSettings,elementName) {
+		if(settings == null) {
+			return;
+		}
+		var h = settings.h;
+		var key_h = h;
+		var key_keys = Object.keys(h);
+		var key_length = key_keys.length;
+		var key_current = 0;
+		while(key_current < key_length) {
+			var key = key_keys[key_current++];
+			if(allowedSettings.indexOf(key) == -1) {
+				throw haxe_Exception.thrown("Unknown setting \"" + key + "\" for " + elementName);
+			}
+		}
+	}
 	,addButton: function(providedBuilder,text,settings) {
+		this.validateSettings(settings,["buildName","text"],"button");
 		var buttonBuildName = this.getSettings(settings,"buildName","button");
 		var buttonText = this.getSettings(settings,"text",text);
 		return bh_ui_UIStandardMultiAnimButton.create(providedBuilder,buttonBuildName,buttonText);
@@ -31488,27 +31506,30 @@ bh_ui_screens_UIScreenBase.prototype = {
 		if(initialValue == null) {
 			initialValue = 0;
 		}
+		this.validateSettings(settings,["buildName","size"],"slider");
 		var sliderBuildName = this.getSettings(settings,"buildName","slider");
 		var size = this.getIntSettings(settings,"size",200);
 		return bh_ui_UIStandardMultiAnimSlider.create(providedBuilder,sliderBuildName,size,initialValue);
 	}
 	,addCheckbox: function(providedBuilder,settings,checked) {
-		if(checked == null) {
-			checked = false;
-		}
+		this.validateSettings(settings,["checkboxBuildName","initialValue"],"checkbox");
 		var checkboxBuildName = this.getSettings(settings,"checkboxBuildName","checkbox");
-		return bh_ui_UIStandardMultiCheckbox.create(providedBuilder,checkboxBuildName,checked);
+		var tmp = checked;
+		var checkBoxInitialValue = this.getBoolSettings(settings,"initialValue",tmp != null && tmp);
+		return bh_ui_UIStandardMultiCheckbox.create(providedBuilder,checkboxBuildName,checkBoxInitialValue);
 	}
 	,addRadio: function(providedBuilder,settings,items,vertical,selectedIndex) {
 		if(selectedIndex == null) {
 			selectedIndex = 0;
 		}
+		this.validateSettings(settings,["radioBuildName","singleRadioButtonBuilderName"],"radio");
 		var radioBuildName = this.getSettings(settings,"radioBuildName",vertical ? "radioButtonsVertical" : "radioButtonsHorizontal");
 		var singleRadioButtonBuilderName = this.getSettings(settings,"singleRadioButtonBuilderName","radio");
 		return bh_ui_UIMultiAnimRadioButtons.create(providedBuilder,radioBuildName,singleRadioButtonBuilderName,items,0);
 	}
 	,addCheckboxWithText: function(providedBuilder,settings,label,checked) {
 		var _gthis = this;
+		this.validateSettings(settings,["buildName","textColor","font"],"checkboxWithText");
 		var checkbox;
 		var checkboxWithNameBuildName = this.getSettings(settings,"buildName","checkboxWithText");
 		var textColor = this.getIntSettings(settings,"textColor",-1);
@@ -31529,6 +31550,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 		return new bh_ui_UIElementContainer(checkbox,built.object);
 	}
 	,addScrollableList: function(builder,width,height,items,settings,initialIndex) {
+		this.validateSettings(settings,["scrollableListBuilder","width","height","topClearance","itemBuilder"],"scrollableList");
 		var panelBuildName = this.getSettings(settings,"scrollableListBuilder","list-panel");
 		var finalWidth = this.getIntSettings(settings,"width",width);
 		var finalHeight = this.getIntSettings(settings,"height",height);
@@ -31541,6 +31563,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 		if(initialIndex == null) {
 			initialIndex = 0;
 		}
+		this.validateSettings(settings,["dropdownBuildName","autoOpen","autoCloseOnLeave","closeOnOutsideClick"],"dropdown");
 		var dropdownBuildName = this.getSettings(settings,"dropdownBuildName","dropdown");
 		var autoOpen = this.getBoolSettings(settings,"autoOpen",true);
 		var autoCloseOnLeave = this.getBoolSettings(settings,"autoCloseOnLeave",true);
@@ -87180,6 +87203,48 @@ js_html__$CanvasElement_CanvasUtil.getContextWebGL = function(canvas,attribs) {
 	return null;
 };
 Math.__name__ = "Math";
+var screens_CheckboxTestScreen = function(screenManager,layers) {
+	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.CheckboxTestScreen"] = screens_CheckboxTestScreen;
+screens_CheckboxTestScreen.__name__ = "screens.CheckboxTestScreen";
+screens_CheckboxTestScreen.__super__ = bh_ui_screens_UIScreenBase;
+screens_CheckboxTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
+		var checkboxBuilder = this.screenManager.buildFromResourceName("checkbox.manim",false);
+		var generatedByMacroBuildWithParametersload747Builder = function() {
+			var checkbox;
+			var checkboxBuilder1 = checkboxBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var element = _gthis.addCheckbox(_gthis.builder,settings,false);
+				_gthis.addElement(element,null);
+				checkbox = element;
+				return element.getObject();
+			});
+			_g.h["checkbox"] = value;
+			var builderResults1 = checkboxBuilder1.buildWithParameters("ui",builderResults,{ placeholderObjects : _g});
+			var retVal = { checkbox : checkbox, builderResults : builderResults1};
+			if(retVal.checkbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "checkbox" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload747Builder();
+		this.updatableText = ui.builderResults.getUpdatable("checkboxVal");
+		this.addBuilderResult(ui.builderResults);
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 2) {
+			var pressed = event.pressed;
+			this.updatableText.updateText("" + (pressed == null ? "null" : "" + pressed));
+		}
+	}
+	,__class__: screens_CheckboxTestScreen
+});
 var screens_ComponentsTestScreen = function(screenManager,layers) {
 	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
 };

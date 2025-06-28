@@ -8,6 +8,12 @@ import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 export class PlaygroundLoader {
     public screens: Screen[] = [
         { 
+            name: 'checkbox', 
+            displayName: 'Checkbox Test',
+            description: 'Checkbox component test screen with interactive checkbox controls and state display.',
+            manimFile: 'checkbox.manim'
+        },
+        { 
             name: 'slider', 
             displayName: 'Slider Test',
             description: 'Slider component test screen with interactive slider controls and screen selection functionality.',
@@ -70,6 +76,12 @@ export class PlaygroundLoader {
     ];
     
     public manimFiles: ManimFile[] = [
+        { 
+            filename: 'checkbox.manim', 
+            displayName: 'Checkbox Test',
+            description: 'Checkbox component test screen with interactive checkbox controls and state display.',
+            content: null
+        },
         { 
             filename: 'slider.manim', 
             displayName: 'Slider Test',

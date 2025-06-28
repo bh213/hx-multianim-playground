@@ -8,7 +8,6 @@ version: 0.1
       
       placeholder(generated(cross(200, 20)), builderParameter("slider")) {
             pos:10,30
-            settings(font=>dd)
       }
 
       

@@ -115,6 +115,7 @@ class Main extends hxd.App {
 		};
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
 		screenManager.addScreen("slider", new screens.SliderTestScreen(screenManager));
+		screenManager.addScreen("checkbox", new screens.CheckboxTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));

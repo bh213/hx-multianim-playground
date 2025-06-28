@@ -16,7 +16,7 @@ interface ReloadError {
 }
 
 function App() {
-  const [selectedScreen, setSelectedScreen] = useState<string>('slider');
+  const [selectedScreen, setSelectedScreen] = useState<string>('checkbox');
   const [selectedManimFile, setSelectedManimFile] = useState<string>('');
   const [manimContent, setManimContent] = useState<string>('');
   const [showDescription, setShowDescription] = useState<boolean>(false);

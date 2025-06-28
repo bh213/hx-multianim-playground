@@ -543,6 +543,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("slider",new screens_SliderTestScreen(this.screenManager));
 		this.screenManager.addScreen("checkbox",new screens_CheckboxTestScreen(this.screenManager));
 		this.screenManager.addScreen("button",new screens_ButtonTestScreen(this.screenManager));
+		this.screenManager.addScreen("scrollableList",new screens_ScrollableListTestScreen(this.screenManager));
 		this.screenManager.addScreen("room1",new screens_Room1Screen(this.screenManager));
 		this.screenManager.addScreen("examples1",new screens_Examples1Screen(this.screenManager));
 		this.screenManager.addScreen("paths",new screens_PathsScreen(this.screenManager));
@@ -88209,6 +88210,53 @@ screens_Room1Screen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	}
 	,__class__: screens_Room1Screen
 });
+var screens_ScrollableListTestScreen = function(screenManager,layers) {
+	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.ScrollableListTestScreen"] = screens_ScrollableListTestScreen;
+screens_ScrollableListTestScreen.__name__ = "screens.ScrollableListTestScreen";
+screens_ScrollableListTestScreen.__super__ = bh_ui_screens_UIScreenBase;
+screens_ScrollableListTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
+		var scrollableListBuilder = this.screenManager.buildFromResourceName("scrollable-list.manim",false);
+		var listItems = [{ name : "Item 1"},{ name : "Item 2"},{ name : "Item 3"},{ name : "Item 4"},{ name : "Item 5"},{ name : "Item 6"},{ name : "Item 7"},{ name : "Item 8"},{ name : "Item 9"},{ name : "Item 10"}];
+		var generatedByMacroBuildWithParametersload1087Builder = function() {
+			var scrollableList;
+			var scrollableListBuilder1 = scrollableListBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var element = _gthis.addScrollableList(_gthis.builder,200,150,listItems,settings,0);
+				_gthis.addElement(element,null);
+				scrollableList = element;
+				return element.getObject();
+			});
+			_g.h["scrollableList"] = value;
+			var builderResults1 = scrollableListBuilder1.buildWithParameters("ui",builderResults,{ placeholderObjects : _g});
+			var retVal = { scrollableList : scrollableList, builderResults : builderResults1};
+			if(retVal.scrollableList == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "scrollableList" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload1087Builder();
+		this.updatableText = ui.builderResults.getUpdatable("listVal");
+		this.scrollableList = ui.scrollableList;
+		this.addBuilderResult(ui.builderResults);
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 4) {
+			var index = event.index;
+			var items = event.items;
+			if(source == this.scrollableList) {
+				this.updatableText.updateText("Selected: " + items[index].name + " (index: " + index + ")");
+			}
+		}
+	}
+	,__class__: screens_ScrollableListTestScreen
+});
 var screens_SliderTestScreen = function(screenManager,layers) {
 	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
 };
@@ -88292,7 +88340,7 @@ hx__registerFont = function(name,data) {
 	div.className = "hx__loadFont";
 	window.document.body.appendChild(div);
 };
-Main.defaultScreen = "button";
+Main.defaultScreen = "scrollableList";
 Xml.Element = 0;
 Xml.PCData = 1;
 Xml.CData = 2;

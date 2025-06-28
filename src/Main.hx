@@ -14,7 +14,7 @@ using bh.base.Atlas2;
 
 @:expose("PlaygroundMain")
 class Main extends hxd.App {
-	public static var defaultScreen:String = "button";
+	public static var defaultScreen:String = "scrollableList";
 	public static var instance:Main = null;
 	var errorText:h2d.Text;
 
@@ -118,6 +118,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("slider", new screens.SliderTestScreen(screenManager));
 		screenManager.addScreen("checkbox", new screens.CheckboxTestScreen(screenManager));
 		screenManager.addScreen("button", new screens.ButtonTestScreen(screenManager));
+		screenManager.addScreen("scrollableList", new screens.ScrollableListTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));

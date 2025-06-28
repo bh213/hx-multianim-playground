@@ -11,6 +11,12 @@ const DEFAULT_SCREEN = 'button';
 export class PlaygroundLoader {
     public screens: Screen[] = [
         { 
+            name: 'scrollableList', 
+            displayName: 'Scrollable List Test',
+            description: 'Scrollable list component test screen with interactive list selection and scrolling functionality.',
+            manimFile: 'scrollable-list.manim'
+        },
+        { 
             name: 'button', 
             displayName: 'Button Test',
             description: 'Button component test screen with interactive button controls and click feedback.',
@@ -85,6 +91,12 @@ export class PlaygroundLoader {
     ];
     
     public manimFiles: ManimFile[] = [
+        { 
+            filename: 'scrollable-list.manim', 
+            displayName: 'Scrollable List Test',
+            description: 'Scrollable list component test screen with interactive list selection and scrolling functionality.',
+            content: null
+        },
         { 
             filename: 'button.manim', 
             displayName: 'Button Test',

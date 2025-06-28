@@ -36,6 +36,7 @@ declare global {
         playgroundLoader: PlaygroundLoader;
         PlaygroundMain: {
             instance: any;
+            defaultScreen: string;
         };
         hxd?: {
             res?: {

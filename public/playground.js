@@ -473,10 +473,10 @@ Main.prototype = $extend(hxd_App.prototype,{
 		_this.y = 30;
 	}
 	,reload: function(screen) {
-		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 36, className : "Main", methodName : "reload"});
+		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 37, className : "Main", methodName : "reload"});
 		var res = this.screenManager.reload(null,false);
 		if(!res.success) {
-			haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 40, className : "Main", methodName : "reload"});
+			haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 41, className : "Main", methodName : "reload"});
 			this.error("Error loading screen: " + res.error);
 			return res;
 		}
@@ -542,6 +542,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("components",new screens_ComponentsTestScreen(this.screenManager));
 		this.screenManager.addScreen("slider",new screens_SliderTestScreen(this.screenManager));
 		this.screenManager.addScreen("checkbox",new screens_CheckboxTestScreen(this.screenManager));
+		this.screenManager.addScreen("button",new screens_ButtonTestScreen(this.screenManager));
 		this.screenManager.addScreen("room1",new screens_Room1Screen(this.screenManager));
 		this.screenManager.addScreen("examples1",new screens_Examples1Screen(this.screenManager));
 		this.screenManager.addScreen("paths",new screens_PathsScreen(this.screenManager));
@@ -561,7 +562,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			}
 		});
 		this.engine.backgroundColor = 5271632;
-		this.reload("slider");
+		this.reload(Main.defaultScreen);
 	}
 	,update: function(dt) {
 		hxd_App.prototype.update.call(this,dt);
@@ -6329,7 +6330,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var tmp1 = tmp != null ? tmp.nodes : null;
 			var node = tmp1 != null ? tmp1.h[name] : null;
 			if(node == null) {
-				throw haxe_Exception.thrown("buildWithComboParameters " + Std.string(allCombos) + ": could not build " + name);
+				throw haxe_Exception.thrown("buildWithComboParameters " + Std.string(allCombos) + ": could not build " + name + " with parameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + " and builderParameters " + Std.string(builderParams));
 			}
 			if(bh_base_MapTools.count(inputParameters) + allCombos.length == 0) {
 				throw haxe_Exception.thrown("parameters are required");
@@ -87203,6 +87204,70 @@ js_html__$CanvasElement_CanvasUtil.getContextWebGL = function(canvas,attribs) {
 	return null;
 };
 Math.__name__ = "Math";
+var screens_ButtonTestScreen = function(screenManager,layers) {
+	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.ButtonTestScreen"] = screens_ButtonTestScreen;
+screens_ButtonTestScreen.__name__ = "screens.ButtonTestScreen";
+screens_ButtonTestScreen.__super__ = bh_ui_screens_UIScreenBase;
+screens_ButtonTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
+		var buttonBuilder = this.screenManager.buildFromResourceName("button.manim",false);
+		var generatedByMacroBuildWithParametersload824Builder = function() {
+			var disableCheckbox;
+			var button;
+			var buttonBuilder1 = buttonBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var element = _gthis.addCheckbox(_gthis.builder,settings,false);
+				_gthis.addElement(element,null);
+				disableCheckbox = element;
+				return element.getObject();
+			});
+			_g.h["disableCheckbox"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var element = _gthis.addButton(buttonBuilder,"Click Me!",settings);
+				_gthis.addElement(element,null);
+				button = element;
+				return element.getObject();
+			});
+			_g.h["button"] = value;
+			var builderResults1 = buttonBuilder1.buildWithParameters("ui",builderResults,{ placeholderObjects : _g});
+			var retVal = { disableCheckbox : disableCheckbox, button : button, builderResults : builderResults1};
+			if(retVal.disableCheckbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableCheckbox" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.button == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "button" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload824Builder();
+		this.updatableText = ui.builderResults.getUpdatable("buttonVal");
+		this.disableCheckbox = ui.disableCheckbox;
+		this.button = ui.button;
+		this.addBuilderResult(ui.builderResults);
+	}
+	,onScreenEvent: function(event,source) {
+		switch(event._hx_index) {
+		case 0:
+			this.updatableText.updateText("Button Clicked!");
+			break;
+		case 2:
+			var pressed = event.pressed;
+			if(source == this.disableCheckbox) {
+				this.updatableText.updateText("Disabled checkbox toggled: " + (pressed == null ? "null" : "" + pressed));
+				this.button.set_disabled(pressed);
+			}
+			break;
+		default:
+		}
+	}
+	,__class__: screens_ButtonTestScreen
+});
 var screens_CheckboxTestScreen = function(screenManager,layers) {
 	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
 };
@@ -88227,6 +88292,7 @@ hx__registerFont = function(name,data) {
 	div.className = "hx__loadFont";
 	window.document.body.appendChild(div);
 };
+Main.defaultScreen = "button";
 Xml.Element = 0;
 Xml.PCData = 1;
 Xml.CData = 2;

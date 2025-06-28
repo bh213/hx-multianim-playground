@@ -14,6 +14,7 @@ using bh.base.Atlas2;
 
 @:expose("PlaygroundMain")
 class Main extends hxd.App {
+	public static var defaultScreen:String = "button";
 	public static var instance:Main = null;
 	var errorText:h2d.Text;
 
@@ -116,6 +117,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("components", new screens.ComponentsTestScreen(screenManager));
 		screenManager.addScreen("slider", new screens.SliderTestScreen(screenManager));
 		screenManager.addScreen("checkbox", new screens.CheckboxTestScreen(screenManager));
+		screenManager.addScreen("button", new screens.ButtonTestScreen(screenManager));
 		#if hl
 		screenManager.addScreen("stateAnim", new screens.StateAnimScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsScreen(screenManager));
@@ -161,7 +163,8 @@ class Main extends hxd.App {
 		
 		
 		engine.backgroundColor = 0x507050;
-		reload("slider");
+		// Default screen - synchronized with React frontend
+		reload(defaultScreen);
 	}
 
 	#if js

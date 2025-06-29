@@ -87264,7 +87264,7 @@ screens_ButtonTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototyp
 		var _gthis = this;
 		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
 		var buttonBuilder = this.screenManager.buildFromResourceName("button.manim",false);
-		var generatedByMacroBuildWithParametersload824Builder = function() {
+		var generatedByMacroBuildWithParametersload849Builder = function() {
 			var disableCheckbox;
 			var button;
 			var buttonBuilder1 = buttonBuilder;
@@ -87294,7 +87294,7 @@ screens_ButtonTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototyp
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload824Builder();
+		var ui = generatedByMacroBuildWithParametersload849Builder();
 		this.updatableText = ui.builderResults.getUpdatable("buttonVal");
 		this.disableCheckbox = ui.disableCheckbox;
 		this.button = ui.button;
@@ -87328,7 +87328,7 @@ screens_CheckboxTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.protot
 		var _gthis = this;
 		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
 		var checkboxBuilder = this.screenManager.buildFromResourceName("checkbox.manim",false);
-		var generatedByMacroBuildWithParametersload747Builder = function() {
+		var generatedByMacroBuildWithParametersload770Builder = function() {
 			var checkbox;
 			var checkboxBuilder1 = checkboxBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -87347,7 +87347,7 @@ screens_CheckboxTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.protot
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload747Builder();
+		var ui = generatedByMacroBuildWithParametersload770Builder();
 		this.updatableText = ui.builderResults.getUpdatable("checkboxVal");
 		this.addBuilderResult(ui.builderResults);
 	}
@@ -88270,7 +88270,7 @@ screens_ScrollableListTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.
 		this.builder = this.screenManager.buildFromResourceName("std.manim",false);
 		var scrollableListBuilder = this.screenManager.buildFromResourceName("scrollable-list.manim",false);
 		var listItems = [{ name : "Item 1"},{ name : "Item 2"},{ name : "Item 3"},{ name : "Item 4"},{ name : "Item 5"},{ name : "Item 6"},{ name : "Item 7"},{ name : "Item 8"},{ name : "Item 9"},{ name : "Item 10"}];
-		var generatedByMacroBuildWithParametersload1087Builder = function() {
+		var generatedByMacroBuildWithParametersload1125Builder = function() {
 			var scrollableList;
 			var scrollableListBuilder1 = scrollableListBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -88289,7 +88289,7 @@ screens_ScrollableListTestScreen.prototype = $extend(bh_ui_screens_UIScreenBase.
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1087Builder();
+		var ui = generatedByMacroBuildWithParametersload1125Builder();
 		this.updatableText = ui.builderResults.getUpdatable("listVal");
 		this.scrollableList = ui.scrollableList;
 		this.addBuilderResult(ui.builderResults);

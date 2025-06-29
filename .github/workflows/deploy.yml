@@ -38,32 +38,13 @@ jobs:
       run: lix download
 
     - name: Build for GitHub Pages
-      run: npm run build:gh-pages
-      
-    - name: Create public directory structure
-      run: |
-        mkdir -p public
-        mkdir -p public/build
-        mkdir -p public/res
-        mkdir -p public/files
-        
-    - name: Copy files to public directory
-      run: |
-        # Copy root files
-        cp index.html public/
-        cp playground-loader.js public/
-        
-        # Copy build files
-        cp -r build/* public/build/
-        
-        # Copy resource files
-        cp -r res/*.manim public/res/
-        cp -r files/* public/files/
+      run: npm run full:build
+
         
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./public
+        publish_dir: ./dist
         publish_branch: gh-pages 

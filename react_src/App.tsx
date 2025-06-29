@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlaygroundLoader } from './PlaygroundLoader';
-import { Screen, ManimFile } from './types';
+import { Screen, ManimFile, AnimFile } from './types';
 import CodeEditor from './CodeEditor';
 import { updateFileContent } from './fileLoader';
 import './index.css'
@@ -18,6 +18,14 @@ interface ReloadError {
   token?: any;
 }
 
+interface ConsoleEntry {
+  type: 'log' | 'error' | 'warn' | 'info';
+  message: string;
+  timestamp: Date;
+}
+
+type TabType = 'playground' | 'console';
+
 function App() {
   const [selectedScreen, setSelectedScreen] = useState<string>(DEFAULT_SCREEN);
   const [selectedManimFile, setSelectedManimFile] = useState<string>('');
@@ -26,7 +34,137 @@ function App() {
   const [description, setDescription] = useState<string>('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [reloadError, setReloadError] = useState<ReloadError | null>(null);
+  const [syncOffer, setSyncOffer] = useState<{file: string, screen: string} | null>(null);
   const [loader] = useState(() => new PlaygroundLoader());
+  
+  // Panel widths for resizable layout
+  const [filePanelWidth, setFilePanelWidth] = useState<number>(250);
+  const [editorPanelWidth, setEditorPanelWidth] = useState<number>(400);
+  const [playgroundWidth, setPlaygroundWidth] = useState<number>(600);
+  const [activeTab, setActiveTab] = useState<TabType>('playground');
+  
+  // Console capture
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+  const consoleRef = useRef<HTMLDivElement>(null);
+  
+  // Refs for resizing
+  const filePanelRef = useRef<HTMLDivElement>(null);
+  const editorPanelRef = useRef<HTMLDivElement>(null);
+  const isResizing = useRef<boolean>(false);
+  const currentResizer = useRef<string>('');
+
+  // Auto-switch to console tab when there's an error
+  useEffect(() => {
+    if (reloadError) {
+      setActiveTab('console');
+    }
+  }, [reloadError]);
+
+  // Console capture setup
+  useEffect(() => {
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    const originalInfo = console.info;
+
+    const addConsoleEntry = (type: 'log' | 'error' | 'warn' | 'info', ...args: any[]) => {
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      
+      setConsoleEntries(prev => [...prev, {
+        type,
+        message,
+        timestamp: new Date()
+      }]);
+    };
+
+    console.log = (...args) => {
+      originalLog(...args);
+      addConsoleEntry('log', ...args);
+    };
+
+    console.error = (...args) => {
+      originalError(...args);
+      addConsoleEntry('error', ...args);
+    };
+
+    console.warn = (...args) => {
+      originalWarn(...args);
+      addConsoleEntry('warn', ...args);
+    };
+
+    console.info = (...args) => {
+      originalInfo(...args);
+      addConsoleEntry('info', ...args);
+    };
+
+    return () => {
+      console.log = originalLog;
+      console.error = originalError;
+      console.warn = originalWarn;
+      console.info = originalInfo;
+    };
+  }, []);
+
+  // Auto-scroll console to bottom
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleEntries]);
+
+  const clearConsole = () => {
+    setConsoleEntries([]);
+  };
+
+
+  const checkScreenSync = (filename: string) => {
+    // Only check for manim files, not anim files
+    if (!filename.endsWith('.manim')) {
+      setSyncOffer(null);
+      return;
+    }
+    
+    // Find the screen that corresponds to this file using loader data
+    const matchingScreen = loader.screens.find(screen => screen.manimFile === filename);
+    
+    if (matchingScreen && matchingScreen.name !== selectedScreen) {
+      setSyncOffer({ file: filename, screen: matchingScreen.name });
+    } else {
+      setSyncOffer(null);
+    }
+  };
+
+  const acceptSyncOffer = () => {
+    if (syncOffer) {
+      setSelectedScreen(syncOffer.screen);
+      setSyncOffer(null);
+      loader.reloadPlayground(syncOffer.screen);
+    }
+  };
+
+  const dismissSyncOffer = () => {
+    setSyncOffer(null);
+  };
+
+  const getConsoleIcon = (type: 'log' | 'error' | 'warn' | 'info') => {
+    switch (type) {
+      case 'error': return '❌';
+      case 'warn': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📋';
+    }
+  };
+
+  const getConsoleColor = (type: 'log' | 'error' | 'warn' | 'info') => {
+    switch (type) {
+      case 'error': return 'text-red-400';
+      case 'warn': return 'text-yellow-400';
+      case 'info': return 'text-blue-400';
+      default: return 'text-gray-300';
+    }
+  };
 
   // Get default screen from Haxe backend when available
   useEffect(() => {
@@ -75,7 +213,6 @@ function App() {
           loader.currentFile = screen.manimFile;
           loader.currentExample = screen.manimFile;
           setHasUnsavedChanges(false);
-          // Don't clear errors here - let them persist
         }
       }
     }
@@ -96,7 +233,6 @@ function App() {
         loader.currentFile = screen.manimFile;
         loader.currentExample = screen.manimFile;
         setHasUnsavedChanges(false);
-        // Don't clear errors here - let them persist
       }
     }
   }, [selectedScreen, loader]);
@@ -154,25 +290,41 @@ function App() {
   const handleScreenChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const screenName = event.target.value;
     setSelectedScreen(screenName);
-    // Don't clear errors when changing screen - let them persist
+    setSyncOffer(null); // Clear any pending sync offer
     loader.reloadPlayground(screenName);
   };
 
   const handleManimFileChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const filename = event.target.value;
     setSelectedManimFile(filename);
-    // Don't clear errors when changing file - let them persist
     
     if (filename) {
-      const manimFile = loader.manimFiles.find(file => file.filename === filename);
-      if (manimFile) {
-        setManimContent(manimFile.content || '');
-        setDescription(manimFile.description);
-        setShowDescription(true);
-        loader.currentFile = filename;
-        loader.currentExample = filename;
-        setHasUnsavedChanges(false);
-        loader.reloadPlayground();
+      // Check if it's a manim file or anim file
+      if (filename.endsWith('.manim')) {
+        const manimFile = loader.manimFiles.find(file => file.filename === filename);
+        if (manimFile) {
+          setManimContent(manimFile.content || '');
+          setDescription(manimFile.description);
+          setShowDescription(true);
+          loader.currentFile = filename;
+          loader.currentExample = filename;
+          setHasUnsavedChanges(false);
+          
+          // Check if we should offer to sync the screen
+          checkScreenSync(filename);
+        }
+      } else if (filename.endsWith('.anim')) {
+        // For anim files, load the content and make it available to the playground
+        const animFile = loader.animFiles.find(file => file.filename === filename);
+        if (animFile) {
+          setManimContent(animFile.content || '');
+          setDescription('Animation file - content loaded and available to playground');
+          setShowDescription(true);
+          loader.currentFile = filename;
+          loader.currentExample = filename;
+          setHasUnsavedChanges(false);
+          setSyncOffer(null); // No screen sync for anim files
+        }
       }
     } else {
       setManimContent('');
@@ -180,6 +332,7 @@ function App() {
       loader.currentFile = null;
       loader.currentExample = null;
       setHasUnsavedChanges(false);
+      setSyncOffer(null);
     }
   };
 
@@ -266,60 +419,144 @@ function App() {
 
   const errorLineInfo = getErrorLineInfo();
 
+  // Resize handlers
+  const handleMouseDown = (resizer: string) => (e: React.MouseEvent) => {
+    isResizing.current = true;
+    currentResizer.current = resizer;
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+
+      if (currentResizer.current === 'file') {
+        const newWidth = e.clientX;
+        if (newWidth > 150 && newWidth < window.innerWidth - 300) {
+          setFilePanelWidth(newWidth);
+        }
+      } else if (currentResizer.current === 'editor') {
+        const newWidth = e.clientX - filePanelWidth;
+        if (newWidth > 200 && newWidth < window.innerWidth - filePanelWidth - 200) {
+          setEditorPanelWidth(newWidth);
+        }
+      } else if (currentResizer.current === 'playground') {
+        const totalWidth = window.innerWidth - filePanelWidth - editorPanelWidth - 2; // Account for resizers
+        const playgroundStartX = filePanelWidth + editorPanelWidth + 2;
+        const newPlaygroundWidth = e.clientX - playgroundStartX;
+        const minPlaygroundWidth = 200;
+        const maxPlaygroundWidth = totalWidth - 200; // Leave space for console
+        
+        if (newPlaygroundWidth > minPlaygroundWidth && newPlaygroundWidth < maxPlaygroundWidth) {
+          setPlaygroundWidth(newPlaygroundWidth);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+      currentResizer.current = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [filePanelWidth, editorPanelWidth]);
+
   return (
-    <div className="flex h-screen w-screen">
-      <div className="flex flex-col w-2/5 bg-zinc-800 border-r border-zinc-700 p-2">
-        <div className="mb-2">
-          <label className="block mb-1 text-sm font-bold text-zinc-300" htmlFor="screen-selector">
-            Select Screen:
-          </label>
-          <select
-            id="screen-selector"
-            className="w-full p-2 bg-zinc-700 border border-zinc-600 text-white text-sm rounded focus:outline-none focus:border-blue-500"
-            value={selectedScreen}
-            onChange={handleScreenChange}
-          >
-            {loader.screens.map((screen: Screen) => (
-              <option key={screen.name} value={screen.name}>
-                {screen.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="mb-2">
-          <label className="block mb-1 text-sm font-bold text-zinc-300" htmlFor="example-combo">
-            Select Manim File:
-          </label>
-          <select
-            id="example-combo"
-            className="w-full p-2 bg-zinc-700 border border-zinc-600 text-white text-sm rounded focus:outline-none focus:border-blue-500"
-            value={selectedManimFile}
-            onChange={handleManimFileChange}
-          >
-            <option value="">Choose a manim file...</option>
-            {loader.manimFiles.map((file: ManimFile) => (
-              <option key={file.filename} value={file.filename}>
-                {file.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        {showDescription && (
-          <div className="mb-3 p-2 bg-zinc-900 border border-zinc-700 rounded">
-            <p className="text-xs leading-snug text-zinc-300 m-0">{description}</p>
-          </div>
-        )}
-        
-        <div className="mb-2">
-          <div className="flex items-center justify-between">
-            <label className="mb-1 text-sm font-bold text-zinc-300" htmlFor="manim-editor">
-              Manim File Editor:
+    <div className="flex h-screen w-screen bg-gray-900 text-white">
+      {/* File Browser Panel */}
+      <div 
+        ref={filePanelRef}
+        className="bg-gray-800 border-r border-gray-700 flex flex-col"
+        style={{ width: filePanelWidth }}
+      >
+        <div className="p-4 border-b border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-200 mb-3">Files</h2>
+          
+          <div className="mb-4">
+            <label className="block mb-2 text-sm font-medium text-gray-300">
+              Screen:
             </label>
+            <select
+              className="w-full p-2 bg-gray-700 border border-gray-600 text-white text-sm rounded focus:outline-none focus:border-blue-500"
+              value={selectedScreen}
+              onChange={handleScreenChange}
+            >
+              {loader.screens.map((screen: Screen) => (
+                <option key={screen.name} value={screen.name}>
+                  {screen.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {showDescription && (
+            <div className="p-3 bg-gray-700 border border-gray-600 rounded">
+              <p className="text-sm text-gray-300">{description}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 p-4">
+          <div className="text-sm text-gray-400">
+            <div className="mb-2">
+              <span className="font-medium">📁 Files:</span>
+            </div>
+            <div className="space-y-1 scrollable" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+              {loader.manimFiles.map((file: ManimFile) => (
+                <div 
+                  key={file.filename}
+                  className={`p-2 rounded cursor-pointer text-sm ${
+                    selectedManimFile === file.filename 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-300 hover:bg-gray-700'
+                  }`}
+                  onClick={() => handleManimFileChange({ target: { value: file.filename } } as any)}
+                >
+                  📄 {file.filename}
+                </div>
+              ))}
+              {loader.animFiles.map((file: AnimFile) => (
+                <div 
+                  key={file.filename}
+                  className={`p-2 rounded cursor-pointer text-sm ${
+                    selectedManimFile === file.filename 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-300 hover:bg-gray-700'
+                  }`}
+                  onClick={() => handleManimFileChange({ target: { value: file.filename } } as any)}
+                >
+                  🎬 {file.filename}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* File Panel Resizer */}
+      <div 
+        className="w-1 bg-gray-700 cursor-col-resize hover:bg-blue-500 transition-colors"
+        onMouseDown={handleMouseDown('file')}
+      />
+
+      {/* Editor Panel */}
+      <div 
+        ref={editorPanelRef}
+        className="bg-gray-900 flex flex-col"
+        style={{ width: editorPanelWidth }}
+      >
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold text-gray-200">Editor</h2>
             {hasUnsavedChanges && (
               <button 
-                className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
                 onClick={saveHandler}
                 title="Save changes and reload playground (Ctrl+S)"
               >
@@ -327,46 +564,15 @@ function App() {
               </button>
             )}
           </div>
-          <div className="text-xs text-zinc-400 mb-1">💡 Tip: Use Ctrl+S to apply changes, Tab for indentation</div>
-          
-          {/* Test error button */}
-          <button 
-            className="text-xs text-yellow-400 mb-1"
-            onClick={() => setReloadError({
-              message: 'Test error message',
-              pos: { psource: 'test.manim', pmin: 67, pmax: 71 }
-            })}
-          >
-            Test Error Display
-          </button>
-          
-          {/* Error display */}
-          {reloadError && (
-            <div className="text-xs text-red-400 mb-1 p-2 bg-red-900/20 border border-red-700 rounded">
-              <div className="flex justify-between items-start">
-                <div className="font-bold">❌ Parse Error:</div>
-                <button 
-                  className="text-red-300 hover:text-red-100 ml-2"
-                  onClick={() => setReloadError(null)}
-                  title="Clear error"
-                >
-                  ✕
-                </button>
-              </div>
-              <div>{reloadError.message}</div>
-              {errorLineInfo && (
-                <div className="mt-1 text-red-300">
-                  Line {errorLineInfo.line}, Column {errorLineInfo.column}
-                </div>
-              )}
-            </div>
-          )}
           
           {hasUnsavedChanges && !reloadError && (
-            <div className="text-xs text-orange-400">⚠️ Unsaved changes - Click "Apply Changes" to save and reload</div>
+            <div className="text-sm text-orange-400 mb-2">
+              ⚠️ Unsaved changes - Click "Apply Changes" to save and reload
+            </div>
           )}
         </div>
-        <div className="flex-1 flex flex-col">
+        
+        <div className="flex-1 scrollable">
           <CodeEditor
             value={manimContent}
             onChange={handleEditorChange}
@@ -380,9 +586,151 @@ function App() {
             errorEnd={errorLineInfo?.end}
           />
         </div>
+        
+        {syncOffer && (
+          <div className="p-3 bg-blue-900/20 border-t border-blue-700">
+            <div className="flex justify-between items-start mb-2">
+              <div className="font-bold text-blue-400">🔄 Screen Sync:</div>
+              <button 
+                className="text-blue-300 hover:text-blue-100"
+                onClick={dismissSyncOffer}
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-blue-300 mb-3">
+              Switch to <strong>{loader.screens.find(s => s.name === syncOffer.screen)?.displayName || syncOffer.screen}</strong> screen to match <strong>{syncOffer.file}</strong>?
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={acceptSyncOffer}
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+              >
+                ✅ Switch Screen
+              </button>
+              <button
+                onClick={dismissSyncOffer}
+                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
+              >
+                ❌ Keep Current
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="w-3/5 bg-black relative">
-        <canvas id="webgl" className="w-full h-full block"></canvas>
+
+      {/* Editor Panel Resizer */}
+      <div 
+        className="w-1 bg-gray-700 cursor-col-resize hover:bg-blue-500 transition-colors"
+        onMouseDown={handleMouseDown('editor')}
+      />
+
+      {/* Playground/Console Panel */}
+      <div className="flex-1 bg-gray-900 flex flex-col h-full min-h-0">
+        <div className="border-b border-gray-700 flex-shrink-0">
+          <div className="flex">
+            <button
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'playground'
+                  ? 'bg-gray-800 text-white border-b-2 border-blue-500'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveTab('playground')}
+            >
+              🎮 Playground
+            </button>
+            <button
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'console'
+                  ? 'bg-gray-800 text-white border-b-2 border-blue-500'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveTab('console')}
+            >
+              {reloadError ? '❌ Console' : '📋 Console'}
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex-1 flex min-h-0">
+          {/* Playground Panel */}
+          <div 
+            className={`${activeTab === 'playground' ? 'flex-1' : 'w-0'} transition-all duration-300 overflow-hidden flex flex-col h-full`}
+            style={{ width: activeTab === 'playground' ? playgroundWidth : 0 }}
+          >
+            <div className="w-full h-full flex-1 min-h-0">
+              <canvas id="webgl" className="w-full h-full block"></canvas>
+            </div>
+          </div>
+
+          {/* Playground/Console Resizer */}
+          <div 
+            className="w-1 bg-gray-700 cursor-col-resize hover:bg-blue-500 transition-colors"
+            onMouseDown={handleMouseDown('playground')}
+          />
+          
+          {/* Console Panel */}
+          <div className={`${activeTab === 'console' ? 'flex-1' : 'w-0'} transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+            <div className="p-3 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+              <h3 className="text-sm font-medium text-gray-200">Console Output</h3>
+              <button
+                onClick={clearConsole}
+                className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                title="Clear console"
+              >
+                🗑️ Clear
+              </button>
+            </div>
+            
+            <div 
+              ref={consoleRef}
+              className="flex-1 p-3 bg-gray-800 text-sm font-mono overflow-y-auto overflow-x-hidden min-h-0"
+            >
+              {consoleEntries.length === 0 ? (
+                <div className="text-gray-400 text-center py-8">
+                  <div className="text-2xl mb-2">📋</div>
+                  <div>Console output will appear here.</div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {consoleEntries.map((entry, index) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <span className="text-gray-500 text-xs mt-1">
+                        {entry.timestamp.toLocaleTimeString()}
+                      </span>
+                      <span className="text-gray-500">{getConsoleIcon(entry.type)}</span>
+                      <span className={`${getConsoleColor(entry.type)} break-all`}>
+                        {entry.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {reloadError && (
+                <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-bold text-red-400">❌ Parse Error:</div>
+                    <button 
+                      className="text-red-300 hover:text-red-100"
+                      onClick={() => setReloadError(null)}
+                      title="Clear error"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="text-red-300 mb-2">{reloadError.message}</div>
+                  {errorLineInfo && (
+                    <div className="text-red-400 text-sm">
+                      Line {errorLineInfo.line}, Column {errorLineInfo.column}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

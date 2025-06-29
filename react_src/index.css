@@ -9,6 +9,76 @@ body {
     overflow: hidden;
 }
 
+/* Custom scrollbar styles */
+.scrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+    background: #2d2d2d;
+    border-radius: 4px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+    background: #555555;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+    background: #777777;
+}
+
+.scrollable::-webkit-scrollbar-corner {
+    background: #2d2d2d;
+}
+
+/* Firefox scrollbar styles */
+.scrollable {
+    scrollbar-width: thin;
+    scrollbar-color: #555555 #2d2d2d;
+}
+
+/* Console-specific scrollbar styles */
+.console-scrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.console-scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.console-scrollable::-webkit-scrollbar-track {
+    background: #374151;
+    border-radius: 4px;
+}
+
+.console-scrollable::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.console-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+.console-scrollable::-webkit-scrollbar-corner {
+    background: #374151;
+}
+
+/* Firefox console scrollbar styles */
+.console-scrollable {
+    scrollbar-width: thin;
+    scrollbar-color: #6b7280 #374151;
+}
+
 .container {
     display: flex;
     height: 100vh;

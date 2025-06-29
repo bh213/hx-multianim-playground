@@ -12,9 +12,15 @@ export interface ManimFile {
     content: string | null;
 }
 
+export interface AnimFile {
+    filename: string;
+    content: string | null;
+}
+
 export interface PlaygroundLoader {
     screens: Screen[];
     manimFiles: ManimFile[];
+    animFiles: AnimFile[];
     currentFile: string | null;
     currentExample: string | null;
     reloadTimeout: number | null;

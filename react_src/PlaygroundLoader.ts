@@ -1,4 +1,4 @@
-import { Screen, ManimFile } from './types';
+import { Screen, ManimFile, AnimFile } from './types';
 import { getFileContent, updateFileContent, fileExists } from './fileLoader';
 
 // Default configuration - single source of truth
@@ -183,6 +183,14 @@ export class PlaygroundLoader {
         }
     ];
     
+    public animFiles: AnimFile[] = [
+        { filename: 'arrows.anim', content: null },
+        { filename: 'dice.anim', content: null },
+        { filename: 'marine.anim', content: null },
+        { filename: 'shield.anim', content: null },
+        { filename: 'turret.anim', content: null }
+    ];
+    
     public currentFile: string | null = null;
     public currentExample: string | null = null;
     public reloadTimeout: number | null = null;
@@ -203,6 +211,14 @@ export class PlaygroundLoader {
     loadFilesFromMap(): void {
         // Load content from fileMap into manimFiles array
         this.manimFiles.forEach(file => {
+            const content = getFileContent(file.filename);
+            if (content) {
+                file.content = content;
+            }
+        });
+        
+        // Load content from fileMap into animFiles array
+        this.animFiles.forEach(file => {
             const content = getFileContent(file.filename);
             if (content) {
                 file.content = content;
@@ -335,6 +351,14 @@ export class PlaygroundLoader {
                 // Also update the file map
                 updateFileContent(this.currentFile, content);
             }
+            
+            // Update the content in animFiles array
+            const animFile = this.animFiles.find(file => file.filename === this.currentFile);
+            if (animFile) {
+                animFile.content = content;
+                // Also update the file map
+                updateFileContent(this.currentFile, content);
+            }
         }
         
         // Clear existing timeout
@@ -387,7 +411,16 @@ export class PlaygroundLoader {
     // Method to get edited content for the FileLoader
     getEditedContent(filename: string): string | null {
         const manimFile = this.manimFiles.find(file => file.filename === filename);
-        return manimFile ? manimFile.content : null;
+        if (manimFile) {
+            return manimFile.content;
+        }
+        
+        const animFile = this.animFiles.find(file => file.filename === filename);
+        if (animFile) {
+            return animFile.content;
+        }
+        
+        return null;
     }
     
     // Public method to update content without triggering reload (for Save button)

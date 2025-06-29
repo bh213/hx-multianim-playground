@@ -107,9 +107,9 @@ class PathsScreen extends UIScreenBase {
 			onPathChanged();
 			var res = bh.base.MacroUtils.macroBuildWithParameters(pathsBuilder, "ui", [], [
 				angleSlider => addSlider(builder, 0),
-				path=>addDropdown(builder,  pathItems, 0),
-				startPoint=>addDropdown(builder,  pointItems, 0),
-				endPoint=>addDropdown(builder,  pointItems, 0),
+				path=>addDropdownWithSingleBuilder(builder, "dropdown", "list-panel", "list-item-120", "scrollbar", pathItems, 0),
+				startPoint=>addDropdownWithSingleBuilder(builder, "dropdown", "list-panel", "list-item-120", "scrollbar", pointItems, 0),	
+				endPoint=>addDropdownWithSingleBuilder(builder, "dropdown", "list-panel", "list-item-120", "scrollbar", pointItems, 0),
 				animate=>addButton(builder,  "Animate"),
 				//relativeCheckbox=>addCheckboxWithText(builder, "relative Anim Mode", false),
 				positionMode=>addRadio(builder, positionModes, true, 0),

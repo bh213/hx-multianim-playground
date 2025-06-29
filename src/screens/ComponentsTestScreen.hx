@@ -88,10 +88,10 @@ class ComponentsTestScreen extends UIScreenBase {
 				checkbox3=>addCheckbox(builder,  true),
 				checkbox4=>addCheckbox(builder,  true),
 				checkbox5=>addCheckbox(builder,  true),
-				scroll1=>addScrollableList(builder, 100, 120, list4, -1),
-				scroll2=>addScrollableList(builder, 100, 120, list100, 10),
-				scroll3=>addScrollableList(builder, 100, 120, list20, 3),
-				scroll4=>addScrollableList(builder, 100, 120, list20disabled, 3),
+				scroll1=>addScrollableListWithSingleBuilder(builder, "list-panel", "list-item-120", "scrollbar", list4, 0,100,100),
+				scroll2=>addScrollableListWithSingleBuilder(builder, "list-panel", "list-item-120", "scrollbar", list100, 10,100,100),
+				scroll3=>addScrollableListWithSingleBuilder(builder, "list-panel", "list-item-120", "scrollbar", list20, 3,100,100),
+				scroll4=>addScrollableListWithSingleBuilder(builder, "list-panel", "list-item-120", "scrollbar", list20disabled, 3,100,100),
 				checkboxWithLabel=>addCheckboxWithText(builder, "my label", true),
 				//function addDropdown(providedBuilder, items, settings:ResolvedSettings, initialIndex = 0) {
 				//dropdown1 => addDropdown(builder, list100, 0)
@@ -109,9 +109,9 @@ class ComponentsTestScreen extends UIScreenBase {
 			
 			
 			// drop1.autoCloseOnLeave = false;
-			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"item A"}, {name:"item B"}, {name:"item C"}]), dropDownIterator);
-			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"Krava"}, {name:"Trava"}, {name:"Zelena Jama"}, {name:"XXXXX"}]), dropDownIterator);
-			var dd3 = addElementWithIterator(UIStandardMultiAnimDropdown.create(builder, "dropdown", "list-panel", "list-item-120", [{name:"10"}, {name:"50"}, {name:"100"}, {name:"1000"}]), dropDownIterator);
+			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder.createElementBuilder("dropdown"), builder.createElementBuilder("list-panel"), builder.createElementBuilder("list-item-120"), builder.createElementBuilder("scrollbar"), [{name:"item A"}, {name:"item B"}, {name:"item C"}]), dropDownIterator);
+			addElementWithIterator(UIStandardMultiAnimDropdown.create(builder.createElementBuilder("dropdown"), builder.createElementBuilder("list-panel"), builder.createElementBuilder("list-item-120"), builder.createElementBuilder("scrollbar"), [{name:"Krava"}, {name:"Trava"}, {name:"Zelena Jama"}, {name:"XXXXX"}]), dropDownIterator);
+			var dd3 = addElementWithIterator(UIStandardMultiAnimDropdown.create(builder.createElementBuilder("dropdown"), builder.createElementBuilder("list-panel"), builder.createElementBuilder("list-item-120"), builder.createElementBuilder("scrollbar"), [{name:"10"}, {name:"50"}, {name:"100"}, {name:"1000"}]), dropDownIterator);
 			dd3.autoOpen = false;
 			
 			this.checkbox1 = addElementWithIterator(UIStandardMultiCheckbox.create(builder, "checkbox", true), checkboxesIterator);

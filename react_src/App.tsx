@@ -24,7 +24,7 @@ interface ConsoleEntry {
   timestamp: Date;
 }
 
-type TabType = 'playground' | 'console';
+type TabType = 'playground' | 'console' | 'info';
 
 function App() {
   const [selectedScreen, setSelectedScreen] = useState<string>(DEFAULT_SCREEN);
@@ -134,6 +134,27 @@ function App() {
     } else {
       setSyncOffer(null);
     }
+  };
+
+  const getScreenHaxeFile = (screenName: string): string => {
+    // Mapping from screen names to their actual Haxe file names
+    const screenToHaxeFile: { [key: string]: string } = {
+      'scrollableList': 'ScrollableListTestScreen.hx',
+      'button': 'ButtonTestScreen.hx',
+      'checkbox': 'CheckboxTestScreen.hx',
+      'slider': 'SliderTestScreen.hx',
+      'particles': 'ParticlesScreen.hx',
+      'components': 'ComponentsTestScreen.hx',
+      'examples1': 'Examples1Screen.hx',
+      'paths': 'PathsScreen.hx',
+      'fonts': 'FontsScreen.hx',
+      'room1': 'Room1Screen.hx',
+      'stateAnim': 'StateAnimScreen.hx',
+      'dialogStart': 'DialogStartScreen.hx',
+      'settings': 'SettingsScreen.hx'
+    };
+    
+    return screenToHaxeFile[screenName] || `${screenName.charAt(0).toUpperCase() + screenName.slice(1)}Screen.hx`;
   };
 
   const acceptSyncOffer = () => {
@@ -476,14 +497,12 @@ function App() {
         style={{ width: filePanelWidth }}
       >
         <div className="p-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-200 mb-3">Files</h2>
-          
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-medium text-gray-300">
+            <label className="block mb-2 text-xs font-medium text-gray-300">
               Screen:
             </label>
             <select
-              className="w-full p-2 bg-gray-700 border border-gray-600 text-white text-sm rounded focus:outline-none focus:border-blue-500"
+              className="w-full p-2 bg-gray-700 border border-gray-600 text-white text-xs rounded focus:outline-none focus:border-blue-500"
               value={selectedScreen}
               onChange={handleScreenChange}
             >
@@ -496,14 +515,22 @@ function App() {
           </div>
           
           {showDescription && (
-            <div className="p-3 bg-gray-700 border border-gray-600 rounded">
-              <p className="text-sm text-gray-300">{description}</p>
+            <div className="p-3 bg-gray-700 border border-gray-600 rounded h-20 overflow-y-auto overflow-x-hidden">
+              <p className="text-xs text-gray-300 leading-relaxed mb-2">{description}</p>
+              <a 
+                href={`https://github.com/bh213/hx-multianim/blob/main/src/screens/${getScreenHaxeFile(selectedScreen)}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                📖 View {selectedScreen} Screen on GitHub
+              </a>
             </div>
           )}
         </div>
         
         <div className="flex-1 p-4">
-          <div className="text-sm text-gray-400">
+          <div className="text-xs text-gray-400">
             <div className="mb-2">
               <span className="font-medium">📁 Files:</span>
             </div>
@@ -511,7 +538,7 @@ function App() {
               {loader.manimFiles.map((file: ManimFile) => (
                 <div 
                   key={file.filename}
-                  className={`p-2 rounded cursor-pointer text-sm ${
+                  className={`p-2 rounded cursor-pointer text-xs ${
                     selectedManimFile === file.filename 
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-300 hover:bg-gray-700'
@@ -524,7 +551,7 @@ function App() {
               {loader.animFiles.map((file: AnimFile) => (
                 <div 
                   key={file.filename}
-                  className={`p-2 rounded cursor-pointer text-sm ${
+                  className={`p-2 rounded cursor-pointer text-xs ${
                     selectedManimFile === file.filename 
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-300 hover:bg-gray-700'
@@ -553,10 +580,10 @@ function App() {
       >
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-gray-200">Editor</h2>
+            <h2 className="text-base font-semibold text-gray-200">Editor</h2>
             {hasUnsavedChanges && (
               <button 
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
                 onClick={saveHandler}
                 title="Save changes and reload playground (Ctrl+S)"
               >
@@ -566,7 +593,7 @@ function App() {
           </div>
           
           {hasUnsavedChanges && !reloadError && (
-            <div className="text-sm text-orange-400 mb-2">
+            <div className="text-xs text-orange-400 mb-2">
               ⚠️ Unsaved changes - Click "Apply Changes" to save and reload
             </div>
           )}
@@ -631,7 +658,7 @@ function App() {
         <div className="border-b border-gray-700 flex-shrink-0">
           <div className="flex">
             <button
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-xs font-medium transition-colors ${
                 activeTab === 'playground'
                   ? 'bg-gray-800 text-white border-b-2 border-blue-500'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -641,7 +668,7 @@ function App() {
               🎮 Playground
             </button>
             <button
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-2 text-xs font-medium transition-colors ${
                 activeTab === 'console'
                   ? 'bg-gray-800 text-white border-b-2 border-blue-500'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -649,6 +676,16 @@ function App() {
               onClick={() => setActiveTab('console')}
             >
               {reloadError ? '❌ Console' : '📋 Console'}
+            </button>
+            <button
+              className={`px-4 py-2 text-xs font-medium transition-colors ${
+                activeTab === 'info'
+                  ? 'bg-gray-800 text-white border-b-2 border-blue-500'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveTab('info')}
+            >
+              ℹ️ Info
             </button>
           </div>
         </div>
@@ -673,7 +710,7 @@ function App() {
           {/* Console Panel */}
           <div className={`${activeTab === 'console' ? 'flex-1' : 'w-0'} transition-all duration-300 overflow-hidden flex flex-col h-full`}>
             <div className="p-3 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-sm font-medium text-gray-200">Console Output</h3>
+              <h3 className="text-xs font-medium text-gray-200">Console Output</h3>
               <button
                 onClick={clearConsole}
                 className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
@@ -685,7 +722,7 @@ function App() {
             
             <div 
               ref={consoleRef}
-              className="flex-1 p-3 bg-gray-800 text-sm font-mono overflow-y-auto overflow-x-hidden min-h-0"
+              className="flex-1 p-3 bg-gray-800 text-xs font-mono overflow-y-auto overflow-x-hidden min-h-0"
             >
               {consoleEntries.length === 0 ? (
                 <div className="text-gray-400 text-center py-8">
@@ -728,6 +765,72 @@ function App() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Info Panel */}
+          <div className={`${activeTab === 'info' ? 'flex-1' : 'w-0'} transition-all duration-300 overflow-hidden flex flex-col h-full`}>
+            <div className="p-4 h-full overflow-y-auto">
+              <h3 className="text-base font-semibold text-gray-200 mb-4">About hx-multianim Playground</h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">📚 Documentation & Resources</h4>
+                  <div className="space-y-2">
+                    <a 
+                      href="https://github.com/bh213/hx-multianim" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      <div className="font-medium text-blue-400">hx-multianim</div>
+                      <div className="text-xs text-gray-400">Animation library for Haxe driving this playground</div>
+                    </a>
+                    
+                    <a 
+                      href="https://github.com/HeapsIO/heaps" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      <div className="font-medium text-blue-400">Heaps</div>
+                      <div className="text-xs text-gray-400">Cross-platform graphics framework</div>
+                    </a>
+                    
+                    <a 
+                      href="https://haxe.org" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      <div className="font-medium text-blue-400">Haxe</div>
+                      <div className="text-xs text-gray-400">Cross-platform programming language</div>
+                    </a>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">🎮 Playground Features</h4>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li>• Real-time code editing and preview</li>
+                    <li>• Multiple animation examples and components</li>
+                    <li>• File management for manim and anim files</li>
+                    <li>• Console output and error display</li>
+                    <li>• Resizable panels for optimal workflow</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">💡 Tips</h4>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li>• Use Ctrl+S to apply changes quickly</li>
+                    <li>• Switch between playground and console tabs</li>
+                    <li>• Resize panels by dragging the dividers</li>
+                    <li>• Select files to edit their content</li>
+                    <li>• Check console for errors and output</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>

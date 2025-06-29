@@ -37,7 +37,7 @@ class ScrollableListTestScreen extends UIScreenBase {
 		];
 		
 		var ui = MacroUtils.macroBuildWithParameters(scrollableListBuilder, "ui", [], [
-			scrollableList=>addScrollableList(builder, 200, 150, listItems, 0),
+			scrollableList=>addScrollableListWithSingleBuilder(builder, "list-panel", "list-item-120", "scrollbar", listItems, 0, 100, 100)
 		]);
 
 		this.updatableText = ui.builderResults.getUpdatable("listVal");

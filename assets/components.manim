@@ -126,10 +126,6 @@ relativeLayouts {
             settings(font=>dd)
       }
 
-      placeholder(generated(cross(200, 20)), builderParameter("dropdown1")){
-            pos:0,-100
-            settings(topClearance=>20)
-      }
-
+      
       
 }

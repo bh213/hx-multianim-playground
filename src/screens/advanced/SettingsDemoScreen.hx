@@ -66,7 +66,8 @@ class SettingsDemoScreen extends DemoScreenBase {
 		final handleTile = h2d.Tile.fromColor(0x7fdbda, HANDLE_SIZE, HANDLE_SIZE);
 		final handleBitmap = new h2d.Bitmap(handleTile);
 		handleDraggable = UIMultiAnimDraggable.create(handleBitmap);
-		handleDraggable.onDragDestination = (pos, wrapper) -> {
+		handleDraggable.onDragEvent = (event, pos, wrapper) -> {
+			if (event != DragMove) return;
 			final mouseX = wrapper.eventPos.x;
 			final mouseY = wrapper.eventPos.y;
 			final newW = Std.int(Math.max(50, Math.min(500, mouseX - PANEL_X)));
@@ -80,7 +81,6 @@ class SettingsDemoScreen extends DemoScreenBase {
 				if (upd != null) upd.updateText('$newW x $newH');
 			}
 			handleDraggable.getObject().setPosition(PANEL_X + newW - HANDLE_SIZE, PANEL_Y + newH - HANDLE_SIZE);
-			return false;
 		};
 		addElementWithPos(handleDraggable, PANEL_X + panelWidth - HANDLE_SIZE, PANEL_Y + panelHeight - HANDLE_SIZE, DefaultLayer);
 	}

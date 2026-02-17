@@ -3,6 +3,8 @@ package screens.animation;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
+import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.paths.Curve.ICurve;
@@ -20,6 +22,16 @@ class CurvesDemoScreen extends DemoScreenBase {
 	var yDot:Null<h2d.Graphics>;
 	var alphaDot:Null<h2d.Graphics>;
 	var scaleDot:Null<h2d.Graphics>;
+
+	var inverseCheckbox:Null<UIStandardMultiCheckbox>;
+	var speedSlider:Null<UIStandardMultiAnimSlider>;
+	var inverse:Bool = false;
+	var speedPct:Int = 100;
+
+	static final CURVE_TYPES = [
+		"linear", "easeInQuad", "easeOutQuad", "easeInOutQuad", "easeOutCubic", "easeOutBack",
+		"easeOutBounce", "easeOutElastic", "accelDecel", "snapBack", "custom"
+	];
 
 	static inline final ANIM_DURATION = 1.5;
 	static inline final GRAPH_X = 50;
@@ -40,15 +52,28 @@ class CurvesDemoScreen extends DemoScreenBase {
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "curvesDemo", [], [
 			btnLinear => addButtonWithSingleBuilder(commonBuilder, "backButton", "linear"),
-			btnEaseIn => addButtonWithSingleBuilder(commonBuilder, "backButton", "easeIn"),
-			btnEaseOut => addButtonWithSingleBuilder(commonBuilder, "backButton", "easeOut"),
-			btnBounce => addButtonWithSingleBuilder(commonBuilder, "backButton", "bounce"),
-			btnElastic => addButtonWithSingleBuilder(commonBuilder, "backButton", "elastic"),
+			btnEaseInQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "inQuad"),
+			btnEaseOutQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "outQuad"),
+			btnEaseInOutQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "inOutQuad"),
+			btnEaseOutCubic => addButtonWithSingleBuilder(commonBuilder, "backButton", "outCubic"),
+			btnEaseOutBack => addButtonWithSingleBuilder(commonBuilder, "backButton", "outBack"),
+			btnEaseOutBounce => addButtonWithSingleBuilder(commonBuilder, "backButton", "bounce"),
+			btnEaseOutElastic => addButtonWithSingleBuilder(commonBuilder, "backButton", "elastic"),
+			btnAccelDecel => addButtonWithSingleBuilder(commonBuilder, "backButton", "accel/decel"),
+			btnSnapBack => addButtonWithSingleBuilder(commonBuilder, "backButton", "snapBack"),
 			btnCustom => addButtonWithSingleBuilder(commonBuilder, "backButton", "custom"),
+			inverseChk => addCheckbox(stdBuilder, false),
+			speedSlider => addSlider(stdBuilder, 100),
 		]);
 
 		demoResult = ui.builderResults;
-		curveButtons = [ui.btnLinear, ui.btnEaseIn, ui.btnEaseOut, ui.btnBounce, ui.btnElastic, ui.btnCustom];
+		curveButtons = [
+			ui.btnLinear, ui.btnEaseInQuad, ui.btnEaseOutQuad, ui.btnEaseInOutQuad,
+			ui.btnEaseOutCubic, ui.btnEaseOutBack, ui.btnEaseOutBounce, ui.btnEaseOutElastic,
+			ui.btnAccelDecel, ui.btnSnapBack, ui.btnCustom
+		];
+		inverseCheckbox = ui.inverseChk;
+		speedSlider = ui.speedSlider;
 		addBuilderResult(demoResult);
 
 		curveGraph = new h2d.Graphics();
@@ -91,7 +116,7 @@ class CurvesDemoScreen extends DemoScreenBase {
 		final curves = demoBuilder.getCurves();
 		activeCurve = curves.get(name);
 
-		demoResult.getUpdatable("curveLabel").updateText(name);
+		demoResult.getUpdatable("curveLabel").updateText(name + (inverse ? " (inverse)" : ""));
 		drawCurveGraph();
 	}
 
@@ -113,7 +138,8 @@ class CurvesDemoScreen extends DemoScreenBase {
 		final steps = 100;
 		for (s in 0...steps + 1) {
 			final t = s / steps;
-			final value = activeCurve.getValue(t);
+			var value = activeCurve.getValue(t);
+			if (inverse) value = 1 - value;
 			final px = t * GRAPH_W;
 			final py = GRAPH_H - value * GRAPH_H;
 
@@ -127,13 +153,14 @@ class CurvesDemoScreen extends DemoScreenBase {
 
 		if (activeCurve == null) return;
 
-		animTimer += dt;
+		animTimer += dt * (speedPct / 100.0);
 		final totalCycle = ANIM_DURATION * 2;
 		if (animTimer >= totalCycle) animTimer -= totalCycle;
 
 		// Ping-pong: 0->1->0
 		final linearT = if (animTimer < ANIM_DURATION) animTimer / ANIM_DURATION else 2.0 - animTimer / ANIM_DURATION;
-		final eased = activeCurve.getValue(linearT);
+		var eased = activeCurve.getValue(linearT);
+		if (inverse) eased = 1 - eased;
 
 		// Tracking dot on curve graph
 		if (animDot != null) {
@@ -163,10 +190,20 @@ class CurvesDemoScreen extends DemoScreenBase {
 			case UIClick:
 				for (i in 0...curveButtons.length) {
 					if (source == curveButtons[i]) {
-						final curveTypes = ["linear", "easeIn", "easeOut", "bounce", "elastic", "custom"];
-						selectCurve(curveTypes[i]);
+						selectCurve(CURVE_TYPES[i]);
 						return;
 					}
+				}
+			case UIToggle(checked):
+				if (source == inverseCheckbox) {
+					inverse = checked;
+					demoResult.getUpdatable("curveLabel").updateText(currentCurve + (inverse ? " (inverse)" : ""));
+					drawCurveGraph();
+				}
+			case UIChangeValue(val):
+				if (source == speedSlider) {
+					speedPct = val;
+					demoResult.getUpdatable("speedValue").updateText('$val%');
 				}
 			default:
 		}
@@ -183,5 +220,7 @@ class CurvesDemoScreen extends DemoScreenBase {
 		yDot = null;
 		alphaDot = null;
 		scaleDot = null;
+		inverseCheckbox = null;
+		speedSlider = null;
 	}
 }

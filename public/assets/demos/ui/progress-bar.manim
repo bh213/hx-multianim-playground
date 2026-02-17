@@ -24,10 +24,20 @@ version: 0.5
 }
 
 #progressBarThin programmable(value:0..100=50) {
-    bitmap(generated(color(152, 12, #222222))): 0, 0
+    bitmap(generated(color(152, 12, #444444))): 0, 0
 
     @(value => 0..50) bitmap(generated(color($value * 150 div 100, 8, #4a90a4))): 1, 2
     @(value => 51..100) bitmap(generated(color($value * 150 div 100, 8, #7fdbda))): 1, 2
+}
+
+#progressBarPixel programmable(value:0..100=50) {
+    bitmap(generated(color(252, 24, #222222))): 0, 0
+
+    @(value => 0..33) bitmap(generated(color($value * 250 div 100, 20, #cc3333))): 1, 2
+    @(value => 34..66) bitmap(generated(color($value * 250 div 100, 20, #cc8800))): 1, 2
+    @(value => 67..100) bitmap(generated(color($value * 250 div 100, 20, #33aa33))): 1, 2
+
+    text(m6x11, '${$value}%', white, center, 252): 0, 7
 }
 
 #progressBarDemo programmable() {
@@ -65,24 +75,34 @@ version: 0.5
         settings{buildName=>progressBarWide}
     }
 
-    // Section: Thin Progress Bars
-    text(exo2_16, "Thin Style", #7fdbda): 0, 320
+    // Section: Animated with Pixel Art Counter
+    text(exo2_16, "Animated + Pixel Counter (m6x11)", #7fdbda): 0, 320
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 342
 
+    text(exo2_light_14, "Centered percentage with pixel art font:", #cccccc): 0, 355
+    placeholder(generated(cross(252, 24)), builderParameter("pixelBar")) {
+        pos: 0, 375
+        settings{buildName=>progressBarPixel}
+    }
+
+    // Section: Thin Progress Bars
+    text(exo2_16, "Thin Style", #7fdbda): 0, 430
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 452
+
     placeholder(generated(cross(152, 12)), builderParameter("thinBar1")) {
-        pos: 0, 360
+        pos: 0, 470
         settings{buildName=>progressBarThin}
     }
     placeholder(generated(cross(152, 12)), builderParameter("thinBar2")) {
-        pos: 170, 360
+        pos: 170, 470
         settings{buildName=>progressBarThin}
     }
     placeholder(generated(cross(152, 12)), builderParameter("thinBar3")) {
-        pos: 340, 360
+        pos: 340, 470
         settings{buildName=>progressBarThin}
     }
 
     // Current animated value display
-    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 400
-    #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 408
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 510
+    #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 518
 }

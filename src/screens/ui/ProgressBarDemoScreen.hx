@@ -6,58 +6,35 @@ import bh.ui.UIMultiAnimProgressBar;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class ProgressBarDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
-	var barBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
-	var bar1:Null<UIMultiAnimProgressBar>;
-	var bar2:Null<UIMultiAnimProgressBar>;
-	var bar3:Null<UIMultiAnimProgressBar>;
 	var animBar:Null<UIMultiAnimProgressBar>;
-	var thinBar1:Null<UIMultiAnimProgressBar>;
-	var thinBar2:Null<UIMultiAnimProgressBar>;
-	var thinBar3:Null<UIMultiAnimProgressBar>;
+	var pixelBar:Null<UIMultiAnimProgressBar>;
 	var animTimer:Float = 0;
 	var animValue:Int = 0;
 
 	override public function load():Void {
 		setupDemo("Progress Bars", "Progress bars at various values with auto-animation");
 
-		barBuilder = screenManager.buildFromResourceName("demos/ui/progress-bar.manim", false);
-		demoBuilder = barBuilder;
+		demoBuilder = screenManager.buildFromResourceName("demos/ui/progress-bar.manim", false);
 
-		// Static bars at fixed values
-		bar1 = addProgressBar(barBuilder, null, 25);
-		addElement(bar1, null);
-		bar2 = addProgressBar(barBuilder, null, 60);
-		addElement(bar2, null);
-		bar3 = addProgressBar(barBuilder, null, 90);
-		addElement(bar3, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "progressBarDemo", [], [
+			bar1 => addProgressBar(demoBuilder, 25),
+			bar2 => addProgressBar(demoBuilder, 60),
+			bar3 => addProgressBar(demoBuilder, 90),
+			animBar => addProgressBar(demoBuilder, 0),
+			pixelBar => addProgressBar(demoBuilder, 0),
+			thinBar1 => addProgressBar(demoBuilder, 30),
+			thinBar2 => addProgressBar(demoBuilder, 65),
+			thinBar3 => addProgressBar(demoBuilder, 95),
+		]);
 
-		// Animated bar starting at 0
-		animBar = addProgressBar(barBuilder, null, 0);
-		addElement(animBar, null);
-
-		// Thin bars
-		thinBar1 = addProgressBar(barBuilder, null, 30);
-		addElement(thinBar1, null);
-		thinBar2 = addProgressBar(barBuilder, null, 65);
-		addElement(thinBar2, null);
-		thinBar3 = addProgressBar(barBuilder, null, 95);
-		addElement(thinBar3, null);
-
-		demoResult = demoBuilder.buildWithParameters("progressBarDemo", [], {
-			placeholderObjects: [
-				"bar1" => PVObject(bar1.getObject()),
-				"bar2" => PVObject(bar2.getObject()),
-				"bar3" => PVObject(bar3.getObject()),
-				"animBar" => PVObject(animBar.getObject()),
-				"thinBar1" => PVObject(thinBar1.getObject()),
-				"thinBar2" => PVObject(thinBar2.getObject()),
-				"thinBar3" => PVObject(thinBar3.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		animBar = ui.animBar;
+		pixelBar = ui.pixelBar;
 
 		addBuilderResult(demoResult);
 	}
@@ -73,6 +50,9 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 			}
 			if (animBar != null) {
 				animBar.setIntValue(animValue);
+			}
+			if (pixelBar != null) {
+				pixelBar.setIntValue(animValue);
 			}
 			updateValueText();
 		}
@@ -93,15 +73,9 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
-		barBuilder = null;
 		demoResult = null;
-		bar1 = null;
-		bar2 = null;
-		bar3 = null;
 		animBar = null;
-		thinBar1 = null;
-		thinBar2 = null;
-		thinBar3 = null;
+		pixelBar = null;
 		animTimer = 0;
 		animValue = 0;
 	}

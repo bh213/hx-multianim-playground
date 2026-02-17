@@ -2,17 +2,22 @@ package screens.ui;
 
 import bh.ui.UIElement;
 import bh.ui.*;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.ui.UIMultiAnimRadioButtons;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class RadioDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
+	var radioBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var radioVertical:Null<UIMultiAnimRadioButtons>;
 	var radioHorizontal:Null<UIMultiAnimRadioButtons>;
 	var radioVertical2:Null<UIMultiAnimRadioButtons>;
+	var disabledRadio:Null<UIMultiAnimRadioButtons>;
+	var disableToggle:Null<UIStandardMultiCheckbox>;
 
 	static final VERTICAL_ITEMS:Array<UIElementListItem> = [
 		{name: "Option A"},
@@ -34,25 +39,32 @@ class RadioDemoScreen extends DemoScreenBase {
 		{name: "Hard"},
 	];
 
+	static final DISABLED_ITEMS:Array<UIElementListItem> = [
+		{name: "Alpha"},
+		{name: "Beta"},
+		{name: "Gamma"},
+	];
+
 	override public function load():Void {
-		setupDemo("Radio Buttons", "Vertical and horizontal radio groups with selection feedback");
+		setupDemo("Radio Buttons", "Vertical and horizontal radio groups with selection feedback and disabled state");
 
-		demoBuilder = screenManager.buildFromResourceName("demos/ui/radio.manim", false);
+		demoBuilder = screenManager.buildFromResourceName("demos/ui/radios-demo.manim", false);
+		radioBuilder = screenManager.buildFromResourceName("radio.manim", false);
 
-		radioVertical = addRadio(stdBuilder, null, VERTICAL_ITEMS, true, 0);
-		addElement(radioVertical, null);
-		radioHorizontal = addRadio(stdBuilder, null, HORIZONTAL_ITEMS, false, 0);
-		addElement(radioHorizontal, null);
-		radioVertical2 = addRadio(stdBuilder, null, DIFFICULTY_ITEMS, true, 0);
-		addElement(radioVertical2, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "radiosDemo", [], [
+			radioVertical => addRadio(radioBuilder, VERTICAL_ITEMS, true, 0),
+			radioHorizontal => addRadio(radioBuilder, HORIZONTAL_ITEMS, false, 0),
+			radioVertical2 => addRadio(radioBuilder, DIFFICULTY_ITEMS, true, 0),
+			disabledRadio => addRadio(radioBuilder, DISABLED_ITEMS, true, 0),
+			disableToggle => addCheckbox(radioBuilder, false),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("radioDemo", [], {
-			placeholderObjects: [
-				"radioVertical" => PVObject(radioVertical.getObject()),
-				"radioHorizontal" => PVObject(radioHorizontal.getObject()),
-				"radioVertical2" => PVObject(radioVertical2.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		radioVertical = ui.radioVertical;
+		radioHorizontal = ui.radioHorizontal;
+		radioVertical2 = ui.radioVertical2;
+		disabledRadio = ui.disabledRadio;
+		disableToggle = ui.disableToggle;
 
 		addBuilderResult(demoResult);
 	}
@@ -66,6 +78,10 @@ class RadioDemoScreen extends DemoScreenBase {
 					updateText("horizontalText", "Selected", index, items);
 				} else if (source == radioVertical2) {
 					updateText("radio2Text", "Selected", index, items);
+				}
+			case UIToggle(pressed):
+				if (source == disableToggle) {
+					disabledRadio.disabled = pressed;
 				}
 			default:
 		}
@@ -85,9 +101,12 @@ class RadioDemoScreen extends DemoScreenBase {
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
+		radioBuilder = null;
 		demoResult = null;
 		radioVertical = null;
 		radioHorizontal = null;
 		radioVertical2 = null;
+		disabledRadio = null;
+		disableToggle = null;
 	}
 }

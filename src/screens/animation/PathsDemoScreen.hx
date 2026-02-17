@@ -44,6 +44,10 @@ class PathsDemoScreen extends DemoScreenBase {
 
 		demoResult = ui.builderResults;
 		speedSlider = ui.speedSlider;
+		speedSlider.min = 10;
+		speedSlider.max = 500;
+		speedSlider.step = 10;
+		speedSlider.setFloatValue(100);
 		pathButtons = [ui.btnCircuit, ui.btnStar, ui.btnZigzag, ui.btnSpiral, ui.btnWaves, ui.btnBezier];
 		addBuilderResult(demoResult);
 
@@ -63,7 +67,7 @@ class PathsDemoScreen extends DemoScreenBase {
 		startAnimation();
 
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = 'Path: $currentPath';
+		statusText.text = 'Path: $currentPath | Speed: 100%';
 		statusText.textColor = 0xCCCCCC;
 		statusText.setPosition(50, 590);
 		addObjectToLayer(statusText, DefaultLayer);
@@ -110,7 +114,7 @@ class PathsDemoScreen extends DemoScreenBase {
 						final pathNames = ["circuit", "star", "zigzag", "spiral", "waves", "bezierLoop"];
 						currentPath = pathNames[i];
 						if (statusText != null) {
-							statusText.text = 'Path: $currentPath | Speed: ${Std.int(speed)}';
+							statusText.text = 'Path: $currentPath | Speed: ${Std.int(speed / 0.8)}%';
 						}
 						drawCurrentPath();
 						startAnimation();
@@ -118,9 +122,11 @@ class PathsDemoScreen extends DemoScreenBase {
 					}
 				}
 			case UIChangeValue(val):
-				if (source == speedSlider && statusText != null) {
-					speed = 30 + val * 1.7; // Map 0-100 slider to 30-200 speed range
-					statusText.text = 'Path: $currentPath | Speed: ${Std.int(speed)}';
+				if (source == speedSlider) {
+					speed = 0.8 * val; // 80 px/s at 100%
+					if (statusText != null)
+						statusText.text = 'Path: $currentPath | Speed: ${val}%';
+					startAnimation();
 				}
 			default:
 		}

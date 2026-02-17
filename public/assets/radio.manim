@@ -29,14 +29,14 @@ version: 0.5
 
 #radioButtonsVertical programmable(count:int){
     repeatable($index, step($count, dy:30)) {
-        placeholder(generated(cross(15, 15)), callback("checkbox", $index)):0,0
+        placeholder(generated(cross(15, 15, #FF0000)), callback("checkbox", $index)):0,0
         text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
     }
 }
 
 #radioButtonsHorizontal programmable(count:int){
     repeatable($index, step($count, dx:120)) {
-        placeholder(generated(cross(15, 15)), callback("checkbox", $index)):0,0
+        placeholder(generated(cross(15, 15, #FF0000)), callback("checkbox", $index)):0,0
         text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
     }
 }

@@ -71,27 +71,27 @@ paths {
     text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
 
     // Speed slider
-    placeholder(generated(cross(200, 20)), builderParameter("speedSlider")) {
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
         pos: 50, 620
     }
 
     // Path selector buttons
-    placeholder(generated(cross(100, 24)), builderParameter("btnCircuit")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnCircuit")) {
         pos: 50, 660
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnStar")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnStar")) {
         pos: 170, 660
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnZigzag")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnZigzag")) {
         pos: 290, 660
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnSpiral")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnSpiral")) {
         pos: 410, 660
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnWaves")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnWaves")) {
         pos: 530, 660
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnBezier")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBezier")) {
         pos: 650, 660
     }
 }

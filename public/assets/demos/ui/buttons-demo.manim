@@ -10,14 +10,14 @@ version: 0.5
     text(exo2_16, "Normal Buttons", #7fdbda): 0, 0
     bitmap(generated(color(660, 1, #7fdbda33))): 0, 22
 
-    placeholder(generated(cross(200, 30)), builderParameter("normalBtn1")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn1")) {
         pos: 0, 40
     }
-    placeholder(generated(cross(200, 30)), builderParameter("normalBtn2")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn2")) {
         pos: 220, 40
         settings{text=>"Action"}
     }
-    placeholder(generated(cross(200, 30)), builderParameter("normalBtn3")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn3")) {
         pos: 440, 40
         settings{text=>"Submit"}
     }
@@ -26,14 +26,14 @@ version: 0.5
     text(exo2_16, "Warning Buttons", #ff7f50): 0, 100
     bitmap(generated(color(660, 1, #ff7f5033))): 0, 122
 
-    placeholder(generated(cross(200, 30)), builderParameter("warningBtn1")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn1")) {
         pos: 0, 140
     }
-    placeholder(generated(cross(200, 30)), builderParameter("warningBtn2")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn2")) {
         pos: 220, 140
         settings{text=>"Delete"}
     }
-    placeholder(generated(cross(200, 30)), builderParameter("warningBtn3")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn3")) {
         pos: 440, 140
         settings{text=>"Reset"}
     }
@@ -42,14 +42,14 @@ version: 0.5
     text(exo2_16, "Small Buttons", #4caf50): 0, 200
     bitmap(generated(color(660, 1, #4caf5033))): 0, 222
 
-    placeholder(generated(cross(64, 32)), builderParameter("smallBtn1")) {
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn1")) {
         pos: 0, 240
     }
-    placeholder(generated(cross(64, 32)), builderParameter("smallBtn2")) {
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn2")) {
         pos: 80, 240
         settings{text=>"No"}
     }
-    placeholder(generated(cross(64, 32)), builderParameter("smallBtn3")) {
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn3")) {
         pos: 160, 240
         settings{text=>"Info"}
     }
@@ -63,7 +63,7 @@ version: 0.5
     // Disable toggle section
     text(exo2_16, "Disable Toggle", #7fdbda): 0, 420
     bitmap(generated(color(660, 1, #7fdbda33))): 0, 442
-    placeholder(generated(cross(200, 20)), builderParameter("disableCheckbox")) {
+    placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
         pos: 0, 460
         settings{buildName=>checkbox}
     }

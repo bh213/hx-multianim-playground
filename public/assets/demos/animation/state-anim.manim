@@ -1,46 +1,142 @@
 version: 0.5
 
 // State Animation Demo
-// Displays .anim state animations with state selection and speed control
+// Displays .anim state animations loaded from .anim files
 
 #stateAnimDemo programmable() {
-    text(exo2_16, "State Animation Viewer", #7fdbda, left, 400): 50, 80
-    text(exo2_light_14, "Select a state to view the animation. Use the speed slider below.", #aaaaaa, left, 600): 50, 110
 
-    // Animation display area background
-    bitmap(generated(color(500, 400, #222233))): 250, 140
+    // Marine - right facing
+    text(exo2_14, "Marine (right):", #cccccc): 0, 0
 
-    // State labels
-    text(m6x11, "idle", #ffffff, left): 50, 160
-    text(m6x11, "walk", #ffffff, left): 50, 190
-    text(m6x11, "shooting", #ffffff, left): 50, 220
-    text(m6x11, "dead", #ffffff, left): 50, 250
+    text(m6x11, "idle", #888888): 10, 25
+    bitmap(generated(color(64, 64, #222233))): 10, 40
+    stateanim("marine.anim", "idle", direction=>"r"): 42, 88
 
-    // Speed label
-    text(exo2_14, "Animation Speed", #cccccc, left, 200): 50, 600
+    text(m6x11, "stand", #888888): 90, 25
+    bitmap(generated(color(64, 64, #222233))): 90, 40
+    stateanim("marine.anim", "stand", direction=>"r"): 122, 88
 
-    // Speed slider
-    placeholder(generated(cross(200, 20)), builderParameter("speedSlider")) {
-        pos: 50, 620
-    }
+    text(m6x11, "hit", #888888): 170, 25
+    bitmap(generated(color(64, 64, #222233))): 170, 40
+    stateanim("marine.anim", "hit", direction=>"r"): 202, 88
 
-    // State buttons
-    placeholder(generated(cross(80, 24)), builderParameter("btnIdle")) {
-        pos: 50, 660
-    }
-    placeholder(generated(cross(80, 24)), builderParameter("btnWalk")) {
-        pos: 150, 660
-    }
-    placeholder(generated(cross(80, 24)), builderParameter("btnShooting")) {
-        pos: 250, 660
-    }
-    placeholder(generated(cross(80, 24)), builderParameter("btnDead")) {
-        pos: 350, 660
-    }
-}
+    text(m6x11, "killed", #888888): 250, 25
+    bitmap(generated(color(64, 64, #222233))): 250, 40
+    stateAnim construct("killed",
+        "killed" => sheet "crew2", marine_r_killed, 20, loop
+    ): 282, 88
 
-#animDisplay programmable() {
-    // Placeholder for sprite display area
-    bitmap(generated(color(60, 60, #445566)), center): 0, 0
-    text(m6x11, "sprite", #aaaaaa, center, 80): -40, 35
+    text(m6x11, "dead", #888888): 330, 25
+    bitmap(generated(color(64, 64, #222233))): 330, 40
+    stateanim("marine.anim", "dead", direction=>"r"): 362, 88
+
+    text(m6x11, "dodge", #888888): 410, 25
+    bitmap(generated(color(64, 64, #222233))): 410, 40
+    stateAnim construct("dodge",
+        "dodge" => sheet "crew2", marine_r_dodging_r, 4, loop
+    ): 442, 88
+
+    // Marine - left facing
+    text(exo2_14, "Marine (left):", #cccccc): 0, 120
+
+    text(m6x11, "idle", #888888): 10, 145
+    bitmap(generated(color(64, 64, #222233))): 10, 160
+    stateanim("marine.anim", "idle", direction=>"l"): 42, 208
+
+    text(m6x11, "fire-up", #888888): 90, 145
+    bitmap(generated(color(64, 64, #222233))): 90, 160
+    stateAnim construct("fire-up",
+        "fire-up" => sheet "crew2", marine_r_shooting_u, 20, loop
+    ): 122, 208
+
+    text(m6x11, "fire-down", #888888): 170, 145
+    bitmap(generated(color(64, 64, #222233))): 170, 160
+    stateAnim construct("fire-down",
+        "fire-down" => sheet "crew2", marine_l_shooting_d, 10, loop
+    ): 202, 208
+
+    text(m6x11, "fire-left", #888888): 250, 145
+    bitmap(generated(color(64, 64, #222233))): 250, 160
+    stateAnim construct("fire-left",
+        "fire-left" => sheet "crew2", marine_l_shooting_u, 20, loop
+    ): 282, 208
+
+    text(m6x11, "fire-right", #888888): 330, 145
+    bitmap(generated(color(64, 64, #222233))): 330, 160
+    stateAnim construct("fire-right",
+        "fire-right" => sheet "crew2", marine_r_shooting_d, 20, loop
+    ): 362, 208
+
+    text(m6x11, "fire-upleft", #888888): 410, 145
+    bitmap(generated(color(64, 64, #222233))): 410, 160
+    stateAnim construct("fire-upleft",
+        "fire-upleft" => sheet "crew2", marine_l_shooting_uu, 20, loop
+    ): 442, 208
+
+    // Turret
+    text(exo2_14, "Turret:", #cccccc): 0, 240
+
+    text(m6x11, "idle", #888888): 10, 265
+    bitmap(generated(color(64, 64, #222233))): 10, 280
+    stateanim("turret.anim", "idle"): 42, 328
+
+    text(m6x11, "shoot", #888888): 90, 265
+    bitmap(generated(color(64, 64, #222233))): 90, 280
+    stateanim("turret.anim", "shoot"): 122, 328
+
+    text(m6x11, "hit", #888888): 170, 265
+    bitmap(generated(color(64, 64, #222233))): 170, 280
+    stateanim("turret.anim", "hit"): 202, 328
+
+    text(m6x11, "explode", #888888): 250, 265
+    bitmap(generated(color(64, 64, #222233))): 250, 280
+    stateAnim construct("explode",
+        "explode" => sheet "crew2", Turret_Explode_SW, 16, loop
+    ): 282, 328
+
+    text(m6x11, "destroyed", #888888): 330, 265
+    bitmap(generated(color(64, 64, #222233))): 330, 280
+    stateAnim construct("destroyed",
+        "destroyed" => sheet "crew2", Turret_Destroyed_SW, 1, loop
+    ): 362, 328
+
+    // Shield
+    text(exo2_14, "Shield:", #cccccc): 0, 360
+
+    text(m6x11, "idle_0 (R)", #888888): 10, 385
+    bitmap(generated(color(64, 64, #222233))): 10, 400
+    stateanim("shield.anim", "idle_0", direction=>"r"): 42, 448
+
+    text(m6x11, "idle_0 (L)", #888888): 90, 385
+    bitmap(generated(color(64, 64, #222233))): 90, 400
+    stateanim("shield.anim", "idle_0", direction=>"l"): 122, 448
+
+    text(m6x11, "idle_1 (R)", #888888): 170, 385
+    bitmap(generated(color(64, 64, #222233))): 170, 400
+    stateanim("shield.anim", "idle_1", direction=>"r"): 202, 448
+
+    text(m6x11, "impact (R)", #888888): 250, 385
+    bitmap(generated(color(64, 64, #222233))): 250, 400
+    stateanim("shield.anim", "impact", direction=>"r"): 282, 448
+
+    // Arrows
+    text(exo2_14, "Arrows:", #cccccc): 0, 480
+
+    text(m6x11, "dir0", #888888): 10, 505
+    stateanim("arrows.anim", "dir0"): 42, 568
+
+    text(m6x11, "dir1", #888888): 90, 505
+    stateanim("arrows.anim", "dir1"): 122, 568
+
+    text(m6x11, "dir2", #888888): 170, 505
+    stateanim("arrows.anim", "dir2"): 202, 568
+
+    text(m6x11, "dir3", #888888): 250, 505
+    stateanim("arrows.anim", "dir3"): 282, 568
+
+    text(m6x11, "dir4", #888888): 330, 505
+    stateanim("arrows.anim", "dir4"): 362, 568
+
+    text(m6x11, "dir5", #888888): 410, 505
+    stateanim("arrows.anim", "dir5"): 442, 568
 }

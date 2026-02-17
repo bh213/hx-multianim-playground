@@ -157,7 +157,7 @@ version: 0.5
 
 #checkboxWithText programmable(textColor:int, title="checkbox label", font="m6x11"){
     point {
-     placeholder(generated(cross(15, 15)), builderParameter("checkbox")):0,0
+     placeholder(generated(cross(15, 15, white)), builderParameter("checkbox")):0,0
       text($font, $title, white, left): 40,4
     }
 }
@@ -165,7 +165,7 @@ version: 0.5
 
 #radioButtons programmable(count:int){
       repeatable($index, step($count, dy:20)) {
-            placeholder(generated(cross(15, 15)), callback("checkbox", $index)):0,0
+            placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
             text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
             
       }
@@ -173,7 +173,7 @@ version: 0.5
 
 #radioButtonsHorizontal programmable(count:int){
       repeatable($index, step($count, dx:120 )) {
-            placeholder(generated(cross(15, 15)), callback("checkbox", $index)):0,0
+            placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
             text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
             
       }
@@ -181,7 +181,7 @@ version: 0.5
 
 #radioButtonsVertical programmable(count:int){
       repeatable($index, step($count, dy:30 )) {
-            placeholder(generated(cross(15, 15)), callback("checkbox", $index)):0,0
+            placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
             text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
             
       }
@@ -223,7 +223,7 @@ version: 0.5
         @(disabled=>true) ninepatch("ui", "droppanel-mid-disabled", $itemWidth+4, 20): -2,0
         
         text(m6x11, $title, 0xffffff12, left, 120): 24,4
-        @(images=>placeholder) placeholder(generated(cross(15, 15)), callback("test")):5,3
+        @(images=>placeholder) placeholder(generated(cross(15, 15, white)), callback("test")):5,3
         @(images=>tile) bitmap(file($tile), center):5,3
         interactive($itemWidth , 20, $index);
         settings{height:float=>20}
@@ -232,7 +232,7 @@ version: 0.5
 #list-panel programmable(width:uint=200, height:uint=200, topClearance:uint = 0) {
   
   ninepatch("ui", "Window_3x3_idle", $width+4, $height+8+$topClearance): -2,-4-$topClearance
-  placeholder(generated(cross($width, $height)), builderParameter("mask")):0,0
+  placeholder(generated(cross($width, $height, white)), builderParameter("mask")):0,0
   #scrollbar @layer(100) point: $width - 4, 0
 }
 
@@ -250,10 +250,10 @@ ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeigh
        #dialogText(updatable) text(dd, $dialogText, #ffffff00, center, 400): 50,50
       point {
         pos: 50,250
-        placeholder(generated(cross(20, 20)), builderParameter("ok")) {
+        placeholder(generated(cross(20, 20, white)), builderParameter("ok")) {
 
           
         }
-        placeholder(generated(cross(20, 20)), builderParameter("cancel")):250,0
+        placeholder(generated(cross(20, 20, white)), builderParameter("cancel")):250,0
       }
 }

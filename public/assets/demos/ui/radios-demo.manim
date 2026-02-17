@@ -10,7 +10,7 @@ version: 0.5
     text(exo2_16, "Vertical Radio Group", #7fdbda): 0, 0
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
 
-    placeholder(generated(cross(200, 150)), builderParameter("radioVertical")) {
+    placeholder(generated(cross(200, 150, #FF0000)), builderParameter("radioVertical")) {
         pos: 0, 40
         settings{radioButtonBuildName=>radio}
     }
@@ -23,7 +23,7 @@ version: 0.5
     text(exo2_16, "Horizontal Radio Group", #7fdbda): 0, 210
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 232
 
-    placeholder(generated(cross(500, 30)), builderParameter("radioHorizontal")) {
+    placeholder(generated(cross(500, 30, #FF0000)), builderParameter("radioHorizontal")) {
         pos: 0, 250
         settings{radioButtonBuildName=>radio}
     }
@@ -36,7 +36,7 @@ version: 0.5
     text(exo2_16, "Radio2 Button Style", #7fdbda): 0, 370
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 392
 
-    placeholder(generated(cross(200, 120)), builderParameter("radioVertical2")) {
+    placeholder(generated(cross(200, 120, #FF0000)), builderParameter("radioVertical2")) {
         pos: 0, 410
         settings{radioButtonBuildName=>radio2}
     }
@@ -48,7 +48,7 @@ version: 0.5
     text(exo2_16, "Disabled State", #7fdbda): 0, 550
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 572
 
-    placeholder(generated(cross(200, 120)), builderParameter("disabledRadio")) {
+    placeholder(generated(cross(200, 120, #FF0000)), builderParameter("disabledRadio")) {
         pos: 0, 590
         settings{radioButtonBuildName=>radio}
     }
@@ -56,7 +56,7 @@ version: 0.5
     // Enable/disable toggle
     text(exo2_16, "Controls", #7fdbda): 0, 730
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 752
-    placeholder(generated(cross(20, 20)), builderParameter("disableToggle")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disableToggle")) {
         pos: 0, 770
         settings{buildName=>radio}
     }

@@ -57,10 +57,10 @@ version: 0.5
 
     // Action buttons
     ninepatch("ui", "Window_3x3_idle", 300, 60): 0, 275
-    placeholder(generated(cross(120, 30)), builderParameter("attackButton")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("attackButton")) {
         pos: 15, 288
     }
-    placeholder(generated(cross(120, 30)), builderParameter("defendButton")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("defendButton")) {
         pos: 155, 288
     }
 

@@ -4,7 +4,7 @@ version: 0.5
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
   #countText(updatable) text(m6x11, "3", #7fdbda, left, 50): 160, 0
 
-  placeholder(generated(cross(210, 20)), builderParameter("countSlider")) {
+  placeholder(generated(cross(210, 20, #FF0000)), builderParameter("countSlider")) {
     pos: 0, 22
     settings{size:int=>200}
     settings{min:int=>0}

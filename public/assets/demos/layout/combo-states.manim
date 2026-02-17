@@ -21,7 +21,7 @@ version: 0.5
     @(mode=>error) text(m6x11, "ERROR", #ff8888, center, 120): 0, 14
   }
   #modeText(updatable) text(exo2_light_14, "mode: idle", #7fdbda, left, 200): 140, 42
-  placeholder(generated(cross(120, 24)), builderParameter("cycleMode")) {
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleMode")) {
     pos: 350, 34
   }
 
@@ -40,7 +40,7 @@ version: 0.5
     @else text(m6x11, "CRIT!", #ff8888, center, 120): 0, 14
   }
   #levelText(updatable) text(exo2_light_14, "level: low", #7fdbda, left, 200): 140, 142
-  placeholder(generated(cross(120, 24)), builderParameter("cycleLevel")) {
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleLevel")) {
     pos: 350, 134
   }
 
@@ -57,7 +57,7 @@ version: 0.5
     @default text(m6x11, "OTHER", #aaaaaa, center, 120): 0, 14
   }
   #stateText(updatable) text(exo2_light_14, "state: on", #7fdbda, left, 200): 140, 242
-  placeholder(generated(cross(120, 24)), builderParameter("cycleState")) {
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleState")) {
     pos: 350, 234
   }
 }

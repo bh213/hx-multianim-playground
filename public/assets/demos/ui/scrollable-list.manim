@@ -13,7 +13,7 @@ version: 0.5
     text(exo2_light_14, "Scroll through items and click to select:", #cccccc): 0, 35
 
     // Scrollable list placeholder
-    placeholder(generated(cross(200, 300)), builderParameter("scrollableList")) {
+    placeholder(generated(cross(200, 300, #FF0000)), builderParameter("scrollableList")) {
         pos: 0, 55
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200}
     }

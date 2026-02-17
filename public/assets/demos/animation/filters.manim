@@ -1,68 +1,64 @@
 version: 0.5
 
 // Filters Demo
-// All filter types demonstrated on sprites
+// All filter types demonstrated on selectable bitmap sources
+// Uses apply{} blocks to apply filters to conditional bitmap sources
 
-#filterSample programmable(filterType:[none, outline, glow, blur, saturate, brightness, dropShadow]=none) {
-    @(filterType=>none) bitmap(generated(color(80, 80, #4488cc))): 0, 0
-    @(filterType=>outline) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: outline(color: #ff0000, size: 2)
-    }
-    @(filterType=>glow) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: glow(color: #ffaa00, alpha: 0.8, radius: 8, smoothColor: true)
-    }
-    @(filterType=>blur) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: blur(radius: 4)
-    }
-    @(filterType=>saturate) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: saturate(0.0)
-    }
-    @(filterType=>brightness) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: brightness(1.5)
-    }
-    @(filterType=>dropShadow) bitmap(generated(color(80, 80, #4488cc))) {
-        filter: dropShadow(4, 0.8, #000000, 0.6, 10, 1.0)
-    }
+// Reusable filter sample: uses apply{} for the filter and @(bitmapType) for the bitmap source.
+// The apply block sets filter properties on the parent context, affecting all child bitmaps.
+#filterSample programmable(
+    filterType:[none, outline, glow, blur, saturate, brightness, dropShadow]=none,
+    bitmapType:[rectangle, marine, circle, star, skull]=rectangle) {
+    @(filterType=>outline) apply { filter: outline(color: #ff000099, size: 1) }
+    @(filterType=>glow) apply { filter: glow(color: #ffaa00, alpha: 0.8, radius: 8, smoothColor: true) }
+    @(filterType=>blur) apply { filter: blur(radius: 4) }
+    @(filterType=>saturate) apply { filter: saturate(0.0) }
+    @(filterType=>brightness) apply { filter: brightness(1.5) }
+    @(filterType=>dropShadow) apply { filter: dropShadow(3, 0.5, #000000, 0.5, 6, 1.0) }
+    @(bitmapType=>marine) apply { scale: 2 }
+    @(bitmapType=>skull) apply { scale: 5 }
+    @(bitmapType=>rectangle) bitmap(generated(color(60, 60, #4488cc)));
+    @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
+    @(bitmapType=>circle) bitmap(file("circle_soft.png"));
+    @(bitmapType=>star) bitmap(file("star.png"));
+    @(bitmapType=>skull) bitmap(sheet("crew2", "icon-skull"));
 }
 
-#filtersDemo programmable() {
+// Grid of all 7 filter types applied to a given bitmap type
+#filterShowcase programmable(bitmapType:[rectangle, marine, circle, star, skull]=rectangle) {
+    // Row 1: none, outline, glow, blur
+    text(m6x11, "none", #aaaaaa, center, 120): 0, 0
+    staticRef($filterSample, filterType=>none, bitmapType=>$bitmapType): 20, 18
+
+    text(m6x11, "outline", #ff6666, center, 120): 140, 0
+    staticRef($filterSample, filterType=>outline, bitmapType=>$bitmapType): 160, 18
+
+    text(m6x11, "glow", #ffaa00, center, 120): 280, 0
+    staticRef($filterSample, filterType=>glow, bitmapType=>$bitmapType): 300, 18
+
+    text(m6x11, "blur", #8888ff, center, 120): 420, 0
+    staticRef($filterSample, filterType=>blur, bitmapType=>$bitmapType): 440, 18
+
+    // Row 2: saturate, brightness, dropShadow
+    text(m6x11, "saturate", #888888, center, 120): 0, 130
+    staticRef($filterSample, filterType=>saturate, bitmapType=>$bitmapType): 20, 148
+
+    text(m6x11, "brightness", #dddd88, center, 120): 140, 130
+    staticRef($filterSample, filterType=>brightness, bitmapType=>$bitmapType): 160, 148
+
+    text(m6x11, "dropShadow", #999999, center, 120): 280, 130
+    staticRef($filterSample, filterType=>dropShadow, bitmapType=>$bitmapType): 300, 148
+}
+
+// Static layout: title, description, list placeholder, and active label
+#filtersLayout programmable() {
     text(exo2_16, "Visual Filters", #7fdbda, left, 400): 50, 80
-    text(exo2_light_14, "Toggle checkboxes to see each filter effect on the sample sprite", #aaaaaa, left, 600): 50, 110
+    text(exo2_light_14, "Double-click a bitmap type to change the sample sprite", #aaaaaa, left, 600): 50, 110
 
-    // Sample sprites with different filters
-    point {
-        pos: 300, 150
-
-        // No filter
-        text(m6x11, "none", #aaaaaa, center, 120): 0, 0
-        bitmap(generated(color(80, 80, #4488cc))): 20, 20
-
-        // Outline
-        text(m6x11, "outline", #aaaaaa, center, 120): 150, 0
-        bitmap(generated(color(80, 80, #4488cc))): 170, 20
-
-        // Glow
-        text(m6x11, "glow", #aaaaaa, center, 120): 300, 0
-        bitmap(generated(color(80, 80, #4488cc))): 320, 20
-
-        // Blur
-        text(m6x11, "blur", #aaaaaa, center, 120): 450, 0
-        bitmap(generated(color(80, 80, #4488cc))): 470, 20
-
-        // Saturate
-        text(m6x11, "saturate", #aaaaaa, center, 120): 600, 0
-        bitmap(generated(color(80, 80, #4488cc))): 620, 20
+    // Scrollable list for bitmap selection
+    placeholder(generated(cross(160, 130, #FF0000)), builderParameter("bitmapList")) {
+        pos: 50, 160
     }
 
-    point {
-        pos: 300, 300
-
-        // Brightness
-        text(m6x11, "brightness", #aaaaaa, center, 120): 0, 0
-        bitmap(generated(color(80, 80, #4488cc))): 20, 20
-
-        // Drop shadow
-        text(m6x11, "dropShadow", #aaaaaa, center, 120): 150, 0
-        bitmap(generated(color(80, 80, #4488cc))): 170, 20
-    }
+    #selectedText(updatable) text(exo2_light_14, "Active: Rectangle", #7fdbda, left, 200): 50, 310
 }

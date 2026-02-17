@@ -13,35 +13,35 @@ version: 0.5
 
     // Checkbox style (checkbox.checkbox)
     text(exo2_light_14, "Checkbox", #cccccc): 0, 35
-    placeholder(generated(cross(20, 20)), builderParameter("checkbox1")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("checkbox1")) {
         pos: 0, 55
         settings{buildName=>checkbox}
     }
 
     // Tickbox style
     text(exo2_light_14, "Tickbox", #cccccc): 120, 35
-    placeholder(generated(cross(20, 20)), builderParameter("checkbox2")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("checkbox2")) {
         pos: 120, 55
         settings{buildName=>tickbox}
     }
 
     // Toggle style
     text(exo2_light_14, "Toggle", #cccccc): 240, 35
-    placeholder(generated(cross(20, 20)), builderParameter("checkbox3")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("checkbox3")) {
         pos: 240, 55
         settings{buildName=>toggle}
     }
 
     // Radio style
     text(exo2_light_14, "Radio", #cccccc): 360, 35
-    placeholder(generated(cross(20, 20)), builderParameter("checkbox4")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("checkbox4")) {
         pos: 360, 55
         settings{buildName=>radio}
     }
 
     // Radio2 style
     text(exo2_light_14, "Radio2", #cccccc): 480, 35
-    placeholder(generated(cross(20, 20)), builderParameter("checkbox5")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("checkbox5")) {
         pos: 480, 55
         settings{buildName=>radio2}
     }
@@ -51,7 +51,7 @@ version: 0.5
     bitmap(generated(color(700, 1, #4caf5033))): 0, 132
 
     text(exo2_light_14, "Simple", #cccccc): 0, 145
-    placeholder(generated(cross(24, 24)), builderParameter("checkbox6")) {
+    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("checkbox6")) {
         pos: 0, 165
         settings{buildName=>simple}
     }
@@ -67,13 +67,13 @@ version: 0.5
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 352
 
     text(exo2_light_14, "Disabled Checkbox", #cccccc): 0, 365
-    placeholder(generated(cross(20, 20)), builderParameter("disabledCheckbox1")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disabledCheckbox1")) {
         pos: 0, 385
         settings{buildName=>checkbox}
     }
 
     text(exo2_light_14, "Disabled Toggle", #cccccc): 160, 365
-    placeholder(generated(cross(20, 20)), builderParameter("disabledCheckbox2")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disabledCheckbox2")) {
         pos: 160, 385
         settings{buildName=>toggle}
     }
@@ -81,7 +81,7 @@ version: 0.5
     // Enable/disable toggle
     text(exo2_16, "Controls", #7fdbda): 0, 440
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 462
-    placeholder(generated(cross(20, 20)), builderParameter("disableToggle")) {
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disableToggle")) {
         pos: 0, 480
         settings{buildName=>toggle}
     }

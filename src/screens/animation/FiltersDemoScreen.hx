@@ -2,91 +2,86 @@ package screens.animation;
 
 import bh.ui.UIElement;
 import bh.ui.*;
-import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
+import bh.ui.UIMultiAnimScrollableList;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
-import bh.base.FontManager;
 
 class FiltersDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
-	var demoResult:Null<BuilderResult>;
-	var filterCheckboxes:Array<UIStandardMultiCheckbox> = [];
-	var filterNames:Array<String> = ["outline", "glow", "blur", "saturate", "brightness", "dropShadow"];
-	var filterStates:Array<Bool> = [];
-	var statusText:Null<h2d.Text>;
+	var layoutResult:Null<BuilderResult>;
+	var showcaseResult:Null<BuilderResult>;
+	var scrollableList:Null<UIMultiAnimScrollableList>;
+	var activeBitmapType:String = "rectangle";
+
+	static final BITMAP_ITEMS:Array<UIElementListItem> = [
+		{name: "Rectangle"},
+		{name: "Marine"},
+		{name: "Circle"},
+		{name: "Star"},
+		{name: "Skull"},
+	];
+
+	static final BITMAP_TYPES:Array<String> = ["rectangle", "marine", "circle", "star", "skull"];
 
 	override public function load():Void {
 		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/filters.manim", false);
 
-		// Build the demo with filter showcase
-		demoResult = demoBuilder.buildWithParameters("filtersDemo", []);
-		addBuilderResult(demoResult);
+		// Scrollable list for bitmap selection
+		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", BITMAP_ITEMS, null, 0, 160,
+			130);
+		addElement(scrollableList, null);
 
-		// Add checkboxes for each filter type
-		var yPos:Float = 500;
-		for (i in 0...filterNames.length) {
-			filterStates.push(false);
-			final checkbox = addCheckbox(stdBuilder, null, false);
-			addElement(checkbox, DefaultLayer);
-			checkbox.getObject().setPosition(50, yPos);
+		// Build layout with list injected
+		layoutResult = demoBuilder.buildWithParameters("filtersLayout", [], {
+			placeholderObjects: [
+				"bitmapList" => PVObject(scrollableList.getObject()),
+			]
+		});
+		addBuilderResult(layoutResult);
 
-			// Add label next to checkbox
-			final label = new h2d.Text(FontManager.getFontByName("exo2_14"));
-			label.text = filterNames[i];
-			label.textColor = 0xCCCCCC;
-			label.setPosition(80, yPos + 2);
-			addObjectToLayer(label, DefaultLayer);
+		// Build initial filter showcase
+		rebuildShowcase("rectangle");
+	}
 
-			filterCheckboxes.push(checkbox);
-			yPos += 30;
+	function rebuildShowcase(bitmapType:String):Void {
+		if (showcaseResult != null) {
+			showcaseResult.object.remove();
 		}
 
-		// Status text
-		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = "Toggle checkboxes to enable/disable filters";
-		statusText.textColor = 0xCCCCCC;
-		statusText.setPosition(50, 470);
-		addObjectToLayer(statusText, DefaultLayer);
+		activeBitmapType = bitmapType;
+		showcaseResult = demoBuilder.buildWithParameters("filterShowcase", ["bitmapType" => bitmapType]);
+		showcaseResult.object.setPosition(280, 160);
+		addBuilderResult(showcaseResult);
+
+		if (layoutResult != null) {
+			final updatable = layoutResult.getUpdatable("selectedText");
+			if (updatable != null) {
+				final idx = BITMAP_TYPES.indexOf(bitmapType);
+				final displayName = idx >= 0 ? BITMAP_ITEMS[idx].name : bitmapType;
+				updatable.updateText('Active: $displayName');
+			}
+		}
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIToggle(checked):
-				for (i in 0...filterCheckboxes.length) {
-					if (source == filterCheckboxes[i]) {
-						filterStates[i] = checked;
-						updateStatusText();
-						return;
-					}
+			case UIDoubleClickItem(index, items):
+				if (source == scrollableList && index >= 0 && index < BITMAP_TYPES.length) {
+					rebuildShowcase(BITMAP_TYPES[index]);
 				}
 			default:
 		}
-	}
-
-	function updateStatusText():Void {
-		if (statusText == null) return;
-		var activeFilters:Array<String> = [];
-		for (i in 0...filterNames.length) {
-			if (filterStates[i]) {
-				activeFilters.push(filterNames[i]);
-			}
-		}
-		if (activeFilters.length == 0) {
-			statusText.text = "No filters active";
-		} else {
-			statusText.text = 'Active: ${activeFilters.join(", ")}';
-		}
+		super.onScreenEvent(event, source);
 	}
 
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
-		demoResult = null;
-		filterCheckboxes = [];
-		filterStates = [];
-		statusText = null;
+		layoutResult = null;
+		showcaseResult = null;
+		scrollableList = null;
 	}
 }

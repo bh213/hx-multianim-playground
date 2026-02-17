@@ -69,7 +69,7 @@ version: 0.5
     #xpText(updatable) text(exo2_14, "0 / 100 XP", #ffffff, center, 340): 30, 360
 
     // Level Up button placeholder
-    placeholder(generated(cross(200, 30)), builderParameter("levelUpButton")) {
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("levelUpButton")) {
         pos: 100, 400
     }
 

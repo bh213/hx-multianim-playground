@@ -15,13 +15,13 @@ version: 0.5
     text(m6x11, "  Types: string, int, float, bool", #aaaaaa, left, 400): 0, 120
 
     // Theme selector buttons
-    placeholder(generated(cross(100, 24)), builderParameter("btnDark")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnDark")) {
         pos: 0, 520
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnLight")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnLight")) {
         pos: 120, 520
     }
-    placeholder(generated(cross(100, 24)), builderParameter("btnBlue")) {
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBlue")) {
         pos: 240, 520
     }
 }

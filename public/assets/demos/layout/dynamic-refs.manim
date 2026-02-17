@@ -30,7 +30,7 @@ version: 0.5
   dynamicRef($healthBar, value=>$barValue, label=>"Player HP"): 0, 30
 
   // Slider control
-  placeholder(generated(cross(210, 20)), builderParameter("slider")) {
+  placeholder(generated(cross(210, 20, #FF0000)), builderParameter("slider")) {
     pos: 0, 60
   }
   #sliderValue(updatable) text(exo2_light_14, "50", #cccccc): 230, 60

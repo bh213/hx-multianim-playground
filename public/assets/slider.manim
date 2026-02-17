@@ -13,7 +13,7 @@ version: 0.5
       #sliderVal(updatable) text(dd, "Drag the slider!", #ffffffaa): 10, 50
 
       // Slider placeholder
-      placeholder(generated(cross(200, 20)), builderParameter("slider")) {
+      placeholder(generated(cross(200, 20, #FF0000)), builderParameter("slider")) {
             pos: 10, 30
       }
 }

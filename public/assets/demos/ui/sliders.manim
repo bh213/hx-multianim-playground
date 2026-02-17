@@ -12,7 +12,7 @@ version: 0.5
 
     // Small slider (100)
     text(exo2_light_14, "Small (100px)", #cccccc): 0, 35
-    placeholder(generated(cross(310, 20)), builderParameter("slider1")) {
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("slider1")) {
         pos: 0, 55
         settings{size:int=>300}
     }
@@ -21,7 +21,7 @@ version: 0.5
 
     // Medium slider (200)
     text(exo2_light_14, "Medium (200px)", #cccccc): 0, 100
-    placeholder(generated(cross(310, 20)), builderParameter("slider2")) {
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("slider2")) {
         pos: 0, 120
         settings{size:int=>300}
     }
@@ -30,7 +30,7 @@ version: 0.5
 
     // Large slider (300)
     text(exo2_light_14, "Large (300px)", #cccccc): 0, 165
-    placeholder(generated(cross(310, 20)), builderParameter("slider3")) {
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("slider3")) {
         pos: 0, 185
         settings{size:int=>300}
     }
@@ -43,7 +43,7 @@ version: 0.5
 
     // Scale x2
     text(exo2_light_14, "Scale x2", #cccccc): 0, 265
-    placeholder(generated(cross(310, 20)), builderParameter("sliderScale2")) {
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("sliderScale2")) {
         pos: 0, 285
         settings{size:int=>300}
     }
@@ -52,7 +52,7 @@ version: 0.5
 
     // Scale x0.5
     text(exo2_light_14, "Scale x0.5", #cccccc): 0, 340
-    placeholder(generated(cross(210, 20)), builderParameter("sliderScale05")) {
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("sliderScale05")) {
         pos: 0, 360
         settings{size:int=>200}
     }
@@ -65,7 +65,7 @@ version: 0.5
 
     // Range 0-10, step 1
     text(exo2_light_14, "0-10, step 1", #cccccc): 0, 445
-    placeholder(generated(cross(210, 20)), builderParameter("sliderStep1")) {
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("sliderStep1")) {
         pos: 0, 465
         settings{size:int=>200}
     }
@@ -74,7 +74,7 @@ version: 0.5
 
     // Range -50 to 50
     text(exo2_light_14, "-50 to 50", #cccccc): 0, 510
-    placeholder(generated(cross(210, 20)), builderParameter("sliderRange1")) {
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("sliderRange1")) {
         pos: 0, 530
         settings{size:int=>200}
     }
@@ -83,7 +83,7 @@ version: 0.5
 
     // Range 0-1000, step 100
     text(exo2_light_14, "0-1000, step 100", #cccccc): 0, 575
-    placeholder(generated(cross(210, 20)), builderParameter("sliderStep100")) {
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("sliderStep100")) {
         pos: 0, 595
         settings{size:int=>200}
     }
@@ -92,7 +92,7 @@ version: 0.5
 
     // Range 0-100, step 25
     text(exo2_light_14, "0-100, step 25", #cccccc): 0, 640
-    placeholder(generated(cross(210, 20)), builderParameter("sliderStep25")) {
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("sliderStep25")) {
         pos: 0, 660
         settings{size:int=>200}
     }

@@ -60,26 +60,26 @@ curves {
     bitmap(generated(color(100, 180, #222233))): 610, 180
 
     // Curve type selector buttons - Row 1
-    placeholder(generated(cross(90, 24)), builderParameter("btnLinear")) { pos: 50, 400 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseInQuad")) { pos: 160, 400 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOutQuad")) { pos: 270, 400 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseInOutQuad")) { pos: 380, 400 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOutCubic")) { pos: 490, 400 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOutBack")) { pos: 600, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnLinear")) { pos: 50, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseInQuad")) { pos: 160, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutQuad")) { pos: 270, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseInOutQuad")) { pos: 380, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutCubic")) { pos: 490, 400 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutBack")) { pos: 600, 400 }
 
     // Curve type selector buttons - Row 2
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOutBounce")) { pos: 50, 440 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOutElastic")) { pos: 160, 440 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnAccelDecel")) { pos: 270, 440 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnSnapBack")) { pos: 380, 440 }
-    placeholder(generated(cross(90, 24)), builderParameter("btnCustom")) { pos: 490, 440 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutBounce")) { pos: 50, 440 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutElastic")) { pos: 160, 440 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnAccelDecel")) { pos: 270, 440 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnSnapBack")) { pos: 380, 440 }
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnCustom")) { pos: 490, 440 }
 
     // Controls
     text(m6x11, "Inverse:", #aaaaaa, left, 80): 50, 494
-    placeholder(generated(cross(24, 24)), builderParameter("inverseChk")) { pos: 120, 490 }
+    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("inverseChk")) { pos: 120, 490 }
 
     text(m6x11, "Speed:", #aaaaaa, left, 80): 250, 494
-    placeholder(generated(cross(200, 20)), builderParameter("speedSlider")) {
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
         pos: 310, 492
         settings{min:int=>10}
         settings{max:int=>500}

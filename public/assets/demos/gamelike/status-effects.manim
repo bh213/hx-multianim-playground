@@ -20,13 +20,13 @@ version: 0.5
 
     // Action buttons
     ninepatch("ui", "Window_3x3_idle", 600, 55): 0, 145
-    placeholder(generated(cross(130, 30)), builderParameter("addBuffButton")) {
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("addBuffButton")) {
         pos: 15, 158
     }
-    placeholder(generated(cross(130, 30)), builderParameter("addDebuffButton")) {
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("addDebuffButton")) {
         pos: 160, 158
     }
-    placeholder(generated(cross(130, 30)), builderParameter("clearAllButton")) {
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("clearAllButton")) {
         pos: 305, 158
     }
 

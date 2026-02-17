@@ -10,7 +10,7 @@ version: 0.5
     text(exo2_16, "Vertical Radio Group", #7fdbda): 0, 0
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
 
-    placeholder(generated(cross(200, 150)), builderParameter("radioVertical")) {
+    placeholder(generated(cross(200, 150, #FF0000)), builderParameter("radioVertical")) {
         pos: 0, 40
     }
 
@@ -22,7 +22,7 @@ version: 0.5
     text(exo2_16, "Horizontal Radio Group", #7fdbda): 0, 210
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 232
 
-    placeholder(generated(cross(500, 30)), builderParameter("radioHorizontal")) {
+    placeholder(generated(cross(500, 30, #FF0000)), builderParameter("radioHorizontal")) {
         pos: 0, 250
     }
 
@@ -34,7 +34,7 @@ version: 0.5
     text(exo2_16, "Radio2 Button Style", #7fdbda): 0, 370
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 392
 
-    placeholder(generated(cross(200, 120)), builderParameter("radioVertical2")) {
+    placeholder(generated(cross(200, 120, #FF0000)), builderParameter("radioVertical2")) {
         pos: 0, 410
     }
 

@@ -11,7 +11,7 @@ version: 0.5
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
     text(exo2_light_14, "Fixed panel height, always scrolls:", #cccccc): 0, 35
 
-    placeholder(generated(cross(120, 30)), builderParameter("dropdownScrollable")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownScrollable")) {
         pos: 0, 55
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
     }
@@ -23,7 +23,7 @@ version: 0.5
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 162
     text(exo2_light_14, "Panel sizes to fit items:", #cccccc): 0, 175
 
-    placeholder(generated(cross(120, 30)), builderParameter("dropdownAutoFew")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownAutoFew")) {
         pos: 0, 195
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>300}
     }
@@ -35,7 +35,7 @@ version: 0.5
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 302
     text(exo2_light_14, "Auto-sizes up to max height, then scrolls:", #cccccc): 0, 315
 
-    placeholder(generated(cross(120, 30)), builderParameter("dropdownAutoMany")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownAutoMany")) {
         pos: 0, 335
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>150}
     }

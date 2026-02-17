@@ -32,10 +32,10 @@ version: 0.5
     #continueText(updatable) text(exo2_light_14, "", #7fdbda, right, 560): 135, 265
 
     // Choice buttons
-    placeholder(generated(cross(270, 30)), builderParameter("choice1Button")) {
+    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice1Button")) {
         pos: 120, 305
     }
-    placeholder(generated(cross(270, 30)), builderParameter("choice2Button")) {
+    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice2Button")) {
         pos: 410, 305
     }
 

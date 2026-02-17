@@ -30,10 +30,10 @@ version: 0.5
     #selectedDescText(updatable) text(exo2_light_14, "Select an item to see details", #aaaaaa, left, 220): 395, 175
 
     // Action buttons
-    placeholder(generated(cross(100, 30)), builderParameter("buyButton")) {
+    placeholder(generated(cross(100, 30, #FF0000)), builderParameter("buyButton")) {
         pos: 395, 210
     }
-    placeholder(generated(cross(100, 30)), builderParameter("sellButton")) {
+    placeholder(generated(cross(100, 30, #FF0000)), builderParameter("sellButton")) {
         pos: 510, 210
     }
 

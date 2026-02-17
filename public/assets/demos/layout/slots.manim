@@ -1,47 +1,56 @@
 version: 0.5
 
+// Item that goes into a slot - 5 variants with different colors and names
+#slotItem programmable(itemType:[sword, shield, potion, ring, scroll]) {
+  @(itemType=>sword) bitmap(generated(color(60, 40, #cc4444))): 0, 0
+  @(itemType=>shield) bitmap(generated(color(60, 40, #4488cc))): 0, 0
+  @(itemType=>potion) bitmap(generated(color(60, 40, #44cc44))): 0, 0
+  @(itemType=>ring) bitmap(generated(color(60, 40, #ccaa33))): 0, 0
+  @(itemType=>scroll) bitmap(generated(color(60, 40, #cc88ff))): 0, 0
+
+  @(itemType=>sword) text(m6x11, "Sword", #ffffff, center, 60): 0, 14
+  @(itemType=>shield) text(m6x11, "Shield", #ffffff, center, 60): 0, 14
+  @(itemType=>potion) text(m6x11, "Potion", #ffffff, center, 60): 0, 14
+  @(itemType=>ring) text(m6x11, "Ring", #ffffff, center, 60): 0, 14
+  @(itemType=>scroll) text(m6x11, "Scroll", #ffffff, center, 60): 0, 14
+}
+
+// Main showcase with 10 slots in 2 rows of 5
 #slotsShowcase programmable() {
   pos: 40, 80
 
-  // Control buttons
-  placeholder(generated(cross(80, 24)), builderParameter("swapButton")) {
-      pos: 460, 20
-  }
-  placeholder(generated(cross(80, 24)), builderParameter("clearButton")) {
-      pos: 560, 20
-  }
+  text(exo2_16, "Slot Items", #7fdbda): 0, 0
+  bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+  text(exo2_light_14, "Click an empty slot to fill it. Auto-fills every second. Clears when full.", #aaaaaa): 0, 30
 
-  // Section 1: Indexed slots in a repeatable
-  text(exo2_16, "Indexed slots (#content[$i]) - click Swap to fill:", #cccccc): 0, 0
-
+  // Row 1: slots 0-4
   point {
-    pos: 0, 30
-    repeatable($i, step(3, dx: 120)) {
-      // Slot container background
-      bitmap(generated(color(100, 100, #333344))): 0, 0
-      text(m6x11, $i, #aaaaaa, center, 100): 0, 5
-
-      // The swappable slot
-      #content[$i] slot {
-        bitmap(generated(color(80, 60, #555555))): 10, 30
+    pos: 0, 55
+    repeatable($i, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot[$i] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
       }
     }
   }
 
-  // Section 2: Static (non-indexed) slot
-  text(exo2_16, "Static slot (#footer):", #cccccc): 0, 160
-
+  // Row 2: slots 5-9
   point {
-    pos: 0, 190
-    bitmap(generated(color(300, 50, #333344))): 0, 0
-    #footer slot {
-      text(m6x11, "Default footer content", #888888): 10, 18
+    pos: 0, 145
+    repeatable($j, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot2[$j] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
+      }
     }
   }
 
-  // Section 3: Explanation
-  text(exo2_16, "Slots provide swappable containers:", #cccccc): 0, 270
-  text(exo2_light_14, "getSlot('name').setContent(obj) - set content", #888888): 20, 300
-  text(exo2_light_14, "getSlot('name').clear() - remove content", #888888): 20, 320
-  text(exo2_light_14, "getSlot('name', index) - indexed variant", #888888): 20, 340
+  // Container for programmatic status texts and interactives
+  #slotContainer(updatable) point: 0, 0
+
+  // Counter
+  #slotCountText(updatable) text(exo2_16, "Slots: 0 / 10 occupied", #ffffff, left, 400): 0, 240
+
+  // Log
+  #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 265
 }

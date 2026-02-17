@@ -17,16 +17,6 @@ class NinepatchDemoScreen extends DemoScreenBase {
 		addBuilderResult(result);
 	}
 
-	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
-		switch event {
-			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-				}
-			default:
-		}
-	}
-
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;

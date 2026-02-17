@@ -29,9 +29,7 @@ class ComboStatesDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-				} else if (source == cycleButton && demoResult != null) {
+				if (source == cycleButton && demoResult != null) {
 					currentState = (currentState + 1) % STATES.length;
 					demoResult.setParameter("mode", STATES[currentState]);
 				}

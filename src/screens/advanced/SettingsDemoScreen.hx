@@ -53,10 +53,6 @@ class SettingsDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 				for (i in 0...themeButtons.length) {
 					if (source == themeButtons[i]) {
 						final themes = ["dark", "light", "blue"];

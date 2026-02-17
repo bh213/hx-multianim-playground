@@ -58,10 +58,6 @@ class StateAnimDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 				for (i in 0...stateButtons.length) {
 					if (source == stateButtons[i]) {
 						final states = ["idle", "walk", "shooting", "dead"];

@@ -121,7 +121,7 @@ class NavScreen extends UIScreenBase {
 				}
 
 				var cardButton = addButtonWithSingleBuilder(commonBuilder, "navCard", null, screen.title);
-				addElement(cardButton, null);
+				addElement(cardButton, DefaultLayer);
 				cardButton.getObject().setPosition(xPos, yPos);
 				cards.push({button: cardButton, screenName: screen.id});
 
@@ -137,9 +137,14 @@ class NavScreen extends UIScreenBase {
 			case UIClick:
 				for (card in cards) {
 					if (source == card.button) {
-						screenManager.updateScreenMode(Single(screenManager.getScreen(card.screenName)));
+						final targetScreen = screenManager.getScreen(card.screenName);
+						final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
+						if (Std.isOfType(targetScreen, DemoScreenBase)) {
+							final demo:DemoScreenBase = cast targetScreen;
+							masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
+						}
+						screenManager.updateScreenMode(MasterAndSingle(masterScreen, targetScreen));
 						#if js
-						// Update URL hash for deep-linking
 						js.Browser.window.location.hash = 'screen=${card.screenName}';
 						#end
 						return;

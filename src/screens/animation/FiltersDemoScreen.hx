@@ -54,11 +54,6 @@ class FiltersDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 			case UIToggle(checked):
 				for (i in 0...filterCheckboxes.length) {
 					if (source == filterCheckboxes[i]) {

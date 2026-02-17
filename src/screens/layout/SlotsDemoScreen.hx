@@ -32,9 +32,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-				} else if (source == swapButton && slotsResult != null) {
+				if (source == swapButton && slotsResult != null) {
 					// Swap slot content by putting a colored bitmap into a slot
 					var slot = slotsResult.getSlot("content", slotIndex % 3);
 					var bmp = new h2d.Bitmap(h2d.Tile.fromColor(Std.int(Math.random() * 0xFFFFFF), 50, 50));

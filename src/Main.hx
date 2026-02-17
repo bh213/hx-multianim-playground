@@ -45,7 +45,18 @@ class Main extends hxd.App {
 			return res;
 		}
 		errorText.remove();
-		screenManager.updateScreenMode(Single(screenManager.getScreen(screen ?? DEFAULT_SCREEN)));
+		final screenName = screen ?? DEFAULT_SCREEN;
+		if (screenName == DEFAULT_SCREEN) {
+			screenManager.updateScreenMode(Single(screenManager.getScreen(screenName)));
+		} else {
+			final targetScreen = screenManager.getScreen(screenName);
+			final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
+			if (Std.isOfType(targetScreen, DemoScreenBase)) {
+				final demo:DemoScreenBase = cast targetScreen;
+				masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
+			}
+			screenManager.updateScreenMode(MasterAndSingle(masterScreen, targetScreen));
+		}
 		return res;
 	}
 
@@ -108,8 +119,9 @@ class Main extends hxd.App {
 			}
 		};
 
-		// Navigation
+		// Navigation and master screen
 		screenManager.addScreen("nav", new NavScreen(screenManager));
+		screenManager.addScreen("demoMaster", new DemoMasterScreen(screenManager));
 
 		// UI Component demos
 		screenManager.addScreen("buttons", new ButtonsDemoScreen(screenManager));

@@ -40,11 +40,6 @@ class ConditionalsDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 			case UIChangeValue(val):
 				if (source == valueSlider) {
 					currentValue = val;

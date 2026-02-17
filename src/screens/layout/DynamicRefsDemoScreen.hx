@@ -28,10 +28,6 @@ class DynamicRefsDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-				}
 			case UIChangeValue(value):
 				if (source == slider && demoResult != null) {
 					demoResult.setParameter("barValue", value);

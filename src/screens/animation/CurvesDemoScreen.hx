@@ -45,10 +45,6 @@ class CurvesDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 				for (i in 0...curveButtons.length) {
 					if (source == curveButtons[i]) {
 						final curveTypes = ["linear", "easeIn", "easeOut", "bounce", "elastic", "custom"];

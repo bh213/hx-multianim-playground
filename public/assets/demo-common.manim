@@ -2,11 +2,11 @@ version: 0.5
 
 #titleBar programmable(title="Demo") {
     ninepatch("ui", "Window_3x3_idle", 1280, 40): 0,0
-    text(exo2_black_20, $title, #ffffff, left, 1200): 50,10
+    #titleText(updatable) text(exo2_black_20, $title, #ffffff, left, 1200): 50,10
 }
 
 #descriptionLabel programmable(text="Description") {
-    text(exo2_light_14, $text, #aaaaaa, left, 1180): 50,48
+    #descText(updatable) text(exo2_light_14, $text, #aaaaaa, left, 1180): 50,48
 }
 
 #backButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Back") {

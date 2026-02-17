@@ -44,10 +44,6 @@ class InteractivesDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
-					return;
-				}
 				// Check if clicked an interactive element
 				if (Std.isOfType(source, UIInteractiveWrapper)) {
 					final wrapper:UIInteractiveWrapper = cast source;

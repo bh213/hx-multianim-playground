@@ -1,0 +1,37 @@
+version: 0.5
+
+#slotsShowcase programmable() {
+  // Section 1: Indexed slots in a repeatable
+  text(exo2_16, "Indexed slots (#content[$i]) - click Swap to fill:", #cccccc): 0, 0
+
+  point {
+    pos: 0, 30
+    repeatable($i, step(3, dx: 120)) {
+      // Slot container background
+      bitmap(generated(color(100, 100, #333344))): 0, 0
+      text(m6x11, $i, #aaaaaa, center, 100): 0, 5
+
+      // The swappable slot
+      #content[$i] slot {
+        bitmap(generated(color(80, 60, #555555))): 10, 30
+      }
+    }
+  }
+
+  // Section 2: Static (non-indexed) slot
+  text(exo2_16, "Static slot (#footer):", #cccccc): 0, 160
+
+  point {
+    pos: 0, 190
+    bitmap(generated(color(300, 50, #333344))): 0, 0
+    #footer slot {
+      text(m6x11, "Default footer content", #888888): 10, 18
+    }
+  }
+
+  // Section 3: Explanation
+  text(exo2_16, "Slots provide swappable containers:", #cccccc): 0, 270
+  text(exo2_light_14, "getSlot('name').setContent(obj) - set content", #888888): 20, 300
+  text(exo2_light_14, "getSlot('name').clear() - remove content", #888888): 20, 320
+  text(exo2_light_14, "getSlot('name', index) - indexed variant", #888888): 20, 340
+}

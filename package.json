@@ -1,0 +1,43 @@
+{
+  "name": "hx-playground",
+  "version": "1.0.0",
+  "description": "Interactive showcase for hx-multianim library features",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "build": "haxe playground.hxml",
+    "watch": "nodemon --watch src --watch res --watch ../hx-multianim/src --ext hx,manim --exec \"npm run build\"",
+    "dev": "npm run build && concurrently \"npm run watch\" \"npm run react:dev\"",
+    "react:dev": "vite",
+    "react:build": "tsc && vite build",
+    "react:preview": "vite preview",
+    "full:build": "npm run build && npm run react:build && cp -r public/* dist/",
+    "clean": "rimraf dist"
+  },
+  "keywords": ["haxe", "heaps", "animation", "playground", "webgl", "react"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "loadjs": "^4.3.0",
+    "prismjs": "^1.29.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/loadjs": "^4.0.4",
+    "@types/prismjs": "^1.26.3",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@tailwindcss/vite": "^4.1.10",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
+    "rimraf": "^5.0.5",
+    "tailwindcss": "^4.1.10",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

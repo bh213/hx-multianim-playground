@@ -1,0 +1,72 @@
+version: 0.5
+
+#bitmapsAtlasShowcase programmable() {
+  // Section 1: Generated color bitmaps
+  text(exo2_16, "bitmap(generated(color(w, h, color))):", #cccccc): 0, 0
+
+  // Row of generated colored bitmaps
+  bitmap(generated(color(60, 60, #ff4444))): 0, 30
+  bitmap(generated(color(60, 60, #ff8844))): 70, 30
+  bitmap(generated(color(60, 60, #ffff44))): 140, 30
+  bitmap(generated(color(60, 60, #44ff44))): 210, 30
+  bitmap(generated(color(60, 60, #44ffff))): 280, 30
+  bitmap(generated(color(60, 60, #4444ff))): 350, 30
+  bitmap(generated(color(60, 60, #ff44ff))): 420, 30
+  bitmap(generated(color(60, 60, #ffffff))): 490, 30
+
+  // Labels
+  text(m6x11, "red", #888888, center, 60): 0, 96
+  text(m6x11, "orange", #888888, center, 60): 70, 96
+  text(m6x11, "yellow", #888888, center, 60): 140, 96
+  text(m6x11, "green", #888888, center, 60): 210, 96
+  text(m6x11, "cyan", #888888, center, 60): 280, 96
+  text(m6x11, "blue", #888888, center, 60): 350, 96
+  text(m6x11, "magenta", #888888, center, 60): 420, 96
+  text(m6x11, "white", #888888, center, 60): 490, 96
+
+  // Section 2: Different sizes
+  text(exo2_16, "Different sizes:", #cccccc): 0, 130
+
+  bitmap(generated(color(20, 20, #7fdbda))): 0, 160
+  bitmap(generated(color(40, 40, #7fdbda))): 30, 160
+  bitmap(generated(color(60, 60, #7fdbda))): 80, 160
+  bitmap(generated(color(80, 80, #7fdbda))): 150, 160
+  bitmap(generated(color(100, 40, #7fdbda))): 240, 160
+  bitmap(generated(color(40, 100, #7fdbda))): 350, 160
+
+  // Size labels
+  text(m6x11, "20x20", #888888): 0, 250
+  text(m6x11, "40x40", #888888): 30, 250
+  text(m6x11, "60x60", #888888): 80, 250
+  text(m6x11, "80x80", #888888): 150, 250
+  text(m6x11, "100x40", #888888): 240, 250
+  text(m6x11, "40x100", #888888): 350, 250
+
+  // Section 3: Alpha variations
+  text(exo2_16, "Alpha variations:", #cccccc): 0, 280
+
+  @alpha(1.0) bitmap(generated(color(60, 40, #ff7f50))): 0, 310
+  @alpha(0.8) bitmap(generated(color(60, 40, #ff7f50))): 70, 310
+  @alpha(0.6) bitmap(generated(color(60, 40, #ff7f50))): 140, 310
+  @alpha(0.4) bitmap(generated(color(60, 40, #ff7f50))): 210, 310
+  @alpha(0.2) bitmap(generated(color(60, 40, #ff7f50))): 280, 310
+
+  text(m6x11, "1.0", #888888, center, 60): 0, 356
+  text(m6x11, "0.8", #888888, center, 60): 70, 356
+  text(m6x11, "0.6", #888888, center, 60): 140, 356
+  text(m6x11, "0.4", #888888, center, 60): 210, 356
+  text(m6x11, "0.2", #888888, center, 60): 280, 356
+
+  // Section 4: Scale
+  text(exo2_16, "Scale:", #cccccc): 0, 390
+
+  @scale(1) bitmap(generated(color(20, 20, #4caf50))): 0, 420
+  @scale(2) bitmap(generated(color(20, 20, #4caf50))): 30, 420
+  @scale(3) bitmap(generated(color(20, 20, #4caf50))): 80, 420
+  @scale(4) bitmap(generated(color(20, 20, #4caf50))): 150, 420
+
+  text(m6x11, "1x", #888888): 0, 500
+  text(m6x11, "2x", #888888): 30, 500
+  text(m6x11, "3x", #888888): 80, 500
+  text(m6x11, "4x", #888888): 150, 500
+}

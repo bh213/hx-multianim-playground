@@ -1,0 +1,85 @@
+version: 0.5
+
+// Character Sheet Demo
+// Shows character stats, HP/MP bars, attributes, XP bar, and Level Up button.
+
+#characterSheetDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Character Sheet", #7fdbda): 0, 0
+    bitmap(generated(color(500, 1, #7fdbda33))): 0, 22
+
+    // Main panel
+    ninepatch("ui", "Window_3x3_idle", 400, 500): 0, 35
+
+    // Character identity
+    text(exo2_14, "Name:", #aaaaaa): 20, 55
+    #charName(updatable) text(exo2_20, "Aethon", #ffffff, left, 300): 80, 50
+
+    text(exo2_14, "Class:", #aaaaaa): 20, 85
+    #charClass(updatable) text(exo2_16, "Warrior", #ff7f50, left, 200): 80, 83
+
+    text(exo2_14, "Level:", #aaaaaa): 250, 85
+    #charLevel(updatable) text(exo2_20, "1", #ffeb3b, left, 60): 310, 80
+
+    // Separator
+    bitmap(generated(color(360, 1, #7fdbda33))): 20, 110
+
+    // HP bar
+    text(exo2_14, "HP", #ff4444): 20, 125
+    bitmap(generated(color(300, 20, #1a1a1a))): 55, 125
+    #hpBar(updatable) bitmap(generated(color(300, 20, #ff4444))): 55, 125
+    #hpText(updatable) text(exo2_14, "100 / 100", #ffffff, center, 300): 55, 127
+
+    // MP bar
+    text(exo2_14, "MP", #4a90a4): 20, 155
+    bitmap(generated(color(300, 20, #1a1a1a))): 55, 155
+    #mpBar(updatable) bitmap(generated(color(300, 20, #4a90a4))): 55, 155
+    #mpText(updatable) text(exo2_14, "50 / 50", #ffffff, center, 300): 55, 157
+
+    // Separator
+    bitmap(generated(color(360, 1, #7fdbda33))): 20, 190
+
+    // Attributes
+    text(exo2_16, "Attributes", #7fdbda): 20, 200
+
+    text(exo2_14, "STR:", #ff7f50): 30, 230
+    #strValue(updatable) text(exo2_20, "10", #ffffff, left, 60): 80, 226
+    bitmap(generated(color(120, 12, #1a1a1a))): 130, 232
+    #strBar(updatable) bitmap(generated(color(60, 12, #ff7f50))): 130, 232
+
+    text(exo2_14, "DEX:", #4caf50): 30, 260
+    #dexValue(updatable) text(exo2_20, "8", #ffffff, left, 60): 80, 256
+    bitmap(generated(color(120, 12, #1a1a1a))): 130, 262
+    #dexBar(updatable) bitmap(generated(color(48, 12, #4caf50))): 130, 262
+
+    text(exo2_14, "INT:", #4a90a4): 30, 290
+    #intValue(updatable) text(exo2_20, "6", #ffffff, left, 60): 80, 286
+    bitmap(generated(color(120, 12, #1a1a1a))): 130, 292
+    #intBar(updatable) bitmap(generated(color(36, 12, #4a90a4))): 130, 292
+
+    // Separator
+    bitmap(generated(color(360, 1, #7fdbda33))): 20, 320
+
+    // XP bar
+    text(exo2_14, "Experience", #7fdbda): 20, 335
+    bitmap(generated(color(340, 20, #1a1a1a))): 30, 358
+    #xpBar(updatable) bitmap(generated(color(0, 20, #ffeb3b))): 30, 358
+    #xpText(updatable) text(exo2_14, "0 / 100 XP", #ffffff, center, 340): 30, 360
+
+    // Level Up button placeholder
+    placeholder(generated(cross(200, 30)), builderParameter("levelUpButton")) {
+        pos: 100, 400
+    }
+
+    // Feedback text
+    #feedbackText(updatable) text(exo2_14, "", #4caf50, center, 400): 0, 445
+
+    // Stats summary
+    text(exo2_14, "Total Power:", #aaaaaa): 20, 475
+    #powerText(updatable) text(exo2_16, "24", #ffeb3b, left, 100): 130, 473
+
+    // Instructions
+    text(exo2_light_14, "Click Level Up to gain XP and increase stats.", #666666): 0, 550
+}

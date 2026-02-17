@@ -1,0 +1,70 @@
+version: 0.5
+
+#repeatableShowcase programmable() {
+  // Section 1: Basic horizontal step
+  text(exo2_16, "Horizontal step (5 items, dx:60):", #cccccc): 0, 0
+
+  point {
+    pos: 0, 30
+    repeatable($i, step(5, dx: 60)) {
+      bitmap(generated(color(50, 50, #4488cc))): 0, 0
+      text(m6x11, $i, #ffffff, center, 50): 0, 18
+    }
+  }
+
+  // Section 2: Vertical step
+  text(exo2_16, "Vertical step (4 items, dy:35):", #cccccc): 400, 0
+
+  point {
+    pos: 400, 30
+    repeatable($j, step(4, dy: 35)) {
+      bitmap(generated(color(120, 28, #cc4488))): 0, 0
+      text(m6x11, $j, #ffffff): 5, 8
+    }
+  }
+
+  // Section 3: Diagonal step
+  text(exo2_16, "Diagonal step (6 items, dx:50 dy:20):", #cccccc): 0, 120
+
+  point {
+    pos: 0, 150
+    repeatable($k, step(6, dx: 50, dy: 20)) {
+      bitmap(generated(color(40, 16, #44cc88))): 0, 0
+      text(m6x11, $k, #ffffff, center, 40): 0, 2
+    }
+  }
+
+  // Section 4: Indexed named elements with #name[$i]
+  text(exo2_16, "Indexed elements #cell[$i]:", #cccccc): 0, 300
+
+  point {
+    pos: 0, 330
+    repeatable($idx, step(6, dx: 80)) {
+      #cell[$idx] bitmap(generated(color(70, 70, #553322))): 0, 0
+      #label[$idx] text(m6x11, $idx, #ffffff, center, 70): 0, 28
+    }
+  }
+
+  // Section 5: Grid using nested repeatables
+  text(exo2_16, "2D grid (range):", #cccccc): 0, 430
+
+  point {
+    pos: 0, 460
+    repeatable($row, range(0, 3)) {
+      repeatable($col, range(0, 5)) {
+        bitmap(generated(color(30, 30, #445566))): $col * 38, $row * 38
+      }
+    }
+  }
+
+  // Section 6: Expression-based coloring
+  text(exo2_16, "Fading alpha with expression:", #cccccc): 400, 300
+
+  point {
+    pos: 400, 330
+    repeatable($n, step(8, dx: 40)) {
+      @alpha(1.0 - $n / 8) bitmap(generated(color(30, 30, #ff7f50))): 0, 0
+      text(m6x11, $n, #ffffff, center, 30): 0, 10
+    }
+  }
+}

@@ -1,0 +1,39 @@
+version: 0.5
+
+// Dropdowns Demo
+// Shows dropdown with item list and selected item display.
+
+#dropdownsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Dropdown
+    text(exo2_16, "Dropdown Selection", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Choose an item:", #cccccc): 0, 35
+
+    // Dropdown placeholder
+    placeholder(generated(cross(120, 30)), builderParameter("dropdown1")) {
+        pos: 0, 55
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>200}
+    }
+
+    // Selected item display
+    text(exo2_16, "Selection", #7fdbda): 0, 130
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 152
+    ninepatch("ui", "Window_3x3_idle", 400, 50): 0, 165
+    #selectedText(updatable) text(exo2_20, "Selected: None", #ffffff, left, 380): 15, 180
+
+    // Second dropdown
+    text(exo2_16, "Another Dropdown", #7fdbda): 0, 250
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 272
+    text(exo2_light_14, "Pick a color:", #cccccc): 0, 285
+
+    placeholder(generated(cross(120, 30)), builderParameter("dropdown2")) {
+        pos: 0, 305
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
+    }
+
+    ninepatch("ui", "Window_3x3_idle", 400, 50): 0, 380
+    #selected2Text(updatable) text(exo2_20, "Color: None", #ffffff, left, 380): 15, 395
+}

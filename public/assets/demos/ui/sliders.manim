@@ -1,0 +1,45 @@
+version: 0.5
+
+// Sliders Demo
+// Shows sliders of different sizes with live value display.
+
+#slidersDemo programmable() {
+    pos: 50, 80
+
+    // Section: Slider Sizes
+    text(exo2_16, "Slider Sizes", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Small slider (100)
+    text(exo2_light_14, "Small (100px)", #cccccc): 0, 35
+    placeholder(generated(cross(110, 20)), builderParameter("slider1")) {
+        pos: 0, 55
+        settings{size:int=>100}
+    }
+    ninepatch("ui", "Window_3x3_idle", 120, 30): 130, 48
+    #value1(updatable) text(exo2_14, "0", #ffffff, center, 100): 140, 55
+
+    // Medium slider (200)
+    text(exo2_light_14, "Medium (200px)", #cccccc): 0, 100
+    placeholder(generated(cross(210, 20)), builderParameter("slider2")) {
+        pos: 0, 120
+        settings{size:int=>200}
+    }
+    ninepatch("ui", "Window_3x3_idle", 120, 30): 230, 113
+    #value2(updatable) text(exo2_14, "0", #ffffff, center, 100): 240, 120
+
+    // Large slider (300)
+    text(exo2_light_14, "Large (300px)", #cccccc): 0, 165
+    placeholder(generated(cross(310, 20)), builderParameter("slider3")) {
+        pos: 0, 185
+        settings{size:int=>300}
+    }
+    ninepatch("ui", "Window_3x3_idle", 120, 30): 330, 178
+    #value3(updatable) text(exo2_14, "0", #ffffff, center, 100): 340, 185
+
+    // Section: Combined Value Display
+    text(exo2_16, "Live Values", #7fdbda): 0, 240
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 262
+    ninepatch("ui", "Window_3x3_idle", 500, 50): 0, 275
+    #summaryText(updatable) text(exo2_16, "Small: 0  |  Medium: 0  |  Large: 0", #ffffff, left, 480): 15, 290
+}

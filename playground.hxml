@@ -1,0 +1,9 @@
+-lib heaps
+-lib hx-multianim
+-cp src
+-main Main
+--macro bh.base.AtlasMacroInit.init()
+-D message.reporting=pretty
+-js public/playground.js
+-dce full
+-D js-source-map

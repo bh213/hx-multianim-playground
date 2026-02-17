@@ -1,0 +1,48 @@
+version: 0.5
+
+#ninepatchShowcase programmable() {
+  // Section 1: Same ninepatch at different sizes
+  text(exo2_16, "Window_3x3_idle at 5 different sizes:", #cccccc): 0, 0
+
+  ninepatch("ui", "Window_3x3_idle", 100, 60): 0, 30
+  text(m6x11, "100 x 60", #888888, center, 100): 0, 96
+
+  ninepatch("ui", "Window_3x3_idle", 200, 80): 120, 30
+  text(m6x11, "200 x 80", #888888, center, 200): 120, 116
+
+  ninepatch("ui", "Window_3x3_idle", 300, 120): 340, 30
+  text(m6x11, "300 x 120", #888888, center, 300): 340, 156
+
+  ninepatch("ui", "Window_3x3_idle", 150, 200): 660, 30
+  text(m6x11, "150 x 200", #888888, center, 150): 660, 236
+
+  ninepatch("ui", "Window_3x3_idle", 400, 40): 0, 180
+  text(m6x11, "400 x 40", #888888, center, 400): 0, 226
+
+  // Section 2: Button ninepatches
+  text(exo2_16, "Button ninepatches at different sizes:", #cccccc): 0, 270
+
+  ninepatch("ui", "button-idle", 100, 30): 0, 300
+  text(m6x11, "idle 100x30", #888888): 0, 336
+
+  ninepatch("ui", "button-hover", 150, 30): 120, 300
+  text(m6x11, "hover 150x30", #888888): 120, 336
+
+  ninepatch("ui", "button-pressed", 200, 30): 290, 300
+  text(m6x11, "pressed 200x30", #888888): 290, 336
+
+  ninepatch("ui", "button-idle", 300, 50): 0, 370
+  text(m6x11, "idle 300x50", #888888): 0, 426
+
+  ninepatch("ui", "button-hover", 80, 80): 320, 370
+  text(m6x11, "hover 80x80", #888888): 320, 456
+
+  // Section 3: Scaled ninepatches
+  text(exo2_16, "Scaled ninepatches:", #cccccc): 0, 490
+
+  @scale(2) ninepatch("ui", "Window_3x3_idle", 80, 40): 0, 520
+  text(m6x11, "scale 2", #888888): 0, 610
+
+  @scale(3) ninepatch("ui", "Window_3x3_idle", 60, 30): 200, 520
+  text(m6x11, "scale 3", #888888): 200, 620
+}

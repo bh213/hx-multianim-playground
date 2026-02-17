@@ -1,0 +1,4 @@
+# hx-multianim local reference for hx-playground
+-lib heaps
+-cp ../hx-multianim/src
+-D hx-multianim=0.12.0

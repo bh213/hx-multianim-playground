@@ -1,0 +1,65 @@
+version: 0.5
+
+#textFontsShowcase programmable() {
+  // Section 1: Bitmap fonts
+  text(exo2_16, "Bitmap Fonts:", #cccccc): 0, 0
+
+  text(m6x11, "Font name", #888888): 0, 28
+  text(m6x11, "Sample text", #888888): 200, 28
+
+  text(m6x11, "m3x6", #aaaaaa): 0, 48
+  text(m3x6, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 48
+
+  text(m6x11, "m5x7", #aaaaaa): 0, 68
+  text(m5x7, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 68
+
+  text(m6x11, "f7x5", #aaaaaa): 0, 88
+  text(f7x5, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 88
+
+  text(m6x11, "m6x11", #aaaaaa): 0, 108
+  text(m6x11, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 108
+
+  text(m6x11, "pixellari", #aaaaaa): 0, 128
+  text(pixellari, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 128
+
+  text(m6x11, "dd (DigitalDisco)", #aaaaaa): 0, 148
+  text(dd, "The quick brown fox jumps over the lazy dog", #ffffff): 200, 148
+
+  text(m6x11, "dd_thin", #aaaaaa): 0, 168
+  text(dd_thin, "The quick brown fox jumps over the lazy dog", #ffffff): 200, 168
+
+  // Section 2: SDF fonts at different sizes
+  text(exo2_16, "SDF Fonts (scalable):", #cccccc): 0, 200
+
+  text(exo2_14, "exo2_14: The quick brown fox jumps over the lazy dog", #ffffff): 0, 228
+  text(exo2_16, "exo2_16: The quick brown fox jumps over the lazy dog", #ffffff): 0, 248
+  text(exo2_20, "exo2_20: The quick brown fox", #ffffff): 0, 270
+  text(exo2_30, "exo2_30: Quick brown fox", #ffffff): 0, 296
+
+  text(exo2_light_14, "exo2_light_14: Light weight text sample", #dddddd): 0, 336
+  text(exo2_light_20, "exo2_light_20: Light weight text", #dddddd): 0, 356
+
+  text(exo2_black_16, "exo2_black_16: Bold weight text sample", #ffffff): 0, 386
+  text(exo2_black_20, "exo2_black_20: Bold weight text", #ffffff): 0, 408
+
+  // Section 3: Text colors
+  text(exo2_16, "Colors:", #cccccc): 0, 445
+
+  text(m6x11, "Red text", #ff4444): 0, 475
+  text(m6x11, "Green text", #44ff44): 100, 475
+  text(m6x11, "Blue text", #4444ff): 200, 475
+  text(m6x11, "Yellow text", #ffff44): 300, 475
+  text(m6x11, "Cyan text", #44ffff): 410, 475
+  text(m6x11, "Magenta text", #ff44ff): 510, 475
+
+  // Section 4: Text alignment
+  text(exo2_16, "Alignment (maxWidth: 300):", #cccccc): 0, 510
+
+  bitmap(generated(color(300, 1, #444444))): 0, 540
+  text(m6x11, "Left aligned text", #ffffff, left, 300): 0, 545
+  bitmap(generated(color(300, 1, #444444))): 0, 560
+  text(m6x11, "Center aligned text", #ffffff, center, 300): 0, 565
+  bitmap(generated(color(300, 1, #444444))): 0, 580
+  text(m6x11, "Right aligned text", #ffffff, right, 300): 0, 585
+  bitmap(generated(color(300, 1, #444444))): 0, 600
+}

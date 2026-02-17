@@ -1,0 +1,56 @@
+version: 0.5
+
+// Skill Tree Demo
+// 3 rows x 4 columns of skill nodes with prerequisite unlocking.
+
+#skillTreeDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Skill Tree", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    // Tree panel background
+    ninepatch("ui", "Window_3x3_idle", 520, 280): 0, 35
+
+    // Column labels
+    text(exo2_14, "Tier 1", #aaaaaa, center, 100): 25, 45
+    text(exo2_14, "Tier 2", #aaaaaa, center, 100): 145, 45
+    text(exo2_14, "Tier 3", #aaaaaa, center, 100): 265, 45
+    text(exo2_14, "Tier 4", #aaaaaa, center, 100): 385, 45
+
+    // Row labels
+    text(exo2_14, "STR", #ff7f50): 15, 80
+    text(exo2_14, "DEX", #4caf50): 15, 170
+    text(exo2_14, "INT", #4a90a4): 15, 260
+
+    // Connector lines between columns (horizontal)
+    bitmap(generated(color(60, 2, #555555))): 95, 100
+    bitmap(generated(color(60, 2, #555555))): 215, 100
+    bitmap(generated(color(60, 2, #555555))): 335, 100
+    bitmap(generated(color(60, 2, #555555))): 95, 190
+    bitmap(generated(color(60, 2, #555555))): 215, 190
+    bitmap(generated(color(60, 2, #555555))): 335, 190
+    bitmap(generated(color(60, 2, #555555))): 95, 280
+    bitmap(generated(color(60, 2, #555555))): 215, 280
+    bitmap(generated(color(60, 2, #555555))): 335, 280
+
+    // Skill node container - nodes created programmatically
+    #nodeContainer(updatable) point: 45, 70
+
+    // Info panel
+    ninepatch("ui", "Window_3x3_idle", 520, 70): 0, 325
+    #pointsText(updatable) text(exo2_16, "Skill Points: 5", #ffeb3b, left, 300): 20, 340
+    #skillInfoText(updatable) text(exo2_14, "Click a skill node to unlock it", #aaaaaa, left, 480): 20, 365
+
+    // Legend
+    bitmap(generated(color(16, 16, #666666))): 350, 340
+    text(exo2_light_14, "Locked", #aaaaaa): 375, 340
+    bitmap(generated(color(16, 16, #4caf50))): 350, 360
+    text(exo2_light_14, "Unlocked", #aaaaaa): 375, 360
+    bitmap(generated(color(16, 16, #ffeb3b))): 440, 360
+    text(exo2_light_14, "Selected", #aaaaaa): 465, 360
+
+    // Instructions
+    text(exo2_light_14, "Click nodes to unlock. Must unlock previous tier first.", #666666): 0, 410
+}

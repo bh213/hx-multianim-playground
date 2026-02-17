@@ -1,0 +1,79 @@
+version: 0.5
+
+// Curves Demo
+// 1D curve visualization using curves{} with easing functions
+
+curves {
+    #linear curve {
+        easing: linear
+    }
+    #easeIn curve {
+        easing: easeinquad
+    }
+    #easeOut curve {
+        easing: easeoutquad
+    }
+    #bounce curve {
+        easing: easeoutbounce
+    }
+    #elastic curve {
+        easing: easeoutelastic
+    }
+    #custom curve {
+        points: [(0, 0), (0.2, 0.8), (0.4, 0.2), (0.6, 0.9), (0.8, 0.4), (1.0, 1.0)]
+    }
+}
+
+paths {
+    #curvePath path {
+        lineTo(200, 0)
+    }
+}
+
+#curvesDemo programmable() {
+    text(exo2_16, "Curve Visualization", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Easing curves for animation timing. Select a curve type below.", #aaaaaa, left, 600): 50, 110
+
+    // Curve display grid
+    point {
+        pos: 100, 160
+
+        // Linear
+        text(m6x11, "linear", #7fdbda, left, 150): 0, 0
+        bitmap(generated(color(200, 150, #222233))): 0, 20
+        bitmap(generated(color(200, 1, #333344))): 0, 170
+        bitmap(generated(color(1, 150, #333344))): 0, 20
+
+        // EaseIn
+        text(m6x11, "easeInQuad", #7fdbda, left, 150): 240, 0
+        bitmap(generated(color(200, 150, #222233))): 240, 20
+
+        // EaseOut
+        text(m6x11, "easeOutQuad", #7fdbda, left, 150): 480, 0
+        bitmap(generated(color(200, 150, #222233))): 480, 20
+    }
+
+    point {
+        pos: 100, 380
+
+        // Bounce
+        text(m6x11, "easeOutBounce", #7fdbda, left, 150): 0, 0
+        bitmap(generated(color(200, 150, #222233))): 0, 20
+
+        // Elastic
+        text(m6x11, "easeOutElastic", #7fdbda, left, 150): 240, 0
+        bitmap(generated(color(200, 150, #222233))): 240, 20
+
+        // Custom
+        text(m6x11, "custom points", #7fdbda, left, 150): 480, 0
+        bitmap(generated(color(200, 150, #222233))): 480, 20
+    }
+}
+
+#panim animatedPath {
+    path: curvePath
+    type: time
+    duration: 2.0
+    0.0: progressCurve: linear, event("start")
+    1.0: event("end")
+}

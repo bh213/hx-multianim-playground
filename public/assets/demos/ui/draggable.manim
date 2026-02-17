@@ -1,0 +1,26 @@
+version: 0.5
+
+// Draggable Demo
+// Shows free-drag colored rectangles.
+
+#draggableDemo programmable() {
+    pos: 50, 80
+
+    // Section: Draggable Elements
+    text(exo2_16, "Draggable Elements", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Drag the colored rectangles around:", #cccccc): 0, 35
+
+    // Drop zone background
+    ninepatch("ui", "Window_3x3_idle", 700, 400): 0, 55
+
+    // Instructions inside the area
+    text(exo2_light_14, "Drag area", #ffffff44, center, 700): 0, 240
+
+    // Position display
+    text(exo2_16, "Drag Info", #7fdbda): 0, 475
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 497
+    ninepatch("ui", "Window_3x3_idle", 500, 40): 0, 510
+    #dragText(updatable) text(exo2_16, "Drag a rectangle to see its position", #ffffff, left, 480): 15, 518
+}

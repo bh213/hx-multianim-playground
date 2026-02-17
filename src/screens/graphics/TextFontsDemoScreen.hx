@@ -1,0 +1,34 @@
+package screens.graphics;
+
+import bh.ui.UIElement;
+import bh.ui.*;
+import bh.multianim.MultiAnimBuilder;
+
+class TextFontsDemoScreen extends DemoScreenBase {
+	var demoBuilder:Null<MultiAnimBuilder>;
+
+	override public function load():Void {
+		setupDemo("Text & Fonts", "All registered fonts with sample text, alignments, and colors");
+
+		demoBuilder = screenManager.buildFromResourceName("demos/graphics/text-fonts.manim", false);
+
+		var result = demoBuilder.buildWithParameters("textFontsShowcase", []);
+		result.object.setPosition(40, 80);
+		addBuilderResult(result);
+	}
+
+	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
+		switch event {
+			case UIClick:
+				if (source == backButton) {
+					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
+				}
+			default:
+		}
+	}
+
+	override public function onClear():Void {
+		super.onClear();
+		demoBuilder = null;
+	}
+}

@@ -1,0 +1,63 @@
+version: 0.5
+
+// Paths Demo
+// Object follows defined paths using paths{} definitions
+
+paths {
+    #circuit path {
+        forward(100)
+        arc(80, 90)
+        forward(150)
+        arc(80, 90)
+        forward(100)
+        arc(80, 90)
+        forward(150)
+        arc(80, 90)
+    }
+    #star path {
+        turn(0)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+    }
+    #zigzag path {
+        lineTo(60, -40)
+        lineTo(60, 40)
+        lineTo(60, -40)
+        lineTo(60, 40)
+        lineTo(60, -40)
+        lineTo(60, 40)
+    }
+}
+
+#pathMarker bitmap(generated(color(12, 12, #7fdbda)), center);
+
+#pathsDemo programmable() {
+    text(exo2_16, "Path Animation", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Objects follow defined paths. Select a path type below.", #aaaaaa, left, 600): 50, 110
+
+    // Path display area
+    bitmap(generated(color(800, 450, #1a1a2e))): 240, 140
+
+    // Path name labels
+    text(m6x11, "Circuit: forward + arc turns", #aaaaaa, left, 300): 50, 150
+    text(m6x11, "Star: forward + sharp turns", #aaaaaa, left, 300): 50, 170
+    text(m6x11, "Zigzag: diagonal lines", #aaaaaa, left, 300): 50, 190
+
+    // Speed label
+    text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
+}
+
+#panim animatedPath {
+    path: circuit
+    type: distance
+    speed: 80
+    0.0: event("start")
+    1.0: event("end")
+}

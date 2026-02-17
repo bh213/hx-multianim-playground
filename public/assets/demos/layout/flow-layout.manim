@@ -1,0 +1,120 @@
+version: 0.5
+
+// Colored box for flow items
+#flowItem programmable(w:uint=40, h:uint=20, color:color=#448) {
+  bitmap(generated(color($w, $h, $color)));
+}
+
+#flowLayoutShowcase programmable() {
+  // Section 1: Basic layouts
+  text(exo2_16, "Vertical layout:", #cccccc): 0, 0
+
+  point {
+    pos: 0, 30
+    flow(minWidth: 60, layout: vertical, padding: 4, verticalSpacing: 4, debug: true) {
+      staticRef($flowItem, w=>50, h=>20, color=>#cc4444);
+      staticRef($flowItem, w=>50, h=>20, color=>#44cc44);
+      staticRef($flowItem, w=>50, h=>20, color=>#4444cc);
+      staticRef($flowItem, w=>50, h=>20, color=>#cc8844);
+    }
+  }
+
+  text(exo2_16, "Horizontal layout:", #cccccc): 200, 0
+
+  point {
+    pos: 200, 30
+    flow(minHeight: 30, layout: horizontal, padding: 4, horizontalSpacing: 4, debug: true) {
+      staticRef($flowItem, w=>50, h=>25, color=>#cc4444);
+      staticRef($flowItem, w=>50, h=>25, color=>#44cc44);
+      staticRef($flowItem, w=>50, h=>25, color=>#4444cc);
+      staticRef($flowItem, w=>50, h=>25, color=>#cc8844);
+    }
+  }
+
+  text(exo2_16, "Stack layout:", #cccccc): 500, 0
+
+  point {
+    pos: 500, 30
+    flow(minWidth: 80, minHeight: 80, layout: stack, padding: 4, debug: true) {
+      staticRef($flowItem, w=>70, h=>70, color=>#663333);
+      staticRef($flowItem, w=>50, h=>50, color=>#336633);
+      staticRef($flowItem, w=>30, h=>30, color=>#333366);
+    }
+  }
+
+  // Section 2: Overflow modes
+  text(exo2_16, "Overflow expand (maxWidth:80):", #cccccc): 0, 160
+
+  point {
+    pos: 0, 190
+    flow(maxWidth: 80, layout: horizontal, overflow: expand) {
+      staticRef($flowItem, w=>40, h=>20, color=>#cc4488);
+      staticRef($flowItem, w=>40, h=>20, color=>#44cc88);
+      staticRef($flowItem, w=>40, h=>20, color=>#8844cc);
+    }
+  }
+
+  text(exo2_16, "Overflow hidden (maxWidth:80):", #cccccc): 200, 160
+
+  point {
+    pos: 200, 190
+    flow(maxWidth: 80, layout: horizontal, overflow: hidden) {
+      staticRef($flowItem, w=>40, h=>20, color=>#cc4488);
+      staticRef($flowItem, w=>40, h=>20, color=>#44cc88);
+      staticRef($flowItem, w=>40, h=>20, color=>#8844cc);
+    }
+  }
+
+  // Section 3: Multiline flow
+  text(exo2_16, "Multiline flow (maxWidth:150):", #cccccc): 0, 240
+
+  point {
+    pos: 0, 270
+    flow(maxWidth: 150, layout: horizontal, multiline: true, padding: 4, horizontalSpacing: 4, verticalSpacing: 4, debug: true) {
+      staticRef($flowItem, w=>40, h=>20, color=>#cc4444);
+      staticRef($flowItem, w=>40, h=>20, color=>#44cc44);
+      staticRef($flowItem, w=>40, h=>20, color=>#4444cc);
+      staticRef($flowItem, w=>40, h=>20, color=>#cc8844);
+      staticRef($flowItem, w=>40, h=>20, color=>#8844cc);
+      staticRef($flowItem, w=>40, h=>20, color=>#44cccc);
+    }
+  }
+
+  // Section 4: Reverse and spacer
+  text(exo2_16, "Reverse:", #cccccc): 400, 160
+
+  point {
+    pos: 400, 190
+    flow(layout: horizontal, horizontalSpacing: 4, reverse: true) {
+      staticRef($flowItem, w=>40, h=>20, color=>#cc4444);
+      staticRef($flowItem, w=>40, h=>20, color=>#44cc44);
+      staticRef($flowItem, w=>40, h=>20, color=>#4444cc);
+    }
+  }
+
+  text(exo2_16, "Spacer(0,16):", #cccccc): 400, 240
+
+  point {
+    pos: 400, 270
+    flow(layout: vertical, verticalSpacing: 2) {
+      staticRef($flowItem, w=>60, h=>15, color=>#cc4444);
+      spacer(0, 16);
+      staticRef($flowItem, w=>60, h=>15, color=>#44cc44);
+      spacer(0, 8);
+      staticRef($flowItem, w=>60, h=>15, color=>#4444cc);
+    }
+  }
+
+  // Section 5: Text in flow
+  text(exo2_16, "Text in flow:", #cccccc): 600, 240
+
+  point {
+    pos: 600, 270
+    flow(minWidth: 120, layout: vertical, verticalSpacing: 4, padding: 6, debug: true) {
+      text(m6x11, "Line 1", #ff8888, left);
+      text(m6x11, "Line 2", #88ff88, left);
+      text(m6x11, "Line 3", #8888ff, left);
+      text(m6x11, "Line 4", #ffff88, left);
+    }
+  }
+}

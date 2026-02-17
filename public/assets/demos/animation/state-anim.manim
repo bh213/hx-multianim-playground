@@ -1,0 +1,27 @@
+version: 0.5
+
+// State Animation Demo
+// Displays .anim state animations with state selection and speed control
+
+#stateAnimDemo programmable() {
+    text(exo2_16, "State Animation Viewer", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Select a state to view the animation. Use the speed slider below.", #aaaaaa, left, 600): 50, 110
+
+    // Animation display area background
+    bitmap(generated(color(500, 400, #222233))): 250, 140
+
+    // State labels
+    text(m6x11, "idle", #ffffff, left): 50, 160
+    text(m6x11, "walk", #ffffff, left): 50, 190
+    text(m6x11, "shooting", #ffffff, left): 50, 220
+    text(m6x11, "dead", #ffffff, left): 50, 250
+
+    // Speed label
+    text(exo2_14, "Animation Speed", #cccccc, left, 200): 50, 600
+}
+
+#animDisplay programmable() {
+    // Placeholder for sprite display area
+    bitmap(generated(color(60, 60, #445566)), center): 0, 0
+    text(m6x11, "sprite", #aaaaaa, center, 80): -40, 35
+}

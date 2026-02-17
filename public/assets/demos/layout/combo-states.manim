@@ -1,0 +1,82 @@
+version: 0.5
+
+// Status indicator that responds to mode
+#statusIndicator programmable(mode:[idle, active, warning, error]) {
+  bitmap(generated(color(120, 40, #222222))): 0, 0
+
+  @(mode=>idle) bitmap(generated(color(116, 36, #334455))): 2, 2
+  @(mode=>active) bitmap(generated(color(116, 36, #335533))): 2, 2
+  @(mode=>warning) bitmap(generated(color(116, 36, #555533))): 2, 2
+  @(mode=>error) bitmap(generated(color(116, 36, #553333))): 2, 2
+
+  @(mode=>idle) text(m6x11, "IDLE", #8888aa, center, 120): 0, 14
+  @(mode=>active) text(m6x11, "ACTIVE", #88ff88, center, 120): 0, 14
+  @(mode=>warning) text(m6x11, "WARNING", #ffff88, center, 120): 0, 14
+  @(mode=>error) text(m6x11, "ERROR", #ff8888, center, 120): 0, 14
+}
+
+// Else-if chain demo
+#elseIfChain programmable(level:[low, medium, high, critical]) {
+  bitmap(generated(color(100, 36, #222222))): 0, 0
+
+  @(level=>low) bitmap(generated(color(96, 32, #003366))): 2, 2
+  @else(level=>medium) bitmap(generated(color(96, 32, #006633))): 2, 2
+  @else(level=>high) bitmap(generated(color(96, 32, #663300))): 2, 2
+  @else bitmap(generated(color(96, 32, #660000))): 2, 2
+
+  @(level=>low) text(m6x11, "LOW", #88ccff, center, 100): 0, 12
+  @else(level=>medium) text(m6x11, "MED", #88ff88, center, 100): 0, 12
+  @else(level=>high) text(m6x11, "HIGH", #ffcc88, center, 100): 0, 12
+  @else text(m6x11, "CRIT!", #ff8888, center, 100): 0, 12
+}
+
+// Default catch-all
+#defaultCatch programmable(state:[on, off, standby, unknown]) {
+  bitmap(generated(color(90, 36, #222222))): 0, 0
+
+  @(state=>on) bitmap(generated(color(86, 32, #006600))): 2, 2
+  @(state=>off) bitmap(generated(color(86, 32, #660000))): 2, 2
+  @default bitmap(generated(color(86, 32, #444444))): 2, 2
+
+  @(state=>on) text(m6x11, "ON", #88ff88, center, 90): 0, 12
+  @(state=>off) text(m6x11, "OFF", #ff8888, center, 90): 0, 12
+  @default text(m6x11, "OTHER", #aaaaaa, center, 90): 0, 12
+}
+
+// Main showcase
+#comboStatesShowcase programmable(mode:[idle, active, warning, error]=idle, level:[low, medium, high, critical]=low) {
+  // Section 1: Conditional per-state (click Cycle State to change mode)
+  text(exo2_16, "Status indicator (cycle with button):", #cccccc): 0, 0
+
+  staticRef($statusIndicator, mode=>$mode): 0, 30
+
+  // Section 2: All states shown side by side
+  text(exo2_16, "All states at once:", #cccccc): 0, 90
+
+  staticRef($statusIndicator, mode=>idle): 0, 120
+  staticRef($statusIndicator, mode=>active): 130, 120
+  staticRef($statusIndicator, mode=>warning): 260, 120
+  staticRef($statusIndicator, mode=>error): 390, 120
+
+  // Section 3: @else / @else(cond) chain
+  text(exo2_16, "@else / @else(cond) chain:", #cccccc): 0, 190
+
+  staticRef($elseIfChain, level=>low): 0, 220
+  staticRef($elseIfChain, level=>medium): 110, 220
+  staticRef($elseIfChain, level=>high): 220, 220
+  staticRef($elseIfChain, level=>critical): 330, 220
+
+  // Section 4: @default catch-all
+  text(exo2_16, "@default catch-all:", #cccccc): 0, 280
+
+  staticRef($defaultCatch, state=>on): 0, 310
+  staticRef($defaultCatch, state=>off): 100, 310
+  staticRef($defaultCatch, state=>standby): 200, 310
+  staticRef($defaultCatch, state=>unknown): 300, 310
+
+  // Labels
+  text(exo2_light_14, "on", #888888, center, 90): 0, 350
+  text(exo2_light_14, "off", #888888, center, 90): 100, 350
+  text(exo2_light_14, "standby", #888888, center, 90): 200, 350
+  text(exo2_light_14, "unknown", #888888, center, 90): 300, 350
+}

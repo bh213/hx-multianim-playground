@@ -1,0 +1,77 @@
+version: 0.5
+
+// Particles Demo
+// Multiple particle effect presets: fire, sparkles, smoke
+
+#fire particles {
+    count: 80
+    emit: cone(10, 5, 270, 25)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 1.8
+    speed: 60
+    speedRandom: 0.3
+    gravity: 40
+    gravityAngle: 270
+    size: 0.6
+    sizeRandom: 0.3
+    fadeOut: 0.7
+    fadeIn: 0.1
+    colorStart: #FF4400
+    colorMid: #FFAA00
+    colorMidPos: 0.4
+    colorEnd: #FF220044
+    blendMode: add
+}
+
+#sparkles particles {
+    count: 40
+    emit: circle(50, 30, 0, 360)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 20
+    speedRandom: 0.5
+    gravity: 10
+    gravityAngle: 270
+    size: 0.3
+    sizeRandom: 0.2
+    fadeIn: 0.2
+    fadeOut: 0.6
+    colorStart: #FFFFFF
+    colorMid: #88DDFF
+    colorMidPos: 0.5
+    colorEnd: #4488FF00
+    blendMode: add
+}
+
+#smoke particles {
+    count: 60
+    emit: cone(5, 3, 270, 15)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 3.0
+    speed: 30
+    speedRandom: 0.4
+    gravity: 15
+    gravityAngle: 270
+    size: 0.8
+    sizeRandom: 0.4
+    fadeIn: 0.3
+    fadeOut: 0.5
+    colorStart: #888888
+    colorMid: #666666
+    colorMidPos: 0.5
+    colorEnd: #44444400
+    blendMode: alpha
+}
+
+#particlesDemo programmable() {
+    text(exo2_16, "Particle Effects", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Three particle presets: fire, sparkles, and smoke", #aaaaaa, left, 600): 50, 110
+
+    // Labels under each particle display
+    text(m6x11, "Fire", #FF4400, center, 100): 150, 500
+    text(m6x11, "Sparkles", #88DDFF, center, 100): 500, 500
+    text(m6x11, "Smoke", #888888, center, 100): 850, 500
+}

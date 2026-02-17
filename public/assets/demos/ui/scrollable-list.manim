@@ -1,0 +1,32 @@
+version: 0.5
+
+// Scrollable List Demo
+// Shows a scrollable list with 20+ items and selected item display.
+
+#scrollableListDemo programmable() {
+    pos: 50, 80
+
+    // Section: Scrollable List
+    text(exo2_16, "Scrollable List", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Scroll through items and click to select:", #cccccc): 0, 35
+
+    // Scrollable list placeholder
+    placeholder(generated(cross(200, 300)), builderParameter("scrollableList")) {
+        pos: 0, 55
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200}
+    }
+
+    // Selected item display
+    text(exo2_16, "Selected Item", #7fdbda): 250, 0
+    bitmap(generated(color(350, 1, #7fdbda33))): 250, 22
+    ninepatch("ui", "Window_3x3_idle", 350, 50): 250, 40
+    #selectedText(updatable) text(exo2_20, "Selected: None", #ffffff, left, 330): 265, 55
+
+    // Instructions
+    ninepatch("ui", "Window_3x3_idle", 350, 80): 250, 110
+    text(exo2_light_14, "Use mouse wheel to scroll", #aaaaaa, left, 320): 265, 125
+    text(exo2_light_14, "Click an item to select it", #aaaaaa, left, 320): 265, 145
+    text(exo2_light_14, "Double-click for confirmation", #aaaaaa, left, 320): 265, 165
+}

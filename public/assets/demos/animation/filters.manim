@@ -1,0 +1,68 @@
+version: 0.5
+
+// Filters Demo
+// All filter types demonstrated on sprites
+
+#filterSample programmable(filterType:[none, outline, glow, blur, saturate, brightness, dropShadow]=none) {
+    @(filterType=>none) bitmap(generated(color(80, 80, #4488cc))): 0, 0
+    @(filterType=>outline) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: outline(color: #ff0000, size: 2)
+    }
+    @(filterType=>glow) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: glow(color: #ffaa00, alpha: 0.8, radius: 8, smoothColor: true)
+    }
+    @(filterType=>blur) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: blur(radius: 4)
+    }
+    @(filterType=>saturate) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: saturate(0.0)
+    }
+    @(filterType=>brightness) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: brightness(1.5)
+    }
+    @(filterType=>dropShadow) bitmap(generated(color(80, 80, #4488cc))) {
+        filter: dropShadow(4, 0.8, #000000, 0.6, 10, 1.0)
+    }
+}
+
+#filtersDemo programmable() {
+    text(exo2_16, "Visual Filters", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Toggle checkboxes to see each filter effect on the sample sprite", #aaaaaa, left, 600): 50, 110
+
+    // Sample sprites with different filters
+    point {
+        pos: 300, 150
+
+        // No filter
+        text(m6x11, "none", #aaaaaa, center, 120): 0, 0
+        bitmap(generated(color(80, 80, #4488cc))): 20, 20
+
+        // Outline
+        text(m6x11, "outline", #aaaaaa, center, 120): 150, 0
+        bitmap(generated(color(80, 80, #4488cc))): 170, 20
+
+        // Glow
+        text(m6x11, "glow", #aaaaaa, center, 120): 300, 0
+        bitmap(generated(color(80, 80, #4488cc))): 320, 20
+
+        // Blur
+        text(m6x11, "blur", #aaaaaa, center, 120): 450, 0
+        bitmap(generated(color(80, 80, #4488cc))): 470, 20
+
+        // Saturate
+        text(m6x11, "saturate", #aaaaaa, center, 120): 600, 0
+        bitmap(generated(color(80, 80, #4488cc))): 620, 20
+    }
+
+    point {
+        pos: 300, 300
+
+        // Brightness
+        text(m6x11, "brightness", #aaaaaa, center, 120): 0, 0
+        bitmap(generated(color(80, 80, #4488cc))): 20, 20
+
+        // Drop shadow
+        text(m6x11, "dropShadow", #aaaaaa, center, 120): 150, 0
+        bitmap(generated(color(80, 80, #4488cc))): 170, 20
+    }
+}

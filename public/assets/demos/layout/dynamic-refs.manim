@@ -1,0 +1,46 @@
+version: 0.5
+
+// A health bar that changes color based on value
+#healthBar programmable(value:uint=50, label:string="HP") {
+  // Background
+  bitmap(generated(color(200, 20, #333333))): 0, 0
+  // Bar fill (width based on value * 2)
+  @(value >= 50) bitmap(generated(color($value * 2, 16, #44cc44))): 2, 2
+  @(value < 50) bitmap(generated(color($value * 2, 16, #cc4444))): 2, 2
+  // Label
+  text(m6x11, $label, #ffffff): 5, 4
+  // Value text
+  text(m6x11, $value, #ffffff, right, 190): 0, 4
+}
+
+// A stat display that uses dynamicRef
+#statDisplay programmable(statName:string="Stat", statValue:uint=0, barColor:color=#4488cc) {
+  text(m6x11, $statName, #aaaaaa): 0, 0
+  bitmap(generated(color($statValue, 8, $barColor))): 80, 2
+  text(m6x11, $statValue, #ffffff): 190, 0
+}
+
+// Main showcase with dynamicRefs
+#dynamicRefsShowcase programmable(barValue:uint=50) {
+  // Section 1: Dynamic health bar controlled by slider
+  text(exo2_16, "Dynamic health bar (use slider):", #cccccc): 0, 0
+
+  dynamicRef($healthBar, value=>$barValue, label=>"Player HP"): 0, 30
+
+  // Section 2: Multiple dynamic bars with different fixed values
+  text(exo2_16, "Multiple bars at fixed values:", #cccccc): 0, 70
+
+  dynamicRef($healthBar, value=>90, label=>"Tank"): 0, 100
+  dynamicRef($healthBar, value=>60, label=>"Fighter"): 0, 130
+  dynamicRef($healthBar, value=>30, label=>"Mage"): 0, 160
+  dynamicRef($healthBar, value=>10, label=>"Rogue"): 0, 190
+
+  // Section 3: Stat displays
+  text(exo2_16, "Stat displays via dynamicRef:", #cccccc): 0, 230
+
+  dynamicRef($statDisplay, statName=>"Attack", statValue=>75, barColor=>#cc4444): 0, 260
+  dynamicRef($statDisplay, statName=>"Defense", statValue=>45, barColor=>#4488cc): 0, 280
+  dynamicRef($statDisplay, statName=>"Speed", statValue=>60, barColor=>#44cc44): 0, 300
+  dynamicRef($statDisplay, statName=>"Magic", statValue=>90, barColor=>#cc44cc): 0, 320
+  dynamicRef($statDisplay, statName=>"Luck", statValue=>12, barColor=>#cccc44): 0, 340
+}

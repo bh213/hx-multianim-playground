@@ -1,7 +1,7 @@
 version: 0.5
 
 // Curves Demo
-// 1D curve visualization using curves{} with easing functions
+// 1D curve visualization with animated easing demos
 
 curves {
     #linear curve {
@@ -24,76 +24,41 @@ curves {
     }
 }
 
-paths {
-    #curvePath path {
-        lineTo(200, 0)
-    }
-}
-
 #curvesDemo programmable() {
     text(exo2_16, "Curve Visualization", #7fdbda, left, 400): 50, 80
-    text(exo2_light_14, "Easing curves for animation timing. Select a curve type below.", #aaaaaa, left, 600): 50, 110
+    text(exo2_light_14, "Select a curve to see its shape and animated effects.", #aaaaaa, left, 700): 50, 110
 
-    // Curve display grid
-    point {
-        pos: 100, 160
+    // Curve graph
+    #curveLabel(updatable) text(m6x11, "linear", #7fdbda, left, 250): 50, 160
+    bitmap(generated(color(250, 180, #222233))): 50, 180
 
-        // Linear
-        text(m6x11, "linear", #7fdbda, left, 150): 0, 0
-        bitmap(generated(color(200, 150, #222233))): 0, 20
-        bitmap(generated(color(200, 1, #333344))): 0, 170
-        bitmap(generated(color(1, 150, #333344))): 0, 20
+    // Animation demos
+    text(m6x11, "Y Position", #7fdbda, left, 100): 350, 160
+    bitmap(generated(color(100, 180, #222233))): 350, 180
 
-        // EaseIn
-        text(m6x11, "easeInQuad", #7fdbda, left, 150): 240, 0
-        bitmap(generated(color(200, 150, #222233))): 240, 20
+    text(m6x11, "Alpha", #7fdbda, left, 100): 480, 160
+    bitmap(generated(color(100, 180, #222233))): 480, 180
 
-        // EaseOut
-        text(m6x11, "easeOutQuad", #7fdbda, left, 150): 480, 0
-        bitmap(generated(color(200, 150, #222233))): 480, 20
-    }
-
-    point {
-        pos: 100, 380
-
-        // Bounce
-        text(m6x11, "easeOutBounce", #7fdbda, left, 150): 0, 0
-        bitmap(generated(color(200, 150, #222233))): 0, 20
-
-        // Elastic
-        text(m6x11, "easeOutElastic", #7fdbda, left, 150): 240, 0
-        bitmap(generated(color(200, 150, #222233))): 240, 20
-
-        // Custom
-        text(m6x11, "custom points", #7fdbda, left, 150): 480, 0
-        bitmap(generated(color(200, 150, #222233))): 480, 20
-    }
+    text(m6x11, "Scale", #7fdbda, left, 100): 610, 160
+    bitmap(generated(color(100, 180, #222233))): 610, 180
 
     // Curve type selector buttons
     placeholder(generated(cross(90, 24)), builderParameter("btnLinear")) {
-        pos: 50, 660
+        pos: 50, 400
     }
     placeholder(generated(cross(90, 24)), builderParameter("btnEaseIn")) {
-        pos: 160, 660
+        pos: 160, 400
     }
     placeholder(generated(cross(90, 24)), builderParameter("btnEaseOut")) {
-        pos: 270, 660
+        pos: 270, 400
     }
     placeholder(generated(cross(90, 24)), builderParameter("btnBounce")) {
-        pos: 380, 660
+        pos: 380, 400
     }
     placeholder(generated(cross(90, 24)), builderParameter("btnElastic")) {
-        pos: 490, 660
+        pos: 490, 400
     }
     placeholder(generated(cross(90, 24)), builderParameter("btnCustom")) {
-        pos: 600, 660
+        pos: 600, 400
     }
-}
-
-#panim animatedPath {
-    path: curvePath
-    type: time
-    duration: 2.0
-    0.0: progressCurve: linear, event("start")
-    1.0: event("end")
 }

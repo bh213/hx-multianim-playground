@@ -34,6 +34,20 @@ paths {
         lineTo(60, -40)
         lineTo(60, 40)
     }
+    #spiral path {
+        spiral(20, 120, 720)
+    }
+    #waves path {
+        wave(40, 80, 4)
+    }
+    #bezierLoop path {
+        bezier(relative, 150, 0, 50, -120)
+        bezier(relative, 150, 0, 50, 120)
+        arc(60, 180)
+        bezier(relative, -150, 0, -50, 120)
+        bezier(relative, -150, 0, -50, -120)
+        close
+    }
 }
 
 #pathMarker bitmap(generated(color(12, 12, #7fdbda)), center);
@@ -46,9 +60,12 @@ paths {
     bitmap(generated(color(800, 450, #1a1a2e))): 240, 140
 
     // Path name labels
-    text(m6x11, "Circuit: forward + arc turns", #aaaaaa, left, 300): 50, 150
-    text(m6x11, "Star: forward + sharp turns", #aaaaaa, left, 300): 50, 170
-    text(m6x11, "Zigzag: diagonal lines", #aaaaaa, left, 300): 50, 190
+    text(m6x11, "Circuit: forward + arc", #aaaaaa, left, 300): 50, 150
+    text(m6x11, "Star: forward + turn", #aaaaaa, left, 300): 50, 170
+    text(m6x11, "Zigzag: lineTo", #aaaaaa, left, 300): 50, 190
+    text(m6x11, "Spiral: spiral", #aaaaaa, left, 300): 50, 210
+    text(m6x11, "Waves: wave", #aaaaaa, left, 300): 50, 230
+    text(m6x11, "Bezier: bezier + arc + close", #aaaaaa, left, 300): 50, 250
 
     // Speed label
     text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
@@ -67,6 +84,15 @@ paths {
     }
     placeholder(generated(cross(100, 24)), builderParameter("btnZigzag")) {
         pos: 290, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnSpiral")) {
+        pos: 410, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnWaves")) {
+        pos: 530, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnBezier")) {
+        pos: 650, 660
     }
 }
 

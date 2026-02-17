@@ -5,14 +5,33 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
-import bh.base.FontManager;
+import bh.paths.Curve.ICurve;
 
 class CurvesDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var curveButtons:Array<UIStandardMultiAnimButton> = [];
 	var currentCurve:String = "linear";
-	var statusText:Null<h2d.Text>;
+
+	var curveGraph:Null<h2d.Graphics>;
+	var activeCurve:Null<ICurve>;
+	var animTimer:Float = 0;
+	var animDot:Null<h2d.Graphics>;
+	var yDot:Null<h2d.Graphics>;
+	var alphaDot:Null<h2d.Graphics>;
+	var scaleDot:Null<h2d.Graphics>;
+
+	static inline final ANIM_DURATION = 1.5;
+	static inline final GRAPH_X = 50;
+	static inline final GRAPH_Y = 180;
+	static inline final GRAPH_W = 250;
+	static inline final GRAPH_H = 180;
+	static inline final DEMO_Y = 180;
+	static inline final DEMO_H = 180;
+	static inline final Y_X = 350;
+	static inline final ALPHA_X = 480;
+	static inline final SCALE_X = 610;
+	static inline final DEMO_W = 100;
 
 	override public function load():Void {
 		setupDemo("Curves", "1D curve visualization using curves{} definitions with easing functions");
@@ -32,11 +51,111 @@ class CurvesDemoScreen extends DemoScreenBase {
 		curveButtons = [ui.btnLinear, ui.btnEaseIn, ui.btnEaseOut, ui.btnBounce, ui.btnElastic, ui.btnCustom];
 		addBuilderResult(demoResult);
 
-		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = 'Curve: $currentCurve';
-		statusText.textColor = 0xCCCCCC;
-		statusText.setPosition(50, 630);
-		addObjectToLayer(statusText, DefaultLayer);
+		curveGraph = new h2d.Graphics();
+		addObjectToLayer(curveGraph, DefaultLayer);
+
+		animDot = createCircle(0xff6644, 5);
+		yDot = createSquare(0x7fdbda, 20);
+		alphaDot = createSquare(0x7fdbda, 20);
+		scaleDot = createSquare(0x7fdbda, 20);
+		addObjectToLayer(animDot, DefaultLayer);
+		addObjectToLayer(yDot, DefaultLayer);
+		addObjectToLayer(alphaDot, DefaultLayer);
+		addObjectToLayer(scaleDot, DefaultLayer);
+
+		selectCurve("linear");
+	}
+
+	function createSquare(color:Int, size:Int):h2d.Graphics {
+		final g = new h2d.Graphics();
+		final half = size / 2.0;
+		g.beginFill(color);
+		g.drawRect(-half, -half, size, size);
+		g.endFill();
+		return g;
+	}
+
+	function createCircle(color:Int, radius:Int):h2d.Graphics {
+		final g = new h2d.Graphics();
+		g.beginFill(color);
+		g.drawCircle(0, 0, radius);
+		g.endFill();
+		return g;
+	}
+
+	function selectCurve(name:String):Void {
+		if (demoBuilder == null) return;
+		currentCurve = name;
+		animTimer = 0;
+
+		final curves = demoBuilder.getCurves();
+		activeCurve = curves.get(name);
+
+		demoResult.getUpdatable("curveLabel").updateText(name);
+		drawCurveGraph();
+	}
+
+	function drawCurveGraph():Void {
+		if (curveGraph == null || activeCurve == null) return;
+
+		curveGraph.clear();
+		curveGraph.setPosition(GRAPH_X, GRAPH_Y);
+
+		// Axis lines
+		curveGraph.lineStyle(1, 0x444455);
+		curveGraph.moveTo(0, GRAPH_H);
+		curveGraph.lineTo(GRAPH_W, GRAPH_H);
+		curveGraph.moveTo(0, 0);
+		curveGraph.lineTo(0, GRAPH_H);
+
+		// Draw curve
+		curveGraph.lineStyle(2, 0x7fdbda);
+		final steps = 100;
+		for (s in 0...steps + 1) {
+			final t = s / steps;
+			final value = activeCurve.getValue(t);
+			final px = t * GRAPH_W;
+			final py = GRAPH_H - value * GRAPH_H;
+
+			if (s == 0) curveGraph.moveTo(px, py);
+			else curveGraph.lineTo(px, py);
+		}
+	}
+
+	override public function update(dt:Float):Void {
+		super.update(dt);
+
+		if (activeCurve == null) return;
+
+		animTimer += dt;
+		final totalCycle = ANIM_DURATION * 2;
+		if (animTimer >= totalCycle) animTimer -= totalCycle;
+
+		// Ping-pong: 0->1->0
+		final linearT = if (animTimer < ANIM_DURATION) animTimer / ANIM_DURATION else 2.0 - animTimer / ANIM_DURATION;
+		final eased = activeCurve.getValue(linearT);
+
+		// Tracking dot on curve graph
+		if (animDot != null) {
+			animDot.setPosition(GRAPH_X + linearT * GRAPH_W, GRAPH_Y + GRAPH_H - eased * GRAPH_H);
+		}
+
+		// Y position
+		if (yDot != null) {
+			yDot.setPosition(Y_X + DEMO_W / 2, DEMO_Y + DEMO_H - 10 - eased * (DEMO_H - 20));
+		}
+
+		// Alpha
+		if (alphaDot != null) {
+			alphaDot.setPosition(ALPHA_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
+			alphaDot.alpha = eased;
+		}
+
+		// Scale (0 to half the container)
+		if (scaleDot != null) {
+			scaleDot.setPosition(SCALE_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
+			scaleDot.setScale(eased * DEMO_H / 2 / 20);
+		}
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
@@ -45,10 +164,7 @@ class CurvesDemoScreen extends DemoScreenBase {
 				for (i in 0...curveButtons.length) {
 					if (source == curveButtons[i]) {
 						final curveTypes = ["linear", "easeIn", "easeOut", "bounce", "elastic", "custom"];
-						currentCurve = curveTypes[i];
-						if (statusText != null) {
-							statusText.text = 'Curve: $currentCurve';
-						}
+						selectCurve(curveTypes[i]);
 						return;
 					}
 				}
@@ -61,6 +177,11 @@ class CurvesDemoScreen extends DemoScreenBase {
 		demoBuilder = null;
 		demoResult = null;
 		curveButtons = [];
-		statusText = null;
+		curveGraph = null;
+		activeCurve = null;
+		animDot = null;
+		yDot = null;
+		alphaDot = null;
+		scaleDot = null;
 	}
 }

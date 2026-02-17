@@ -62,4 +62,47 @@ version: 0.5
   bitmap(generated(color(300, 1, #444444))): 0, 580
   text(m6x11, "Right aligned text", #ffffff, right, 300): 0, 585
   bitmap(generated(color(300, 1, #444444))): 0, 600
+
+  // Section 5: Drop shadows
+  text(exo2_16, "Drop Shadows:", #cccccc): 0, 630
+
+  // Dark shadow on light background
+  bitmap(generated(color(300, 34, #cccccc))): 0, 658
+  text(exo2_16, "Dark shadow on light bg", #333333, left, 300, dropShadowXY: 2.0, 2.0, dropShadowColor: #000000, dropShadowAlpha: 0.5): 8, 664
+
+  // Classic black shadow on dark background
+  bitmap(generated(color(300, 34, #222244))): 0, 700
+  text(exo2_16, "Black shadow, dark bg", #ffffff, left, 300, dropShadowXY: 2.0, 2.0, dropShadowColor: #000000, dropShadowAlpha: 0.8): 8, 706
+
+  // Red glow shadow
+  bitmap(generated(color(300, 34, #1a0000))): 0, 742
+  text(exo2_16, "Red shadow glow", #ff4444, left, 300, dropShadowXY: 2.0, 2.0, dropShadowColor: #ff0000, dropShadowAlpha: 1.0): 8, 748
+
+  // Blue shadow on dark blue
+  bitmap(generated(color(300, 34, #000022))): 0, 784
+  text(exo2_16, "Blue shadow, navy bg", #88ccff, left, 300, dropShadowXY: 1.0, 2.0, dropShadowColor: #0044ff, dropShadowAlpha: 0.9): 8, 790
+
+  // Green neon shadow
+  bitmap(generated(color(300, 34, #001100))): 0, 826
+  text(exo2_16, "Neon green shadow", #44ff44, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #00ff00, dropShadowAlpha: 1.0): 8, 832
+
+  // Gold shadow on brown
+  bitmap(generated(color(300, 34, #2a1a00))): 0, 868
+  text(exo2_16, "Gold text with shadow", #ffcc44, left, 300, dropShadowXY: 2.0, 2.0, dropShadowColor: #885500, dropShadowAlpha: 0.8): 8, 874
+
+  // White shadow (glow effect) on dark
+  bitmap(generated(color(300, 34, #111111))): 0, 910
+  text(exo2_16, "White glow shadow", #ffffff, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #ffffff, dropShadowAlpha: 0.6): 8, 916
+
+  // Pixel font shadows
+  text(exo2_16, "Pixel Font Shadows:", #cccccc): 0, 960
+
+  bitmap(generated(color(300, 28, #222222))): 0, 988
+  @scale(2) text(m6x11, "m6x11 with shadow", #ffffff, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #000000, dropShadowAlpha: 0.8): 4, 992
+
+  bitmap(generated(color(300, 28, #220000))): 0, 1024
+  @scale(2) text(dd, "DigitalDisco shadow", #ffcc44, left, 300, dropShadowXY: 2.0, 2.0, dropShadowColor: #ff0000, dropShadowAlpha: 1.0): 4, 1028
+
+  bitmap(generated(color(300, 28, #002200))): 0, 1060
+  @scale(2) text(pixellari, "Pixellari green glow", #88ff88, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #00ff44, dropShadowAlpha: 0.9): 4, 1064
 }

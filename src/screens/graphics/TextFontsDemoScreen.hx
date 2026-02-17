@@ -8,7 +8,7 @@ class TextFontsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 
 	override public function load():Void {
-		setupDemo("Text & Fonts", "All registered fonts with sample text, alignments, and colors");
+		setupDemo("Text & Fonts", "Fonts, alignments, colors, and drop shadows with different backgrounds");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/graphics/text-fonts.manim", false);
 

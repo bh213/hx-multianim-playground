@@ -42,7 +42,9 @@ class DialogueDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/dialogue.manim", false);
 
 		choice1Button = addButtonWithSingleBuilder(stdBuilder, "button", null, "Choice 1");
+		addElement(choice1Button, null);
 		choice2Button = addButtonWithSingleBuilder(stdBuilder, "button", null, "Choice 2");
+		addElement(choice2Button, null);
 
 		demoResult = demoBuilder.buildWithParameters("dialogueDemo", [], {
 			placeholderObjects: [

@@ -29,16 +29,23 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 
 		// Static bars at fixed values
 		bar1 = addProgressBar(barBuilder, null, 25);
+		addElement(bar1, null);
 		bar2 = addProgressBar(barBuilder, null, 60);
+		addElement(bar2, null);
 		bar3 = addProgressBar(barBuilder, null, 90);
+		addElement(bar3, null);
 
 		// Animated bar starting at 0
 		animBar = addProgressBar(barBuilder, null, 0);
+		addElement(animBar, null);
 
 		// Thin bars
 		thinBar1 = addProgressBar(barBuilder, null, 30);
+		addElement(thinBar1, null);
 		thinBar2 = addProgressBar(barBuilder, null, 65);
+		addElement(thinBar2, null);
 		thinBar3 = addProgressBar(barBuilder, null, 95);
+		addElement(thinBar3, null);
 
 		demoResult = demoBuilder.buildWithParameters("progressBarDemo", [], {
 			placeholderObjects: [

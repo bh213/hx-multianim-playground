@@ -121,6 +121,7 @@ class NavScreen extends UIScreenBase {
 				}
 
 				var cardButton = addButtonWithSingleBuilder(commonBuilder, "navCard", null, screen.title);
+				addElement(cardButton, null);
 				cardButton.getObject().setPosition(xPos, yPos);
 				cards.push({button: cardButton, screenName: screen.id});
 

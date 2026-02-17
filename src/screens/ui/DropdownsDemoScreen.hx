@@ -42,7 +42,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/dropdowns.manim", false);
 
 		dropdown1 = addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", ITEMS, null, 0);
+		addElement(dropdown1, null);
 		dropdown2 = addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", COLOR_ITEMS, null, 0);
+		addElement(dropdown2, null);
 
 		demoResult = demoBuilder.buildWithParameters("dropdownsDemo", [], {
 			placeholderObjects: [

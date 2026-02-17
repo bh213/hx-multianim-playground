@@ -53,8 +53,11 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/status-effects.manim", false);
 
 		addBuffButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Add Buff");
+		addElement(addBuffButton, null);
 		addDebuffButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Add Debuff");
+		addElement(addDebuffButton, null);
 		clearAllButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Clear All");
+		addElement(clearAllButton, null);
 
 		demoResult = demoBuilder.buildWithParameters("statusEffectsDemo", [], {
 			placeholderObjects: [

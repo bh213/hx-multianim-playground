@@ -40,8 +40,11 @@ class RadioDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/radio.manim", false);
 
 		radioVertical = addRadio(stdBuilder, null, VERTICAL_ITEMS, true, 0);
+		addElement(radioVertical, null);
 		radioHorizontal = addRadio(stdBuilder, null, HORIZONTAL_ITEMS, false, 0);
+		addElement(radioHorizontal, null);
 		radioVertical2 = addRadio(stdBuilder, null, DIFFICULTY_ITEMS, true, 0);
+		addElement(radioVertical2, null);
 
 		demoResult = demoBuilder.buildWithParameters("radioDemo", [], {
 			placeholderObjects: [

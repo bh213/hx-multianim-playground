@@ -31,6 +31,7 @@ class DemoScreenBase extends UIScreenBase {
 
 		// Add back button
 		backButton = addButtonWithSingleBuilder(commonBuilder, "backButton", null, "Back");
+		addElement(backButton, null);
 	}
 
 	public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

@@ -42,7 +42,9 @@ class BattleHudDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/battle-hud.manim", false);
 
 		attackButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Attack");
+		addElement(attackButton, null);
 		defendButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Defend");
+		addElement(defendButton, null);
 
 		demoResult = demoBuilder.buildWithParameters("battleHudDemo", [], {
 			placeholderObjects: [

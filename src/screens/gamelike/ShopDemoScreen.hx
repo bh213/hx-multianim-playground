@@ -34,7 +34,9 @@ class ShopDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/shop.manim", false);
 
 		buyButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Buy");
+		addElement(buyButton, null);
 		sellButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Sell");
+		addElement(sellButton, null);
 
 		demoResult = demoBuilder.buildWithParameters("shopDemo", [], {
 			placeholderObjects: [

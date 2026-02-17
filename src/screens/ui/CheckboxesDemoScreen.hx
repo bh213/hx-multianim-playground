@@ -22,18 +22,26 @@ class CheckboxesDemoScreen extends DemoScreenBase {
 
 		// Create the 5 checkbox variants
 		var cb1 = addCheckbox(stdBuilder, null, false);
+		addElement(cb1, null);
 		var cb2 = addCheckbox(stdBuilder, null, false);
+		addElement(cb2, null);
 		var cb3 = addCheckbox(stdBuilder, null, false);
+		addElement(cb3, null);
 		var cb4 = addCheckbox(stdBuilder, null, false);
+		addElement(cb4, null);
 		var cb5 = addCheckbox(stdBuilder, null, false);
+		addElement(cb5, null);
 		checkboxes = [cb1, cb2, cb3, cb4, cb5];
 
 		// Disabled state checkboxes
 		disabledCheckbox1 = addCheckbox(stdBuilder, null, true);
+		addElement(disabledCheckbox1, null);
 		disabledCheckbox2 = addCheckbox(stdBuilder, null, false);
+		addElement(disabledCheckbox2, null);
 
 		// Toggle for enabling/disabling
 		disableToggle = addCheckbox(stdBuilder, null, false);
+		addElement(disableToggle, null);
 
 		demoResult = demoBuilder.buildWithParameters("checkboxesDemo", [], {
 			placeholderObjects: [

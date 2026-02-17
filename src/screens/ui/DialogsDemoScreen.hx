@@ -23,7 +23,9 @@ class DialogsDemoScreen extends DemoScreenBase {
 		dialogBuilder = demoBuilder;
 
 		openButton1 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Open Dialog");
+		addElement(openButton1, null);
 		openButton2 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Confirm Action");
+		addElement(openButton2, null);
 
 		demoResult = demoBuilder.buildWithParameters("dialogsDemo", [], {
 			placeholderObjects: [

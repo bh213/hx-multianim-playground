@@ -36,6 +36,7 @@ class SettingsDemoScreen extends DemoScreenBase {
 		var xPos:Float = 50;
 		for (theme in themes) {
 			final btn = addButtonWithSingleBuilder(commonBuilder, "backButton", null, theme);
+			addElement(btn, null);
 			btn.getObject().setPosition(xPos, 660);
 			themeButtons.push(btn);
 			xPos += 120;

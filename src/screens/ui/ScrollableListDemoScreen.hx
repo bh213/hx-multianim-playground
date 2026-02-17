@@ -46,6 +46,7 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/scrollable-list.manim", false);
 
 		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", LIST_ITEMS, null, 0, 200, 300);
+		addElement(scrollableList, null);
 
 		demoResult = demoBuilder.buildWithParameters("scrollableListDemo", [], {
 			placeholderObjects: [

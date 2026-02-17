@@ -21,8 +21,11 @@ class SlidersDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/sliders.manim", false);
 
 		slider1 = addSlider(stdBuilder, null, 0);
+		addElement(slider1, null);
 		slider2 = addSlider(stdBuilder, null, 0);
+		addElement(slider2, null);
 		slider3 = addSlider(stdBuilder, null, 0);
+		addElement(slider3, null);
 
 		demoResult = demoBuilder.buildWithParameters("slidersDemo", [], {
 			placeholderObjects: [

@@ -25,13 +25,19 @@ class ButtonsDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/buttons.manim", false);
 
 		button1 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Click Me");
+		addElement(button1, null);
 		button2 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Action");
+		addElement(button2, null);
 		button3 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Submit");
+		addElement(button3, null);
 		button4 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Normal");
+		addElement(button4, null);
 		button5 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Disabled");
+		addElement(button5, null);
 		button5.disabled = true;
 
 		disableCheckbox = addCheckbox(stdBuilder, null, false);
+		addElement(disableCheckbox, null);
 
 		demoResult = demoBuilder.buildWithParameters("buttonsDemo", [], {
 			placeholderObjects: [

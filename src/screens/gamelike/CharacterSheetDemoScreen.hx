@@ -30,6 +30,7 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/character-sheet.manim", false);
 
 		levelUpButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Level Up (+25 XP)");
+		addElement(levelUpButton, null);
 
 		demoResult = demoBuilder.buildWithParameters("characterSheetDemo", [], {
 			placeholderObjects: [

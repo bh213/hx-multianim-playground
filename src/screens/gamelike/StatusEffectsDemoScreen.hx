@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 private typedef StatusEffect = {
 	name:String,
@@ -52,20 +51,16 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/status-effects.manim", false);
 
-		addBuffButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Add Buff");
-		addElement(addBuffButton, null);
-		addDebuffButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Add Debuff");
-		addElement(addDebuffButton, null);
-		clearAllButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Clear All");
-		addElement(clearAllButton, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "statusEffectsDemo", [], [
+			addBuffButton => addButtonWithSingleBuilder(stdBuilder, "button", "Add Buff"),
+			addDebuffButton => addButtonWithSingleBuilder(stdBuilder, "button", "Add Debuff"),
+			clearAllButton => addButtonWithSingleBuilder(stdBuilder, "button", "Clear All"),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("statusEffectsDemo", [], {
-			placeholderObjects: [
-				"addBuffButton" => PVObject(addBuffButton.getObject()),
-				"addDebuffButton" => PVObject(addDebuffButton.getObject()),
-				"clearAllButton" => PVObject(clearAllButton.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		addBuffButton = ui.addBuffButton;
+		addDebuffButton = ui.addDebuffButton;
+		clearAllButton = ui.clearAllButton;
 		addBuilderResult(demoResult);
 
 		effects = [];
@@ -73,19 +68,16 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		slotTimerTexts = [];
 		slotInteractives = [];
 
-		// Build slot visuals
 		final container = demoResult.getSingleItemByName("slotContainer").object.toh2dObject();
 
 		for (i in 0...MAX_SLOTS) {
 			final x = i * (SLOT_SIZE + SLOT_GAP);
 
-			// Empty slot background
 			final bmp = new h2d.Bitmap(h2d.Tile.fromColor(0xFF333333, SLOT_SIZE, SLOT_SIZE));
 			bmp.setPosition(x, 0);
 			container.addChild(bmp);
 			slotBitmaps.push(bmp);
 
-			// Timer text below slot
 			final timerText = new h2d.Text(bh.base.FontManager.getFontByName("exo2_light_12"));
 			timerText.text = "";
 			timerText.textColor = 0xFFFFFF;
@@ -93,7 +85,6 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			container.addChild(timerText);
 			slotTimerTexts.push(timerText);
 
-			// Interactive for hover
 			final inter = new h2d.Interactive(SLOT_SIZE, SLOT_SIZE, container);
 			inter.setPosition(x, 0);
 			final idx = i;
@@ -122,10 +113,8 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		final defs = isBuff ? BUFF_DEFS : DEBUFF_DEFS;
 		final def = defs[Std.int(Math.random() * defs.length)];
 
-		// Check if already active
 		for (e in effects) {
 			if (e.name == def.name) {
-				// Refresh duration
 				e.remaining = def.duration;
 				setLog('Refreshed ${def.name}!');
 				refreshSlots();
@@ -200,7 +189,6 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	override public function update(dt:Float):Void {
 		super.update(dt);
 
-		// Tick down effect timers
 		var changed = false;
 		var i = effects.length - 1;
 		while (i >= 0) {
@@ -222,7 +210,6 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			refreshSlots();
 		}
 
-		// Update hovered tooltip timer in real-time
 		if (hoveredSlot >= 0 && hoveredSlot < effects.length && demoResult != null) {
 			final secs = Math.round(effects[hoveredSlot].remaining * 10) / 10;
 			demoResult.getUpdatable("tooltipTimer").updateText('${secs}s left');

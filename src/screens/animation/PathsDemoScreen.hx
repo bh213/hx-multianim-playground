@@ -5,8 +5,7 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 import bh.base.FontManager;
 
 class PathsDemoScreen extends DemoScreenBase {
@@ -22,26 +21,18 @@ class PathsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/paths.manim", false);
 
-		// Build demo layout
-		demoResult = demoBuilder.buildWithParameters("pathsDemo", []);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "pathsDemo", [], [
+			speedSlider => addSlider(stdBuilder, 50),
+			btnCircuit => addButtonWithSingleBuilder(commonBuilder, "backButton", "circuit"),
+			btnStar => addButtonWithSingleBuilder(commonBuilder, "backButton", "star"),
+			btnZigzag => addButtonWithSingleBuilder(commonBuilder, "backButton", "zigzag"),
+		]);
+
+		demoResult = ui.builderResults;
+		speedSlider = ui.speedSlider;
+		pathButtons = [ui.btnCircuit, ui.btnStar, ui.btnZigzag];
 		addBuilderResult(demoResult);
 
-		// Speed slider
-		speedSlider = addSlider(stdBuilder, null, 50);
-		addElement(speedSlider, DefaultLayer);
-		speedSlider.getObject().setPosition(50, 620);
-
-		// Path selector buttons
-		final paths = ["circuit", "star", "zigzag"];
-		var xPos:Float = 50;
-		for (path in paths) {
-			final btn = addButtonWithSingleBuilder(commonBuilder, "backButton", null, path);
-			btn.getObject().setPosition(xPos, 660);
-			pathButtons.push(btn);
-			xPos += 120;
-		}
-
-		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Path: $currentPath';
 		statusText.textColor = 0xCCCCCC;

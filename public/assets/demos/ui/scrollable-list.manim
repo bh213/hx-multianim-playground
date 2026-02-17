@@ -24,9 +24,15 @@ version: 0.5
     ninepatch("ui", "Window_3x3_idle", 350, 50): 250, 40
     #selectedText(updatable) text(exo2_20, "Selected: None", #ffffff, left, 330): 265, 55
 
+    // Double-click display
+    text(exo2_16, "Double-Click", #7fdbda): 250, 100
+    bitmap(generated(color(350, 1, #7fdbda33))): 250, 122
+    ninepatch("ui", "Window_3x3_idle", 350, 50): 250, 140
+    #doubleClickText(updatable) text(exo2_20, "Confirmed: None", #ffdd44, left, 330): 265, 155
+
     // Instructions
-    ninepatch("ui", "Window_3x3_idle", 350, 80): 250, 110
-    text(exo2_light_14, "Use mouse wheel to scroll", #aaaaaa, left, 320): 265, 125
-    text(exo2_light_14, "Click an item to select it", #aaaaaa, left, 320): 265, 145
-    text(exo2_light_14, "Double-click for confirmation", #aaaaaa, left, 320): 265, 165
+    ninepatch("ui", "Window_3x3_idle", 350, 80): 250, 210
+    text(exo2_light_14, "Use mouse wheel to scroll", #aaaaaa, left, 320): 265, 225
+    text(exo2_light_14, "Click an item to select it", #aaaaaa, left, 320): 265, 245
+    text(exo2_light_14, "Double-click for confirmation", #aaaaaa, left, 320): 265, 265
 }

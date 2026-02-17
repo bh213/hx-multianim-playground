@@ -52,6 +52,22 @@ paths {
 
     // Speed label
     text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
+
+    // Speed slider
+    placeholder(generated(cross(200, 20)), builderParameter("speedSlider")) {
+        pos: 50, 620
+    }
+
+    // Path selector buttons
+    placeholder(generated(cross(100, 24)), builderParameter("btnCircuit")) {
+        pos: 50, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnStar")) {
+        pos: 170, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnZigzag")) {
+        pos: 290, 660
+    }
 }
 
 #panim animatedPath {

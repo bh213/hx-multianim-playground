@@ -4,6 +4,8 @@ version: 0.5
 // Shows settings{key:type=>value} usage in components
 
 #settingsDemo programmable() {
+    pos: 50, 140
+
     text(exo2_16, "Settings Configuration", #7fdbda, left, 400): 0, 0
     text(exo2_light_14, "Components can declare settings{} blocks with typed key=>value pairs.", #aaaaaa, left, 700): 0, 30
 
@@ -11,6 +13,17 @@ version: 0.5
     text(m6x11, "Settings are metadata attached to .manim components:", #cccccc, left, 500): 0, 80
     text(m6x11, "  settings{key:type=>value}", #7fdbda, left, 400): 0, 100
     text(m6x11, "  Types: string, int, float, bool", #aaaaaa, left, 400): 0, 120
+
+    // Theme selector buttons
+    placeholder(generated(cross(100, 24)), builderParameter("btnDark")) {
+        pos: 0, 520
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnLight")) {
+        pos: 120, 520
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnBlue")) {
+        pos: 240, 520
+    }
 }
 
 #settingsExamples programmable() {

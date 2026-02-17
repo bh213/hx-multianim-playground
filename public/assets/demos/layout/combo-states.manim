@@ -45,6 +45,13 @@ version: 0.5
 
 // Main showcase
 #comboStatesShowcase programmable(mode:[idle, active, warning, error]=idle, level:[low, medium, high, critical]=low) {
+  pos: 40, 80
+
+  // Cycle button
+  placeholder(generated(cross(120, 24)), builderParameter("cycleButton")) {
+      pos: 460, 20
+  }
+
   // Section 1: Conditional per-state (click Cycle State to change mode)
   text(exo2_16, "Status indicator (cycle with button):", #cccccc): 0, 0
 

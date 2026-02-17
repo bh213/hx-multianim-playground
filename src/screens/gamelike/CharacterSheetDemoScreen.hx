@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class CharacterSheetDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -29,14 +28,12 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/character-sheet.manim", false);
 
-		levelUpButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Level Up (+25 XP)");
-		addElement(levelUpButton, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "characterSheetDemo", [], [
+			levelUpButton => addButtonWithSingleBuilder(stdBuilder, "button", "Level Up (+25 XP)"),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("characterSheetDemo", [], {
-			placeholderObjects: [
-				"levelUpButton" => PVObject(levelUpButton.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		levelUpButton = ui.levelUpButton;
 		addBuilderResult(demoResult);
 
 		refreshDisplay();
@@ -68,24 +65,20 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 
 		demoResult.getUpdatable("charLevel").updateText('$level');
 
-		// HP bar - scale width based on current/max
 		final hpWidth = Std.int(300 * currentHp / maxHp);
 		final hpBarObj = demoResult.getSingleItemByName("hpBar").object.toh2dObject();
 		hpBarObj.scaleX = hpWidth / 300.0;
 		demoResult.getUpdatable("hpText").updateText('$currentHp / $maxHp');
 
-		// MP bar
 		final mpWidth = Std.int(300 * currentMp / maxMp);
 		final mpBarObj = demoResult.getSingleItemByName("mpBar").object.toh2dObject();
 		mpBarObj.scaleX = mpWidth / 300.0;
 		demoResult.getUpdatable("mpText").updateText('$currentMp / $maxMp');
 
-		// Attributes
 		demoResult.getUpdatable("strValue").updateText('$str');
 		demoResult.getUpdatable("dexValue").updateText('$dex');
 		demoResult.getUpdatable("intValue").updateText('$intStat');
 
-		// Attribute bars (scale relative to max of 60)
 		final strBarObj = demoResult.getSingleItemByName("strBar").object.toh2dObject();
 		strBarObj.scaleX = Math.min(str / 60.0, 1.0) * (120.0 / 60.0);
 		final dexBarObj = demoResult.getSingleItemByName("dexBar").object.toh2dObject();
@@ -93,13 +86,11 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 		final intBarObj = demoResult.getSingleItemByName("intBar").object.toh2dObject();
 		intBarObj.scaleX = Math.min(intStat / 60.0, 1.0) * (120.0 / 36.0);
 
-		// XP bar
 		final xpRatio = xp / xpToLevel;
 		final xpBarObj = demoResult.getSingleItemByName("xpBar").object.toh2dObject();
 		xpBarObj.scaleX = if (xpRatio > 0) xpRatio * 340.0 else 0.001;
 		demoResult.getUpdatable("xpText").updateText('$xp / $xpToLevel XP');
 
-		// Power total
 		final power = str + dex + intStat;
 		demoResult.getUpdatable("powerText").updateText('$power');
 	}

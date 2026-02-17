@@ -4,6 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 
 class ComboStatesDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -17,13 +18,13 @@ class ComboStatesDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/combo-states.manim", false);
 
-		demoResult = demoBuilder.buildWithParameters("comboStatesShowcase", ["mode" => "idle", "level" => "low"], null, null, true);
-		demoResult.object.setPosition(40, 80);
-		addBuilderResult(demoResult);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "comboStatesShowcase", ["mode" => "idle", "level" => "low"], [
+			cycleButton => addButtonWithSingleBuilder(commonBuilder, "backButton", "Cycle State"),
+		], true);
 
-		// Add cycle button
-		cycleButton = addButtonWithSingleBuilder(commonBuilder, "backButton", null, "Cycle State");
-		cycleButton.getObject().setPosition(500, 100);
+		demoResult = ui.builderResults;
+		cycleButton = ui.cycleButton;
+		addBuilderResult(demoResult);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

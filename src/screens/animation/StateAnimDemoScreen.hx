@@ -5,8 +5,7 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 import bh.base.FontManager;
 
 class StateAnimDemoScreen extends DemoScreenBase {
@@ -23,31 +22,23 @@ class StateAnimDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/state-anim.manim", false);
 
-		// Build the demo UI layout
-		demoResult = demoBuilder.buildWithParameters("stateAnimDemo", []);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "stateAnimDemo", [], [
+			speedSlider => addSlider(stdBuilder, 50),
+			btnIdle => addButtonWithSingleBuilder(commonBuilder, "backButton", "idle"),
+			btnWalk => addButtonWithSingleBuilder(commonBuilder, "backButton", "walk"),
+			btnShooting => addButtonWithSingleBuilder(commonBuilder, "backButton", "shooting"),
+			btnDead => addButtonWithSingleBuilder(commonBuilder, "backButton", "dead"),
+		]);
+
+		demoResult = ui.builderResults;
+		speedSlider = ui.speedSlider;
+		stateButtons = [ui.btnIdle, ui.btnWalk, ui.btnShooting, ui.btnDead];
 		addBuilderResult(demoResult);
 
-		// Load the marine anim and display it
 		final animResult = demoBuilder.buildWithParameters("animDisplay", []);
 		animResult.object.setPosition(400, 300);
 		addBuilderResult(animResult);
 
-		// Speed slider
-		speedSlider = addSlider(stdBuilder, null, 50);
-		addElement(speedSlider, DefaultLayer);
-		speedSlider.getObject().setPosition(50, 620);
-
-		// State buttons
-		final states = ["idle", "walk", "shooting", "dead"];
-		var xPos:Float = 50;
-		for (state in states) {
-			final btn = addButtonWithSingleBuilder(commonBuilder, "backButton", null, state);
-			btn.getObject().setPosition(xPos, 660);
-			stateButtons.push(btn);
-			xPos += 100;
-		}
-
-		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'State: $currentState | Speed: ${animSpeed}x';
 		statusText.textColor = 0xCCCCCC;

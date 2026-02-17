@@ -1,6 +1,16 @@
 version: 0.5
 
 #slotsShowcase programmable() {
+  pos: 40, 80
+
+  // Control buttons
+  placeholder(generated(cross(80, 24)), builderParameter("swapButton")) {
+      pos: 460, 20
+  }
+  placeholder(generated(cross(80, 24)), builderParameter("clearButton")) {
+      pos: 560, 20
+  }
+
   // Section 1: Indexed slots in a repeatable
   text(exo2_16, "Indexed slots (#content[$i]) - click Swap to fill:", #cccccc): 0, 0
 

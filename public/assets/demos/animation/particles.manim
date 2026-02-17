@@ -74,4 +74,15 @@ version: 0.5
     text(m6x11, "Fire", #FF4400, center, 100): 150, 500
     text(m6x11, "Sparkles", #88DDFF, center, 100): 500, 500
     text(m6x11, "Smoke", #888888, center, 100): 850, 500
+
+    // Preset selector buttons
+    placeholder(generated(cross(100, 24)), builderParameter("btnFire")) {
+        pos: 50, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnSparkles")) {
+        pos: 170, 660
+    }
+    placeholder(generated(cross(100, 24)), builderParameter("btnSmoke")) {
+        pos: 290, 660
+    }
 }

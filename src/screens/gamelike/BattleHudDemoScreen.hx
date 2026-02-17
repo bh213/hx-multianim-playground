@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class BattleHudDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -13,25 +12,21 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	var attackButton:Null<UIStandardMultiAnimButton>;
 	var defendButton:Null<UIStandardMultiAnimButton>;
 
-	// Hero stats
 	var heroHp:Int = 100;
 	var heroMaxHp:Int = 100;
 	var heroMp:Int = 50;
 	var heroMaxMp:Int = 50;
 	var defending:Bool = false;
 
-	// Enemy stats
 	var enemyHp:Int = 80;
 	var enemyMaxHp:Int = 80;
 	var enemyMp:Int = 30;
 	var enemyMaxMp:Int = 30;
 
-	// Turn management
 	var isPlayerTurn:Bool = true;
 	var enemyDelayTimer:Float = 0;
 	var waitingForEnemy:Bool = false;
 
-	// Damage text animation
 	var damageTextTimer:Float = 0;
 	var damageTextY:Float = 0;
 	var showingDamage:Bool = false;
@@ -41,17 +36,14 @@ class BattleHudDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/battle-hud.manim", false);
 
-		attackButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Attack");
-		addElement(attackButton, null);
-		defendButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Defend");
-		addElement(defendButton, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "battleHudDemo", [], [
+			attackButton => addButtonWithSingleBuilder(stdBuilder, "button", "Attack"),
+			defendButton => addButtonWithSingleBuilder(stdBuilder, "button", "Defend"),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("battleHudDemo", [], {
-			placeholderObjects: [
-				"attackButton" => PVObject(attackButton.getObject()),
-				"defendButton" => PVObject(defendButton.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		attackButton = ui.attackButton;
+		defendButton = ui.defendButton;
 		addBuilderResult(demoResult);
 
 		refreshBars();
@@ -148,25 +140,21 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	function refreshBars():Void {
 		if (demoResult == null) return;
 
-		// Hero HP
 		final heroHpRatio = heroHp / heroMaxHp;
 		final heroHpObj = demoResult.getSingleItemByName("heroHpBar").object.toh2dObject();
 		heroHpObj.scaleX = Math.max(heroHpRatio, 0.001);
 		demoResult.getUpdatable("heroHpText").updateText('$heroHp / $heroMaxHp');
 
-		// Hero MP
 		final heroMpRatio = heroMp / heroMaxMp;
 		final heroMpObj = demoResult.getSingleItemByName("heroMpBar").object.toh2dObject();
 		heroMpObj.scaleX = Math.max(heroMpRatio, 0.001);
 		demoResult.getUpdatable("heroMpText").updateText('$heroMp / $heroMaxMp');
 
-		// Enemy HP
 		final enemyHpRatio = enemyHp / enemyMaxHp;
 		final enemyHpObj = demoResult.getSingleItemByName("enemyHpBar").object.toh2dObject();
 		enemyHpObj.scaleX = Math.max(enemyHpRatio, 0.001);
 		demoResult.getUpdatable("enemyHpText").updateText('$enemyHp / $enemyMaxHp');
 
-		// Enemy MP
 		final enemyMpRatio = enemyMp / enemyMaxMp;
 		final enemyMpObj = demoResult.getSingleItemByName("enemyMpBar").object.toh2dObject();
 		enemyMpObj.scaleX = Math.max(enemyMpRatio, 0.001);
@@ -176,7 +164,6 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	override public function update(dt:Float):Void {
 		super.update(dt);
 
-		// Enemy attack delay
 		if (waitingForEnemy) {
 			enemyDelayTimer -= dt;
 			if (enemyDelayTimer <= 0) {
@@ -184,7 +171,6 @@ class BattleHudDemoScreen extends DemoScreenBase {
 			}
 		}
 
-		// Damage text float animation
 		if (showingDamage && demoResult != null) {
 			damageTextTimer -= dt;
 			if (damageTextTimer <= 0) {

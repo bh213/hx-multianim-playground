@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 import bh.base.FontManager;
 
 class CurvesDemoScreen extends DemoScreenBase {
@@ -20,21 +19,19 @@ class CurvesDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/curves.manim", false);
 
-		// Build demo layout with curve visualization
-		demoResult = demoBuilder.buildWithParameters("curvesDemo", []);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "curvesDemo", [], [
+			btnLinear => addButtonWithSingleBuilder(commonBuilder, "backButton", "linear"),
+			btnEaseIn => addButtonWithSingleBuilder(commonBuilder, "backButton", "easeIn"),
+			btnEaseOut => addButtonWithSingleBuilder(commonBuilder, "backButton", "easeOut"),
+			btnBounce => addButtonWithSingleBuilder(commonBuilder, "backButton", "bounce"),
+			btnElastic => addButtonWithSingleBuilder(commonBuilder, "backButton", "elastic"),
+			btnCustom => addButtonWithSingleBuilder(commonBuilder, "backButton", "custom"),
+		]);
+
+		demoResult = ui.builderResults;
+		curveButtons = [ui.btnLinear, ui.btnEaseIn, ui.btnEaseOut, ui.btnBounce, ui.btnElastic, ui.btnCustom];
 		addBuilderResult(demoResult);
 
-		// Curve type selector buttons
-		final curveTypes = ["linear", "easeIn", "easeOut", "bounce", "elastic", "custom"];
-		var xPos:Float = 50;
-		for (curve in curveTypes) {
-			final btn = addButtonWithSingleBuilder(commonBuilder, "backButton", null, curve);
-			btn.getObject().setPosition(xPos, 660);
-			curveButtons.push(btn);
-			xPos += 110;
-		}
-
-		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Curve: $currentCurve';
 		statusText.textColor = 0xCCCCCC;

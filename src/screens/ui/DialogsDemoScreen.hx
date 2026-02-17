@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 import screens.OkCancelDialog;
 
 class DialogsDemoScreen extends DemoScreenBase {
@@ -22,18 +21,14 @@ class DialogsDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/dialogs.manim", false);
 		dialogBuilder = demoBuilder;
 
-		openButton1 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Open Dialog");
-		addElement(openButton1, null);
-		openButton2 = addButtonWithSingleBuilder(stdBuilder, "button", null, "Confirm Action");
-		addElement(openButton2, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dialogsDemo", [], [
+			openButton1 => addButtonWithSingleBuilder(stdBuilder, "button", "Open Dialog"),
+			openButton2 => addButtonWithSingleBuilder(stdBuilder, "button", "Confirm Action"),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("dialogsDemo", [], {
-			placeholderObjects: [
-				"openButton1" => PVObject(openButton1.getObject()),
-				"openButton2" => PVObject(openButton2.getObject()),
-			]
-		});
-
+		demoResult = ui.builderResults;
+		openButton1 = ui.openButton1;
+		openButton2 = ui.openButton2;
 		addBuilderResult(demoResult);
 	}
 

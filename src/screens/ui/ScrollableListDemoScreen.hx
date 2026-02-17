@@ -64,6 +64,10 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 				if (source == scrollableList) {
 					updateSelectedText(index);
 				}
+			case UIDoubleClickItem(index, items):
+				if (source == scrollableList) {
+					updateDoubleClickText(index);
+				}
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -77,6 +81,18 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 				updatable.updateText('Selected: ${LIST_ITEMS[index].name}');
 			} else {
 				updatable.updateText('Selected: None');
+			}
+		}
+	}
+
+	function updateDoubleClickText(index:Int):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable("doubleClickText");
+		if (updatable != null) {
+			if (index >= 0 && index < LIST_ITEMS.length) {
+				updatable.updateText('Confirmed: ${LIST_ITEMS[index].name}');
+			} else {
+				updatable.updateText('Confirmed: None');
 			}
 		}
 	}

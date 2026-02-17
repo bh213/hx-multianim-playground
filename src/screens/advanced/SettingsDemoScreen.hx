@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 import bh.base.FontManager;
 
 class SettingsDemoScreen extends DemoScreenBase {
@@ -21,28 +20,21 @@ class SettingsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/advanced/settings.manim", false);
 
-		// Build the settings demo layout
-		demoResult = demoBuilder.buildWithParameters("settingsDemo", []);
-		demoResult.object.setPosition(50, 140);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "settingsDemo", [], [
+			btnDark => addButtonWithSingleBuilder(commonBuilder, "backButton", "dark"),
+			btnLight => addButtonWithSingleBuilder(commonBuilder, "backButton", "light"),
+			btnBlue => addButtonWithSingleBuilder(commonBuilder, "backButton", "blue"),
+		]);
+
+		demoResult = ui.builderResults;
+		themeButtons = [ui.btnDark, ui.btnLight, ui.btnBlue];
 		addBuilderResult(demoResult);
 
-		// Build settings component examples
+		// Build settings component examples (separate element, no interactive controls)
 		settingsResult = demoBuilder.buildWithParameters("settingsExamples", []);
 		settingsResult.object.setPosition(50, 300);
 		addBuilderResult(settingsResult);
 
-		// Theme selector buttons
-		final themes = ["dark", "light", "blue"];
-		var xPos:Float = 50;
-		for (theme in themes) {
-			final btn = addButtonWithSingleBuilder(commonBuilder, "backButton", null, theme);
-			addElement(btn, null);
-			btn.getObject().setPosition(xPos, 660);
-			themeButtons.push(btn);
-			xPos += 120;
-		}
-
-		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Theme: $currentTheme';
 		statusText.textColor = 0xCCCCCC;

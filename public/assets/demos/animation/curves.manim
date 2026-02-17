@@ -68,6 +68,26 @@ paths {
         text(m6x11, "custom points", #7fdbda, left, 150): 480, 0
         bitmap(generated(color(200, 150, #222233))): 480, 20
     }
+
+    // Curve type selector buttons
+    placeholder(generated(cross(90, 24)), builderParameter("btnLinear")) {
+        pos: 50, 660
+    }
+    placeholder(generated(cross(90, 24)), builderParameter("btnEaseIn")) {
+        pos: 160, 660
+    }
+    placeholder(generated(cross(90, 24)), builderParameter("btnEaseOut")) {
+        pos: 270, 660
+    }
+    placeholder(generated(cross(90, 24)), builderParameter("btnBounce")) {
+        pos: 380, 660
+    }
+    placeholder(generated(cross(90, 24)), builderParameter("btnElastic")) {
+        pos: 490, 660
+    }
+    placeholder(generated(cross(90, 24)), builderParameter("btnCustom")) {
+        pos: 600, 660
+    }
 }
 
 #panim animatedPath {

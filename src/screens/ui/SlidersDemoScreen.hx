@@ -3,21 +3,19 @@ package screens.ui;
 import bh.ui.UIElement;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 
 class SlidersDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 
-	// Size sliders
 	var slider1:Null<UIStandardMultiAnimSlider>;
 	var slider2:Null<UIStandardMultiAnimSlider>;
 	var slider3:Null<UIStandardMultiAnimSlider>;
 
-	// Scale sliders
 	var sliderScale2:Null<UIStandardMultiAnimSlider>;
 	var sliderScale05:Null<UIStandardMultiAnimSlider>;
 
-	// Min/max/step sliders
 	var sliderStep1:Null<UIStandardMultiAnimSlider>;
 	var sliderRange1:Null<UIStandardMultiAnimSlider>;
 	var sliderStep100:Null<UIStandardMultiAnimSlider>;
@@ -28,66 +26,45 @@ class SlidersDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/sliders.manim", false);
 
-		// Size sliders
-		slider1 = addSlider(stdBuilder, null, 0);
-		addElement(slider1, null);
-		slider2 = addSlider(stdBuilder, null, 0);
-		addElement(slider2, null);
-		slider3 = addSlider(stdBuilder, null, 0);
-		addElement(slider3, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "slidersDemo", [], [
+			slider1 => addSlider(stdBuilder, 0),
+			slider2 => addSlider(stdBuilder, 0),
+			slider3 => addSlider(stdBuilder, 0),
+			sliderScale2 => addSlider(stdBuilder, 0),
+			sliderScale05 => addSlider(stdBuilder, 0),
+			sliderStep1 => addSlider(stdBuilder, 0),
+			sliderRange1 => addSlider(stdBuilder, 0),
+			sliderStep100 => addSlider(stdBuilder, 0),
+			sliderStep25 => addSlider(stdBuilder, 0),
+		]);
 
-		// Scale x2
-		sliderScale2 = addSlider(stdBuilder, null, 0);
+		demoResult = ui.builderResults;
+		slider1 = ui.slider1;
+		slider2 = ui.slider2;
+		slider3 = ui.slider3;
+		sliderScale2 = ui.sliderScale2;
+		sliderScale05 = ui.sliderScale05;
+		sliderStep1 = ui.sliderStep1;
+		sliderRange1 = ui.sliderRange1;
+		sliderStep100 = ui.sliderStep100;
+		sliderStep25 = ui.sliderStep25;
+
 		sliderScale2.getObject().scaleX = 2;
 		sliderScale2.getObject().scaleY = 2;
-		addElement(sliderScale2, null);
-
-		// Scale x0.5
-		sliderScale05 = addSlider(stdBuilder, null, 0);
 		sliderScale05.getObject().scaleX = 0.5;
 		sliderScale05.getObject().scaleY = 0.5;
-		addElement(sliderScale05, null);
 
-		// 0-10, step 1
-		sliderStep1 = addSlider(stdBuilder, null, 0);
 		sliderStep1.min = 0;
 		sliderStep1.max = 10;
 		sliderStep1.step = 1;
-		addElement(sliderStep1, null);
-
-		// -50 to 50
-		sliderRange1 = addSlider(stdBuilder, null, 0);
 		sliderRange1.min = -50;
 		sliderRange1.max = 50;
-		addElement(sliderRange1, null);
-
-		// 0-1000, step 100
-		sliderStep100 = addSlider(stdBuilder, null, 0);
 		sliderStep100.min = 0;
 		sliderStep100.max = 1000;
 		sliderStep100.step = 100;
-		addElement(sliderStep100, null);
-
-		// 0-100, step 25
-		sliderStep25 = addSlider(stdBuilder, null, 0);
 		sliderStep25.min = 0;
 		sliderStep25.max = 100;
 		sliderStep25.step = 25;
-		addElement(sliderStep25, null);
-
-		demoResult = demoBuilder.buildWithParameters("slidersDemo", [], {
-			placeholderObjects: [
-				"slider1" => PVObject(slider1.getObject()),
-				"slider2" => PVObject(slider2.getObject()),
-				"slider3" => PVObject(slider3.getObject()),
-				"sliderScale2" => PVObject(sliderScale2.getObject()),
-				"sliderScale05" => PVObject(sliderScale05.getObject()),
-				"sliderStep1" => PVObject(sliderStep1.getObject()),
-				"sliderRange1" => PVObject(sliderRange1.getObject()),
-				"sliderStep100" => PVObject(sliderStep100.getObject()),
-				"sliderStep25" => PVObject(sliderStep25.getObject()),
-			]
-		});
 
 		addBuilderResult(demoResult);
 	}

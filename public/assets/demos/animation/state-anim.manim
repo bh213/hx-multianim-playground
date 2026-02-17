@@ -18,6 +18,25 @@ version: 0.5
 
     // Speed label
     text(exo2_14, "Animation Speed", #cccccc, left, 200): 50, 600
+
+    // Speed slider
+    placeholder(generated(cross(200, 20)), builderParameter("speedSlider")) {
+        pos: 50, 620
+    }
+
+    // State buttons
+    placeholder(generated(cross(80, 24)), builderParameter("btnIdle")) {
+        pos: 50, 660
+    }
+    placeholder(generated(cross(80, 24)), builderParameter("btnWalk")) {
+        pos: 150, 660
+    }
+    placeholder(generated(cross(80, 24)), builderParameter("btnShooting")) {
+        pos: 250, 660
+    }
+    placeholder(generated(cross(80, 24)), builderParameter("btnDead")) {
+        pos: 350, 660
+    }
 }
 
 #animDisplay programmable() {

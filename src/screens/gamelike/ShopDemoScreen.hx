@@ -4,8 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class ShopDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -33,26 +32,21 @@ class ShopDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/shop.manim", false);
 
-		buyButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Buy");
-		addElement(buyButton, null);
-		sellButton = addButtonWithSingleBuilder(stdBuilder, "button", null, "Sell");
-		addElement(sellButton, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "shopDemo", [], [
+			buyButton => addButtonWithSingleBuilder(stdBuilder, "button", "Buy"),
+			sellButton => addButtonWithSingleBuilder(stdBuilder, "button", "Sell"),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("shopDemo", [], {
-			placeholderObjects: [
-				"buyButton" => PVObject(buyButton.getObject()),
-				"sellButton" => PVObject(sellButton.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		buyButton = ui.buyButton;
+		sellButton = ui.sellButton;
 		addBuilderResult(demoResult);
 
 		playerInventory = [];
 		itemInteractives = [];
 
-		// Build item list rows
 		final container = demoResult.getSingleItemByName("itemContainer").object.toh2dObject();
 
-		// Selection highlight
 		itemHighlight = new h2d.Bitmap(h2d.Tile.fromColor(0x337FDBDA, 330, 32));
 		itemHighlight.visible = false;
 		container.addChild(itemHighlight);
@@ -61,26 +55,22 @@ class ShopDemoScreen extends DemoScreenBase {
 			final item = SHOP_ITEMS[i];
 			final y = i * 36;
 
-			// Item color indicator
 			final colorBmp = new h2d.Bitmap(h2d.Tile.fromColor(item.color, 20, 20));
 			colorBmp.setPosition(0, y + 6);
 			container.addChild(colorBmp);
 
-			// Item name
 			final nameText = new h2d.Text(bh.base.FontManager.getFontByName("exo2_14"));
 			nameText.text = item.name;
 			nameText.textColor = 0xFFFFFF;
 			nameText.setPosition(30, y + 4);
 			container.addChild(nameText);
 
-			// Price
 			final priceText = new h2d.Text(bh.base.FontManager.getFontByName("exo2_14"));
 			priceText.text = '${item.price}g';
 			priceText.textColor = 0xFFEB3B;
 			priceText.setPosition(250, y + 4);
 			container.addChild(priceText);
 
-			// Interactive
 			final inter = new h2d.Interactive(330, 32, container);
 			inter.setPosition(0, y);
 			final idx = i;
@@ -129,7 +119,6 @@ class ShopDemoScreen extends DemoScreenBase {
 		if (selectedIdx < 0 || demoResult == null) return;
 		final item = SHOP_ITEMS[selectedIdx];
 
-		// Find item in inventory
 		final invIdx = playerInventory.indexOf(item.name);
 		if (invIdx < 0) {
 			demoResult.getUpdatable("feedbackText").updateText("You don't have that item!");
@@ -155,7 +144,6 @@ class ShopDemoScreen extends DemoScreenBase {
 		if (playerInventory.length == 0) {
 			demoResult.getUpdatable("inventoryText").updateText("(empty)");
 		} else {
-			// Count items
 			var counts = new Map<String, Int>();
 			for (item in playerInventory) {
 				final cur = counts.exists(item) ? counts.get(item) : 0;

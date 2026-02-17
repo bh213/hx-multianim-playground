@@ -5,8 +5,7 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class ButtonsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -30,48 +29,30 @@ class ButtonsDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/buttons-demo.manim", false);
 		buttonsBuilder = screenManager.buildFromResourceName("buttons.manim", false);
 
-		// Normal buttons (buttons.main)
-		normalBtn1 = addButtonWithSingleBuilder(buttonsBuilder, "main", null, "Click Me");
-		addElement(normalBtn1, null);
-		normalBtn2 = addButtonWithSingleBuilder(buttonsBuilder, "main", null, "Action");
-		addElement(normalBtn2, null);
-		normalBtn3 = addButtonWithSingleBuilder(buttonsBuilder, "main", null, "Submit");
-		addElement(normalBtn3, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "buttonsDemo", [], [
+			normalBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Click Me"),
+			normalBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Action"),
+			normalBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Submit"),
+			warningBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Danger"),
+			warningBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Delete"),
+			warningBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Reset"),
+			smallBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "small", "OK"),
+			smallBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "small", "No"),
+			smallBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "small", "Info"),
+			disableCheckbox => addCheckbox(stdBuilder, false),
+		]);
 
-		// Warning buttons (buttons.warning)
-		warningBtn1 = addButtonWithSingleBuilder(buttonsBuilder, "warning", null, "Danger");
-		addElement(warningBtn1, null);
-		warningBtn2 = addButtonWithSingleBuilder(buttonsBuilder, "warning", null, "Delete");
-		addElement(warningBtn2, null);
-		warningBtn3 = addButtonWithSingleBuilder(buttonsBuilder, "warning", null, "Reset");
-		addElement(warningBtn3, null);
-
-		// Small buttons (buttons.small)
-		smallBtn1 = addButtonWithSingleBuilder(buttonsBuilder, "small", null, "OK");
-		addElement(smallBtn1, null);
-		smallBtn2 = addButtonWithSingleBuilder(buttonsBuilder, "small", null, "No");
-		addElement(smallBtn2, null);
-		smallBtn3 = addButtonWithSingleBuilder(buttonsBuilder, "small", null, "Info");
-		addElement(smallBtn3, null);
-
-		disableCheckbox = addCheckbox(stdBuilder, null, false);
-		addElement(disableCheckbox, null);
-
-		demoResult = demoBuilder.buildWithParameters("buttonsDemo", [], {
-			placeholderObjects: [
-				"normalBtn1" => PVObject(normalBtn1.getObject()),
-				"normalBtn2" => PVObject(normalBtn2.getObject()),
-				"normalBtn3" => PVObject(normalBtn3.getObject()),
-				"warningBtn1" => PVObject(warningBtn1.getObject()),
-				"warningBtn2" => PVObject(warningBtn2.getObject()),
-				"warningBtn3" => PVObject(warningBtn3.getObject()),
-				"smallBtn1" => PVObject(smallBtn1.getObject()),
-				"smallBtn2" => PVObject(smallBtn2.getObject()),
-				"smallBtn3" => PVObject(smallBtn3.getObject()),
-				"disableCheckbox" => PVObject(disableCheckbox.getObject()),
-			]
-		});
-
+		demoResult = ui.builderResults;
+		normalBtn1 = ui.normalBtn1;
+		normalBtn2 = ui.normalBtn2;
+		normalBtn3 = ui.normalBtn3;
+		warningBtn1 = ui.warningBtn1;
+		warningBtn2 = ui.warningBtn2;
+		warningBtn3 = ui.warningBtn3;
+		smallBtn1 = ui.smallBtn1;
+		smallBtn2 = ui.smallBtn2;
+		smallBtn3 = ui.smallBtn3;
+		disableCheckbox = ui.disableCheckbox;
 		addBuilderResult(demoResult);
 	}
 

@@ -38,11 +38,11 @@ export default function Sidebar({ currentScreen, onScreenSelect, collapsed, onTo
 
   return (
     <div className="w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full">
-      <div className="p-3 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-200">Demos</span>
+      <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
+        <span className="text-base font-bold text-gray-100">Demos</span>
         <button
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white text-xs"
+          className="text-gray-400 hover:text-white text-sm px-2 py-1"
           title="Collapse sidebar"
         >
           &laquo;
@@ -54,7 +54,7 @@ export default function Sidebar({ currentScreen, onScreenSelect, collapsed, onTo
           <div key={cat.name} className="mb-1">
             <button
               onClick={() => toggleCategory(cat.name)}
-              className="w-full text-left px-2 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 flex items-center"
+              className="w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center"
             >
               <span className="mr-1.5 text-[10px]">
                 {expandedCategories.has(cat.name) ? '\u25BE' : '\u25B8'}
@@ -63,7 +63,7 @@ export default function Sidebar({ currentScreen, onScreenSelect, collapsed, onTo
             </button>
 
             {expandedCategories.has(cat.name) && (
-              <div className="ml-2">
+              <div className="ml-6">
                 {cat.screens.map(screen => (
                   <button
                     key={screen.name}

@@ -4,6 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 
 class DynamicRefsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -15,15 +16,16 @@ class DynamicRefsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/dynamic-refs.manim", false);
 
-		// Build the showcase with initial value
-		demoResult = demoBuilder.buildWithParameters("dynamicRefsShowcase", ["barValue" => 50], null, null, true);
-		demoResult.object.setPosition(40, 80);
-		addBuilderResult(demoResult);
+		// Use macroBuildWithParameters — the preferred way to add UI elements to manim-created UI.
+		// It wires placeholder slots from the .manim file to UIElement factory calls,
+		// keeping layout in the .manim and behavior in Haxe.
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dynamicRefsShowcase", ["barValue" => 50], [
+			slider => addSlider(stdBuilder, 50),
+		], true);
 
-		// Add a slider to control the dynamic ref value
-		slider = addSlider(stdBuilder, null, 50);
-		addElement(slider, DefaultLayer);
-		slider.getObject().setPosition(500, 100);
+		demoResult = ui.builderResults;
+		slider = ui.slider;
+		addBuilderResult(demoResult);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
@@ -31,6 +33,10 @@ class DynamicRefsDemoScreen extends DemoScreenBase {
 			case UIChangeValue(value):
 				if (source == slider && demoResult != null) {
 					demoResult.setParameter("barValue", value);
+					final updatable = demoResult.getUpdatable("sliderValue");
+					if (updatable != null) {
+						updatable.updateText('$value');
+					}
 				}
 			default:
 		}

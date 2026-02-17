@@ -6,14 +6,16 @@ import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class DropdownsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
-	var dropdown1:Null<UIStandardMultiAnimDropdown>;
-	var dropdown2:Null<UIStandardMultiAnimDropdown>;
+	var dropdownScrollable:Null<UIStandardMultiAnimDropdown>;
+	var dropdownAutoFew:Null<UIStandardMultiAnimDropdown>;
+	var dropdownAutoMany:Null<UIStandardMultiAnimDropdown>;
 
-	static final ITEMS:Array<UIElementListItem> = [
+	static final FRUITS:Array<UIElementListItem> = [
 		{name: "Apple"},
 		{name: "Banana"},
 		{name: "Cherry"},
@@ -26,45 +28,53 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		{name: "Lemon"},
 	];
 
-	static final COLOR_ITEMS:Array<UIElementListItem> = [
+	static final FEW_ITEMS:Array<UIElementListItem> = [
 		{name: "Red"},
 		{name: "Green"},
 		{name: "Blue"},
-		{name: "Yellow"},
-		{name: "Purple"},
+	];
+
+	static final MANY_ITEMS:Array<UIElementListItem> = [
+		{name: "Red"},
 		{name: "Orange"},
+		{name: "Yellow"},
+		{name: "Green"},
+		{name: "Blue"},
+		{name: "Indigo"},
+		{name: "Violet"},
 		{name: "Cyan"},
+		{name: "Magenta"},
+		{name: "Teal"},
 	];
 
 	override public function load():Void {
-		setupDemo("Dropdowns", "Dropdown menus with item selection and display");
+		setupDemo("Dropdowns", "Dropdown menus: scrollable (fixed height) and autoscale (auto-sizing) modes");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/dropdowns.manim", false);
 
-		dropdown1 = addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", ITEMS, null, 0);
-		addElement(dropdown1, null);
-		dropdown2 = addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", COLOR_ITEMS, null, 0);
-		addElement(dropdown2, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dropdownsDemo", [], [
+			dropdownScrollable => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			dropdownAutoFew => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FEW_ITEMS, 0),
+			dropdownAutoMany => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", MANY_ITEMS, 0),
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("dropdownsDemo", [], {
-			placeholderObjects: [
-				"dropdown1" => PVObject(dropdown1.getObject()),
-				"dropdown2" => PVObject(dropdown2.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		dropdownScrollable = ui.dropdownScrollable;
+		dropdownAutoFew = ui.dropdownAutoFew;
+		dropdownAutoMany = ui.dropdownAutoMany;
 
 		addBuilderResult(demoResult);
-		updateSelectedText(0, ITEMS, "selectedText");
-		updateSelectedText(0, COLOR_ITEMS, "selected2Text");
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIChangeItem(index, items):
-				if (source == dropdown1) {
-					updateSelectedText(index, items, "selectedText");
-				} else if (source == dropdown2) {
-					updateSelectedText(index, items, "selected2Text");
+				if (source == dropdownScrollable) {
+					updateSelectedText(index, items, "scrollableText");
+				} else if (source == dropdownAutoFew) {
+					updateSelectedText(index, items, "autoFewText");
+				} else if (source == dropdownAutoMany) {
+					updateSelectedText(index, items, "autoManyText");
 				}
 			default:
 		}
@@ -75,11 +85,10 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		if (demoResult == null) return;
 		final updatable = demoResult.getUpdatable(fieldName);
 		if (updatable != null) {
-			final prefix = fieldName == "selectedText" ? "Selected" : "Color";
 			if (index >= 0 && index < items.length) {
-				updatable.updateText('$prefix: ${items[index].name}');
+				updatable.updateText('Selected: ${items[index].name}');
 			} else {
-				updatable.updateText('$prefix: None');
+				updatable.updateText('Selected: None');
 			}
 		}
 	}
@@ -88,7 +97,8 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		super.onClear();
 		demoBuilder = null;
 		demoResult = null;
-		dropdown1 = null;
-		dropdown2 = null;
+		dropdownScrollable = null;
+		dropdownAutoFew = null;
+		dropdownAutoMany = null;
 	}
 }

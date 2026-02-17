@@ -22,25 +22,33 @@ version: 0.5
 
 // Main showcase with dynamicRefs
 #dynamicRefsShowcase programmable(barValue:uint=50) {
+  pos: 50, 80
+
   // Section 1: Dynamic health bar controlled by slider
   text(exo2_16, "Dynamic health bar (use slider):", #cccccc): 0, 0
 
   dynamicRef($healthBar, value=>$barValue, label=>"Player HP"): 0, 30
 
-  // Section 2: Multiple dynamic bars with different fixed values
-  text(exo2_16, "Multiple bars at fixed values:", #cccccc): 0, 70
+  // Slider control
+  placeholder(generated(cross(210, 20)), builderParameter("slider")) {
+    pos: 0, 60
+  }
+  #sliderValue(updatable) text(exo2_light_14, "50", #cccccc): 230, 60
 
-  dynamicRef($healthBar, value=>90, label=>"Tank"): 0, 100
-  dynamicRef($healthBar, value=>60, label=>"Fighter"): 0, 130
-  dynamicRef($healthBar, value=>30, label=>"Mage"): 0, 160
-  dynamicRef($healthBar, value=>10, label=>"Rogue"): 0, 190
+  // Section 2: Derived health bars (all driven by slider)
+  text(exo2_16, "Derived bars (expressions of slider):", #cccccc): 0, 100
 
-  // Section 3: Stat displays
-  text(exo2_16, "Stat displays via dynamicRef:", #cccccc): 0, 230
+  dynamicRef($healthBar, value=>100 - $barValue, label=>"Inverse"): 0, 130
+  dynamicRef($healthBar, value=>$barValue / 2 + 10, label=>"Half+10"): 0, 160
+  dynamicRef($healthBar, value=>$barValue * 3 / 4 + 10, label=>"3/4+10"): 0, 190
+  dynamicRef($healthBar, value=>($barValue + 30) % 100, label=>"Wrap"): 0, 220
 
-  dynamicRef($statDisplay, statName=>"Attack", statValue=>75, barColor=>#cc4444): 0, 260
-  dynamicRef($statDisplay, statName=>"Defense", statValue=>45, barColor=>#4488cc): 0, 280
-  dynamicRef($statDisplay, statName=>"Speed", statValue=>60, barColor=>#44cc44): 0, 300
-  dynamicRef($statDisplay, statName=>"Magic", statValue=>90, barColor=>#cc44cc): 0, 320
-  dynamicRef($statDisplay, statName=>"Luck", statValue=>12, barColor=>#cccc44): 0, 340
+  // Section 3: Stat displays (derived from slider)
+  text(exo2_16, "Stat displays (derived from slider):", #cccccc): 0, 260
+
+  dynamicRef($statDisplay, statName=>"Attack", statValue=>$barValue, barColor=>#cc4444): 0, 290
+  dynamicRef($statDisplay, statName=>"Defense", statValue=>100 - $barValue, barColor=>#4488cc): 0, 310
+  dynamicRef($statDisplay, statName=>"Speed", statValue=>$barValue / 2 + 25, barColor=>#44cc44): 0, 330
+  dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
+  dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
 }

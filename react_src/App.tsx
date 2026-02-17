@@ -64,10 +64,10 @@ function App() {
 
       <div className="flex-1 flex flex-col h-full min-h-0">
         {/* Header */}
-        <div className="border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-4 py-2">
+        <div className="border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3">
           <button
             onClick={() => handleScreenSelect(DEFAULT_SCREEN)}
-            className="text-xs font-medium text-gray-400 hover:text-white transition-colors"
+            className="text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide"
           >
             hx-multianim Showcase
           </button>

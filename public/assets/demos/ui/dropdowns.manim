@@ -1,39 +1,44 @@
 version: 0.5
 
 // Dropdowns Demo
-// Shows dropdown with item list and selected item display.
+// Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).
 
 #dropdownsDemo programmable() {
     pos: 50, 80
 
-    // Section: Dropdown
-    text(exo2_16, "Dropdown Selection", #7fdbda): 0, 0
+    // Section: Scrollable (default)
+    text(exo2_16, "Scrollable (default)", #7fdbda): 0, 0
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Fixed panel height, always scrolls:", #cccccc): 0, 35
 
-    text(exo2_light_14, "Choose an item:", #cccccc): 0, 35
-
-    // Dropdown placeholder
-    placeholder(generated(cross(120, 30)), builderParameter("dropdown1")) {
+    placeholder(generated(cross(120, 30)), builderParameter("dropdownScrollable")) {
         pos: 0, 55
-        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>200}
-    }
-
-    // Selected item display
-    text(exo2_16, "Selection", #7fdbda): 0, 130
-    bitmap(generated(color(600, 1, #7fdbda33))): 0, 152
-    ninepatch("ui", "Window_3x3_idle", 400, 50): 0, 165
-    #selectedText(updatable) text(exo2_20, "Selected: None", #ffffff, left, 380): 15, 180
-
-    // Second dropdown
-    text(exo2_16, "Another Dropdown", #7fdbda): 0, 250
-    bitmap(generated(color(600, 1, #7fdbda33))): 0, 272
-    text(exo2_light_14, "Pick a color:", #cccccc): 0, 285
-
-    placeholder(generated(cross(120, 30)), builderParameter("dropdown2")) {
-        pos: 0, 305
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
     }
 
-    ninepatch("ui", "Window_3x3_idle", 400, 50): 0, 380
-    #selected2Text(updatable) text(exo2_20, "Color: None", #ffffff, left, 380): 15, 395
+    #scrollableText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 65
+
+    // Section: Autoscale (few items)
+    text(exo2_16, "Autoscale (few items)", #7fdbda): 0, 140
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 162
+    text(exo2_light_14, "Panel sizes to fit items:", #cccccc): 0, 175
+
+    placeholder(generated(cross(120, 30)), builderParameter("dropdownAutoFew")) {
+        pos: 0, 195
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>300}
+    }
+
+    #autoFewText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 205
+
+    // Section: Autoscale (many items)
+    text(exo2_16, "Autoscale (many items)", #7fdbda): 0, 280
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 302
+    text(exo2_light_14, "Auto-sizes up to max height, then scrolls:", #cccccc): 0, 315
+
+    placeholder(generated(cross(120, 30)), builderParameter("dropdownAutoMany")) {
+        pos: 0, 335
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>150}
+    }
+
+    #autoManyText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 345
 }

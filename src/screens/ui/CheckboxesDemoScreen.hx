@@ -6,9 +6,11 @@ import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.base.MacroUtils;
 
 class CheckboxesDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
+	var checkboxBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var checkboxes:Array<UIStandardMultiCheckbox> = [];
 	var disabledCheckbox1:Null<UIStandardMultiCheckbox>;
@@ -16,45 +18,28 @@ class CheckboxesDemoScreen extends DemoScreenBase {
 	var disableToggle:Null<UIStandardMultiCheckbox>;
 
 	override public function load():Void {
-		setupDemo("Checkboxes", "Checkbox, tickbox, and toggle variants with selection tracking");
+		setupDemo("Checkboxes", "Checkbox, tickbox, toggle, radio, and simple variants with selection tracking");
 
-		demoBuilder = screenManager.buildFromResourceName("demos/ui/checkboxes.manim", false);
+		demoBuilder = screenManager.buildFromResourceName("demos/ui/checkboxes-demo.manim", false);
+		checkboxBuilder = screenManager.buildFromResourceName("checkbox.manim", false);
 
-		// Create the 5 checkbox variants
-		var cb1 = addCheckbox(stdBuilder, null, false);
-		addElement(cb1, null);
-		var cb2 = addCheckbox(stdBuilder, null, false);
-		addElement(cb2, null);
-		var cb3 = addCheckbox(stdBuilder, null, false);
-		addElement(cb3, null);
-		var cb4 = addCheckbox(stdBuilder, null, false);
-		addElement(cb4, null);
-		var cb5 = addCheckbox(stdBuilder, null, false);
-		addElement(cb5, null);
-		checkboxes = [cb1, cb2, cb3, cb4, cb5];
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "checkboxesDemo", [], [
+			checkbox1 => addCheckbox(checkboxBuilder, false),
+			checkbox2 => addCheckbox(checkboxBuilder, false),
+			checkbox3 => addCheckbox(checkboxBuilder, false),
+			checkbox4 => addCheckbox(checkboxBuilder, false),
+			checkbox5 => addCheckbox(checkboxBuilder, false),
+			checkbox6 => addCheckbox(checkboxBuilder, false),
+			disabledCheckbox1 => addCheckbox(checkboxBuilder, true),
+			disabledCheckbox2 => addCheckbox(checkboxBuilder, false),
+			disableToggle => addCheckbox(checkboxBuilder, false),
+		]);
 
-		// Disabled state checkboxes
-		disabledCheckbox1 = addCheckbox(stdBuilder, null, true);
-		addElement(disabledCheckbox1, null);
-		disabledCheckbox2 = addCheckbox(stdBuilder, null, false);
-		addElement(disabledCheckbox2, null);
-
-		// Toggle for enabling/disabling
-		disableToggle = addCheckbox(stdBuilder, null, false);
-		addElement(disableToggle, null);
-
-		demoResult = demoBuilder.buildWithParameters("checkboxesDemo", [], {
-			placeholderObjects: [
-				"checkbox1" => PVObject(cb1.getObject()),
-				"checkbox2" => PVObject(cb2.getObject()),
-				"checkbox3" => PVObject(cb3.getObject()),
-				"checkbox4" => PVObject(cb4.getObject()),
-				"checkbox5" => PVObject(cb5.getObject()),
-				"disabledCheckbox1" => PVObject(disabledCheckbox1.getObject()),
-				"disabledCheckbox2" => PVObject(disabledCheckbox2.getObject()),
-				"disableToggle" => PVObject(disableToggle.getObject()),
-			]
-		});
+		demoResult = ui.builderResults;
+		checkboxes = [ui.checkbox1, ui.checkbox2, ui.checkbox3, ui.checkbox4, ui.checkbox5, ui.checkbox6];
+		disabledCheckbox1 = ui.disabledCheckbox1;
+		disabledCheckbox2 = ui.disabledCheckbox2;
+		disableToggle = ui.disableToggle;
 
 		addBuilderResult(demoResult);
 		updateCount();
@@ -90,6 +75,7 @@ class CheckboxesDemoScreen extends DemoScreenBase {
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
+		checkboxBuilder = null;
 		demoResult = null;
 		checkboxes = [];
 		disabledCheckbox1 = null;

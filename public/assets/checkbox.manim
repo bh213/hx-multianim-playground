@@ -1,20 +1,71 @@
 version: 0.5
 
-// Checkbox Test
-// Demonstrates a checkbox component with toggle state display.
-// Uses checkbox2 style (overridden via settings).
-// See also: components.manim for all 5 checkbox variants.
+// Checkbox Styles Builder
+// #checkbox - Standard checkbox (ui atlas: CheckBox_off/on_*)
+// #tickbox  - Tickbox style (ui atlas: TickBox2_off/on_*)
+// #toggle   - Toggle switch (ui atlas: Toggle_off/on_*)
+// #radio    - Small radio button (ui atlas: RadioButton_off/on_*)
+// #radio2   - Large radio button (ui atlas: RadioButton2_off/on_*)
+// #simple   - Simple checkbox (ui-new atlas: checkbox_unchecked/checked/disabled)
 
-#ui programmable() {
-      pos: 100, 300
+#checkbox programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "CheckBox_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "CheckBox_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "CheckBox_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "CheckBox_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "CheckBox_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "CheckBox_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "CheckBox_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "CheckBox_on_disabled"));
+}
 
-      text(dd, "Checkbox Demo", #ffffffcc): 10, -30
+#tickbox programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "TickBox2_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "TickBox2_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "TickBox2_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "TickBox2_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "TickBox2_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "TickBox2_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "TickBox2_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "TickBox2_on_disabled"));
+}
 
-      // Toggle state display
-      #checkboxVal(updatable) text(dd, "Toggle the checkbox!", #ffffffaa): 10, 50
+#toggle programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "Toggle_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "Toggle_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "Toggle_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "Toggle_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "Toggle_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "Toggle_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "Toggle_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "Toggle_on_disabled"));
+}
 
-      // Checkbox placeholder - uses checkbox2 style from std.manim
-      placeholder(generated(cross(200, 20)), builderParameter("checkbox")) {
-            settings{buildName=>checkbox2}
-      }
+#radio programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "RadioButton_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "RadioButton_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "RadioButton_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "RadioButton_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "RadioButton_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "RadioButton_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "RadioButton_on_disabled"));
+}
+
+#radio2 programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton2_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "RadioButton2_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "RadioButton2_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "RadioButton2_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "RadioButton2_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "RadioButton2_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "RadioButton2_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "RadioButton2_on_disabled"));
+}
+
+#simple programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    scale: 2
+    @(status=>*, checked=>false, disabled=>false) bitmap(sheet("ui-new", "checkbox_unchecked"));
+    @(status=>*, checked=>true, disabled=>false) bitmap(sheet("ui-new", "checkbox_checked"));
+    @(disabled=>true) bitmap(sheet("ui-new", "checkbox_disabled"));
 }

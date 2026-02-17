@@ -5,8 +5,8 @@ export const CATEGORIES: CategoryInfo[] = [
     {
         name: 'UI Components',
         screens: [
-            { name: 'buttons', displayName: 'Buttons', category: 'UI Components', manimFile: 'demos/ui/buttons.manim' },
-            { name: 'checkboxes', displayName: 'Checkboxes', category: 'UI Components', manimFile: 'demos/ui/checkboxes.manim' },
+            { name: 'buttons', displayName: 'Buttons', category: 'UI Components', manimFile: 'demos/ui/buttons-demo.manim' },
+            { name: 'checkboxes', displayName: 'Checkboxes', category: 'UI Components', manimFile: 'demos/ui/checkboxes-demo.manim' },
             { name: 'sliders', displayName: 'Sliders', category: 'UI Components', manimFile: 'demos/ui/sliders.manim' },
             { name: 'dropdowns', displayName: 'Dropdowns', category: 'UI Components', manimFile: 'demos/ui/dropdowns.manim' },
             { name: 'scrollableList', displayName: 'Scrollable List', category: 'UI Components', manimFile: 'demos/ui/scrollable-list.manim' },

@@ -1,0 +1,89 @@
+version: 0.5
+
+// Checkboxes Demo
+// Shows checkbox, tickbox, toggle, radio, and simple variants with selected count.
+// Uses checkbox.manim builder styles from ui and ui-new atlases.
+
+#checkboxesDemo programmable() {
+    pos: 50, 80
+
+    // Section: Checkbox Variants (ui atlas)
+    text(exo2_16, "Checkbox Variants (ui)", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Checkbox style (checkbox.checkbox)
+    text(exo2_light_14, "Checkbox", #cccccc): 0, 35
+    placeholder(generated(cross(20, 20)), builderParameter("checkbox1")) {
+        pos: 0, 55
+        settings{buildName=>checkbox}
+    }
+
+    // Tickbox style
+    text(exo2_light_14, "Tickbox", #cccccc): 120, 35
+    placeholder(generated(cross(20, 20)), builderParameter("checkbox2")) {
+        pos: 120, 55
+        settings{buildName=>tickbox}
+    }
+
+    // Toggle style
+    text(exo2_light_14, "Toggle", #cccccc): 240, 35
+    placeholder(generated(cross(20, 20)), builderParameter("checkbox3")) {
+        pos: 240, 55
+        settings{buildName=>toggle}
+    }
+
+    // Radio style
+    text(exo2_light_14, "Radio", #cccccc): 360, 35
+    placeholder(generated(cross(20, 20)), builderParameter("checkbox4")) {
+        pos: 360, 55
+        settings{buildName=>radio}
+    }
+
+    // Radio2 style
+    text(exo2_light_14, "Radio2", #cccccc): 480, 35
+    placeholder(generated(cross(20, 20)), builderParameter("checkbox5")) {
+        pos: 480, 55
+        settings{buildName=>radio2}
+    }
+
+    // Section: Simple Checkbox (ui-new atlas)
+    text(exo2_16, "Simple Checkbox (ui-new)", #4caf50): 0, 110
+    bitmap(generated(color(700, 1, #4caf5033))): 0, 132
+
+    text(exo2_light_14, "Simple", #cccccc): 0, 145
+    placeholder(generated(cross(24, 24)), builderParameter("checkbox6")) {
+        pos: 0, 165
+        settings{buildName=>simple}
+    }
+
+    // Selected count display
+    text(exo2_16, "Status", #7fdbda): 0, 220
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 242
+    ninepatch("ui", "Window_3x3_idle", 350, 40): 0, 255
+    #countText(updatable) text(exo2_20, "Selected: 0 / 6", #ffffff, left, 330): 15, 263
+
+    // Disabled state demo
+    text(exo2_16, "Disabled State", #7fdbda): 0, 330
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 352
+
+    text(exo2_light_14, "Disabled Checkbox", #cccccc): 0, 365
+    placeholder(generated(cross(20, 20)), builderParameter("disabledCheckbox1")) {
+        pos: 0, 385
+        settings{buildName=>checkbox}
+    }
+
+    text(exo2_light_14, "Disabled Toggle", #cccccc): 160, 365
+    placeholder(generated(cross(20, 20)), builderParameter("disabledCheckbox2")) {
+        pos: 160, 385
+        settings{buildName=>toggle}
+    }
+
+    // Enable/disable toggle
+    text(exo2_16, "Controls", #7fdbda): 0, 440
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 462
+    placeholder(generated(cross(20, 20)), builderParameter("disableToggle")) {
+        pos: 0, 480
+        settings{buildName=>toggle}
+    }
+    text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 482
+}

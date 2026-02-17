@@ -27,9 +27,9 @@ version: 0.5
   // Section 2: Generated cross bitmaps (placeholder markers)
   text(exo2_16, "generated(cross(w, h, #FF0000)):", #cccccc): 0, 130
 
-  bitmap(generated(cross(30, 30, #FF0000))): 0, 160
-  bitmap(generated(cross(50, 50, #FF0000))): 40, 160
-  bitmap(generated(cross(80, 40, #FF0000))): 100, 160
+  bitmap(generated(cross(30, 30, white))): 0, 160
+  bitmap(generated(cross(50, 50, black))): 40, 160
+  bitmap(generated(cross(80, 40, #FFFFFFFF))): 100, 160
   bitmap(generated(cross(40, 80, #FF0000))): 190, 160
   bitmap(generated(cross(100, 60, #FF0000))): 240, 160
 

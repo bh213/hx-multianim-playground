@@ -24,19 +24,28 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 	var currentMp:Int = 50;
 
 	override public function load():Void {
-		setupDemo("Character Sheet", "Character stats with HP/MP bars, attributes, and XP progression");
+		setupDemo("Character Sheet", "Character stats with dynamic references for HP/MP bars, attributes, and XP");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/character-sheet.manim", false);
 
-		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "characterSheetDemo", [], [
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "characterSheetDemo", [
+			"hp" => currentHp,
+			"maxHp" => maxHp,
+			"mp" => currentMp,
+			"maxMp" => maxMp,
+			"strStat" => str,
+			"dexStat" => dex,
+			"intStat" => intStat,
+			"xp" => xp,
+			"xpMax" => xpToLevel,
+			"level" => level,
+		], [
 			levelUpButton => addButtonWithSingleBuilder(stdBuilder, "button", "Level Up (+25 XP)"),
-		]);
+		], true);
 
 		demoResult = ui.builderResults;
 		levelUpButton = ui.levelUpButton;
 		addBuilderResult(demoResult);
-
-		refreshDisplay();
 	}
 
 	function gainXP(amount:Int):Void {
@@ -52,10 +61,6 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 			currentHp = maxHp;
 			currentMp = maxMp;
 			xpToLevel = Std.int(xpToLevel * 1.5);
-
-			if (demoResult != null) {
-				demoResult.getUpdatable("feedbackText").updateText('Level Up! Now level $level');
-			}
 		}
 		refreshDisplay();
 	}
@@ -63,36 +68,16 @@ class CharacterSheetDemoScreen extends DemoScreenBase {
 	function refreshDisplay():Void {
 		if (demoResult == null) return;
 
-		demoResult.getUpdatable("charLevel").updateText('$level');
-
-		final hpWidth = Std.int(300 * currentHp / maxHp);
-		final hpBarObj = demoResult.getSingleItemByName("hpBar").object.toh2dObject();
-		hpBarObj.scaleX = hpWidth / 300.0;
-		demoResult.getUpdatable("hpText").updateText('$currentHp / $maxHp');
-
-		final mpWidth = Std.int(300 * currentMp / maxMp);
-		final mpBarObj = demoResult.getSingleItemByName("mpBar").object.toh2dObject();
-		mpBarObj.scaleX = mpWidth / 300.0;
-		demoResult.getUpdatable("mpText").updateText('$currentMp / $maxMp');
-
-		demoResult.getUpdatable("strValue").updateText('$str');
-		demoResult.getUpdatable("dexValue").updateText('$dex');
-		demoResult.getUpdatable("intValue").updateText('$intStat');
-
-		final strBarObj = demoResult.getSingleItemByName("strBar").object.toh2dObject();
-		strBarObj.scaleX = Math.min(str / 60.0, 1.0) * (120.0 / 60.0);
-		final dexBarObj = demoResult.getSingleItemByName("dexBar").object.toh2dObject();
-		dexBarObj.scaleX = Math.min(dex / 60.0, 1.0) * (120.0 / 48.0);
-		final intBarObj = demoResult.getSingleItemByName("intBar").object.toh2dObject();
-		intBarObj.scaleX = Math.min(intStat / 60.0, 1.0) * (120.0 / 36.0);
-
-		final xpRatio = xp / xpToLevel;
-		final xpBarObj = demoResult.getSingleItemByName("xpBar").object.toh2dObject();
-		xpBarObj.scaleX = if (xpRatio > 0) xpRatio * 340.0 else 0.001;
-		demoResult.getUpdatable("xpText").updateText('$xp / $xpToLevel XP');
-
-		final power = str + dex + intStat;
-		demoResult.getUpdatable("powerText").updateText('$power');
+		demoResult.setParameter("hp", currentHp);
+		demoResult.setParameter("maxHp", maxHp);
+		demoResult.setParameter("mp", currentMp);
+		demoResult.setParameter("maxMp", maxMp);
+		demoResult.setParameter("strStat", str);
+		demoResult.setParameter("dexStat", dex);
+		demoResult.setParameter("intStat", intStat);
+		demoResult.setParameter("xp", xp);
+		demoResult.setParameter("xpMax", xpToLevel);
+		demoResult.setParameter("level", level);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

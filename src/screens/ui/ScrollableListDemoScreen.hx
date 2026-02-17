@@ -1,5 +1,6 @@
 package screens.ui;
 
+import bh.base.MacroUtils;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimScrollableList;
@@ -8,7 +9,6 @@ import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
 
 class ScrollableListDemoScreen extends DemoScreenBase {
-	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var scrollableList:Null<UIMultiAnimScrollableList>;
 
@@ -43,17 +43,14 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 	override public function load():Void {
 		setupDemo("Scrollable List", "Scrollable list with 25 items and selection tracking");
 
-		demoBuilder = screenManager.buildFromResourceName("demos/ui/scrollable-list.manim", false);
+		var demoBuilder = screenManager.buildFromResourceName("demos/ui/scrollable-list.manim", false);
 
-		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", LIST_ITEMS, null, 0, 200, 300);
-		addElement(scrollableList, null);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "scrollableListDemo", [], [
+			scrollableList => addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", LIST_ITEMS, 0, 200, 300)
+		]);
 
-		demoResult = demoBuilder.buildWithParameters("scrollableListDemo", [], {
-			placeholderObjects: [
-				"scrollableList" => PVObject(scrollableList.getObject()),
-			]
-		});
-
+		scrollableList = ui.scrollableList;
+		demoResult = ui.builderResults;
 		addBuilderResult(demoResult);
 		updateSelectedText(0);
 	}
@@ -99,7 +96,6 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 
 	override public function onClear():Void {
 		super.onClear();
-		demoBuilder = null;
 		demoResult = null;
 		scrollableList = null;
 	}

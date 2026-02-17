@@ -102,12 +102,7 @@ export class PlaygroundBridge {
     }
 
     private stringToArrayBuffer(str: string): ArrayBuffer {
-        const buf = new ArrayBuffer(str.length);
-        const bufView = new Uint8Array(buf);
-        for (let i = 0; i < str.length; i++) {
-            bufView[i] = str.charCodeAt(i);
-        }
-        return buf;
+        return new TextEncoder().encode(str).buffer;
     }
 
     private loadFile(url: string): ArrayBuffer {

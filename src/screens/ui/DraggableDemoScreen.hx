@@ -82,7 +82,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 		final maxX = BX + 500;
 		final fixedY = BY + 272;
 		drag.dragConstraint = (pos) -> new Point(Math.max(minX, Math.min(pos.x, maxX)), fixedY);
-		drag.returnPathFactory = animPathFactory("returnAnim");
+		drag.returnToOrigin = false;
 		drag.dragAlpha = 0.7;
 
 		drag.onDragEvent = (event, pos, wrapper) -> {

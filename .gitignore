@@ -1,1 +1,4 @@
 node_modules/
+public/playground.js
+public/playground.js.map
+res/.tmp/cache.dat

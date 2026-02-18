@@ -1,0 +1,86 @@
+version: 0.5
+
+// Macro Performance Benchmark
+// Compares builder, builder+incremental, and macro creation & update performance.
+
+// Simple programmable: bitmap + text (2 elements)
+#perfSimple programmable(value:uint=0, color:color=#446688) {
+    bitmap(generated(color(30, 12, $color))): 0, 0
+    text(m6x11, $value, #ffffff): 2, 1
+}
+
+// Complex programmable: avatar, name, level, HP bar, MP bar, status icon (~11 elements)
+#perfComplex programmable(hp:uint=100, maxHp:uint=100, mp:uint=50, maxMp:uint=50, name:string="Unit", level:uint=1) {
+    // Avatar
+    bitmap(generated(color(40, 40, #334455))): 0, 0
+    // Name + Level
+    text(m6x11, $name, #ffffff): 45, 0
+    text(m6x11, 'Lv.${$level}', #aaaaaa): 45, 12
+    // HP bar
+    bitmap(generated(color(100, 6, #1a1a1a))): 45, 24
+    bitmap(generated(color($hp * 100 div $maxHp, 6, #ff4444))): 45, 24
+    text(m6x11, '${$hp}/${$maxHp}', #ffffff, left, 100): 150, 22
+    // MP bar
+    bitmap(generated(color(100, 6, #1a1a1a))): 45, 32
+    bitmap(generated(color($mp * 100 div $maxMp, 6, #4488cc))): 45, 32
+    text(m6x11, '${$mp}/${$maxMp}', #ffffff, left, 100): 150, 30
+    // Status icon
+    bitmap(generated(color(8, 8, #44cc44))): 150, 0
+}
+
+// Small button with pixel font for compact controls
+#perfButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Btn") {
+    @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 90, 26): 0,0
+    @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", 90, 26): 0,0
+    @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", 90, 26): 0,0
+    @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", 90, 26): 0,0
+    text(m6x11, $buttonText, #ffffff, center, 90): 0,7
+}
+
+// Controls panel
+#perfControls programmable() {
+    pos: 40, 80
+
+    text(exo2_16, "Macro Performance Benchmark", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    text(m6x11, "Count:", #cccccc): 0, 33
+
+    placeholder(generated(cross(120, 26, #FF0000)), builderParameter("countDropdown")) {
+        pos: 50, 28
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>200}
+    }
+
+    // perfButton = 90px wide, 26px tall
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("addSimpleBtn")) {
+        pos: 190, 28
+    }
+
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("addComplexBtn")) {
+        pos: 290, 28
+    }
+
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("updateBtn")) {
+        pos: 390, 28
+    }
+
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("clearBtn")) {
+        pos: 490, 28
+    }
+
+    // Creation timing (3 columns)
+    text(m6x11, "Create:", #888888): 0, 64
+    #createBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 64
+    #createIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 64
+    #createMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 64
+
+    // Update timing (3 columns)
+    text(m6x11, "Update:", #888888): 0, 78
+    #updateBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 78
+    #updateIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 78
+    #updateMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 78
+
+    // Object counts
+    text(m6x11, "Objects:", #888888): 0, 92
+    #objectCount(updatable) text(m6x11, "Builder: 0 | Incr: 0 | Macro: 0", #cccccc): 60, 92
+}

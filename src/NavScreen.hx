@@ -77,6 +77,7 @@ class NavScreen extends UIScreenBase {
 				{id: "conditionals", title: "Conditionals"},
 				{id: "expressions", title: "Expressions"},
 				{id: "settings", title: "Settings"},
+				{id: "macroPerformance", title: "Macro Performance"},
 			]
 		}
 	];
@@ -100,10 +101,10 @@ class NavScreen extends UIScreenBase {
 
 		var yPos:Float = 80;
 		var colWidth:Float = 200;
-		var cardHeight:Float = 60;
+		var cardHeight:Float = 36;
 		var cardSpacingX:Float = 10;
-		var cardSpacingY:Float = 8;
-		var categorySpacing:Float = 30;
+		var cardSpacingY:Float = 6;
+		var categorySpacing:Float = 26;
 		var xStart:Float = 40;
 
 		for (cat in CATEGORIES) {

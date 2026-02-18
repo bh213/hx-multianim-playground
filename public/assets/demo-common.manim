@@ -17,11 +17,10 @@ version: 0.5
 }
 
 #navCard programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Demo", category="") {
-    @(status=>normal) ninepatch("ui", "Window_3x3_idle", 180, 60): 0,0
-    @(status=>hover) ninepatch("ui", "button-hover", 180, 60): 0,0
-    @(status=>pressed) ninepatch("ui", "button-pressed", 180, 60): 0,0
-    text(exo2_16, $buttonText, #ffffff, center, 180): 0,12
-    text(exo2_light_12, $category, #888888, center, 180): 0,36
+    @(status=>normal) ninepatch("ui", "Window_3x3_idle", 180, 36): 0,0
+    @(status=>hover) ninepatch("ui", "button-hover", 180, 36): 0,0
+    @(status=>pressed) ninepatch("ui", "button-pressed", 180, 36): 0,0
+    text(exo2_14, $buttonText, #ffffff, center, 180): 0,9
 }
 
 #categoryHeader programmable(title="Category") {

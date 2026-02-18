@@ -172,6 +172,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("conditionals", new ConditionalsDemoScreen(screenManager));
 		screenManager.addScreen("expressions", new ExpressionsDemoScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsDemoScreen(screenManager));
+		screenManager.addScreen("macroPerformance", new MacroPerformanceDemoScreen(screenManager));
 
 		final window = hxd.Window.getInstance();
 		window.resize(1280, 720);

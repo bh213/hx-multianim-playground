@@ -2,12 +2,15 @@ package screens.layout;
 
 import bh.ui.UIElement;
 import bh.ui.*;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 import bh.base.FontManager;
 
 class SlotsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var slotsResult:Null<BuilderResult>;
+	var autoAddCheckbox:Null<UIStandardMultiCheckbox>;
 
 	static inline var TOTAL_SLOTS = 10;
 	static inline var COLS = 5;
@@ -29,7 +32,11 @@ class SlotsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/slots.manim", false);
 
-		slotsResult = demoBuilder.buildWithParameters("slotsShowcase", []);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "slotsShowcase", [], [
+			autoAddChk => addCheckbox(stdBuilder, true),
+		]);
+		slotsResult = ui.builderResults;
+		autoAddCheckbox = ui.autoAddChk;
 		addBuilderResult(slotsResult);
 
 		slotItems = [for (_ in 0...TOTAL_SLOTS) null];
@@ -45,13 +52,12 @@ class SlotsDemoScreen extends DemoScreenBase {
 			final x = col * SLOT_SPACING;
 			final y = if (row == 0) ROW1_Y else ROW2_Y;
 
-			// Set empty bag icon as initial slot content
-			getSlotByIndex(i).setContent(createEmptySlotGraphic());
+			// Set empty slot content from manim
+			getSlotByIndex(i).setContent(buildSlotItem("empty"));
 
-			// Status text under each slot
+			// Status text under each slot (only visible when occupied)
 			final text = new h2d.Text(font);
-			text.text = "empty";
-			text.textColor = 0x888888;
+			text.textColor = 0x44cc44;
 			text.textAlign = Center;
 			text.maxWidth = SLOT_SIZE;
 			text.setPosition(x, y + SLOT_SIZE + 2);
@@ -71,42 +77,10 @@ class SlotsDemoScreen extends DemoScreenBase {
 		updateCountText();
 	}
 
-	function createEmptySlotGraphic():h2d.Object {
-		var g = new h2d.Graphics();
-
-		// Slot border
-		g.lineStyle(1, 0x556677);
-		g.drawRect(5, 15, 60, 40);
-
-		// Bag body
-		g.beginFill(0x3a3a4a);
-		g.moveTo(20, 28);
-		g.lineTo(16, 48);
-		g.lineTo(48, 48);
-		g.lineTo(44, 28);
-		g.endFill();
-
-		// Bag outline
-		g.lineStyle(1, 0x667788);
-		g.moveTo(20, 28);
-		g.lineTo(16, 48);
-		g.lineTo(48, 48);
-		g.lineTo(44, 28);
-		g.lineTo(20, 28);
-
-		// Bag opening
-		g.lineStyle(1, 0x778899);
-		g.moveTo(20, 28);
-		g.lineTo(44, 28);
-
-		// Handle
-		g.lineStyle(1, 0x667788);
-		g.moveTo(26, 28);
-		g.lineTo(26, 22);
-		g.lineTo(38, 22);
-		g.lineTo(38, 28);
-
-		return g;
+	function buildSlotItem(itemType:String):h2d.Object {
+		final result = demoBuilder.buildWithParameters("slotItem", ["itemType" => itemType]);
+		result.object.setPosition(5, 15);
+		return result.object;
 	}
 
 	function getSlotByIndex(index:Int):SlotHandle {
@@ -117,24 +91,31 @@ class SlotsDemoScreen extends DemoScreenBase {
 	function onSlotClick(index:Int):Void {
 		if (slotsResult == null || demoBuilder == null) return;
 		if (clearDelay >= 0) return;
-		if (slotItems[index] != null) return;
+		if (slotItems[index] != null) {
+			emptySlot(index);
+			setLog('Emptied slot $index');
+			return;
+		}
 		fillSlot(index);
 		setLog('Clicked slot $index');
 		checkAllFull();
+	}
+
+	function emptySlot(index:Int):Void {
+		if (slotsResult == null || demoBuilder == null) return;
+		getSlotByIndex(index).setContent(buildSlotItem("empty"));
+		slotItems[index] = null;
+		statusTexts[index].text = "";
+		updateCountText();
 	}
 
 	function fillSlot(index:Int):Void {
 		if (slotsResult == null || demoBuilder == null) return;
 
 		final itemType = ITEM_TYPES[Std.int(Math.random() * ITEM_TYPES.length)];
-		final itemResult = demoBuilder.buildWithParameters("slotItem", ["itemType" => itemType]);
-		itemResult.object.setPosition(5, 15);
-
-		getSlotByIndex(index).setContent(itemResult.object);
+		getSlotByIndex(index).setContent(buildSlotItem(itemType));
 		slotItems[index] = itemType;
-
 		statusTexts[index].text = "occupied";
-		statusTexts[index].textColor = 0x44cc44;
 
 		updateCountText();
 	}
@@ -156,6 +137,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 	}
 
 	function checkAllFull():Void {
+		if (!isAutoAddEnabled()) return;
 		for (i in 0...TOTAL_SLOTS) {
 			if (slotItems[i] == null) return;
 		}
@@ -164,13 +146,12 @@ class SlotsDemoScreen extends DemoScreenBase {
 	}
 
 	function clearAllSlots():Void {
-		if (slotsResult == null) return;
+		if (slotsResult == null || demoBuilder == null) return;
 
 		for (i in 0...TOTAL_SLOTS) {
-			getSlotByIndex(i).setContent(createEmptySlotGraphic());
+			getSlotByIndex(i).setContent(buildSlotItem("empty"));
 			slotItems[i] = null;
-			statusTexts[i].text = "empty";
-			statusTexts[i].textColor = 0x888888;
+			statusTexts[i].text = "";
 		}
 
 		setLog("All slots full! Cleared.");
@@ -192,16 +173,26 @@ class SlotsDemoScreen extends DemoScreenBase {
 		}
 	}
 
+	function isAutoAddEnabled():Bool {
+		return autoAddCheckbox != null && autoAddCheckbox.selected;
+	}
+
 	override public function update(dt:Float):Void {
 		super.update(dt);
 
 		if (clearDelay >= 0) {
+			if (!isAutoAddEnabled()) {
+				clearDelay = -1;
+				return;
+			}
 			clearDelay -= dt;
 			if (clearDelay < 0) {
 				clearAllSlots();
 			}
 			return;
 		}
+
+		if (!isAutoAddEnabled()) return;
 
 		autoFillTimer += dt;
 		if (autoFillTimer >= 1.0) {
@@ -220,6 +211,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 		}
 		demoBuilder = null;
 		slotsResult = null;
+		autoAddCheckbox = null;
 		slotItems = null;
 		statusTexts = null;
 		autoFillTimer = 0;

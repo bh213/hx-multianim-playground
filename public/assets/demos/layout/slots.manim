@@ -1,13 +1,15 @@
 version: 0.5
 
-// Item that goes into a slot - 5 variants with different colors and names
-#slotItem programmable(itemType:[sword, shield, potion, ring, scroll]) {
+// Item that goes into a slot - 5 item variants + empty state
+#slotItem programmable(itemType:[empty, sword, shield, potion, ring, scroll]) {
+  @(itemType=>empty) bitmap(generated(color(60, 40, #2a2a3a))): 0, 0
   @(itemType=>sword) bitmap(generated(color(60, 40, #cc4444))): 0, 0
   @(itemType=>shield) bitmap(generated(color(60, 40, #4488cc))): 0, 0
   @(itemType=>potion) bitmap(generated(color(60, 40, #44cc44))): 0, 0
   @(itemType=>ring) bitmap(generated(color(60, 40, #ccaa33))): 0, 0
   @(itemType=>scroll) bitmap(generated(color(60, 40, #cc88ff))): 0, 0
 
+  @(itemType=>empty) text(m6x11, "empty", #888888, center, 60): 0, 14
   @(itemType=>sword) text(m6x11, "Sword", #ffffff, center, 60): 0, 14
   @(itemType=>shield) text(m6x11, "Shield", #ffffff, center, 60): 0, 14
   @(itemType=>potion) text(m6x11, "Potion", #ffffff, center, 60): 0, 14
@@ -48,9 +50,13 @@ version: 0.5
   // Container for programmatic status texts and interactives
   #slotContainer(updatable) point: 0, 0
 
+  // Auto-add checkbox
+  placeholder(generated(cross(20, 20, #FF0000)), builderParameter("autoAddChk")) { pos: 0, 240 }
+  text(exo2_light_14, "Auto-add", #aaaaaa): 24, 240
+
   // Counter
-  #slotCountText(updatable) text(exo2_16, "Slots: 0 / 10 occupied", #ffffff, left, 400): 0, 240
+  #slotCountText(updatable) text(exo2_16, "Slots: 0 / 10 occupied", #ffffff, left, 400): 0, 265
 
   // Log
-  #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 265
+  #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 290
 }

@@ -12,17 +12,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 	var layoutResult:Null<BuilderResult>;
 	var showcaseResult:Null<BuilderResult>;
 	var scrollableList:Null<UIMultiAnimScrollableList>;
-	var activeBitmapType:String = "rectangle";
-
-	static final BITMAP_ITEMS:Array<UIElementListItem> = [
-		{name: "Rectangle"},
-		{name: "Marine"},
-		{name: "Circle"},
-		{name: "Star"},
-		{name: "Skull"},
-	];
-
-	static final BITMAP_TYPES:Array<String> = ["rectangle", "marine", "circle", "star", "skull"];
+	var activeBitmapType:String = "rectBlack";
 
 	override public function load():Void {
 		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow");
@@ -30,8 +20,8 @@ class FiltersDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/filters.manim", false);
 
 		// Scrollable list for bitmap selection
-		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", BITMAP_ITEMS, null, 0, 160,
-			130);
+		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", TestBitmaps.ALL_ITEMS,
+			null, 0, 160, 200);
 		addElement(scrollableList, null);
 
 		// Build layout with list injected
@@ -43,7 +33,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 		addBuilderResult(layoutResult);
 
 		// Build initial filter showcase
-		rebuildShowcase("rectangle");
+		rebuildShowcase(TestBitmaps.ALL_TYPES[0]);
 	}
 
 	function rebuildShowcase(bitmapType:String):Void {
@@ -59,9 +49,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 		if (layoutResult != null) {
 			final updatable = layoutResult.getUpdatable("selectedText");
 			if (updatable != null) {
-				final idx = BITMAP_TYPES.indexOf(bitmapType);
-				final displayName = idx >= 0 ? BITMAP_ITEMS[idx].name : bitmapType;
-				updatable.updateText('Active: $displayName');
+				updatable.updateText('Active: ${TestBitmaps.getName(bitmapType)}');
 			}
 		}
 	}
@@ -69,8 +57,8 @@ class FiltersDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIDoubleClickItem(index, items):
-				if (source == scrollableList && index >= 0 && index < BITMAP_TYPES.length) {
-					rebuildShowcase(BITMAP_TYPES[index]);
+				if (source == scrollableList && index >= 0 && index < TestBitmaps.ALL_TYPES.length) {
+					rebuildShowcase(TestBitmaps.ALL_TYPES[index]);
 				}
 			default:
 		}

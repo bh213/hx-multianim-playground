@@ -3,12 +3,13 @@ version: 0.5
 // Filters Demo
 // All filter types demonstrated on selectable bitmap sources
 // Uses apply{} blocks to apply filters to conditional bitmap sources
+// Bitmap types match TestBitmaps.ALL_TYPES
 
 // Reusable filter sample: uses apply{} for the filter and @(bitmapType) for the bitmap source.
 // The apply block sets filter properties on the parent context, affecting all child bitmaps.
 #filterSample programmable(
     filterType:[none, outline, glow, blur, saturate, brightness, dropShadow]=none,
-    bitmapType:[rectangle, marine, circle, star, skull]=rectangle) {
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack) {
     @(filterType=>outline) apply { filter: outline(color: #ff000099, size: 1) }
     @(filterType=>glow) apply { filter: glow(color: #ffaa00, alpha: 0.8, radius: 8, smoothColor: true) }
     @(filterType=>blur) apply { filter: blur(radius: 4) }
@@ -17,15 +18,23 @@ version: 0.5
     @(filterType=>dropShadow) apply { filter: dropShadow(3, 0.5, #000000, 0.5, 6, 1.0) }
     @(bitmapType=>marine) apply { scale: 2 }
     @(bitmapType=>skull) apply { scale: 5 }
-    @(bitmapType=>rectangle) bitmap(generated(color(60, 60, #4488cc)));
-    @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
-    @(bitmapType=>circle) bitmap(file("circle_soft.png"));
+    @(bitmapType=>dice) apply { scale: 5 }
+    @(bitmapType=>rectBlack) bitmap(generated(color(60, 60, #000000)));
+    @(bitmapType=>rectWhite) bitmap(generated(color(60, 60, #ffffff)));
+    @(bitmapType=>rectGreen) bitmap(generated(color(60, 60, #00cc00)));
+    @(bitmapType=>circleWhite) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleBlack) apply { tint: #000000 }
+    @(bitmapType=>circleBlack) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleRed) apply { tint: #ff0000 }
+    @(bitmapType=>circleRed) bitmap(file("circle_soft.png"));
     @(bitmapType=>star) bitmap(file("star.png"));
     @(bitmapType=>skull) bitmap(sheet("crew2", "icon-skull"));
+    @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
+    @(bitmapType=>dice) bitmap(sheet("crew2", "dice"));
 }
 
 // Grid of all 7 filter types applied to a given bitmap type
-#filterShowcase programmable(bitmapType:[rectangle, marine, circle, star, skull]=rectangle) {
+#filterShowcase programmable(bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack) {
     // Row 1: none, outline, glow, blur
     text(m6x11, "none", #aaaaaa, center, 120): 0, 0
     staticRef($filterSample, filterType=>none, bitmapType=>$bitmapType): 20, 18
@@ -56,9 +65,9 @@ version: 0.5
     text(exo2_light_14, "Double-click a bitmap type to change the sample sprite", #aaaaaa, left, 600): 50, 110
 
     // Scrollable list for bitmap selection
-    placeholder(generated(cross(160, 130, #FF0000)), builderParameter("bitmapList")) {
+    placeholder(generated(cross(160, 200, #FF0000)), builderParameter("bitmapList")) {
         pos: 50, 160
     }
 
-    #selectedText(updatable) text(exo2_light_14, "Active: Rectangle", #7fdbda, left, 200): 50, 310
+    #selectedText(updatable) text(exo2_light_14, "Active: Black Rect", #7fdbda, left, 200): 50, 380
 }

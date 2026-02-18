@@ -68,6 +68,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'conditionals', displayName: 'Conditionals', category: 'Advanced Features', manimFile: 'demos/advanced/conditionals.manim' },
             { name: 'expressions', displayName: 'Expressions', category: 'Advanced Features', manimFile: 'demos/advanced/expressions.manim' },
             { name: 'settings', displayName: 'Settings', category: 'Advanced Features', manimFile: 'demos/advanced/settings.manim' },
+            { name: 'macroPerformance', displayName: 'Macro Performance', category: 'Advanced Features', manimFile: 'demos/advanced/macro-performance.manim' },
         ]
     }
 ];

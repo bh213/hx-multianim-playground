@@ -17957,7 +17957,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		particles.addGroup(group);
 		return particles;
 	}
-	,createAnimatedPath: function(name,startPoint,endPoint,startAngle) {
+	,createAnimatedPath: function(name,normalization) {
 		var tmp = this.multiParserResult;
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
@@ -17967,10 +17967,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(_g._hx_index == 12) {
 			var pathDef = _g.animatedPathDef;
 			var paths = this.getPaths();
-			var path = paths.getPath(pathDef.pathName,startPoint,endPoint);
-			if(startAngle != null) {
-				path = path.withStartAngle(startAngle);
-			}
+			var path = paths.getPath(pathDef.pathName,normalization);
 			var mode;
 			var _g = pathDef.mode;
 			if(_g == null) {
@@ -18579,7 +18576,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4080, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4076, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -18685,7 +18682,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4163, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4159, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -18719,7 +18716,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4179, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4175, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -20246,6 +20243,14 @@ var bh_paths_PathType = $hxEnums["bh.paths.PathType"] = { __ename__:true,__const
 };
 bh_paths_PathType.__constructs__ = [bh_paths_PathType.Checkpoint,bh_paths_PathType.Line,bh_paths_PathType.Arc,bh_paths_PathType.Bezier3,bh_paths_PathType.Bezier4,bh_paths_PathType.Spiral,bh_paths_PathType.Wave];
 bh_paths_PathType.__empty_constructs__ = [bh_paths_PathType.Line];
+var bh_paths_PathNormalization = $hxEnums["bh.paths.PathNormalization"] = { __ename__:true,__constructs__:null
+	,Stretch: ($_=function(startPoint,endPoint) { return {_hx_index:0,startPoint:startPoint,endPoint:endPoint,__enum__:"bh.paths.PathNormalization",toString:$estr}; },$_._hx_name="Stretch",$_.__params__ = ["startPoint","endPoint"],$_)
+	,FitCenter: ($_=function(startPoint,endPoint) { return {_hx_index:1,startPoint:startPoint,endPoint:endPoint,__enum__:"bh.paths.PathNormalization",toString:$estr}; },$_._hx_name="FitCenter",$_.__params__ = ["startPoint","endPoint"],$_)
+	,Anchor: ($_=function(position,angle) { return {_hx_index:2,position:position,angle:angle,__enum__:"bh.paths.PathNormalization",toString:$estr}; },$_._hx_name="Anchor",$_.__params__ = ["position","angle"],$_)
+	,FitBounds: ($_=function(topLeft,bottomRight) { return {_hx_index:3,topLeft:topLeft,bottomRight:bottomRight,__enum__:"bh.paths.PathNormalization",toString:$estr}; },$_._hx_name="FitBounds",$_.__params__ = ["topLeft","bottomRight"],$_)
+};
+bh_paths_PathNormalization.__constructs__ = [bh_paths_PathNormalization.Stretch,bh_paths_PathNormalization.FitCenter,bh_paths_PathNormalization.Anchor,bh_paths_PathNormalization.FitBounds];
+bh_paths_PathNormalization.__empty_constructs__ = [];
 var bh_paths_MultiAnimPaths = function(pathDefs,builder) {
 	this.pathDefs = pathDefs;
 	this.builder = builder;
@@ -20253,7 +20258,7 @@ var bh_paths_MultiAnimPaths = function(pathDefs,builder) {
 $hxClasses["bh.paths.MultiAnimPaths"] = bh_paths_MultiAnimPaths;
 bh_paths_MultiAnimPaths.__name__ = "bh.paths.MultiAnimPaths";
 bh_paths_MultiAnimPaths.prototype = {
-	getPath: function(name,startPoint,endPoint) {
+	getPath: function(name,normalization) {
 		var _gthis = this;
 		var oldIndexed = this.builder.indexedParams;
 		this.builder.indexedParams = new haxe_ds_StringMap();
@@ -20263,7 +20268,6 @@ bh_paths_MultiAnimPaths.prototype = {
 		if(def == null) {
 			throw haxe_Exception.thrown("path not found: " + name);
 		}
-		var baseStart = startPoint != null ? startPoint : new bh_base_FPoint(0,0);
 		var singlePaths = [];
 		var point = new bh_base_FPoint(0,0);
 		var angle = 0.;
@@ -20523,8 +20527,8 @@ bh_paths_MultiAnimPaths.prototype = {
 		}
 		this.builder.indexedParams = oldIndexed;
 		var path = new bh_paths_Path(singlePaths);
-		if(startPoint != null && endPoint != null) {
-			return path.normalize(startPoint,endPoint);
+		if(normalization != null) {
+			return path.applyTransform(normalization);
 		}
 		return path;
 	}
@@ -20682,20 +20686,35 @@ bh_paths_Path.prototype = {
 		}
 		throw haxe_Exception.thrown("rate out of range: " + rate);
 	}
-	,withStartAngle: function(angle) {
-		var cosA = Math.cos(angle);
-		var sinA = Math.sin(angle);
-		var transformed = [];
-		var _g = 0;
-		var _g1 = this.singlePaths;
-		while(_g < _g1.length) {
-			var sp = _g1[_g];
-			++_g;
-			transformed.push(sp.transform(cosA,sinA,1.0,0.,0.));
+	,applyTransform: function(mode) {
+		switch(mode._hx_index) {
+		case 0:
+			var startPoint = mode.startPoint;
+			var endPoint = mode.endPoint;
+			return this.applyStretch(startPoint,endPoint);
+		case 1:
+			var startPoint = mode.startPoint;
+			var endPoint = mode.endPoint;
+			return this.applyFitCenter(startPoint,endPoint);
+		case 2:
+			var position = mode.position;
+			var angle = mode.angle;
+			return this.applyAnchor(position,angle);
+		case 3:
+			var topLeft = mode.topLeft;
+			var bottomRight = mode.bottomRight;
+			return this.applyFitBounds(topLeft,bottomRight);
 		}
-		return new bh_paths_Path(transformed);
 	}
-	,normalize: function(startPoint,endPoint) {
+	,applyStretch: function(startPoint,endPoint) {
+		var dx = endPoint.x - startPoint.x;
+		var dy = endPoint.y - startPoint.y;
+		var dz = 0.;
+		if(dz == null) {
+			dz = 0.;
+		}
+		var targetDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var targetAngle = Math.atan2(endPoint.y - startPoint.y,endPoint.x - startPoint.x);
 		var dx = this.endpoint.x;
 		var dy = this.endpoint.y;
 		var dz = 0.;
@@ -20704,8 +20723,14 @@ bh_paths_Path.prototype = {
 		}
 		var rawDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 		if(rawDist < 1e-10) {
-			return this;
+			return this.applyFitCenter(startPoint,endPoint);
 		}
+		var scale = targetDist / rawDist;
+		var rawAngle = Math.atan2(this.endpoint.y,this.endpoint.x);
+		var rotation = targetAngle - rawAngle;
+		return this.transformAll(Math.cos(rotation),Math.sin(rotation),scale,startPoint.x,startPoint.y);
+	}
+	,applyFitCenter: function(startPoint,endPoint) {
 		var dx = endPoint.x - startPoint.x;
 		var dy = endPoint.y - startPoint.y;
 		var dz = 0.;
@@ -20713,21 +20738,125 @@ bh_paths_Path.prototype = {
 			dz = 0.;
 		}
 		var targetDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-		var scale = targetDist / rawDist;
-		var rawAngle = Math.atan2(this.endpoint.y,this.endpoint.x);
 		var targetAngle = Math.atan2(endPoint.y - startPoint.y,endPoint.x - startPoint.x);
-		var rotation = targetAngle - rawAngle;
-		var cosA = Math.cos(rotation);
-		var sinA = Math.sin(rotation);
+		var maxExtent = this.computeMaxExtent();
+		var scale = maxExtent > 1e-10 ? targetDist / (maxExtent * 2) : 1.0;
+		var cosA = Math.cos(targetAngle);
+		var sinA = Math.sin(targetAngle);
+		var scaled = this.transformAll(cosA,sinA,scale,0,0);
+		var center = scaled.computeCenter();
+		var midX = (startPoint.x + endPoint.x) / 2;
+		var midY = (startPoint.y + endPoint.y) / 2;
+		return scaled.translateAll(midX - center.x,midY - center.y);
+	}
+	,applyAnchor: function(position,angle) {
+		return this.transformAll(Math.cos(angle),Math.sin(angle),1.0,position.x,position.y);
+	}
+	,applyFitBounds: function(topLeft,bottomRight) {
+		var bounds = this.computeBounds();
+		var pathW = bounds.maxX - bounds.minX;
+		var pathH = bounds.maxY - bounds.minY;
+		var boxW = bottomRight.x - topLeft.x;
+		var boxH = bottomRight.y - topLeft.y;
+		var scale = 1.0;
+		if(pathW > 1e-10 && pathH > 1e-10) {
+			scale = Math.min(boxW / pathW,boxH / pathH);
+		} else if(pathW > 1e-10) {
+			scale = boxW / pathW;
+		} else if(pathH > 1e-10) {
+			scale = boxH / pathH;
+		}
+		var scaled = this.transformAll(1.0,0.0,scale,0,0);
+		var scaledBounds = scaled.computeBounds();
+		var scaledW = scaledBounds.maxX - scaledBounds.minX;
+		var scaledH = scaledBounds.maxY - scaledBounds.minY;
+		var tx = topLeft.x + (boxW - scaledW) / 2 - scaledBounds.minX;
+		var ty = topLeft.y + (boxH - scaledH) / 2 - scaledBounds.minY;
+		return scaled.translateAll(tx,ty);
+	}
+	,transformAll: function(cosA,sinA,scale,tx,ty) {
 		var transformed = [];
 		var _g = 0;
 		var _g1 = this.singlePaths;
 		while(_g < _g1.length) {
 			var sp = _g1[_g];
 			++_g;
-			transformed.push(sp.transform(cosA,sinA,scale,startPoint.x,startPoint.y));
+			transformed.push(sp.transform(cosA,sinA,scale,tx,ty));
 		}
 		return new bh_paths_Path(transformed);
+	}
+	,translateAll: function(dx,dy) {
+		var transformed = [];
+		var _g = 0;
+		var _g1 = this.singlePaths;
+		while(_g < _g1.length) {
+			var sp = _g1[_g];
+			++_g;
+			transformed.push(sp.transform(1.0,0.0,1.0,dx,dy));
+		}
+		return new bh_paths_Path(transformed);
+	}
+	,computeMaxExtent: function() {
+		var maxDist = 0;
+		var steps = 50;
+		var _g = 0;
+		var _g1 = steps + 1;
+		while(_g < _g1) {
+			var i = _g++;
+			var pt = this.getPoint(i / steps);
+			var dx = pt.x;
+			var dy = pt.y;
+			var dz = 0.;
+			if(dz == null) {
+				dz = 0.;
+			}
+			var d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if(d > maxDist) {
+				maxDist = d;
+			}
+		}
+		return maxDist;
+	}
+	,computeCenter: function() {
+		var sumX = 0;
+		var sumY = 0;
+		var steps = 50;
+		var _g = 0;
+		var _g1 = steps + 1;
+		while(_g < _g1) {
+			var i = _g++;
+			var pt = this.getPoint(i / steps);
+			sumX += pt.x;
+			sumY += pt.y;
+		}
+		var n = steps + 1;
+		return new bh_base_FPoint(sumX / n,sumY / n);
+	}
+	,computeBounds: function() {
+		var minX = Infinity;
+		var minY = Infinity;
+		var maxX = -Infinity;
+		var maxY = -Infinity;
+		var steps = 50;
+		var _g = 0;
+		var _g1 = steps + 1;
+		while(_g < _g1) {
+			var i = _g++;
+			var pt = this.getPoint(i / steps);
+			if(pt.x < minX) {
+				minX = pt.x;
+			}
+			if(pt.y < minY) {
+				minY = pt.y;
+			}
+			if(pt.x > maxX) {
+				maxX = pt.x;
+			}
+			if(pt.y > maxY) {
+				maxY = pt.y;
+			}
+		}
+		return { minX : minX, minY : minY, maxX : maxX, maxY : maxY};
 	}
 	,__class__: bh_paths_Path
 };
@@ -23946,13 +24075,13 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 	}
 	,setReturnAnimPath: function(builder,name) {
 		this.returnPathFactory = function(from,to) {
-			return builder.createAnimatedPath(name,from,to);
+			return builder.createAnimatedPath(name,bh_paths_PathNormalization.Stretch(from,to));
 		};
 		return this;
 	}
 	,setSnapAnimPath: function(builder,name) {
 		this.snapPathFactory = function(from,to) {
-			return builder.createAnimatedPath(name,from,to);
+			return builder.createAnimatedPath(name,bh_paths_PathNormalization.Stretch(from,to));
 		};
 		return this;
 	}
@@ -83480,12 +83609,13 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	,__class__: screens_advanced_SettingsDemoScreen
 });
 var screens_animation_AnimPathDemoScreen = function(screenManager,layers) {
-	this.pathOrigin = new bh_base_FPoint(0,0);
-	this.colorSwatches = [];
+	this.endColorSwatches = [];
+	this.startColorSwatches = [];
 	this.animPaths = [];
 	this.circles = [];
 	this.mode = 0;
-	this.selectedColorIndex = 0;
+	this.endColorIndex = 3;
+	this.startColorIndex = 0;
 	this.speedPct = 100;
 	this.count = 5;
 	this.applyDirection = false;
@@ -83507,8 +83637,9 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.startPoint = new bh_base_FPoint(100,330.);
 		this.endPoint = new bh_base_FPoint(680,330.);
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/anim-path.manim",false);
-		var generatedByMacroBuildWithParametersload4286Builder = function() {
+		var generatedByMacroBuildWithParametersload4602Builder = function() {
 			var speedSlider;
+			var modeDropdown;
 			var countDropdown;
 			var chkScale;
 			var chkProgress;
@@ -83516,8 +83647,6 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			var chkColor;
 			var chkAlpha;
 			var btnRandomize;
-			var btnModeNorm;
-			var btnModeAngle;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -83528,6 +83657,13 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return _el.getObject();
 			});
 			_g.h["speedSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_animation_AnimPathDemoScreen.MODE_ITEMS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				modeDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["modeDropdown"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_animation_AnimPathDemoScreen.COUNT_ITEMS,settings,1);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -83577,24 +83713,13 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return _el.getObject();
 			});
 			_g.h["btnRandomize"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"Start+End");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnModeNorm = _el;
-				return _el.getObject();
-			});
-			_g.h["btnModeNorm"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"Start+Angle");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnModeAngle = _el;
-				return _el.getObject();
-			});
-			_g.h["btnModeAngle"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("animPathDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { speedSlider : speedSlider, countDropdown : countDropdown, chkScale : chkScale, chkProgress : chkProgress, chkDirection : chkDirection, chkColor : chkColor, chkAlpha : chkAlpha, btnRandomize : btnRandomize, btnModeNorm : btnModeNorm, btnModeAngle : btnModeAngle, builderResults : builderResults1};
+			var retVal = { speedSlider : speedSlider, modeDropdown : modeDropdown, countDropdown : countDropdown, chkScale : chkScale, chkProgress : chkProgress, chkDirection : chkDirection, chkColor : chkColor, chkAlpha : chkAlpha, btnRandomize : btnRandomize, builderResults : builderResults1};
 			if(retVal.speedSlider == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "speedSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.modeDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "modeDropdown" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.countDropdown == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "countDropdown" + " is null (check if placeholder object is named correctly)");
@@ -83617,19 +83742,12 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			if(retVal.btnRandomize == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnRandomize" + " is null (check if placeholder object is named correctly)");
 			}
-			if(retVal.btnModeNorm == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnModeNorm" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.btnModeAngle == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnModeAngle" + " is null (check if placeholder object is named correctly)");
-			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4286Builder();
+		var ui = generatedByMacroBuildWithParametersload4602Builder();
 		this.demoResult = ui.builderResults;
 		this.countDropdown = ui.countDropdown;
-		this.btnModeAngle = ui.btnModeAngle;
-		this.btnModeNorm = ui.btnModeNorm;
+		this.modeDropdown = ui.modeDropdown;
 		this.speedSlider = ui.speedSlider;
 		this.randomizeBtn = ui.btnRandomize;
 		this.alphaChk = ui.chkAlpha;
@@ -83681,27 +83799,47 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	}
 	,createColorSwatches: function() {
 		var _gthis = this;
-		this.colorHighlight = new h2d_Graphics();
-		this.addObjectToLayer(this.colorHighlight,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.startColorHighlight = new h2d_Graphics();
+		this.addObjectToLayer(this.startColorHighlight,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.endColorHighlight = new h2d_Graphics();
+		this.addObjectToLayer(this.endColorHighlight,bh_ui_screens_LayersEnum.DefaultLayer);
 		var _g = 0;
 		var _g1 = screens_animation_AnimPathDemoScreen.COLORS.length;
 		while(_g < _g1) {
 			var i = _g++;
-			var g = new h2d_Graphics();
-			g.beginFill(screens_animation_AnimPathDemoScreen.COLORS[i]);
-			g.drawRect(0,0,18,18);
-			g.endFill();
-			g.posChanged = true;
-			g.x = 520 + i * 22;
-			g.posChanged = true;
-			g.y = 543;
-			this.addObjectToLayer(g,bh_ui_screens_LayersEnum.DefaultLayer);
-			this.colorSwatches.push(g);
+			var gs = new h2d_Graphics();
+			gs.beginFill(screens_animation_AnimPathDemoScreen.COLORS[i]);
+			gs.drawRect(0,0,18,18);
+			gs.endFill();
+			gs.posChanged = true;
+			gs.x = 555 + i * 22;
+			gs.posChanged = true;
+			gs.y = 578;
+			this.addObjectToLayer(gs,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.startColorSwatches.push(gs);
 			var idx = [i];
-			var inter = new h2d_Interactive(18,18,g);
-			inter.onClick = (function(idx) {
+			var interS = new h2d_Interactive(18,18,gs);
+			interS.onClick = (function(idx) {
 				return function(_) {
-					_gthis.selectedColorIndex = idx[0];
+					_gthis.startColorIndex = idx[0];
+					_gthis.updateColorSelection();
+					_gthis.rebuildCircles();
+				};
+			})(idx);
+			var ge = new h2d_Graphics();
+			ge.beginFill(screens_animation_AnimPathDemoScreen.COLORS[i]);
+			ge.drawRect(0,0,18,18);
+			ge.endFill();
+			ge.posChanged = true;
+			ge.x = 555 + i * 22;
+			ge.posChanged = true;
+			ge.y = 613;
+			this.addObjectToLayer(ge,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.endColorSwatches.push(ge);
+			var interE = new h2d_Interactive(18,18,ge);
+			interE.onClick = (function(idx) {
+				return function(_) {
+					_gthis.endColorIndex = idx[0];
 					_gthis.updateColorSelection();
 					_gthis.rebuildCircles();
 				};
@@ -83710,19 +83848,23 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.updateColorSelection();
 	}
 	,updateColorSelection: function() {
-		if(this.colorHighlight == null) {
-			return;
+		if(this.startColorHighlight != null) {
+			this.startColorHighlight.clear();
+			this.startColorHighlight.lineStyle(2,16777215);
+			this.startColorHighlight.drawRect(555 + this.startColorIndex * 22 - 2,576,22,22);
 		}
-		this.colorHighlight.clear();
-		this.colorHighlight.lineStyle(2,16777215);
-		this.colorHighlight.drawRect(520 + this.selectedColorIndex * 22 - 2,541,22,22);
+		if(this.endColorHighlight != null) {
+			this.endColorHighlight.clear();
+			this.endColorHighlight.lineStyle(2,16777215);
+			this.endColorHighlight.drawRect(555 + this.endColorIndex * 22 - 2,611,22,22);
+		}
 	}
 	,drawMarkers: function() {
 		if(this.markerGraphics == null) {
 			return;
 		}
 		this.markerGraphics.clear();
-		if(this.mode == 0) {
+		if(this.mode == 2) {
 			this.drawCrosshair(this.markerGraphics,this.startPoint.x,this.startPoint.y,4521796);
 			this.markerGraphics.lineStyle(1.0,16737860);
 			var _this = this.markerGraphics;
@@ -83738,6 +83880,11 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			this.markerGraphics.beginFill(16737860);
 			this.markerGraphics.drawCircle(this.endPoint.x,this.endPoint.y,3);
 			this.markerGraphics.endFill();
+		} else if(this.mode == 3) {
+			this.drawCrosshair(this.markerGraphics,this.startPoint.x,this.startPoint.y,4521796);
+			this.drawCrosshair(this.markerGraphics,this.endPoint.x,this.endPoint.y,16729156);
+			this.markerGraphics.lineStyle(1.0,8947848);
+			this.markerGraphics.drawRect(this.startPoint.x,this.startPoint.y,this.endPoint.x - this.startPoint.x,this.endPoint.y - this.startPoint.y);
 		} else {
 			this.drawCrosshair(this.markerGraphics,this.startPoint.x,this.startPoint.y,4521796);
 			this.drawCrosshair(this.markerGraphics,this.endPoint.x,this.endPoint.y,16729156);
@@ -83761,8 +83908,11 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,getDuration: function() {
 		return 2.0 * (100.0 / this.speedPct);
 	}
-	,getSelectedColor: function() {
-		return screens_animation_AnimPathDemoScreen.COLORS[this.selectedColorIndex];
+	,getStartColor: function() {
+		return screens_animation_AnimPathDemoScreen.COLORS[this.startColorIndex];
+	}
+	,getEndColor: function() {
+		return screens_animation_AnimPathDemoScreen.COLORS[this.endColorIndex];
 	}
 	,rebuildCircles: function() {
 		var _g = 0;
@@ -83797,7 +83947,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			g.addVertex(0,0,g.curR,g.curG,g.curB,g.curA,0 * g.ma + 0 * g.mc + g.mx,0 * g.mb + 0 * g.md + g.my);
 			var x = circleRadius * 1.5;
 			g.addVertex(x,0,g.curR,g.curG,g.curB,g.curA,x * g.ma + 0 * g.mc + g.mx,x * g.mb + 0 * g.md + g.my);
-			var c = this.getSelectedColor();
+			var c = this.getStartColor();
 			g.color.x = (c >> 16 & 255) / 255.0;
 			g.color.y = (c >> 8 & 255) / 255.0;
 			g.color.z = (c & 255) / 255.0;
@@ -83812,18 +83962,23 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		}
 		this.updateStatusText();
 	}
-	,getTransformedPath: function(basePath) {
-		if(this.mode == 0) {
-			var angle = Math.atan2(this.endPoint.y - this.startPoint.y,this.endPoint.x - this.startPoint.x);
-			this.pathOrigin = this.startPoint;
-			return basePath.withStartAngle(angle);
+	,getNormalization: function() {
+		switch(this.mode) {
+		case 0:
+			return bh_paths_PathNormalization.Stretch(this.startPoint,this.endPoint);
+		case 1:
+			return bh_paths_PathNormalization.FitCenter(this.startPoint,this.endPoint);
+		case 2:
+			return bh_paths_PathNormalization.Anchor(this.startPoint,Math.atan2(this.endPoint.y - this.startPoint.y,this.endPoint.x - this.startPoint.x));
+		case 3:
+			return bh_paths_PathNormalization.FitBounds(this.startPoint,this.endPoint);
+		default:
+			return bh_paths_PathNormalization.Stretch(this.startPoint,this.endPoint);
 		}
-		this.pathOrigin = new bh_base_FPoint(0,0);
-		return basePath.normalize(this.startPoint,this.endPoint);
 	}
 	,createAnimPathForIndex: function(idx,basePath,activeCurve,duration) {
 		var _gthis = this;
-		var transformedPath = this.getTransformedPath(basePath);
+		var transformedPath = basePath.applyTransform(this.getNormalization());
 		var ap = new bh_paths_AnimatedPath(transformedPath,bh_paths_AnimatedPathMode.Time(duration));
 		if(this.applyAlpha && activeCurve != null) {
 			ap.addCurveSegment(bh_paths_CurveSlot.Alpha,0.0,activeCurve);
@@ -83835,21 +83990,17 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			ap.addCurveSegment(bh_paths_CurveSlot.Progress,0.0,activeCurve);
 		}
 		if(this.applyColor && activeCurve != null) {
-			ap.setColorRange(2236962,this.getSelectedColor());
+			ap.setColorRange(this.getStartColor(),this.getEndColor());
 			ap.addCurveSegment(bh_paths_CurveSlot.Color,0.0,activeCurve);
 		}
 		ap.addEvent(1.0,"pathEnd");
-		var ox = this.pathOrigin.x;
-		var oy = this.pathOrigin.y;
 		ap.onUpdate = function(state) {
 			if(idx < _gthis.circles.length) {
 				var _this = _gthis.circles[idx];
-				var x = ox + state.position.x;
-				var y = oy + state.position.y;
 				_this.posChanged = true;
-				_this.x = x;
+				_this.x = state.position.x;
 				_this.posChanged = true;
-				_this.y = y;
+				_this.y = state.position.y;
 				_gthis.circles[idx].alpha = state.alpha;
 				var _this = _gthis.circles[idx];
 				var v = state.scale;
@@ -83909,8 +84060,8 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				targets.push("direction");
 			}
 			var targetsStr = targets.length > 0 ? targets.join("+") : "none";
-			var modeName = this.mode == 0 ? "Start+Angle" : "Start+End";
-			updatable.updateText("Path: " + this.currentPath + " | Curve: " + this.currentCurve + " (" + targetsStr + ") | Count: " + this.count + " | " + modeName + " | " + screens_animation_AnimPathDemoScreen.COLOR_NAMES[this.selectedColorIndex]);
+			var modeName = screens_animation_AnimPathDemoScreen.MODE_NAMES[this.mode];
+			updatable.updateText("Path: " + this.currentPath + " | Curve: " + this.currentCurve + " (" + targetsStr + ") | Count: " + this.count + " | " + modeName + " | " + screens_animation_AnimPathDemoScreen.COLOR_NAMES[this.startColorIndex] + "->" + screens_animation_AnimPathDemoScreen.COLOR_NAMES[this.endColorIndex]);
 		}
 	}
 	,update: function(dt) {
@@ -83928,18 +84079,6 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
 		case 0:
-			if(source == this.btnModeAngle) {
-				this.mode = 0;
-				this.drawMarkers();
-				this.rebuildCircles();
-				return;
-			}
-			if(source == this.btnModeNorm) {
-				this.mode = 1;
-				this.drawMarkers();
-				this.rebuildCircles();
-				return;
-			}
 			if(source == this.randomizeBtn) {
 				this.rebuildCircles();
 				return;
@@ -83982,6 +84121,11 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			var items = event.items;
 			if(source == this.countDropdown && index >= 0 && index < screens_animation_AnimPathDemoScreen.COUNT_VALUES.length) {
 				this.count = screens_animation_AnimPathDemoScreen.COUNT_VALUES[index];
+				this.rebuildCircles();
+			}
+			if(source == this.modeDropdown && index >= 0 && index < screens_animation_AnimPathDemoScreen.MODE_NAMES.length) {
+				this.mode = index;
+				this.drawMarkers();
 				this.rebuildCircles();
 			}
 			break;
@@ -84031,7 +84175,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			this.displayInteractive = null;
 		}
 		var _g = 0;
-		var _g1 = this.colorSwatches;
+		var _g1 = this.startColorSwatches;
 		while(_g < _g1.length) {
 			var g = _g1[_g];
 			++_g;
@@ -84039,25 +84183,41 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				g.parent.removeChild(g);
 			}
 		}
-		if(this.colorHighlight != null) {
-			var _this = this.colorHighlight;
+		var _g = 0;
+		var _g1 = this.endColorSwatches;
+		while(_g < _g1.length) {
+			var g = _g1[_g];
+			++_g;
+			if(g != null && g.parent != null) {
+				g.parent.removeChild(g);
+			}
+		}
+		if(this.startColorHighlight != null) {
+			var _this = this.startColorHighlight;
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
-			this.colorHighlight = null;
+			this.startColorHighlight = null;
+		}
+		if(this.endColorHighlight != null) {
+			var _this = this.endColorHighlight;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.endColorHighlight = null;
 		}
 		this.circles = [];
 		this.animPaths = [];
-		this.colorSwatches = [];
+		this.startColorSwatches = [];
+		this.endColorSwatches = [];
 		this.demoBuilder = null;
 		this.demoResult = null;
 		this.pathList = null;
 		this.curveList = null;
 		this.countDropdown = null;
+		this.modeDropdown = null;
 		this.speedSlider = null;
 		this.randomizeBtn = null;
-		this.btnModeAngle = null;
-		this.btnModeNorm = null;
 		this.alphaChk = null;
 		this.scaleChk = null;
 		this.progressChk = null;
@@ -88759,6 +88919,8 @@ screens_animation_AnimPathDemoScreen.CURVE_NAMES = ["linear","easeInQuad","easeO
 screens_animation_AnimPathDemoScreen.CURVE_ITEMS = [{ name : "Linear"},{ name : "Ease In Quad"},{ name : "Ease Out Quad"},{ name : "Ease In/Out Quad"},{ name : "Ease In Cubic"},{ name : "Ease Out Cubic"},{ name : "Ease In/Out Cubic"},{ name : "Ease In Back"},{ name : "Ease Out Back"},{ name : "Ease In/Out Back"},{ name : "Ease Out Bounce"},{ name : "Ease Out Elastic"},{ name : "Accel/Decel"},{ name : "Snap Back"},{ name : "Cubic Bezier"},{ name : "Custom Points"},{ name : "Fade In"},{ name : "Pulse"}];
 screens_animation_AnimPathDemoScreen.COUNT_ITEMS = [{ name : "1"},{ name : "5"},{ name : "10"},{ name : "100"}];
 screens_animation_AnimPathDemoScreen.COUNT_VALUES = [1,5,10,100];
+screens_animation_AnimPathDemoScreen.MODE_ITEMS = [{ name : "Stretch"},{ name : "FitCenter"},{ name : "Anchor"},{ name : "FitBounds"}];
+screens_animation_AnimPathDemoScreen.MODE_NAMES = ["Stretch","FitCenter","Anchor","FitBounds"];
 screens_animation_AnimPathDemoScreen.COLORS = [8379354,16729156,4521796,4491519,16768324,16729343,16777215];
 screens_animation_AnimPathDemoScreen.COLOR_NAMES = ["Cyan","Red","Green","Blue","Yellow","Magenta","White"];
 screens_animation_CurvesDemoScreen.CURVE_TYPES = ["linear","easeInQuad","easeOutQuad","easeInOutQuad","easeInCubic","easeOutCubic","easeInOutCubic","easeInBack","easeOutBack","easeInOutBack","easeOutBounce","easeOutElastic","accelDecel","snapBack","cubicBezier","custom"];

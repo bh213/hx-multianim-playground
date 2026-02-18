@@ -83813,18 +83813,13 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.updateStatusText();
 	}
 	,getTransformedPath: function(basePath) {
-		var angle = Math.atan2(this.endPoint.y - this.startPoint.y,this.endPoint.x - this.startPoint.x);
 		if(this.mode == 0) {
+			var angle = Math.atan2(this.endPoint.y - this.startPoint.y,this.endPoint.x - this.startPoint.x);
 			this.pathOrigin = this.startPoint;
 			return basePath.withStartAngle(angle);
 		}
-		var normalized = basePath.normalize(this.startPoint,this.endPoint);
-		if(normalized != basePath) {
-			this.pathOrigin = new bh_base_FPoint(0,0);
-			return normalized;
-		}
-		this.pathOrigin = this.startPoint;
-		return basePath.withStartAngle(angle);
+		this.pathOrigin = new bh_base_FPoint(0,0);
+		return basePath.normalize(this.startPoint,this.endPoint);
 	}
 	,createAnimPathForIndex: function(idx,basePath,activeCurve,duration) {
 		var _gthis = this;

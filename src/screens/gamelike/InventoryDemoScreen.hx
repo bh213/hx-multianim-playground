@@ -306,9 +306,9 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 	function setupZoneHighlighting(drag:UIMultiAnimDraggable, itemKey:String):Void {
 		drag.onDragStartHighlightZones = (zones) -> {
-			// Highlight valid empty drop zones
+			// Highlight all valid drop zones (empty and occupied — occupied allows swap)
 			for (z in zones) {
-				if (z.slot != null && z.slot.isEmpty())
+				if (z.slot != null)
 					z.slot.setParameter("state", "highlight");
 			}
 

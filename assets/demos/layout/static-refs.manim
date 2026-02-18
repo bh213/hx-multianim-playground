@@ -1,0 +1,65 @@
+version: 0.5
+
+// Child programmable: a colored card with configurable size and color
+#colorCard programmable(w:uint=60, h:uint=40, cardColor:color=#4488cc, label:string="Card") {
+  bitmap(generated(colorWithText($w, $h, $cardColor, $label, #ffffff, m6x11))): 0, 0
+}
+
+// Child programmable: a labeled badge
+#badge programmable(size:uint=30, badgeColor:color=#cc4444, number:uint=0) {
+  bitmap(generated(colorWithText($size, $size, $badgeColor, $number, #ffffff, m6x11))): 0, 0
+  graphics (
+    polygon(#ffffff33, filled, 0,0, 10,0, 0,10);
+  );
+}
+
+// Parent programmable that embeds children via staticRef
+#staticRefsShowcase programmable() {
+  // Section 1: Same child, different sizes
+  text(exo2_16, "Same child, different sizes:", #cccccc): 0, 0
+
+  staticRef($colorCard, w=>80, h=>50, cardColor=>#2c5f7c, label=>"Small"): 0, 30
+  staticRef($colorCard, w=>150, h=>70, cardColor=>#4a90a4, label=>"Medium"): 100, 30
+  staticRef($colorCard, w=>250, h=>90, cardColor=>#7fdbda, label=>"Large"): 270, 30
+
+  // Section 2: Same child, different colors
+  text(exo2_16, "Same child, different colors:", #cccccc): 0, 150
+
+  staticRef($colorCard, w=>100, h=>50, cardColor=>#ff7f50, label=>"Orange"): 0, 180
+  staticRef($colorCard, w=>100, h=>50, cardColor=>#4caf50, label=>"Green"): 120, 180
+  staticRef($colorCard, w=>100, h=>50, cardColor=>#ff4444, label=>"Red"): 240, 180
+  staticRef($colorCard, w=>100, h=>50, cardColor=>#ffeb3b, label=>"Yellow"): 360, 180
+  staticRef($colorCard, w=>100, h=>50, cardColor=>#9c27b0, label=>"Purple"): 480, 180
+
+  // Section 3: Badge grid using staticRef
+  text(exo2_16, "Badges via staticRef:", #cccccc): 0, 260
+
+  staticRef($badge, size=>40, badgeColor=>#cc4444, number=>1): 0, 290
+  staticRef($badge, size=>40, badgeColor=>#44cc44, number=>2): 50, 290
+  staticRef($badge, size=>40, badgeColor=>#4444cc, number=>3): 100, 290
+  staticRef($badge, size=>40, badgeColor=>#cc8844, number=>4): 150, 290
+  staticRef($badge, size=>40, badgeColor=>#cc44cc, number=>5): 200, 290
+
+  // Section 4: Nested children
+  text(exo2_16, "Nesting different children:", #cccccc): 0, 360
+
+  point {
+    pos: 0, 390
+    staticRef($colorCard, w=>300, h=>150, cardColor=>#333344, label=>"Outer Container"): 0, 0
+
+    point {
+      pos: 15, 30
+      staticRef($colorCard, w=>120, h=>100, cardColor=>#2c5f7c, label=>"Inner A"): 0, 0
+      staticRef($badge, size=>25, badgeColor=>#ff4444, number=>1): 10, 60
+      staticRef($badge, size=>25, badgeColor=>#44ff44, number=>2): 45, 60
+      staticRef($badge, size=>25, badgeColor=>#4444ff, number=>3): 80, 60
+    }
+
+    point {
+      pos: 160, 30
+      staticRef($colorCard, w=>120, h=>100, cardColor=>#4a5a6a, label=>"Inner B"): 0, 0
+      staticRef($badge, size=>25, badgeColor=>#ffcc44, number=>4): 10, 60
+      staticRef($badge, size=>25, badgeColor=>#cc44ff, number=>5): 45, 60
+    }
+  }
+}

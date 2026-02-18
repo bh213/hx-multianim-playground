@@ -1,0 +1,145 @@
+version: 0.5
+
+// Skill Tree Demo
+// 4 tiers × 3 attribute paths. Dynamic refs with incremental parameter updates
+// drive node unlock/lock states. Interactives provide click and hover.
+
+// ── Skill node component ────────────────────────────────────────────
+#skillNode programmable(
+    name:string="Skill",
+    unlocked:uint=0,
+    pathColor:color=#666666,
+    icon:[skull,shield,levelup,circle,cross]=circle
+) {
+    // Outer border
+    @(unlocked => 0) bitmap(generated(color(50, 50, #333333))): 0, 0
+    @(unlocked > 0) bitmap(generated(color(50, 50, $pathColor))): 0, 0
+
+    // Inner fill
+    bitmap(generated(color(46, 46, #1a1a1a))): 2, 2
+
+    // Icon background
+    @(unlocked => 0) bitmap(generated(color(28, 28, #262626))): 11, 7
+    @(unlocked > 0) bitmap(generated(color(28, 28, $pathColor))): 11, 7
+
+    // Icons — dimmed when locked, bright when unlocked
+    @(unlocked => 0, icon=>skull)   @alpha(0.2) bitmap(sheet("crew2", "icon-skull")): 17, 13
+    @(unlocked => 0, icon=>shield)  @alpha(0.2) bitmap(sheet("crew2", "icon-shield")): 17, 13
+    @(unlocked => 0, icon=>levelup) @alpha(0.2) bitmap(sheet("crew2", "icon-levelup")): 17, 13
+    @(unlocked => 0, icon=>circle)  @alpha(0.2) bitmap(sheet("crew2", "icon-circle")): 17, 13
+    @(unlocked => 0, icon=>cross)   @alpha(0.2) bitmap(sheet("crew2", "icon-cross")): 17, 13
+
+    @(unlocked > 0, icon=>skull)   bitmap(sheet("crew2", "icon-skull")): 17, 13
+    @(unlocked > 0, icon=>shield)  bitmap(sheet("crew2", "icon-shield")): 17, 13
+    @(unlocked > 0, icon=>levelup) bitmap(sheet("crew2", "icon-levelup")): 17, 13
+    @(unlocked > 0, icon=>circle)  bitmap(sheet("crew2", "icon-circle")): 17, 13
+    @(unlocked > 0, icon=>cross)   bitmap(sheet("crew2", "icon-cross")): 17, 13
+
+    // Skill name
+    @(unlocked => 0) text(m6x11, $name, #555555, center, 56): -3, 52
+    @(unlocked > 0) text(m6x11, $name, #cccccc, center, 56): -3, 52
+}
+
+// ── Main skill tree ─────────────────────────────────────────────────
+// Parameters u0–u11 are per-node unlock flags, propagated to each dynamicRef.
+#skillTreeDemo programmable(
+    u0:uint=1, u1:uint=0, u2:uint=0, u3:uint=0,
+    u4:uint=1, u5:uint=0, u6:uint=0, u7:uint=0,
+    u8:uint=1, u9:uint=0, u10:uint=0, u11:uint=0,
+    pts:uint=5
+) {
+    pos: 50, 60
+
+    // Title
+    text(exo2_16, "Skill Tree", #7fdbda): 0, 0
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 22
+
+    // Tree panel
+    ninepatch("ui", "Window_3x3_idle", 560, 290): 0, 35
+
+    // Tier headers (centered on columns 75, 195, 315, 435)
+    text(exo2_14, "Tier 1", #888888, center, 50): 75, 48
+    text(exo2_14, "Tier 2", #888888, center, 50): 195, 48
+    text(exo2_14, "Tier 3", #888888, center, 50): 315, 48
+    text(exo2_14, "Tier 4", #888888, center, 50): 435, 48
+
+    // Row labels (vertically centered on rows 70, 155, 240)
+    text(exo2_14, "STR", #ff7f50): 18, 88
+    text(exo2_14, "DEX", #4caf50): 18, 173
+    text(exo2_14, "INT", #4a90a4): 18, 258
+
+    // ── Connectors (repeatable per row) ─────────────────
+    point {
+        pos: 126, 95
+        repeatable($c, step(3, dx: 120)) {
+            #connStr[$c] bitmap(generated(color(68, 2, #3a3a3a))): 0, 0
+        }
+    }
+    point {
+        pos: 126, 180
+        repeatable($c, step(3, dx: 120)) {
+            #connDex[$c] bitmap(generated(color(68, 2, #3a3a3a))): 0, 0
+        }
+    }
+    point {
+        pos: 126, 265
+        repeatable($c, step(3, dx: 120)) {
+            #connInt[$c] bitmap(generated(color(68, 2, #3a3a3a))): 0, 0
+        }
+    }
+
+    // ── Skill nodes (dynamicRef with per-node unlock binding) ───
+    // STR path
+    dynamicRef($skillNode, name=>"Power",  unlocked=>$u0,  pathColor=>#ff7f50, icon=>skull):   75, 70
+    dynamicRef($skillNode, name=>"Cleave", unlocked=>$u1,  pathColor=>#ff7f50, icon=>cross):  195, 70
+    dynamicRef($skillNode, name=>"Fury",   unlocked=>$u2,  pathColor=>#ff7f50, icon=>skull):  315, 70
+    dynamicRef($skillNode, name=>"Titan",  unlocked=>$u3,  pathColor=>#ff7f50, icon=>shield): 435, 70
+
+    // DEX path
+    dynamicRef($skillNode, name=>"Agility", unlocked=>$u4,  pathColor=>#4caf50, icon=>circle):  75, 155
+    dynamicRef($skillNode, name=>"Dodge",   unlocked=>$u5,  pathColor=>#4caf50, icon=>shield): 195, 155
+    dynamicRef($skillNode, name=>"Swift",   unlocked=>$u6,  pathColor=>#4caf50, icon=>levelup):315, 155
+    dynamicRef($skillNode, name=>"Shadow",  unlocked=>$u7,  pathColor=>#4caf50, icon=>cross):  435, 155
+
+    // INT path
+    dynamicRef($skillNode, name=>"Focus",  unlocked=>$u8,  pathColor=>#4a90a4, icon=>circle):   75, 240
+    dynamicRef($skillNode, name=>"Arcane", unlocked=>$u9,  pathColor=>#4a90a4, icon=>levelup): 195, 240
+    dynamicRef($skillNode, name=>"Mystic", unlocked=>$u10, pathColor=>#4a90a4, icon=>shield):  315, 240
+    dynamicRef($skillNode, name=>"Cosmic", unlocked=>$u11, pathColor=>#4a90a4, icon=>skull):   435, 240
+
+    // ── Highlights (repositioned by Haxe) ───────────────
+    #hoverHighlight(updatable) @alpha(0.0) bitmap(generated(color(54, 54, #ffffff44))): -100, -100
+    #selectHighlight(updatable) @alpha(0.0) bitmap(generated(color(54, 54, #ffeb3b66))): -100, -100
+
+    // ── Interactives (click & hover hit regions) ────────
+    interactive(50, 65, "0"):   75, 70
+    interactive(50, 65, "1"):  195, 70
+    interactive(50, 65, "2"):  315, 70
+    interactive(50, 65, "3"):  435, 70
+    interactive(50, 65, "4"):   75, 155
+    interactive(50, 65, "5"):  195, 155
+    interactive(50, 65, "6"):  315, 155
+    interactive(50, 65, "7"):  435, 155
+    interactive(50, 65, "8"):   75, 240
+    interactive(50, 65, "9"):  195, 240
+    interactive(50, 65, "10"): 315, 240
+    interactive(50, 65, "11"): 435, 240
+
+    // ── Info panel ──────────────────────────────────────
+    ninepatch("ui", "Window_3x3_idle", 560, 55): 0, 335
+    text(exo2_16, 'Skill Points: ${$pts}', #ffeb3b, left, 200): 18, 348
+    #skillInfoText(updatable) text(exo2_14, "Hover over a skill to see details", #aaaaaa, left, 300): 18, 368
+
+    // Legend + Reset
+    bitmap(generated(color(12, 12, #333333))): 370, 348
+    text(exo2_light_14, "Locked", #888888): 388, 348
+    bitmap(generated(color(12, 12, #4caf50))): 370, 366
+    text(exo2_light_14, "Unlocked", #888888): 388, 366
+
+    placeholder(generated(cross(80, 28, #FF0000)), builderParameter("resetButton")) {
+        pos: 472, 348
+    }
+
+    // Instructions
+    text(exo2_light_14, "Click to unlock skills. Previous tier required. Hover for details.", #555555): 0, 405
+}

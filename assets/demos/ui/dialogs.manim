@@ -1,0 +1,53 @@
+version: 0.5
+
+// Dialogs Demo
+// Shows modal dialog with OK/Cancel and result display.
+
+#okCancelDemoDialog programmable(dialogText = "Are you sure?") {
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "Confirmation", #ffffff, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #ffffff33))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #cccccc, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+#dialogsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Modal Dialogs
+    text(exo2_16, "Modal Dialogs", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Click a button to open a dialog:", #cccccc): 0, 35
+
+    // Open dialog buttons
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton1")) {
+        pos: 0, 60
+    }
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton2")) {
+        pos: 220, 60
+    }
+
+    // Result display
+    text(exo2_16, "Dialog Result", #7fdbda): 0, 130
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 152
+    ninepatch("ui", "Window_3x3_idle", 500, 50): 0, 170
+    #resultText(updatable) text(exo2_20, "No dialog opened yet", #ffffff, left, 480): 15, 185
+
+    // History
+    text(exo2_16, "Dialog History", #7fdbda): 0, 250
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 272
+    ninepatch("ui", "Window_3x3_idle", 500, 150): 0, 285
+    #historyText1(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 295
+    #historyText2(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 315
+    #historyText3(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 335
+    #historyText4(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 355
+    #historyText5(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 375
+}

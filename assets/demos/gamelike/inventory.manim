@@ -1,0 +1,30 @@
+version: 0.5
+
+// Inventory Demo
+// 5x4 grid of item slots with selection highlighting and tooltip area.
+
+#inventoryDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Inventory", #7fdbda): 0, 0
+    bitmap(generated(color(500, 1, #7fdbda33))): 0, 22
+
+    // Grid panel background
+    ninepatch("ui", "Window_3x3_idle", 320, 280): 0, 35
+
+    // Grid container - items/cells created programmatically
+    #gridContainer(updatable) point: 15, 50
+
+    // Selection highlight - repositioned on click
+    #selectHighlight(updatable) bitmap(generated(color(50, 50, #7fdbda55))): -100, -100
+
+    // Info panel
+    ninepatch("ui", "Window_3x3_idle", 320, 80): 0, 325
+    text(exo2_14, "Item Info:", #aaaaaa): 15, 335
+    #tooltipText(updatable) text(exo2_16, "Select a cell", #ffffff, left, 290): 15, 355
+    #itemCountText(updatable) text(exo2_14, "Items: 0 / 20", #7fdbda, left, 290): 15, 380
+
+    // Instructions
+    text(exo2_light_14, "Click cells to select. Items are pre-placed.", #666666): 0, 420
+}

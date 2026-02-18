@@ -1,0 +1,52 @@
+version: 0.5
+
+// Dialogue Demo
+// Dialogue panel with speaker name, typewriter text, and branching choices.
+
+#dialogueDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Dialogue System", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Scene description area
+    ninepatch("ui", "Window_3x3_idle", 700, 120): 0, 35
+    text(exo2_14, "Scene", #7fdbda): 15, 45
+    #sceneText(updatable) text(exo2_light_14, "You enter a dimly lit tavern. An old man sits in the corner.", #aaaaaa, left, 660): 15, 70
+
+    // Character portrait area (colored rectangle as placeholder)
+    ninepatch("ui", "Window_3x3_idle", 100, 100): 0, 170
+    #portraitColor(updatable) bitmap(generated(color(80, 80, #4a90a4))): 10, 180
+
+    // Dialogue panel
+    ninepatch("ui", "Window_3x3_idle", 580, 120): 120, 170
+
+    // Speaker name
+    #speakerText(updatable) text(exo2_16, "Old Man", #ffeb3b, left, 300): 135, 180
+
+    // Dialogue text (typewriter effect handled in code)
+    #dialogueText(updatable) text(exo2_14, "", #ffffff, left, 540): 135, 205
+
+    // Continue indicator
+    #continueText(updatable) text(exo2_light_14, "", #7fdbda, right, 560): 135, 265
+
+    // Choice buttons
+    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice1Button")) {
+        pos: 120, 305
+    }
+    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice2Button")) {
+        pos: 410, 305
+    }
+
+    // Choice visibility containers
+    #choice1Visible(updatable) point: 120, 305
+    #choice2Visible(updatable) point: 410, 305
+
+    // Dialogue state info
+    ninepatch("ui", "Window_3x3_idle", 700, 40): 0, 350
+    #stateText(updatable) text(exo2_light_14, "Node: intro", #666666, left, 660): 15, 360
+
+    // Instructions
+    text(exo2_light_14, "Text appears character by character. Choose responses to branch the story.", #666666): 0, 405
+}

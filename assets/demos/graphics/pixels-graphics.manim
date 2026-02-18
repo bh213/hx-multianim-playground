@@ -1,0 +1,194 @@
+version: 0.5
+
+#pixelsGraphicsShowcase programmable() {
+  // Section 1: Pixels primitives
+  text(exo2_16, "Pixels primitives:", #cccccc): 0, 0
+
+  // Colored squares
+  point {
+    pos: 0, 30
+    pixels (
+      rect 0, 0, 20, 20, #ff4444
+      rect 20, 0, 20, 20, #44ff44
+      rect 0, 20, 20, 20, #4444ff
+      rect 20, 20, 20, 20, #ffff44
+    ) {
+      scale: 3
+    }
+    text(m6x11, "Colored squares", #888888): 0, 130
+  }
+
+  // Diagonal lines
+  point {
+    pos: 180, 30
+    pixels (
+      line 0, 0, 30, 30, #ff4444
+      line 30, 0, 0, 30, #44ff44
+      line 0, 15, 30, 15, #4444ff
+      line 15, 0, 15, 30, #ffff44
+    ) {
+      scale: 4
+    }
+    text(m6x11, "Lines crossing", #888888): 0, 130
+  }
+
+  // Single pixels
+  point {
+    pos: 360, 30
+    pixels (
+      pixel 0, 0, #ff0000
+      pixel 2, 0, #00ff00
+      pixel 4, 0, #0000ff
+      pixel 0, 2, #ffff00
+      pixel 2, 2, #ff00ff
+      pixel 4, 2, #00ffff
+      pixel 1, 1, #ffffff
+      pixel 3, 1, #ffffff
+    ) {
+      scale: 16
+    }
+    text(m6x11, "Individual pixels", #888888): 0, 130
+  }
+
+  // Border rectangle
+  point {
+    pos: 500, 30
+    pixels (
+      rect 0, 0, 1, 30, #ff7f50
+      rect 0, 0, 30, 1, #ff7f50
+      rect 29, 0, 1, 30, #ff7f50
+      rect 0, 29, 30, 1, #ff7f50
+    ) {
+      scale: 4
+    }
+    text(m6x11, "1px border rect", #888888): 0, 130
+  }
+
+  // Section 2: Graphics primitives
+  text(exo2_16, "Graphics primitives:", #cccccc): 0, 190
+
+  // Filled rectangle
+  point {
+    pos: 0, 220
+    graphics (
+      rect(#cc4444, filled, 80, 60): 0, 0
+    );
+    text(m6x11, "Filled rect", #888888): 0, 70
+  }
+
+  // Filled circle
+  point {
+    pos: 120, 250
+    graphics (
+      circle(#44cc44, filled, 30): 0, 0
+    );
+    text(m6x11, "Filled circle", #888888): -30, 40
+  }
+
+  // Circle outline
+  point {
+    pos: 240, 250
+    graphics (
+      circle(#4488cc, 3, 30): 0, 0
+    );
+    text(m6x11, "Circle outline", #888888): -30, 40
+  }
+
+  // Rounded rectangle
+  point {
+    pos: 340, 220
+    graphics (
+      roundRect(#cc8844, filled, 100, 60, 12): 0, 0
+    );
+    text(m6x11, "Rounded rect", #888888): 0, 70
+  }
+
+  // Line
+  point {
+    pos: 480, 220
+    graphics (
+      line(#44cccc, 3, 0, 0, 80, 60);
+      line(#cc44cc, 3, 80, 0, 0, 60);
+    );
+    text(m6x11, "Lines (X)", #888888): 0, 70
+  }
+
+  // Polygon (triangle)
+  point {
+    pos: 620, 250
+    graphics (
+      polygon(#cc44cc, filled,
+        0, -30,
+        26, 30,
+        -26, 30
+      );
+    );
+    text(m6x11, "Triangle", #888888): -26, 40
+  }
+
+  // Section 3: Combined shapes
+  text(exo2_16, "Combined shapes:", #cccccc): 0, 330
+
+  // Simple face
+  point {
+    pos: 60, 400
+    graphics (
+      circle(#ffcc88, filled, 40): 0, 0
+      circle(#333333, filled, 6): -14, -10
+      circle(#333333, filled, 6): 14, -10
+      arc(#333333, 3, 16, 10, 170): 0, 5
+    );
+    text(m6x11, "Face", #888888, center, 80): -40, 50
+  }
+
+  // House
+  point {
+    pos: 200, 420
+    graphics (
+      rect(#884422, filled, 60, 40): -30, 0
+      polygon(#cc6644, filled,
+        -35, 0,
+        0, -30,
+        35, 0
+      );
+      rect(#4488cc, filled, 15, 20): -25, 10
+      rect(#4488cc, filled, 15, 20): 10, 10
+      rect(#663311, filled, 12, 20): -6, 20
+    );
+    text(m6x11, "House", #888888, center, 80): -40, 50
+  }
+
+  // Star shape
+  point {
+    pos: 360, 400
+    graphics (
+      polygon(#ffcc00, filled,
+        0, -35,
+        8, -10,
+        35, -10,
+        14, 5,
+        22, 30,
+        0, 15,
+        -22, 30,
+        -14, 5,
+        -35, -10,
+        -8, -10
+      );
+    );
+    text(m6x11, "Star", #888888, center, 80): -40, 50
+  }
+
+  // Arrow
+  point {
+    pos: 500, 410
+    graphics (
+      rect(#44cc88, filled, 50, 16): -25, -8
+      polygon(#44cc88, filled,
+        25, -20,
+        50, 0,
+        25, 20
+      );
+    );
+    text(m6x11, "Arrow", #888888, center, 80): -40, 40
+  }
+}

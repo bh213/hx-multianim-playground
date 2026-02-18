@@ -1,0 +1,50 @@
+version: 0.5
+
+// Status Effects Demo
+// Row of buff/debuff slots with timers, add/remove buttons, and tooltip.
+
+#statusEffectsDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Status Effects", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Effect slots panel
+    ninepatch("ui", "Window_3x3_idle", 600, 100): 0, 35
+
+    text(exo2_14, "Active Effects", #7fdbda): 15, 45
+
+    // Slot container - 8 slots created programmatically
+    #slotContainer(updatable) point: 15, 70
+
+    // Action buttons
+    ninepatch("ui", "Window_3x3_idle", 600, 55): 0, 145
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("addBuffButton")) {
+        pos: 15, 158
+    }
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("addDebuffButton")) {
+        pos: 160, 158
+    }
+    placeholder(generated(cross(130, 30, #FF0000)), builderParameter("clearAllButton")) {
+        pos: 305, 158
+    }
+
+    // Effect count
+    #effectCountText(updatable) text(exo2_14, "Effects: 0 / 8", #aaaaaa, left, 200): 450, 163
+
+    // Tooltip panel
+    ninepatch("ui", "Window_3x3_idle", 600, 80): 0, 210
+
+    text(exo2_14, "Effect Info", #7fdbda): 15, 220
+    #tooltipName(updatable) text(exo2_16, "Hover over an effect", #ffffff, left, 350): 15, 245
+    #tooltipDesc(updatable) text(exo2_light_14, "", #aaaaaa, left, 350): 15, 270
+    #tooltipTimer(updatable) text(exo2_14, "", #ffeb3b, left, 200): 400, 245
+
+    // Effect log
+    ninepatch("ui", "Window_3x3_idle", 600, 40): 0, 300
+    #logText(updatable) text(exo2_light_14, "Add buffs or debuffs to see them tick down.", #666666, left, 570): 15, 312
+
+    // Instructions
+    text(exo2_light_14, "Effects expire when their timer runs out. Hover for details.", #666666): 0, 355
+}

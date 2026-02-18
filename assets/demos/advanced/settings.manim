@@ -1,0 +1,72 @@
+version: 0.5
+
+// Settings Demo
+// Shows settings{key:type=>value} usage in components
+
+#settingsDemo programmable() {
+    pos: 50, 140
+
+    text(exo2_16, "Settings Configuration", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "Components can declare settings{} blocks with typed key=>value pairs.", #aaaaaa, left, 700): 0, 30
+
+    // Explain settings syntax
+    text(m6x11, "Settings are metadata attached to .manim components:", #cccccc, left, 500): 0, 80
+    text(m6x11, "  settings{key:type=>value}", #7fdbda, left, 400): 0, 100
+    text(m6x11, "  Types: string, int, float, bool", #aaaaaa, left, 400): 0, 120
+
+    // Theme selector buttons
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnDark")) {
+        pos: 0, 520
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnLight")) {
+        pos: 120, 520
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBlue")) {
+        pos: 240, 520
+    }
+}
+
+#resizablePanel programmable(width:50..500=150, height:50..500=200) {
+    ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
+    #sizeText(updatable) text(m6x11, "150 x 200", #ffffff, left, 200): 10, 10
+}
+
+#settingsExamples programmable() {
+    // Example 1: Component with string settings
+    text(m6x11, "Example 1: String settings", #cccccc, left, 400): 0, 0
+    point {
+        pos: 0, 20
+        bitmap(generated(color(300, 40, #222233))): 0, 0
+        text(m6x11, "theme => dark", #ffffff, left, 280): 10, 12
+        settings{theme => "dark"}
+    }
+
+    // Example 2: Component with int settings
+    text(m6x11, "Example 2: Integer settings", #cccccc, left, 400): 0, 80
+    point {
+        pos: 0, 100
+        bitmap(generated(color(300, 40, #222233))): 0, 0
+        text(m6x11, "width:int => 200, height:int => 100", #ffffff, left, 280): 10, 12
+        settings{width:int => 200}
+        settings{height:int => 100}
+    }
+
+    // Example 3: Component with float settings
+    text(m6x11, "Example 3: Float settings", #cccccc, left, 400): 0, 160
+    point {
+        pos: 0, 180
+        bitmap(generated(color(300, 40, #222233))): 0, 0
+        text(m6x11, "scrollSpeed:float => 2.5", #ffffff, left, 280): 10, 12
+        settings{scrollSpeed:float => 2.5}
+    }
+
+    // Example 4: Multiple settings on one component
+    text(m6x11, "Example 4: Combined settings", #cccccc, left, 400): 0, 240
+    point {
+        pos: 0, 260
+        bitmap(generated(color(300, 60, #222233))): 0, 0
+        text(m6x11, "transitionTimer:float => 0.3", #ffffff, left, 280): 10, 8
+        text(m6x11, "autoClose => true", #ffffff, left, 280): 10, 28
+        settings{transitionTimer:float => 0.3}
+    }
+}

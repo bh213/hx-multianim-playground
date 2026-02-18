@@ -1,0 +1,83 @@
+version: 0.5
+
+#repeatableControls programmable() {
+  text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
+  #countText(updatable) text(m6x11, "3", #7fdbda, left, 50): 160, 0
+
+  placeholder(generated(cross(210, 20, #FF0000)), builderParameter("countSlider")) {
+    pos: 0, 22
+    settings{size:int=>200}
+    settings{min:int=>0}
+    settings{max:int=>5}
+    settings{step:int=>1}
+  }
+}
+
+#repeatableShowcase programmable(count: 0..5 = 3) {
+  // Section 1: Basic horizontal step
+  text(exo2_16, "Horizontal step:", #cccccc): 0, 0
+
+  point {
+    pos: 0, 30
+    repeatable($i, step($count, dx: 60)) {
+      bitmap(generated(color(50, 50, #4488cc))): 0, 0
+      text(m6x11, $i, #ffffff, center, 50): 0, 18
+    }
+  }
+
+  // Section 2: Vertical step
+  text(exo2_16, "Vertical step:", #cccccc): 400, 0
+
+  point {
+    pos: 400, 30
+    repeatable($j, step($count, dy: 35)) {
+      bitmap(generated(color(120, 28, #cc4488))): 0, 0
+      text(m6x11, $j, #ffffff): 5, 8
+    }
+  }
+
+  // Section 3: Diagonal step
+  text(exo2_16, "Diagonal step:", #cccccc): 0, 120
+
+  point {
+    pos: 0, 150
+    repeatable($k, step($count, dx: 50, dy: 20)) {
+      bitmap(generated(color(40, 16, #44cc88))): 0, 0
+      text(m6x11, $k, #ffffff, center, 40): 0, 2
+    }
+  }
+
+  // Section 4: Indexed named elements with #name[$i]
+  text(exo2_16, "Indexed elements #cell[$i]:", #cccccc): 0, 300
+
+  point {
+    pos: 0, 330
+    repeatable($idx, step($count, dx: 80)) {
+      #cell[$idx] bitmap(generated(color(70, 70, #553322))): 0, 0
+      #label[$idx] text(m6x11, $idx, #ffffff, center, 70): 0, 28
+    }
+  }
+
+  // Section 5: Grid using nested repeatables
+  text(exo2_16, "2D grid (range):", #cccccc): 0, 430
+
+  point {
+    pos: 0, 460
+    repeatable($row, range(0, $count)) {
+      repeatable($col, range(0, $count)) {
+        bitmap(generated(color(30, 30, #445566))): $col * 38, $row * 38
+      }
+    }
+  }
+
+  // Section 6: Fading alpha with expression
+  text(exo2_16, "Fading alpha:", #cccccc): 400, 300
+
+  point {
+    pos: 400, 330
+    repeatable($n, step($count, dx: 40)) {
+      @alpha(1.0 - $n / 5) bitmap(generated(color(30, 30, #ff7f50))): 0, 0
+      text(m6x11, $n, #ffffff, center, 30): 0, 10
+    }
+  }
+}

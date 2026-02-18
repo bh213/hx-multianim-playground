@@ -1,0 +1,42 @@
+version: 0.5
+
+// Minimap Demo
+// 6x6 room grid with fog of war. Click to reveal rooms.
+
+#minimapDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Minimap Explorer", #7fdbda): 0, 0
+    bitmap(generated(color(500, 1, #7fdbda33))): 0, 22
+
+    // Map panel background
+    ninepatch("ui", "Window_3x3_idle", 340, 340): 0, 35
+
+    // Grid container - rooms created programmatically
+    #gridContainer(updatable) point: 15, 50
+
+    // Legend
+    ninepatch("ui", "Window_3x3_idle", 200, 150): 360, 35
+    text(exo2_14, "Legend", #7fdbda): 375, 50
+
+    bitmap(generated(color(16, 16, #444444))): 375, 75
+    text(exo2_light_14, "Unexplored", #aaaaaa): 400, 75
+
+    bitmap(generated(color(16, 16, #4caf50))): 375, 100
+    text(exo2_light_14, "Explored", #aaaaaa): 400, 100
+
+    bitmap(generated(color(16, 16, #ffeb3b))): 375, 125
+    text(exo2_light_14, "Current Room", #aaaaaa): 400, 125
+
+    bitmap(generated(color(16, 16, #ff4444))): 375, 150
+    text(exo2_light_14, "Boss Room", #aaaaaa): 400, 150
+
+    // Info panel
+    ninepatch("ui", "Window_3x3_idle", 340, 60): 0, 385
+    #exploredText(updatable) text(exo2_16, "Explored: 1 / 36", #7fdbda, left, 300): 20, 400
+    #roomInfoText(updatable) text(exo2_14, "Room (0,0) - Start", #ffffff, left, 300): 20, 422
+
+    // Instructions
+    text(exo2_light_14, "Click adjacent rooms to explore. Navigate the dungeon.", #666666): 0, 460
+}

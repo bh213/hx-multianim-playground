@@ -1,0 +1,61 @@
+version: 0.5
+
+// Interactives Demo
+// Hit regions with typed metadata
+
+#interactivesDemo programmable() {
+    text(exo2_16, "Interactive Regions", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "Click on colored regions. Each has an id and metadata.", #aaaaaa, left, 600): 0, 30
+
+    // Interactive region 1: simple
+    point {
+        pos: 0, 80
+        bitmap(generated(color(200, 50, #334466))): 0, 0
+        text(m6x11, "Button A - simple id", #ffffff, left, 180): 10, 18
+        interactive(200, 50, "buttonA"): 0, 0
+    }
+
+    // Interactive region 2: with action metadata
+    point {
+        pos: 0, 150
+        bitmap(generated(color(200, 50, #443366))): 0, 0
+        text(m6x11, "Button B - action=>buy", #ffffff, left, 180): 10, 18
+        interactive(200, 50, "buttonB", action => "buy"): 0, 0
+    }
+
+    // Interactive region 3: with typed metadata
+    point {
+        pos: 0, 220
+        bitmap(generated(color(200, 50, #336644))): 0, 0
+        text(m6x11, "Button C - typed meta", #ffffff, left, 180): 10, 18
+        interactive(200, 50, "buttonC", price:int => 100, label => "Buy Sword"): 0, 0
+    }
+
+    // Interactive region 4: debug visible
+    point {
+        pos: 0, 290
+        bitmap(generated(color(200, 50, #664433))): 0, 0
+        text(m6x11, "Button D - debug mode", #ffffff, left, 180): 10, 18
+        interactive(200, 50, "buttonD", debug): 0, 0
+    }
+
+    // Interactive region 5: with multiple metadata
+    point {
+        pos: 250, 80
+        bitmap(generated(color(250, 50, #445533))): 0, 0
+        text(m6x11, "Region E - multi-meta", #ffffff, left, 230): 10, 18
+        interactive(250, 50, "regionE", action => "craft", weight:float => 2.5, tier => "rare"): 0, 0
+    }
+
+    // Interactive region 6
+    point {
+        pos: 250, 150
+        bitmap(generated(color(250, 50, #553344))): 0, 0
+        text(m6x11, "Region F - category=>armor", #ffffff, left, 230): 10, 18
+        interactive(250, 50, "regionF", category => "armor", slot => "chest"): 0, 0
+    }
+
+    // Info display area
+    bitmap(generated(color(500, 80, #1a1a2e))): 0, 370
+    text(m6x11, "Click result will appear below:", #888888, left, 400): 10, 360
+}

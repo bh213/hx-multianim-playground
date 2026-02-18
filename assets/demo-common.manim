@@ -1,0 +1,37 @@
+version: 0.5
+
+#titleBar programmable(title="Demo") {
+    ninepatch("ui", "Window_3x3_idle", 1280, 40): 0,0
+    #titleText(updatable) text(exo2_black_20, $title, #ffffff, left, 1200): 50,10
+}
+
+#descriptionLabel programmable(text="Description") {
+    #descText(updatable) text(exo2_light_14, $text, #aaaaaa, left, 1180): 50,48
+}
+
+#backButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Back") {
+    @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 80, 30): 5,5
+    @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", 80, 30): 5,4
+    @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", 80, 30): 5,5
+    text(exo2_14, $buttonText, #ffffff, center, 80): 5,11
+}
+
+#navCard programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Demo", category="") {
+    @(status=>normal) ninepatch("ui", "Window_3x3_idle", 180, 36): 0,0
+    @(status=>hover) ninepatch("ui", "button-hover", 180, 36): 0,0
+    @(status=>pressed) ninepatch("ui", "button-pressed", 180, 36): 0,0
+    text(exo2_14, $buttonText, #ffffff, center, 180): 0,9
+}
+
+#categoryHeader programmable(title="Category") {
+    text(exo2_black_16, $title, #7fdbda, left, 400): 0,0
+    bitmap(generated(color(400, 1, #7fdbda33))): 0,22
+}
+
+#sectionLabel programmable(text="Section") {
+    text(exo2_16, $text, #cccccc, left, 600): 0,0
+}
+
+#valueLabel programmable(text="value") {
+    text(m6x11, $text, #ffffff, left, 200): 0,0
+}

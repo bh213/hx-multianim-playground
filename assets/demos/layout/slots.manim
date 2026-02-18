@@ -1,0 +1,62 @@
+version: 0.5
+
+// Item that goes into a slot - 5 item variants + empty state
+#slotItem programmable(itemType:[empty, sword, shield, potion, ring, scroll]) {
+  @(itemType=>empty) bitmap(generated(color(60, 40, #2a2a3a))): 0, 0
+  @(itemType=>sword) bitmap(generated(color(60, 40, #cc4444))): 0, 0
+  @(itemType=>shield) bitmap(generated(color(60, 40, #4488cc))): 0, 0
+  @(itemType=>potion) bitmap(generated(color(60, 40, #44cc44))): 0, 0
+  @(itemType=>ring) bitmap(generated(color(60, 40, #ccaa33))): 0, 0
+  @(itemType=>scroll) bitmap(generated(color(60, 40, #cc88ff))): 0, 0
+
+  @(itemType=>empty) text(m6x11, "empty", #888888, center, 60): 0, 14
+  @(itemType=>sword) text(m6x11, "Sword", #ffffff, center, 60): 0, 14
+  @(itemType=>shield) text(m6x11, "Shield", #ffffff, center, 60): 0, 14
+  @(itemType=>potion) text(m6x11, "Potion", #ffffff, center, 60): 0, 14
+  @(itemType=>ring) text(m6x11, "Ring", #ffffff, center, 60): 0, 14
+  @(itemType=>scroll) text(m6x11, "Scroll", #ffffff, center, 60): 0, 14
+}
+
+// Main showcase with 10 slots in 2 rows of 5
+#slotsShowcase programmable() {
+  pos: 40, 80
+
+  text(exo2_16, "Slot Items", #7fdbda): 0, 0
+  bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+  text(exo2_light_14, "Click an empty slot to fill it. Auto-fills every second. Clears when full.", #aaaaaa): 0, 30
+
+  // Row 1: slots 0-4
+  point {
+    pos: 0, 55
+    repeatable($i, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot[$i] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
+      }
+    }
+  }
+
+  // Row 2: slots 5-9
+  point {
+    pos: 0, 145
+    repeatable($j, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot2[$j] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
+      }
+    }
+  }
+
+  // Container for programmatic status texts and interactives
+  #slotContainer(updatable) point: 0, 0
+
+  // Auto-add checkbox
+  placeholder(generated(cross(20, 20, #FF0000)), builderParameter("autoAddChk")) { pos: 0, 240 }
+  text(exo2_light_14, "Auto-add", #aaaaaa): 24, 240
+
+  // Counter
+  #slotCountText(updatable) text(exo2_16, "Slots: 0 / 10 occupied", #ffffff, left, 400): 0, 265
+
+  // Log
+  #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 290
+}

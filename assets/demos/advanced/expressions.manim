@@ -1,0 +1,46 @@
+version: 0.5
+
+// Expressions Demo
+// Arithmetic expressions with $param references
+
+#expressionsDemo programmable(value:0..100=25) {
+    text(exo2_16, "Arithmetic Expressions", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "Expressions use $param references with arithmetic operators.", #aaaaaa, left, 600): 0, 30
+
+    // Basic arithmetic
+    text(m6x11, "Basic arithmetic:", #cccccc, left, 400): 0, 80
+
+    text(m6x11, "$value = ", #888888, left, 200): 20, 110
+    text(m6x11, "$value", #ffffff, left, 100): 120, 110
+
+    text(m6x11, "$value + 10 = ", #888888, left, 200): 20, 130
+    text(m6x11, "$value + 10", #ffffff, left, 100): 120, 130
+
+    text(m6x11, "$value * 2 = ", #888888, left, 200): 20, 150
+    text(m6x11, "$value * 2", #ffffff, left, 100): 120, 150
+
+    text(m6x11, "$value * 3 + 5 = ", #888888, left, 200): 20, 170
+    text(m6x11, "$value * 3 + 5", #ffffff, left, 100): 140, 170
+
+    text(m6x11, "$value div 10 = ", #888888, left, 200): 20, 190
+    text(m6x11, "$value div 10", #ffffff, left, 100): 140, 190
+
+    text(m6x11, "$value % 7 = ", #888888, left, 200): 20, 210
+    text(m6x11, "$value % 7", #ffffff, left, 100): 120, 210
+
+    // Visual expression results
+    text(m6x11, "Visual width = $value * 3:", #cccccc, left, 400): 0, 260
+    bitmap(generated(color($value * 3, 25, #4488cc))): 0, 280
+
+    text(m6x11, "Visual width = ($value + 20) * 2:", #cccccc, left, 400): 0, 320
+    bitmap(generated(color(($value + 20) * 2, 25, #cc8844))): 0, 340
+
+    // Grid layout using expressions
+    text(m6x11, "Repeatable with expression ($value div 5 items):", #cccccc, left, 400): 0, 390
+    repeatable($i, step($value div 5, dx:20)) {
+        bitmap(generated(color(15, 15, #7fdbda))): 0, 415
+    }
+
+    // Slider label
+    text(exo2_14, "Input value slider", #888888, left, 200): 0, 460
+}

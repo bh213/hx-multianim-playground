@@ -1,0 +1,43 @@
+version: 0.5
+
+// Radio Buttons Demo
+// Shows vertical and horizontal radio groups with selection feedback.
+
+#radioDemo programmable() {
+    pos: 50, 80
+
+    // Section: Vertical Radio Group
+    text(exo2_16, "Vertical Radio Group", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    placeholder(generated(cross(200, 150, #FF0000)), builderParameter("radioVertical")) {
+        pos: 0, 40
+    }
+
+    // Vertical selection display
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 250, 40
+    #verticalText(updatable) text(exo2_16, "Selected: Option A", #ffffff, left, 280): 265, 50
+
+    // Section: Horizontal Radio Group
+    text(exo2_16, "Horizontal Radio Group", #7fdbda): 0, 210
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 232
+
+    placeholder(generated(cross(500, 30, #FF0000)), builderParameter("radioHorizontal")) {
+        pos: 0, 250
+    }
+
+    // Horizontal selection display
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 300
+    #horizontalText(updatable) text(exo2_16, "Selected: Small", #ffffff, left, 280): 15, 310
+
+    // Section: Radio2 Style
+    text(exo2_16, "Radio2 Button Style", #7fdbda): 0, 370
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 392
+
+    placeholder(generated(cross(200, 120, #FF0000)), builderParameter("radioVertical2")) {
+        pos: 0, 410
+    }
+
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 250, 410
+    #radio2Text(updatable) text(exo2_16, "Selected: Easy", #ffffff, left, 280): 265, 420
+}

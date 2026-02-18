@@ -59,4 +59,18 @@ version: 0.5
 
   // Log
   #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 290
+
+  // --- NEW: Parameterized Slots ---
+  text(exo2_16, "Parameterized Slots", #7fdbda): 0, 330
+  bitmap(generated(color(700, 1, #7fdbda33))): 0, 352
+  text(exo2_light_14, "Slots with parameters for visual states. Use setParameter() at runtime.", #aaaaaa): 0, 360
+
+  repeatable($k, step(4, dx: 80)) {
+    #paramSlot[$k] slot(state:[empty, filled, highlight, error] = empty) {
+      @(state => empty)     bitmap(generated(color(60, 60, #333344))): 0, 390
+      @(state => filled)    bitmap(generated(color(60, 60, #226622))): 0, 390
+      @(state => highlight) bitmap(generated(color(60, 60, #886600))): 0, 390
+      @(state => error)     bitmap(generated(color(60, 60, #882222))): 0, 390
+    }
+  }
 }

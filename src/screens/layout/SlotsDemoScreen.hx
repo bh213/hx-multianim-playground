@@ -26,6 +26,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 	var slotInteractives:Array<h2d.Interactive>;
 	var autoFillTimer:Float = 0;
 	var clearDelay:Float = -1;
+	var paramSlotTimer:Float = 0;
 
 	override public function load():Void {
 		setupDemo("Slots", "Clickable slot containers with auto-fill items and auto-clear");
@@ -75,6 +76,13 @@ class SlotsDemoScreen extends DemoScreenBase {
 		}
 
 		updateCountText();
+
+		// Initialize parameterized slots with diverse states to showcase
+		paramSlotTimer = 0;
+		final paramStates = ["empty", "filled", "highlight", "error"];
+		for (i in 0...4) {
+			slotsResult.getSlot("paramSlot", i).setParameter("state", paramStates[i]);
+		}
 	}
 
 	function buildSlotItem(itemType:String):h2d.Object {
@@ -199,6 +207,19 @@ class SlotsDemoScreen extends DemoScreenBase {
 			autoFillTimer -= 1.0;
 			autoFillRandomSlot();
 		}
+
+		// Cycle parameterized slot states
+		if (slotsResult != null) {
+			paramSlotTimer += dt;
+			if (paramSlotTimer >= 1.5) {
+				paramSlotTimer -= 1.5;
+				final states = ["empty", "filled", "highlight", "error"];
+				for (i in 0...4) {
+					final newState = states[Std.int(Math.random() * states.length)];
+					slotsResult.getSlot("paramSlot", i).setParameter("state", newState);
+				}
+			}
+		}
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {}
@@ -215,5 +236,6 @@ class SlotsDemoScreen extends DemoScreenBase {
 		slotItems = null;
 		statusTexts = null;
 		autoFillTimer = 0;
+		paramSlotTimer = 0;
 	}
 }

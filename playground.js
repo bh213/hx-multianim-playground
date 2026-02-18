@@ -82503,7 +82503,6 @@ screens_advanced_ConditionalsDemoScreen.prototype = $extend(DemoScreenBase.proto
 	,__class__: screens_advanced_ConditionalsDemoScreen
 });
 var screens_advanced_ExpressionsDemoScreen = function(screenManager,layers) {
-	this.currentValue = 25;
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.advanced.ExpressionsDemoScreen"] = screens_advanced_ExpressionsDemoScreen;
@@ -82511,45 +82510,39 @@ screens_advanced_ExpressionsDemoScreen.__name__ = "screens.advanced.ExpressionsD
 screens_advanced_ExpressionsDemoScreen.__super__ = DemoScreenBase;
 screens_advanced_ExpressionsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Expressions","Arithmetic expressions with $param: live result display of $value * 2 + 10");
+		var _gthis = this;
+		this.setupDemo("Expressions","Arithmetic, ternary, and string interpolation with $param references");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/advanced/expressions.manim",false);
-		var tmp = this.demoBuilder;
-		var _g = new haxe_ds_StringMap();
-		_g.h["value"] = 25;
-		this.expressionResult = tmp.buildWithParameters("expressionsDemo",_g,null,null,true);
-		var _this = this.expressionResult.object;
-		_this.posChanged = true;
-		_this.x = 50;
-		_this.posChanged = true;
-		_this.y = 140;
-		this.addBuilderResult(this.expressionResult);
-		this.valueSlider = this.addSlider(this.stdBuilder,null,25);
-		this.addElement(this.valueSlider,bh_ui_screens_LayersEnum.DefaultLayer);
-		var _this = this.valueSlider.getObject();
-		_this.posChanged = true;
-		_this.x = 50;
-		_this.posChanged = true;
-		_this.y = 640;
-		this.statusText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
-		this.statusText.set_text("Input value: " + this.currentValue + " | Computed: " + (this.currentValue * 2 + 10));
-		this.statusText.set_textColor(13421772);
-		var _this = this.statusText;
-		_this.posChanged = true;
-		_this.x = 50;
-		_this.posChanged = true;
-		_this.y = 610;
-		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
+		var generatedByMacroBuildWithParametersload669Builder = function() {
+			var valueSlider;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,25);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				valueSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["valueSlider"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("expressionsDemo",builderResults,{ placeholderObjects : _g},null,true);
+			var retVal = { valueSlider : valueSlider, builderResults : builderResults1};
+			if(retVal.valueSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "valueSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload669Builder();
+		this.demoResult = ui.builderResults;
+		this.valueSlider = ui.valueSlider;
+		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 3) {
 			var val = event.value;
 			if(source == this.valueSlider) {
-				this.currentValue = val;
-				if(this.expressionResult != null) {
-					this.expressionResult.setParameter("value",val);
-				}
-				if(this.statusText != null) {
-					this.statusText.set_text("Input value: " + this.currentValue + " | Computed: " + (this.currentValue * 2 + 10));
+				if(this.demoResult != null) {
+					this.demoResult.setParameter("value",val);
 				}
 			}
 		}
@@ -82557,9 +82550,8 @@ screens_advanced_ExpressionsDemoScreen.prototype = $extend(DemoScreenBase.protot
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
-		this.expressionResult = null;
+		this.demoResult = null;
 		this.valueSlider = null;
-		this.statusText = null;
 	}
 	,__class__: screens_advanced_ExpressionsDemoScreen
 });

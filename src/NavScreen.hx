@@ -52,6 +52,7 @@ class NavScreen extends UIScreenBase {
 				{id: "particles", title: "Particles"},
 				{id: "paths", title: "Paths"},
 				{id: "curves", title: "Curves"},
+				{id: "animPath", title: "Anim Paths"},
 				{id: "filters", title: "Filters"},
 			]
 		},

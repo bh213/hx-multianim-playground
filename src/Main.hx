@@ -153,6 +153,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("particles", new ParticlesDemoScreen(screenManager));
 		screenManager.addScreen("paths", new PathsDemoScreen(screenManager));
 		screenManager.addScreen("curves", new CurvesDemoScreen(screenManager));
+		screenManager.addScreen("animPath", new AnimPathDemoScreen(screenManager));
 		screenManager.addScreen("filters", new FiltersDemoScreen(screenManager));
 
 		// Game-like demos

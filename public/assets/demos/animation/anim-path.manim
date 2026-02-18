@@ -1,0 +1,131 @@
+version: 0.5
+
+// Anim Path Demo
+// Circles follow paths with alpha, scale & progress curves
+
+curves {
+    #linear curve {
+        easing: linear
+    }
+    #easeInOut curve {
+        easing: easeinoutcubic
+    }
+    #bounce curve {
+        easing: easeoutbounce
+    }
+    #elastic curve {
+        easing: easeoutelastic
+    }
+    #back curve {
+        easing: easeoutback
+    }
+    #fadeIn curve {
+        points: [(0, 0), (0.3, 1.0), (1.0, 1.0)]
+    }
+    #pulse curve {
+        points: [(0, 0.3), (0.5, 1.0), (1.0, 0.3)]
+    }
+}
+
+paths {
+    #circuit path {
+        forward(80)
+        arc(50, 90)
+        forward(60)
+        arc(50, 90)
+        forward(80)
+        arc(50, 90)
+        forward(60)
+        arc(50, 90)
+    }
+    #star path {
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+    }
+    #spiral path {
+        spiral(10, 70, 720)
+    }
+    #waves path {
+        wave(30, 60, 4)
+    }
+    #bezierLoop path {
+        bezier(relative, 100, 0, 30, -80)
+        bezier(relative, 100, 0, 30, 80)
+        arc(40, 180)
+        bezier(relative, -100, 0, -30, 80)
+        bezier(relative, -100, 0, -30, -80)
+        close
+    }
+    #circle path {
+        arc(50, 360)
+    }
+}
+
+#animPathDemo programmable() {
+    text(exo2_16, "Animated Paths", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Click in the display area to set the fixed point. Circles follow paths with curves.", #aaaaaa, left, 750): 50, 105
+
+    // Display area (700x400)
+    bitmap(generated(color(700, 400, #111122))): 50, 130
+
+    // Path selector
+    text(m6x11, "Path:", #aaaaaa, left, 40): 50, 545
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnCircuit")) { pos: 100, 543 }
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnStar")) { pos: 190, 543 }
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnSpiral")) { pos: 280, 543 }
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnWaves")) { pos: 370, 543 }
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnBezier")) { pos: 460, 543 }
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnCircle")) { pos: 550, 543 }
+
+    // Count dropdown
+    text(m6x11, "Count:", #aaaaaa, left, 50): 660, 545
+    placeholder(generated(cross(60, 24, #FF0000)), builderParameter("countDropdown")) {
+        pos: 710, 543
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>120}
+    }
+
+    // Curve selector
+    text(m6x11, "Curve:", #aaaaaa, left, 50): 50, 578
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnLinear")) { pos: 100, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnEaseInOut")) { pos: 185, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnBounce")) { pos: 270, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnElastic")) { pos: 355, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnBack")) { pos: 440, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnFadeIn")) { pos: 525, 576 }
+    placeholder(generated(cross(75, 24, #FF0000)), builderParameter("btnPulse")) { pos: 610, 576 }
+
+    // Apply-to checkboxes
+    text(m6x11, "Apply:", #aaaaaa, left, 50): 50, 613
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkAlpha")) { pos: 100, 610 }
+    text(m6x11, "Alpha", #cccccc, left, 40): 122, 613
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkScale")) { pos: 172, 610 }
+    text(m6x11, "Scale", #cccccc, left, 40): 194, 613
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkProgress")) { pos: 244, 610 }
+    text(m6x11, "Progress", #cccccc, left, 55): 266, 613
+
+    // Mode buttons
+    text(m6x11, "Mode:", #aaaaaa, left, 50): 350, 613
+    placeholder(generated(cross(105, 24, #FF0000)), builderParameter("btnModeAngle")) { pos: 400, 610 }
+    placeholder(generated(cross(105, 24, #FF0000)), builderParameter("btnModeRandStart")) { pos: 515, 610 }
+    placeholder(generated(cross(105, 24, #FF0000)), builderParameter("btnModeRandEnd")) { pos: 630, 610 }
+
+    // Speed slider + Randomize
+    text(m6x11, "Speed:", #aaaaaa, left, 50): 50, 648
+    placeholder(generated(cross(180, 20, #FF0000)), builderParameter("speedSlider")) {
+        pos: 100, 646
+        settings{min:int=>10, max:int=>500, step:int=>10}
+    }
+    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 50): 290, 648
+
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnRandomize")) { pos: 370, 645 }
+
+    // Status
+    #statusText(updatable) text(m6x11, "Click display to set point | Path: circuit | Curve: linear | Count: 5", #7fdbda, left, 700): 50, 680
+}

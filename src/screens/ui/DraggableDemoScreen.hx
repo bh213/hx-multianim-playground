@@ -1,7 +1,5 @@
 package screens.ui;
 
-import bh.base.FPoint;
-import bh.paths.AnimatedPath;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimDraggable;
@@ -37,8 +35,8 @@ class DraggableDemoScreen extends DemoScreenBase {
 	// --- Mode 1: Drop zones with snap & elastic return, alpha feedback ---
 	function setupDropZoneDrag():Void {
 		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0x4488FF, 40, 40)));
-		drag.returnPathFactory = animPathFactory("returnAnim");
-		drag.snapPathFactory = animPathFactory("snapAnim");
+		drag.setReturnAnimPath(demoBuilder, "returnAnim");
+		drag.setSnapAnimPath(demoBuilder, "snapAnim");
 		drag.dragAlpha = 0.6;
 		drag.zoneHighlightAlpha = 1.0;
 
@@ -100,8 +98,8 @@ class DraggableDemoScreen extends DemoScreenBase {
 	// --- Mode 3: Priority zones (overlapping) with elastic return ---
 	function setupPriorityDrag():Void {
 		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFFAA00, 30, 30)));
-		drag.returnPathFactory = animPathFactory("returnAnim");
-		drag.snapPathFactory = animPathFactory("snapAnim");
+		drag.setReturnAnimPath(demoBuilder, "returnAnim");
+		drag.setSnapAnimPath(demoBuilder, "snapAnim");
 		drag.dragAlpha = 0.7;
 		drag.zoneHighlightAlpha = 1.0;
 
@@ -142,7 +140,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 	function setupDragLayerDrag():Void {
 		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xAA44FF, 50, 50)));
 		drag.dragLayer = BackgroundLayer;
-		drag.returnPathFactory = animPathFactory("linearReturn");
+		drag.setReturnAnimPath(demoBuilder, "linearReturn");
 		drag.dragAlpha = 0.8;
 
 		drag.onDragEvent = (event, pos, wrapper) -> {
@@ -157,10 +155,6 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 		draggables.push(drag);
 		addElementWithPos(drag, BX + 400, BY + 270, DefaultLayer);
-	}
-
-	function animPathFactory(name:String):AnimatedPathFactory {
-		return (from:FPoint, to:FPoint) -> demoBuilder.createAnimatedPath(name, from, to);
 	}
 
 	function updateEventText(text:String):Void {

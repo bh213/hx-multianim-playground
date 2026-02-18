@@ -1,30 +1,312 @@
 version: 0.5
 
-// Inventory Demo
-// 5x4 grid of item slots with selection highlighting and tooltip area.
+// Inventory Demo — Shop, Player Inventory (3x4), Equipment (head, 2 arms, armor, legs)
 
+curves {
+    #elasticBounce curve {
+        easing: easeoutelastic
+    }
+    #easeOut curve {
+        easing: easeoutcubic
+    }
+}
+
+paths {
+    #straightLine path {
+        lineTo(100, 0)
+    }
+}
+
+#returnAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.4
+    0.0: progressCurve: elasticBounce
+}
+
+#snapAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.12
+    0.0: progressCurve: easeOut
+}
+
+// Item visual — colored block with icon and item name
+#invItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
+    // Colored background per item type
+    @(itemType => empty)   bitmap(generated(color(48, 48, #1a1a2e))): 0, 0
+    @(itemType => hpot)    bitmap(generated(color(48, 48, #cc3333))): 0, 0
+    @(itemType => mpot)    bitmap(generated(color(48, 48, #3366bb))): 0, 0
+    @(itemType => lsword)  bitmap(generated(color(48, 48, #88aa44))): 0, 0
+    @(itemType => ssword)  bitmap(generated(color(48, 48, #669944))): 0, 0
+    @(itemType => shield)  bitmap(generated(color(48, 48, #4488cc))): 0, 0
+    @(itemType => ring)    bitmap(generated(color(48, 48, #ccaa33))): 0, 0
+    @(itemType => boots)   bitmap(generated(color(48, 48, #44aa88))): 0, 0
+    @(itemType => scroll)  bitmap(generated(color(48, 48, #aa66cc))): 0, 0
+    @(itemType => helm)    bitmap(generated(color(48, 48, #999999))): 0, 0
+    @(itemType => armor)   bitmap(generated(color(48, 48, #445588))): 0, 0
+
+    // Icons (compact, top 28px area)
+    @(itemType => hpot)    bitmap(generated(color(6, 16, #ff6666))): 21, 4
+    @(itemType => hpot)    bitmap(generated(color(16, 6, #ff6666))): 16, 10
+
+    @(itemType => mpot)    bitmap(generated(color(6, 16, #6688ff))): 21, 4
+    @(itemType => mpot)    bitmap(generated(color(16, 6, #6688ff))): 16, 10
+
+    @(itemType => lsword)  bitmap(generated(color(4, 24, #ccddaa))): 22, 1
+    @(itemType => lsword)  bitmap(generated(color(14, 4, #886633))): 17, 23
+    @(itemType => lsword)  bitmap(generated(color(4, 5, #664422))): 22, 27
+
+    @(itemType => ssword)  bitmap(generated(color(4, 14, #aabb88))): 22, 6
+    @(itemType => ssword)  bitmap(generated(color(10, 3, #667744))): 19, 18
+    @(itemType => ssword)  bitmap(generated(color(4, 5, #554433))): 22, 21
+
+    @(itemType => shield)  bitmap(generated(color(20, 22, #66aadd))): 14, 3
+    @(itemType => shield)  bitmap(generated(color(14, 3, #4477aa))): 17, 25
+
+    @(itemType => ring)    bitmap(generated(color(18, 18, #1a1a2e))): 15, 4
+    @(itemType => ring)    bitmap(generated(color(10, 10, #ffcc44))): 19, 8
+
+    @(itemType => boots)   bitmap(generated(color(10, 16, #66ccaa))): 11, 6
+    @(itemType => boots)   bitmap(generated(color(10, 16, #66ccaa))): 27, 6
+
+    @(itemType => scroll)  bitmap(generated(color(18, 18, #cc99ee))): 15, 3
+    @(itemType => scroll)  bitmap(generated(color(22, 3, #ddbbff))): 13, 3
+    @(itemType => scroll)  bitmap(generated(color(22, 3, #ddbbff))): 13, 18
+
+    @(itemType => helm)    bitmap(generated(color(24, 12, #bbbbbb))): 12, 3
+    @(itemType => helm)    bitmap(generated(color(20, 10, #aaaaaa))): 14, 13
+
+    @(itemType => armor)   bitmap(generated(color(26, 5, #7799cc))): 11, 4
+    @(itemType => armor)   bitmap(generated(color(20, 14, #6688bb))): 14, 9
+    @(itemType => armor)   bitmap(generated(color(14, 4, #5577aa))): 17, 23
+
+    // Item name label (bottom of item)
+    @(itemType => empty)   text(m5x7, "---", #555555, center, 48): 0, 32
+    @(itemType => hpot)    text(m5x7, "H.Pot", #ff8888, center, 48): 0, 32
+    @(itemType => mpot)    text(m5x7, "M.Pot", #88aaff, center, 48): 0, 32
+    @(itemType => lsword)  text(m5x7, "L.Sword", #bbcc88, center, 48): 0, 32
+    @(itemType => ssword)  text(m5x7, "S.Sword", #99cc77, center, 48): 0, 32
+    @(itemType => shield)  text(m5x7, "Shield", #88bbdd, center, 48): 0, 32
+    @(itemType => ring)    text(m5x7, "Ring", #ddbb66, center, 48): 0, 32
+    @(itemType => boots)   text(m5x7, "Boots", #88ddbb, center, 48): 0, 32
+    @(itemType => scroll)  text(m5x7, "Scroll", #bb99dd, center, 48): 0, 32
+    @(itemType => helm)    text(m5x7, "Helm", #bbbbbb, center, 48): 0, 32
+    @(itemType => armor)   text(m5x7, "Armor", #7799bb, center, 48): 0, 32
+}
+
+// Main demo layout
 #inventoryDemo programmable() {
-    pos: 50, 80
+    pos: 30, 70
 
-    // Title
-    text(exo2_16, "Inventory", #7fdbda): 0, 0
-    bitmap(generated(color(500, 1, #7fdbda33))): 0, 22
+    // ===== SHOP BAR =====
+    text(exo2_16, "Shop", #7fdbda): 0, 0
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 20
 
-    // Grid panel background
-    ninepatch("ui", "Window_3x3_idle", 320, 280): 0, 35
+    // Shop slots (10 items)
+    point {
+        pos: 0, 30
+        repeatable($s, step(10, dx: 56)) {
+            bitmap(generated(color(52, 52, #222244))): 0, 0
+            #shop[$s] slot(state:[normal, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(1, 1, #22224400))): 0, 0
+                @(state => unavailable) bitmap(generated(color(52, 52, #00000099))): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+    }
 
-    // Grid container - items/cells created programmatically
-    #gridContainer(updatable) point: 15, 50
+    // ===== GOLD / WEIGHT / RESET =====
+    text(m6x11, "Gold:", #ffcc33): 0, 95
+    #goldText(updatable) text(exo2_16, "600", #ffcc33): 35, 92
+    text(m6x11, "Weight:", #aaaaaa): 130, 95
+    #weightText(updatable) text(exo2_16, "0 / 60 kg", #aaaaaa): 178, 92
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("resetBtn")) { pos: 350, 92 }
+    text(exo2_light_14, "Reset", #aaaaaa): 374, 92
 
-    // Selection highlight - repositioned on click
-    #selectHighlight(updatable) bitmap(generated(color(50, 50, #7fdbda55))): -100, -100
+    // ===== PLAYER INVENTORY (left) =====
+    text(exo2_16, "Inventory", #66cc99): 0, 120
+    bitmap(generated(color(232, 1, #66cc9933))): 0, 140
 
-    // Info panel
-    ninepatch("ui", "Window_3x3_idle", 320, 80): 0, 325
-    text(exo2_14, "Item Info:", #aaaaaa): 15, 335
-    #tooltipText(updatable) text(exo2_16, "Select a cell", #ffffff, left, 290): 15, 355
-    #itemCountText(updatable) text(exo2_14, "Items: 0 / 20", #7fdbda, left, 290): 15, 380
+    // Row 0
+    point {
+        pos: 0, 155
+        repeatable($a, step(4, dx: 58)) {
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            #p0[$a] slot(state:[normal, disabled, highlight] = normal) {
+                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight) graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+            }
+        }
+    }
+    // Row 1
+    point {
+        pos: 0, 213
+        repeatable($b, step(4, dx: 58)) {
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            #p1[$b] slot(state:[normal, disabled, highlight] = normal) {
+                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight) graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+            }
+        }
+    }
+    // Row 2
+    point {
+        pos: 0, 271
+        repeatable($c, step(4, dx: 58)) {
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            #p2[$c] slot(state:[normal, disabled, highlight] = normal) {
+                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight) graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+            }
+        }
+    }
 
-    // Instructions
-    text(exo2_light_14, "Click cells to select. Items are pre-placed.", #666666): 0, 420
+    #playerWeightText(updatable) text(exo2_light_14, "Weight: 0 / 60 kg", #66cc99): 0, 332
+    #playerCountText(updatable) text(exo2_light_14, "Items: 0 / 12  Equipped: 0 / 5", #66cc99): 0, 350
+
+    // ===== EQUIPMENT (right) =====
+    text(exo2_16, "Equipment", #cc9966): 310, 120
+    bitmap(generated(color(200, 1, #cc996633))): 310, 140
+
+    point {
+        pos: 310, 155
+
+        // Stick figure body silhouette (visible in gaps between slots)
+        bitmap(generated(color(20, 20, #2a2a4e))): 74, -24
+        bitmap(generated(color(4, 208, #2a2a4e))): 82, -24
+        bitmap(generated(color(120, 4, #2a2a4e))): 24, 56
+        bitmap(generated(color(20, 4, #2a2a4e))): 74, 122
+        bitmap(generated(color(4, 10, #2a2a4e))): 76, 124
+        bitmap(generated(color(4, 10, #2a2a4e))): 88, 124
+
+        // Head slot
+        point {
+            pos: 58, 0
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            text(m5x7, "HEAD", #333355, center, 52): 0, 20
+            #eq_head slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+
+        // Left Arm slot
+        point {
+            pos: 0, 66
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            text(m5x7, "L.ARM", #333355, center, 52): 0, 20
+            #eq_larm slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+
+        // Armor slot
+        point {
+            pos: 58, 66
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            text(m5x7, "ARMOR", #333355, center, 52): 0, 20
+            #eq_armor slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+
+        // Right Arm slot
+        point {
+            pos: 116, 66
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            text(m5x7, "R.ARM", #333355, center, 52): 0, 20
+            #eq_rarm slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+
+        // Legs slot
+        point {
+            pos: 58, 132
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            text(m5x7, "LEGS", #333355, center, 52): 0, 20
+            #eq_legs slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+    }
+
+    // ===== LOG =====
+    #logText(updatable) text(exo2_light_14, "Drag items from shop to inventory or equip them.", #666666): 0, 375
 }

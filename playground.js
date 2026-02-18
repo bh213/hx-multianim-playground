@@ -9253,7 +9253,15 @@ bh_multianim_MacroManimParser.prototype = {
 												if(updatableName == null) {
 													this.error("slot requires a #name prefix");
 												}
-												node = this.createNode(bh_multianim_NodeType.SLOT,parent,conditional,scale,alpha,tint,layerIndex,updatableName);
+												if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
+													var parsed = this.parseDefines();
+													currentDefs = parsed.defs;
+													this.activeDefs = parsed.defs;
+													this.scopeVars = [];
+													node = this.createNode(bh_multianim_NodeType.SLOT(parsed.defs,parsed.order),parent,conditional,scale,alpha,tint,layerIndex,updatableName);
+												} else {
+													node = this.createNode(bh_multianim_NodeType.SLOT(null,null),parent,conditional,scale,alpha,tint,layerIndex,updatableName);
+												}
 											} else {
 												var s = _g1;
 												if(bh_multianim_MacroManimParser.isKeyword(s,"interactive")) {
@@ -13164,7 +13172,11 @@ var bh_multianim_SlotKey = $hxEnums["bh.multianim.SlotKey"] = { __ename__:true,_
 };
 bh_multianim_SlotKey.__constructs__ = [bh_multianim_SlotKey.Named,bh_multianim_SlotKey.Indexed];
 bh_multianim_SlotKey.__empty_constructs__ = [];
-var bh_multianim_SlotHandle = function(container) {
+var bh_multianim_SlotHandle = function(container,incrementalContext) {
+	this.hasParameters = false;
+	this.contentRoot = null;
+	this.incrementalContext = null;
+	this.data = null;
 	this.container = container;
 	this.defaultChildren = [];
 	this.currentContent = null;
@@ -13174,34 +13186,66 @@ var bh_multianim_SlotHandle = function(container) {
 		var i = _g++;
 		this.defaultChildren.push(container.getChildAt(i));
 	}
+	if(incrementalContext != null) {
+		this.incrementalContext = incrementalContext;
+		this.hasParameters = true;
+		this.contentRoot = new h2d_Object();
+		container.addChild(this.contentRoot);
+	}
 };
 $hxClasses["bh.multianim.SlotHandle"] = bh_multianim_SlotHandle;
 bh_multianim_SlotHandle.__name__ = "bh.multianim.SlotHandle";
 bh_multianim_SlotHandle.prototype = {
 	setContent: function(obj) {
 		this.clear();
-		var _g = 0;
-		var _g1 = this.defaultChildren;
-		while(_g < _g1.length) {
-			var child = _g1[_g];
-			++_g;
-			child.set_visible(false);
+		if(this.hasParameters) {
+			this.currentContent = obj;
+			this.contentRoot.addChild(obj);
+		} else {
+			var _g = 0;
+			var _g1 = this.defaultChildren;
+			while(_g < _g1.length) {
+				var child = _g1[_g];
+				++_g;
+				child.set_visible(false);
+			}
+			this.currentContent = obj;
+			this.container.addChild(obj);
 		}
-		this.currentContent = obj;
-		this.container.addChild(obj);
 	}
 	,clear: function() {
 		if(this.currentContent != null) {
-			this.container.removeChild(this.currentContent);
+			if(this.hasParameters) {
+				this.contentRoot.removeChild(this.currentContent);
+			} else {
+				this.container.removeChild(this.currentContent);
+			}
 			this.currentContent = null;
 		}
-		var _g = 0;
-		var _g1 = this.defaultChildren;
-		while(_g < _g1.length) {
-			var child = _g1[_g];
-			++_g;
-			child.set_visible(true);
+		if(!this.hasParameters) {
+			var _g = 0;
+			var _g1 = this.defaultChildren;
+			while(_g < _g1.length) {
+				var child = _g1[_g];
+				++_g;
+				child.set_visible(true);
+			}
 		}
+	}
+	,getContent: function() {
+		return this.currentContent;
+	}
+	,isEmpty: function() {
+		return this.currentContent == null;
+	}
+	,isOccupied: function() {
+		return this.currentContent != null;
+	}
+	,setParameter: function(name,value) {
+		if(this.incrementalContext == null) {
+			throw haxe_Exception.thrown("Slot has no parameters");
+		}
+		this.incrementalContext.setParameter(name,value);
 	}
 	,__class__: bh_multianim_SlotHandle
 };
@@ -17036,7 +17080,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 2423, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 2458, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -17132,6 +17176,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var _g1 = _g.dataDef;
 			throw haxe_Exception.thrown("data is a definition node, not a renderable element");
 		case 29:
+			var parameters = _g.parameters;
+			var paramOrder = _g.paramOrder;
 			var container = new h2d_Object();
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(container);
 			break;
@@ -17302,6 +17348,53 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(selectedBuildMode == null) {
 			selectedBuildMode = bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(object);
 		}
+		var slotIncrementalCtx = null;
+		var savedSlotIncrementalMode = false;
+		var savedSlotIncrementalContext = null;
+		var savedSlotIndexedParams = null;
+		var _g = node.type;
+		if(_g._hx_index == 29) {
+			var _g1 = _g.paramOrder;
+			var parameters = _g.parameters;
+			if(parameters != null) {
+				savedSlotIncrementalMode = this.incrementalMode;
+				savedSlotIncrementalContext = this.incrementalContext;
+				savedSlotIndexedParams = this.indexedParams;
+				var mergedParams = new haxe_ds_StringMap();
+				var h = this.indexedParams.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var k = _g_key;
+					var v = _g_value;
+					mergedParams.h[k] = v;
+				}
+				var h = parameters.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var key1 = _g_key;
+					var def = _g_value;
+					if(def.defaultValue != null) {
+						mergedParams.h[key1] = def.defaultValue;
+					}
+				}
+				this.indexedParams = mergedParams;
+				slotIncrementalCtx = new bh_multianim_IncrementalUpdateContext(this,mergedParams,builderParams,node);
+				this.incrementalMode = true;
+				this.incrementalContext = slotIncrementalCtx;
+			}
+		}
 		if(!skipChildren) {
 			var resolvedChildren = this.resolveConditionalChildren(node.children);
 			var _g = 0;
@@ -17312,16 +17405,24 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,this.indexedParams);
 		}
-		if(node.type._hx_index == 29) {
+		if(savedSlotIndexedParams != null) {
+			this.incrementalMode = savedSlotIncrementalMode;
+			this.incrementalContext = savedSlotIncrementalContext;
+			this.indexedParams = savedSlotIndexedParams;
+		}
+		var _g = node.type;
+		if(_g._hx_index == 29) {
+			var _g1 = _g.paramOrder;
+			var parameters = _g.parameters;
 			var _g = node.updatableName;
 			switch(_g._hx_index) {
 			case 0:
 				var name = _g.name;
-				internalResults.slots.push({ key : bh_multianim_SlotKey.Named(name), handle : new bh_multianim_SlotHandle(object)});
+				internalResults.slots.push({ key : bh_multianim_SlotKey.Named(name), handle : new bh_multianim_SlotHandle(object,slotIncrementalCtx)});
 				break;
 			case 1:
 				var name = _g.name;
-				internalResults.slots.push({ key : bh_multianim_SlotKey.Named(name), handle : new bh_multianim_SlotHandle(object)});
+				internalResults.slots.push({ key : bh_multianim_SlotKey.Named(name), handle : new bh_multianim_SlotHandle(object,slotIncrementalCtx)});
 				break;
 			case 2:
 				var baseName = _g.name;
@@ -17330,7 +17431,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				if(index == null) {
 					throw haxe_Exception.thrown("Slot \"" + baseName + "\" indexed variable did not resolve to an integer");
 				}
-				internalResults.slots.push({ key : bh_multianim_SlotKey.Indexed(baseName,index), handle : new bh_multianim_SlotHandle(object)});
+				internalResults.slots.push({ key : bh_multianim_SlotKey.Indexed(baseName,index), handle : new bh_multianim_SlotHandle(object,slotIncrementalCtx)});
 				break;
 			}
 		}
@@ -18576,7 +18677,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4076, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4143, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -18682,7 +18783,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4159, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4335, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -18716,7 +18817,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4175, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4351, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -19400,12 +19501,12 @@ var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true
 	,AUTOTILE: ($_=function(autotileDef) { return {_hx_index:26,autotileDef:autotileDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="AUTOTILE",$_.__params__ = ["autotileDef"],$_)
 	,ATLAS2: ($_=function(atlas2Def) { return {_hx_index:27,atlas2Def:atlas2Def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ATLAS2",$_.__params__ = ["atlas2Def"],$_)
 	,DATA: ($_=function(dataDef) { return {_hx_index:28,dataDef:dataDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DATA",$_.__params__ = ["dataDef"],$_)
-	,SLOT: {_hx_name:"SLOT",_hx_index:29,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,SLOT: ($_=function(parameters,paramOrder) { return {_hx_index:29,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SLOT",$_.__params__ = ["parameters","paramOrder"],$_)
 	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:30,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
 	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:31,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
 };
 bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR];
-bh_multianim_NodeType.__empty_constructs__ = [bh_multianim_NodeType.POINT,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.SLOT];
+bh_multianim_NodeType.__empty_constructs__ = [bh_multianim_NodeType.POINT,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS];
 var bh_multianim_NodeConditionalValues = $hxEnums["bh.multianim.NodeConditionalValues"] = { __ename__:true,__constructs__:null
 	,Conditional: ($_=function(values,strict) { return {_hx_index:0,values:values,strict:strict,__enum__:"bh.multianim.NodeConditionalValues",toString:$estr}; },$_._hx_name="Conditional",$_.__params__ = ["values","strict"],$_)
 	,ConditionalElse: ($_=function(values) { return {_hx_index:1,values:values,__enum__:"bh.multianim.NodeConditionalValues",toString:$estr}; },$_._hx_name="ConditionalElse",$_.__params__ = ["values"],$_)
@@ -23976,7 +24077,8 @@ var bh_ui_DragEvent = $hxEnums["bh.ui.DragEvent"] = { __ename__:true,__construct
 };
 bh_ui_DragEvent.__constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragCancel,bh_ui_DragEvent.ZoneEnter,bh_ui_DragEvent.ZoneLeave];
 bh_ui_DragEvent.__empty_constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragCancel];
-var bh_ui_DropZone = function(id,bounds,slot,snapX,snapY,accepts,priority,boundsProvider,snapProvider) {
+var bh_ui_DropZone = function(id,bounds,slot,snapX,snapY,accepts,priority,boundsProvider,snapProvider,onZoneHighlight) {
+	this.onZoneHighlight = null;
 	this.snapProvider = null;
 	this.boundsProvider = null;
 	this.priority = 0;
@@ -24007,6 +24109,9 @@ var bh_ui_DropZone = function(id,bounds,slot,snapX,snapY,accepts,priority,bounds
 	if(snapProvider != null) {
 		this.snapProvider = snapProvider;
 	}
+	if(onZoneHighlight != null) {
+		this.onZoneHighlight = onZoneHighlight;
+	}
 };
 $hxClasses["bh.ui.DropZone"] = bh_ui_DropZone;
 bh_ui_DropZone.__name__ = "bh.ui.DropZone";
@@ -24031,6 +24136,8 @@ bh_ui_DraggableState.__constructs__ = [bh_ui_DraggableState.Idle,bh_ui_Draggable
 bh_ui_DraggableState.__empty_constructs__ = [bh_ui_DraggableState.Idle,bh_ui_DraggableState.Dragging,bh_ui_DraggableState.Animating];
 var bh_ui_UIMultiAnimDraggable = function(target) {
 	this.savedAlpha = 1.0;
+	this.swapMode = false;
+	this.sourceSlot = null;
 	this.animApplyRotation = false;
 	this.animApplyAlpha = false;
 	this.animApplyScale = false;
@@ -24043,6 +24150,8 @@ var bh_ui_UIMultiAnimDraggable = function(target) {
 	this.dropZones = [];
 	this.snapPathFactory = null;
 	this.returnPathFactory = null;
+	this.onDragEndHighlightZones = null;
+	this.onDragStartHighlightZones = null;
 	this.onDragCancel = null;
 	this.onDragEvent = null;
 	this.onDragDrop = null;
@@ -24290,6 +24399,20 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				if(this.onDragEvent != null) {
 					this.onDragEvent(bh_ui_DragEvent.DragStart,wrapper.eventPos,wrapper);
 				}
+				if(this.onDragStartHighlightZones != null) {
+					var _g1 = [];
+					var _g2 = 0;
+					var _g3 = this.dropZones;
+					while(_g2 < _g3.length) {
+						var v = _g3[_g2];
+						++_g2;
+						if(v.accepts == null || v.accepts(_gthis,v)) {
+							_g1.push(v);
+						}
+					}
+					var validZones = _g1;
+					this.onDragStartHighlightZones(validZones);
+				}
 			}
 			break;
 		case 1:
@@ -24299,10 +24422,16 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				this.activeWrapper = null;
 				wrapper.control.captureEvents.stopCapture();
 				if(this.currentHoverZone != null) {
+					if(this.currentHoverZone.onZoneHighlight != null) {
+						this.currentHoverZone.onZoneHighlight(this.currentHoverZone,false);
+					}
 					if(this.onDragEvent != null) {
 						this.onDragEvent(bh_ui_DragEvent.ZoneLeave(this.currentHoverZone),wrapper.eventPos,wrapper);
 					}
 					this.currentHoverZone = null;
+				}
+				if(this.onDragEndHighlightZones != null) {
+					this.onDragEndHighlightZones(this.dropZones);
 				}
 				this.target.alpha = this.savedAlpha;
 				var x = wrapper.eventPos.x + this.dragOffset.x;
@@ -24336,8 +24465,19 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 						_this.y = y;
 						_gthis.restoreLayer();
 						if(zone.slot != null) {
-							zone.slot.setContent(_gthis.target);
+							if(_gthis.swapMode && zone.slot.isOccupied() && _gthis.sourceSlot != null) {
+								var displaced = zone.slot.getContent();
+								var displacedData = zone.slot.data;
+								zone.slot.clear();
+								zone.slot.setContent(_gthis.target);
+								zone.slot.data = _gthis.sourceSlot.data;
+								_gthis.sourceSlot.setContent(displaced);
+								_gthis.sourceSlot.data = displacedData;
+							} else {
+								zone.slot.setContent(_gthis.target);
+							}
 						}
+						_gthis.sourceSlot = null;
 					});
 				} else {
 					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UICustomEvent("dragCancel",null),this);
@@ -24357,6 +24497,10 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 							_this.posChanged = true;
 							_this.y = y;
 							_gthis.restoreLayer();
+							if(_gthis.sourceSlot != null) {
+								_gthis.sourceSlot.setContent(_gthis.target);
+								_gthis.sourceSlot = null;
+							}
 						});
 					} else {
 						this.state = bh_ui_DraggableState.Idle;
@@ -24386,12 +24530,22 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				_this.y = newPos.y;
 				var hoverZone = this.findDropZone(wrapper.eventPos);
 				if(hoverZone != this.currentHoverZone) {
-					if(this.currentHoverZone != null && this.onDragEvent != null) {
-						this.onDragEvent(bh_ui_DragEvent.ZoneLeave(this.currentHoverZone),wrapper.eventPos,wrapper);
+					if(this.currentHoverZone != null) {
+						if(this.currentHoverZone.onZoneHighlight != null) {
+							this.currentHoverZone.onZoneHighlight(this.currentHoverZone,false);
+						}
+						if(this.onDragEvent != null) {
+							this.onDragEvent(bh_ui_DragEvent.ZoneLeave(this.currentHoverZone),wrapper.eventPos,wrapper);
+						}
 					}
 					this.currentHoverZone = hoverZone;
-					if(this.currentHoverZone != null && this.onDragEvent != null) {
-						this.onDragEvent(bh_ui_DragEvent.ZoneEnter(this.currentHoverZone),wrapper.eventPos,wrapper);
+					if(this.currentHoverZone != null) {
+						if(this.currentHoverZone.onZoneHighlight != null) {
+							this.currentHoverZone.onZoneHighlight(this.currentHoverZone,true);
+						}
+						if(this.onDragEvent != null) {
+							this.onDragEvent(bh_ui_DragEvent.ZoneEnter(this.currentHoverZone),wrapper.eventPos,wrapper);
+						}
 					}
 					if(this.zoneHighlightAlpha != null) {
 						this.target.alpha = this.currentHoverZone != null ? this.zoneHighlightAlpha : this.dragAlpha != null ? this.dragAlpha : this.savedAlpha;
@@ -85388,7 +85542,8 @@ screens_gamelike_DialogueDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	,__class__: screens_gamelike_DialogueDemoScreen
 });
 var screens_gamelike_InventoryDemoScreen = function(screenManager,layers) {
-	this.selectedCell = -1;
+	this.gold = 600;
+	this.draggables = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.gamelike.InventoryDemoScreen"] = screens_gamelike_InventoryDemoScreen;
@@ -85397,114 +85552,809 @@ screens_gamelike_InventoryDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Inventory Grid","5x4 inventory grid with item selection and tooltip");
+		this.setupDemo("Inventory Grid","Shop, inventory & equipment with drag-drop, gold & weight");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/inventory.manim",false);
-		this.demoResult = this.demoBuilder.buildWithParameters("inventoryDemo",new haxe_ds_StringMap());
+		var generatedByMacroBuildWithParametersload3189Builder = function() {
+			var resetBtn;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Reset");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				resetBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["resetBtn"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("inventoryDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { resetBtn : resetBtn, builderResults : builderResults1};
+			if(retVal.resetBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "resetBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload3189Builder();
+		this.demoResult = ui.builderResults;
+		this.resetButton = ui.resetBtn;
 		this.addBuilderResult(this.demoResult);
-		this.items = new haxe_ds_IntMap();
+		this.stockShop();
+		this.rebuildAllDraggables();
+		this.refreshUI();
+	}
+	,stockShop: function() {
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.ITEM_DEFS;
-		while(_g < _g1.length) {
-			var def = _g1[_g];
-			++_g;
-			this.items.h[def.cell] = { name : def.name, color : def.color};
+		var _g1 = screens_gamelike_InventoryDemoScreen.ITEMS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var slot = this.demoResult.getSlot("shop",i);
+			slot.data = screens_gamelike_InventoryDemoScreen.ITEMS[i].key;
+			slot.setContent(this.buildItem(screens_gamelike_InventoryDemoScreen.ITEMS[i].key));
 		}
-		var container = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("gridContainer").object);
-		this.cellInteractives = [];
+	}
+	,resetAll: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		this.gold = 600;
+		var ps = this.playerSlot(0);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(1);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(2);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(3);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(4);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(5);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(6);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(7);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(8);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(9);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(10);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
+		var ps = this.playerSlot(11);
+		ps.data = null;
+		ps.clear();
+		ps.setParameter("state","normal");
 		var _g = 0;
-		while(_g < 4) {
-			var row = _g++;
-			var _g1 = 0;
-			while(_g1 < 5) {
-				var col = _g1++;
-				var cellIdx = row * 5 + col;
-				var x = col * 60;
-				var y = row * 60;
-				var cellBg = new h2d_Bitmap(h2d_Tile.fromColor(-13421773,50,50));
-				cellBg.posChanged = true;
-				cellBg.x = x;
-				cellBg.posChanged = true;
-				cellBg.y = y;
-				container.addChild(cellBg);
-				if(this.items.h.hasOwnProperty(cellIdx)) {
-					var item = this.items.h[cellIdx];
-					var itemBmp = new h2d_Bitmap(h2d_Tile.fromColor(item.color,40,40));
-					itemBmp.posChanged = true;
-					itemBmp.x = x + 5;
-					itemBmp.posChanged = true;
-					itemBmp.y = y + 5;
-					container.addChild(itemBmp);
-				}
-				var inter = new h2d_Interactive(50,50,container);
-				inter.posChanged = true;
-				inter.x = x;
-				inter.posChanged = true;
-				inter.y = y;
-				var idx = [cellIdx];
-				inter.onClick = (function(idx) {
-					return function(_) {
-						_gthis.selectCell(idx[0]);
-					};
-				})(idx);
-				this.cellInteractives.push(inter);
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+		while(_g < _g1.length) {
+			var eq = _g1[_g];
+			++_g;
+			var s = this.demoResult.getSlot(eq.name);
+			s.data = null;
+			s.clear();
+			s.setParameter("state","normal");
+		}
+		this.stockShop();
+		this.rebuildAllDraggables();
+		this.refreshUI();
+		this.setLog("Reset! Gold: " + 600 + "g, all cleared.");
+	}
+	,buildItem: function(itemKey) {
+		var result = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["itemType"] = itemKey;
+		var result1 = result.buildWithParameters("invItem",_g);
+		var _this = result1.object;
+		_this.posChanged = true;
+		_this.x = 2;
+		_this.posChanged = true;
+		_this.y = 2;
+		return result1.object;
+	}
+	,itemDef: function(key) {
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.ITEMS;
+		while(_g < _g1.length) {
+			var d = _g1[_g];
+			++_g;
+			if(d.key == key) {
+				return d;
 			}
 		}
-		this.updateItemCount();
+		return null;
 	}
-	,selectCell: function(cellIndex) {
+	,getSlotByGrid: function(rows,idx) {
+		var row = idx / 4 | 0;
+		var col = idx % 4;
+		return this.demoResult.getSlot(rows[row],col);
+	}
+	,playerSlot: function(idx) {
+		return this.getSlotByGrid(screens_gamelike_InventoryDemoScreen.PLAYER_ROWS,idx);
+	}
+	,shopSlot: function(idx) {
+		return this.demoResult.getSlot("shop",idx);
+	}
+	,equipSlot: function(name) {
+		return this.demoResult.getSlot(name);
+	}
+	,invWeight: function() {
+		var w = 0;
+		var _g = 0;
+		while(_g < 12) {
+			var i = _g++;
+			var s = this.playerSlot(i);
+			if(s.isOccupied()) {
+				var def = this.itemDef(s.data);
+				if(def != null) {
+					w += def.weight;
+				}
+			}
+		}
+		return w;
+	}
+	,equipWeight: function() {
+		var w = 0;
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+		while(_g < _g1.length) {
+			var eq = _g1[_g];
+			++_g;
+			var s = this.equipSlot(eq.name);
+			if(s.isOccupied()) {
+				var def = this.itemDef(s.data);
+				if(def != null) {
+					w += def.weight;
+				}
+			}
+		}
+		return w;
+	}
+	,totalWeight: function() {
+		return this.invWeight() + this.equipWeight();
+	}
+	,invCount: function() {
+		var n = 0;
+		if(this.playerSlot(0).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(1).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(2).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(3).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(4).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(5).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(6).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(7).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(8).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(9).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(10).isOccupied()) {
+			++n;
+		}
+		if(this.playerSlot(11).isOccupied()) {
+			++n;
+		}
+		return n;
+	}
+	,equipCount: function() {
+		var n = 0;
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+		while(_g < _g1.length) {
+			var eq = _g1[_g];
+			++_g;
+			if(this.equipSlot(eq.name).isOccupied()) {
+				++n;
+			}
+		}
+		return n;
+	}
+	,invSlotScreenX: function(col) {
+		return 30 + col * 58;
+	}
+	,invSlotScreenY: function(row) {
+		return 225 + row * 58;
+	}
+	,equipScreenX: function(eq) {
+		return 340 + eq.dx;
+	}
+	,equipScreenY: function(eq) {
+		return 225 + eq.dy;
+	}
+	,isEquipZone: function(zoneId) {
+		return StringTools.startsWith(zoneId,"eq_");
+	}
+	,getInvZoneIdx: function(zoneId) {
+		var parts = zoneId.split("_");
+		return Std.parseInt(parts[1]);
+	}
+	,rebuildAllDraggables: function() {
+		var _g = 0;
+		var _g1 = this.draggables;
+		while(_g < _g1.length) {
+			var d = _g1[_g];
+			++_g;
+			this.removeElement(d);
+		}
+		this.draggables = [];
+		this.stockShop();
+		this.setupShopDraggable(0);
+		this.setupShopDraggable(1);
+		this.setupShopDraggable(2);
+		this.setupShopDraggable(3);
+		this.setupShopDraggable(4);
+		this.setupShopDraggable(5);
+		this.setupShopDraggable(6);
+		this.setupShopDraggable(7);
+		this.setupShopDraggable(8);
+		this.setupShopDraggable(9);
+		if(this.playerSlot(0).isOccupied()) {
+			this.setupInvDraggable(0);
+		}
+		if(this.playerSlot(1).isOccupied()) {
+			this.setupInvDraggable(1);
+		}
+		if(this.playerSlot(2).isOccupied()) {
+			this.setupInvDraggable(2);
+		}
+		if(this.playerSlot(3).isOccupied()) {
+			this.setupInvDraggable(3);
+		}
+		if(this.playerSlot(4).isOccupied()) {
+			this.setupInvDraggable(4);
+		}
+		if(this.playerSlot(5).isOccupied()) {
+			this.setupInvDraggable(5);
+		}
+		if(this.playerSlot(6).isOccupied()) {
+			this.setupInvDraggable(6);
+		}
+		if(this.playerSlot(7).isOccupied()) {
+			this.setupInvDraggable(7);
+		}
+		if(this.playerSlot(8).isOccupied()) {
+			this.setupInvDraggable(8);
+		}
+		if(this.playerSlot(9).isOccupied()) {
+			this.setupInvDraggable(9);
+		}
+		if(this.playerSlot(10).isOccupied()) {
+			this.setupInvDraggable(10);
+		}
+		if(this.playerSlot(11).isOccupied()) {
+			this.setupInvDraggable(11);
+		}
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS.length;
+		while(_g < _g1) {
+			var eqIdx = _g++;
+			this.setupEquipDraggable(eqIdx);
+		}
+	}
+	,makeDraggable: function(content) {
+		var drag = bh_ui_UIMultiAnimDraggable.create(content);
+		drag.setReturnAnimPath(this.demoBuilder,"returnAnim");
+		drag.setSnapAnimPath(this.demoBuilder,"snapAnim");
+		drag.dragAlpha = 0.7;
+		drag.zoneHighlightAlpha = 1.0;
+		drag.returnToOrigin = true;
+		return drag;
+	}
+	,addInvDropZones: function(drag) {
+		var i = 0;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(0);
+		var y = this.invSlotScreenY(0);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 1;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(1);
+		var y = this.invSlotScreenY(0);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 2;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(2);
+		var y = this.invSlotScreenY(0);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 3;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(3);
+		var y = this.invSlotScreenY(0);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 4;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(0);
+		var y = this.invSlotScreenY(1);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 5;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(1);
+		var y = this.invSlotScreenY(1);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 6;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(2);
+		var y = this.invSlotScreenY(1);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 7;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(3);
+		var y = this.invSlotScreenY(1);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 8;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(0);
+		var y = this.invSlotScreenY(2);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 9;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(1);
+		var y = this.invSlotScreenY(2);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 10;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(2);
+		var y = this.invSlotScreenY(2);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+		var i = 11;
+		var slot = this.playerSlot(i);
+		var x = this.invSlotScreenX(3);
+		var y = this.invSlotScreenY(2);
+		var b = new h2d_col_Bounds();
+		b.xMin = x;
+		b.yMin = y;
+		b.xMax = x + 52;
+		b.yMax = y + 52;
+		drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x + 2,y + 2,null,null,null,null,null));
+	}
+	,addEquipDropZones: function(drag,itemKey) {
+		var def = this.itemDef(itemKey);
+		if(def == null || def.equip == "") {
+			return;
+		}
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+		while(_g < _g1.length) {
+			var eq = _g1[_g];
+			++_g;
+			if(eq.accepts != def.equip) {
+				continue;
+			}
+			var slot = this.equipSlot(eq.name);
+			var x = this.equipScreenX(eq);
+			var y = this.equipScreenY(eq);
+			var _g2 = eq.name;
+			var b = new h2d_col_Bounds();
+			b.xMin = x;
+			b.yMin = y;
+			b.xMax = x + 52;
+			b.yMax = y + 52;
+			drag.addDropZone(new bh_ui_DropZone(_g2,b,slot,x + 2,y + 2,null,null,null,null,null));
+		}
+	}
+	,setupZoneHighlighting: function(drag,itemKey) {
+		var _gthis = this;
+		drag.onDragStartHighlightZones = function(zones) {
+			var _g = 0;
+			while(_g < zones.length) {
+				var z = zones[_g];
+				++_g;
+				if(z.slot != null) {
+					z.slot.setParameter("state","highlight");
+				}
+			}
+			var _g = 0;
+			var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+			while(_g < _g1.length) {
+				var eq = _g1[_g];
+				++_g;
+				var isValid = false;
+				var _g2 = 0;
+				while(_g2 < zones.length) {
+					var z = zones[_g2];
+					++_g2;
+					if(z.id == eq.name) {
+						isValid = true;
+						break;
+					}
+				}
+				if(!isValid) {
+					var s = _gthis.equipSlot(eq.name);
+					if(s.isEmpty()) {
+						s.setParameter("state","unavailable");
+					}
+				}
+			}
+		};
+		drag.onDragEndHighlightZones = function(zones) {
+			_gthis.refreshUI();
+		};
+	}
+	,setupShopDraggable: function(shopIdx) {
+		var _gthis = this;
+		var slot = this.shopSlot(shopIdx);
+		if(slot.isEmpty()) {
+			return;
+		}
+		var content = slot.getContent();
+		if(content == null) {
+			return;
+		}
+		var itemKey = slot.data;
+		var def = this.itemDef(itemKey);
+		if(def != null && (this.gold < def.cost || this.totalWeight() + def.weight > 60)) {
+			return;
+		}
+		var drag = this.makeDraggable(content);
+		this.addInvDropZones(drag);
+		this.addEquipDropZones(drag,itemKey);
+		this.setupZoneHighlighting(drag,itemKey);
+		drag.onDragDrop = function(result,wrapper) {
+			if(result.zone == null) {
+				return false;
+			}
+			var tgtSlot = result.zone.slot;
+			if(tgtSlot == null || tgtSlot.isOccupied()) {
+				return false;
+			}
+			var def = _gthis.itemDef(itemKey);
+			if(def == null) {
+				return false;
+			}
+			if(_gthis.gold < def.cost) {
+				_gthis.setLog("Not enough gold! Need " + def.cost + "g, have " + _gthis.gold + "g");
+				return false;
+			}
+			if(_gthis.totalWeight() + def.weight > 60) {
+				_gthis.setLog("Too heavy! " + def.name + " weighs " + def.weight + "kg");
+				return false;
+			}
+			_gthis.gold -= def.cost;
+			tgtSlot.data = itemKey;
+			tgtSlot.setContent(_gthis.buildItem(itemKey));
+			slot.setContent(_gthis.buildItem(itemKey));
+			_gthis.setLog("Bought " + def.name + " for " + def.cost + "g (" + def.weight + "kg)");
+			_gthis.rebuildAllDraggables();
+			_gthis.refreshUI();
+			return false;
+		};
+		drag.onDragEvent = function(event,pos,wrapper) {
+			if(event._hx_index == 0) {
+				var def = _gthis.itemDef(itemKey);
+				if(def != null) {
+					_gthis.setLog("" + def.name + ": " + def.cost + "g, " + def.weight + "kg");
+				}
+			}
+		};
+		this.draggables.push(drag);
+		this.addElementWithPos(drag,30 + shopIdx * 56 + 2,102,bh_ui_screens_LayersEnum.DefaultLayer);
+	}
+	,setupInvDraggable: function(slotIdx) {
+		var _gthis = this;
+		var slot = this.playerSlot(slotIdx);
+		if(slot.isEmpty()) {
+			return;
+		}
+		var content = slot.getContent();
+		if(content == null) {
+			return;
+		}
+		var itemKey = slot.data;
+		var drag = this.makeDraggable(content);
+		this.addInvDropZones(drag);
+		this.addEquipDropZones(drag,itemKey);
+		this.setupZoneHighlighting(drag,itemKey);
+		drag.onDragDrop = function(result,wrapper) {
+			if(result.zone == null) {
+				return false;
+			}
+			var tgtSlot = result.zone.slot;
+			if(tgtSlot == null) {
+				return false;
+			}
+			var def = _gthis.itemDef(itemKey);
+			if(def == null) {
+				return false;
+			}
+			if(_gthis.isEquipZone(result.zone.id)) {
+				if(tgtSlot.isOccupied()) {
+					var otherKey = tgtSlot.data;
+					var otherDef = _gthis.itemDef(otherKey);
+					slot.data = otherKey;
+					slot.setContent(_gthis.buildItem(otherKey));
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Equipped " + def.name + ", unequipped " + (otherDef != null ? otherDef.name : "?"));
+				} else {
+					slot.data = null;
+					slot.clear();
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Equipped " + def.name);
+				}
+			} else {
+				var tgtIdx = _gthis.getInvZoneIdx(result.zone.id);
+				if(tgtIdx == slotIdx) {
+					return false;
+				}
+				if(tgtSlot.isOccupied()) {
+					var otherKey = tgtSlot.data;
+					var otherDef = _gthis.itemDef(otherKey);
+					slot.data = otherKey;
+					slot.setContent(_gthis.buildItem(otherKey));
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Swapped " + def.name + " <-> " + (otherDef != null ? otherDef.name : "?"));
+				} else {
+					slot.data = null;
+					slot.clear();
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Moved " + def.name);
+				}
+			}
+			_gthis.rebuildAllDraggables();
+			_gthis.refreshUI();
+			return false;
+		};
+		drag.onDragEvent = function(event,pos,wrapper) {
+			if(event._hx_index == 0) {
+				var def = _gthis.itemDef(itemKey);
+				if(def != null) {
+					_gthis.setLog("" + def.name + ": " + def.weight + "kg");
+				}
+			}
+		};
+		var col = slotIdx % 4;
+		var row = slotIdx / 4 | 0;
+		this.draggables.push(drag);
+		this.addElementWithPos(drag,this.invSlotScreenX(col) + 2,this.invSlotScreenY(row) + 2,bh_ui_screens_LayersEnum.DefaultLayer);
+	}
+	,setupEquipDraggable: function(eqIdx) {
+		var _gthis = this;
+		var eq = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS[eqIdx];
+		var slot = this.equipSlot(eq.name);
+		if(slot.isEmpty()) {
+			return;
+		}
+		var content = slot.getContent();
+		if(content == null) {
+			return;
+		}
+		var itemKey = slot.data;
+		var drag = this.makeDraggable(content);
+		this.addInvDropZones(drag);
+		this.addEquipDropZones(drag,itemKey);
+		this.setupZoneHighlighting(drag,itemKey);
+		var srcName = eq.name;
+		drag.onDragDrop = function(result,wrapper) {
+			if(result.zone == null) {
+				return false;
+			}
+			var tgtSlot = result.zone.slot;
+			if(tgtSlot == null) {
+				return false;
+			}
+			var def = _gthis.itemDef(itemKey);
+			if(def == null) {
+				return false;
+			}
+			if(_gthis.isEquipZone(result.zone.id)) {
+				if(result.zone.id == srcName) {
+					return false;
+				}
+				if(tgtSlot.isOccupied()) {
+					var otherKey = tgtSlot.data;
+					var otherDef = _gthis.itemDef(otherKey);
+					slot.data = otherKey;
+					slot.setContent(_gthis.buildItem(otherKey));
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Swapped " + def.name + " <-> " + (otherDef != null ? otherDef.name : "?"));
+				} else {
+					slot.data = null;
+					slot.clear();
+					tgtSlot.data = itemKey;
+					tgtSlot.setContent(_gthis.buildItem(itemKey));
+					_gthis.setLog("Moved " + def.name);
+				}
+			} else if(tgtSlot.isOccupied()) {
+				var otherKey = tgtSlot.data;
+				var otherDef = _gthis.itemDef(otherKey);
+				if(otherDef == null || otherDef.equip != eq.accepts) {
+					_gthis.setLog("Can't swap: " + (otherDef != null ? otherDef.name : "?") + " can't be equipped here");
+					return false;
+				}
+				slot.data = otherKey;
+				slot.setContent(_gthis.buildItem(otherKey));
+				tgtSlot.data = itemKey;
+				tgtSlot.setContent(_gthis.buildItem(itemKey));
+				_gthis.setLog("Unequipped " + def.name + ", equipped " + otherDef.name);
+			} else {
+				slot.data = null;
+				slot.clear();
+				tgtSlot.data = itemKey;
+				tgtSlot.setContent(_gthis.buildItem(itemKey));
+				_gthis.setLog("Unequipped " + def.name);
+			}
+			_gthis.rebuildAllDraggables();
+			_gthis.refreshUI();
+			return false;
+		};
+		drag.onDragEvent = function(event,pos,wrapper) {
+			if(event._hx_index == 0) {
+				var def = _gthis.itemDef(itemKey);
+				if(def != null) {
+					_gthis.setLog("" + def.name + ": " + def.weight + "kg (equipped)");
+				}
+			}
+		};
+		this.draggables.push(drag);
+		this.addElementWithPos(drag,this.equipScreenX(eq) + 2,this.equipScreenY(eq) + 2,bh_ui_screens_LayersEnum.DefaultLayer);
+	}
+	,refreshUI: function() {
 		if(this.demoResult == null) {
 			return;
 		}
-		this.selectedCell = cellIndex;
-		var col = cellIndex % 5;
-		var row = cellIndex / 5 | 0;
-		var x = 15 + col * 60;
-		var y = 50 + row * 60;
-		var highlightObj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("selectHighlight").object);
-		highlightObj.posChanged = true;
-		highlightObj.x = x;
-		highlightObj.posChanged = true;
-		highlightObj.y = y;
-		var tooltip = this.demoResult.getUpdatable("tooltipText");
-		if(this.items.h.hasOwnProperty(cellIndex)) {
-			tooltip.updateText("" + this.items.h[cellIndex].name + " [Slot " + cellIndex + "]");
-		} else {
-			tooltip.updateText("Empty [Slot " + cellIndex + "]");
+		var tw = this.totalWeight();
+		var ic = this.invCount();
+		var ec = this.equipCount();
+		this.demoResult.getUpdatable("goldText").updateText("" + this.gold);
+		this.demoResult.getUpdatable("weightText").updateText("" + tw + " / " + 60 + " kg");
+		this.demoResult.getUpdatable("playerWeightText").updateText("Weight: " + tw + " / " + 60 + " kg");
+		this.demoResult.getUpdatable("playerCountText").updateText("Items: " + ic + " / " + 12 + "  Equipped: " + ec + " / " + screens_gamelike_InventoryDemoScreen.EQUIP_DEFS.length);
+		this.updateSlotStates();
+	}
+	,updateSlotStates: function() {
+		var tw = this.totalWeight();
+		var weightFull = tw + 2 > 60;
+		var cantAfford = this.gold < 20;
+		var disabled = weightFull || cantAfford;
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.ITEMS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var slot = this.shopSlot(i);
+			var def = screens_gamelike_InventoryDemoScreen.ITEMS[i];
+			var unavail = this.gold < def.cost || tw + def.weight > 60;
+			slot.setParameter("state",unavail ? "unavailable" : "normal");
+			var content = slot.getContent();
+			if(content != null) {
+				content.set_visible(!unavail);
+			}
+		}
+		var _g = 0;
+		while(_g < 12) {
+			var i = _g++;
+			var slot = this.playerSlot(i);
+			if(slot.isOccupied()) {
+				continue;
+			}
+			slot.setParameter("state",disabled ? "disabled" : "normal");
+		}
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
+		while(_g < _g1.length) {
+			var eq = _g1[_g];
+			++_g;
+			var s = this.equipSlot(eq.name);
+			if(s.isOccupied()) {
+				continue;
+			}
+			s.setParameter("state",disabled ? "disabled" : "normal");
 		}
 	}
-	,updateItemCount: function() {
-		if(this.demoResult == null) {
-			return;
+	,setLog: function(text) {
+		if(this.demoResult != null) {
+			this.demoResult.getUpdatable("logText").updateText(text);
 		}
-		var count = 0;
-		var _ = this.items.iterator();
-		while(_.hasNext()) {
-			var _1 = _.next();
-			++count;
-		}
-		this.demoResult.getUpdatable("itemCountText").updateText("Items: " + count + " / 20");
 	}
 	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 0) {
+			if(source == this.resetButton) {
+				this.resetAll();
+			}
+		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
-		if(this.cellInteractives != null) {
-			var _g = 0;
-			var _g1 = this.cellInteractives;
-			while(_g < _g1.length) {
-				var inter = _g1[_g];
-				++_g;
-				if(inter != null && inter.parent != null) {
-					inter.parent.removeChild(inter);
-				}
-			}
-			this.cellInteractives = null;
-		}
+		this.draggables = [];
 		this.demoBuilder = null;
 		this.demoResult = null;
-		this.items = null;
-		this.selectedCell = -1;
+		this.resetButton = null;
+		this.gold = 600;
 	}
 	,__class__: screens_gamelike_InventoryDemoScreen
 });
@@ -86768,6 +87618,7 @@ screens_layout_RepeatableDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	,__class__: screens_layout_RepeatableDemoScreen
 });
 var screens_layout_SlotsDemoScreen = function(screenManager,layers) {
+	this.paramSlotTimer = 0;
 	this.clearDelay = -1;
 	this.autoFillTimer = 0;
 	DemoScreenBase.call(this,screenManager,layers);
@@ -86780,7 +87631,7 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Slots","Clickable slot containers with auto-fill items and auto-clear");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/layout/slots.manim",false);
-		var generatedByMacroBuildWithParametersload1128Builder = function() {
+		var generatedByMacroBuildWithParametersload1159Builder = function() {
 			var autoAddChk;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -86799,7 +87650,7 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1128Builder();
+		var ui = generatedByMacroBuildWithParametersload1159Builder();
 		this.slotsResult = ui.builderResults;
 		this.autoAddCheckbox = ui.autoAddChk;
 		this.addBuilderResult(this.slotsResult);
@@ -86851,6 +87702,15 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			this.slotInteractives.push(inter);
 		}
 		this.updateCountText();
+		this.paramSlotTimer = 0;
+		var paramStates_0 = "empty";
+		var paramStates_1 = "filled";
+		var paramStates_2 = "highlight";
+		var paramStates_3 = "error";
+		this.slotsResult.getSlot("paramSlot",0).setParameter("state",paramStates_0);
+		this.slotsResult.getSlot("paramSlot",1).setParameter("state",paramStates_1);
+		this.slotsResult.getSlot("paramSlot",2).setParameter("state",paramStates_2);
+		this.slotsResult.getSlot("paramSlot",3).setParameter("state",paramStates_3);
 	}
 	,buildSlotItem: function(itemType) {
 		var result = this.demoBuilder;
@@ -87092,6 +87952,21 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			this.autoFillTimer -= 1.0;
 			this.autoFillRandomSlot();
 		}
+		if(this.slotsResult != null) {
+			this.paramSlotTimer += dt;
+			if(this.paramSlotTimer >= 1.5) {
+				this.paramSlotTimer -= 1.5;
+				var states = ["empty","filled","highlight","error"];
+				var newState = states[Math.random() * states.length | 0];
+				this.slotsResult.getSlot("paramSlot",0).setParameter("state",newState);
+				var newState = states[Math.random() * states.length | 0];
+				this.slotsResult.getSlot("paramSlot",1).setParameter("state",newState);
+				var newState = states[Math.random() * states.length | 0];
+				this.slotsResult.getSlot("paramSlot",2).setParameter("state",newState);
+				var newState = states[Math.random() * states.length | 0];
+				this.slotsResult.getSlot("paramSlot",3).setParameter("state",newState);
+			}
+		}
 	}
 	,onScreenEvent: function(event,source) {
 	}
@@ -87115,6 +87990,7 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.slotItems = null;
 		this.statusTexts = null;
 		this.autoFillTimer = 0;
+		this.paramSlotTimer = 0;
 	}
 	,__class__: screens_layout_SlotsDemoScreen
 });
@@ -87699,13 +88575,13 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		b.yMin = 140;
 		b.xMax = 170;
 		b.yMax = 260;
-		drag.addDropZone(new bh_ui_DropZone("zone1",b,null,90,180,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone("zone1",b,null,90,180,null,null,null,null,null));
 		var b = new h2d_col_Bounds();
 		b.xMin = 200;
 		b.yMin = 140;
 		b.xMax = 320;
 		b.yMax = 260;
-		drag.addDropZone(new bh_ui_DropZone("zone2",b,null,240,180,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone("zone2",b,null,240,180,null,null,null,null,null));
 		drag.onDragEvent = function(event,pos,wrapper) {
 			switch(event._hx_index) {
 			case 0:
@@ -87770,13 +88646,13 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		b.yMin = 450;
 		b.xMax = 230;
 		b.yMax = 570;
-		drag.addDropZone(new bh_ui_DropZone("outer-low",b,null,190,500,null,0,null,null));
+		drag.addDropZone(new bh_ui_DropZone("outer-low",b,null,190,500,null,0,null,null,null));
 		var b = new h2d_col_Bounds();
 		b.xMin = 100;
 		b.yMin = 470;
 		b.xMax = 180;
 		b.yMax = 550;
-		drag.addDropZone(new bh_ui_DropZone("inner-high",b,null,120,490,null,10,null,null));
+		drag.addDropZone(new bh_ui_DropZone("inner-high",b,null,120,490,null,10,null,null,null));
 		drag.onDragEvent = function(event,pos,wrapper) {
 			switch(event._hx_index) {
 			case 2:
@@ -88917,7 +89793,9 @@ screens_animation_AnimPathDemoScreen.COLORS = [8379354,16729156,4521796,4491519,
 screens_animation_AnimPathDemoScreen.COLOR_NAMES = ["Cyan","Red","Green","Blue","Yellow","Magenta","White"];
 screens_animation_CurvesDemoScreen.CURVE_TYPES = ["linear","easeInQuad","easeOutQuad","easeInOutQuad","easeInCubic","easeOutCubic","easeInOutCubic","easeInBack","easeOutBack","easeInOutBack","easeOutBounce","easeOutElastic","accelDecel","snapBack","cubicBezier","custom"];
 screens_animation_CurvesDemoScreen.CURVE_ITEMS = [{ name : "Linear"},{ name : "Ease In Quad"},{ name : "Ease Out Quad"},{ name : "Ease In/Out Quad"},{ name : "Ease In Cubic"},{ name : "Ease Out Cubic"},{ name : "Ease In/Out Cubic"},{ name : "Ease In Back"},{ name : "Ease Out Back"},{ name : "Ease In/Out Back"},{ name : "Ease Out Bounce"},{ name : "Ease Out Elastic"},{ name : "Accel/Decel"},{ name : "Snap Back"},{ name : "Cubic Bezier"},{ name : "Custom Points"}];
-screens_gamelike_InventoryDemoScreen.ITEM_DEFS = [{ name : "Health Potion", color : -48060, cell : 0},{ name : "Iron Sword", color : -11751600, cell : 2},{ name : "Gold Ring", color : -5317, cell : 4},{ name : "Blue Shield", color : -13869188, cell : 7},{ name : "Fire Scroll", color : -32944, cell : 10},{ name : "Silver Helm", color : -5197648, cell : 13},{ name : "Mana Crystal", color : -11890524, cell : 16},{ name : "Red Cloak", color : -3394765, cell : 19}];
+screens_gamelike_InventoryDemoScreen.PLAYER_ROWS = ["p0","p1","p2"];
+screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
+screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
 screens_gamelike_MinimapDemoScreen.ROOM_NAMES = ["Empty Room","Treasure Room","Trap Room","Boss Room"];
 screens_gamelike_MinimapDemoScreen.FOG_COLOR = -12303292;
 screens_gamelike_MinimapDemoScreen.EXPLORED_COLOR = -11751600;

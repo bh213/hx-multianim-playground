@@ -301,23 +301,16 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	}
 
 	function getTransformedPath(basePath:Path):Path {
-		var angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
-
 		if (mode == 0) {
-			// Start+Angle: always withStartAngle + offset by startPoint
+			// Start+Angle: rotate to face end, no scaling
+			var angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
 			pathOrigin = startPoint;
 			return basePath.withStartAngle(angle);
 		}
 
-		// Start+End: try normalize, fallback to withStartAngle for closed paths
-		var normalized = basePath.normalize(startPoint, endPoint);
-		if (normalized != basePath) {
-			pathOrigin = new FPoint(0, 0);
-			return normalized;
-		}
-		// Closed path: normalize failed (endpoint ≈ origin)
-		pathOrigin = startPoint;
-		return basePath.withStartAngle(angle);
+		// Start+End: normalize handles both open and closed paths
+		pathOrigin = new FPoint(0, 0);
+		return basePath.normalize(startPoint, endPoint);
 	}
 
 	function createAnimPathForIndex(idx:Int, basePath:Path, activeCurve:Null<ICurve>, duration:Float):AnimatedPath {

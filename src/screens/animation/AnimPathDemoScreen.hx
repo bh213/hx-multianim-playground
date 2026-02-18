@@ -6,6 +6,7 @@ import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
+import bh.ui.UIMultiAnimScrollableList;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.base.FPoint;
@@ -18,15 +19,18 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 
 	// UI elements
-	var pathButtons:Array<UIStandardMultiAnimButton> = [];
-	var curveButtons:Array<UIStandardMultiAnimButton> = [];
-	var modeButtons:Array<UIStandardMultiAnimButton> = [];
+	var pathList:Null<UIMultiAnimScrollableList>;
+	var curveList:Null<UIMultiAnimScrollableList>;
 	var countDropdown:Null<UIStandardMultiAnimDropdown>;
 	var speedSlider:Null<UIStandardMultiAnimSlider>;
 	var randomizeBtn:Null<UIStandardMultiAnimButton>;
 	var alphaChk:Null<UIStandardMultiCheckbox>;
 	var scaleChk:Null<UIStandardMultiCheckbox>;
 	var progressChk:Null<UIStandardMultiCheckbox>;
+	var colorChk:Null<UIStandardMultiCheckbox>;
+	var directionChk:Null<UIStandardMultiCheckbox>;
+	var btnModeAngle:Null<UIStandardMultiAnimButton>;
+	var btnModeNorm:Null<UIStandardMultiAnimButton>;
 
 	// State
 	var currentPath:String = "circuit";
@@ -34,97 +38,138 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	var applyAlpha:Bool = false;
 	var applyScale:Bool = false;
 	var applyProgress:Bool = true;
+	var applyColor:Bool = false;
+	var applyDirection:Bool = false;
 	var count:Int = 5;
-	var mode:Int = 0; // 0=fixedStart+randAngle, 1=randStart+fixedEnd, 2=fixedStart+randEnd
 	var speedPct:Int = 100;
+	var selectedColorIndex:Int = 0;
+	var mode:Int = 0; // 0=start+angle, 1=start+end
 
-	// Fixed point (set by clicking in display area)
-	var fixedPoint:FPoint;
+	// Start and end points (set by L-click / R-click)
+	var startPoint:FPoint;
+	var endPoint:FPoint;
 
 	// Animation objects
 	var circles:Array<h2d.Graphics> = [];
 	var animPaths:Array<AnimatedPath> = [];
-	var pathGraphics:h2d.Graphics = new h2d.Graphics();
 	var markerGraphics:Null<h2d.Graphics>;
 	var displayInteractive:Null<h2d.Interactive>;
 	var manimPaths:Null<MultiAnimPaths>;
 
-	// Random data per circle
-	var randPoints:Array<FPoint> = [];
-	var randAngles:Array<Float> = [];
+	// Color swatches
+	var colorSwatches:Array<h2d.Graphics> = [];
+	var colorHighlight:Null<h2d.Graphics>;
 
 	static final PATH_NAMES = ["circuit", "star", "spiral", "waves", "bezierLoop", "circle"];
-	static final CURVE_NAMES = ["linear", "easeInOut", "bounce", "elastic", "back", "fadeIn", "pulse"];
+	static final PATH_ITEMS:Array<UIElementListItem> = [
+		{name: "Circuit"}, {name: "Star"}, {name: "Spiral"}, {name: "Waves"}, {name: "Bezier Loop"}, {name: "Circle"}
+	];
+
+	static final CURVE_NAMES = [
+		"linear", "easeInQuad", "easeOutQuad", "easeInOutQuad",
+		"easeInCubic", "easeOutCubic", "easeInOutCubic",
+		"easeInBack", "easeOutBack", "easeInOutBack",
+		"easeOutBounce", "easeOutElastic",
+		"accelDecel", "snapBack", "cubicBezier", "custom",
+		"fadeIn", "pulse"
+	];
+	static final CURVE_ITEMS:Array<UIElementListItem> = [
+		{name: "Linear"}, {name: "Ease In Quad"}, {name: "Ease Out Quad"}, {name: "Ease In/Out Quad"},
+		{name: "Ease In Cubic"}, {name: "Ease Out Cubic"}, {name: "Ease In/Out Cubic"},
+		{name: "Ease In Back"}, {name: "Ease Out Back"}, {name: "Ease In/Out Back"},
+		{name: "Ease Out Bounce"}, {name: "Ease Out Elastic"},
+		{name: "Accel/Decel"}, {name: "Snap Back"}, {name: "Cubic Bezier"}, {name: "Custom Points"},
+		{name: "Fade In"}, {name: "Pulse"}
+	];
+
 	static final COUNT_ITEMS:Array<UIElementListItem> = [{name: "1"}, {name: "5"}, {name: "10"}, {name: "100"}];
 	static final COUNT_VALUES = [1, 5, 10, 100];
 
+	static final COLORS = [0x7fdbda, 0xff4444, 0x44ff44, 0x4488ff, 0xffdd44, 0xff44ff, 0xffffff];
+	static final COLOR_NAMES = ["Cyan", "Red", "Green", "Blue", "Yellow", "Magenta", "White"];
+
 	static inline final AREA_X = 50;
 	static inline final AREA_Y = 130;
-	static inline final AREA_W = 700;
+	static inline final AREA_W = 680;
 	static inline final AREA_H = 400;
 	static inline final BASE_DURATION = 2.0;
+	static inline final SWATCH_X = 520;
+	static inline final SWATCH_Y = 543;
+
+	// Path origin offset (non-zero for closed paths where normalize fails)
+	var pathOrigin:FPoint = new FPoint(0, 0);
 
 	override public function load():Void {
-		setupDemo("Anim Paths", "Animated path demo: circles follow paths with alpha, scale & progress curves");
+		setupDemo("Anim Paths", "Animated path demo: circles follow paths with alpha, scale, progress, color & direction curves");
 
-		fixedPoint = new FPoint(AREA_X + AREA_W / 2, AREA_Y + AREA_H / 2);
+		startPoint = new FPoint(AREA_X + 50, AREA_Y + AREA_H / 2);
+		endPoint = new FPoint(AREA_X + AREA_W - 50, AREA_Y + AREA_H / 2);
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/anim-path.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "animPathDemo", [], [
-			btnCircuit => addButtonWithSingleBuilder(commonBuilder, "backButton", "circuit"),
-			btnStar => addButtonWithSingleBuilder(commonBuilder, "backButton", "star"),
-			btnSpiral => addButtonWithSingleBuilder(commonBuilder, "backButton", "spiral"),
-			btnWaves => addButtonWithSingleBuilder(commonBuilder, "backButton", "waves"),
-			btnBezier => addButtonWithSingleBuilder(commonBuilder, "backButton", "bezier"),
-			btnCircle => addButtonWithSingleBuilder(commonBuilder, "backButton", "circle"),
-			btnLinear => addButtonWithSingleBuilder(commonBuilder, "backButton", "linear"),
-			btnEaseInOut => addButtonWithSingleBuilder(commonBuilder, "backButton", "easeInOut"),
-			btnBounce => addButtonWithSingleBuilder(commonBuilder, "backButton", "bounce"),
-			btnElastic => addButtonWithSingleBuilder(commonBuilder, "backButton", "elastic"),
-			btnBack => addButtonWithSingleBuilder(commonBuilder, "backButton", "back"),
-			btnFadeIn => addButtonWithSingleBuilder(commonBuilder, "backButton", "fadeIn"),
-			btnPulse => addButtonWithSingleBuilder(commonBuilder, "backButton", "pulse"),
 			countDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
 				COUNT_ITEMS, 1),
-			btnModeAngle => addButtonWithSingleBuilder(commonBuilder, "backButton", "Click+Angle"),
-			btnModeRandStart => addButtonWithSingleBuilder(commonBuilder, "backButton", "Rand Start"),
-			btnModeRandEnd => addButtonWithSingleBuilder(commonBuilder, "backButton", "Rand End"),
+			btnModeAngle => addButtonWithSingleBuilder(commonBuilder, "backButton", "Start+Angle"),
+			btnModeNorm => addButtonWithSingleBuilder(commonBuilder, "backButton", "Start+End"),
 			speedSlider => addSlider(stdBuilder, 100),
 			btnRandomize => addButtonWithSingleBuilder(commonBuilder, "backButton", "Randomize"),
 			chkAlpha => addCheckbox(stdBuilder, false),
 			chkScale => addCheckbox(stdBuilder, false),
 			chkProgress => addCheckbox(stdBuilder, true),
+			chkColor => addCheckbox(stdBuilder, false),
+			chkDirection => addCheckbox(stdBuilder, false),
 		]);
 
 		demoResult = ui.builderResults;
-		pathButtons = [ui.btnCircuit, ui.btnStar, ui.btnSpiral, ui.btnWaves, ui.btnBezier, ui.btnCircle];
-		curveButtons = [ui.btnLinear, ui.btnEaseInOut, ui.btnBounce, ui.btnElastic, ui.btnBack, ui.btnFadeIn, ui.btnPulse];
-		modeButtons = [ui.btnModeAngle, ui.btnModeRandStart, ui.btnModeRandEnd];
 		countDropdown = ui.countDropdown;
+		btnModeAngle = ui.btnModeAngle;
+		btnModeNorm = ui.btnModeNorm;
 		speedSlider = ui.speedSlider;
 		randomizeBtn = ui.btnRandomize;
 		alphaChk = ui.chkAlpha;
 		scaleChk = ui.chkScale;
 		progressChk = ui.chkProgress;
+		colorChk = ui.chkColor;
+		directionChk = ui.chkDirection;
 		addBuilderResult(demoResult);
 
 		manimPaths = demoBuilder.getPaths();
 
-		// Graphics layers
-		addObjectToLayer(pathGraphics, DefaultLayer);
+		// Path scrollable list (right column)
+		pathList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
+			PATH_ITEMS, null, 0, 160, 190);
+		addElement(pathList, null);
+		pathList.getObject().setPosition(750, 130);
+		addObjectToLayer(pathList.getObject(), DefaultLayer);
 
-		// Fixed point marker (crosshair)
+		// Curve scrollable list (right column)
+		curveList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
+			CURVE_ITEMS, null, 0, 160, 190);
+		addElement(curveList, null);
+		curveList.getObject().setPosition(750, 350);
+		addObjectToLayer(curveList.getObject(), DefaultLayer);
+
+		// Markers for start/end points
 		markerGraphics = new h2d.Graphics();
 		addObjectToLayer(markerGraphics, DefaultLayer);
-		drawFixedPointMarker();
+		drawMarkers();
+
+		// Color swatches
+		createColorSwatches();
 
 		// Click interaction on display area
 		displayInteractive = new h2d.Interactive(AREA_W, AREA_H);
 		displayInteractive.setPosition(AREA_X, AREA_Y);
-		displayInteractive.onClick = (event) -> {
-			fixedPoint = new FPoint(AREA_X + event.relX, AREA_Y + event.relY);
-			drawFixedPointMarker();
+		displayInteractive.enableRightButton = true;
+		displayInteractive.onPush = (event) -> {
+			var pt = new FPoint(AREA_X + event.relX, AREA_Y + event.relY);
+			if (event.button == 0) {
+				startPoint = pt;
+			} else if (event.button == 1) {
+				endPoint = pt;
+			}
+			drawMarkers();
 			rebuildCircles();
 		};
 		addObjectToLayer(displayInteractive, DefaultLayer);
@@ -132,51 +177,88 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		rebuildCircles();
 	}
 
-	function drawFixedPointMarker():Void {
-		if (markerGraphics == null) return;
-		markerGraphics.clear();
-		final x = fixedPoint.x;
-		final y = fixedPoint.y;
-		// Crosshair
-		markerGraphics.lineStyle(1.5, 0xff6644);
-		markerGraphics.moveTo(x - 8, y);
-		markerGraphics.lineTo(x + 8, y);
-		markerGraphics.moveTo(x, y - 8);
-		markerGraphics.lineTo(x, y + 8);
-		// Circle
-		markerGraphics.lineStyle(1.0, 0xff6644);
-		markerGraphics.drawCircle(x, y, 5);
+	function createColorSwatches():Void {
+		colorHighlight = new h2d.Graphics();
+		addObjectToLayer(colorHighlight, DefaultLayer);
+
+		for (i in 0...COLORS.length) {
+			var g = new h2d.Graphics();
+			g.beginFill(COLORS[i]);
+			g.drawRect(0, 0, 18, 18);
+			g.endFill();
+			g.setPosition(SWATCH_X + i * 22, SWATCH_Y);
+			addObjectToLayer(g, DefaultLayer);
+			colorSwatches.push(g);
+
+			var idx = i;
+			var inter = new h2d.Interactive(18, 18, g);
+			inter.onClick = (_) -> {
+				selectedColorIndex = idx;
+				updateColorSelection();
+				rebuildCircles();
+			};
+		}
+
+		updateColorSelection();
 	}
 
-	function randomPointInArea():FPoint {
-		return new FPoint(
-			AREA_X + 20 + Math.random() * (AREA_W - 40),
-			AREA_Y + 20 + Math.random() * (AREA_H - 40)
+	function updateColorSelection():Void {
+		if (colorHighlight == null) return;
+		colorHighlight.clear();
+		colorHighlight.lineStyle(2, 0xFFFFFF);
+		colorHighlight.drawRect(
+			SWATCH_X + selectedColorIndex * 22 - 2,
+			SWATCH_Y - 2,
+			22, 22
 		);
 	}
 
-	function generateRandomData():Void {
-		randPoints = [];
-		randAngles = [];
-		for (_ in 0...count) {
-			randPoints.push(randomPointInArea());
-			randAngles.push(Math.random() * Math.PI * 2);
+	function drawMarkers():Void {
+		if (markerGraphics == null) return;
+		markerGraphics.clear();
+
+		if (mode == 0) {
+			// Start+Angle: green start point + direction line to end
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
+			markerGraphics.lineStyle(1.0, 0xff6644);
+			markerGraphics.moveTo(startPoint.x, startPoint.y);
+			markerGraphics.lineTo(endPoint.x, endPoint.y);
+			// Small dot at end of line
+			markerGraphics.lineStyle(0);
+			markerGraphics.beginFill(0xff6644);
+			markerGraphics.drawCircle(endPoint.x, endPoint.y, 3);
+			markerGraphics.endFill();
+		} else {
+			// Start+End: green start, red end
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
+			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xff4444);
 		}
+	}
+
+	function drawCrosshair(g:h2d.Graphics, x:Float, y:Float, color:Int):Void {
+		g.lineStyle(1.5, color);
+		g.moveTo(x - 8, y);
+		g.lineTo(x + 8, y);
+		g.moveTo(x, y - 8);
+		g.lineTo(x, y + 8);
+		g.lineStyle(1.0, color);
+		g.drawCircle(x, y, 5);
 	}
 
 	function getDuration():Float {
 		return BASE_DURATION * (100.0 / speedPct);
 	}
 
+	function getSelectedColor():Int {
+		return COLORS[selectedColorIndex];
+	}
+
 	function rebuildCircles():Void {
-		// Remove old circles
 		for (circle in circles) {
 			circle.remove();
 		}
 		circles = [];
 		animPaths = [];
-
-		generateRandomData();
 
 		if (manimPaths == null || demoBuilder == null) return;
 
@@ -188,15 +270,23 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		var circleRadius:Float = if (count <= 1) 6 else if (count <= 5) 5 else if (count <= 10) 4 else 2;
 
 		for (i in 0...count) {
-			// Create circle
+			// Create circle drawn white, tinted by color
 			var g = new h2d.Graphics();
-			g.beginFill(0x7fdbda);
+			g.beginFill(0xFFFFFF);
 			g.drawCircle(0, 0, circleRadius);
 			g.endFill();
+			// Direction indicator line
+			g.lineStyle(1, 0xFFFFFF);
+			g.moveTo(0, 0);
+			g.lineTo(circleRadius * 1.5, 0);
+			// Apply initial color tint
+			var c = getSelectedColor();
+			g.color.x = ((c >> 16) & 0xFF) / 255.0;
+			g.color.y = ((c >> 8) & 0xFF) / 255.0;
+			g.color.z = (c & 0xFF) / 255.0;
 			addObjectToLayer(g, DefaultLayer);
 			circles.push(g);
 
-			// Create animated path
 			var ap = createAnimPathForIndex(i, basePath, activeCurve, duration);
 			animPaths.push(ap);
 
@@ -210,28 +300,28 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		updateStatusText();
 	}
 
-	function getTransformedPath(idx:Int, basePath:Path):Path {
-		switch mode {
-			case 0: // Fixed start + random angle
-				return basePath.withStartAngle(randAngles[idx]);
-			case 1: // Random start + fixed end
-				return basePath.normalize(randPoints[idx], fixedPoint);
-			case 2: // Fixed start + random end
-				return basePath.normalize(fixedPoint, randPoints[idx]);
-			default:
-				return basePath;
-		}
-	}
+	function getTransformedPath(basePath:Path):Path {
+		var angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
 
-	function getOrigin(idx:Int):FPoint {
-		// In mode 0 (angle), path starts at (0,0) so we offset by fixedPoint
-		if (mode == 0) return fixedPoint;
-		// In modes 1,2, normalize already places path in screen coords
-		return new FPoint(0, 0);
+		if (mode == 0) {
+			// Start+Angle: always withStartAngle + offset by startPoint
+			pathOrigin = startPoint;
+			return basePath.withStartAngle(angle);
+		}
+
+		// Start+End: try normalize, fallback to withStartAngle for closed paths
+		var normalized = basePath.normalize(startPoint, endPoint);
+		if (normalized != basePath) {
+			pathOrigin = new FPoint(0, 0);
+			return normalized;
+		}
+		// Closed path: normalize failed (endpoint ≈ origin)
+		pathOrigin = startPoint;
+		return basePath.withStartAngle(angle);
 	}
 
 	function createAnimPathForIndex(idx:Int, basePath:Path, activeCurve:Null<ICurve>, duration:Float):AnimatedPath {
-		var transformedPath = getTransformedPath(idx, basePath);
+		var transformedPath = getTransformedPath(basePath);
 
 		var ap = new AnimatedPath(transformedPath, Time(duration));
 
@@ -244,18 +334,32 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		if (applyProgress && activeCurve != null) {
 			ap.addCurveSegment(Progress, 0.0, activeCurve);
 		}
+		if (applyColor && activeCurve != null) {
+			ap.setColorRange(0x222222, getSelectedColor());
+			ap.addCurveSegment(Color, 0.0, activeCurve);
+		}
 
 		ap.addEvent(1.0, "pathEnd");
 
-		final origin = getOrigin(idx);
-		final ox = origin.x;
-		final oy = origin.y;
+		final ox = pathOrigin.x;
+		final oy = pathOrigin.y;
 
 		ap.onUpdate = (state) -> {
 			if (idx < circles.length) {
 				circles[idx].setPosition(ox + state.position.x, oy + state.position.y);
 				circles[idx].alpha = state.alpha;
 				circles[idx].setScale(state.scale);
+
+				if (applyColor) {
+					var c = state.color;
+					circles[idx].color.x = ((c >> 16) & 0xFF) / 255.0;
+					circles[idx].color.y = ((c >> 8) & 0xFF) / 255.0;
+					circles[idx].color.z = (c & 0xFF) / 255.0;
+				}
+
+				if (applyDirection) {
+					circles[idx].rotation = state.angle;
+				}
 			}
 		};
 
@@ -271,10 +375,6 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	function restartPath(idx:Int):Void {
 		if (manimPaths == null || demoBuilder == null || idx >= count) return;
 
-		// Regenerate random data for this circle
-		randPoints[idx] = randomPointInArea();
-		randAngles[idx] = Math.random() * Math.PI * 2;
-
 		var basePath = manimPaths.getPath(currentPath);
 		var curvesMap = demoBuilder.getCurves();
 		var activeCurve:Null<ICurve> = curvesMap.get(currentCurve);
@@ -286,13 +386,15 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		if (demoResult == null) return;
 		final updatable = demoResult.getUpdatable("statusText");
 		if (updatable != null) {
-			final modeNames = ["Click+Angle", "Rand Start->Fixed End", "Fixed Start->Rand End"];
 			var targets:Array<String> = [];
 			if (applyAlpha) targets.push("alpha");
 			if (applyScale) targets.push("scale");
 			if (applyProgress) targets.push("progress");
+			if (applyColor) targets.push("color");
+			if (applyDirection) targets.push("direction");
 			final targetsStr = if (targets.length > 0) targets.join("+") else "none";
-			updatable.updateText('Path: $currentPath | Curve: $currentCurve ($targetsStr) | Count: $count | ${modeNames[mode]}');
+			final modeName = if (mode == 0) "Start+Angle" else "Start+End";
+			updatable.updateText('Path: $currentPath | Curve: $currentCurve ($targetsStr) | Count: $count | $modeName | ${COLOR_NAMES[selectedColorIndex]}');
 		}
 	}
 
@@ -307,35 +409,22 @@ class AnimPathDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				// Path buttons
-				for (i in 0...pathButtons.length) {
-					if (source == pathButtons[i]) {
-						currentPath = PATH_NAMES[i];
-						rebuildCircles();
-						return;
+			case UIDoubleClickItem(index, items):
+				if (source == pathList && index >= 0 && index < PATH_NAMES.length) {
+					currentPath = PATH_NAMES[index];
+					if (demoResult != null) {
+						final u = demoResult.getUpdatable("selectedPath");
+						if (u != null) u.updateText(PATH_NAMES[index]);
 					}
-				}
-				// Curve buttons
-				for (i in 0...curveButtons.length) {
-					if (source == curveButtons[i]) {
-						currentCurve = CURVE_NAMES[i];
-						rebuildCircles();
-						return;
-					}
-				}
-				// Mode buttons
-				for (i in 0...modeButtons.length) {
-					if (source == modeButtons[i]) {
-						mode = i;
-						rebuildCircles();
-						return;
-					}
-				}
-				// Randomize
-				if (source == randomizeBtn) {
 					rebuildCircles();
-					return;
+				}
+				if (source == curveList && index >= 0 && index < CURVE_NAMES.length) {
+					currentCurve = CURVE_NAMES[index];
+					if (demoResult != null) {
+						final u = demoResult.getUpdatable("selectedCurve");
+						if (u != null) u.updateText(CURVE_NAMES[index]);
+					}
+					rebuildCircles();
 				}
 			case UIChangeItem(index, items):
 				if (source == countDropdown && index >= 0 && index < COUNT_VALUES.length) {
@@ -361,6 +450,29 @@ class AnimPathDemoScreen extends DemoScreenBase {
 				} else if (source == progressChk) {
 					applyProgress = checked;
 					rebuildCircles();
+				} else if (source == colorChk) {
+					applyColor = checked;
+					rebuildCircles();
+				} else if (source == directionChk) {
+					applyDirection = checked;
+					rebuildCircles();
+				}
+			case UIClick:
+				if (source == btnModeAngle) {
+					mode = 0;
+					drawMarkers();
+					rebuildCircles();
+					return;
+				}
+				if (source == btnModeNorm) {
+					mode = 1;
+					drawMarkers();
+					rebuildCircles();
+					return;
+				}
+				if (source == randomizeBtn) {
+					rebuildCircles();
+					return;
 				}
 			default:
 		}
@@ -375,22 +487,31 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			displayInteractive.remove();
 			displayInteractive = null;
 		}
+		for (g in colorSwatches) {
+			g.remove();
+		}
+		if (colorHighlight != null) {
+			colorHighlight.remove();
+			colorHighlight = null;
+		}
 		circles = [];
 		animPaths = [];
+		colorSwatches = [];
 		demoBuilder = null;
 		demoResult = null;
-		pathButtons = [];
-		curveButtons = [];
-		modeButtons = [];
+		pathList = null;
+		curveList = null;
 		countDropdown = null;
 		speedSlider = null;
 		randomizeBtn = null;
+		btnModeAngle = null;
+		btnModeNorm = null;
 		alphaChk = null;
 		scaleChk = null;
 		progressChk = null;
+		colorChk = null;
+		directionChk = null;
 		manimPaths = null;
 		markerGraphics = null;
-		randPoints = [];
-		randAngles = [];
 	}
 }

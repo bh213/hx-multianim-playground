@@ -16,11 +16,23 @@ curves {
     #easeInOutQuad curve {
         easing: easeinoutquad
     }
+    #easeInCubic curve {
+        easing: easeincubic
+    }
     #easeOutCubic curve {
         easing: easeoutcubic
     }
+    #easeInOutCubic curve {
+        easing: easeinoutcubic
+    }
+    #easeInBack curve {
+        easing: easeinback
+    }
     #easeOutBack curve {
         easing: easeoutback
+    }
+    #easeInOutBack curve {
+        easing: easeinoutback
     }
     #easeOutBounce curve {
         easing: easeoutbounce
@@ -35,6 +47,9 @@ curves {
     #snapBack curve {
         [0..0.7] easeoutquad (0, 1.15)
         [0.7..1.0] easeinoutquad (1.15, 1.0)
+    }
+    #cubicBezier curve {
+        easing: cubicbezier(0.68, -0.55, 0.27, 1.55)
     }
     #custom curve {
         points: [(0, 0), (0.2, 0.8), (0.4, 0.2), (0.6, 0.9), (0.8, 0.4), (1.0, 1.0)]
@@ -59,31 +74,23 @@ curves {
     text(m6x11, "Scale", #7fdbda, left, 100): 610, 160
     bitmap(generated(color(100, 180, #222233))): 610, 180
 
-    // Curve type selector buttons - Row 1
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnLinear")) { pos: 50, 400 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseInQuad")) { pos: 160, 400 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutQuad")) { pos: 270, 400 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseInOutQuad")) { pos: 380, 400 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutCubic")) { pos: 490, 400 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutBack")) { pos: 600, 400 }
+    // Right column - lists
+    text(m6x11, "Curves:", #aaaaaa, left, 70): 750, 80
+    #selectedCurve(updatable) text(m6x11, "linear", #7fdbda, left, 100): 810, 80
 
-    // Curve type selector buttons - Row 2
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutBounce")) { pos: 50, 440 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnEaseOutElastic")) { pos: 160, 440 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnAccelDecel")) { pos: 270, 440 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnSnapBack")) { pos: 380, 440 }
-    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnCustom")) { pos: 490, 440 }
+    text(m6x11, "Bitmap:", #aaaaaa, left, 70): 750, 300
+    #selectedBitmap(updatable) text(m6x11, "Star", #7fdbda, left, 100): 810, 300
 
     // Controls
-    text(m6x11, "Inverse:", #aaaaaa, left, 80): 50, 494
-    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("inverseChk")) { pos: 120, 490 }
+    text(m6x11, "Inverse:", #aaaaaa, left, 80): 50, 400
+    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("inverseChk")) { pos: 120, 396 }
 
-    text(m6x11, "Speed:", #aaaaaa, left, 80): 250, 494
+    text(m6x11, "Speed:", #aaaaaa, left, 80): 250, 400
     placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
-        pos: 310, 492
+        pos: 310, 398
         settings{min:int=>10}
         settings{max:int=>500}
         settings{step:int=>10}
     }
-    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 60): 530, 494
+    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 60): 530, 400
 }

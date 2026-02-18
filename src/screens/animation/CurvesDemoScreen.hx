@@ -2,35 +2,49 @@ package screens.animation;
 
 import bh.ui.UIElement;
 import bh.ui.*;
-import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
+import bh.ui.UIMultiAnimScrollableList;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.paths.Curve.ICurve;
+import h2d.Tile;
 
 class CurvesDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
-	var curveButtons:Array<UIStandardMultiAnimButton> = [];
 	var currentCurve:String = "linear";
 
 	var curveGraph:Null<h2d.Graphics>;
 	var activeCurve:Null<ICurve>;
 	var animTimer:Float = 0;
 	var animDot:Null<h2d.Graphics>;
-	var yDot:Null<h2d.Graphics>;
-	var alphaDot:Null<h2d.Graphics>;
-	var scaleDot:Null<h2d.Graphics>;
+	var yBmp:Null<h2d.Bitmap>;
+	var alphaBmp:Null<h2d.Bitmap>;
+	var scaleBmp:Null<h2d.Bitmap>;
 
 	var inverseCheckbox:Null<UIStandardMultiCheckbox>;
 	var speedSlider:Null<UIStandardMultiAnimSlider>;
+	var curveList:Null<UIMultiAnimScrollableList>;
+	var bitmapList:Null<UIMultiAnimScrollableList>;
 	var inverse:Bool = false;
 	var speedPct:Int = 100;
+	var currentBitmapIndex:Int = 6; // star
 
 	static final CURVE_TYPES = [
-		"linear", "easeInQuad", "easeOutQuad", "easeInOutQuad", "easeOutCubic", "easeOutBack",
-		"easeOutBounce", "easeOutElastic", "accelDecel", "snapBack", "custom"
+		"linear", "easeInQuad", "easeOutQuad", "easeInOutQuad",
+		"easeInCubic", "easeOutCubic", "easeInOutCubic",
+		"easeInBack", "easeOutBack", "easeInOutBack",
+		"easeOutBounce", "easeOutElastic",
+		"accelDecel", "snapBack", "cubicBezier", "custom"
+	];
+
+	static final CURVE_ITEMS:Array<UIElementListItem> = [
+		{name: "Linear"}, {name: "Ease In Quad"}, {name: "Ease Out Quad"}, {name: "Ease In/Out Quad"},
+		{name: "Ease In Cubic"}, {name: "Ease Out Cubic"}, {name: "Ease In/Out Cubic"},
+		{name: "Ease In Back"}, {name: "Ease Out Back"}, {name: "Ease In/Out Back"},
+		{name: "Ease Out Bounce"}, {name: "Ease Out Elastic"},
+		{name: "Accel/Decel"}, {name: "Snap Back"}, {name: "Cubic Bezier"}, {name: "Custom Points"}
 	];
 
 	static inline final ANIM_DURATION = 1.5;
@@ -51,53 +65,65 @@ class CurvesDemoScreen extends DemoScreenBase {
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/curves.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "curvesDemo", [], [
-			btnLinear => addButtonWithSingleBuilder(commonBuilder, "backButton", "linear"),
-			btnEaseInQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "inQuad"),
-			btnEaseOutQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "outQuad"),
-			btnEaseInOutQuad => addButtonWithSingleBuilder(commonBuilder, "backButton", "inOutQuad"),
-			btnEaseOutCubic => addButtonWithSingleBuilder(commonBuilder, "backButton", "outCubic"),
-			btnEaseOutBack => addButtonWithSingleBuilder(commonBuilder, "backButton", "outBack"),
-			btnEaseOutBounce => addButtonWithSingleBuilder(commonBuilder, "backButton", "bounce"),
-			btnEaseOutElastic => addButtonWithSingleBuilder(commonBuilder, "backButton", "elastic"),
-			btnAccelDecel => addButtonWithSingleBuilder(commonBuilder, "backButton", "accel/decel"),
-			btnSnapBack => addButtonWithSingleBuilder(commonBuilder, "backButton", "snapBack"),
-			btnCustom => addButtonWithSingleBuilder(commonBuilder, "backButton", "custom"),
 			inverseChk => addCheckbox(stdBuilder, false),
 			speedSlider => addSlider(stdBuilder, 100),
 		]);
 
 		demoResult = ui.builderResults;
-		curveButtons = [
-			ui.btnLinear, ui.btnEaseInQuad, ui.btnEaseOutQuad, ui.btnEaseInOutQuad,
-			ui.btnEaseOutCubic, ui.btnEaseOutBack, ui.btnEaseOutBounce, ui.btnEaseOutElastic,
-			ui.btnAccelDecel, ui.btnSnapBack, ui.btnCustom
-		];
 		inverseCheckbox = ui.inverseChk;
 		speedSlider = ui.speedSlider;
 		addBuilderResult(demoResult);
+
+		// Curves dropdown list
+		curveList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
+			CURVE_ITEMS, null, 0, 160, 190);
+		addElement(curveList, null);
+		curveList.getObject().setPosition(750, 100);
+		addObjectToLayer(curveList.getObject(), DefaultLayer);
+
+		// Bitmap dropdown list
+		bitmapList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
+			TestBitmaps.ALL_ITEMS, null, currentBitmapIndex, 160, 170);
+		addElement(bitmapList, null);
+		bitmapList.getObject().setPosition(750, 320);
+		addObjectToLayer(bitmapList.getObject(), DefaultLayer);
 
 		curveGraph = new h2d.Graphics();
 		addObjectToLayer(curveGraph, DefaultLayer);
 
 		animDot = createCircle(0xff6644, 5);
-		yDot = createSquare(0x7fdbda, 20);
-		alphaDot = createSquare(0x7fdbda, 20);
-		scaleDot = createSquare(0x7fdbda, 20);
 		addObjectToLayer(animDot, DefaultLayer);
-		addObjectToLayer(yDot, DefaultLayer);
-		addObjectToLayer(alphaDot, DefaultLayer);
-		addObjectToLayer(scaleDot, DefaultLayer);
+
+		// Create bitmap demo dots
+		final startTile = TestBitmaps.getTile(currentBitmapIndex);
+		if (startTile != null) {
+			final centered = centerTile(startTile);
+			yBmp = new h2d.Bitmap(centered);
+			alphaBmp = new h2d.Bitmap(centered);
+			scaleBmp = new h2d.Bitmap(centered);
+			addObjectToLayer(yBmp, DefaultLayer);
+			addObjectToLayer(alphaBmp, DefaultLayer);
+			addObjectToLayer(scaleBmp, DefaultLayer);
+		}
 
 		selectCurve("linear");
 	}
 
-	function createSquare(color:Int, size:Int):h2d.Graphics {
-		final g = new h2d.Graphics();
-		final half = size / 2.0;
-		g.beginFill(color);
-		g.drawRect(-half, -half, size, size);
-		g.endFill();
-		return g;
+	static function centerTile(tile:Tile):Tile {
+		return tile.sub(0, 0, tile.width, tile.height, -tile.width / 2, -tile.height / 2);
+	}
+
+	function updateDemoBitmaps(index:Int):Void {
+		currentBitmapIndex = index;
+		final tile = TestBitmaps.getTile(index);
+		if (tile == null) return;
+		final centered = centerTile(tile);
+		if (yBmp != null) yBmp.tile = centered;
+		if (alphaBmp != null) alphaBmp.tile = centered;
+		if (scaleBmp != null) scaleBmp.tile = centered;
+		if (demoResult != null) {
+			demoResult.getUpdatable("selectedBitmap").updateText(TestBitmaps.getName(TestBitmaps.getType(index)));
+		}
 	}
 
 	function createCircle(color:Int, radius:Int):h2d.Graphics {
@@ -117,6 +143,7 @@ class CurvesDemoScreen extends DemoScreenBase {
 		activeCurve = curves.get(name);
 
 		demoResult.getUpdatable("curveLabel").updateText(name + (inverse ? " (inverse)" : ""));
+		demoResult.getUpdatable("selectedCurve").updateText(name);
 		drawCurveGraph();
 	}
 
@@ -168,31 +195,31 @@ class CurvesDemoScreen extends DemoScreenBase {
 		}
 
 		// Y position
-		if (yDot != null) {
-			yDot.setPosition(Y_X + DEMO_W / 2, DEMO_Y + DEMO_H - 10 - eased * (DEMO_H - 20));
+		if (yBmp != null) {
+			yBmp.setPosition(Y_X + DEMO_W / 2, DEMO_Y + DEMO_H - 10 - eased * (DEMO_H - 20));
 		}
 
 		// Alpha
-		if (alphaDot != null) {
-			alphaDot.setPosition(ALPHA_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
-			alphaDot.alpha = eased;
+		if (alphaBmp != null) {
+			alphaBmp.setPosition(ALPHA_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
+			alphaBmp.alpha = eased;
 		}
 
-		// Scale (0 to half the container)
-		if (scaleDot != null) {
-			scaleDot.setPosition(SCALE_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
-			scaleDot.setScale(eased * DEMO_H / 2 / 20);
+		// Scale
+		if (scaleBmp != null) {
+			scaleBmp.setPosition(SCALE_X + DEMO_W / 2, DEMO_Y + DEMO_H / 2);
+			scaleBmp.setScale(eased * DEMO_H / 2 / 15);
 		}
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				for (i in 0...curveButtons.length) {
-					if (source == curveButtons[i]) {
-						selectCurve(CURVE_TYPES[i]);
-						return;
-					}
+			case UIDoubleClickItem(index, items):
+				if (source == curveList && index >= 0 && index < CURVE_TYPES.length) {
+					selectCurve(CURVE_TYPES[index]);
+				}
+				if (source == bitmapList && index >= 0 && index < TestBitmaps.ALL_TYPES.length) {
+					updateDemoBitmaps(index);
 				}
 			case UIToggle(checked):
 				if (source == inverseCheckbox) {
@@ -213,14 +240,15 @@ class CurvesDemoScreen extends DemoScreenBase {
 		super.onClear();
 		demoBuilder = null;
 		demoResult = null;
-		curveButtons = [];
 		curveGraph = null;
 		activeCurve = null;
 		animDot = null;
-		yDot = null;
-		alphaDot = null;
-		scaleDot = null;
+		yBmp = null;
+		alphaBmp = null;
+		scaleBmp = null;
 		inverseCheckbox = null;
 		speedSlider = null;
+		curveList = null;
+		bitmapList = null;
 	}
 }

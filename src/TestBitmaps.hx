@@ -106,6 +106,17 @@ class TestBitmaps {
 		return Tile.fromPixels(pixels);
 	}
 
+	public static function getTile(index:Int):Null<Tile> {
+		final items = ALL_ITEMS;
+		if (index < 0 || index >= items.length) return null;
+		final ref = items[index].tileRef;
+		if (ref == null) return null;
+		return switch (ref) {
+			case TRTile(tile): tile;
+			default: null;
+		};
+	}
+
 	public static function getType(index:Int):String {
 		return index >= 0 && index < ALL_TYPES.length ? ALL_TYPES[index] : ALL_TYPES[0];
 	}

@@ -12,6 +12,7 @@ import bh.base.MacroUtils;
 import bh.base.FPoint;
 import bh.paths.*;
 import bh.paths.MultiAnimPaths.Path;
+import bh.paths.MultiAnimPaths.PathNormalization;
 import bh.paths.Curve.ICurve;
 
 class AnimPathDemoScreen extends DemoScreenBase {
@@ -29,8 +30,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	var progressChk:Null<UIStandardMultiCheckbox>;
 	var colorChk:Null<UIStandardMultiCheckbox>;
 	var directionChk:Null<UIStandardMultiCheckbox>;
-	var btnModeAngle:Null<UIStandardMultiAnimButton>;
-	var btnModeNorm:Null<UIStandardMultiAnimButton>;
+	var modeDropdown:Null<UIStandardMultiAnimDropdown>;
 
 	// State
 	var currentPath:String = "circuit";
@@ -42,8 +42,9 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	var applyDirection:Bool = false;
 	var count:Int = 5;
 	var speedPct:Int = 100;
-	var selectedColorIndex:Int = 0;
-	var mode:Int = 0; // 0=start+angle, 1=start+end
+	var startColorIndex:Int = 0;
+	var endColorIndex:Int = 3; // blue
+	var mode:Int = 0; // 0=Stretch, 1=FitCenter, 2=Anchor, 3=FitBounds
 
 	// Start and end points (set by L-click / R-click)
 	var startPoint:FPoint;
@@ -56,9 +57,11 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	var displayInteractive:Null<h2d.Interactive>;
 	var manimPaths:Null<MultiAnimPaths>;
 
-	// Color swatches
-	var colorSwatches:Array<h2d.Graphics> = [];
-	var colorHighlight:Null<h2d.Graphics>;
+	// Color swatches (start and end rows)
+	var startColorSwatches:Array<h2d.Graphics> = [];
+	var endColorSwatches:Array<h2d.Graphics> = [];
+	var startColorHighlight:Null<h2d.Graphics>;
+	var endColorHighlight:Null<h2d.Graphics>;
 
 	static final PATH_NAMES = ["circuit", "star", "spiral", "waves", "bezierLoop", "circle"];
 	static final PATH_ITEMS:Array<UIElementListItem> = [
@@ -85,6 +88,9 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	static final COUNT_ITEMS:Array<UIElementListItem> = [{name: "1"}, {name: "5"}, {name: "10"}, {name: "100"}];
 	static final COUNT_VALUES = [1, 5, 10, 100];
 
+	static final MODE_ITEMS:Array<UIElementListItem> = [{name: "Stretch"}, {name: "FitCenter"}, {name: "Anchor"}, {name: "FitBounds"}];
+	static final MODE_NAMES = ["Stretch", "FitCenter", "Anchor", "FitBounds"];
+
 	static final COLORS = [0x7fdbda, 0xff4444, 0x44ff44, 0x4488ff, 0xffdd44, 0xff44ff, 0xffffff];
 	static final COLOR_NAMES = ["Cyan", "Red", "Green", "Blue", "Yellow", "Magenta", "White"];
 
@@ -93,11 +99,9 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	static inline final AREA_W = 680;
 	static inline final AREA_H = 400;
 	static inline final BASE_DURATION = 2.0;
-	static inline final SWATCH_X = 520;
-	static inline final SWATCH_Y = 543;
-
-	// Path origin offset (non-zero for closed paths where normalize fails)
-	var pathOrigin:FPoint = new FPoint(0, 0);
+	static inline final SWATCH_X = 555;
+	static inline final SWATCH_START_Y = 578;
+	static inline final SWATCH_END_Y = 613;
 
 	override public function load():Void {
 		setupDemo("Anim Paths", "Animated path demo: circles follow paths with alpha, scale, progress, color & direction curves");
@@ -110,8 +114,8 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "animPathDemo", [], [
 			countDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
 				COUNT_ITEMS, 1),
-			btnModeAngle => addButtonWithSingleBuilder(commonBuilder, "backButton", "Start+Angle"),
-			btnModeNorm => addButtonWithSingleBuilder(commonBuilder, "backButton", "Start+End"),
+			modeDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
+				MODE_ITEMS, 0),
 			speedSlider => addSlider(stdBuilder, 100),
 			btnRandomize => addButtonWithSingleBuilder(commonBuilder, "backButton", "Randomize"),
 			chkAlpha => addCheckbox(stdBuilder, false),
@@ -123,8 +127,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 
 		demoResult = ui.builderResults;
 		countDropdown = ui.countDropdown;
-		btnModeAngle = ui.btnModeAngle;
-		btnModeNorm = ui.btnModeNorm;
+		modeDropdown = ui.modeDropdown;
 		speedSlider = ui.speedSlider;
 		randomizeBtn = ui.btnRandomize;
 		alphaChk = ui.chkAlpha;
@@ -178,22 +181,41 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	}
 
 	function createColorSwatches():Void {
-		colorHighlight = new h2d.Graphics();
-		addObjectToLayer(colorHighlight, DefaultLayer);
+		startColorHighlight = new h2d.Graphics();
+		addObjectToLayer(startColorHighlight, DefaultLayer);
+		endColorHighlight = new h2d.Graphics();
+		addObjectToLayer(endColorHighlight, DefaultLayer);
 
 		for (i in 0...COLORS.length) {
-			var g = new h2d.Graphics();
-			g.beginFill(COLORS[i]);
-			g.drawRect(0, 0, 18, 18);
-			g.endFill();
-			g.setPosition(SWATCH_X + i * 22, SWATCH_Y);
-			addObjectToLayer(g, DefaultLayer);
-			colorSwatches.push(g);
+			// Start color row
+			var gs = new h2d.Graphics();
+			gs.beginFill(COLORS[i]);
+			gs.drawRect(0, 0, 18, 18);
+			gs.endFill();
+			gs.setPosition(SWATCH_X + i * 22, SWATCH_START_Y);
+			addObjectToLayer(gs, DefaultLayer);
+			startColorSwatches.push(gs);
 
 			var idx = i;
-			var inter = new h2d.Interactive(18, 18, g);
-			inter.onClick = (_) -> {
-				selectedColorIndex = idx;
+			var interS = new h2d.Interactive(18, 18, gs);
+			interS.onClick = (_) -> {
+				startColorIndex = idx;
+				updateColorSelection();
+				rebuildCircles();
+			};
+
+			// End color row
+			var ge = new h2d.Graphics();
+			ge.beginFill(COLORS[i]);
+			ge.drawRect(0, 0, 18, 18);
+			ge.endFill();
+			ge.setPosition(SWATCH_X + i * 22, SWATCH_END_Y);
+			addObjectToLayer(ge, DefaultLayer);
+			endColorSwatches.push(ge);
+
+			var interE = new h2d.Interactive(18, 18, ge);
+			interE.onClick = (_) -> {
+				endColorIndex = idx;
 				updateColorSelection();
 				rebuildCircles();
 			};
@@ -203,33 +225,41 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	}
 
 	function updateColorSelection():Void {
-		if (colorHighlight == null) return;
-		colorHighlight.clear();
-		colorHighlight.lineStyle(2, 0xFFFFFF);
-		colorHighlight.drawRect(
-			SWATCH_X + selectedColorIndex * 22 - 2,
-			SWATCH_Y - 2,
-			22, 22
-		);
+		if (startColorHighlight != null) {
+			startColorHighlight.clear();
+			startColorHighlight.lineStyle(2, 0xFFFFFF);
+			startColorHighlight.drawRect(SWATCH_X + startColorIndex * 22 - 2, SWATCH_START_Y - 2, 22, 22);
+		}
+		if (endColorHighlight != null) {
+			endColorHighlight.clear();
+			endColorHighlight.lineStyle(2, 0xFFFFFF);
+			endColorHighlight.drawRect(SWATCH_X + endColorIndex * 22 - 2, SWATCH_END_Y - 2, 22, 22);
+		}
 	}
 
 	function drawMarkers():Void {
 		if (markerGraphics == null) return;
 		markerGraphics.clear();
 
-		if (mode == 0) {
-			// Start+Angle: green start point + direction line to end
+		if (mode == 2) {
+			// Anchor: green position + direction line to end (angle indicator)
 			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
 			markerGraphics.lineStyle(1.0, 0xff6644);
 			markerGraphics.moveTo(startPoint.x, startPoint.y);
 			markerGraphics.lineTo(endPoint.x, endPoint.y);
-			// Small dot at end of line
 			markerGraphics.lineStyle(0);
 			markerGraphics.beginFill(0xff6644);
 			markerGraphics.drawCircle(endPoint.x, endPoint.y, 3);
 			markerGraphics.endFill();
+		} else if (mode == 3) {
+			// FitBounds: draw rectangle between start (topLeft) and end (bottomRight)
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
+			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xff4444);
+			markerGraphics.lineStyle(1.0, 0x888888);
+			markerGraphics.drawRect(startPoint.x, startPoint.y,
+				endPoint.x - startPoint.x, endPoint.y - startPoint.y);
 		} else {
-			// Start+End: green start, red end
+			// Stretch / FitCenter: green start, red end
 			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
 			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xff4444);
 		}
@@ -249,8 +279,12 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		return BASE_DURATION * (100.0 / speedPct);
 	}
 
-	function getSelectedColor():Int {
-		return COLORS[selectedColorIndex];
+	function getStartColor():Int {
+		return COLORS[startColorIndex];
+	}
+
+	function getEndColor():Int {
+		return COLORS[endColorIndex];
 	}
 
 	function rebuildCircles():Void {
@@ -280,7 +314,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			g.moveTo(0, 0);
 			g.lineTo(circleRadius * 1.5, 0);
 			// Apply initial color tint
-			var c = getSelectedColor();
+			var c = getStartColor();
 			g.color.x = ((c >> 16) & 0xFF) / 255.0;
 			g.color.y = ((c >> 8) & 0xFF) / 255.0;
 			g.color.z = (c & 0xFF) / 255.0;
@@ -300,21 +334,18 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		updateStatusText();
 	}
 
-	function getTransformedPath(basePath:Path):Path {
-		if (mode == 0) {
-			// Start+Angle: rotate to face end, no scaling
-			var angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
-			pathOrigin = startPoint;
-			return basePath.withStartAngle(angle);
-		}
-
-		// Start+End: normalize handles both open and closed paths
-		pathOrigin = new FPoint(0, 0);
-		return basePath.normalize(startPoint, endPoint);
+	function getNormalization():PathNormalization {
+		return switch mode {
+			case 0: Stretch(startPoint, endPoint);
+			case 1: FitCenter(startPoint, endPoint);
+			case 2: Anchor(startPoint, Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x));
+			case 3: FitBounds(startPoint, endPoint);
+			default: Stretch(startPoint, endPoint);
+		};
 	}
 
 	function createAnimPathForIndex(idx:Int, basePath:Path, activeCurve:Null<ICurve>, duration:Float):AnimatedPath {
-		var transformedPath = getTransformedPath(basePath);
+		var transformedPath = basePath.applyTransform(getNormalization());
 
 		var ap = new AnimatedPath(transformedPath, Time(duration));
 
@@ -328,18 +359,15 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			ap.addCurveSegment(Progress, 0.0, activeCurve);
 		}
 		if (applyColor && activeCurve != null) {
-			ap.setColorRange(0x222222, getSelectedColor());
+			ap.setColorRange(getStartColor(), getEndColor());
 			ap.addCurveSegment(Color, 0.0, activeCurve);
 		}
 
 		ap.addEvent(1.0, "pathEnd");
 
-		final ox = pathOrigin.x;
-		final oy = pathOrigin.y;
-
 		ap.onUpdate = (state) -> {
 			if (idx < circles.length) {
-				circles[idx].setPosition(ox + state.position.x, oy + state.position.y);
+				circles[idx].setPosition(state.position.x, state.position.y);
 				circles[idx].alpha = state.alpha;
 				circles[idx].setScale(state.scale);
 
@@ -386,8 +414,8 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			if (applyColor) targets.push("color");
 			if (applyDirection) targets.push("direction");
 			final targetsStr = if (targets.length > 0) targets.join("+") else "none";
-			final modeName = if (mode == 0) "Start+Angle" else "Start+End";
-			updatable.updateText('Path: $currentPath | Curve: $currentCurve ($targetsStr) | Count: $count | $modeName | ${COLOR_NAMES[selectedColorIndex]}');
+			final modeName = MODE_NAMES[mode];
+			updatable.updateText('Path: $currentPath | Curve: $currentCurve ($targetsStr) | Count: $count | $modeName | ${COLOR_NAMES[startColorIndex]}->${COLOR_NAMES[endColorIndex]}');
 		}
 	}
 
@@ -424,6 +452,11 @@ class AnimPathDemoScreen extends DemoScreenBase {
 					count = COUNT_VALUES[index];
 					rebuildCircles();
 				}
+				if (source == modeDropdown && index >= 0 && index < MODE_NAMES.length) {
+					mode = index;
+					drawMarkers();
+					rebuildCircles();
+				}
 			case UIChangeValue(val):
 				if (source == speedSlider) {
 					speedPct = val;
@@ -451,18 +484,6 @@ class AnimPathDemoScreen extends DemoScreenBase {
 					rebuildCircles();
 				}
 			case UIClick:
-				if (source == btnModeAngle) {
-					mode = 0;
-					drawMarkers();
-					rebuildCircles();
-					return;
-				}
-				if (source == btnModeNorm) {
-					mode = 1;
-					drawMarkers();
-					rebuildCircles();
-					return;
-				}
 				if (source == randomizeBtn) {
 					rebuildCircles();
 					return;
@@ -480,25 +501,32 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			displayInteractive.remove();
 			displayInteractive = null;
 		}
-		for (g in colorSwatches) {
+		for (g in startColorSwatches) {
 			g.remove();
 		}
-		if (colorHighlight != null) {
-			colorHighlight.remove();
-			colorHighlight = null;
+		for (g in endColorSwatches) {
+			g.remove();
+		}
+		if (startColorHighlight != null) {
+			startColorHighlight.remove();
+			startColorHighlight = null;
+		}
+		if (endColorHighlight != null) {
+			endColorHighlight.remove();
+			endColorHighlight = null;
 		}
 		circles = [];
 		animPaths = [];
-		colorSwatches = [];
+		startColorSwatches = [];
+		endColorSwatches = [];
 		demoBuilder = null;
 		demoResult = null;
 		pathList = null;
 		curveList = null;
 		countDropdown = null;
+		modeDropdown = null;
 		speedSlider = null;
 		randomizeBtn = null;
-		btnModeAngle = null;
-		btnModeNorm = null;
 		alphaChk = null;
 		scaleChk = null;
 		progressChk = null;

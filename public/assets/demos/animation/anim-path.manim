@@ -124,13 +124,12 @@ paths {
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>120}
     }
 
-    // Mode buttons
-    text(m6x11, "Mode:", #aaaaaa, left, 50): 190, 545
-    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnModeAngle")) { pos: 235, 543 }
-    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnModeNorm")) { pos: 345, 543 }
-
-    // Colors label (swatches created in code)
-    text(m6x11, "Colors:", #aaaaaa, left, 50): 470, 545
+    // Mode dropdown
+    text(m6x11, "Mode:", #aaaaaa, left, 50): 200, 545
+    placeholder(generated(cross(110, 24, #FF0000)), builderParameter("modeDropdown")) {
+        pos: 240, 543
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>120}
+    }
 
     // Apply-to checkboxes
     text(m6x11, "Apply:", #aaaaaa, left, 50): 50, 580
@@ -144,6 +143,10 @@ paths {
     text(m6x11, "Color", #cccccc, left, 40): 367, 580
     placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkDirection")) { pos: 420, 578 }
     text(m6x11, "Direction", #cccccc, left, 60): 442, 580
+
+    // Color start/end swatches (created in code)
+    text(m6x11, "Start:", #aaaaaa, left, 40): 515, 580
+    text(m6x11, "End:", #aaaaaa, left, 40): 515, 615
 
     // Speed slider + Randomize
     text(m6x11, "Speed:", #aaaaaa, left, 50): 50, 615

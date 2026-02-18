@@ -4,50 +4,33 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
-import bh.base.FontManager;
+import bh.base.MacroUtils;
 
 class ExpressionsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
-	var expressionResult:Null<BuilderResult>;
+	var demoResult:Null<BuilderResult>;
 	var valueSlider:Null<UIStandardMultiAnimSlider>;
-	var currentValue:Int = 25;
-	var statusText:Null<h2d.Text>;
 
 	override public function load():Void {
-		setupDemo("Expressions", "Arithmetic expressions with $param: live result display of $value * 2 + 10");
+		setupDemo("Expressions", "Arithmetic, ternary, and string interpolation with $param references");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/advanced/expressions.manim", false);
 
-		// Build with incremental mode for live expression evaluation
-		expressionResult = demoBuilder.buildWithParameters("expressionsDemo", ["value" => 25], null, null, true);
-		expressionResult.object.setPosition(50, 140);
-		addBuilderResult(expressionResult);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "expressionsDemo", [], [
+			valueSlider => addSlider(stdBuilder, 25),
+		], true);
 
-		// Value slider
-		valueSlider = addSlider(stdBuilder, null, 25);
-		addElement(valueSlider, DefaultLayer);
-		valueSlider.getObject().setPosition(50, 640);
-
-		// Status text
-		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = 'Input value: $currentValue | Computed: ${currentValue * 2 + 10}';
-		statusText.textColor = 0xCCCCCC;
-		statusText.setPosition(50, 610);
-		addObjectToLayer(statusText, DefaultLayer);
+		demoResult = ui.builderResults;
+		valueSlider = ui.valueSlider;
+		addBuilderResult(demoResult);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIChangeValue(val):
 				if (source == valueSlider) {
-					currentValue = val;
-					if (expressionResult != null) {
-						expressionResult.setParameter("value", val);
-					}
-					if (statusText != null) {
-						statusText.text = 'Input value: $currentValue | Computed: ${currentValue * 2 + 10}';
+					if (demoResult != null) {
+						demoResult.setParameter("value", val);
 					}
 				}
 			default:
@@ -57,8 +40,7 @@ class ExpressionsDemoScreen extends DemoScreenBase {
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
-		expressionResult = null;
+		demoResult = null;
 		valueSlider = null;
-		statusText = null;
 	}
 }

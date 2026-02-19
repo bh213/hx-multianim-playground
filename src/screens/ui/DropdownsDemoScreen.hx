@@ -14,6 +14,7 @@ class DropdownsDemoScreen extends DemoScreenBase {
 	var dropdownScrollable:Null<UIStandardMultiAnimDropdown>;
 	var dropdownAutoFew:Null<UIStandardMultiAnimDropdown>;
 	var dropdownAutoMany:Null<UIStandardMultiAnimDropdown>;
+	var dropdownCustom:Null<UIStandardMultiAnimDropdown>;
 
 	static final FRUITS:Array<UIElementListItem> = [
 		{name: "Apple"},
@@ -56,12 +57,14 @@ class DropdownsDemoScreen extends DemoScreenBase {
 			dropdownScrollable => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
 			dropdownAutoFew => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FEW_ITEMS, 0),
 			dropdownAutoMany => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", MANY_ITEMS, 0),
+			dropdownCustom => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
 		]);
 
 		demoResult = ui.builderResults;
 		dropdownScrollable = ui.dropdownScrollable;
 		dropdownAutoFew = ui.dropdownAutoFew;
 		dropdownAutoMany = ui.dropdownAutoMany;
+		dropdownCustom = ui.dropdownCustom;
 
 		addBuilderResult(demoResult);
 	}
@@ -75,6 +78,8 @@ class DropdownsDemoScreen extends DemoScreenBase {
 					updateSelectedText(index, items, "autoFewText");
 				} else if (source == dropdownAutoMany) {
 					updateSelectedText(index, items, "autoManyText");
+				} else if (source == dropdownCustom) {
+					updateSelectedText(index, items, "customText");
 				}
 			default:
 		}
@@ -100,5 +105,6 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownScrollable = null;
 		dropdownAutoFew = null;
 		dropdownAutoMany = null;
+		dropdownCustom = null;
 	}
 }

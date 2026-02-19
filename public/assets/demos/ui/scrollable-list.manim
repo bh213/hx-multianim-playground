@@ -15,7 +15,7 @@ version: 0.5
     // Scrollable list placeholder
     placeholder(generated(cross(200, 300, #FF0000)), builderParameter("scrollableList")) {
         pos: 0, 55
-        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200}
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200, font=>"dd", fontColor:color=>white}
     }
 
     // Selected item display

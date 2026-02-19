@@ -28,6 +28,13 @@ version: 0.5
     bitmap(generated(color(8, 8, #44cc44))): 150, 0
 }
 
+// Repeatable programmable: param-dependent repeat count (tests incremental structural rebuild)
+#perfRepeatable programmable(value:uint=3) {
+    repeatable($i, step($value, dx:6)) {
+        bitmap(generated(color(5, 5, #446688))): 0, 0
+    }
+}
+
 // Small button with pixel font for compact controls
 #perfButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Btn") {
     @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 90, 26): 0,0
@@ -37,7 +44,7 @@ version: 0.5
     text(m6x11, $buttonText, #ffffff, center, 90): 0,7
 }
 
-// Controls panel
+// Controls panel — vertical layout with descriptions
 #perfControls programmable() {
     pos: 40, 80
 
@@ -45,42 +52,49 @@ version: 0.5
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
 
     text(m6x11, "Count:", #cccccc): 0, 33
-
     placeholder(generated(cross(120, 26, #FF0000)), builderParameter("countDropdown")) {
         pos: 50, 28
         settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>200}
     }
 
-    // perfButton = 90px wide, 26px tall
+    // Add buttons — vertical stack with descriptions
     placeholder(generated(cross(90, 26, #FF0000)), builderParameter("addSimpleBtn")) {
-        pos: 190, 28
+        pos: 0, 62
     }
+    text(m6x11, "bitmap + text (2 elements)", #888888): 100, 69
 
     placeholder(generated(cross(90, 26, #FF0000)), builderParameter("addComplexBtn")) {
-        pos: 290, 28
+        pos: 0, 90
     }
+    text(m6x11, "avatar, bars, text (~11 elements)", #888888): 100, 97
 
-    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("updateBtn")) {
-        pos: 390, 28
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("addRepeatableBtn")) {
+        pos: 0, 118
     }
+    text(m6x11, "repeatable with 0..5 bitmaps", #888888): 100, 125
+
+    // Object count
+    text(m6x11, "Objects:", #888888): 0, 152
+    #objectCount(updatable) text(m6x11, "Builder: 0 | Incr: 0 | Macro: 0", #cccccc): 60, 152
+
+    // Update + Clear
+    placeholder(generated(cross(90, 26, #FF0000)), builderParameter("updateBtn")) {
+        pos: 0, 168
+    }
+    text(m6x11, "cycles repeat 0..5, randomizes others", #888888): 100, 175
 
     placeholder(generated(cross(90, 26, #FF0000)), builderParameter("clearBtn")) {
-        pos: 490, 28
+        pos: 0, 196
     }
 
-    // Creation timing (3 columns)
-    text(m6x11, "Create:", #888888): 0, 64
-    #createBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 64
-    #createIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 64
-    #createMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 64
+    // Timing results
+    text(m6x11, "Create:", #888888): 0, 230
+    #createBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 230
+    #createIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 230
+    #createMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 230
 
-    // Update timing (3 columns)
-    text(m6x11, "Update:", #888888): 0, 78
-    #updateBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 78
-    #updateIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 78
-    #updateMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 78
-
-    // Object counts
-    text(m6x11, "Objects:", #888888): 0, 92
-    #objectCount(updatable) text(m6x11, "Builder: 0 | Incr: 0 | Macro: 0", #cccccc): 60, 92
+    text(m6x11, "Update:", #888888): 0, 244
+    #updateBuilderTime(updatable) text(m6x11, "Builder: --", #ffaa44): 60, 244
+    #updateIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 244
+    #updateMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 244
 }

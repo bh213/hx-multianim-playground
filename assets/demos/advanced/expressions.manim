@@ -16,19 +16,19 @@ version: 0.5
     text(m6x11, $value, #ffffff, left, 100): 140, 80
 
     text(m6x11, "$value + 10 = ", #888888, left, 200): 20, 97
-    text(m6x11, $value + 10, #ffffff, left, 100): 140, 97
+    text(m6x11, '${value + 10}', #ffffff, left, 100): 140, 97
 
     text(m6x11, "$value * 2 = ", #888888, left, 200): 20, 114
-    //text(m6x11, '${$value * 2}', #ffffff, left, 100): 140, 114
+    text(m6x11, '${value * 2}', #ffffff, left, 100): 140, 114
 
     text(m6x11, "$value * 3 + 5 = ", #888888, left, 200): 20, 131
-    text(m6x11, "$value * 3 + 5", #ffffff, left, 100): 160, 131
+    text(m6x11, '${value * 3 + 5}', #ffffff, left, 100): 160, 131
 
     text(m6x11, "$value div 10 = ", #888888, left, 200): 20, 148
-    text(m6x11, "$value div 10", #ffffff, left, 100): 160, 148
+    text(m6x11, '${value div 10}', #ffffff, left, 100): 160, 148
 
     text(m6x11, "$value % 7 = ", #888888, left, 200): 20, 165
-    text(m6x11, "$value % 7", #ffffff, left, 100): 140, 165
+    text(m6x11, '${value % 7}', #ffffff, left, 100): 140, 165
 
     // Ternary expressions
     text(m6x11, "Ternary  ?(cond) a : b :", #cccccc, left, 400): 0, 195
@@ -52,13 +52,13 @@ version: 0.5
     text(m6x11, "String interpolation:", #cccccc, left, 400): 0, 322
 
     text(m6x11, "simple:", #888888, left, 80): 20, 342
-    text(m6x11, 'Value is ${$value}', #ffffff, left, 300): 100, 342
+    text(m6x11, 'Value is ${value}', #ffffff, left, 300): 100, 342
 
     text(m6x11, "math:", #888888, left, 80): 20, 359
-    //text(m6x11, 'Double: ${$value * 2}', #ffffff, left, 300): 100, 359
+     text(m6x11, 'Double: ${value * 2}', #ffffff, left, 300): 100, 359
 
     text(m6x11, "multi:", #888888, left, 80): 20, 376
-    text(m6x11, '${$value} and ${$value + 10}', #ffffff, left, 300): 100, 376
+   text(m6x11, '${$value} and ${$value + 10}', #ffffff, left, 300): 100, 376
 
     // Visual expression result
     text(m6x11, "Visual width = $value * 3:", #cccccc, left, 400): 0, 406

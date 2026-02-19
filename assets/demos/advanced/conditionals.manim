@@ -37,7 +37,7 @@ version: 0.5
     bitmap(generated(color($value * 4, 20, #4488cc))): 0, 320
 
     // Current value display
-    text(exo2_20, "Current value: $value", #ffffff, left, 300): 0, 370
+    text(exo2_20, 'Current value: ${value}', #ffffff, left, 300): 0, 370
 
     // Slider label
     text(exo2_14, "Value slider", #888888, left, 200): 0, 420

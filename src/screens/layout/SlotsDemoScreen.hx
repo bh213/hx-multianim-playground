@@ -4,6 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
+import bh.multianim.MultiAnimBuilder.SlotHandle;
 import bh.base.MacroUtils;
 import bh.base.FontManager;
 
@@ -26,7 +27,8 @@ class SlotsDemoScreen extends DemoScreenBase {
 	var slotInteractives:Array<h2d.Interactive>;
 	var autoFillTimer:Float = 0;
 	var clearDelay:Float = -1;
-	var paramSlotTimer:Float = 0;
+	var comboInteractives:Array<h2d.Interactive>;
+	var comboItemCycleIdx:Int = 0;
 
 	override public function load():Void {
 		setupDemo("Slots", "Clickable slot containers with auto-fill items and auto-clear");
@@ -35,7 +37,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "slotsShowcase", [], [
 			autoAddChk => addCheckbox(stdBuilder, true),
-		]);
+		], true);
 		slotsResult = ui.builderResults;
 		autoAddCheckbox = ui.autoAddChk;
 		addBuilderResult(slotsResult);
@@ -77,12 +79,30 @@ class SlotsDemoScreen extends DemoScreenBase {
 
 		updateCountText();
 
-		// Initialize parameterized slots with diverse states to showcase
-		paramSlotTimer = 0;
-		final paramStates = ["empty", "filled", "highlight", "error"];
-		for (i in 0...4) {
-			slotsResult.getSlot("paramSlot", i).setParameter("state", paramStates[i]);
+		// Set up combo slot section (enabled/disabled x none/cursed/blessed)
+		comboInteractives = [];
+		comboItemCycleIdx = 0;
+
+		// Set states for each combo slot via parametrized slot API
+		final enabledStates = ["en", "ec", "eb"];
+		final disabledStates = ["dn", "dc", "db"];
+		for (i in 0...3) {
+			slotsResult.getSlot("cs_e", i).setParameter("state", enabledStates[i]);
+			slotsResult.getSlot("cs_d", i).setParameter("state", disabledStates[i]);
 		}
+
+		// Click interactives for enabled combo slots only
+		for (i in 0...3) {
+			final inter = new h2d.Interactive(60, 60, container);
+			inter.setPosition(100 + i * 80, 426);
+			final colIdx = i;
+			inter.onClick = function(_) {
+				onComboSlotClick(colIdx);
+			};
+			comboInteractives.push(inter);
+		}
+
+		updateComboInfo();
 	}
 
 	function buildSlotItem(itemType:String):h2d.Object {
@@ -207,19 +227,46 @@ class SlotsDemoScreen extends DemoScreenBase {
 			autoFillTimer -= 1.0;
 			autoFillRandomSlot();
 		}
+	}
 
-		// Cycle parameterized slot states
-		if (slotsResult != null) {
-			paramSlotTimer += dt;
-			if (paramSlotTimer >= 1.5) {
-				paramSlotTimer -= 1.5;
-				final states = ["empty", "filled", "highlight", "error"];
-				for (i in 0...4) {
-					final newState = states[Std.int(Math.random() * states.length)];
-					slotsResult.getSlot("paramSlot", i).setParameter("state", newState);
-				}
-			}
+	// ----- Combo slots (status x extra combinations) -----
+
+	function onComboSlotClick(colIdx:Int):Void {
+		if (slotsResult == null || demoBuilder == null) return;
+		final slot = slotsResult.getSlot("cs_e", colIdx);
+
+		if (slot.isOccupied()) {
+			slot.clear();
+			slot.data = null;
+			setComboLog("Removed item. Overlays persist around empty slot.");
+		} else {
+			final itemType = ITEM_TYPES[comboItemCycleIdx % ITEM_TYPES.length];
+			comboItemCycleIdx++;
+			final result = demoBuilder.buildWithParameters("slotItem", ["itemType" => itemType]);
+			result.object.setPosition(0, 10);
+			// Apply glow filter to items inserted into blessed slots (col 2)
+			if (colIdx == 2)
+				result.object.filter = new h2d.filter.Glow(0xddaa44, 0.8, 4.0, 1.0, 1.0, true);
+			slot.setContent(result.object);
+			slot.data = itemType;
+			setComboLog('Added $itemType. Overlays still visible around content.');
 		}
+		updateComboInfo();
+	}
+
+	function updateComboInfo():Void {
+		if (slotsResult == null) return;
+		var occupied = 0;
+		for (i in 0...3) {
+			if (slotsResult.getSlot("cs_e", i).isOccupied()) occupied++;
+			if (slotsResult.getSlot("cs_d", i).isOccupied()) occupied++;
+		}
+		slotsResult.getUpdatable("comboInfoText").updateText('Occupied: $occupied / 6  (only enabled slots accept clicks)');
+	}
+
+	function setComboLog(text:String):Void {
+		if (slotsResult != null)
+			slotsResult.getUpdatable("comboStatusText").updateText(text);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {}
@@ -230,12 +277,16 @@ class SlotsDemoScreen extends DemoScreenBase {
 			for (inter in slotInteractives) inter.remove();
 			slotInteractives = null;
 		}
+		if (comboInteractives != null) {
+			for (inter in comboInteractives) inter.remove();
+			comboInteractives = null;
+		}
 		demoBuilder = null;
 		slotsResult = null;
 		autoAddCheckbox = null;
 		slotItems = null;
 		statusTexts = null;
 		autoFillTimer = 0;
-		paramSlotTimer = 0;
+		comboItemCycleIdx = 0;
 	}
 }

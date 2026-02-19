@@ -39,7 +39,6 @@ class InventoryDemoScreen extends DemoScreenBase {
 	// Inventory grid origin relative to programmable
 	static inline var INV_X = 0;
 	static inline var INV_Y = 155;
-	static inline var ROW_STEP = 58;
 
 	// Equipment area origin relative to programmable
 	static inline var EQ_X = 310;
@@ -50,8 +49,6 @@ class InventoryDemoScreen extends DemoScreenBase {
 	static inline var MIN_ITEM_WEIGHT = 2;
 
 	var gold:Int = START_GOLD;
-
-	static final PLAYER_ROWS = ["p0", "p1", "p2"];
 
 	// Item catalog — equip: "" = inventory only, "head"/"arm"/"armor"/"legs" = equipment slot type
 	static final ITEMS:Array<{key:String, name:String, cost:Int, weight:Int, equip:String}> = [
@@ -141,14 +138,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 	// ----- Slot access -----
 
-	function getSlotByGrid(rows:Array<String>, idx:Int):SlotHandle {
-		final row = Std.int(idx / GRID_COLS);
-		final col = idx % GRID_COLS;
-		return demoResult.getSlot(rows[row], col);
-	}
-
 	function playerSlot(idx:Int):SlotHandle {
-		return getSlotByGrid(PLAYER_ROWS, idx);
+		return demoResult.getSlot("inv", idx);
 	}
 
 	function shopSlot(idx:Int):SlotHandle {
@@ -205,12 +196,12 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 	// ----- Pixel position helpers -----
 
-	function invSlotScreenX(col:Int):Float {
-		return BX + INV_X + col * CELL_STEP;
+	function invSlotScreenX(idx:Int):Float {
+		return BX + INV_X + (idx % GRID_COLS) * CELL_STEP;
 	}
 
-	function invSlotScreenY(row:Int):Float {
-		return BY + INV_Y + row * ROW_STEP;
+	function invSlotScreenY(idx:Int):Float {
+		return BY + INV_Y + Std.int(idx / GRID_COLS) * CELL_STEP;
 	}
 
 	function equipScreenX(eq:{name:String, accepts:String, dx:Int, dy:Int}):Float {
@@ -268,20 +259,17 @@ class InventoryDemoScreen extends DemoScreenBase {
 	}
 
 	function addInvDropZones(drag:UIMultiAnimDraggable):Void {
-		for (r in 0...GRID_ROWS) {
-			for (c in 0...GRID_COLS) {
-				final i = r * GRID_COLS + c;
-				final slot = playerSlot(i);
-				final x = invSlotScreenX(c);
-				final y = invSlotScreenY(r);
-				drag.addDropZone({
-					id: 'p_${i}',
-					bounds: Bounds.fromValues(x, y, CELL_SIZE, CELL_SIZE),
-					snapX: x + ITEM_PAD,
-					snapY: y + ITEM_PAD,
-					slot: slot,
-				});
-			}
+		for (i in 0...GRID_TOTAL) {
+			final slot = playerSlot(i);
+			final x = invSlotScreenX(i);
+			final y = invSlotScreenY(i);
+			drag.addDropZone({
+				id: 'p_${i}',
+				bounds: Bounds.fromValues(x, y, CELL_SIZE, CELL_SIZE),
+				snapX: x,
+				snapY: y,
+				slot: slot,
+			});
 		}
 	}
 
@@ -297,8 +285,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 			drag.addDropZone({
 				id: eq.name,
 				bounds: Bounds.fromValues(x, y, CELL_SIZE, CELL_SIZE),
-				snapX: x + ITEM_PAD,
-				snapY: y + ITEM_PAD,
+				snapX: x,
+				snapY: y,
 				slot: slot,
 			});
 		}
@@ -390,7 +378,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 		};
 
 		draggables.push(drag);
-		addElementWithPos(drag, BX + SHOP_X + shopIdx * SHOP_STEP + ITEM_PAD, BY + SHOP_Y + ITEM_PAD, DefaultLayer);
+		addElementWithPos(drag, BX + SHOP_X + shopIdx * SHOP_STEP, BY + SHOP_Y, DefaultLayer);
 	}
 
 	function setupInvDraggable(slotIdx:Int):Void {
@@ -468,10 +456,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 			}
 		};
 
-		final col = slotIdx % GRID_COLS;
-		final row = Std.int(slotIdx / GRID_COLS);
 		draggables.push(drag);
-		addElementWithPos(drag, invSlotScreenX(col) + ITEM_PAD, invSlotScreenY(row) + ITEM_PAD, DefaultLayer);
+		addElementWithPos(drag, invSlotScreenX(slotIdx), invSlotScreenY(slotIdx), DefaultLayer);
 	}
 
 	function setupEquipDraggable(eqIdx:Int):Void {
@@ -556,7 +542,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 		};
 
 		draggables.push(drag);
-		addElementWithPos(drag, equipScreenX(eq) + ITEM_PAD, equipScreenY(eq) + ITEM_PAD, DefaultLayer);
+		addElementWithPos(drag, equipScreenX(eq), equipScreenY(eq), DefaultLayer);
 	}
 
 	// ----- UI refresh -----

@@ -1,0 +1,1272 @@
+roguelikeitems-0.png
+size: 208, 240
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+ring
+  rotate: false
+  xy: 0, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+ring
+  rotate: false
+  xy: 16, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+ring
+  rotate: false
+  xy: 32, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+ring
+  rotate: false
+  xy: 48, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+ring
+  rotate: false
+  xy: 64, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+ring
+  rotate: false
+  xy: 80, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+ring
+  rotate: false
+  xy: 96, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+necklace
+  rotate: false
+  xy: 112, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+necklace
+  rotate: false
+  xy: 128, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+necklace
+  rotate: false
+  xy: 144, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+necklace
+  rotate: false
+  xy: 160, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+necklace
+  rotate: false
+  xy: 176, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+necklace
+  rotate: false
+  xy: 192, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+ring
+  rotate: false
+  xy: 0, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+ring
+  rotate: false
+  xy: 16, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+ring
+  rotate: false
+  xy: 32, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+ring
+  rotate: false
+  xy: 48, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+ring
+  rotate: false
+  xy: 64, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12
+ring
+  rotate: false
+  xy: 80, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 13
+ring
+  rotate: false
+  xy: 96, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 14
+pendant
+  rotate: false
+  xy: 112, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+pendant
+  rotate: false
+  xy: 128, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+pendant
+  rotate: false
+  xy: 144, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+pendant
+  rotate: false
+  xy: 160, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+pendant
+  rotate: false
+  xy: 176, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+pendant
+  rotate: false
+  xy: 192, 16
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+ring
+  rotate: false
+  xy: 0, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 15
+ring
+  rotate: false
+  xy: 16, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 16
+ring
+  rotate: false
+  xy: 32, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 17
+ring
+  rotate: false
+  xy: 48, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 18
+ring
+  rotate: false
+  xy: 64, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 19
+ring
+  rotate: false
+  xy: 80, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 20
+ring
+  rotate: false
+  xy: 96, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 21
+crown
+  rotate: false
+  xy: 112, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+crown
+  rotate: false
+  xy: 128, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+crown
+  rotate: false
+  xy: 144, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+crown
+  rotate: false
+  xy: 160, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+crown
+  rotate: false
+  xy: 176, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+key
+  rotate: false
+  xy: 192, 32
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+gem
+  rotate: false
+  xy: 0, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+gem
+  rotate: false
+  xy: 16, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+gem
+  rotate: false
+  xy: 32, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+gem
+  rotate: false
+  xy: 48, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+gem
+  rotate: false
+  xy: 64, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+gem
+  rotate: false
+  xy: 80, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+gem
+  rotate: false
+  xy: 96, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+gold
+  rotate: false
+  xy: 112, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+gold
+  rotate: false
+  xy: 128, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+scroll
+  rotate: false
+  xy: 144, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+cape
+  rotate: false
+  xy: 160, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+key
+  rotate: false
+  xy: 176, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+key
+  rotate: false
+  xy: 192, 48
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+material
+  rotate: false
+  xy: 0, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+material
+  rotate: false
+  xy: 16, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+material
+  rotate: false
+  xy: 32, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+material
+  rotate: false
+  xy: 48, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+material
+  rotate: false
+  xy: 64, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+material
+  rotate: false
+  xy: 80, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+material
+  rotate: false
+  xy: 96, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+potion
+  rotate: false
+  xy: 112, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+potion
+  rotate: false
+  xy: 128, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+potion
+  rotate: false
+  xy: 144, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+potion
+  rotate: false
+  xy: 160, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+potion
+  rotate: false
+  xy: 176, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+potion
+  rotate: false
+  xy: 192, 64
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+ingot
+  rotate: false
+  xy: 0, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+ingot
+  rotate: false
+  xy: 16, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+ingot
+  rotate: false
+  xy: 32, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+ingot
+  rotate: false
+  xy: 48, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+ingot
+  rotate: false
+  xy: 64, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+ingot
+  rotate: false
+  xy: 80, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+ingot
+  rotate: false
+  xy: 96, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+potion
+  rotate: false
+  xy: 112, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+potion
+  rotate: false
+  xy: 128, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+potion
+  rotate: false
+  xy: 144, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+potion
+  rotate: false
+  xy: 160, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+potion
+  rotate: false
+  xy: 176, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+potion
+  rotate: false
+  xy: 192, 80
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12
+material
+  rotate: false
+  xy: 0, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+material
+  rotate: false
+  xy: 16, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+wood
+  rotate: false
+  xy: 32, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+rope
+  rotate: false
+  xy: 48, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+shovel
+  rotate: false
+  xy: 64, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+pickaxe
+  rotate: false
+  xy: 80, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+pickaxe
+  rotate: false
+  xy: 96, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+wood
+  rotate: false
+  xy: 112, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+weapon
+  rotate: false
+  xy: 128, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+weapon
+  rotate: false
+  xy: 144, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+weapon
+  rotate: false
+  xy: 160, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+weapon
+  rotate: false
+  xy: 176, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+weapon
+  rotate: false
+  xy: 192, 96
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+weapon
+  rotate: false
+  xy: 0, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+weapon
+  rotate: false
+  xy: 16, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+weapon
+  rotate: false
+  xy: 32, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12
+weapon
+  rotate: false
+  xy: 48, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 13
+weapon
+  rotate: false
+  xy: 64, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 14
+weapon
+  rotate: false
+  xy: 80, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 15
+weapon
+  rotate: false
+  xy: 96, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 16
+weapon
+  rotate: false
+  xy: 112, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 17
+weapon
+  rotate: false
+  xy: 128, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 18
+weapon
+  rotate: false
+  xy: 144, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 19
+weapon
+  rotate: false
+  xy: 160, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 20
+weapon
+  rotate: false
+  xy: 176, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 21
+weapon
+  rotate: false
+  xy: 192, 112
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 22
+weapon
+  rotate: false
+  xy: 0, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 23
+weapon
+  rotate: false
+  xy: 16, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 24
+weapon
+  rotate: false
+  xy: 32, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 25
+weapon
+  rotate: false
+  xy: 48, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 26
+weapon
+  rotate: false
+  xy: 64, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 27
+weapon
+  rotate: false
+  xy: 80, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 28
+weapon
+  rotate: false
+  xy: 96, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 29
+weapon
+  rotate: false
+  xy: 112, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 30
+weapon
+  rotate: false
+  xy: 128, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 31
+weapon
+  rotate: false
+  xy: 144, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 32
+weapon
+  rotate: false
+  xy: 160, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 33
+weapon
+  rotate: false
+  xy: 176, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 34
+weapon
+  rotate: false
+  xy: 192, 128
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 35
+helmet
+  rotate: false
+  xy: 0, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+helmet
+  rotate: false
+  xy: 16, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+helmet
+  rotate: false
+  xy: 32, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+helmet
+  rotate: false
+  xy: 48, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+helmet
+  rotate: false
+  xy: 64, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+helmet
+  rotate: false
+  xy: 80, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+helmet
+  rotate: false
+  xy: 96, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+helmet
+  rotate: false
+  xy: 112, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+helmet
+  rotate: false
+  xy: 128, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+armor
+  rotate: false
+  xy: 144, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+gloves
+  rotate: false
+  xy: 160, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+bow
+  rotate: false
+  xy: 176, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+skull
+  rotate: false
+  xy: 192, 144
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+helmet
+  rotate: false
+  xy: 0, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+armor
+  rotate: false
+  xy: 16, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+boots
+  rotate: false
+  xy: 32, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+helmet
+  rotate: false
+  xy: 48, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+helmet
+  rotate: false
+  xy: 64, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12
+boots
+  rotate: false
+  xy: 80, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+boots
+  rotate: false
+  xy: 96, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+boots
+  rotate: false
+  xy: 112, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+boots
+  rotate: false
+  xy: 128, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+boots
+  rotate: false
+  xy: 144, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+gloves
+  rotate: false
+  xy: 160, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+material
+  rotate: false
+  xy: 176, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+paper
+  rotate: false
+  xy: 192, 160
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+scepter
+  rotate: false
+  xy: 0, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+scepter
+  rotate: false
+  xy: 16, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+scepter
+  rotate: false
+  xy: 32, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+scepter
+  rotate: false
+  xy: 48, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+scepter
+  rotate: false
+  xy: 64, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+shield
+  rotate: false
+  xy: 80, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+shield
+  rotate: false
+  xy: 96, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+shield
+  rotate: false
+  xy: 112, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+shield
+  rotate: false
+  xy: 128, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+shield
+  rotate: false
+  xy: 144, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+worm
+  rotate: false
+  xy: 176, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+dice
+  rotate: false
+  xy: 192, 176
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+food
+  rotate: false
+  xy: 0, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+food
+  rotate: false
+  xy: 16, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+food
+  rotate: false
+  xy: 32, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+food
+  rotate: false
+  xy: 48, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+food
+  rotate: false
+  xy: 64, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+food
+  rotate: false
+  xy: 80, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+food
+  rotate: false
+  xy: 96, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+book
+  rotate: false
+  xy: 112, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+book
+  rotate: false
+  xy: 128, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+book
+  rotate: false
+  xy: 144, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+book
+  rotate: false
+  xy: 160, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+book
+  rotate: false
+  xy: 176, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+book
+  rotate: false
+  xy: 192, 192
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+food
+  rotate: false
+  xy: 0, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+food
+  rotate: false
+  xy: 16, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+food
+  rotate: false
+  xy: 32, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+food
+  rotate: false
+  xy: 48, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+food
+  rotate: false
+  xy: 64, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12
+food
+  rotate: false
+  xy: 80, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 13
+food
+  rotate: false
+  xy: 96, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 14
+book
+  rotate: false
+  xy: 112, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+book
+  rotate: false
+  xy: 128, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
+book
+  rotate: false
+  xy: 144, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 9
+book
+  rotate: false
+  xy: 160, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 10
+book
+  rotate: false
+  xy: 176, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+book
+  rotate: false
+  xy: 192, 208
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 12

@@ -13,7 +13,8 @@
       "Bash(git rm:*)",
       "Bash(ls -la \"c:\\\\Users\\\\goraz\\\\work\\\\dotabota\\\\hx-multianim\\\\res\"\" 2>/dev/null || echo \"Path not found, trying alternative \")",
       "Bash(xxd:*)",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "WebFetch(domain:)"
     ]
   }
 }

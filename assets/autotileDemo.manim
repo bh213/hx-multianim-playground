@@ -41,7 +41,7 @@ version: 0.5
     grid: 500, 400
 
     // Background
-    @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight), black)));
+    @alpha(0.1) bitmap(generated(color($grid.width, $grid.height, black)));
 
     // Title
     text(dd, "AUTOTILE CROSS FORMAT", white, left, 400):5,5

@@ -46,40 +46,17 @@ paths {
     @(itemType => helm)    bitmap(generated(color(48, 48, #999999))): 0, 0
     @(itemType => armor)   bitmap(generated(color(48, 48, #445588))): 0, 0
 
-    // Icons (compact, top 28px area)
-    @(itemType => hpot)    bitmap(generated(color(6, 16, #ff6666))): 21, 4
-    @(itemType => hpot)    bitmap(generated(color(16, 6, #ff6666))): 16, 10
-
-    @(itemType => mpot)    bitmap(generated(color(6, 16, #6688ff))): 21, 4
-    @(itemType => mpot)    bitmap(generated(color(16, 6, #6688ff))): 16, 10
-
-    @(itemType => lsword)  bitmap(generated(color(4, 24, #ccddaa))): 22, 1
-    @(itemType => lsword)  bitmap(generated(color(14, 4, #886633))): 17, 23
-    @(itemType => lsword)  bitmap(generated(color(4, 5, #664422))): 22, 27
-
-    @(itemType => ssword)  bitmap(generated(color(4, 14, #aabb88))): 22, 6
-    @(itemType => ssword)  bitmap(generated(color(10, 3, #667744))): 19, 18
-    @(itemType => ssword)  bitmap(generated(color(4, 5, #554433))): 22, 21
-
-    @(itemType => shield)  bitmap(generated(color(20, 22, #66aadd))): 14, 3
-    @(itemType => shield)  bitmap(generated(color(14, 3, #4477aa))): 17, 25
-
-    @(itemType => ring)    bitmap(generated(color(18, 18, #1a1a2e))): 15, 4
-    @(itemType => ring)    bitmap(generated(color(10, 10, #ffcc44))): 19, 8
-
-    @(itemType => boots)   bitmap(generated(color(10, 16, #66ccaa))): 11, 6
-    @(itemType => boots)   bitmap(generated(color(10, 16, #66ccaa))): 27, 6
-
-    @(itemType => scroll)  bitmap(generated(color(18, 18, #cc99ee))): 15, 3
-    @(itemType => scroll)  bitmap(generated(color(22, 3, #ddbbff))): 13, 3
-    @(itemType => scroll)  bitmap(generated(color(22, 3, #ddbbff))): 13, 18
-
-    @(itemType => helm)    bitmap(generated(color(24, 12, #bbbbbb))): 12, 3
-    @(itemType => helm)    bitmap(generated(color(20, 10, #aaaaaa))): 14, 13
-
-    @(itemType => armor)   bitmap(generated(color(26, 5, #7799cc))): 11, 4
-    @(itemType => armor)   bitmap(generated(color(20, 14, #6688bb))): 14, 9
-    @(itemType => armor)   bitmap(generated(color(14, 4, #5577aa))): 17, 23
+    // Item sprites from roguelike atlas (3x scale = 48x48)
+    @(itemType => hpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 0)): 0, 0
+    @(itemType => mpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 2)): 0, 0
+    @(itemType => lsword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+    @(itemType => ssword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 11)): 0, 0
+    @(itemType => shield)  scale(3) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+    @(itemType => ring)    scale(3) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+    @(itemType => boots)   scale(3) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+    @(itemType => scroll)  scale(3) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+    @(itemType => helm)    scale(3) bitmap(sheet("roguelikeitems", "helmet", 0)): 0, 0
+    @(itemType => armor)   scale(3) bitmap(sheet("roguelikeitems", "armor", 0)): 0, 0
 
     // Item name label (bottom of item)
     @(itemType => empty)   text(m5x7, "---", #555555, center, 48): 0, 32
@@ -93,6 +70,26 @@ paths {
     @(itemType => scroll)  text(m5x7, "Scroll", #bb99dd, center, 48): 0, 32
     @(itemType => helm)    text(m5x7, "Helm", #bbbbbb, center, 48): 0, 32
     @(itemType => armor)   text(m5x7, "Armor", #7799bb, center, 48): 0, 32
+}
+
+relativeLayouts {
+    #invGrid list {
+        // Row 0
+        point: 0, 155
+        point: 58, 155
+        point: 116, 155
+        point: 174, 155
+        // Row 1
+        point: 0, 213
+        point: 58, 213
+        point: 116, 213
+        point: 174, 213
+        // Row 2
+        point: 0, 271
+        point: 58, 271
+        point: 116, 271
+        point: 174, 271
+    }
 }
 
 // Main demo layout
@@ -131,55 +128,18 @@ paths {
     text(exo2_16, "Inventory", #66cc99): 0, 120
     bitmap(generated(color(232, 1, #66cc9933))): 0, 140
 
-    // Row 0
-    point {
-        pos: 0, 155
-        repeatable($a, step(4, dx: 58)) {
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            #p0[$a] slot(state:[normal, disabled, highlight] = normal) {
-                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight) graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-            }
-        }
-    }
-    // Row 1
-    point {
-        pos: 0, 213
-        repeatable($b, step(4, dx: 58)) {
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            #p1[$b] slot(state:[normal, disabled, highlight] = normal) {
-                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight) graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-            }
-        }
-    }
-    // Row 2
-    point {
-        pos: 0, 271
-        repeatable($c, step(4, dx: 58)) {
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            #p2[$c] slot(state:[normal, disabled, highlight] = normal) {
-                @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight) graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-            }
+    // Inventory grid (4x3 = 12 slots)
+    repeatable($i, layout("main", "invGrid")) {
+        bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+        #inv[$i] slot(state:[normal, disabled, highlight] = normal) {
+            @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+            @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
+            @(state => highlight) graphics(
+                line(#ffffff, 1, 0, 0, 51, 0);
+                line(#ffffff, 1, 0, 51, 51, 51);
+                line(#ffffff, 1, 0, 0, 0, 51);
+                line(#ffffff, 1, 51, 0, 51, 51);
+            ): 0, 0
         }
     }
 

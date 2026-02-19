@@ -22,23 +22,23 @@ relativeLayouts {
             pos:10, 40
             grid:1,20
             #pauseCheckbox point {
-                  pos: grid(0,0)
+                  pos: $grid.pos(0,0)
                   text(dd, "Pause", white): 30, 5
                   placeholder(generated(cross(20, 20, #FF0000)), builderParameter("pause"));
             }
             #boundsCheckbox point {
-                  pos: grid(0,1)
+                  pos: $grid.pos(0,1)
                   text(dd, "Show bounds", white): 30, 5
                   placeholder(generated(cross(20, 20, #FF0000)), builderParameter("bounds"));
             }
             #animStatesCheckbox point {
-                  pos: grid(0,2)
+                  pos: $grid.pos(0,2)
                   
                   placeholder(generated(cross(20, 20, #FF0000)), builderParameter("animStates"));
                   text(pixellari, "Show states", white):30,5;
             }
             #animCommandsCheckbox point {
-                  pos: grid(0,3)
+                  pos: $grid.pos(0,3)
                   text(dd, "Show commands", #ddd): 30, 5
                   placeholder(generated(cross(20, 20, #FF0000)), builderParameter("animCommands"));
             }

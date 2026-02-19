@@ -1,21 +1,11 @@
 version: 0.5
 
-// Filters Demo
-// All filter types demonstrated on selectable bitmap sources
-// Uses apply{} blocks to apply filters to conditional bitmap sources
-// Bitmap types match TestBitmaps.ALL_TYPES
+// Filters Demo — All 6 filters shown simultaneously with interactive controls
+// Each filter cell: name + bitmap preview + sliders/checkboxes
 
-// Reusable filter sample: uses apply{} for the filter and @(bitmapType) for the bitmap source.
-// The apply block sets filter properties on the parent context, affecting all child bitmaps.
-#filterSample programmable(
-    filterType:[none, outline, glow, blur, saturate, brightness, dropShadow]=none,
+// Bitmap-only preview: builds the selected bitmap without any filter
+#bitmapPreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack) {
-    @(filterType=>outline) apply { filter: outline(color: #ff000099, size: 1) }
-    @(filterType=>glow) apply { filter: glow(color: #ffaa00, alpha: 0.8, radius: 8, smoothColor: true) }
-    @(filterType=>blur) apply { filter: blur(radius: 4) }
-    @(filterType=>saturate) apply { filter: saturate(0.0) }
-    @(filterType=>brightness) apply { filter: brightness(1.5) }
-    @(filterType=>dropShadow) apply { filter: dropShadow(3, 0.5, #000000, 0.5, 6, 1.0) }
     @(bitmapType=>marine) apply { scale: 2 }
     @(bitmapType=>skull) apply { scale: 5 }
     @(bitmapType=>dice) apply { scale: 5 }
@@ -33,41 +23,74 @@ version: 0.5
     @(bitmapType=>dice) bitmap(sheet("crew2", "dice"));
 }
 
-// Grid of all 7 filter types applied to a given bitmap type
-#filterShowcase programmable(bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack) {
-    // Row 1: none, outline, glow, blur
-    text(m6x11, "none", #aaaaaa, center, 120): 0, 0
-    staticRef($filterSample, filterType=>none, bitmapType=>$bitmapType): 20, 18
-
-    text(m6x11, "outline", #ff6666, center, 120): 140, 0
-    staticRef($filterSample, filterType=>outline, bitmapType=>$bitmapType): 160, 18
-
-    text(m6x11, "glow", #ffaa00, center, 120): 280, 0
-    staticRef($filterSample, filterType=>glow, bitmapType=>$bitmapType): 300, 18
-
-    text(m6x11, "blur", #8888ff, center, 120): 420, 0
-    staticRef($filterSample, filterType=>blur, bitmapType=>$bitmapType): 440, 18
-
-    // Row 2: saturate, brightness, dropShadow
-    text(m6x11, "saturate", #888888, center, 120): 0, 130
-    staticRef($filterSample, filterType=>saturate, bitmapType=>$bitmapType): 20, 148
-
-    text(m6x11, "brightness", #dddd88, center, 120): 140, 130
-    staticRef($filterSample, filterType=>brightness, bitmapType=>$bitmapType): 160, 148
-
-    text(m6x11, "dropShadow", #999999, center, 120): 280, 130
-    staticRef($filterSample, filterType=>dropShadow, bitmapType=>$bitmapType): 300, 148
-}
-
-// Static layout: title, description, list placeholder, and active label
+// Main layout with grid-positioned filter cells
 #filtersLayout programmable() {
     text(exo2_16, "Visual Filters", #7fdbda, left, 400): 50, 80
-    text(exo2_light_14, "Double-click a bitmap type to change the sample sprite", #aaaaaa, left, 600): 50, 110
+    text(exo2_light_14, "Double-click a bitmap type to change preview", #aaaaaa, left, 600): 50, 130
 
-    // Scrollable list for bitmap selection
     placeholder(generated(cross(160, 200, #FF0000)), builderParameter("bitmapList")) {
         pos: 50, 160
     }
 
     #selectedText(updatable) text(exo2_light_14, "Active: Black Rect", #7fdbda, left, 200): 50, 380
+
+    // 3x2 grid of filter cells
+    point {
+        pos: 230, 160
+        grid: 293, 205
+
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell0")) { pos: $grid.pos(0, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell1")) { pos: $grid.pos(1, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell2")) { pos: $grid.pos(2, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell3")) { pos: $grid.pos(0, 1) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell4")) { pos: $grid.pos(1, 1) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell5")) { pos: $grid.pos(2, 1) }
+    }
+}
+
+// Reusable filter cell: name label, 4 slider slots, 2 checkbox slots
+// Bitmap preview is added as child by Haxe at (10, 20)
+#filterCell programmable() {
+    #cellName(updatable) text(m6x11, "filter", #aaaaaa, left, 180): 0, 0
+
+    // Slider rows (label + slider + value) — compact 16px spacing
+    #s1Label(updatable) text(m6x11, "", #888888, left, 38): 0, 92
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("s1")) {
+        pos: 40, 92
+        settings{size:int=>100}
+    }
+    #s1Value(updatable) text(m6x11, "", #cccccc, left, 45): 145, 92
+
+    #s2Label(updatable) text(m6x11, "", #888888, left, 38): 0, 108
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("s2")) {
+        pos: 40, 108
+        settings{size:int=>100}
+    }
+    #s2Value(updatable) text(m6x11, "", #cccccc, left, 45): 145, 108
+
+    #s3Label(updatable) text(m6x11, "", #888888, left, 38): 0, 124
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("s3")) {
+        pos: 40, 124
+        settings{size:int=>100}
+    }
+    #s3Value(updatable) text(m6x11, "", #cccccc, left, 45): 145, 124
+
+    #s4Label(updatable) text(m6x11, "", #888888, left, 38): 0, 140
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("s4")) {
+        pos: 40, 140
+        settings{size:int=>100}
+    }
+    #s4Value(updatable) text(m6x11, "", #cccccc, left, 45): 145, 140
+
+    // Checkbox row
+    #c1Label(updatable) text(m6x11, "", #888888, left, 50): 0, 159
+    placeholder(generated(cross(14, 14, #FF0000)), builderParameter("c1")) {
+        pos: 53, 159
+        settings{buildName=>checkbox}
+    }
+    #c2Label(updatable) text(m6x11, "", #888888, left, 50): 80, 159
+    placeholder(generated(cross(14, 14, #FF0000)), builderParameter("c2")) {
+        pos: 133, 159
+        settings{buildName=>checkbox}
+    }
 }

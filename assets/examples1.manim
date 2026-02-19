@@ -6,10 +6,10 @@ relativeLayouts {
   grid: 21, 31 {
   
   
-  #roomCheckboxes sequence($i: 1..6) point: grid(0,$i)	
-  #cornerCheckboxes sequence($i: 1..6) point: grid(1,$i)	
-  #panelCheckboxes sequence($i: 1..6) point: grid(2,$i)	
-  #panelButtons sequence($i: 10..16) point: grid(0,$i)	
+  #roomCheckboxes sequence($i: 1..6) point: $grid.pos(0,$i)
+  #cornerCheckboxes sequence($i: 1..6) point: $grid.pos(1,$i)
+  #panelCheckboxes sequence($i: 1..6) point: $grid.pos(2,$i)
+  #panelButtons sequence($i: 10..16) point: $grid.pos(0,$i)	
   #repeatableTest list {
         point: 10,20
         point: 30,20
@@ -88,23 +88,23 @@ relativeLayouts {
        
 
       point { // example 1: hex grid + pixels
-          pos: grid(0,0);
-          
-          @alpha(0.7) bitmap(generated(color(function(gridWidth), function(gridHeight), #777)));
+          pos: $grid.pos(0,0);
+
+          @alpha(0.7) bitmap(generated(color($grid.width, $grid.height, #777)));
           pixels (
-            line hexCorner(0, 1.1), hexCorner(1, 1.1), #f00
-            line hexCorner(1, 1.1), hexCorner(2, 1.1), #0f0
-            line hexCorner(2, 1.1), hexCorner(3, 1.1), #00f
-            line hexCorner(3, 1.1), hexCorner(4, 1.1), #ff0
-            line hexCorner(4, 1.1), hexCorner(5, 1.1), #f0f
-            line hexCorner(5, 1.1), hexCorner(0, 1.1), #fff
+            line $hex.corner(0, 1.1), $hex.corner(1, 1.1), #f00
+            line $hex.corner(1, 1.1), $hex.corner(2, 1.1), #0f0
+            line $hex.corner(2, 1.1), $hex.corner(3, 1.1), #00f
+            line $hex.corner(3, 1.1), $hex.corner(4, 1.1), #ff0
+            line $hex.corner(4, 1.1), $hex.corner(5, 1.1), #f0f
+            line $hex.corner(5, 1.1), $hex.corner(0, 1.1), #fff
           ):100,50
           @alpha(0.9) text(dd, "#1: hex grid + pixels", white, left, 200);
       }
 
       point { // example 2: text 
-          pos: grid(1,0);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),green)));
+          pos: $grid.pos(1,0);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,green)));
           @alpha(0.9) text(dd, "#2: text", white, left, 160);
 
           text(dd, "test left", red, left, 200):0,20;
@@ -114,8 +114,8 @@ relativeLayouts {
       }
 
       point { // example 3: bitmap
-          pos: grid(2,0);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),blue)));
+          pos: $grid.pos(2,0);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,blue)));
           @alpha(0.9) text(dd, "#3: bitmap", white, left, 160);
 
           //bitmap(sheet("crew2", "marine_r_shooting_d")):20,30
@@ -134,8 +134,8 @@ relativeLayouts {
           }
       }      
       point { // example 4: repeatable
-          pos: grid(3,0);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),gray)));
+          pos: $grid.pos(3,0);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,gray)));
           @alpha(0.9) text(dd, "#4: repeatable", white, left, 200);
 
           repeatable($index, step(5, dx:5, dy:1)) {
@@ -143,8 +143,8 @@ relativeLayouts {
           }
       }
       point { // example 5: stateanim
-          pos: grid(4,0);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),yellow)));
+          pos: $grid.pos(4,0);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,yellow)));
           stateanim("files/marine.anim", "idle", "direction"=>"l"):50,50
           @alpha(0.5) stateanim("files/marine.anim", "idle", direction=>"l"):100,50
           stateanim("files/marine.anim", "idle", direction=>r){
@@ -156,8 +156,8 @@ relativeLayouts {
           
       }
       point { // example 6: flow
-          pos: grid(0,1);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),orange)));
+          pos: $grid.pos(0,1);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,orange)));
           flow(maxWidth:200, maxHeight:100, minWidth:200, minHeight:100, layout:vertical, padding:0, debug:1) {
             text(dd, "test left", red, left);
             text(m3x6, "test center", blue, center);
@@ -170,8 +170,8 @@ relativeLayouts {
           
       }
       point { // example 7: palette
-          pos: grid(1,1);
-           bitmap(generated(color(function(gridWidth), function(gridHeight),black)));
+          pos: $grid.pos(1,1);
+           bitmap(generated(color($grid.width, $grid.height,black)));
           
           @alpha(0.9) text(dd, "#7: palette", white, left, 200);
 
@@ -183,8 +183,8 @@ relativeLayouts {
         }
       }
       point { // example 8: layers
-          pos: grid(2,1);
-          bitmap(generated(color(function(gridWidth), function(gridHeight),gray)));
+          pos: $grid.pos(2,1);
+          bitmap(generated(color($grid.width, $grid.height,gray)));
           @alpha(0.9) text(dd, "#8: layers", white, left, 200);
           
           layers {
@@ -202,8 +202,8 @@ relativeLayouts {
 
       }
       point { // example 9: 9-patch
-          pos: grid(3,1);
-          @alpha(0.5) bitmap(generated(color(function(gridWidth), function(gridHeight),blue)));
+          pos: $grid.pos(3,1);
+          @alpha(0.5) bitmap(generated(color($grid.width, $grid.height,blue)));
           @alpha(0.9) text(dd, "#9: 9-patch", white, left, 200);
           
           ninepatch("ui", "Window_3x3_idle", 30, 30): 10,20
@@ -212,8 +212,8 @@ relativeLayouts {
 
       }
       point { // example 10: reference
-          pos: grid(4,1);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),red)));
+          pos: $grid.pos(4,1);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,red)));
           @alpha(0.9) text(dd, "#10: reference", white, left, 200);
           
           
@@ -228,8 +228,8 @@ relativeLayouts {
 
       }
       point { // example 11: bitmap align
-          pos: grid(0,2);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),red)));
+          pos: $grid.pos(0,2);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,red)));
           
           @alpha(0.9) text(dd, "#11: bitmap align", white, left, 200);
           bitmap(generated(color(100, 1, white)), left, top):0,50
@@ -245,8 +245,8 @@ relativeLayouts {
           bitmap(generated(color(20, 20, red)), right, top):150,100
       }
       point { // example 12: text & tile are updatable from code
-          pos: grid(1,2);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),yellow)));
+          pos: $grid.pos(1,2);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,yellow)));
           @alpha(0.9) text(dd, "#12: updatable from code", white, left, 200);
           
           #textToUpdate(updatable) text(dd, "This is a test text message", #ffffff00): 10,30
@@ -255,8 +255,8 @@ relativeLayouts {
 
       }
       point { // example 13: layout iterator
-          pos: grid(2,2);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),gray)));
+          pos: $grid.pos(2,2);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,gray)));
           @alpha(0.9) text(dd, "#13: layout repeatable", white, left, 200);
           repeatable($index, layout("mainScreen", "repeatableTest")) {
             pos: 0, 0
@@ -264,8 +264,8 @@ relativeLayouts {
           }
       }
       point { // example 14: tileGroup
-          pos: grid(3,2);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),black)));
+          pos: $grid.pos(3,2);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,black)));
           @alpha(0.9) text(dd, "#14: tileGroup", white, left, 200);
           point {
             pos:1, 1
@@ -302,8 +302,8 @@ relativeLayouts {
             }
           }
         point { // example 15: stateAnim construct
-          pos: grid(4,2);
-          @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),white)));
+          pos: $grid.pos(4,2);
+          @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,white)));
           @alpha(0.9) text(dd, "#15: stateAnim construct", white, left, 200);
           stateAnim construct("state1", 
             "state1" => sheet "crew2", marine_r_shooting_u, 10, loop
@@ -312,8 +312,8 @@ relativeLayouts {
       }
 
       point { // example 16: div/mod expressions
-        pos: grid(0,3);
-        @alpha(0.1) bitmap(generated(color(function(gridWidth), function(gridHeight),white)));
+        pos: $grid.pos(0,3);
+        @alpha(0.1) bitmap(generated(color($grid.width, $grid.height,white)));
         @alpha(0.9) text(dd, "#16: div/mod", white, left, 200);
         repeatable($index, step(25, dx:0)) {
           pos: 5, 20
@@ -322,8 +322,8 @@ relativeLayouts {
       }
 
       point { // example 17: apply
-        pos: grid(1,3);
-        @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),#F0F)));
+        pos: $grid.pos(1,3);
+        @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,#F0F)));
         @alpha(0.9) text(dd, "#17: apply", white, left, 200);
 
         point {
@@ -337,8 +337,8 @@ relativeLayouts {
         }
       }
     point { // example 18: reference
-          pos: grid(2,3);
-          @alpha(0.3) bitmap(generated(color(function(gridWidth), function(gridHeight),yellow)));
+          pos: $grid.pos(2,3);
+          @alpha(0.3) bitmap(generated(color($grid.width, $grid.height,yellow)));
 
           @alpha(0.9) text(dd, "#18: conditionals", white, left, 200);
 

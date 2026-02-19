@@ -1,0 +1,264 @@
+version: 0.5
+
+// Feature Showcase
+// Demonstrates layers, tileGroups, apply blocks, bitmap alignment,
+// and other features not covered by individual demos.
+
+// Helper: shape reference with conditional rendering
+#refShape programmable(width:uint=20, height:uint=20, shape:[rect, triangle], c1:color=white) {
+  @(shape=>rect) bitmap(generated(color($width, $height, $c1)));
+  @(shape=>triangle) pixels (
+    line 0,0, 0, $height, $c1
+    line 0,$height, $width, $height, $c1
+    line $width,$height, 0, 0, $c1
+  );
+}
+
+// Helper: apply block demo
+#applyExample programmable(state:[alpha, filter, scale]) {
+  @(state=>alpha) apply {
+    alpha: 0.4
+  }
+  @(state=>filter) apply {
+    filter: glow(color:white, alpha:0.9, radius:15, smoothColor:true)
+  }
+  @(state=>scale) apply {
+    scale: 0.7
+  }
+  bitmap(generated(color(30, 30, green)));
+}
+
+// Helper: conditional rendering
+#condExample programmable(param1:[A, B, C]) {
+  @(param1=>A) text(m6x11, "A", #44ff44, left): 0, 0
+  @(param1=>B) text(m6x11, "B", #ff4444, left): 0, 0
+  @(param1=>C) text(m6x11, "C", #4444ff, left): 0, 0
+  @(param1=>!C) text(m6x11, "(not C)", #888888, left): 15, 0
+}
+
+// Helper: array demo
+#arrayExample programmable(arr:array = [one, two, three], index:int=0) {
+  text(m6x11, $arr[$index], #ffffff, left): 0, 0
+}
+
+#featureShowcase programmable() {
+
+  // === Section 1: Layers (z-ordering) ===
+  text(exo2_16, "Layers (z-ordering):", #cccccc): 0, 0
+
+  point {
+    pos: 0, 30
+    text(m6x11, "3 on top, 1 on bottom", #888888): 0, 0
+    layers {
+      pos: 0, 15
+      @layer(3) bitmap(generated(color(35, 35, #cc4444)));
+      @layer(2) bitmap(generated(color(35, 35, #44cc44))): 12, 12;
+      @layer(1) bitmap(generated(color(35, 35, #4444cc))): 24, 24
+    }
+  }
+
+  point {
+    pos: 140, 30
+    text(m6x11, "1 on top, 3 on bottom", #888888): 0, 0
+    layers {
+      pos: 0, 15
+      @layer(1) bitmap(generated(color(35, 35, #cc4444)));
+      @layer(2) bitmap(generated(color(35, 35, #44cc44))): 12, 12;
+      @layer(3) bitmap(generated(color(35, 35, #4444cc))): 24, 24
+    }
+  }
+
+  // === Section 2: TileGroup (batched rendering) ===
+  text(exo2_16, "TileGroup (batched):", #cccccc): 340, 0
+
+  point {
+    pos: 340, 30
+    text(m6x11, "regular points:", #888888): 0, 0
+    point {
+      pos: 0, 15
+      bitmap(generated(color(20, 20, #888888))): 0, 0
+      bitmap(generated(color(20, 20, #888888))): 25, 0
+      bitmap(generated(color(20, 20, #888888))): 50, 0
+    }
+  }
+
+  point {
+    pos: 470, 30
+    text(m6x11, "tileGroup:", #888888): 0, 0
+    tileGroup {
+      pos: 0, 15
+      bitmap(generated(color(20, 20, #ff4444))): 0, 0
+      bitmap(generated(color(20, 20, #44ff44))): 25, 0
+      bitmap(generated(color(20, 20, #4444ff))): 50, 0
+    }
+  }
+
+  point {
+    pos: 600, 30
+    text(m6x11, "tileGroup + repeatable:", #888888): 0, 0
+    tileGroup {
+      pos: 0, 15
+      repeatable($i, step(5, dx:5, dy:1)) {
+        @alpha(1.0 - $i/5.0) bitmap(generated(color(20, 20, white))): 0, 0
+      }
+    }
+  }
+
+  // === Section 3: Bitmap Alignment ===
+  text(exo2_16, "Bitmap alignment:", #cccccc): 0, 115
+
+  point {
+    pos: 0, 145
+    bitmap(generated(color(120, 1, white))): 0, 25
+
+    text(m6x11, "left,top", #888888): 0, 0
+    bitmap(generated(color(20, 20, #ff4444)), left, top): 0, 25
+
+    text(m6x11, "left,center", #888888): 45, 0
+    bitmap(generated(color(20, 20, #44ff44)), left, center): 45, 35
+
+    text(m6x11, "left,bottom", #888888): 100, 0
+    bitmap(generated(color(20, 20, #4444ff)), left, bottom): 100, 45
+  }
+
+  point {
+    pos: 160, 145
+    bitmap(generated(color(1, 80, white))): 25, 0
+
+    text(m6x11, "left,top", #888888): 0, 82
+    bitmap(generated(color(20, 20, #ff4444)), left, top): 25, 0
+
+    text(m6x11, "center", #888888): 50, 82
+    bitmap(generated(color(20, 20, #44ff44)), center, top): 75, 0
+
+    text(m6x11, "right", #888888): 100, 82
+    bitmap(generated(color(20, 20, #4444ff)), right, top): 125, 0
+  }
+
+  // === Section 4: Apply Blocks ===
+  text(exo2_16, "Apply blocks:", #cccccc): 340, 115
+
+  point {
+    pos: 340, 145
+    text(m6x11, "alpha:0.4", #888888): 0, 0
+    staticRef($applyExample, state=>alpha): 0, 15
+
+    text(m6x11, "glow filter", #888888): 80, 0
+    staticRef($applyExample, state=>filter): 80, 15
+
+    text(m6x11, "scale:0.7", #888888): 190, 0
+    staticRef($applyExample, state=>scale): 190, 15
+  }
+
+  // === Section 5: References with Parameters ===
+  text(exo2_16, "StaticRef with params:", #cccccc): 560, 115
+
+  point {
+    pos: 560, 145
+    staticRef($refShape, width=>20, height=>20, shape=>rect, c1=>#ff7f50): 0, 0
+    staticRef($refShape, width=>40, height=>30, shape=>triangle, c1=>#44ff44): 30, 0
+    staticRef($refShape, width=>50, height=>20, shape=>rect, c1=>#4488cc): 80, 0
+    staticRef($refShape, width=>30, height=>30, shape=>triangle, c1=>#ffcc44): 140, 0
+  }
+
+  // === Section 6: Div/Mod Grid Layout ===
+  text(exo2_16, "Repeatable with div/mod:", #cccccc): 0, 240
+
+  point {
+    pos: 0, 270
+    repeatable($index, step(20, dx:0)) {
+      bitmap(generated(color(12, 12, #ff4444))): ($index % 5) * 16, ($index div 5) * 16
+    }
+  }
+
+  // === Section 7: Conditionals ===
+  text(exo2_16, "Conditionals:", #cccccc): 140, 240
+
+  point {
+    pos: 140, 270
+    text(m6x11, "param=>A:", #888888): 0, 0
+    staticRef($condExample, param1=>A): 80, 0
+    text(m6x11, "param=>B:", #888888): 0, 15
+    staticRef($condExample, param1=>B): 80, 15
+    text(m6x11, "param=>C:", #888888): 0, 30
+    staticRef($condExample, param1=>C): 80, 30
+  }
+
+  // === Section 8: Array Parameters ===
+  text(exo2_16, "Array parameters:", #cccccc): 340, 240
+
+  point {
+    pos: 340, 270
+    text(m6x11, "index 0:", #888888): 0, 0
+    staticRef($arrayExample, arr=>["first","second","third"], index=>0): 80, 0
+    text(m6x11, "index 1:", #888888): 0, 15
+    staticRef($arrayExample, arr=>["first","second","third"], index=>1): 80, 15
+    text(m6x11, "index 2:", #888888): 0, 30
+    staticRef($arrayExample, arr=>["first","second","third"], index=>2): 80, 30
+  }
+
+  // === Section 9: StateAnim Construct ===
+  text(exo2_16, "StateAnim construct:", #cccccc): 560, 240
+
+  point {
+    pos: 560, 270
+    text(m6x11, "shooting", #888888): 0, 0
+    bitmap(generated(color(64, 64, #222233))): 0, 15
+    stateAnim construct("state1",
+      "state1" => sheet "crew2", marine_r_shooting_u, 10, loop
+    ): 32, 63
+
+    text(m6x11, "killed", #888888): 80, 0
+    bitmap(generated(color(64, 64, #222233))): 80, 15
+    stateAnim construct("state1",
+      "state1" => sheet "crew2", marine_l_killed, 10, loop
+    ): 112, 63
+  }
+
+  // === Section 10: Ninepatch Sizes ===
+  text(exo2_16, "Ninepatch (various sizes):", #cccccc): 0, 365
+
+  point {
+    pos: 0, 395
+    ninepatch("ui", "Window_3x3_idle", 60, 40): 0, 0
+    ninepatch("ui", "Window_3x3_idle", 100, 60): 70, 0
+    ninepatch("ui", "Window_3x3_idle", 40, 80): 180, 0
+    ninepatch("ui", "Window_3x3_idle", 150, 30): 230, 0
+  }
+
+  // === Section 11: Repeatable with Fade ===
+  text(exo2_16, "Repeatable with fade:", #cccccc): 420, 365
+
+  point {
+    pos: 420, 395
+    repeatable($n, step(5, dx:5, dy:1)) {
+      @alpha(1.0 - $n/5.0) scale(2) bitmap(sheet("crew2", "marine_r_shooting_d")): 0, 40;
+    }
+  }
+
+  // === Section 12: Pixels Lines ===
+  text(exo2_16, "Pixels lines:", #cccccc): 0, 490
+
+  point {
+    pos: 0, 520
+    pixels (
+      line 0, 0, 40, 0, #ff4444
+      line 0, 0, 0, 40, #44ff44
+      line 0, 0, 40, 40, #4444ff
+      line 40, 0, 0, 40, #ffff44
+    ) {
+      scale: 2
+    }
+  }
+
+  // === Section 13: Text Styles ===
+  text(exo2_16, "Text rendering:", #cccccc): 200, 490
+
+  point {
+    pos: 200, 520
+    text(m6x11, "m6x11 font", #ff4444, left): 0, 0
+    text(m5x7, "m5x7 font", #44ff44, left): 0, 14
+    text(exo2_14, "exo2 font", #4488cc, left): 0, 26
+    text(pixeled6, "pixeled6 font", #ffcc44, left): 0, 44
+  }
+}

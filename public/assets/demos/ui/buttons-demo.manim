@@ -54,18 +54,31 @@ version: 0.5
         settings{text=>"Info"}
     }
 
+    // Section: Custom Settings (buttons.main with overrides)
+    text(exo2_16, "Custom Settings", #ffeb3b): 0, 300
+    bitmap(generated(color(660, 1, #ffeb3b33))): 0, 322
+
+    placeholder(generated(cross(300, 40, white)), builderParameter("customBtn1")) {
+        pos: 0, 340
+        settings{text=>"Wide Button", width:int=>300, height:int=>40}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("customBtn2")) {
+        pos: 320, 340
+        settings{text=>"Custom Font", font=>"m6x11", fontColor:int=>0xff7f50ff}
+    }
+
     // Click counter display
-    text(exo2_16, "Click Counter", #7fdbda): 0, 310
-    bitmap(generated(color(660, 1, #7fdbda33))): 0, 332
-    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 350
-    #counterText(updatable) text(exo2_20, "Clicks: 0", #ffffff, left, 280): 15, 358
+    text(exo2_16, "Click Counter", #7fdbda): 0, 410
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 432
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 450
+    #counterText(updatable) text(exo2_20, "Clicks: 0", #ffffff, left, 280): 15, 458
 
     // Disable toggle section
-    text(exo2_16, "Disable Toggle", #7fdbda): 0, 420
-    bitmap(generated(color(660, 1, #7fdbda33))): 0, 442
+    text(exo2_16, "Disable Toggle", #7fdbda): 0, 520
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 542
     placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
-        pos: 0, 460
+        pos: 0, 560
         settings{buildName=>checkbox}
     }
-    text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 462
+    text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 562
 }

@@ -1,9 +1,6 @@
 # Demo Suggestions & Rework Plan
 
 ## Immediate Fixes (bugs)
-
-- Combo States: fix overlapping text in rows 2/3, add description text
-- Conditionals: fix multiple text at #4
 - Skill Tree: fix broken functionality
 
 ## Rework Existing Demos

@@ -20,6 +20,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 	var smallBtn1:Null<UIStandardMultiAnimButton>;
 	var smallBtn2:Null<UIStandardMultiAnimButton>;
 	var smallBtn3:Null<UIStandardMultiAnimButton>;
+	var customBtn1:Null<UIStandardMultiAnimButton>;
+	var customBtn2:Null<UIStandardMultiAnimButton>;
 	var disableCheckbox:Null<UIStandardMultiCheckbox>;
 	var clickCount:Int = 0;
 
@@ -39,6 +41,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 			smallBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "small", "OK"),
 			smallBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "small", "No"),
 			smallBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "small", "Info"),
+			customBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Wide Button"),
+			customBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Custom Font"),
 			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
@@ -52,6 +56,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 		smallBtn1 = ui.smallBtn1;
 		smallBtn2 = ui.smallBtn2;
 		smallBtn3 = ui.smallBtn3;
+		customBtn1 = ui.customBtn1;
+		customBtn2 = ui.customBtn2;
 		disableCheckbox = ui.disableCheckbox;
 		addBuilderResult(demoResult);
 	}
@@ -61,7 +67,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 			case UIClick:
 				if (source == normalBtn1 || source == normalBtn2 || source == normalBtn3 ||
 					source == warningBtn1 || source == warningBtn2 || source == warningBtn3 ||
-					source == smallBtn1 || source == smallBtn2 || source == smallBtn3) {
+					source == smallBtn1 || source == smallBtn2 || source == smallBtn3 ||
+					source == customBtn1 || source == customBtn2) {
 					clickCount++;
 					updateCounter();
 				}
@@ -76,6 +83,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 					smallBtn1.disabled = pressed;
 					smallBtn2.disabled = pressed;
 					smallBtn3.disabled = pressed;
+					customBtn1.disabled = pressed;
+					customBtn2.disabled = pressed;
 				}
 			default:
 		}
@@ -105,6 +114,8 @@ class ButtonsDemoScreen extends DemoScreenBase {
 		smallBtn1 = null;
 		smallBtn2 = null;
 		smallBtn3 = null;
+		customBtn1 = null;
+		customBtn2 = null;
 		disableCheckbox = null;
 		clickCount = 0;
 	}

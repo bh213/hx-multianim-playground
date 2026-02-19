@@ -159,7 +159,7 @@ class Main extends hxd.App {
 		// Game-like demos
 		screenManager.addScreen("inventory", new InventoryDemoScreen(screenManager));
 		screenManager.addScreen("characterSheet", new CharacterSheetDemoScreen(screenManager));
-		screenManager.addScreen("minimap", new MinimapDemoScreen(screenManager));
+		screenManager.addScreen("blob47", new Blob47DemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
 		screenManager.addScreen("shop", new ShopDemoScreen(screenManager));
@@ -173,6 +173,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("expressions", new ExpressionsDemoScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsDemoScreen(screenManager));
 		screenManager.addScreen("macroPerformance", new MacroPerformanceDemoScreen(screenManager));
+		screenManager.addScreen("featureShowcase", new FeatureShowcaseDemoScreen(screenManager));
 
 		final window = hxd.Window.getInstance();
 		window.resize(1280, 720);

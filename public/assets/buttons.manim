@@ -5,30 +5,33 @@ version: 0.5
 // #warning - Warning/alert animated button (ui atlas: Altcolor/Button_Warning_3x3_*)
 // #small   - Compact pixel button (ui-new atlas: btn_*_32x16)
 
-#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button") {
-    @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 200, 30):     0,1
-    @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", 200, 30):     0,0
-    @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", 200, 30): 0,0
-    @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", 200, 30):       0,0
+#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12) {
+    @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+    @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+    @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+    @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
 
-    text(dd, $buttonText, 0xffffff12, center, 200): 0,10
+    text($font, $buttonText, $fontColor, center, $width): 0,10
+    settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning") {
-    @(status=>normal, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 200, 30):     0,1
-    @(status=>hover, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_hover", 200, 30):     0,0
-    @(status=>pressed, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_pressed", 200, 30): 0,0
-    @(status=>*, disabled=>true) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_disabled", 200, 30):       0,0
+#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12) {
+    @(status=>normal, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", $width, $height):     0,1
+    @(status=>hover, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_hover", $width, $height):     0,0
+    @(status=>pressed, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_pressed", $width, $height): 0,0
+    @(status=>*, disabled=>true) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_disabled", $width, $height):       0,0
 
-    text(dd, $buttonText, 0xffffff12, center, 200): 0,10
+    text($font, $buttonText, $fontColor, center, $width): 0,10
+    settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#small programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="OK") {
+#small programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="OK", font="f7x5", fontColor:int=0xffffff12) {
     scale: 2
     @(status=>normal, disabled=>false) bitmap(sheet("ui-new", "btn_normal_32x16")):   0,0
     @(status=>hover, disabled=>false) bitmap(sheet("ui-new", "btn_hover_32x16")):     0,0
     @(status=>pressed, disabled=>false) bitmap(sheet("ui-new", "btn_pressed_32x16")): 0,0
     @(status=>*, disabled=>true) bitmap(sheet("ui-new", "btn_disabled_32x16")):       0,0
 
-    text(f7x5, $buttonText, 0xffffff12, center, 32): 0,4
+    text($font, $buttonText, $fontColor, center, 32): 0,4
+    settings{font:string=>$font, fontColor:int=>$fontColor}
 }

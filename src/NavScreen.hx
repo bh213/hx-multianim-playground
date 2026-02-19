@@ -78,6 +78,7 @@ class NavScreen extends UIScreenBase {
 				{id: "expressions", title: "Expressions"},
 				{id: "settings", title: "Settings"},
 				{id: "macroPerformance", title: "Macro Performance"},
+				{id: "featureShowcase", title: "Feature Showcase"},
 			]
 		}
 	];

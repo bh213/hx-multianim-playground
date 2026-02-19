@@ -52,7 +52,7 @@ export const CATEGORIES: CategoryInfo[] = [
         screens: [
             { name: 'inventory', displayName: 'Inventory Grid', category: 'Game-Like Demos', manimFile: 'demos/gamelike/inventory.manim' },
             { name: 'characterSheet', displayName: 'Character Sheet', category: 'Game-Like Demos', manimFile: 'demos/gamelike/character-sheet.manim' },
-            { name: 'minimap', displayName: 'Minimap', category: 'Game-Like Demos', manimFile: 'demos/gamelike/minimap.manim' },
+            { name: 'blob47', displayName: 'Blob47 Autotile', category: 'Game-Like Demos', manimFile: 'demos/gamelike/blob47.manim' },
             { name: 'battleHud', displayName: 'Battle HUD', category: 'Game-Like Demos', manimFile: 'demos/gamelike/battle-hud.manim' },
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'shop', displayName: 'Shop UI', category: 'Game-Like Demos', manimFile: 'demos/gamelike/shop.manim' },
@@ -69,6 +69,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'expressions', displayName: 'Expressions', category: 'Advanced Features', manimFile: 'demos/advanced/expressions.manim' },
             { name: 'settings', displayName: 'Settings', category: 'Advanced Features', manimFile: 'demos/advanced/settings.manim' },
             { name: 'macroPerformance', displayName: 'Macro Performance', category: 'Advanced Features', manimFile: 'demos/advanced/macro-performance.manim' },
+            { name: 'featureShowcase', displayName: 'Feature Showcase', category: 'Advanced Features', manimFile: 'demos/advanced/feature-showcase.manim' },
         ]
     }
 ];

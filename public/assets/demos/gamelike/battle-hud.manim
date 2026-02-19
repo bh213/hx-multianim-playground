@@ -1,76 +1,61 @@
 version: 0.5
 
-// Battle HUD Demo
-// Two-unit battle with HP/MP bars, attack/defend buttons, damage text, and turn system.
+// Hero HUD - HP/MP bars with Dota 2-style damage trail
+// Driven entirely by programmable parameters with dynamicRef
 
-#battleHudDemo programmable() {
+// ── HP bar: green/yellow/red based on HP%, white trail for recent damage ──
+#hpBar programmable(hp:uint=100, maxHp:uint=100, trail:float=100) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#dddddd, filled, $trail * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 1..25) graphics(rect(#cc3322, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 26..60) graphics(rect(#eecc00, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 61..100) graphics(rect(#44cc44, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    text(exo2_14, '${$hp} / ${$maxHp}', #ffffff, center, 310): 0, 2
+}
+
+// ── MP bar: blue normally, reddish when low ──
+#mpBar programmable(mp:uint=50, maxMp:uint=50, trail:float=50) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#88bbdd, filled, $trail * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 1..12) graphics(rect(#993388, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 13..50) graphics(rect(#2196f3, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    text(exo2_14, '${$mp} / ${$maxMp}', #ffffff, center, 310): 0, 2
+}
+
+// ── Main HUD layout ──
+#battleHudDemo programmable(
+    hp:uint=100, maxHp:uint=100, hpTrail:float=100,
+    mp:uint=50, maxMp:uint=50, mpTrail:float=50,
+    dead:uint=1
+) {
     pos: 50, 80
 
     // Title
-    text(exo2_16, "Battle HUD", #7fdbda): 0, 0
-    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_16, 'Hero HUD ${dead}' , #7fdbda): 0, 0
+    graphics(rect(#7fdbda33, filled, 400, 1): 0, 0): 0, 22
 
-    // Turn indicator
-    #turnText(updatable) text(exo2_20, "Your Turn", #ffeb3b, center, 700): 0, 30
-
-    // Hero panel (left)
-    ninepatch("ui", "Window_3x3_idle", 300, 200): 0, 60
-
-    text(exo2_16, "HERO", #4caf50): 20, 75
-    #heroName(updatable) text(exo2_20, "Aethon", #ffffff, left, 250): 20, 100
-
-    // Hero HP
-    text(exo2_14, "HP", #ff4444): 20, 135
-    bitmap(generated(color(230, 18, #1a1a1a))): 50, 135
-    #heroHpBar(updatable) bitmap(generated(color(230, 18, #4caf50))): 50, 135
-    #heroHpText(updatable) text(exo2_14, "100 / 100", #ffffff, center, 230): 50, 136
-
-    // Hero MP
-    text(exo2_14, "MP", #4a90a4): 20, 162
-    bitmap(generated(color(230, 18, #1a1a1a))): 50, 162
-    #heroMpBar(updatable) bitmap(generated(color(230, 18, #4a90a4))): 50, 162
-    #heroMpText(updatable) text(exo2_14, "50 / 50", #ffffff, center, 230): 50, 163
-
-    // Hero status
-    #heroStatusText(updatable) text(exo2_14, "", #aaaaaa, left, 260): 20, 190
-
-    // Enemy panel (right)
-    ninepatch("ui", "Window_3x3_idle", 300, 200): 380, 60
-
-    text(exo2_16, "ENEMY", #ff4444): 400, 75
-    #enemyName(updatable) text(exo2_20, "Dark Slime", #ffffff, left, 250): 400, 100
-
-    // Enemy HP
-    text(exo2_14, "HP", #ff4444): 400, 135
-    bitmap(generated(color(230, 18, #1a1a1a))): 430, 135
-    #enemyHpBar(updatable) bitmap(generated(color(230, 18, #ff4444))): 430, 135
-    #enemyHpText(updatable) text(exo2_14, "80 / 80", #ffffff, center, 230): 430, 136
-
-    // Enemy MP
-    text(exo2_14, "MP", #4a90a4): 400, 162
-    bitmap(generated(color(230, 18, #1a1a1a))): 430, 162
-    #enemyMpBar(updatable) bitmap(generated(color(230, 18, #4a90a4))): 430, 162
-    #enemyMpText(updatable) text(exo2_14, "30 / 30", #ffffff, center, 230): 430, 163
-
-    // Enemy status
-    #enemyStatusText(updatable) text(exo2_14, "", #aaaaaa, left, 260): 400, 190
-
-    // Action buttons
-    ninepatch("ui", "Window_3x3_idle", 300, 60): 0, 275
-    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("attackButton")) {
-        pos: 15, 288
-    }
-    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("defendButton")) {
-        pos: 155, 288
+    // Grayscale on death
+    @(dead => 1) apply {
+        filter: grayscale(1.0)
     }
 
-    // Floating damage text
-    #damageText(updatable) text(exo2_black_20, "", #ff4444, center, 200): 300, 180
+    // Hero panel
+    ninepatch("ui", "Window_3x3_idle", 400, 160): 0, 40
 
-    // Battle log
-    ninepatch("ui", "Window_3x3_idle", 700, 60): 0, 350
-    #logText(updatable) text(exo2_14, "Battle begins!", #aaaaaa, left, 660): 20, 365
+    text(exo2_16, "HERO", #4caf50): 20, 55
+    text(exo2_20, "Aethon", #ffffff, left, 350): 20, 76
 
-    // Instructions
-    text(exo2_light_14, "Click Attack or Defend. Enemy counterattacks after 1.5s.", #666666): 0, 425
+    // HP bar via dynamicRef
+    text(exo2_14, "HP", #ff4444): 20, 108
+    dynamicRef($hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
+
+    // MP bar via dynamicRef
+    text(exo2_14, "MP", #4488cc): 20, 140
+    dynamicRef($mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
+
+    // Status (shows DEAD)
+    @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 360): 20, 170
+
+    // Description
+    text(exo2_light_14, "HP and MP drain with Dota 2-style trail. Grayscale on death, then reset.", #666666): 0, 215
 }

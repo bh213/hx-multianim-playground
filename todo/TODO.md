@@ -12,3 +12,4 @@
 - conditiionals initial version shows multiple text at #4
 - settings - no idea what this is supposed to show, text is fine though
 - dropdowns - initial settings doesn't apply if clicked again
+- filters - use programmables and manim

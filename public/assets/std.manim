@@ -11,12 +11,12 @@ version: 0.5
     @if(size=>300) point {
       ninepatch("ui", "Sliderbar_H_3x1", 310, 8) {
         grid: 3, 1;
-        #start point:grid(0, -1)
-        #end point:grid(100, -1)
-        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):grid($value,-1)
-        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):grid($value,-1)
-        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):grid($value,-1)
-        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):grid($value,-1)
+        #start point:$grid.pos(0, -1)
+        #end point:$grid.pos(100, -1)
+        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):$grid.pos($value,-1)
+        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):$grid.pos($value,-1)
+        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):$grid.pos($value,-1)
+        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):$grid.pos($value,-1)
       }
     
     }
@@ -24,13 +24,13 @@ version: 0.5
       
       ninepatch("ui", "Sliderbar_H_3x1", 210, 8) {
         grid:2, 1
-        #start point:grid(0, -1)
-        #end point:grid(100, -1)
+        #start point:$grid.pos(0, -1)
+        #end point:$grid.pos(100, -1)
 
-        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):grid($value,-1)
-        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):grid($value,-1)
-        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):grid($value,-1)
-        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):grid($value,-1)
+        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):$grid.pos($value,-1)
+        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):$grid.pos($value,-1)
+        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):$grid.pos($value,-1)
+        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):$grid.pos($value,-1)
         
       
     }
@@ -40,13 +40,13 @@ version: 0.5
       
       ninepatch("ui", "Sliderbar_H_3x1", 110, 8) {
         grid:1, 1
-        #start point:grid(0, -1)
-        #end point:grid(100, -1)
+        #start point:$grid.pos(0, -1)
+        #end point:$grid.pos(100, -1)
 
-        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):grid($value,-1)
-        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):grid($value,-1)
-        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):grid($value,-1)
-        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):grid($value,-1)
+        #slider @(status=>hover)  bitmap(sheet("ui", "Slider_button_hover")):$grid.pos($value,-1)
+        #slider @(status=>normal)  bitmap(sheet("ui", "Slider_button_idle")):$grid.pos($value,-1)
+        #slider @(status=>pressed)  bitmap(sheet("ui", "Slider_button_pressed")):$grid.pos($value,-1)
+        #slider @(status=>*, disabled=>true)  bitmap(sheet("ui", "Slider_button_disabled")):$grid.pos($value,-1)
       
     }
     }

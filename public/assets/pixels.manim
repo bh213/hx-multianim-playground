@@ -12,7 +12,7 @@ version: 0.5
 
     // Squares (20x20)
     point {
-        pos: grid(0, 1)
+        pos: $grid.pos(0, 1)
         pixels (
             rect 0,0, 20,20, #00f
             rect 1,1, 9,9, #f0f
@@ -28,7 +28,7 @@ version: 0.5
 
     // Single pixels (red, green, blue)
     point {
-        pos: grid(1, 1)
+        pos: $grid.pos(1, 1)
         pixels (
             pixel 0,0, #f00
             pixel 1,1, #0f0
@@ -42,24 +42,24 @@ version: 0.5
 
     // Hexagon using hexCorner
     point {
-        pos: grid(2, 1)
+        pos: $grid.pos(2, 1)
         pixels (
-            line hexCorner(0, 1.1), hexCorner(1, 1.1), #f00
-            line hexCorner(1, 1.1), hexCorner(2, 1.1), #0f0
-            line hexCorner(2, 1.1), hexCorner(3, 1.1), #00f
-            line hexCorner(3, 1.1), hexCorner(4, 1.1), #ff0
-            line hexCorner(4, 1.1), hexCorner(5, 1.1), #f0f
-            line hexCorner(5, 1.1), hexCorner(0, 1.1), #fff
+            line $hex.corner(0, 1.1), $hex.corner(1, 1.1), #f00
+            line $hex.corner(1, 1.1), $hex.corner(2, 1.1), #0f0
+            line $hex.corner(2, 1.1), $hex.corner(3, 1.1), #00f
+            line $hex.corner(3, 1.1), $hex.corner(4, 1.1), #ff0
+            line $hex.corner(4, 1.1), $hex.corner(5, 1.1), #f0f
+            line $hex.corner(5, 1.1), $hex.corner(0, 1.1), #fff
         ) {
             scale: 4
             pos: 0, 0
         }
-        text(pixellari, "Hexagon using hexCorner, scale 4", #0f0, left, grid): 0, -40
+        text(pixellari, "Hexagon using $hex.corner, scale 4", #0f0, left, grid): 0, -40
     }
 
     // Cross (20x20)
     point {
-        pos: grid(3, 1)
+        pos: $grid.pos(3, 1)
         pixels (
             line -10,0, 10,0, #f00
             line 0,-10, 0,10, #f00
@@ -73,7 +73,7 @@ version: 0.5
 
     // Single yellow pixel
     point {
-        pos: grid(4, 1)
+        pos: $grid.pos(4, 1)
         pixels (
             pixel 0,0, #ff0
         ) {
@@ -85,7 +85,7 @@ version: 0.5
 
     // Diagonal lines (1px)
     point {
-        pos: grid(0, 2)
+        pos: $grid.pos(0, 2)
         pixels (
             line 0,0, 20,20, #f00
             line 1,0, 21,20, #ff0
@@ -98,7 +98,7 @@ version: 0.5
 
     
     point {
-        pos: grid(1, 2)
+        pos: $grid.pos(1, 2)
         pixels (
             rect 0,0, 1,40, #fff
             rect 0,0, 40,1, #fff
@@ -113,7 +113,7 @@ version: 0.5
 
     
     point {
-        pos: grid(2, 2)
+        pos: $grid.pos(2, 2)
         repeatable($i, step(10, dx:10, dy:10)) {
             pixels (
                 rect 0,0, 5,5, #fff
@@ -128,7 +128,7 @@ version: 0.5
 
     // Checkerboard 4x4 (1px)
     point {
-        pos: grid(3, 2)
+        pos: $grid.pos(3, 2)
         // White squares
         repeatable($y, range(1, 10)) {
             repeatable($x, range(1,10)) {
@@ -146,7 +146,7 @@ version: 0.5
 
     
     point {
-        pos: grid(4, 2)
+        pos: $grid.pos(4, 2)
         
         point {
         pixels (
@@ -186,7 +186,7 @@ version: 0.5
 
     
     point {
-        pos: grid(5, 2)
+        pos: $grid.pos(5, 2)
         // "/" direction (bottom-left to top-right)
         repeatable($i, range(0, 9)) {
             pixels (
@@ -210,7 +210,7 @@ version: 0.5
 
     // Pixel staircase (1x1 px, offset 10px)
     point {
-        pos: grid(0, 3)
+        pos: $grid.pos(0, 3)
         repeatable($i, step(10, dx:10, dy:10)) {
             pixels (
                 pixel 0,0, #ff0

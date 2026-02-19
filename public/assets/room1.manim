@@ -5,11 +5,11 @@ relativeLayouts {
   grid: 21, 31 {
   offset: 50,50 {
   
-  #roomCheckboxes sequence($i: 1..6) point: grid(0,$i)	
-  #cornerCheckboxes sequence($i: 1..6) point: grid(1,$i)	
-  #panelCheckboxes sequence($i: 1..6) point: grid(2,$i)	
+  #roomCheckboxes sequence($i: 1..6) point: $grid.pos(0,$i)	
+  #cornerCheckboxes sequence($i: 1..6) point: $grid.pos(1,$i)	
+  #panelCheckboxes sequence($i: 1..6) point: $grid.pos(2,$i)	
 
-  #panelButtons sequence($i: 10..16) point: grid(0,$i)
+  #panelButtons sequence($i: 10..16) point: $grid.pos(0,$i)
   }
   }
 }
@@ -20,12 +20,12 @@ relativeLayouts {
       hex:pointy(197, 180)
       point {
           pixels (
-            line hexCorner(0, 1.1), hexCorner(1, 1.1), #fF0000FF
-            line hexCorner(1, 1.1), hexCorner(2, 1.1), #fFFF0000
-            line hexCorner(2, 1.1), hexCorner(3, 1.1), #fF0000FF
-            line hexCorner(3, 1.1), hexCorner(4, 1.1), #fFFF0000
-            line hexCorner(4, 1.1), hexCorner(5, 1.1), #fF0000FF
-            line hexCorner(5, 1.1), hexCorner(0, 1.1), #fFFF0000
+            line $hex.corner(0, 1.1), $hex.corner(1, 1.1), #fF0000FF
+            line $hex.corner(1, 1.1), $hex.corner(2, 1.1), #fFFF0000
+            line $hex.corner(2, 1.1), $hex.corner(3, 1.1), #fF0000FF
+            line $hex.corner(3, 1.1), $hex.corner(4, 1.1), #fFFF0000
+            line $hex.corner(4, 1.1), $hex.corner(5, 1.1), #fF0000FF
+            line $hex.corner(5, 1.1), $hex.corner(0, 1.1), #fFFF0000
           ):0,-4
       }
 

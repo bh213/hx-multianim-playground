@@ -1524,79 +1524,64 @@ paths {
 }
 `,cf=`version: 0.5
 
-// Battle HUD Demo
-// Two-unit battle with HP/MP bars, attack/defend buttons, damage text, and turn system.
+// Hero HUD - HP/MP bars with Dota 2-style damage trail
+// Driven entirely by programmable parameters with dynamicRef
 
-#battleHudDemo programmable() {
+// ── HP bar: green/yellow/red based on HP%, white trail for recent damage ──
+#hpBar programmable(hp:uint=100, maxHp:uint=100, trail:float=100) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#dddddd, filled, $trail * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 1..25) graphics(rect(#cc3322, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 26..60) graphics(rect(#eecc00, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 61..100) graphics(rect(#44cc44, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    text(exo2_14, '\${$hp} / \${$maxHp}', #ffffff, center, 310): 0, 2
+}
+
+// ── MP bar: blue normally, reddish when low ──
+#mpBar programmable(mp:uint=50, maxMp:uint=50, trail:float=50) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#88bbdd, filled, $trail * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 1..12) graphics(rect(#993388, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 13..50) graphics(rect(#2196f3, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    text(exo2_14, '\${$mp} / \${$maxMp}', #ffffff, center, 310): 0, 2
+}
+
+// ── Main HUD layout ──
+#battleHudDemo programmable(
+    hp:uint=100, maxHp:uint=100, hpTrail:float=100,
+    mp:uint=50, maxMp:uint=50, mpTrail:float=50,
+    dead:uint=1
+) {
     pos: 50, 80
 
     // Title
-    text(exo2_16, "Battle HUD", #7fdbda): 0, 0
-    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_16, 'Hero HUD \${dead}' , #7fdbda): 0, 0
+    graphics(rect(#7fdbda33, filled, 400, 1): 0, 0): 0, 22
 
-    // Turn indicator
-    #turnText(updatable) text(exo2_20, "Your Turn", #ffeb3b, center, 700): 0, 30
-
-    // Hero panel (left)
-    ninepatch("ui", "Window_3x3_idle", 300, 200): 0, 60
-
-    text(exo2_16, "HERO", #4caf50): 20, 75
-    #heroName(updatable) text(exo2_20, "Aethon", #ffffff, left, 250): 20, 100
-
-    // Hero HP
-    text(exo2_14, "HP", #ff4444): 20, 135
-    bitmap(generated(color(230, 18, #1a1a1a))): 50, 135
-    #heroHpBar(updatable) bitmap(generated(color(230, 18, #4caf50))): 50, 135
-    #heroHpText(updatable) text(exo2_14, "100 / 100", #ffffff, center, 230): 50, 136
-
-    // Hero MP
-    text(exo2_14, "MP", #4a90a4): 20, 162
-    bitmap(generated(color(230, 18, #1a1a1a))): 50, 162
-    #heroMpBar(updatable) bitmap(generated(color(230, 18, #4a90a4))): 50, 162
-    #heroMpText(updatable) text(exo2_14, "50 / 50", #ffffff, center, 230): 50, 163
-
-    // Hero status
-    #heroStatusText(updatable) text(exo2_14, "", #aaaaaa, left, 260): 20, 190
-
-    // Enemy panel (right)
-    ninepatch("ui", "Window_3x3_idle", 300, 200): 380, 60
-
-    text(exo2_16, "ENEMY", #ff4444): 400, 75
-    #enemyName(updatable) text(exo2_20, "Dark Slime", #ffffff, left, 250): 400, 100
-
-    // Enemy HP
-    text(exo2_14, "HP", #ff4444): 400, 135
-    bitmap(generated(color(230, 18, #1a1a1a))): 430, 135
-    #enemyHpBar(updatable) bitmap(generated(color(230, 18, #ff4444))): 430, 135
-    #enemyHpText(updatable) text(exo2_14, "80 / 80", #ffffff, center, 230): 430, 136
-
-    // Enemy MP
-    text(exo2_14, "MP", #4a90a4): 400, 162
-    bitmap(generated(color(230, 18, #1a1a1a))): 430, 162
-    #enemyMpBar(updatable) bitmap(generated(color(230, 18, #4a90a4))): 430, 162
-    #enemyMpText(updatable) text(exo2_14, "30 / 30", #ffffff, center, 230): 430, 163
-
-    // Enemy status
-    #enemyStatusText(updatable) text(exo2_14, "", #aaaaaa, left, 260): 400, 190
-
-    // Action buttons
-    ninepatch("ui", "Window_3x3_idle", 300, 60): 0, 275
-    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("attackButton")) {
-        pos: 15, 288
-    }
-    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("defendButton")) {
-        pos: 155, 288
+    // Grayscale on death
+    @(dead => 1) apply {
+        filter: grayscale(1.0)
     }
 
-    // Floating damage text
-    #damageText(updatable) text(exo2_black_20, "", #ff4444, center, 200): 300, 180
+    // Hero panel
+    ninepatch("ui", "Window_3x3_idle", 400, 160): 0, 40
 
-    // Battle log
-    ninepatch("ui", "Window_3x3_idle", 700, 60): 0, 350
-    #logText(updatable) text(exo2_14, "Battle begins!", #aaaaaa, left, 660): 20, 365
+    text(exo2_16, "HERO", #4caf50): 20, 55
+    text(exo2_20, "Aethon", #ffffff, left, 350): 20, 76
 
-    // Instructions
-    text(exo2_light_14, "Click Attack or Defend. Enemy counterattacks after 1.5s.", #666666): 0, 425
+    // HP bar via dynamicRef
+    text(exo2_14, "HP", #ff4444): 20, 108
+    dynamicRef($hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
+
+    // MP bar via dynamicRef
+    text(exo2_14, "MP", #4488cc): 20, 140
+    dynamicRef($mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
+
+    // Status (shows DEAD)
+    @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 360): 20, 170
+
+    // Description
+    text(exo2_light_14, "HP and MP drain with Dota 2-style trail. Grayscale on death, then reset.", #666666): 0, 215
 }
 `,df=`version: 0.5
 
@@ -3561,7 +3546,7 @@ relativeLayouts {
     }
     placeholder(generated(cross(200, 30, white)), builderParameter("customBtn2")) {
         pos: 320, 340
-        settings{text=>"Custom Font", font=>"m6x11", fontColor:int=>0xff7f50ff}
+        settings{text=>"Custom Font", font=>"m6x11", fontColor:color=>orange}
     }
 
     // Click counter display
@@ -3858,6 +3843,18 @@ paths {
     }
 
     #autoManyText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 345
+
+    // Section: Custom Font & Color
+    text(exo2_16, "Custom Font & Color", #ffeb3b): 0, 420
+    bitmap(generated(color(600, 1, #ffeb3b33))): 0, 442
+    text(exo2_light_14, "White text with dd font:", #cccccc): 0, 455
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownCustom")) {
+        pos: 0, 475
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150, font=>"dd", fontColor:color=>white}
+    }
+
+    #customText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 485
 }
 `,Af=`version: 0.5
 
@@ -4091,7 +4088,7 @@ paths {
     // Scrollable list placeholder
     placeholder(generated(cross(200, 300, #FF0000)), builderParameter("scrollableList")) {
         pos: 0, 55
-        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200}
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>300, width:int=>200, font=>"dd", fontColor:color=>white}
     }
 
     // Selected item display
@@ -4445,7 +4442,7 @@ paths {
 }
 
 
-#dropdown programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled,normal], panel:[open, closed]) {
+#dropdown programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled,normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffff12) {
       
       #panelPoint (updatable) point: 0, 30;
       //placeholder(generated(cross(120, 200)), builderParameter("panel")):5,10
@@ -4455,35 +4452,35 @@ paths {
       @(status=>disabled) ninepatch("ui", "dropdown-button-disabled", 120, 30);
       @(panel=>closed) bitmap(sheet("ui", "icon_drop_fold_idle")):108,17
       @(panel=>open) bitmap(sheet("ui", "icon_drop_open")):108,17
-      #selectedName(updatable) text(m6x11, callback("selectedName"), 0xffffff12, center, 120): -4,6
+      #selectedName(updatable) text($font, callback("selectedName"), $fontColor, center, 120): -4,6
       // @(images=>placeholder) placeholder(generated(cross(15, 15)), callback("test")):8,5
       settings{transitionTimer:float=>0.2}
 }
 
 
-#list-item-120 programmable(images:[none,placeholder,tile]=placeholder,status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114,  index:uint=0, title="title") {
-        
+#list-item-120 programmable(images:[none,placeholder,tile]=placeholder,status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114,  index:uint=0, title="title", font="m6x11", fontColor:int=0xffffff12) {
+
         @(status=>normal, selected=>false, disabled=>false) ninepatch("ui", "droppanel-mid-idle", $itemWidth+4, 20): -2,0
         @(status=>normal, selected=>true, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, 20): -2,0
-        
+
         @(status=>pressed, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, 20) {
           pos:-2,0;
           alpha:0.1;
           blendMode: alphaAdd;
-        } 
+        }
         @(status=>hover, disabled=>false) ninepatch("ui", "droppanel-mid-hover", $itemWidth+4, 20) {
           pos:-2,0;
           alpha:0.1;
           blendMode: alphaAdd;
-        } 
-        
+        }
+
         @(disabled=>true) ninepatch("ui", "droppanel-mid-disabled", $itemWidth+4, 20): -2,0
-        
-        text(m6x11, $title, 0xffffff12, left, 120): 24,4
+
+        text($font, $title, $fontColor, left, 120): 24,4
         @(images=>placeholder) placeholder(generated(cross(15, 15, white)), callback("test")):5,3
         @(images=>tile) bitmap($tile):5,3
         interactive($itemWidth , 20, $index);
-        settings{height:float=>20}
+        settings{height:float=>20, font:string=>$font, fontColor:int=>$fontColor}
 }
 
 #list-panel programmable(width:uint=200, height:uint=200, topClearance:uint = 0) {
@@ -4852,4 +4849,4 @@ animation {
  * @public
  */var t=function(r){var a=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,l=0,i={},o={manual:r.Prism&&r.Prism.manual,disableWorkerMessageHandler:r.Prism&&r.Prism.disableWorkerMessageHandler,util:{encode:function s(u){return u instanceof c?new c(u.type,s(u.content),u.alias):Array.isArray(u)?u.map(s):u.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++l}),s.__id},clone:function s(u,f){f=f||{};var h,g;switch(o.util.type(u)){case"Object":if(g=o.util.objId(u),f[g])return f[g];h={},f[g]=h;for(var b in u)u.hasOwnProperty(b)&&(h[b]=s(u[b],f));return h;case"Array":return g=o.util.objId(u),f[g]?f[g]:(h=[],f[g]=h,u.forEach(function(y,$){h[$]=s(y,f)}),h);default:return u}},getLanguage:function(s){for(;s;){var u=a.exec(s.className);if(u)return u[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,u){s.className=s.className.replace(RegExp(a,"gi"),""),s.classList.add("language-"+u)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var u=document.getElementsByTagName("script");for(var f in u)if(u[f].src==s)return u[f]}return null}},isActive:function(s,u,f){for(var h="no-"+u;s;){var g=s.classList;if(g.contains(u))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!f}},languages:{plain:i,plaintext:i,text:i,txt:i,extend:function(s,u){var f=o.util.clone(o.languages[s]);for(var h in u)f[h]=u[h];return f},insertBefore:function(s,u,f,h){h=h||o.languages;var g=h[s],b={};for(var y in g)if(g.hasOwnProperty(y)){if(y==u)for(var $ in f)f.hasOwnProperty($)&&(b[$]=f[$]);f.hasOwnProperty(y)||(b[y]=g[y])}var T=h[s];return h[s]=b,o.languages.DFS(o.languages,function(z,de){de===T&&z!=s&&(this[z]=b)}),b},DFS:function s(u,f,h,g){g=g||{};var b=o.util.objId;for(var y in u)if(u.hasOwnProperty(y)){f.call(u,y,u[y],h||y);var $=u[y],T=o.util.type($);T==="Object"&&!g[b($)]?(g[b($)]=!0,s($,f,null,g)):T==="Array"&&!g[b($)]&&(g[b($)]=!0,s($,f,y,g))}}},plugins:{},highlightAll:function(s,u){o.highlightAllUnder(document,s,u)},highlightAllUnder:function(s,u,f){var h={callback:f,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};o.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),o.hooks.run("before-all-elements-highlight",h);for(var g=0,b;b=h.elements[g++];)o.highlightElement(b,u===!0,h.callback)},highlightElement:function(s,u,f){var h=o.util.getLanguage(s),g=o.languages[h];o.util.setLanguage(s,h);var b=s.parentElement;b&&b.nodeName.toLowerCase()==="pre"&&o.util.setLanguage(b,h);var y=s.textContent,$={element:s,language:h,grammar:g,code:y};function T(de){$.highlightedCode=de,o.hooks.run("before-insert",$),$.element.innerHTML=$.highlightedCode,o.hooks.run("after-highlight",$),o.hooks.run("complete",$),f&&f.call($.element)}if(o.hooks.run("before-sanity-check",$),b=$.element.parentElement,b&&b.nodeName.toLowerCase()==="pre"&&!b.hasAttribute("tabindex")&&b.setAttribute("tabindex","0"),!$.code){o.hooks.run("complete",$),f&&f.call($.element);return}if(o.hooks.run("before-highlight",$),!$.grammar){T(o.util.encode($.code));return}if(u&&r.Worker){var z=new Worker(o.filename);z.onmessage=function(de){T(de.data)},z.postMessage(JSON.stringify({language:$.language,code:$.code,immediateClose:!0}))}else T(o.highlight($.code,$.grammar,$.language))},highlight:function(s,u,f){var h={code:s,grammar:u,language:f};if(o.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=o.tokenize(h.code,h.grammar),o.hooks.run("after-tokenize",h),c.stringify(o.util.encode(h.tokens),h.language)},tokenize:function(s,u){var f=u.rest;if(f){for(var h in f)u[h]=f[h];delete u.rest}var g=new x;return m(g,g.head,s),v(s,g,u,g.head,0),k(g)},hooks:{all:{},add:function(s,u){var f=o.hooks.all;f[s]=f[s]||[],f[s].push(u)},run:function(s,u){var f=o.hooks.all[s];if(!(!f||!f.length))for(var h=0,g;g=f[h++];)g(u)}},Token:c};r.Prism=o;function c(s,u,f,h){this.type=s,this.content=u,this.alias=f,this.length=(h||"").length|0}c.stringify=function s(u,f){if(typeof u=="string")return u;if(Array.isArray(u)){var h="";return u.forEach(function(T){h+=s(T,f)}),h}var g={type:u.type,content:s(u.content,f),tag:"span",classes:["token",u.type],attributes:{},language:f},b=u.alias;b&&(Array.isArray(b)?Array.prototype.push.apply(g.classes,b):g.classes.push(b)),o.hooks.run("wrap",g);var y="";for(var $ in g.attributes)y+=" "+$+'="'+(g.attributes[$]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function p(s,u,f,h){s.lastIndex=u;var g=s.exec(f);if(g&&h&&g[1]){var b=g[1].length;g.index+=b,g[0]=g[0].slice(b)}return g}function v(s,u,f,h,g,b){for(var y in f)if(!(!f.hasOwnProperty(y)||!f[y])){var $=f[y];$=Array.isArray($)?$:[$];for(var T=0;T<$.length;++T){if(b&&b.cause==y+","+T)return;var z=$[T],de=z.inside,nn=!!z.lookbehind,ht=!!z.greedy,ka=z.alias;if(ht&&!z.pattern.global){var gt=z.pattern.toString().match(/[imsuy]*$/)[0];z.pattern=RegExp(z.pattern.source,gt+"g")}for(var Mn=z.pattern||z,C=h.next,P=g;C!==u.tail&&!(b&&P>=b.reach);P+=C.value.length,C=C.next){var R=C.value;if(u.length>s.length)return;if(!(R instanceof c)){var M=1,D;if(ht){if(D=p(Mn,P,s,nn),!D||D.index>=s.length)break;var Se=D.index,In=D.index+D[0].length,te=P;for(te+=C.value.length;Se>=te;)C=C.next,te+=C.value.length;if(te-=C.value.length,P=te,C.value instanceof c)continue;for(var He=C;He!==u.tail&&(te<In||typeof He.value=="string");He=He.next)M++,te+=He.value.length;M--,R=s.slice(P,te),D.index-=P}else if(D=p(Mn,0,R,nn),!D)continue;var Se=D.index,Ue=D[0],Sa=R.slice(0,Se),Vi=R.slice(Se+Ue.length),Ca=P+R.length;b&&Ca>b.reach&&(b.reach=Ca);var ir=C.prev;Sa&&(ir=m(u,ir,Sa),P+=Sa.length),w(u,ir,M);var xc=new c(y,de?o.tokenize(Ue,de):Ue,ka,Ue);if(C=m(u,ir,xc),Vi&&m(u,C,Vi),M>1){var $a={cause:y+","+T,reach:Ca};v(s,u,f,C.prev,P,$a),b&&$a.reach>b.reach&&(b.reach=$a.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},u={value:null,prev:s,next:null};s.next=u,this.head=s,this.tail=u,this.length=0}function m(s,u,f){var h=u.next,g={value:f,prev:u,next:h};return u.next=g,h.prev=g,s.length++,g}function w(s,u,f){for(var h=u.next,g=0;g<f&&h!==s.tail;g++)h=h.next;u.next=h,h.prev=u,s.length-=g}function k(s){for(var u=[],f=s.head.next;f!==s.tail;)u.push(f.value),f=f.next;return u}if(!r.document)return r.addEventListener&&(o.disableWorkerMessageHandler||r.addEventListener("message",function(s){var u=JSON.parse(s.data),f=u.language,h=u.code,g=u.immediateClose;r.postMessage(o.highlight(h,o.languages[f],f)),g&&r.close()},!1)),o;var _=o.util.currentScript();_&&(o.filename=_.src,_.hasAttribute("data-manual")&&(o.manual=!0));function E(){o.manual||o.highlightAll()}if(!o.manual){var d=document.readyState;d==="loading"||d==="interactive"&&_&&_.defer?document.addEventListener("DOMContentLoaded",E):window.requestAnimationFrame?window.requestAnimationFrame(E):window.setTimeout(E,16)}return o}(n);e.exports&&(e.exports=t),typeof el<"u"&&(el.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(r){r.type==="entity"&&(r.attributes.title=r.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(a,l){var i={};i["language-"+l]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[l]},i.cdata=/^<!\[CDATA\[|\]\]>$/i;var o={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:i}};o["language-"+l]={pattern:/[\s\S]+/,inside:t.languages[l]};var c={};c[a]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return a}),"i"),lookbehind:!0,greedy:!0,inside:o},t.languages.insertBefore("markup","cdata",c)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(r,a){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+r+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[a,"language-"+a],inside:t.languages[a]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(r){var a=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;r.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+a.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+a.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+a.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+a.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:a,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},r.languages.css.atrule.inside.rest=r.languages.css;var l=r.languages.markup;l&&(l.tag.addInlined("style","css"),l.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var r="Loading…",a=function(_,E){return"✖ Error "+_+" while fetching file: "+E},l="✖ Error: File does not exist or is empty",i={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},o="data-src-status",c="loading",p="loaded",v="failed",x="pre[data-src]:not(["+o+'="'+p+'"]):not(['+o+'="'+c+'"])';function m(_,E,d){var s=new XMLHttpRequest;s.open("GET",_,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?E(s.responseText):s.status>=400?d(a(s.status,s.statusText)):d(l))},s.send(null)}function w(_){var E=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(_||"");if(E){var d=Number(E[1]),s=E[2],u=E[3];return s?u?[d,Number(u)]:[d,void 0]:[d,d]}}t.hooks.add("before-highlightall",function(_){_.selector+=", "+x}),t.hooks.add("before-sanity-check",function(_){var E=_.element;if(E.matches(x)){_.code="",E.setAttribute(o,c);var d=E.appendChild(document.createElement("CODE"));d.textContent=r;var s=E.getAttribute("data-src"),u=_.language;if(u==="none"){var f=(/\.(\w+)$/.exec(s)||[,"none"])[1];u=i[f]||f}t.util.setLanguage(d,u),t.util.setLanguage(E,u);var h=t.plugins.autoloader;h&&h.loadLanguages(u),m(s,function(g){E.setAttribute(o,p);var b=w(E.getAttribute("data-range"));if(b){var y=g.split(/\r\n?|\n/g),$=b[0],T=b[1]==null?y.length:b[1];$<0&&($+=y.length),$=Math.max(0,Math.min($-1,y.length)),T<0&&(T+=y.length),T=Math.max(0,Math.min(T,y.length)),g=y.slice($,T).join(`
 `),E.hasAttribute("data-start")||E.setAttribute("data-start",String($+1))}d.textContent=g,t.highlightElement(d)},function(g){E.setAttribute(o,v),d.textContent=g})}}),t.plugins.fileHighlight={highlight:function(E){for(var d=(E||document).querySelectorAll(x),s=0,u;u=d[s++];)t.highlightElement(u)}};var k=!1;t.fileHighlight=function(){k||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),k=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mc);var Kf=mc.exports;const Xl=Kl(Kf);Xl.languages.manim||(Xl.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function Zf({source:e,visible:n}){const t=ve.useRef(null);return ve.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Xl.highlightElement(t.current))},[e]),!n||!e?null:A.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[A.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),A.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:A.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:A.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Ja="nav";function qf(){const[e,n]=ve.useState(Ja),[t,r]=ve.useState(!1),[a,l]=ve.useState(!1),[i,o]=ve.useState(null),[c]=ve.useState(()=>new Yf);ve.useEffect(()=>(window.playgroundLoader=c,window.defaultScreen=Ja,()=>{c.dispose()}),[c]),ve.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const k=w[1];n(k),c.switchScreen(k)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[c]);const p=x=>{n(x),window.location.hash=`screen=${x}`,c.switchScreen(x);const m=c.getSourceForScreen(x);o(m)},v=()=>{if(!a){const x=c.getSourceForScreen(e);o(x)}l(!a)};return A.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[A.jsx(Xf,{currentScreen:e,onScreenSelect:p,collapsed:t,onToggleCollapse:()=>r(!t)}),A.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[A.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[A.jsx("button",{onClick:()=>p(Ja),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),A.jsx("div",{className:"flex items-center space-x-3",children:A.jsx("button",{onClick:v,className:`text-xs px-2 py-0.5 rounded transition-colors ${a?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:a?"Hide Source":"View .manim"})})]}),A.jsxs("div",{className:"flex-1 flex min-h-0",children:[A.jsx("div",{className:`${a?"w-2/3":"w-full"} min-h-0`,children:A.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),a&&A.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:A.jsx(Zf,{source:i,visible:a})})]})]})]})}var hc={exports:{}};(function(e,n){(function(t,r){e.exports=r()})(el,function(){var t=function(){},r={},a={},l={};function i(m,w){m=m.push?m:[m];var k=[],_=m.length,E=_,d,s,u,f;for(d=function(h,g){g.length&&k.push(h),E--,E||w(k)};_--;){if(s=m[_],u=a[s],u){d(s,u);continue}f=l[s]=l[s]||[],f.push(d)}}function o(m,w){if(m){var k=l[m];if(a[m]=w,!!k)for(;k.length;)k[0](m,w),k.splice(0,1)}}function c(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function p(m,w,k,_){var E=document,d=k.async,s=(k.numRetries||0)+1,u=k.before||t,f=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,b,y;if(_=_||0,/(^css!|\.css$)/.test(f))y=E.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(f))y=E.createElement("img"),y.src=h;else if(y=E.createElement("script"),y.src=h,y.async=d===void 0?!0:d,b="noModule"in y,/^module!/.test(f)){if(!b)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(f)&&b)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function($){var T=$.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(z){z.code!=18&&(T="e")}if(T=="e"){if(_+=1,_<s)return p(m,w,k,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,T,$.defaultPrevented)},u(m,y)!==!1&&E.head.appendChild(y)}function v(m,w,k){m=m.push?m:[m];var _=m.length,E=_,d=[],s,u;for(s=function(f,h,g){if(h=="e"&&d.push(f),h=="b")if(g)d.push(f);else return;_--,_||w(d)},u=0;u<E;u++)p(m[u],s,k)}function x(m,w,k){var _,E;if(w&&w.trim&&(_=w),E=(_?k:w)||{},_){if(_ in r)throw"LoadJS";r[_]=!0}function d(s,u){v(m,function(f){c(E,f),s&&c({success:s,error:u},f),o(_,f)},E)}if(E.returnPromise)return new Promise(d);d()}return x.ready=function(w,k){return i(w,function(_){c(k,_)}),x},x.done=function(w){o(w,[])},x.reset=function(){r={},a={},l={}},x.isDefined=function(w){return w in r},x})})(hc);var Jf=hc.exports;const ep=Kl(Jf);class np{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);ep("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gc=new np({maxRetries:5,retryDelay:2e3,timeout:1e4});gc.start();window.haxeLoader=gc;nl.createRoot(document.getElementById("root")).render(A.jsx(zc.StrictMode,{children:A.jsx(qf,{})}));
-//# sourceMappingURL=index-Q1WKH-YR.js.map
+//# sourceMappingURL=index-BG4l0ptq.js.map

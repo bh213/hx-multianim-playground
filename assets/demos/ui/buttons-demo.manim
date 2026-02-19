@@ -64,7 +64,7 @@ version: 0.5
     }
     placeholder(generated(cross(200, 30, white)), builderParameter("customBtn2")) {
         pos: 320, 340
-        settings{text=>"Custom Font", font=>"m6x11", fontColor:int=>0xff7f50ff}
+        settings{text=>"Custom Font", font=>"m6x11", fontColor:color=>orange}
     }
 
     // Click counter display

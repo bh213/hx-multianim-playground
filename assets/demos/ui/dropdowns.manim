@@ -41,4 +41,16 @@ version: 0.5
     }
 
     #autoManyText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 345
+
+    // Section: Custom Font & Color
+    text(exo2_16, "Custom Font & Color", #ffeb3b): 0, 420
+    bitmap(generated(color(600, 1, #ffeb3b33))): 0, 442
+    text(exo2_light_14, "White text with dd font:", #cccccc): 0, 455
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownCustom")) {
+        pos: 0, 475
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150, font=>"dd", fontColor:color=>white}
+    }
+
+    #customText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 485
 }

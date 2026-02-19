@@ -20,7 +20,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 	static inline var ROW1_Y = 55;
 	static inline var ROW2_Y = 145;
 
-	static final ITEM_TYPES = ["sword", "shield", "potion", "ring", "scroll"];
+	static final ITEM_TYPES = ["hpot", "mpot", "lsword", "ssword", "shield", "ring", "boots", "scroll", "helm", "armor"];
 
 	var slotItems:Array<Null<String>>;
 	var statusTexts:Array<h2d.Text>;
@@ -107,7 +107,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 
 	function buildSlotItem(itemType:String):h2d.Object {
 		final result = demoBuilder.buildWithParameters("slotItem", ["itemType" => itemType]);
-		result.object.setPosition(5, 15);
+		result.object.setPosition(11, 11);
 		return result.object;
 	}
 
@@ -243,7 +243,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 			final itemType = ITEM_TYPES[comboItemCycleIdx % ITEM_TYPES.length];
 			comboItemCycleIdx++;
 			final result = demoBuilder.buildWithParameters("slotItem", ["itemType" => itemType]);
-			result.object.setPosition(0, 10);
+			result.object.setPosition(6, 6);
 			// Apply glow filter to items inserted into blessed slots (col 2)
 			if (colIdx == 2)
 				result.object.filter = new h2d.filter.Glow(0xddaa44, 0.8, 4.0, 1.0, 1.0, true);

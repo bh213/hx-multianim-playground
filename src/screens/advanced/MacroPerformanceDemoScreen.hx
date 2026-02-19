@@ -15,6 +15,7 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 	var countDropdown:Null<UIStandardMultiAnimDropdown>;
 	var addSimpleBtn:Null<UIStandardMultiAnimButton>;
 	var addComplexBtn:Null<UIStandardMultiAnimButton>;
+	var addRepeatableBtn:Null<UIStandardMultiAnimButton>;
 	var updateBtn:Null<UIStandardMultiAnimButton>;
 	var clearBtn:Null<UIStandardMultiAnimButton>;
 
@@ -26,16 +27,18 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 	var incrementalResults:Array<BuilderResult> = [];
 	var macroSimpleInstances:Array<Dynamic> = [];
 	var macroComplexInstances:Array<Dynamic> = [];
+	var macroRepeatableInstances:Array<Dynamic> = [];
 
 	var perfProg:Null<PerfProgrammables>;
 
 	var selectedCount:Int = 100;
 	var currentType:String = "simple";
+	var repeatableValue:Int = 0;
 
 	static inline final OBJ_AREA_X = 0;
-	static inline final OBJ_AREA_Y = 260;
+	static inline final OBJ_AREA_Y = 340;
 	static inline final OBJ_AREA_W = 1200;
-	static inline final OBJ_AREA_H = 440;
+	static inline final OBJ_AREA_H = 360;
 
 	static final COUNT_ITEMS:Array<UIElementListItem> = [
 		{name: "1"},
@@ -59,6 +62,7 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 				COUNT_ITEMS, 1),
 			addSimpleBtn => addButtonWithSingleBuilder(demoBuilder, "perfButton", "Add Simple"),
 			addComplexBtn => addButtonWithSingleBuilder(demoBuilder, "perfButton", "Add Complex"),
+			addRepeatableBtn => addButtonWithSingleBuilder(demoBuilder, "perfButton", "Add Repeat"),
 			updateBtn => addButtonWithSingleBuilder(demoBuilder, "perfButton", "Update"),
 			clearBtn => addButtonWithSingleBuilder(demoBuilder, "perfButton", "Clear"),
 		]);
@@ -67,6 +71,7 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 		countDropdown = ui.countDropdown;
 		addSimpleBtn = ui.addSimpleBtn;
 		addComplexBtn = ui.addComplexBtn;
+		addRepeatableBtn = ui.addRepeatableBtn;
 		updateBtn = ui.updateBtn;
 		clearBtn = ui.clearBtn;
 		addBuilderResult(controlsResult);
@@ -83,8 +88,14 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 
 	function addObjects(type:String):Void {
 		final count = selectedCount;
-		final componentName = type == "simple" ? "perfSimple" : "perfComplex";
 		currentType = type;
+
+		if (type == "repeatable") {
+			addRepeatableObjects(count);
+			return;
+		}
+
+		final componentName = type == "simple" ? "perfSimple" : "perfComplex";
 
 		// 1) Builder (non-incremental)
 		final t0 = haxe.Timer.stamp();
@@ -131,12 +142,58 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 		updateObjectCount();
 	}
 
+	function addRepeatableObjects(count:Int):Void {
+		repeatableValue = 0;
+		final initialValue = repeatableValue;
+
+		// 1) Builder (non-incremental)
+		final t0 = haxe.Timer.stamp();
+		for (i in 0...count) {
+			final result = demoBuilder.buildWithParameters("perfRepeatable", ["value" => initialValue]);
+			result.object.setPosition(randomX(i), randomY(i));
+			builderContainer.addChild(result.object);
+			builderResults.push(result);
+		}
+		final builderMs = (haxe.Timer.stamp() - t0) * 1000;
+
+		// 2) Builder+Incremental
+		final t1 = haxe.Timer.stamp();
+		for (i in 0...count) {
+			final result = demoBuilder.buildWithParameters("perfRepeatable", ["value" => initialValue], null, null, true);
+			result.object.setPosition(randomX(i + 7919), randomY(i + 7919));
+			incrementalContainer.addChild(result.object);
+			incrementalResults.push(result);
+		}
+		final incrMs = (haxe.Timer.stamp() - t1) * 1000;
+
+		// 3) @:manim codegen
+		final t2 = haxe.Timer.stamp();
+		for (i in 0...count) {
+			final inst = perfProg.perfRepeatable.create(initialValue);
+			inst.setPosition(randomX(i + 15383), randomY(i + 15383));
+			macroContainer.addChild(inst);
+			macroRepeatableInstances.push(inst);
+		}
+		final macroMs = (haxe.Timer.stamp() - t2) * 1000;
+
+		updateTimingText("createBuilderTime", 'Builder: ${formatMs(builderMs)} ($count)');
+		updateTimingText("createIncrTime", 'Incr: ${formatMs(incrMs)} ($count)');
+		updateTimingText("createMacroTime", 'Macro: ${formatMs(macroMs)} ($count)');
+		updateObjectCount();
+	}
+
 	function updateObjects():Void {
 		final hasObjects = builderResults.length > 0 || incrementalResults.length > 0 || macroSimpleInstances.length > 0
-			|| macroComplexInstances.length > 0;
+			|| macroComplexInstances.length > 0 || macroRepeatableInstances.length > 0;
 		if (!hasObjects) return;
 
 		final type = currentType;
+
+		if (type == "repeatable") {
+			updateRepeatableObjects();
+			return;
+		}
+
 		final componentName = type == "simple" ? "perfSimple" : "perfComplex";
 
 		// 1) Builder: remove + rebuild
@@ -192,6 +249,43 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 		updateTimingText("updateMacroTime", 'Macro: ${formatMs(macroMs)} ($macroCount)');
 	}
 
+	function updateRepeatableObjects():Void {
+		repeatableValue = (repeatableValue + 1) % 6;
+		final newValue = repeatableValue;
+
+		// 1) Builder: remove + rebuild
+		final t0 = haxe.Timer.stamp();
+		for (i in 0...builderResults.length) {
+			final old = builderResults[i];
+			final x = old.object.x;
+			final y = old.object.y;
+			old.object.remove();
+			final result = demoBuilder.buildWithParameters("perfRepeatable", ["value" => newValue]);
+			result.object.setPosition(x, y);
+			builderContainer.addChild(result.object);
+			builderResults[i] = result;
+		}
+		final builderMs = (haxe.Timer.stamp() - t0) * 1000;
+
+		// 2) Incremental: setParameter (triggers structural rebuild of repeatable)
+		final t1 = haxe.Timer.stamp();
+		for (i in 0...incrementalResults.length) {
+			incrementalResults[i].setParameter("value", newValue);
+		}
+		final incrMs = (haxe.Timer.stamp() - t1) * 1000;
+
+		// 3) @:manim codegen: typed setter
+		final t2 = haxe.Timer.stamp();
+		for (i in 0...macroRepeatableInstances.length) {
+			macroRepeatableInstances[i].setValue(newValue);
+		}
+		final macroMs = (haxe.Timer.stamp() - t2) * 1000;
+
+		updateTimingText("updateBuilderTime", 'Builder: ${formatMs(builderMs)} (${builderResults.length}) val=$newValue');
+		updateTimingText("updateIncrTime", 'Incr: ${formatMs(incrMs)} (${incrementalResults.length}) val=$newValue');
+		updateTimingText("updateMacroTime", 'Macro: ${formatMs(macroMs)} (${macroRepeatableInstances.length}) val=$newValue');
+	}
+
 	function clearObjects():Void {
 		for (r in builderResults)
 			r.object.remove();
@@ -201,10 +295,14 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 			(inst : h2d.Object).remove();
 		for (inst in macroComplexInstances)
 			(inst : h2d.Object).remove();
+		for (inst in macroRepeatableInstances)
+			(inst : h2d.Object).remove();
 		builderResults = [];
 		incrementalResults = [];
 		macroSimpleInstances = [];
 		macroComplexInstances = [];
+		macroRepeatableInstances = [];
+		repeatableValue = 0;
 
 		updateTimingText("createBuilderTime", "Builder: --");
 		updateTimingText("createIncrTime", "Incr: --");
@@ -216,7 +314,7 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 	}
 
 	function updateObjectCount():Void {
-		final macroCount = macroSimpleInstances.length + macroComplexInstances.length;
+		final macroCount = macroSimpleInstances.length + macroComplexInstances.length + macroRepeatableInstances.length;
 		updateTimingText("objectCount", 'Builder: ${builderResults.length} | Incr: ${incrementalResults.length} | Macro: $macroCount');
 	}
 
@@ -266,6 +364,8 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 					addObjects("simple");
 				} else if (source == addComplexBtn) {
 					addObjects("complex");
+				} else if (source == addRepeatableBtn) {
+					addObjects("repeatable");
 				} else if (source == updateBtn) {
 					updateObjects();
 				} else if (source == clearBtn) {
@@ -289,11 +389,14 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 			(inst : h2d.Object).remove();
 		for (inst in macroComplexInstances)
 			(inst : h2d.Object).remove();
+		for (inst in macroRepeatableInstances)
+			(inst : h2d.Object).remove();
 		demoBuilder = null;
 		controlsResult = null;
 		countDropdown = null;
 		addSimpleBtn = null;
 		addComplexBtn = null;
+		addRepeatableBtn = null;
 		updateBtn = null;
 		clearBtn = null;
 		builderContainer = null;
@@ -304,5 +407,6 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 		incrementalResults = [];
 		macroSimpleInstances = [];
 		macroComplexInstances = [];
+		macroRepeatableInstances = [];
 	}
 }

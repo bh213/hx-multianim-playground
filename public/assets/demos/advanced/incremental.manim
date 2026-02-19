@@ -12,7 +12,7 @@ version: 0.5
     bitmap(generated(color($value * 5, 30, #4488cc))): 0, 100
 
     // Text showing computed value
-    text(m6x11, "Value: $value", #ffffff, left, 200): 0, 150
+    text(m6x11, 'Value: ${value}', #ffffff, left, 200): 0, 150
 
     // Conditional visibility based on value ranges
     text(m6x11, "Conditional blocks:", #cccccc, left, 300): 0, 190
@@ -23,7 +23,7 @@ version: 0.5
     @(value > 75) text(m6x11, "HIGH (value > 75)", #44ff44, left, 300): 20, 220
 
     // Expression result
-    text(m6x11, "Expression: $value * 2 + 10 = " , #cccccc, left, 300): 0, 260
+    text(m6x11, 'Expression: $value * 2 + 10 = ${value * 2 + 10}' , #cccccc, left, 300): 0, 260
     bitmap(generated(color($value * 2 + 10, 20, #7fdbda))): 0, 280
 
     // Repeatable grid sized by value

@@ -53,24 +53,23 @@ version: 0.5
   }
 
 
- #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button") {
-      //filter:pixelOutline(knockout, blue, 0.3)
-      //filter:replacePalette(file, 0, 1)
-      
-      //bitmap(sheet("crew2", "marine_r_shooting_d")):30,130;
-      //filter:glow(red, 0.3, 1, 1, 1, smoothColor)
-      //filter:glow(red, 0.3, 1, 1, 1, smoothColor)
-      //filter:dropShadow(4, 1.6, #F3F, 0.9, 50, 3.05)
-      //filter:pixelOutline(knockout, blue, 0.3)
-      //filter:pixelOutline(inlineColor, red, yellow)
-      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 200, 30):     0,1
-      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", 200, 30):     0,0
-      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", 200, 30): 0,0
-      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", 200, 30):       0,0
-      
-      text(dd, $buttonText, 0xffffff12, center, 200): 0,10
+ #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
+      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
+
+      @(textShadow=>false) text($font, $buttonText, $fontColor, center, $width): 0, ($height - $ctx.font($font).lineHeight) / 2
+      @(textShadow=>true) text($font, $buttonText, $fontColor, center, $width, dropShadowXY: 1, 1): 0, ($height - $ctx.font($font).lineHeight) / 2
 }
-    
+
+ #colorButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xff0000) {
+      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
+      bitmap(generated(color($width - 8, $height - 8, $color))): 4, 4
+}
 
  #radio programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
       @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton_off_idle"));

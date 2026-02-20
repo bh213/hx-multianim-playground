@@ -1,11 +1,16 @@
 package screens.gamelike;
 
 import bh.ui.*;
+import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 
 class BattleHudDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResults:Array<BuilderResult> = [];
+	var controlsResult:Null<BuilderResult>;
+	var pauseButton:Null<UIStandardMultiAnimButton>;
+	var paused:Bool = false;
 
 	// State (shared across all HUD variants)
 	var heroHp:Int = 100;
@@ -19,14 +24,17 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	var hpTrailDelay:Float = 0;
 	var mpTrailDelay:Float = 0;
 
-	// Damage/mana timing
-	var nextDamageTimer:Float = 1.5;
-	var nextMpUseTimer:Float = 2.0;
-
-	// Death
+	// Scripted loop
+	var loopTimer:Float = 0;
 	var isDead:Bool = false;
-	var deadTimer:Float = 0;
-	static inline var DEAD_DURATION = 1.5;
+
+	// Phase boundaries (seconds within 10s loop)
+	// Phase 1: Decrease HP 100→0   (0.0 – 4.0)
+	// Phase 2: Dead                 (4.0 – 6.0)
+	// Phase 3: Increase HP 0→100   (6.0 – 10.0)
+	static inline var DECREASE_END = 4.0;
+	static inline var DEAD_END = 6.0;
+	static inline var LOOP_DURATION = 10.0;
 
 	override public function load():Void {
 		setupDemo("Battle HUD", "Three visual styles, same code — the .manim defines the look, the code drives the data");
@@ -39,6 +47,24 @@ class BattleHudDemoScreen extends DemoScreenBase {
 			demoResults.push(result);
 			addBuilderResult(result);
 		}
+
+		// Controls
+		buildControls();
+	}
+
+	function buildControls():Void {
+		if (controlsResult != null)
+			controlsResult.object.remove();
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "battleHudControls", [], [
+			pauseButton => addButtonWithSingleBuilder(stdBuilder, "button", paused ? "Resume" : "Pause"),
+		]);
+		controlsResult = ui.builderResults;
+		addBuilderResult(controlsResult);
+		pauseButton = ui.pauseButton;
+		pauseButton.onClick = function() {
+			paused = !paused;
+			buildControls();
+		};
 	}
 
 	function buildHud(name:String):BuilderResult {
@@ -73,25 +99,23 @@ class BattleHudDemoScreen extends DemoScreenBase {
 			result.setParameter("dead", dead);
 	}
 
-	function dealDamage():Void {
-		final damage = 8 + Std.int(Math.random() * 20);
-		heroHp = Std.int(Math.max(0, heroHp - damage));
-		hpTrailDelay = 0.25;
-	}
-
-	function useMana():Void {
-		final cost = 3 + Std.int(Math.random() * 12);
-		heroMp = Std.int(Math.max(0, heroMp - cost));
-		mpTrailDelay = 0.2;
+	/** Step-wise decrease: 6 discrete hits over the phase, HP goes 100→80→60→40→20→0 */
+	static function steppedDecrease(progress:Float, maxVal:Int):Int {
+		var step = Std.int(Math.min(5, Math.floor(progress * 6)));
+		return Std.int(maxVal * (5 - step) / 5);
 	}
 
 	function updateTrails(dt:Float):Void {
+		// Trail follows HP downward with delay
 		if (hpTrailDelay > 0) {
 			hpTrailDelay -= dt;
 		} else if (hpTrail > heroHp) {
 			final speed = Math.max((hpTrail - heroHp) * 4, 15);
 			hpTrail = Math.max(heroHp, hpTrail - speed * dt);
 		}
+		// Trail snaps up when HP increases
+		if (hpTrail < heroHp)
+			hpTrail = heroHp;
 
 		if (mpTrailDelay > 0) {
 			mpTrailDelay -= dt;
@@ -99,53 +123,66 @@ class BattleHudDemoScreen extends DemoScreenBase {
 			final speed = Math.max((mpTrail - heroMp) * 4, 12);
 			mpTrail = Math.max(heroMp, mpTrail - speed * dt);
 		}
+		if (mpTrail < heroMp)
+			mpTrail = heroMp;
 	}
 
 	override public function update(dt:Float):Void {
 		super.update(dt);
-		if (demoResults.length == 0) return;
-
-		if (isDead) {
-			deadTimer -= dt;
-			updateTrails(dt);
-			refreshAllHuds();
-
-			if (deadTimer <= 0) {
-				isDead = false;
-				heroHp = heroMaxHp;
-				heroMp = heroMaxMp;
-				hpTrail = heroMaxHp;
-				mpTrail = heroMaxMp;
-				hpTrailDelay = 0;
-				mpTrailDelay = 0;
-				nextDamageTimer = 1.5;
-				nextMpUseTimer = 2.0;
-				setAllDead(0);
-				refreshAllHuds();
-			}
+		if (demoResults.length == 0)
 			return;
+		if (paused)
+			return;
+
+		var prevHp = heroHp;
+		var prevMp = heroMp;
+		var wasDead = isDead;
+
+		loopTimer += dt;
+		if (loopTimer >= LOOP_DURATION) {
+			loopTimer -= LOOP_DURATION;
+			// Reset to full at loop boundary
+			hpTrail = heroMaxHp;
+			mpTrail = heroMaxMp;
+			hpTrailDelay = 0;
+			mpTrailDelay = 0;
 		}
 
-		nextDamageTimer -= dt;
-		if (nextDamageTimer <= 0) {
-			dealDamage();
-			nextDamageTimer = 1.0 + Math.random() * 2.0;
+		var t = loopTimer;
+
+		if (t < DECREASE_END) {
+			// Phase 1: Decrease HP — discrete hits
+			var progress = t / DECREASE_END;
+			heroHp = steppedDecrease(progress, heroMaxHp);
+			heroMp = steppedDecrease(progress * 0.8, heroMaxMp);
+			isDead = false;
+		} else if (t < DEAD_END) {
+			// Phase 2: Dead
+			heroHp = 0;
+			heroMp = 0;
+			isDead = true;
+		} else {
+			// Phase 3: Increase HP — smooth heal
+			var progress = (t - DEAD_END) / (LOOP_DURATION - DEAD_END);
+			heroHp = Std.int(heroMaxHp * progress);
+			heroMp = Std.int(heroMaxMp * progress);
+			isDead = false;
 		}
 
-		nextMpUseTimer -= dt;
-		if (nextMpUseTimer <= 0) {
-			useMana();
-			nextMpUseTimer = 1.5 + Math.random() * 2.5;
-		}
+		// Trigger trail delay on discrete HP/MP drops
+		if (heroHp < prevHp)
+			hpTrailDelay = 0.25;
+		if (heroMp < prevMp)
+			mpTrailDelay = 0.2;
+
+		// Dead state transitions
+		if (isDead && !wasDead)
+			setAllDead(1);
+		if (!isDead && wasDead)
+			setAllDead(0);
 
 		updateTrails(dt);
 		refreshAllHuds();
-
-		if (heroHp <= 0) {
-			isDead = true;
-			deadTimer = DEAD_DURATION;
-			setAllDead(1);
-		}
 	}
 
 	override public function onClear():Void {
@@ -159,5 +196,9 @@ class BattleHudDemoScreen extends DemoScreenBase {
 		hpTrail = 100;
 		mpTrail = 50;
 		isDead = false;
+		loopTimer = 0;
+		paused = false;
+		pauseButton = null;
+		controlsResult = null;
 	}
 }

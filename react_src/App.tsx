@@ -15,7 +15,10 @@ function App() {
 
   useEffect(() => {
     window.playgroundLoader = bridge;
-    (window as any).defaultScreen = DEFAULT_SCREEN;
+    // Parse initial screen from URL hash so Haxe can load it directly in init()
+    const hash = window.location.hash;
+    const match = hash.match(/screen=(\w+)/);
+    (window as any).defaultScreen = match ? match[1] : DEFAULT_SCREEN;
     return () => { bridge.dispose(); };
   }, [bridge]);
 

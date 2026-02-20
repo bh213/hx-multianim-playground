@@ -1,7 +1,6 @@
 package screens.ui;
 
 import bh.ui.UIElement;
-import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
@@ -11,53 +10,60 @@ class ButtonsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var buttonsBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
-	var normalBtn1:Null<UIStandardMultiAnimButton>;
-	var normalBtn2:Null<UIStandardMultiAnimButton>;
-	var normalBtn3:Null<UIStandardMultiAnimButton>;
-	var warningBtn1:Null<UIStandardMultiAnimButton>;
-	var warningBtn2:Null<UIStandardMultiAnimButton>;
-	var warningBtn3:Null<UIStandardMultiAnimButton>;
-	var smallBtn1:Null<UIStandardMultiAnimButton>;
-	var smallBtn2:Null<UIStandardMultiAnimButton>;
-	var smallBtn3:Null<UIStandardMultiAnimButton>;
-	var customBtn1:Null<UIStandardMultiAnimButton>;
-	var customBtn2:Null<UIStandardMultiAnimButton>;
+	var allButtons:Array<UIStandardMultiAnimButton> = [];
 	var disableCheckbox:Null<UIStandardMultiCheckbox>;
 	var clickCount:Int = 0;
 
 	override public function load():Void {
-		setupDemo("Buttons", "Multiple button styles: Normal, Warning, and Small");
+		setupDemo("Buttons", "Button styles: Normal, Warning, Small, Text Shadow, Font Colors, Sizes, Color Buttons");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/buttons-demo.manim", false);
 		buttonsBuilder = screenManager.buildFromResourceName("buttons.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "buttonsDemo", [], [
+			// Normal
 			normalBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Click Me"),
 			normalBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Action"),
 			normalBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Submit"),
+			// Warning
 			warningBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Danger"),
 			warningBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Delete"),
 			warningBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "warning", "Reset"),
+			// Small
 			smallBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "small", "OK"),
 			smallBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "small", "No"),
 			smallBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "small", "Info"),
-			customBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Wide Button"),
-			customBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Custom Font"),
+			// Text Shadow
+			shadowBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Shadow"),
+			shadowBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Big Shadow"),
+			shadowBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Warning Shadow"),
+			// Font Colors
+			colorTextBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Red Text"),
+			colorTextBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Green Text"),
+			colorTextBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Gold Text"),
+			// Size Variants
+			sizeBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Compact"),
+			sizeBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Standard"),
+			sizeBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", "Large Button"),
+			// Color Buttons
+			colorBtn1 => addButtonWithSingleBuilder(buttonsBuilder, "main", ""),
+			colorBtn2 => addButtonWithSingleBuilder(buttonsBuilder, "main", ""),
+			colorBtn3 => addButtonWithSingleBuilder(buttonsBuilder, "main", ""),
+			colorBtn4 => addButtonWithSingleBuilder(buttonsBuilder, "main", ""),
+			// Checkbox
 			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
 		demoResult = ui.builderResults;
-		normalBtn1 = ui.normalBtn1;
-		normalBtn2 = ui.normalBtn2;
-		normalBtn3 = ui.normalBtn3;
-		warningBtn1 = ui.warningBtn1;
-		warningBtn2 = ui.warningBtn2;
-		warningBtn3 = ui.warningBtn3;
-		smallBtn1 = ui.smallBtn1;
-		smallBtn2 = ui.smallBtn2;
-		smallBtn3 = ui.smallBtn3;
-		customBtn1 = ui.customBtn1;
-		customBtn2 = ui.customBtn2;
+		allButtons = [
+			ui.normalBtn1, ui.normalBtn2, ui.normalBtn3,
+			ui.warningBtn1, ui.warningBtn2, ui.warningBtn3,
+			ui.smallBtn1, ui.smallBtn2, ui.smallBtn3,
+			ui.shadowBtn1, ui.shadowBtn2, ui.shadowBtn3,
+			ui.colorTextBtn1, ui.colorTextBtn2, ui.colorTextBtn3,
+			ui.sizeBtn1, ui.sizeBtn2, ui.sizeBtn3,
+			ui.colorBtn1, ui.colorBtn2, ui.colorBtn3, ui.colorBtn4,
+		];
 		disableCheckbox = ui.disableCheckbox;
 		addBuilderResult(demoResult);
 	}
@@ -65,26 +71,17 @@ class ButtonsDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == normalBtn1 || source == normalBtn2 || source == normalBtn3 ||
-					source == warningBtn1 || source == warningBtn2 || source == warningBtn3 ||
-					source == smallBtn1 || source == smallBtn2 || source == smallBtn3 ||
-					source == customBtn1 || source == customBtn2) {
-					clickCount++;
-					updateCounter();
+				for (btn in allButtons) {
+					if (source == btn) {
+						clickCount++;
+						updateCounter();
+						break;
+					}
 				}
 			case UIToggle(pressed):
 				if (source == disableCheckbox) {
-					normalBtn1.disabled = pressed;
-					normalBtn2.disabled = pressed;
-					normalBtn3.disabled = pressed;
-					warningBtn1.disabled = pressed;
-					warningBtn2.disabled = pressed;
-					warningBtn3.disabled = pressed;
-					smallBtn1.disabled = pressed;
-					smallBtn2.disabled = pressed;
-					smallBtn3.disabled = pressed;
-					customBtn1.disabled = pressed;
-					customBtn2.disabled = pressed;
+					for (btn in allButtons)
+						btn.disabled = pressed;
 				}
 			default:
 		}
@@ -105,17 +102,7 @@ class ButtonsDemoScreen extends DemoScreenBase {
 		demoBuilder = null;
 		buttonsBuilder = null;
 		demoResult = null;
-		normalBtn1 = null;
-		normalBtn2 = null;
-		normalBtn3 = null;
-		warningBtn1 = null;
-		warningBtn2 = null;
-		warningBtn3 = null;
-		smallBtn1 = null;
-		smallBtn2 = null;
-		smallBtn3 = null;
-		customBtn1 = null;
-		customBtn2 = null;
+		allButtons = [];
 		disableCheckbox = null;
 		clickCount = 0;
 	}

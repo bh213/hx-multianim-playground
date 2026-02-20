@@ -23,6 +23,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 	var cellSliders:Array<Array<UIStandardMultiAnimSlider>> = [];
 	var cellChecks:Array<Array<UIStandardMultiCheckbox>> = [];
 	var cellColorButtons:Array<Null<UIStandardMultiAnimButton>> = [];
+	var cellColorSwatches:Array<Null<h2d.Graphics>> = [];
 	var filterColors:Array<Int> = [];
 	var activeColorPickerIndex:Int = -1;
 
@@ -104,7 +105,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 		// Build each filter cell with its specific sliders/checkboxes
 		var o = MacroUtils.macroBuildWithParameters(demoBuilder, "outlineCell", [], [
 			sSize => addSlider(stdBuilder, 0),
-			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", ""),
 		]);
 		cellResults[0] = o.builderResults;
 		cellSliders[0] = [o.sSize];
@@ -115,7 +116,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 			sRadius => addSlider(stdBuilder, 0),
 			cSmooth => addCheckbox(checkboxBuilder, null),
 			cKnockout => addCheckbox(checkboxBuilder, null),
-			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", ""),
 		]);
 		cellResults[1] = g.builderResults;
 		cellSliders[1] = [g.sAlpha, g.sRadius];
@@ -143,7 +144,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 			sAlpha => addSlider(stdBuilder, 0),
 			sRadius => addSlider(stdBuilder, 0),
 			cSmooth => addCheckbox(checkboxBuilder, null),
-			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", ""),
 		]);
 		cellResults[5] = ds.builderResults;
 		cellSliders[5] = [ds.sDist, ds.sAngle, ds.sAlpha, ds.sRadius];
@@ -160,7 +161,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 
 		var po = MacroUtils.macroBuildWithParameters(demoBuilder, "pixelOutlineCell", [], [
 			sStrength => addSlider(stdBuilder, 0),
-			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", ""),
 		]);
 		cellResults[8] = po.builderResults;
 		cellSliders[8] = [po.sStrength];
@@ -170,6 +171,15 @@ class FiltersDemoScreen extends DemoScreenBase {
 		for (cellIdx in 0...NUM_FILTERS)
 			for (sIdx in 0...cellSliders[cellIdx].length)
 				cellSliders[cellIdx][sIdx].setFloatValue(SLIDER_DEFAULTS[cellIdx][sIdx]);
+
+		// Create color swatches for color-using filters (overlay on colorButton's rect area)
+		for (ci in 0...COLOR_FILTER_INDICES.length) {
+			final filterIdx = COLOR_FILTER_INDICES[ci];
+			final swatch = createColorSwatch(filterColors[ci]);
+			swatch.setPosition(44, 98);
+			cellResults[filterIdx].object.addChild(swatch);
+			cellColorSwatches.push(swatch);
+		}
 
 		// Build layout with all cells
 		layoutResult = demoBuilder.buildWithParameters("filtersLayout", [], {
@@ -210,7 +220,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 				params.set(COLOR_PARAM_NAMES[ci], filterColors[ci]);
 
 		var preview = demoBuilder.buildWithParameters(PREVIEW_NAMES[cellIdx], params);
-		preview.object.setPosition(10, 14);
+		preview.object.setPosition(10, 24);
 		result.object.addChild(preview.object);
 		cellPreviews[cellIdx] = preview;
 	}
@@ -240,6 +250,23 @@ class FiltersDemoScreen extends DemoScreenBase {
 		if (result == null) return;
 		final updatable = result.getUpdatable(name);
 		if (updatable != null) updatable.updateText(text);
+	}
+
+	function createColorSwatch(color:Int):h2d.Graphics {
+		var g = new h2d.Graphics();
+		g.beginFill(color);
+		g.drawRect(0, 0, 52, 14);
+		g.endFill();
+		return g;
+	}
+
+	function updateColorSwatch(colorArrayIndex:Int, color:Int):Void {
+		final swatch = cellColorSwatches[colorArrayIndex];
+		if (swatch == null) return;
+		swatch.clear();
+		swatch.beginFill(color);
+		swatch.drawRect(0, 0, 52, 14);
+		swatch.endFill();
 	}
 
 	function findColorIndexForSource(source:Null<UIElement>):Int {
@@ -313,7 +340,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 							filterColors[activeColorPickerIndex] = colorInt;
 							final filterIdx = COLOR_FILTER_INDICES[activeColorPickerIndex];
 							buildPreview(filterIdx);
-							setCellText(filterIdx, "colorHex", "#" + StringTools.hex(colorInt, 6));
+							updateColorSwatch(activeColorPickerIndex, colorInt);
 							activeColorPickerIndex = -1;
 						}
 					default:
@@ -335,6 +362,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 		cellSliders = [];
 		cellChecks = [];
 		cellColorButtons = [];
+		cellColorSwatches = [];
 		filterColors = [];
 		activeColorPickerIndex = -1;
 	}

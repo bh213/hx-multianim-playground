@@ -3,12 +3,10 @@
 - ninepatch: add resizable panel, take the one from settings, maybe add draggable with animPaths if it makes things better
 - particles need more work, buttons don't work correctly. Maybe wait until animPaths are used for particles
 - inventory: colors of the slots are strange. Maybe use text to describe state instead of just color. X is great though.
-- minimap - probably need to be redesigned.
-- battle hud - needs to be redesigned or removed.
 - skill tree doesn't work correctly
 - shop ui is ugly and broken, maybe remove it or redesign it completely
 - dialog box - need to review
 - status effects - need to review, maybe this should demonstrate status bar in a game, with horizontal flow and adding/removing and updates - incremental or macros.
 - settings - no idea what this is supposed to show, text is fine though
 - dropdowns - initial settings doesn't apply if clicked again
-- filters - use programmables and manim
+- interactives need revisit/rework

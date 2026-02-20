@@ -97,8 +97,10 @@ export class PlaygroundBridge {
     }
 
     private waitForMainApp(): void {
-        if (typeof window.PlaygroundMain !== 'undefined' && window.PlaygroundMain.instance) {
-            this.mainApp = window.PlaygroundMain.instance;
+        const instance = window.PlaygroundMain?.instance;
+        // Check screenManager to ensure init() has completed
+        if (instance && instance.screenManager) {
+            this.mainApp = instance;
             // Apply pending screen from URL hash that arrived before Haxe was ready
             if (this.currentScreen && this.currentScreen !== 'nav') {
                 this.switchScreen(this.currentScreen);

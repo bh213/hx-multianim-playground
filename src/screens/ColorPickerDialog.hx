@@ -11,6 +11,8 @@ using bh.ui.screens.UIScreen.UIScreenBase;
 
 @:nullSafety
 class ColorPickerDialog extends UIScreenBase {
+	static final PRESET_COLORS:Array<Int> = [0xFF0000, 0xFF8800, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0xFFFFFF];
+
 	final initialColor:Int;
 	final dialogTitle:String;
 	var okButton:Null<UIStandardMultiAnimButton>;
@@ -18,6 +20,7 @@ class ColorPickerDialog extends UIScreenBase {
 	var sliderR:Null<UIStandardMultiAnimSlider>;
 	var sliderG:Null<UIStandardMultiAnimSlider>;
 	var sliderB:Null<UIStandardMultiAnimSlider>;
+	var presetButtons:Array<UIStandardMultiAnimButton> = [];
 	var dialogBuilder:UIElementBuilder;
 	var okButtonBuilder:UIElementBuilder;
 	var cancelButtonBuilder:UIElementBuilder;
@@ -42,6 +45,14 @@ class ColorPickerDialog extends UIScreenBase {
 			sliderR => addSlider(sliderBuilder, 0),
 			sliderG => addSlider(sliderBuilder, 0),
 			sliderB => addSlider(sliderBuilder, 0),
+			preRed => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preOrange => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preYellow => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preGreen => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preCyan => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preBlue => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			prePurple => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
+			preWhite => addButtonWithSingleBuilder(sliderBuilder, "colorButton", ""),
 		]);
 
 		addBuilderResult(dialog.builderResults);
@@ -50,12 +61,26 @@ class ColorPickerDialog extends UIScreenBase {
 		this.sliderR = dialog.sliderR;
 		this.sliderG = dialog.sliderG;
 		this.sliderB = dialog.sliderB;
+		this.presetButtons = [
+			dialog.preRed, dialog.preOrange, dialog.preYellow, dialog.preGreen,
+			dialog.preCyan, dialog.preBlue, dialog.prePurple, dialog.preWhite,
+		];
 		this.dialogResult = dialog.builderResults;
 
 		// Set initial color
 		final r = (initialColor >> 16) & 0xFF;
 		final g = (initialColor >> 8) & 0xFF;
 		final b = initialColor & 0xFF;
+		if (sliderR != null) sliderR.setFloatValue(r);
+		if (sliderG != null) sliderG.setFloatValue(g);
+		if (sliderB != null) sliderB.setFloatValue(b);
+		updatePreview();
+	}
+
+	function applyPreset(color:Int):Void {
+		final r = (color >> 16) & 0xFF;
+		final g = (color >> 8) & 0xFF;
+		final b = color & 0xFF;
 		if (sliderR != null) sliderR.setFloatValue(r);
 		if (sliderG != null) sliderG.setFloatValue(g);
 		if (sliderB != null) sliderB.setFloatValue(b);
@@ -102,6 +127,10 @@ class ColorPickerDialog extends UIScreenBase {
 					this.getController().exitResponse = getCurrentColor();
 				} else if (source == this.cancelButton) {
 					this.getController().exitResponse = false;
+				} else {
+					for (i in 0...presetButtons.length)
+						if (source == presetButtons[i])
+							applyPreset(PRESET_COLORS[i]);
 				}
 			case UIChangeValue(value):
 				if (source == sliderR || source == sliderG || source == sliderB)

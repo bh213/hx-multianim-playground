@@ -192,7 +192,16 @@ class Main extends hxd.App {
 		});
 
 		engine.backgroundColor = 0x1a1a2e;
-		reload(DEFAULT_SCREEN);
+
+		// Read initial screen from React-set window.defaultScreen (parsed from URL hash)
+		var initialScreen = DEFAULT_SCREEN;
+		#if js
+		var jsDefault:Dynamic = js.Lib.global.defaultScreen;
+		if (jsDefault != null && Std.isOfType(jsDefault, String)) {
+			initialScreen = cast jsDefault;
+		}
+		#end
+		reload(initialScreen);
 	}
 
 	#if js

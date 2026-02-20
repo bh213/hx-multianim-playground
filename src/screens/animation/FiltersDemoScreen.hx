@@ -5,12 +5,15 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimScrollableList;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
+import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
+import screens.ColorPickerDialog;
 
 class FiltersDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var checkboxBuilder:Null<MultiAnimBuilder>;
+	var colorPickerBuilder:Null<MultiAnimBuilder>;
 	var layoutResult:Null<BuilderResult>;
 	var scrollableList:Null<UIMultiAnimScrollableList>;
 	var activeBitmapType:String = "rectBlack";
@@ -19,6 +22,9 @@ class FiltersDemoScreen extends DemoScreenBase {
 	var cellPreviews:Array<Null<BuilderResult>> = [];
 	var cellSliders:Array<Array<UIStandardMultiAnimSlider>> = [];
 	var cellChecks:Array<Array<UIStandardMultiCheckbox>> = [];
+	var cellColorButtons:Array<Null<UIStandardMultiAnimButton>> = [];
+	var filterColors:Array<Int> = [];
+	var activeColorPickerIndex:Int = -1;
 
 	static final NUM_FILTERS = 9;
 	static final PREVIEW_NAMES = [
@@ -69,38 +75,52 @@ class FiltersDemoScreen extends DemoScreenBase {
 		[0.0],
 		[0.5],
 	];
+	// Color-using filter indices: outline=0, glow=1, dropShadow=5, pixelOutline=8
+	static final COLOR_FILTER_INDICES = [0, 1, 5, 8];
+	static final COLOR_PARAM_NAMES = ["outlineColor", "glowColor", "dsColor", "poColor"];
+	static final COLOR_DEFAULTS:Array<Int> = [0xff0000, 0xffaa00, 0x000000, 0x0000ff];
 
 	override public function load():Void {
 		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow, grayscale, hue, pixelOutline");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/filters.manim", false);
 		checkboxBuilder = screenManager.buildFromResourceName("checkbox.manim", false);
+		colorPickerBuilder = screenManager.buildFromResourceName("demos/animation/color-picker-dialog.manim", false);
 
 		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", TestBitmaps.ALL_ITEMS,
 			null, 0, 160, 200);
 		addElement(scrollableList, null);
+
+		filterColors = COLOR_DEFAULTS.copy();
 
 		for (i in 0...NUM_FILTERS) {
 			cellResults.push(null);
 			cellPreviews.push(null);
 			cellSliders.push([]);
 			cellChecks.push([]);
+			cellColorButtons.push(null);
 		}
 
 		// Build each filter cell with its specific sliders/checkboxes
-		var o = MacroUtils.macroBuildWithParameters(demoBuilder, "outlineCell", [], [sSize => addSlider(stdBuilder, 0)]);
+		var o = MacroUtils.macroBuildWithParameters(demoBuilder, "outlineCell", [], [
+			sSize => addSlider(stdBuilder, 0),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+		]);
 		cellResults[0] = o.builderResults;
 		cellSliders[0] = [o.sSize];
+		cellColorButtons[0] = o.bColor;
 
 		var g = MacroUtils.macroBuildWithParameters(demoBuilder, "glowCell", [], [
 			sAlpha => addSlider(stdBuilder, 0),
 			sRadius => addSlider(stdBuilder, 0),
 			cSmooth => addCheckbox(checkboxBuilder, null),
 			cKnockout => addCheckbox(checkboxBuilder, null),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
 		]);
 		cellResults[1] = g.builderResults;
 		cellSliders[1] = [g.sAlpha, g.sRadius];
 		cellChecks[1] = [g.cSmooth, g.cKnockout];
+		cellColorButtons[1] = g.bColor;
 
 		var b = MacroUtils.macroBuildWithParameters(demoBuilder, "blurCell", [], [
 			sRadius => addSlider(stdBuilder, 0),
@@ -123,10 +143,12 @@ class FiltersDemoScreen extends DemoScreenBase {
 			sAlpha => addSlider(stdBuilder, 0),
 			sRadius => addSlider(stdBuilder, 0),
 			cSmooth => addCheckbox(checkboxBuilder, null),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
 		]);
 		cellResults[5] = ds.builderResults;
 		cellSliders[5] = [ds.sDist, ds.sAngle, ds.sAlpha, ds.sRadius];
 		cellChecks[5] = [ds.cSmooth];
+		cellColorButtons[5] = ds.bColor;
 
 		var gs = MacroUtils.macroBuildWithParameters(demoBuilder, "grayscaleCell", [], [sValue => addSlider(stdBuilder, 0)]);
 		cellResults[6] = gs.builderResults;
@@ -136,9 +158,13 @@ class FiltersDemoScreen extends DemoScreenBase {
 		cellResults[7] = hu.builderResults;
 		cellSliders[7] = [hu.sValue];
 
-		var po = MacroUtils.macroBuildWithParameters(demoBuilder, "pixelOutlineCell", [], [sStrength => addSlider(stdBuilder, 0)]);
+		var po = MacroUtils.macroBuildWithParameters(demoBuilder, "pixelOutlineCell", [], [
+			sStrength => addSlider(stdBuilder, 0),
+			bColor => addButtonWithSingleBuilder(stdBuilder, "button", "Pick"),
+		]);
 		cellResults[8] = po.builderResults;
 		cellSliders[8] = [po.sStrength];
+		cellColorButtons[8] = po.bColor;
 
 		// Set initial slider values (after min/max/step configured from manim settings)
 		for (cellIdx in 0...NUM_FILTERS)
@@ -178,6 +204,11 @@ class FiltersDemoScreen extends DemoScreenBase {
 		for (i in 0...cellChecks[cellIdx].length)
 			params.set(CHECK_PARAMS[cellIdx][i], cellChecks[cellIdx][i].selected ? 1 : 0);
 
+		// Add color parameter for color-using filters
+		for (ci in 0...COLOR_FILTER_INDICES.length)
+			if (COLOR_FILTER_INDICES[ci] == cellIdx)
+				params.set(COLOR_PARAM_NAMES[ci], filterColors[ci]);
+
 		var preview = demoBuilder.buildWithParameters(PREVIEW_NAMES[cellIdx], params);
 		preview.object.setPosition(10, 14);
 		result.object.addChild(preview.object);
@@ -211,6 +242,33 @@ class FiltersDemoScreen extends DemoScreenBase {
 		if (updatable != null) updatable.updateText(text);
 	}
 
+	function findColorIndexForSource(source:Null<UIElement>):Int {
+		for (ci in 0...COLOR_FILTER_INDICES.length) {
+			final filterIdx = COLOR_FILTER_INDICES[ci];
+			if (source == cellColorButtons[filterIdx])
+				return ci;
+		}
+		return -1;
+	}
+
+	function openColorPicker(colorArrayIndex:Int):Void {
+		if (colorPickerBuilder == null || stdBuilder == null) return;
+		final currentColor = filterColors[colorArrayIndex];
+		final filterIdx = COLOR_FILTER_INDICES[colorArrayIndex];
+		final filterName = StringTools.replace(PREVIEW_NAMES[filterIdx], "Preview", "");
+
+		final okBuilder = stdBuilder.createElementBuilder("button");
+		final cancelBuilder = stdBuilder.createElementBuilder("button");
+		final dialogScreenBuilder = colorPickerBuilder.createElementBuilder("colorPickerDialog");
+
+		final dialog = new ColorPickerDialog(
+			screenManager, dialogScreenBuilder, okBuilder, cancelBuilder,
+			stdBuilder, 'Color: $filterName', currentColor
+		);
+		activeColorPickerIndex = colorArrayIndex;
+		screenManager.modalDialog(dialog, this, "colorPicker");
+	}
+
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIDoubleClickItem(index, items):
@@ -223,6 +281,10 @@ class FiltersDemoScreen extends DemoScreenBase {
 						if (updatable != null) updatable.updateText('Active: ${TestBitmaps.getName(activeBitmapType)}');
 					}
 				}
+			case UIClick:
+				final ci = findColorIndexForSource(source);
+				if (ci >= 0)
+					openColorPicker(ci);
 			case UIChangeValue(value):
 				final cellIdx = findCellForSource(source);
 				if (cellIdx >= 0) {
@@ -243,6 +305,19 @@ class FiltersDemoScreen extends DemoScreenBase {
 				final cellIdx = findCellForSource(source);
 				if (cellIdx >= 0)
 					buildPreview(cellIdx);
+			case UIOnControllerEvent(controllerEvent):
+				switch controllerEvent {
+					case OnDialogResult(dialogName, result):
+						if (dialogName == "colorPicker" && activeColorPickerIndex >= 0 && Std.isOfType(result, Int)) {
+							final colorInt:Int = cast result;
+							filterColors[activeColorPickerIndex] = colorInt;
+							final filterIdx = COLOR_FILTER_INDICES[activeColorPickerIndex];
+							buildPreview(filterIdx);
+							setCellText(filterIdx, "colorHex", "#" + StringTools.hex(colorInt, 6));
+							activeColorPickerIndex = -1;
+						}
+					default:
+				}
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -252,11 +327,15 @@ class FiltersDemoScreen extends DemoScreenBase {
 		super.onClear();
 		demoBuilder = null;
 		checkboxBuilder = null;
+		colorPickerBuilder = null;
 		layoutResult = null;
 		scrollableList = null;
 		cellResults = [];
 		cellPreviews = [];
 		cellSliders = [];
 		cellChecks = [];
+		cellColorButtons = [];
+		filterColors = [];
+		activeColorPickerIndex = -1;
 	}
 }

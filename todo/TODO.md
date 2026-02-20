@@ -9,7 +9,6 @@
 - shop ui is ugly and broken, maybe remove it or redesign it completely
 - dialog box - need to review
 - status effects - need to review, maybe this should demonstrate status bar in a game, with horizontal flow and adding/removing and updates - incremental or macros.
-- conditiionals initial version shows multiple text at #4
 - settings - no idea what this is supposed to show, text is fine though
 - dropdowns - initial settings doesn't apply if clicked again
 - filters - use programmables and manim

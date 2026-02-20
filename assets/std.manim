@@ -202,6 +202,50 @@ version: 0.5
       settings{transitionTimer:float=>0.2}
 }
 
+#dropdown-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], btnWidth:uint=120, btnHeight:uint=30, font="m6x11", fontColor:int=0xffffff12) {
+      #panelPoint (updatable) point: 0, $btnHeight;
+      @(status=>hover) ninepatch("ui", "dropdown-button-hover", $btnWidth, $btnHeight);
+      @(status=>normal) ninepatch("ui", "dropdown-button-idle", $btnWidth, $btnHeight);
+      @(status=>pressed) ninepatch("ui", "dropdown-button-pressed", $btnWidth, $btnHeight);
+      @(status=>disabled) ninepatch("ui", "dropdown-button-disabled", $btnWidth, $btnHeight);
+      @(panel=>closed) bitmap(sheet("ui", "icon_drop_fold_idle")): $btnWidth - 12, $btnHeight / 2 + 2
+      @(panel=>open) bitmap(sheet("ui", "icon_drop_open")): $btnWidth - 12, $btnHeight / 2 + 2
+      #selectedName(updatable) text($font, callback("selectedName"), $fontColor, center, $btnWidth): -4, ($btnHeight - $ctx.font($font).lineHeight) / 2
+      settings{transitionTimer:float=>0.2}
+}
+
+#dropdown-shadow programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffff12) {
+      #panelPoint (updatable) point: 0, 30;
+      @(status=>hover) ninepatch("ui", "dropdown-button-hover", 120, 30);
+      @(status=>normal) ninepatch("ui", "dropdown-button-idle", 120, 30);
+      @(status=>pressed) ninepatch("ui", "dropdown-button-pressed", 120, 30);
+      @(status=>disabled) ninepatch("ui", "dropdown-button-disabled", 120, 30);
+      @(panel=>closed) bitmap(sheet("ui", "icon_drop_fold_idle")):108,17
+      @(panel=>open) bitmap(sheet("ui", "icon_drop_open")):108,17
+      #selectedName(updatable) text($font, callback("selectedName"), $fontColor, center, 120, dropShadowXY: 1, -1): -4,6
+      settings{transitionTimer:float=>0.2}
+}
+
+#list-item-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114, itemHeight:uint=20, index:uint=0, title="title", font="m6x11", fontColor:int=0xffffff12) {
+        @(status=>normal, selected=>false, disabled=>false) ninepatch("ui", "droppanel-mid-idle", $itemWidth+4, $itemHeight): -2,0
+        @(status=>normal, selected=>true, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, $itemHeight): -2,0
+        @(status=>pressed, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, $itemHeight) {
+          pos:-2,0;
+          alpha:0.1;
+          blendMode: alphaAdd;
+        }
+        @(status=>hover, disabled=>false) ninepatch("ui", "droppanel-mid-hover", $itemWidth+4, $itemHeight) {
+          pos:-2,0;
+          alpha:0.1;
+          blendMode: alphaAdd;
+        }
+        @(disabled=>true) ninepatch("ui", "droppanel-mid-disabled", $itemWidth+4, $itemHeight): -2,0
+        text($font, $title, $fontColor, left, $itemWidth): 24, ($itemHeight - $ctx.font($font).lineHeight) / 2
+        @(images=>placeholder) placeholder(generated(cross(15, 15, white)), callback("test")):5, ($itemHeight - 15) / 2
+        @(images=>tile) bitmap($tile):5, ($itemHeight - 15) / 2
+        interactive($itemWidth, $itemHeight, $index);
+        settings{height:float=>$itemHeight, font:string=>$font, fontColor:int=>$fontColor}
+}
 
 #list-item-120 programmable(images:[none,placeholder,tile]=placeholder,status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114,  index:uint=0, title="title", font="m6x11", fontColor:int=0xffffff12) {
 

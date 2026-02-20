@@ -92330,8 +92330,11 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Dropdowns","Dropdown menus: scrollable (fixed height) and autoscale (auto-sizing) modes");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/dropdowns.manim",false);
-		var generatedByMacroBuildWithParametersload1527Builder = function() {
+		var generatedByMacroBuildWithParametersload1689Builder = function() {
+			var dropdownWide;
+			var dropdownShadow;
 			var dropdownScrollable;
+			var dropdownLarge;
 			var dropdownCustom;
 			var dropdownAutoMany;
 			var dropdownAutoFew;
@@ -92341,10 +92344,31 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dropdownWide = _el;
+				return _el.getObject();
+			});
+			_g.h["dropdownWide"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dropdownShadow = _el;
+				return _el.getObject();
+			});
+			_g.h["dropdownShadow"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				dropdownScrollable = _el;
 				return _el.getObject();
 			});
 			_g.h["dropdownScrollable"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dropdownLarge = _el;
+				return _el.getObject();
+			});
+			_g.h["dropdownLarge"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -92367,9 +92391,18 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["dropdownAutoFew"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("dropdownsDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { dropdownScrollable : dropdownScrollable, dropdownCustom : dropdownCustom, dropdownAutoMany : dropdownAutoMany, dropdownAutoFew : dropdownAutoFew, builderResults : builderResults1};
+			var retVal = { dropdownWide : dropdownWide, dropdownShadow : dropdownShadow, dropdownScrollable : dropdownScrollable, dropdownLarge : dropdownLarge, dropdownCustom : dropdownCustom, dropdownAutoMany : dropdownAutoMany, dropdownAutoFew : dropdownAutoFew, builderResults : builderResults1};
+			if(retVal.dropdownWide == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownWide" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dropdownShadow == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownShadow" + " is null (check if placeholder object is named correctly)");
+			}
 			if(retVal.dropdownScrollable == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownScrollable" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dropdownLarge == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownLarge" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.dropdownCustom == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownCustom" + " is null (check if placeholder object is named correctly)");
@@ -92382,12 +92415,15 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1527Builder();
+		var ui = generatedByMacroBuildWithParametersload1689Builder();
 		this.demoResult = ui.builderResults;
 		this.dropdownScrollable = ui.dropdownScrollable;
 		this.dropdownAutoFew = ui.dropdownAutoFew;
 		this.dropdownAutoMany = ui.dropdownAutoMany;
 		this.dropdownCustom = ui.dropdownCustom;
+		this.dropdownWide = ui.dropdownWide;
+		this.dropdownLarge = ui.dropdownLarge;
+		this.dropdownShadow = ui.dropdownShadow;
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
@@ -92402,6 +92438,12 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.updateSelectedText(index,items,"autoManyText");
 			} else if(source == this.dropdownCustom) {
 				this.updateSelectedText(index,items,"customText");
+			} else if(source == this.dropdownWide) {
+				this.updateSelectedText(index,items,"wideText");
+			} else if(source == this.dropdownLarge) {
+				this.updateSelectedText(index,items,"largeText");
+			} else if(source == this.dropdownShadow) {
+				this.updateSelectedText(index,items,"shadowText");
 			}
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
@@ -92427,6 +92469,9 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.dropdownAutoFew = null;
 		this.dropdownAutoMany = null;
 		this.dropdownCustom = null;
+		this.dropdownWide = null;
+		this.dropdownLarge = null;
+		this.dropdownShadow = null;
 	}
 	,__class__: screens_ui_DropdownsDemoScreen
 });

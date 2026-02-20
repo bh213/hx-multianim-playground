@@ -53,4 +53,40 @@ version: 0.5
     }
 
     #customText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 485
+
+    // Section: Wide Dropdown (180px)
+    text(exo2_16, "Wide Dropdown (180px)", #7fdbda): 0, 560
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 582
+    text(exo2_light_14, "Wider dropdown with pixellari font:", #cccccc): 0, 595
+
+    placeholder(generated(cross(180, 30, #FF0000)), builderParameter("dropdownWide")) {
+        pos: 0, 615
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>180, itemBuildName=>list-item-w, width:int=>180, height:int=>150, font=>"pixellari", fontColor:int=>0x7fdbda12}
+    }
+
+    #wideText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 240, 625
+
+    // Section: Large Dropdown (200x40)
+    text(exo2_16, "Large Dropdown (200x40)", #ffeb3b): 0, 700
+    bitmap(generated(color(600, 1, #ffeb3b33))): 0, 722
+    text(exo2_light_14, "Extra large button with exo2_16 font:", #cccccc): 0, 735
+
+    placeholder(generated(cross(200, 40, #FF0000)), builderParameter("dropdownLarge")) {
+        pos: 0, 755
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>200, dropdown.btnHeight:int=>40, itemBuildName=>list-item-w, item.itemHeight:int=>28, width:int=>200, height:int=>150, font=>"exo2_16", fontColor:int=>0xffeb3b12}
+    }
+
+    #largeText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 260, 770
+
+    // Section: Text Shadow
+    text(exo2_16, "Text Shadow", #b0b0b0): 0, 840
+    bitmap(generated(color(600, 1, #b0b0b033))): 0, 862
+    text(exo2_light_14, "Dropdown with text shadow effect:", #cccccc): 0, 875
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownShadow")) {
+        pos: 0, 895
+        settings{dropdownBuildName=>dropdown-shadow, height:int=>150, font=>"dd", fontColor:color=>white}
+    }
+
+    #shadowText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 905
 }

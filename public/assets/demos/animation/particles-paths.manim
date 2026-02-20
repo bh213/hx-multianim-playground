@@ -44,41 +44,41 @@ paths {
     blendMode: add
 }
 
-// Emit along path with tangent velocity
+// Emit along circle with tangent velocity — particles fly away fast
 #pathTangent particles {
-    count: 50
-    emit: path(figure8, tangent)
-    tiles: file("spark.png")
+    count: 60
+    emit: path(orbit, tangent)
+    tiles: file("circle_soft.png")
     loop: true
-    maxLife: 1.0
-    speed: 60
-    speedRandom: 0.2
-    size: 0.4
+    maxLife: 0.6
+    speed: 180
+    speedRandom: 0.3
+    size: 0.5
     sizeRandom: 0.2
     fadeIn: 0.05
-    fadeOut: 0.5
+    fadeOut: 0.4
     0.0: colorCurve: linear, #FF88FF, #FF44AA
     blendMode: add
     rotateAuto: true
 }
 
-// PathGuide force field — particles attracted to and flowing along path
+// PathGuide force field — particles attracted to and flowing along circle
 #pathGuideDemo particles {
-    count: 80
-    emit: box(200, 200, 0, 360)
+    count: 100
+    emit: cone(100, 5, 270, 25)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 3.0
-    speed: 20
+    speed: 1
     speedRandom: 0.5
-    size: 0.3
+    size: 0.35
     sizeRandom: 0.2
     fadeIn: 0.15
     fadeOut: 0.7
     0.0: colorCurve: linear, #88FF44, #FFFF44
     0.5: colorCurve: linear, #FFFF44, #FF8844
     blendMode: add
-    forceFields: [pathguide(wave, 60, 80, 120)]
+    forceFields: [pathguide(orbit, 1000, 200, 650)]
 }
 
 // Emit along wave + flow along it
@@ -105,9 +105,9 @@ paths {
     text(m6x11, "Path Emit", #44FFFF, center, 120): 120, 20
     text(m3x6, "circle path", #888888, center, 120): 120, 36
     text(m6x11, "Tangent", #FF88FF, center, 120): 380, 20
-    text(m3x6, "figure-8 + tangent", #888888, center, 120): 380, 36
+    text(m3x6, "circle + tangent", #888888, center, 120): 380, 36
     text(m6x11, "PathGuide", #88FF44, center, 120): 640, 20
-    text(m3x6, "attract + flow", #888888, center, 120): 640, 36
+    text(m3x6, "attract to circle", #888888, center, 120): 640, 36
     text(m6x11, "Wave Stream", #88AAFF, center, 120): 900, 20
     text(m3x6, "emit + guide", #888888, center, 120): 900, 36
 }

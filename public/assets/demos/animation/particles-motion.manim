@@ -31,23 +31,23 @@ relativeLayouts {
     forceFields: [vortex(0, 0, 150, 200), attractor(0, 0, 30, 180)]
 }
 
-// Rising smoke with turbulence and wind
+// Turbulence — chaotic swirling motion
 #turbulence particles {
-    count: 80
-    emit: cone(5, 3, 270, 10)
-    tiles: file("smoke.png")
+    count: 100
+    emit: box(160, 160, 0, 360)
+    tiles: file("circle_soft.png")
     loop: true
-    maxLife: 3.0
-    speed: 25
-    speedRandom: 0.3
-    gravity: 15
-    gravityAngle: 270
-    size: 0.3
-    sizeRandom: 0.2
-    fadeIn: 0.2
-    fadeOut: 0.5
-    0.0: colorCurve: linear, #AAAAAA, #666666
-    forceFields: [turbulence(25, 0.015, 1.5), wind(20, 0)]
+    maxLife: 2.5
+    speed: 10
+    speedRandom: 0.5
+    size: 0.4
+    sizeRandom: 0.3
+    fadeIn: 0.1
+    fadeOut: 0.6
+    0.0: colorCurve: linear, #FF8844, #FFCC44
+    0.5: colorCurve: linear, #FFCC44, #FF4488
+    blendMode: add
+    forceFields: [turbulence(120, 0.01, 2.0)]
 }
 
 // Attractor + repulsor battle
@@ -93,7 +93,7 @@ relativeLayouts {
     text(m6x11, "Vortex", #8888FF, center, 120): 120, 20
     text(m3x6, "vortex + attractor", #888888, center, 120): 120, 36
     text(m6x11, "Turbulence", #999999, center, 120): 380, 20
-    text(m3x6, "turbulence + wind", #888888, center, 120): 380, 36
+    text(m3x6, "chaotic swirl", #888888, center, 120): 380, 36
     text(m6x11, "Push/Pull", #FF8844, center, 120): 640, 20
     text(m3x6, "attractor + repulsor", #888888, center, 120): 640, 36
     text(m6x11, "Fountain", #4488FF, center, 120): 900, 20

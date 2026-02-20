@@ -2,8 +2,6 @@
 - slots: parametrized slots are weird, don't auto update them, write status with text so it is obvious what is going on. Add some text that describes how slots work
 - particles need more work, buttons don't work correctly. Maybe wait until animPaths are used for particles
 - inventory: colors of the slots are strange. Maybe use text to describe state instead of just color. X is great though.
-- skill tree doesn't work correctly
-- shop ui is ugly and broken, maybe remove it or redesign it completely
 - dialog box - need to review
 - status effects - need to review, maybe this should demonstrate status bar in a game, with horizontal flow and adding/removing and updates - incremental or macros.
 - settings - no idea what this is supposed to show, text is fine though

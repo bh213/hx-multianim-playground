@@ -36,6 +36,10 @@ class ParticlesDemoScreen extends DemoScreenBase {
 	];
 	// UI programmable names per tab
 	static final TAB_UI_NAMES = ["basicsUI", "colorsUI", "motionUI", "boundsUI", "pathsUI", "subEmittersUI"];
+	// Sub-emitter groups to add to each main group (tab index => group index => sub-group names)
+	static final SUB_EMITTER_GROUPS:Map<Int, Map<Int, Array<String>>> = [
+		5 => [0 => ["fireworkBurst"], 1 => ["bounceSparks"]],
+	];
 
 	var tabButtons:Array<UIStandardMultiAnimButton> = [];
 	var activeTab:Int = 0;
@@ -112,6 +116,18 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		for (i in 0...groups.length) {
 			var pos = layouts.getPoint("positions", i);
 			var particles = tabBuilder.createParticles(groups[i]);
+
+			// Add sub-emitter groups to the same Particles container
+			var subMap = SUB_EMITTER_GROUPS.get(index);
+			if (subMap != null) {
+				var subGroups = subMap.get(i);
+				if (subGroups != null) {
+					for (subName in subGroups) {
+						tabBuilder.addParticleGroupTo(subName, particles);
+					}
+				}
+			}
+
 			particles.setPosition(pos.x, pos.y);
 			addObjectToLayer(particles, DefaultLayer);
 			particleObjects.push(particles);
@@ -120,6 +136,11 @@ class ParticlesDemoScreen extends DemoScreenBase {
 			if (index == 3) {
 				drawBoundsIndicator(pos.x, pos.y, i);
 			}
+		}
+
+		// Draw path indicators for paths tab
+		if (index == 4 && tabBuilder != null) {
+			drawPathIndicators(layouts);
 		}
 	}
 
@@ -149,6 +170,34 @@ class ParticlesDemoScreen extends DemoScreenBase {
 
 		addObjectToLayer(g, DefaultLayer);
 		boundsGraphics.push(g);
+	}
+
+	function drawPathIndicators(layouts:bh.multianim.layouts.MultiAnimLayouts):Void {
+		if (tabBuilder == null) return;
+		var paths = tabBuilder.getPaths();
+		var pathNames = ["orbit", "orbit", "orbit", "wave"];
+
+		for (i in 0...pathNames.length) {
+			var pos = layouts.getPoint("positions", i);
+			var path = paths.getPath(pathNames[i]);
+
+			var g = new h2d.Graphics();
+			g.lineStyle(1, 0x555555);
+
+			var steps = 80;
+			for (s in 0...steps + 1) {
+				var rate = s / steps;
+				var pt = path.getPoint(rate);
+				if (s == 0) {
+					g.moveTo(pos.x + pt.x, pos.y + pt.y);
+				} else {
+					g.lineTo(pos.x + pt.x, pos.y + pt.y);
+				}
+			}
+
+			addObjectToLayer(g, DefaultLayer);
+			boundsGraphics.push(g);
+		}
 	}
 
 	function drawDashedRect(g:h2d.Graphics, x1:Float, y1:Float, x2:Float, y2:Float):Void {

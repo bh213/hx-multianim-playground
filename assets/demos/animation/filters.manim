@@ -13,10 +13,8 @@ version: 0.5
     @(bitmapType=>rectWhite) bitmap(generated(color(60, 60, #ffffff)));
     @(bitmapType=>rectGreen) bitmap(generated(color(60, 60, #00cc00)));
     @(bitmapType=>circleWhite) bitmap(file("circle_soft.png"));
-    @(bitmapType=>circleBlack) apply { tint: #000000 }
-    @(bitmapType=>circleBlack) bitmap(file("circle_soft.png"));
-    @(bitmapType=>circleRed) apply { tint: #ff0000 }
-    @(bitmapType=>circleRed) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleBlack) @tint(#000000) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleRed) @tint(#ff0000) bitmap(file("circle_soft.png"));
     @(bitmapType=>star) bitmap(file("star.png"));
     @(bitmapType=>skull) bitmap(sheet("crew2", "icon-skull"));
     @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
@@ -130,51 +128,51 @@ version: 0.5
 #outlineCell programmable() {
     text(m6x11, "outline", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xff0000, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#ff0000", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Size", #888888, left, 38): 0, 92
+    text(m6x11, "Size", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sSize")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
     }
-    #sizeValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 92
+    #sizeValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 120
 }
 
 #glowCell programmable() {
     text(m6x11, "glow", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xffaa00, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#ffaa00", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Alpha", #888888, left, 38): 0, 92
+    text(m6x11, "Alpha", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #alphaValue(updatable) text(m6x11, "0.8", #cccccc, left, 45): 145, 92
+    #alphaValue(updatable) text(m6x11, "0.8", #cccccc, left, 45): 145, 120
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 108
+    text(m6x11, "Radius", #888888, left, 38): 0, 136
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 108
+        pos: 40, 136
         settings{size:int=>100, min:float=>0, max:float=>50, step:float=>1}
     }
-    #radiusValue(updatable) text(m6x11, "8", #cccccc, left, 45): 145, 108
+    #radiusValue(updatable) text(m6x11, "8", #cccccc, left, 45): 145, 136
 
-    text(m6x11, "Smooth", #888888, left, 50): 0, 159
+    text(m6x11, "Smooth", #888888, left, 50): 0, 160
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
-        pos: 53, 159
+        pos: 53, 160
         settings{buildName=>checkbox, initialValue:int=>1}
     }
-    text(m6x11, "Knockout", #888888, left, 50): 80, 159
+    text(m6x11, "Knockout", #888888, left, 50): 80, 160
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cKnockout")) {
-        pos: 133, 159
+        pos: 133, 160
         settings{buildName=>checkbox}
     }
 }
@@ -182,83 +180,83 @@ version: 0.5
 #blurCell programmable() {
     text(m6x11, "blur", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 92
+    text(m6x11, "Radius", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #radiusValue(updatable) text(m6x11, "4", #cccccc, left, 45): 145, 92
+    #radiusValue(updatable) text(m6x11, "4", #cccccc, left, 45): 145, 94
 
-    text(m6x11, "Gain", #888888, left, 38): 0, 108
+    text(m6x11, "Gain", #888888, left, 38): 0, 110
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sGain")) {
-        pos: 40, 108
+        pos: 40, 110
         settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
     }
-    #gainValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 108
+    #gainValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 110
 }
 
 #saturateCell programmable() {
     text(m6x11, "saturate", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>2, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
 }
 
 #brightnessCell programmable() {
     text(m6x11, "brightness", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>3, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "1.5", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "1.5", #cccccc, left, 45): 145, 94
 }
 
 #dropShadowCell programmable() {
     text(m6x11, "dropShadow", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0x000000, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#000000", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Dist", #888888, left, 38): 0, 92
+    text(m6x11, "Dist", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sDist")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #distValue(updatable) text(m6x11, "3", #cccccc, left, 45): 145, 92
+    #distValue(updatable) text(m6x11, "3", #cccccc, left, 45): 145, 120
 
-    text(m6x11, "Angle", #888888, left, 38): 0, 108
+    text(m6x11, "Angle", #888888, left, 38): 0, 136
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAngle")) {
-        pos: 40, 108
+        pos: 40, 136
         settings{size:int=>100, min:float=>0, max:float=>360, step:float=>5}
     }
-    #angleValue(updatable) text(m6x11, "30", #cccccc, left, 45): 145, 108
+    #angleValue(updatable) text(m6x11, "30", #cccccc, left, 45): 145, 136
 
-    text(m6x11, "Alpha", #888888, left, 38): 0, 124
+    text(m6x11, "Alpha", #888888, left, 38): 0, 152
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
-        pos: 40, 124
+        pos: 40, 152
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #alphaValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 124
+    #alphaValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 152
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 140
+    text(m6x11, "Radius", #888888, left, 38): 0, 168
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 140
+        pos: 40, 168
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #radiusValue(updatable) text(m6x11, "6", #cccccc, left, 45): 145, 140
+    #radiusValue(updatable) text(m6x11, "6", #cccccc, left, 45): 145, 168
 
-    text(m6x11, "Smooth", #888888, left, 50): 0, 159
+    text(m6x11, "Smooth", #888888, left, 50): 0, 188
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
-        pos: 53, 159
+        pos: 53, 188
         settings{buildName=>checkbox}
     }
 }
@@ -266,40 +264,40 @@ version: 0.5
 #grayscaleCell programmable() {
     text(m6x11, "grayscale", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 94
 }
 
 #hueCell programmable() {
     text(m6x11, "hue", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>6.28, step:float=>0.1}
     }
-    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
 }
 
 #pixelOutlineCell programmable() {
     text(m6x11, "pixelOutline", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0x0000ff, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#0000ff", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Strength", #888888, left, 38): 0, 92
+    text(m6x11, "Strength", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sStrength")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #strengthValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 92
+    #strengthValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 120
 }
 
 // ── Main layout with grid-positioned filter cells ─────────────────────────

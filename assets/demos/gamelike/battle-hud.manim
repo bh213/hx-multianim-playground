@@ -75,17 +75,17 @@ version: 0.5
         scale: 4
     }
     @(hp => 1..25) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #cc3322
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #cc3322
     ) {
         scale: 4
     }
     @(hp => 26..60) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #eecc00
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #eecc00
     ) {
         scale: 4
     }
     @(hp => 61..100) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #44cc44
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #44cc44
     ) {
         scale: 4
     }
@@ -209,4 +209,17 @@ version: 0.5
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 140): 20, 148
 
     text(exo2_light_14, "Vertical bars filling bottom-up.", #666666): 0, 240
+}
+
+// ════════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════════
+
+#battleHudControls programmable() {
+    pos: 500, 280
+
+    placeholder(generated(cross(100, 30, #FF0000)), builderParameter("pauseButton")) {
+        pos: 0, 0
+        settings { }
+    }
 }

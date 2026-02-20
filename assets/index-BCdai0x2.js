@@ -43,24 +43,27 @@ Error generating stack: `+l.message+`
 // #main    - Standard button (ui atlas: button-idle/hover/pressed/disabled)
 // #warning - Warning/alert animated button (ui atlas: Altcolor/Button_Warning_3x3_*)
 // #small   - Compact pixel button (ui-new atlas: btn_*_32x16)
+// #color   - Color swatch button (shows colored rect instead of text)
 
-#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12) {
+#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
     @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
     @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
     @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
     @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
 
-    text($font, $buttonText, $fontColor, center, $width): 0,10
+    @(textShadow=>false) text($font, $buttonText, $fontColor, center, $width): 0, ($height - $ctx.font($font).lineHeight) / 2
+    @(textShadow=>true) text($font, $buttonText, $fontColor, center, $width, dropShadowXY: 1, 1): 0, ($height - $ctx.font($font).lineHeight) / 2
     settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12) {
+#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
     @(status=>normal, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", $width, $height):     0,1
     @(status=>hover, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_hover", $width, $height):     0,0
     @(status=>pressed, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_pressed", $width, $height): 0,0
     @(status=>*, disabled=>true) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_disabled", $width, $height):       0,0
 
-    text($font, $buttonText, $fontColor, center, $width): 0,10
+    @(textShadow=>false) text($font, $buttonText, $fontColor, center, $width): 0, ($height - $ctx.font($font).lineHeight) / 2
+    @(textShadow=>true) text($font, $buttonText, $fontColor, center, $width, dropShadowXY: 1, 1): 0, ($height - $ctx.font($font).lineHeight) / 2
     settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
@@ -73,6 +76,15 @@ Error generating stack: `+l.message+`
 
     text($font, $buttonText, $fontColor, center, 32): 0,4
     settings{font:string=>$font, fontColor:int=>$fontColor}
+}
+
+#color programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xff0000) {
+    @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+    @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+    @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+    @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
+    bitmap(generated(color($width - 8, $height - 8, $color))): 4, 4
+    settings{width:int=>$width, height:int=>$height, color:int=>$color}
 }
 `,Yd=`version: 0.5
 
@@ -998,12 +1010,12 @@ paths {
 `,af=`version: 0.5
 
 // Color Picker Dialog
-// Modal dialog with R/G/B sliders, live color preview, and hex display.
+// Modal dialog with R/G/B sliders, live color preview, hex display, and preset colors.
 
 #colorPickerDialog programmable(dialogTitle = "Pick a Color") {
-    pos: 300, 130
+    pos: 300, 120
 
-    ninepatch("ui", "Droppanel_3x3_idle", 400, 310): 0, 0
+    ninepatch("ui", "Droppanel_3x3_idle", 400, 340): 0, 0
     text(exo2_black_20, $dialogTitle, #ffffff, center, 360): 20, 15
     bitmap(generated(color(360, 1, #ffffff33))): 20, 45
 
@@ -1039,11 +1051,55 @@ paths {
     text(m6x11, "Hex:", #888888, left, 40): 145, 175
     #hexValue(updatable) text(exo2_16, "#000000", #ffffff, left, 150): 185, 172
 
+    // Preset colors
+    text(m6x11, "Presets:", #888888, left, 60): 25, 238
+    point {
+        pos: 25, 255
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preRed")) {
+            pos: 0, 0
+            settings{buildName=>"colorButton", color:int=>0xff0000, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preOrange")) {
+            pos: 39, 0
+            settings{buildName=>"colorButton", color:int=>0xff8800, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preYellow")) {
+            pos: 78, 0
+            settings{buildName=>"colorButton", color:int=>0xffff00, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preGreen")) {
+            pos: 117, 0
+            settings{buildName=>"colorButton", color:int=>0x00ff00, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preCyan")) {
+            pos: 156, 0
+            settings{buildName=>"colorButton", color:int=>0x00ffff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preBlue")) {
+            pos: 195, 0
+            settings{buildName=>"colorButton", color:int=>0x0000ff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("prePurple")) {
+            pos: 234, 0
+            settings{buildName=>"colorButton", color:int=>0xff00ff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preWhite")) {
+            pos: 273, 0
+            settings{buildName=>"colorButton", color:int=>0xffffff, width:int=>34, height:int=>20}
+        }
+    }
+
     // OK / Cancel buttons
     point {
-        pos: 25, 250
-        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
-        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 200, 0
+        pos: 25, 290
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")) {
+            pos: 0, 0
+            settings{width:int=>120, height:int=>26}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")) {
+            pos: 230, 0
+            settings{width:int=>120, height:int=>26}
+        }
     }
 }
 `,lf=`version: 0.5
@@ -1157,10 +1213,8 @@ curves {
     @(bitmapType=>rectWhite) bitmap(generated(color(60, 60, #ffffff)));
     @(bitmapType=>rectGreen) bitmap(generated(color(60, 60, #00cc00)));
     @(bitmapType=>circleWhite) bitmap(file("circle_soft.png"));
-    @(bitmapType=>circleBlack) apply { tint: #000000 }
-    @(bitmapType=>circleBlack) bitmap(file("circle_soft.png"));
-    @(bitmapType=>circleRed) apply { tint: #ff0000 }
-    @(bitmapType=>circleRed) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleBlack) @tint(#000000) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleRed) @tint(#ff0000) bitmap(file("circle_soft.png"));
     @(bitmapType=>star) bitmap(file("star.png"));
     @(bitmapType=>skull) bitmap(sheet("crew2", "icon-skull"));
     @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
@@ -1274,51 +1328,51 @@ curves {
 #outlineCell programmable() {
     text(m6x11, "outline", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xff0000, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#ff0000", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Size", #888888, left, 38): 0, 92
+    text(m6x11, "Size", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sSize")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
     }
-    #sizeValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 92
+    #sizeValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 120
 }
 
 #glowCell programmable() {
     text(m6x11, "glow", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xffaa00, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#ffaa00", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Alpha", #888888, left, 38): 0, 92
+    text(m6x11, "Alpha", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #alphaValue(updatable) text(m6x11, "0.8", #cccccc, left, 45): 145, 92
+    #alphaValue(updatable) text(m6x11, "0.8", #cccccc, left, 45): 145, 120
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 108
+    text(m6x11, "Radius", #888888, left, 38): 0, 136
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 108
+        pos: 40, 136
         settings{size:int=>100, min:float=>0, max:float=>50, step:float=>1}
     }
-    #radiusValue(updatable) text(m6x11, "8", #cccccc, left, 45): 145, 108
+    #radiusValue(updatable) text(m6x11, "8", #cccccc, left, 45): 145, 136
 
-    text(m6x11, "Smooth", #888888, left, 50): 0, 159
+    text(m6x11, "Smooth", #888888, left, 50): 0, 160
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
-        pos: 53, 159
+        pos: 53, 160
         settings{buildName=>checkbox, initialValue:int=>1}
     }
-    text(m6x11, "Knockout", #888888, left, 50): 80, 159
+    text(m6x11, "Knockout", #888888, left, 50): 80, 160
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cKnockout")) {
-        pos: 133, 159
+        pos: 133, 160
         settings{buildName=>checkbox}
     }
 }
@@ -1326,83 +1380,83 @@ curves {
 #blurCell programmable() {
     text(m6x11, "blur", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 92
+    text(m6x11, "Radius", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #radiusValue(updatable) text(m6x11, "4", #cccccc, left, 45): 145, 92
+    #radiusValue(updatable) text(m6x11, "4", #cccccc, left, 45): 145, 94
 
-    text(m6x11, "Gain", #888888, left, 38): 0, 108
+    text(m6x11, "Gain", #888888, left, 38): 0, 110
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sGain")) {
-        pos: 40, 108
+        pos: 40, 110
         settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
     }
-    #gainValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 108
+    #gainValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 110
 }
 
 #saturateCell programmable() {
     text(m6x11, "saturate", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>2, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
 }
 
 #brightnessCell programmable() {
     text(m6x11, "brightness", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>3, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "1.5", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "1.5", #cccccc, left, 45): 145, 94
 }
 
 #dropShadowCell programmable() {
     text(m6x11, "dropShadow", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0x000000, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#000000", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Dist", #888888, left, 38): 0, 92
+    text(m6x11, "Dist", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sDist")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #distValue(updatable) text(m6x11, "3", #cccccc, left, 45): 145, 92
+    #distValue(updatable) text(m6x11, "3", #cccccc, left, 45): 145, 120
 
-    text(m6x11, "Angle", #888888, left, 38): 0, 108
+    text(m6x11, "Angle", #888888, left, 38): 0, 136
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAngle")) {
-        pos: 40, 108
+        pos: 40, 136
         settings{size:int=>100, min:float=>0, max:float=>360, step:float=>5}
     }
-    #angleValue(updatable) text(m6x11, "30", #cccccc, left, 45): 145, 108
+    #angleValue(updatable) text(m6x11, "30", #cccccc, left, 45): 145, 136
 
-    text(m6x11, "Alpha", #888888, left, 38): 0, 124
+    text(m6x11, "Alpha", #888888, left, 38): 0, 152
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
-        pos: 40, 124
+        pos: 40, 152
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #alphaValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 124
+    #alphaValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 152
 
-    text(m6x11, "Radius", #888888, left, 38): 0, 140
+    text(m6x11, "Radius", #888888, left, 38): 0, 168
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
-        pos: 40, 140
+        pos: 40, 168
         settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
     }
-    #radiusValue(updatable) text(m6x11, "6", #cccccc, left, 45): 145, 140
+    #radiusValue(updatable) text(m6x11, "6", #cccccc, left, 45): 145, 168
 
-    text(m6x11, "Smooth", #888888, left, 50): 0, 159
+    text(m6x11, "Smooth", #888888, left, 50): 0, 188
     placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
-        pos: 53, 159
+        pos: 53, 188
         settings{buildName=>checkbox}
     }
 }
@@ -1410,40 +1464,40 @@ curves {
 #grayscaleCell programmable() {
     text(m6x11, "grayscale", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 94
 }
 
 #hueCell programmable() {
     text(m6x11, "hue", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Value", #888888, left, 38): 0, 92
+    text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
-        pos: 40, 92
+        pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>6.28, step:float=>0.1}
     }
-    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 92
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
 }
 
 #pixelOutlineCell programmable() {
     text(m6x11, "pixelOutline", #aaaaaa, left, 180): 0, 0
 
-    text(m6x11, "Color", #888888, left, 38): 0, 76
-    placeholder(generated(cross(40, 12, #FF0000)), builderParameter("bColor")) {
-        pos: 40, 74
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0x0000ff, width:int=>60, height:int=>22}
     }
-    #colorHex(updatable) text(m6x11, "#0000ff", #cccccc, left, 55): 90, 76
 
-    text(m6x11, "Strength", #888888, left, 38): 0, 92
+    text(m6x11, "Strength", #888888, left, 38): 0, 120
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sStrength")) {
-        pos: 40, 92
+        pos: 40, 120
         settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
     }
-    #strengthValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 92
+    #strengthValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 120
 }
 
 // ── Main layout with grid-positioned filter cells ─────────────────────────
@@ -1885,17 +1939,17 @@ paths {
         scale: 4
     }
     @(hp => 1..25) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #cc3322
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #cc3322
     ) {
         scale: 4
     }
     @(hp => 26..60) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #eecc00
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #eecc00
     ) {
         scale: 4
     }
     @(hp => 61..100) pixels (
-        filledRect 1, 1, $hp * 32 / $maxHp, 5, #44cc44
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #44cc44
     ) {
         scale: 4
     }
@@ -2019,6 +2073,19 @@ paths {
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 140): 20, 148
 
     text(exo2_light_14, "Vertical bars filling bottom-up.", #666666): 0, 240
+}
+
+// ════════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════════
+
+#battleHudControls programmable() {
+    pos: 500, 280
+
+    placeholder(generated(cross(100, 30, #FF0000)), builderParameter("pauseButton")) {
+        pos: 0, 0
+        settings { }
+    }
 }
 `,ff=`version: 0.5
 
@@ -3921,6 +3988,7 @@ relativeLayouts {
 
 // Buttons Demo
 // Shows all button styles from buttons.manim builder: Normal, Warning, Small
+// Plus custom settings: text shadow, font colors, sizes, color buttons
 
 #buttonsDemo programmable() {
     pos: 50, 80
@@ -3973,33 +4041,92 @@ relativeLayouts {
         settings{text=>"Info"}
     }
 
-    // Section: Custom Settings (buttons.main with overrides)
-    text(exo2_16, "Custom Settings", #ffeb3b): 0, 300
-    bitmap(generated(color(660, 1, #ffeb3b33))): 0, 322
+    // Section: Text Shadow
+    text(exo2_16, "Text Shadow", #b0b0b0): 0, 300
+    bitmap(generated(color(660, 1, #b0b0b033))): 0, 322
 
-    placeholder(generated(cross(300, 40, white)), builderParameter("customBtn1")) {
+    placeholder(generated(cross(200, 30, white)), builderParameter("shadowBtn1")) {
         pos: 0, 340
-        settings{text=>"Wide Button", width:int=>300, height:int=>40}
+        settings{text=>"Shadow", textShadow:bool=>true}
     }
-    placeholder(generated(cross(200, 30, white)), builderParameter("customBtn2")) {
-        pos: 320, 340
-        settings{text=>"Custom Font", font=>"m6x11", fontColor:color=>orange}
+    placeholder(generated(cross(200, 40, white)), builderParameter("shadowBtn2")) {
+        pos: 220, 335
+        settings{text=>"Big Shadow", width:int=>200, height:int=>40, font=>"exo2_16", textShadow:bool=>true}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("shadowBtn3")) {
+        pos: 440, 340
+        settings{buildName=>"warning", text=>"Warning Shadow", textShadow:bool=>true}
+    }
+
+    // Section: Font Colors
+    text(exo2_16, "Font Colors", #ffeb3b): 0, 400
+    bitmap(generated(color(660, 1, #ffeb3b33))): 0, 422
+
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn1")) {
+        pos: 0, 440
+        settings{text=>"Red Text", fontColor:int=>0xff444412}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn2")) {
+        pos: 220, 440
+        settings{text=>"Green Text", fontColor:int=>0x44ff4412}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn3")) {
+        pos: 440, 440
+        settings{text=>"Gold Text", fontColor:int=>0xffcc4412}
+    }
+
+    // Section: Size Variants
+    text(exo2_16, "Size Variants", #4a90a4): 0, 500
+    bitmap(generated(color(660, 1, #4a90a433))): 0, 522
+
+    placeholder(generated(cross(120, 22, white)), builderParameter("sizeBtn1")) {
+        pos: 0, 540
+        settings{text=>"Compact", width:int=>120, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("sizeBtn2")) {
+        pos: 140, 536
+        settings{text=>"Standard"}
+    }
+    placeholder(generated(cross(300, 50, white)), builderParameter("sizeBtn3")) {
+        pos: 360, 526
+        settings{text=>"Large Button", width:int=>300, height:int=>50, font=>"exo2_20"}
+    }
+
+    // Section: Color Buttons
+    text(exo2_16, "Color Buttons", #ff7f50): 0, 600
+    bitmap(generated(color(660, 1, #ff7f5033))): 0, 622
+
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn1")) {
+        pos: 0, 640
+        settings{buildName=>"color", color:int=>0xff4444, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn2")) {
+        pos: 80, 640
+        settings{buildName=>"color", color:int=>0x4caf50, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn3")) {
+        pos: 160, 640
+        settings{buildName=>"color", color:int=>0x2196f3, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(100, 30, white)), builderParameter("colorBtn4")) {
+        pos: 240, 640
+        settings{buildName=>"color", color:int=>0xffcc44, width:int=>100, height:int=>30}
     }
 
     // Click counter display
-    text(exo2_16, "Click Counter", #7fdbda): 0, 410
-    bitmap(generated(color(660, 1, #7fdbda33))): 0, 432
-    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 450
-    #counterText(updatable) text(exo2_20, "Clicks: 0", #ffffff, left, 280): 15, 458
+    text(exo2_16, "Click Counter", #7fdbda): 0, 700
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 722
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 740
+    #counterText(updatable) text(exo2_20, "Clicks: 0", #ffffff, left, 280): 15, 748
 
     // Disable toggle section
-    text(exo2_16, "Disable Toggle", #7fdbda): 0, 520
-    bitmap(generated(color(660, 1, #7fdbda33))): 0, 542
+    text(exo2_16, "Disable Toggle", #7fdbda): 0, 810
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 832
     placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
-        pos: 0, 560
+        pos: 0, 850
         settings{buildName=>checkbox}
     }
-    text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 562
+    text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 852
 }
 `,Rf=`version: 0.5
 
@@ -4744,24 +4871,23 @@ paths {
   }
 
 
- #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button") {
-      //filter:pixelOutline(knockout, blue, 0.3)
-      //filter:replacePalette(file, 0, 1)
-      
-      //bitmap(sheet("crew2", "marine_r_shooting_d")):30,130;
-      //filter:glow(red, 0.3, 1, 1, 1, smoothColor)
-      //filter:glow(red, 0.3, 1, 1, 1, smoothColor)
-      //filter:dropShadow(4, 1.6, #F3F, 0.9, 50, 3.05)
-      //filter:pixelOutline(knockout, blue, 0.3)
-      //filter:pixelOutline(inlineColor, red, yellow)
-      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", 200, 30):     0,1
-      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", 200, 30):     0,0
-      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", 200, 30): 0,0
-      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", 200, 30):       0,0
-      
-      text(dd, $buttonText, 0xffffff12, center, 200): 0,10
+ #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
+      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
+
+      @(textShadow=>false) text($font, $buttonText, $fontColor, center, $width): 0, ($height - $ctx.font($font).lineHeight) / 2
+      @(textShadow=>true) text($font, $buttonText, $fontColor, center, $width, dropShadowXY: 1, 1): 0, ($height - $ctx.font($font).lineHeight) / 2
 }
-    
+
+ #colorButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xff0000) {
+      @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
+      @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
+      @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
+      @(status=>*, disabled=>true) ninepatch("ui", "button-disabled", $width, $height):       0,0
+      bitmap(generated(color($width - 8, $height - 8, $color))): 4, 4
+}
 
  #radio programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
       @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton_off_idle"));
@@ -5277,7 +5403,7 @@ animation {
         sheet: "Turret_Destroyed_SW"
     }
 }
-`,Gf=Object.assign({"../public/assets/buttons.manim":Qd,"../public/assets/checkbox.manim":Yd,"../public/assets/demo-common.manim":Xd,"../public/assets/demos/advanced/conditionals.manim":Kd,"../public/assets/demos/advanced/expressions.manim":Zd,"../public/assets/demos/advanced/feature-showcase.manim":qd,"../public/assets/demos/advanced/incremental.manim":Jd,"../public/assets/demos/advanced/interactives.manim":ef,"../public/assets/demos/advanced/macro-performance.manim":nf,"../public/assets/demos/advanced/settings.manim":tf,"../public/assets/demos/animation/anim-path.manim":rf,"../public/assets/demos/animation/color-picker-dialog.manim":af,"../public/assets/demos/animation/curves.manim":lf,"../public/assets/demos/animation/filters.manim":of,"../public/assets/demos/animation/particles.manim":sf,"../public/assets/demos/animation/paths.manim":cf,"../public/assets/demos/animation/state-anim.manim":uf,"../public/assets/demos/gamelike/battle-hud.manim":df,"../public/assets/demos/gamelike/blob47.manim":ff,"../public/assets/demos/gamelike/character-sheet.manim":pf,"../public/assets/demos/gamelike/dialogue.manim":mf,"../public/assets/demos/gamelike/inventory.manim":hf,"../public/assets/demos/gamelike/minimap.manim":gf,"../public/assets/demos/gamelike/shop.manim":xf,"../public/assets/demos/gamelike/skill-tree.manim":vf,"../public/assets/demos/gamelike/status-effects.manim":bf,"../public/assets/demos/graphics/bitmaps-atlas.manim":yf,"../public/assets/demos/graphics/ninepatch.manim":_f,"../public/assets/demos/graphics/pixels-graphics.manim":wf,"../public/assets/demos/graphics/text-fonts.manim":kf,"../public/assets/demos/layout/combo-states.manim":Sf,"../public/assets/demos/layout/dynamic-refs.manim":$f,"../public/assets/demos/layout/flow-layout.manim":Cf,"../public/assets/demos/layout/repeatable.manim":Ff,"../public/assets/demos/layout/slots.manim":Tf,"../public/assets/demos/layout/static-refs.manim":Ef,"../public/assets/demos/ui/buttons-demo.manim":Pf,"../public/assets/demos/ui/checkboxes-demo.manim":Rf,"../public/assets/demos/ui/dialogs.manim":Bf,"../public/assets/demos/ui/draggable.manim":Nf,"../public/assets/demos/ui/dropdowns.manim":Af,"../public/assets/demos/ui/progress-bar.manim":zf,"../public/assets/demos/ui/radio.manim":Df,"../public/assets/demos/ui/radios-demo.manim":Lf,"../public/assets/demos/ui/scrollable-list.manim":Mf,"../public/assets/demos/ui/sliders.manim":If,"../public/assets/radio.manim":Of,"../public/assets/std.manim":Wf}),Qf=Object.assign({"../public/assets/arrows.anim":Hf,"../public/assets/marine.anim":jf,"../public/assets/shield.anim":Vf,"../public/assets/turret.anim":Uf}),Yf=Object.fromEntries([...Object.entries(Gf).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(Qf).map(([e,n])=>[e.replace("../public/assets/",""),n])]),Sr=e=>Yf[e]||null,Yl=[{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radio.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"blob47",displayName:"Blob47 Autotile",category:"Game-Like Demos",manimFile:"demos/gamelike/blob47.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"shop",displayName:"Shop UI",category:"Game-Like Demos",manimFile:"demos/gamelike/shop.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"}]},{name:"Advanced Features",screens:[{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"},{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"}]}];class Xf{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:r=>{if(r.startsWith("http")||r.startsWith("//")||r.startsWith("file://"))return r;try{return new URL(r,n).href}catch{return n+r}},load:r=>this.loadFile(r),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(this.mainApp=window.PlaygroundMain.instance,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const r=new XMLHttpRequest;return r.open("GET",n,!1),r.send(),r.status===200?this.stringToArrayBuffer(r.response):new ArrayBuffer(0)}findFileContent(n){const t=n.split("?")[0].split("#")[0];let r=Sr(t);if(r)return r;const a=t.indexOf("/assets/");if(a>=0&&(r=Sr(t.substring(a+8)),r))return r;const l=t.split("/"),i=l[l.length-1];return i&&(r=Sr(i),r)?r:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.reload(n)}catch(r){return console.error("Failed to switch screen:",r),null}return null}getSourceForScreen(n){for(const t of Yl){const r=t.screens.find(a=>a.name===n);if(r)return Sr(r.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function Kf({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:r}){const[a,l]=ve.useState(new Set(Yl.map(o=>o.name))),i=o=>{l(u=>{const p=new Set(u);return p.has(o)?p.delete(o):p.add(o),p})};return t?A.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:A.jsx("button",{onClick:r,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):A.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[A.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[A.jsx("span",{className:"text-base font-bold text-gray-100",children:"Demos"}),A.jsx("button",{onClick:r,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),A.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:Yl.map(o=>A.jsxs("div",{className:"mb-1",children:[A.jsxs("button",{onClick:()=>i(o.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[A.jsx("span",{className:"mr-1.5 text-[10px]",children:a.has(o.name)?"▾":"▸"}),o.name]}),a.has(o.name)&&A.jsx("div",{className:"ml-6",children:o.screens.map(u=>A.jsx("button",{onClick:()=>n(u.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===u.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:u.displayName},u.name))})]},o.name))})]})}var mu={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
+`,Gf=Object.assign({"../public/assets/buttons.manim":Qd,"../public/assets/checkbox.manim":Yd,"../public/assets/demo-common.manim":Xd,"../public/assets/demos/advanced/conditionals.manim":Kd,"../public/assets/demos/advanced/expressions.manim":Zd,"../public/assets/demos/advanced/feature-showcase.manim":qd,"../public/assets/demos/advanced/incremental.manim":Jd,"../public/assets/demos/advanced/interactives.manim":ef,"../public/assets/demos/advanced/macro-performance.manim":nf,"../public/assets/demos/advanced/settings.manim":tf,"../public/assets/demos/animation/anim-path.manim":rf,"../public/assets/demos/animation/color-picker-dialog.manim":af,"../public/assets/demos/animation/curves.manim":lf,"../public/assets/demos/animation/filters.manim":of,"../public/assets/demos/animation/particles.manim":sf,"../public/assets/demos/animation/paths.manim":cf,"../public/assets/demos/animation/state-anim.manim":uf,"../public/assets/demos/gamelike/battle-hud.manim":df,"../public/assets/demos/gamelike/blob47.manim":ff,"../public/assets/demos/gamelike/character-sheet.manim":pf,"../public/assets/demos/gamelike/dialogue.manim":mf,"../public/assets/demos/gamelike/inventory.manim":hf,"../public/assets/demos/gamelike/minimap.manim":gf,"../public/assets/demos/gamelike/shop.manim":xf,"../public/assets/demos/gamelike/skill-tree.manim":vf,"../public/assets/demos/gamelike/status-effects.manim":bf,"../public/assets/demos/graphics/bitmaps-atlas.manim":yf,"../public/assets/demos/graphics/ninepatch.manim":_f,"../public/assets/demos/graphics/pixels-graphics.manim":wf,"../public/assets/demos/graphics/text-fonts.manim":kf,"../public/assets/demos/layout/combo-states.manim":Sf,"../public/assets/demos/layout/dynamic-refs.manim":$f,"../public/assets/demos/layout/flow-layout.manim":Cf,"../public/assets/demos/layout/repeatable.manim":Ff,"../public/assets/demos/layout/slots.manim":Tf,"../public/assets/demos/layout/static-refs.manim":Ef,"../public/assets/demos/ui/buttons-demo.manim":Pf,"../public/assets/demos/ui/checkboxes-demo.manim":Rf,"../public/assets/demos/ui/dialogs.manim":Bf,"../public/assets/demos/ui/draggable.manim":Nf,"../public/assets/demos/ui/dropdowns.manim":Af,"../public/assets/demos/ui/progress-bar.manim":zf,"../public/assets/demos/ui/radio.manim":Df,"../public/assets/demos/ui/radios-demo.manim":Lf,"../public/assets/demos/ui/scrollable-list.manim":Mf,"../public/assets/demos/ui/sliders.manim":If,"../public/assets/radio.manim":Of,"../public/assets/std.manim":Wf}),Qf=Object.assign({"../public/assets/arrows.anim":Hf,"../public/assets/marine.anim":jf,"../public/assets/shield.anim":Vf,"../public/assets/turret.anim":Uf}),Yf=Object.fromEntries([...Object.entries(Gf).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(Qf).map(([e,n])=>[e.replace("../public/assets/",""),n])]),Sr=e=>Yf[e]||null,Yl=[{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radio.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"blob47",displayName:"Blob47 Autotile",category:"Game-Like Demos",manimFile:"demos/gamelike/blob47.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"shop",displayName:"Shop UI",category:"Game-Like Demos",manimFile:"demos/gamelike/shop.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"}]},{name:"Advanced Features",screens:[{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"},{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"}]}];class Xf{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:r=>{if(r.startsWith("http")||r.startsWith("//")||r.startsWith("file://"))return r;try{return new URL(r,n).href}catch{return n+r}},load:r=>this.loadFile(r),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){var t;const n=(t=window.PlaygroundMain)==null?void 0:t.instance;n&&n.screenManager?(this.mainApp=n,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const r=new XMLHttpRequest;return r.open("GET",n,!1),r.send(),r.status===200?this.stringToArrayBuffer(r.response):new ArrayBuffer(0)}findFileContent(n){const t=n.split("?")[0].split("#")[0];let r=Sr(t);if(r)return r;const a=t.indexOf("/assets/");if(a>=0&&(r=Sr(t.substring(a+8)),r))return r;const l=t.split("/"),i=l[l.length-1];return i&&(r=Sr(i),r)?r:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.reload(n)}catch(r){return console.error("Failed to switch screen:",r),null}return null}getSourceForScreen(n){for(const t of Yl){const r=t.screens.find(a=>a.name===n);if(r)return Sr(r.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function Kf({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:r}){const[a,l]=ve.useState(new Set(Yl.map(o=>o.name))),i=o=>{l(u=>{const p=new Set(u);return p.has(o)?p.delete(o):p.add(o),p})};return t?A.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:A.jsx("button",{onClick:r,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):A.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[A.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[A.jsx("span",{className:"text-base font-bold text-gray-100",children:"Demos"}),A.jsx("button",{onClick:r,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),A.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:Yl.map(o=>A.jsxs("div",{className:"mb-1",children:[A.jsxs("button",{onClick:()=>i(o.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[A.jsx("span",{className:"mr-1.5 text-[10px]",children:a.has(o.name)?"▾":"▸"}),o.name]}),a.has(o.name)&&A.jsx("div",{className:"ml-6",children:o.screens.map(u=>A.jsx("button",{onClick:()=>n(u.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===u.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:u.displayName},u.name))})]},o.name))})]})}var mu={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
  * Prism: Lightweight, robust, elegant syntax highlighting
  *
  * @license MIT <https://opensource.org/licenses/MIT>
@@ -5285,5 +5411,5 @@ animation {
  * @namespace
  * @public
  */var t=function(r){var a=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,l=0,i={},o={manual:r.Prism&&r.Prism.manual,disableWorkerMessageHandler:r.Prism&&r.Prism.disableWorkerMessageHandler,util:{encode:function s(c){return c instanceof u?new u(c.type,s(c.content),c.alias):Array.isArray(c)?c.map(s):c.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++l}),s.__id},clone:function s(c,f){f=f||{};var h,g;switch(o.util.type(c)){case"Object":if(g=o.util.objId(c),f[g])return f[g];h={},f[g]=h;for(var b in c)c.hasOwnProperty(b)&&(h[b]=s(c[b],f));return h;case"Array":return g=o.util.objId(c),f[g]?f[g]:(h=[],f[g]=h,c.forEach(function(y,C){h[C]=s(y,f)}),h);default:return c}},getLanguage:function(s){for(;s;){var c=a.exec(s.className);if(c)return c[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,c){s.className=s.className.replace(RegExp(a,"gi"),""),s.classList.add("language-"+c)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var c=document.getElementsByTagName("script");for(var f in c)if(c[f].src==s)return c[f]}return null}},isActive:function(s,c,f){for(var h="no-"+c;s;){var g=s.classList;if(g.contains(c))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!f}},languages:{plain:i,plaintext:i,text:i,txt:i,extend:function(s,c){var f=o.util.clone(o.languages[s]);for(var h in c)f[h]=c[h];return f},insertBefore:function(s,c,f,h){h=h||o.languages;var g=h[s],b={};for(var y in g)if(g.hasOwnProperty(y)){if(y==c)for(var C in f)f.hasOwnProperty(C)&&(b[C]=f[C]);f.hasOwnProperty(y)||(b[y]=g[y])}var E=h[s];return h[s]=b,o.languages.DFS(o.languages,function(z,de){de===E&&z!=s&&(this[z]=b)}),b},DFS:function s(c,f,h,g){g=g||{};var b=o.util.objId;for(var y in c)if(c.hasOwnProperty(y)){f.call(c,y,c[y],h||y);var C=c[y],E=o.util.type(C);E==="Object"&&!g[b(C)]?(g[b(C)]=!0,s(C,f,null,g)):E==="Array"&&!g[b(C)]&&(g[b(C)]=!0,s(C,f,y,g))}}},plugins:{},highlightAll:function(s,c){o.highlightAllUnder(document,s,c)},highlightAllUnder:function(s,c,f){var h={callback:f,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};o.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),o.hooks.run("before-all-elements-highlight",h);for(var g=0,b;b=h.elements[g++];)o.highlightElement(b,c===!0,h.callback)},highlightElement:function(s,c,f){var h=o.util.getLanguage(s),g=o.languages[h];o.util.setLanguage(s,h);var b=s.parentElement;b&&b.nodeName.toLowerCase()==="pre"&&o.util.setLanguage(b,h);var y=s.textContent,C={element:s,language:h,grammar:g,code:y};function E(de){C.highlightedCode=de,o.hooks.run("before-insert",C),C.element.innerHTML=C.highlightedCode,o.hooks.run("after-highlight",C),o.hooks.run("complete",C),f&&f.call(C.element)}if(o.hooks.run("before-sanity-check",C),b=C.element.parentElement,b&&b.nodeName.toLowerCase()==="pre"&&!b.hasAttribute("tabindex")&&b.setAttribute("tabindex","0"),!C.code){o.hooks.run("complete",C),f&&f.call(C.element);return}if(o.hooks.run("before-highlight",C),!C.grammar){E(o.util.encode(C.code));return}if(c&&r.Worker){var z=new Worker(o.filename);z.onmessage=function(de){E(de.data)},z.postMessage(JSON.stringify({language:C.language,code:C.code,immediateClose:!0}))}else E(o.highlight(C.code,C.grammar,C.language))},highlight:function(s,c,f){var h={code:s,grammar:c,language:f};if(o.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=o.tokenize(h.code,h.grammar),o.hooks.run("after-tokenize",h),u.stringify(o.util.encode(h.tokens),h.language)},tokenize:function(s,c){var f=c.rest;if(f){for(var h in f)c[h]=f[h];delete c.rest}var g=new x;return m(g,g.head,s),v(s,g,c,g.head,0),k(g)},hooks:{all:{},add:function(s,c){var f=o.hooks.all;f[s]=f[s]||[],f[s].push(c)},run:function(s,c){var f=o.hooks.all[s];if(!(!f||!f.length))for(var h=0,g;g=f[h++];)g(c)}},Token:u};r.Prism=o;function u(s,c,f,h){this.type=s,this.content=c,this.alias=f,this.length=(h||"").length|0}u.stringify=function s(c,f){if(typeof c=="string")return c;if(Array.isArray(c)){var h="";return c.forEach(function(E){h+=s(E,f)}),h}var g={type:c.type,content:s(c.content,f),tag:"span",classes:["token",c.type],attributes:{},language:f},b=c.alias;b&&(Array.isArray(b)?Array.prototype.push.apply(g.classes,b):g.classes.push(b)),o.hooks.run("wrap",g);var y="";for(var C in g.attributes)y+=" "+C+'="'+(g.attributes[C]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function p(s,c,f,h){s.lastIndex=c;var g=s.exec(f);if(g&&h&&g[1]){var b=g[1].length;g.index+=b,g[0]=g[0].slice(b)}return g}function v(s,c,f,h,g,b){for(var y in f)if(!(!f.hasOwnProperty(y)||!f[y])){var C=f[y];C=Array.isArray(C)?C:[C];for(var E=0;E<C.length;++E){if(b&&b.cause==y+","+E)return;var z=C[E],de=z.inside,nn=!!z.lookbehind,ht=!!z.greedy,ka=z.alias;if(ht&&!z.pattern.global){var gt=z.pattern.toString().match(/[imsuy]*$/)[0];z.pattern=RegExp(z.pattern.source,gt+"g")}for(var Mn=z.pattern||z,$=h.next,P=g;$!==c.tail&&!(b&&P>=b.reach);P+=$.value.length,$=$.next){var R=$.value;if(c.length>s.length)return;if(!(R instanceof u)){var M=1,D;if(ht){if(D=p(Mn,P,s,nn),!D||D.index>=s.length)break;var Se=D.index,In=D.index+D[0].length,te=P;for(te+=$.value.length;Se>=te;)$=$.next,te+=$.value.length;if(te-=$.value.length,P=te,$.value instanceof u)continue;for(var je=$;je!==c.tail&&(te<In||typeof je.value=="string");je=je.next)M++,te+=je.value.length;M--,R=s.slice(P,te),D.index-=P}else if(D=p(Mn,0,R,nn),!D)continue;var Se=D.index,Ve=D[0],Sa=R.slice(0,Se),Ui=R.slice(Se+Ve.length),$a=P+R.length;b&&$a>b.reach&&(b.reach=$a);var ir=$.prev;Sa&&(ir=m(c,ir,Sa),P+=Sa.length),w(c,ir,M);var xu=new u(y,de?o.tokenize(Ve,de):Ve,ka,Ve);if($=m(c,ir,xu),Ui&&m(c,$,Ui),M>1){var Ca={cause:y+","+E,reach:$a};v(s,c,f,$.prev,P,Ca),b&&Ca.reach>b.reach&&(b.reach=Ca.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},c={value:null,prev:s,next:null};s.next=c,this.head=s,this.tail=c,this.length=0}function m(s,c,f){var h=c.next,g={value:f,prev:c,next:h};return c.next=g,h.prev=g,s.length++,g}function w(s,c,f){for(var h=c.next,g=0;g<f&&h!==s.tail;g++)h=h.next;c.next=h,h.prev=c,s.length-=g}function k(s){for(var c=[],f=s.head.next;f!==s.tail;)c.push(f.value),f=f.next;return c}if(!r.document)return r.addEventListener&&(o.disableWorkerMessageHandler||r.addEventListener("message",function(s){var c=JSON.parse(s.data),f=c.language,h=c.code,g=c.immediateClose;r.postMessage(o.highlight(h,o.languages[f],f)),g&&r.close()},!1)),o;var _=o.util.currentScript();_&&(o.filename=_.src,_.hasAttribute("data-manual")&&(o.manual=!0));function T(){o.manual||o.highlightAll()}if(!o.manual){var d=document.readyState;d==="loading"||d==="interactive"&&_&&_.defer?document.addEventListener("DOMContentLoaded",T):window.requestAnimationFrame?window.requestAnimationFrame(T):window.setTimeout(T,16)}return o}(n);e.exports&&(e.exports=t),typeof el<"u"&&(el.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(r){r.type==="entity"&&(r.attributes.title=r.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(a,l){var i={};i["language-"+l]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[l]},i.cdata=/^<!\[CDATA\[|\]\]>$/i;var o={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:i}};o["language-"+l]={pattern:/[\s\S]+/,inside:t.languages[l]};var u={};u[a]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return a}),"i"),lookbehind:!0,greedy:!0,inside:o},t.languages.insertBefore("markup","cdata",u)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(r,a){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+r+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[a,"language-"+a],inside:t.languages[a]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(r){var a=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;r.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+a.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+a.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+a.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+a.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:a,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},r.languages.css.atrule.inside.rest=r.languages.css;var l=r.languages.markup;l&&(l.tag.addInlined("style","css"),l.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var r="Loading…",a=function(_,T){return"✖ Error "+_+" while fetching file: "+T},l="✖ Error: File does not exist or is empty",i={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},o="data-src-status",u="loading",p="loaded",v="failed",x="pre[data-src]:not(["+o+'="'+p+'"]):not(['+o+'="'+u+'"])';function m(_,T,d){var s=new XMLHttpRequest;s.open("GET",_,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?T(s.responseText):s.status>=400?d(a(s.status,s.statusText)):d(l))},s.send(null)}function w(_){var T=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(_||"");if(T){var d=Number(T[1]),s=T[2],c=T[3];return s?c?[d,Number(c)]:[d,void 0]:[d,d]}}t.hooks.add("before-highlightall",function(_){_.selector+=", "+x}),t.hooks.add("before-sanity-check",function(_){var T=_.element;if(T.matches(x)){_.code="",T.setAttribute(o,u);var d=T.appendChild(document.createElement("CODE"));d.textContent=r;var s=T.getAttribute("data-src"),c=_.language;if(c==="none"){var f=(/\.(\w+)$/.exec(s)||[,"none"])[1];c=i[f]||f}t.util.setLanguage(d,c),t.util.setLanguage(T,c);var h=t.plugins.autoloader;h&&h.loadLanguages(c),m(s,function(g){T.setAttribute(o,p);var b=w(T.getAttribute("data-range"));if(b){var y=g.split(/\r\n?|\n/g),C=b[0],E=b[1]==null?y.length:b[1];C<0&&(C+=y.length),C=Math.max(0,Math.min(C-1,y.length)),E<0&&(E+=y.length),E=Math.max(0,Math.min(E,y.length)),g=y.slice(C,E).join(`
-`),T.hasAttribute("data-start")||T.setAttribute("data-start",String(C+1))}d.textContent=g,t.highlightElement(d)},function(g){T.setAttribute(o,v),d.textContent=g})}}),t.plugins.fileHighlight={highlight:function(T){for(var d=(T||document).querySelectorAll(x),s=0,c;c=d[s++];)t.highlightElement(c)}};var k=!1;t.fileHighlight=function(){k||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),k=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mu);var Zf=mu.exports;const Xl=Kl(Zf);Xl.languages.manim||(Xl.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function qf({source:e,visible:n}){const t=ve.useRef(null);return ve.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Xl.highlightElement(t.current))},[e]),!n||!e?null:A.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[A.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),A.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:A.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:A.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Ja="nav";function Jf(){const[e,n]=ve.useState(Ja),[t,r]=ve.useState(!1),[a,l]=ve.useState(!1),[i,o]=ve.useState(null),[u]=ve.useState(()=>new Xf);ve.useEffect(()=>(window.playgroundLoader=u,window.defaultScreen=Ja,()=>{u.dispose()}),[u]),ve.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const k=w[1];n(k),u.switchScreen(k)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[u]);const p=x=>{n(x),window.location.hash=`screen=${x}`,u.switchScreen(x);const m=u.getSourceForScreen(x);o(m)},v=()=>{if(!a){const x=u.getSourceForScreen(e);o(x)}l(!a)};return A.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[A.jsx(Kf,{currentScreen:e,onScreenSelect:p,collapsed:t,onToggleCollapse:()=>r(!t)}),A.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[A.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[A.jsx("button",{onClick:()=>p(Ja),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),A.jsx("div",{className:"flex items-center space-x-3",children:A.jsx("button",{onClick:v,className:`text-xs px-2 py-0.5 rounded transition-colors ${a?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:a?"Hide Source":"View .manim"})})]}),A.jsxs("div",{className:"flex-1 flex min-h-0",children:[A.jsx("div",{className:`${a?"w-2/3":"w-full"} min-h-0`,children:A.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),a&&A.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:A.jsx(qf,{source:i,visible:a})})]})]})]})}var hu={exports:{}};(function(e,n){(function(t,r){e.exports=r()})(el,function(){var t=function(){},r={},a={},l={};function i(m,w){m=m.push?m:[m];var k=[],_=m.length,T=_,d,s,c,f;for(d=function(h,g){g.length&&k.push(h),T--,T||w(k)};_--;){if(s=m[_],c=a[s],c){d(s,c);continue}f=l[s]=l[s]||[],f.push(d)}}function o(m,w){if(m){var k=l[m];if(a[m]=w,!!k)for(;k.length;)k[0](m,w),k.splice(0,1)}}function u(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function p(m,w,k,_){var T=document,d=k.async,s=(k.numRetries||0)+1,c=k.before||t,f=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,b,y;if(_=_||0,/(^css!|\.css$)/.test(f))y=T.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(f))y=T.createElement("img"),y.src=h;else if(y=T.createElement("script"),y.src=h,y.async=d===void 0?!0:d,b="noModule"in y,/^module!/.test(f)){if(!b)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(f)&&b)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var E=C.type[0];if(g)try{y.sheet.cssText.length||(E="e")}catch(z){z.code!=18&&(E="e")}if(E=="e"){if(_+=1,_<s)return p(m,w,k,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,E,C.defaultPrevented)},c(m,y)!==!1&&T.head.appendChild(y)}function v(m,w,k){m=m.push?m:[m];var _=m.length,T=_,d=[],s,c;for(s=function(f,h,g){if(h=="e"&&d.push(f),h=="b")if(g)d.push(f);else return;_--,_||w(d)},c=0;c<T;c++)p(m[c],s,k)}function x(m,w,k){var _,T;if(w&&w.trim&&(_=w),T=(_?k:w)||{},_){if(_ in r)throw"LoadJS";r[_]=!0}function d(s,c){v(m,function(f){u(T,f),s&&u({success:s,error:c},f),o(_,f)},T)}if(T.returnPromise)return new Promise(d);d()}return x.ready=function(w,k){return i(w,function(_){u(k,_)}),x},x.done=function(w){o(w,[])},x.reset=function(){r={},a={},l={}},x.isDefined=function(w){return w in r},x})})(hu);var ep=hu.exports;const np=Kl(ep);class tp{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);np("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gu=new tp({maxRetries:5,retryDelay:2e3,timeout:1e4});gu.start();window.haxeLoader=gu;nl.createRoot(document.getElementById("root")).render(A.jsx(zu.StrictMode,{children:A.jsx(Jf,{})}));
-//# sourceMappingURL=index-DTzDieqA.js.map
+`),T.hasAttribute("data-start")||T.setAttribute("data-start",String(C+1))}d.textContent=g,t.highlightElement(d)},function(g){T.setAttribute(o,v),d.textContent=g})}}),t.plugins.fileHighlight={highlight:function(T){for(var d=(T||document).querySelectorAll(x),s=0,c;c=d[s++];)t.highlightElement(c)}};var k=!1;t.fileHighlight=function(){k||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),k=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mu);var Zf=mu.exports;const Xl=Kl(Zf);Xl.languages.manim||(Xl.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function qf({source:e,visible:n}){const t=ve.useRef(null);return ve.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Xl.highlightElement(t.current))},[e]),!n||!e?null:A.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[A.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),A.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:A.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:A.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Ja="nav";function Jf(){const[e,n]=ve.useState(Ja),[t,r]=ve.useState(!1),[a,l]=ve.useState(!1),[i,o]=ve.useState(null),[u]=ve.useState(()=>new Xf);ve.useEffect(()=>{window.playgroundLoader=u;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Ja,()=>{u.dispose()}},[u]),ve.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const k=w[1];n(k),u.switchScreen(k)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[u]);const p=x=>{n(x),window.location.hash=`screen=${x}`,u.switchScreen(x);const m=u.getSourceForScreen(x);o(m)},v=()=>{if(!a){const x=u.getSourceForScreen(e);o(x)}l(!a)};return A.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[A.jsx(Kf,{currentScreen:e,onScreenSelect:p,collapsed:t,onToggleCollapse:()=>r(!t)}),A.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[A.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[A.jsx("button",{onClick:()=>p(Ja),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),A.jsx("div",{className:"flex items-center space-x-3",children:A.jsx("button",{onClick:v,className:`text-xs px-2 py-0.5 rounded transition-colors ${a?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:a?"Hide Source":"View .manim"})})]}),A.jsxs("div",{className:"flex-1 flex min-h-0",children:[A.jsx("div",{className:`${a?"w-2/3":"w-full"} min-h-0`,children:A.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),a&&A.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:A.jsx(qf,{source:i,visible:a})})]})]})]})}var hu={exports:{}};(function(e,n){(function(t,r){e.exports=r()})(el,function(){var t=function(){},r={},a={},l={};function i(m,w){m=m.push?m:[m];var k=[],_=m.length,T=_,d,s,c,f;for(d=function(h,g){g.length&&k.push(h),T--,T||w(k)};_--;){if(s=m[_],c=a[s],c){d(s,c);continue}f=l[s]=l[s]||[],f.push(d)}}function o(m,w){if(m){var k=l[m];if(a[m]=w,!!k)for(;k.length;)k[0](m,w),k.splice(0,1)}}function u(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function p(m,w,k,_){var T=document,d=k.async,s=(k.numRetries||0)+1,c=k.before||t,f=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,b,y;if(_=_||0,/(^css!|\.css$)/.test(f))y=T.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(f))y=T.createElement("img"),y.src=h;else if(y=T.createElement("script"),y.src=h,y.async=d===void 0?!0:d,b="noModule"in y,/^module!/.test(f)){if(!b)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(f)&&b)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var E=C.type[0];if(g)try{y.sheet.cssText.length||(E="e")}catch(z){z.code!=18&&(E="e")}if(E=="e"){if(_+=1,_<s)return p(m,w,k,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,E,C.defaultPrevented)},c(m,y)!==!1&&T.head.appendChild(y)}function v(m,w,k){m=m.push?m:[m];var _=m.length,T=_,d=[],s,c;for(s=function(f,h,g){if(h=="e"&&d.push(f),h=="b")if(g)d.push(f);else return;_--,_||w(d)},c=0;c<T;c++)p(m[c],s,k)}function x(m,w,k){var _,T;if(w&&w.trim&&(_=w),T=(_?k:w)||{},_){if(_ in r)throw"LoadJS";r[_]=!0}function d(s,c){v(m,function(f){u(T,f),s&&u({success:s,error:c},f),o(_,f)},T)}if(T.returnPromise)return new Promise(d);d()}return x.ready=function(w,k){return i(w,function(_){u(k,_)}),x},x.done=function(w){o(w,[])},x.reset=function(){r={},a={},l={}},x.isDefined=function(w){return w in r},x})})(hu);var ep=hu.exports;const np=Kl(ep);class tp{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);np("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gu=new tp({maxRetries:5,retryDelay:2e3,timeout:1e4});gu.start();window.haxeLoader=gu;nl.createRoot(document.getElementById("root")).render(A.jsx(zu.StrictMode,{children:A.jsx(Jf,{})}));
+//# sourceMappingURL=index-BCdai0x2.js.map

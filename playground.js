@@ -13563,6 +13563,24 @@ bh_multianim_Updatable.prototype = {
 			}
 		}
 	}
+	,updateTile: function(newTile,throwIfAnyFails) {
+		if(throwIfAnyFails == null) {
+			throwIfAnyFails = true;
+		}
+		var _g = 0;
+		var _g1 = this.updatables;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			var _g2 = v.object;
+			if(_g2._hx_index == 3) {
+				var b = _g2.b;
+				b.set_tile(newTile);
+			} else if(throwIfAnyFails) {
+				throw haxe_Exception.thrown("invalid updateTile: expected HeapsBitmap but got " + Std.string(v.object));
+			}
+		}
+	}
 	,setObject: function(newObject) {
 		if(this.updatables.length != 1) {
 			throw haxe_Exception.thrown("setObject needs exactly one updatable");
@@ -84619,6 +84637,175 @@ js_html__$CanvasElement_CanvasUtil.getContextWebGL = function(canvas,attribs) {
 	return null;
 };
 Math.__name__ = "Math";
+var screens_ColorPickerDialog = function(screenManager,dialogBuilder,okButtonBuilder,cancelButtonBuilder,sliderBuilder,dialogTitle,initialColor) {
+	bh_ui_screens_UIScreenBase.call(this,screenManager);
+	this.dialogBuilder = dialogBuilder;
+	this.okButtonBuilder = okButtonBuilder;
+	this.cancelButtonBuilder = cancelButtonBuilder;
+	this.sliderBuilder = sliderBuilder;
+	this.dialogTitle = dialogTitle;
+	this.initialColor = initialColor;
+};
+$hxClasses["screens.ColorPickerDialog"] = screens_ColorPickerDialog;
+screens_ColorPickerDialog.__name__ = "screens.ColorPickerDialog";
+screens_ColorPickerDialog.__super__ = bh_ui_screens_UIScreenBase;
+screens_ColorPickerDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		var generatedByMacroBuildWithParametersload1422Builder = function() {
+			var sliderR;
+			var sliderG;
+			var sliderB;
+			var ok;
+			var cancel;
+			var _gthis1 = _gthis.dialogBuilder.builder;
+			var _gthis2 = _gthis.dialogBuilder.name;
+			var _g = new haxe_ds_StringMap();
+			_g.h["dialogTitle"] = _gthis.dialogTitle;
+			var _g1 = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.sliderBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sliderR = _el;
+				return _el.getObject();
+			});
+			_g1.h["sliderR"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.sliderBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sliderG = _el;
+				return _el.getObject();
+			});
+			_g1.h["sliderG"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.sliderBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sliderB = _el;
+				return _el.getObject();
+			});
+			_g1.h["sliderB"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButton(_gthis.okButtonBuilder,"OK",settings);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				ok = _el;
+				return _el.getObject();
+			});
+			_g1.h["ok"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButton(_gthis.cancelButtonBuilder,"Cancel",settings);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cancel = _el;
+				return _el.getObject();
+			});
+			_g1.h["cancel"] = value;
+			var builderResults = _gthis1.buildWithParameters(_gthis2,_g,{ placeholderObjects : _g1});
+			var retVal = { sliderR : sliderR, sliderG : sliderG, sliderB : sliderB, ok : ok, cancel : cancel, builderResults : builderResults};
+			if(retVal.sliderR == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sliderR" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sliderG == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sliderG" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sliderB == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sliderB" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.ok == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "ok" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.cancel == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cancel" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var dialog = generatedByMacroBuildWithParametersload1422Builder();
+		this.addBuilderResult(dialog.builderResults);
+		this.okButton = dialog.ok;
+		this.cancelButton = dialog.cancel;
+		this.sliderR = dialog.sliderR;
+		this.sliderG = dialog.sliderG;
+		this.sliderB = dialog.sliderB;
+		this.dialogResult = dialog.builderResults;
+		var r = this.initialColor >> 16 & 255;
+		var g = this.initialColor >> 8 & 255;
+		var b = this.initialColor & 255;
+		if(this.sliderR != null) {
+			this.sliderR.setFloatValue(r);
+		}
+		if(this.sliderG != null) {
+			this.sliderG.setFloatValue(g);
+		}
+		if(this.sliderB != null) {
+			this.sliderB.setFloatValue(b);
+		}
+		this.updatePreview();
+	}
+	,getCurrentColor: function() {
+		var r = this.sliderR != null ? this.sliderR.getFloatValue() | 0 : 0;
+		var g = this.sliderG != null ? this.sliderG.getFloatValue() | 0 : 0;
+		var b = this.sliderB != null ? this.sliderB.getFloatValue() | 0 : 0;
+		return r << 16 | g << 8 | b;
+	}
+	,updatePreview: function() {
+		if(this.dialogResult == null) {
+			return;
+		}
+		var color = this.getCurrentColor();
+		var previewUpdatable = this.dialogResult.getUpdatable("colorPreview");
+		if(previewUpdatable != null) {
+			previewUpdatable.updateTile(h2d_Tile.fromColor(color,100,60));
+		}
+		var hexUpdatable = this.dialogResult.getUpdatable("hexValue");
+		if(hexUpdatable != null) {
+			hexUpdatable.updateText("#" + StringTools.hex(color,6));
+		}
+		var rUpdatable = this.dialogResult.getUpdatable("rValue");
+		if(rUpdatable != null) {
+			rUpdatable.updateText(Std.string(this.sliderR != null ? this.sliderR.getFloatValue() | 0 : 0));
+		}
+		var gUpdatable = this.dialogResult.getUpdatable("gValue");
+		if(gUpdatable != null) {
+			gUpdatable.updateText(Std.string(this.sliderG != null ? this.sliderG.getFloatValue() | 0 : 0));
+		}
+		var bUpdatable = this.dialogResult.getUpdatable("bValue");
+		if(bUpdatable != null) {
+			bUpdatable.updateText(Std.string(this.sliderB != null ? this.sliderB.getFloatValue() | 0 : 0));
+		}
+	}
+	,onScreenEvent: function(event,source) {
+		switch(event._hx_index) {
+		case 0:
+			if(source == this.okButton) {
+				this.getController().exitResponse = this.getCurrentColor();
+			} else if(source == this.cancelButton) {
+				this.getController().exitResponse = false;
+			}
+			break;
+		case 3:
+			var value = event.value;
+			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
+				this.updatePreview();
+			}
+			break;
+		case 4:
+			var value = event.value;
+			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
+				this.updatePreview();
+			}
+			break;
+		case 7:
+			var keyCode = event.keyCode;
+			var release = event.release;
+			if(keyCode == 13) {
+				this.getController().exitResponse = this.getCurrentColor();
+			} else if(keyCode == 27) {
+				this.getController().exitResponse = false;
+			}
+			break;
+		default:
+		}
+	}
+	,__class__: screens_ColorPickerDialog
+});
 var screens_OkCancelDialog = function(screenManager,dialogBuilder,okButtonBuilder,cancelButtonBuilder,okText,cancelText,dialogText) {
 	bh_ui_screens_UIScreenBase.call(this,screenManager);
 	this.initialDialogText = dialogText;
@@ -87002,6 +87189,9 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 	,__class__: screens_animation_CurvesDemoScreen
 });
 var screens_animation_FiltersDemoScreen = function(screenManager,layers) {
+	this.activeColorPickerIndex = -1;
+	this.filterColors = [];
+	this.cellColorButtons = [];
 	this.cellChecks = [];
 	this.cellSliders = [];
 	this.cellPreviews = [];
@@ -87018,8 +87208,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.setupDemo("Filters","Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow, grayscale, hue, pixelOutline");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/filters.manim",false);
 		this.checkboxBuilder = this.screenManager.buildFromResourceName("checkbox.manim",false);
+		this.colorPickerBuilder = this.screenManager.buildFromResourceName("demos/animation/color-picker-dialog.manim",false);
 		this.scrollableList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",TestBitmaps.get_ALL_ITEMS(),null,0,160,200);
 		this.addElement(this.scrollableList,null);
+		this.filterColors = screens_animation_FiltersDemoScreen.COLOR_DEFAULTS.slice();
 		var _g = 0;
 		var _g1 = screens_animation_FiltersDemoScreen.NUM_FILTERS;
 		while(_g < _g1) {
@@ -87028,9 +87220,11 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			this.cellPreviews.push(null);
 			this.cellSliders.push([]);
 			this.cellChecks.push([]);
+			this.cellColorButtons.push(null);
 		}
-		var generatedByMacroBuildWithParametersload2665Builder = function() {
+		var generatedByMacroBuildWithParametersload3432Builder = function() {
 			var sSize;
+			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -87041,21 +87235,33 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["sSize"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Pick");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				bColor = _el;
+				return _el.getObject();
+			});
+			_g.h["bColor"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("outlineCell",builderResults,{ placeholderObjects : _g});
-			var retVal = { sSize : sSize, builderResults : builderResults1};
+			var retVal = { sSize : sSize, bColor : bColor, builderResults : builderResults1};
 			if(retVal.sSize == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sSize" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.bColor == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "bColor" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var o = generatedByMacroBuildWithParametersload2665Builder();
+		var o = generatedByMacroBuildWithParametersload3432Builder();
 		this.cellResults[0] = o.builderResults;
 		this.cellSliders[0] = [o.sSize];
-		var generatedByMacroBuildWithParametersload2849Builder = function() {
+		this.cellColorButtons[0] = o.bColor;
+		var generatedByMacroBuildWithParametersload3729Builder = function() {
 			var sRadius;
 			var sAlpha;
 			var cSmooth;
 			var cKnockout;
+			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -87087,8 +87293,15 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["cKnockout"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Pick");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				bColor = _el;
+				return _el.getObject();
+			});
+			_g.h["bColor"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("glowCell",builderResults,{ placeholderObjects : _g});
-			var retVal = { sRadius : sRadius, sAlpha : sAlpha, cSmooth : cSmooth, cKnockout : cKnockout, builderResults : builderResults1};
+			var retVal = { sRadius : sRadius, sAlpha : sAlpha, cSmooth : cSmooth, cKnockout : cKnockout, bColor : bColor, builderResults : builderResults1};
 			if(retVal.sRadius == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sRadius" + " is null (check if placeholder object is named correctly)");
 			}
@@ -87101,13 +87314,17 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			if(retVal.cKnockout == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cKnockout" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.bColor == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "bColor" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var g = generatedByMacroBuildWithParametersload2849Builder();
+		var g = generatedByMacroBuildWithParametersload3729Builder();
 		this.cellResults[1] = g.builderResults;
 		this.cellSliders[1] = [g.sAlpha,g.sRadius];
 		this.cellChecks[1] = [g.cSmooth,g.cKnockout];
-		var generatedByMacroBuildWithParametersload3237Builder = function() {
+		this.cellColorButtons[1] = g.bColor;
+		var generatedByMacroBuildWithParametersload4222Builder = function() {
 			var sRadius;
 			var sGain;
 			var _gthis1 = _gthis.demoBuilder;
@@ -87137,10 +87354,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var b = generatedByMacroBuildWithParametersload3237Builder();
+		var b = generatedByMacroBuildWithParametersload4222Builder();
 		this.cellResults[2] = b.builderResults;
 		this.cellSliders[2] = [b.sRadius,b.sGain];
-		var generatedByMacroBuildWithParametersload3477Builder = function() {
+		var generatedByMacroBuildWithParametersload4462Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -87159,10 +87376,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var s = generatedByMacroBuildWithParametersload3477Builder();
+		var s = generatedByMacroBuildWithParametersload4462Builder();
 		this.cellResults[3] = s.builderResults;
 		this.cellSliders[3] = [s.sValue];
-		var generatedByMacroBuildWithParametersload3665Builder = function() {
+		var generatedByMacroBuildWithParametersload4650Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -87181,15 +87398,16 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var br = generatedByMacroBuildWithParametersload3665Builder();
+		var br = generatedByMacroBuildWithParametersload4650Builder();
 		this.cellResults[4] = br.builderResults;
 		this.cellSliders[4] = [br.sValue];
-		var generatedByMacroBuildWithParametersload3857Builder = function() {
+		var generatedByMacroBuildWithParametersload4842Builder = function() {
 			var sRadius;
 			var sDist;
 			var sAngle;
 			var sAlpha;
 			var cSmooth;
+			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -87228,8 +87446,15 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["cSmooth"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Pick");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				bColor = _el;
+				return _el.getObject();
+			});
+			_g.h["bColor"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("dropShadowCell",builderResults,{ placeholderObjects : _g});
-			var retVal = { sRadius : sRadius, sDist : sDist, sAngle : sAngle, sAlpha : sAlpha, cSmooth : cSmooth, builderResults : builderResults1};
+			var retVal = { sRadius : sRadius, sDist : sDist, sAngle : sAngle, sAlpha : sAlpha, cSmooth : cSmooth, bColor : bColor, builderResults : builderResults1};
 			if(retVal.sRadius == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sRadius" + " is null (check if placeholder object is named correctly)");
 			}
@@ -87245,13 +87470,17 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			if(retVal.cSmooth == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cSmooth" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.bColor == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "bColor" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var ds = generatedByMacroBuildWithParametersload3857Builder();
+		var ds = generatedByMacroBuildWithParametersload4842Builder();
 		this.cellResults[5] = ds.builderResults;
 		this.cellSliders[5] = [ds.sDist,ds.sAngle,ds.sAlpha,ds.sRadius];
 		this.cellChecks[5] = [ds.cSmooth];
-		var generatedByMacroBuildWithParametersload4289Builder = function() {
+		this.cellColorButtons[5] = ds.bColor;
+		var generatedByMacroBuildWithParametersload5380Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -87270,10 +87499,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var gs = generatedByMacroBuildWithParametersload4289Builder();
+		var gs = generatedByMacroBuildWithParametersload5380Builder();
 		this.cellResults[6] = gs.builderResults;
 		this.cellSliders[6] = [gs.sValue];
-		var generatedByMacroBuildWithParametersload4480Builder = function() {
+		var generatedByMacroBuildWithParametersload5571Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -87292,11 +87521,12 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var hu = generatedByMacroBuildWithParametersload4480Builder();
+		var hu = generatedByMacroBuildWithParametersload5571Builder();
 		this.cellResults[7] = hu.builderResults;
 		this.cellSliders[7] = [hu.sValue];
-		var generatedByMacroBuildWithParametersload4665Builder = function() {
+		var generatedByMacroBuildWithParametersload5756Builder = function() {
 			var sStrength;
+			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -87307,16 +87537,27 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["sStrength"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Pick");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				bColor = _el;
+				return _el.getObject();
+			});
+			_g.h["bColor"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("pixelOutlineCell",builderResults,{ placeholderObjects : _g});
-			var retVal = { sStrength : sStrength, builderResults : builderResults1};
+			var retVal = { sStrength : sStrength, bColor : bColor, builderResults : builderResults1};
 			if(retVal.sStrength == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sStrength" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.bColor == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "bColor" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var po = generatedByMacroBuildWithParametersload4665Builder();
+		var po = generatedByMacroBuildWithParametersload5756Builder();
 		this.cellResults[8] = po.builderResults;
 		this.cellSliders[8] = [po.sStrength];
+		this.cellColorButtons[8] = po.bColor;
 		var _g = 0;
 		var _g1 = screens_animation_FiltersDemoScreen.NUM_FILTERS;
 		while(_g < _g1) {
@@ -87378,6 +87619,14 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			var i = _g++;
 			params.h[screens_animation_FiltersDemoScreen.CHECK_PARAMS[cellIdx][i]] = this.cellChecks[cellIdx][i].selected ? 1 : 0;
 		}
+		var _g = 0;
+		var _g1 = screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES.length;
+		while(_g < _g1) {
+			var ci = _g++;
+			if(screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES[ci] == cellIdx) {
+				params.h[screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES[ci]] = this.filterColors[ci];
+			}
+		}
 		var preview = this.demoBuilder.buildWithParameters(screens_animation_FiltersDemoScreen.PREVIEW_NAMES[cellIdx],params);
 		var _this = preview.object;
 		_this.posChanged = true;
@@ -87437,8 +87686,40 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			updatable.updateText(text);
 		}
 	}
+	,findColorIndexForSource: function(source) {
+		var _g = 0;
+		var _g1 = screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES.length;
+		while(_g < _g1) {
+			var ci = _g++;
+			var filterIdx = screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES[ci];
+			if(source == this.cellColorButtons[filterIdx]) {
+				return ci;
+			}
+		}
+		return -1;
+	}
+	,openColorPicker: function(colorArrayIndex) {
+		if(this.colorPickerBuilder == null || this.stdBuilder == null) {
+			return;
+		}
+		var currentColor = this.filterColors[colorArrayIndex];
+		var filterIdx = screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES[colorArrayIndex];
+		var filterName = StringTools.replace(screens_animation_FiltersDemoScreen.PREVIEW_NAMES[filterIdx],"Preview","");
+		var okBuilder = this.stdBuilder.createElementBuilder("button");
+		var cancelBuilder = this.stdBuilder.createElementBuilder("button");
+		var dialogScreenBuilder = this.colorPickerBuilder.createElementBuilder("colorPickerDialog");
+		var dialog = new screens_ColorPickerDialog(this.screenManager,dialogScreenBuilder,okBuilder,cancelBuilder,this.stdBuilder,"Color: " + filterName,currentColor);
+		this.activeColorPickerIndex = colorArrayIndex;
+		this.screenManager.modalDialog(dialog,this,"colorPicker");
+	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
+		case 0:
+			var ci = this.findColorIndexForSource(source);
+			if(ci >= 0) {
+				this.openColorPicker(ci);
+			}
+			break;
 		case 2:
 			var pressed = event.pressed;
 			var cellIdx = this.findCellForSource(source);
@@ -87487,6 +87768,21 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
+		case 8:
+			var controllerEvent = event.event;
+			if(controllerEvent._hx_index == 2) {
+				var dialogName = controllerEvent.dialogName;
+				var result = controllerEvent.result;
+				if(dialogName == "colorPicker" && this.activeColorPickerIndex >= 0 && (typeof(result) == "number" && ((result | 0) === result))) {
+					var colorInt = result;
+					this.filterColors[this.activeColorPickerIndex] = colorInt;
+					var filterIdx = screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES[this.activeColorPickerIndex];
+					this.buildPreview(filterIdx);
+					this.setCellText(filterIdx,"colorHex","#" + StringTools.hex(colorInt,6));
+					this.activeColorPickerIndex = -1;
+				}
+			}
+			break;
 		default:
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
@@ -87495,12 +87791,16 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
 		this.checkboxBuilder = null;
+		this.colorPickerBuilder = null;
 		this.layoutResult = null;
 		this.scrollableList = null;
 		this.cellResults = [];
 		this.cellPreviews = [];
 		this.cellSliders = [];
 		this.cellChecks = [];
+		this.cellColorButtons = [];
+		this.filterColors = [];
+		this.activeColorPickerIndex = -1;
 	}
 	,__class__: screens_animation_FiltersDemoScreen
 });
@@ -92603,6 +92903,9 @@ screens_animation_FiltersDemoScreen.SLIDER_PARAMS = [["outlineSize"],["glowAlpha
 screens_animation_FiltersDemoScreen.CHECK_PARAMS = [[],["glowSmooth","glowKnockout"],[],[],[],["dsSmooth"],[],[],[]];
 screens_animation_FiltersDemoScreen.VALUE_LABELS = [["sizeValue"],["alphaValue","radiusValue"],["radiusValue","gainValue"],["valueText"],["valueText"],["distValue","angleValue","alphaValue","radiusValue"],["valueText"],["valueText"],["strengthValue"]];
 screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[0.0],[1.5],[3,30,0.5,6],[1.0],[0.0],[0.5]];
+screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES = [0,1,5,8];
+screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowColor","dsColor","poColor"];
+screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [16711680,16755200,0,255];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
 screens_gamelike_ShopDemoScreen.SHOP_ITEMS = [{ name : "Health Potion", price : 50, color : -48060, desc : "Restores 50 HP"},{ name : "Mana Potion", price : 40, color : -11890524, desc : "Restores 30 MP"},{ name : "Iron Sword", price : 150, color : -5197648, desc : "ATK +10"},{ name : "Leather Armor", price : 120, color : -7640812, desc : "DEF +8"},{ name : "Magic Ring", price : 200, color : -5317, desc : "INT +5"},{ name : "Speed Boots", price : 180, color : -11751600, desc : "DEX +6"}];

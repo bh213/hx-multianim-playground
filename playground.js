@@ -89866,7 +89866,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,__class__: screens_gamelike_InventoryDemoScreen
 });
 var screens_gamelike_SkillTreeDemoScreen = function(screenManager,layers) {
-	this.selected = -1;
+	this.hoveredNode = -1;
 	this.skillPoints = 5;
 	DemoScreenBase.call(this,screenManager,layers);
 };
@@ -89876,157 +89876,224 @@ screens_gamelike_SkillTreeDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Skill Tree","Dynamic refs with incremental updates, interactives for hover/click");
+		this.setupDemo("Equipment Tree","Roguelike icons with grayscale filters, tiered costs, state-driven visuals");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/skill-tree.manim",false);
-		this.unlocked = [true,false,false,false,true,false,false,false,true,false,false,false];
-		var generatedByMacroBuildWithParametersload1328Builder = function() {
+		var _g = [];
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		this.unlocked = _g;
+		var generatedByMacroBuildWithParametersload1433Builder = function() {
 			var resetButton;
+			var addPointButton;
 			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
-			_g.h["u0"] = 1;
-			_g.h["u1"] = 0;
-			_g.h["u2"] = 0;
-			_g.h["u3"] = 0;
-			_g.h["u4"] = 1;
-			_g.h["u5"] = 0;
-			_g.h["u6"] = 0;
-			_g.h["u7"] = 0;
-			_g.h["u8"] = 1;
-			_g.h["u9"] = 0;
-			_g.h["u10"] = 0;
-			_g.h["u11"] = 0;
-			_g.h["pts"] = _gthis.skillPoints;
-			var _g1 = new haxe_ds_StringMap();
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Reset");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				resetButton = _el;
 				return _el.getObject();
 			});
-			_g1.h["resetButton"] = value;
-			var builderResults = _gthis1.buildWithParameters("skillTreeDemo",_g,{ placeholderObjects : _g1},null,true);
-			var retVal = { resetButton : resetButton, builderResults : builderResults};
+			_g.h["resetButton"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"+1 SP");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				addPointButton = _el;
+				return _el.getObject();
+			});
+			_g.h["addPointButton"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("eqTreeDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { resetButton : resetButton, addPointButton : addPointButton, builderResults : builderResults1};
 			if(retVal.resetButton == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "resetButton" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.addPointButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "addPointButton" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1328Builder();
+		var ui = generatedByMacroBuildWithParametersload1433Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetButton;
+		this.addPointButton = ui.addPointButton;
 		this.addBuilderResult(this.demoResult);
 		this.addInteractives(this.demoResult);
+		this.buildNodeContent(0);
+		this.buildNodeContent(1);
+		this.buildNodeContent(2);
+		this.buildNodeContent(3);
+		this.buildNodeContent(4);
+		this.buildNodeContent(5);
+		this.buildNodeContent(6);
+		this.buildNodeContent(7);
+		this.buildNodeContent(8);
+		this.buildNodeContent(9);
+		this.buildNodeContent(10);
+		this.buildNodeContent(11);
+		this.updateSkillPointsText();
 	}
-	,isUnlockable: function(nodeIdx) {
-		if(this.unlocked[nodeIdx]) {
-			return false;
+	,nodeSlot: function(idx) {
+		return this.demoResult.getSlot(screens_gamelike_SkillTreeDemoScreen.PATH_SLOT_NAMES[idx / 4 | 0],idx % 4);
+	}
+	,nodeState: function(idx) {
+		if(this.unlocked[idx]) {
+			return "upgraded";
 		}
-		if(this.skillPoints <= 0) {
-			return false;
+		var col = idx % 4;
+		var row = idx / 4 | 0;
+		var prevUnlocked = col == 0 || this.unlocked[row * 4 + (col - 1)];
+		if(!prevUnlocked) {
+			return "hidden";
 		}
-		var col = nodeIdx % 4;
-		var row = nodeIdx / 4 | 0;
-		if(col != 0) {
-			return this.unlocked[row * 4 + (col - 1)];
+		if(this.skillPoints >= screens_gamelike_SkillTreeDemoScreen.COSTS[idx]) {
+			return "upgradable";
 		} else {
-			return true;
+			return "notEnoughPoints";
 		}
+	}
+	,buildNodeContent: function(idx) {
+		if(this.demoResult == null || this.demoBuilder == null) {
+			return;
+		}
+		var slot = this.nodeSlot(idx);
+		slot.clear();
+		var state = this.nodeState(idx);
+		slot.setParameter("state",state);
+		if(state == "hidden") {
+			return;
+		}
+		var gray = state != "upgraded";
+		var result = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["icon"] = screens_gamelike_SkillTreeDemoScreen.ICONS[idx];
+		_g.h["style"] = gray ? "gray" : "full";
+		var result1 = result.buildWithParameters("eqIcon",_g);
+		var obj = result1.object;
+		if(state == "upgradable") {
+			obj.alpha = 0.5;
+		}
+		slot.setContent(obj);
+	}
+	,recalcStates: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		this.buildNodeContent(0);
+		this.buildNodeContent(1);
+		this.buildNodeContent(2);
+		this.buildNodeContent(3);
+		this.buildNodeContent(4);
+		this.buildNodeContent(5);
+		this.buildNodeContent(6);
+		this.buildNodeContent(7);
+		this.buildNodeContent(8);
+		this.buildNodeContent(9);
+		this.buildNodeContent(10);
+		this.buildNodeContent(11);
+		this.updateSkillPointsText();
 	}
 	,onNodeClick: function(nodeIdx) {
 		if(nodeIdx < 0 || nodeIdx >= 12) {
 			return;
 		}
-		var col = nodeIdx % 4;
-		var row = nodeIdx / 4 | 0;
-		if(this.unlocked[nodeIdx]) {
-			this.selected = nodeIdx;
-			this.updateSelectHighlight();
-			this.updateInfoText("" + screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[nodeIdx] + " — already unlocked");
+		var state = this.nodeState(nodeIdx);
+		var name = screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[nodeIdx];
+		var path = screens_gamelike_SkillTreeDemoScreen.PATH_NAMES[nodeIdx / 4 | 0];
+		if(state == "upgraded") {
+			this.updateInfoText("[" + path + "] " + name + " — already unlocked");
 			return;
 		}
-		if(col > 0 && !this.unlocked[row * 4 + (col - 1)]) {
-			this.updateInfoText("Requires " + screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[row * 4 + (col - 1)] + " first!");
+		if(state == "hidden") {
+			this.updateInfoText("??? — unlock previous tier to reveal");
 			return;
 		}
-		if(this.skillPoints <= 0) {
-			this.updateInfoText("No skill points remaining!");
+		if(state == "notEnoughPoints") {
+			this.updateInfoText("[" + path + "] " + name + " — needs " + screens_gamelike_SkillTreeDemoScreen.COSTS[nodeIdx] + " SP (have " + this.skillPoints + ")");
 			return;
 		}
-		this.skillPoints--;
+		this.skillPoints -= screens_gamelike_SkillTreeDemoScreen.COSTS[nodeIdx];
 		this.unlocked[nodeIdx] = true;
-		this.selected = nodeIdx;
-		this.demoResult.setParameter("u" + nodeIdx,1);
-		this.demoResult.setParameter("pts",this.skillPoints);
-		this.updateSelectHighlight();
-		this.updateInfoText("Unlocked " + screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[nodeIdx] + "!");
+		this.recalcStates();
+		this.updateInfoText("Unlocked " + name + "! (-" + screens_gamelike_SkillTreeDemoScreen.COSTS[nodeIdx] + " SP)");
 	}
 	,onNodeHover: function(nodeIdx) {
 		if(nodeIdx < 0 || nodeIdx >= 12) {
-			this.hideHoverHighlight();
+			this.clearHover();
 			return;
 		}
-		if(this.isUnlockable(nodeIdx)) {
-			var obj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("hoverHighlight").object);
-			obj.posChanged = true;
-			obj.x = screens_gamelike_SkillTreeDemoScreen.NODE_X[nodeIdx] - 2;
-			obj.posChanged = true;
-			obj.y = screens_gamelike_SkillTreeDemoScreen.NODE_Y[nodeIdx] - 2;
-			obj.alpha = 1.0;
-		} else {
-			this.hideHoverHighlight();
+		if(this.hoveredNode >= 0 && this.hoveredNode != nodeIdx) {
+			this.nodeSlot(this.hoveredNode).setParameter("hover","off");
 		}
-		var suffix = this.unlocked[nodeIdx] ? " (unlocked)" : this.isUnlockable(nodeIdx) ? " — click to unlock" : " (locked)";
-		this.updateInfoText(screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[nodeIdx] + suffix);
+		this.hoveredNode = nodeIdx;
+		this.nodeSlot(nodeIdx).setParameter("hover","on");
+		var state = this.nodeState(nodeIdx);
+		var path = screens_gamelike_SkillTreeDemoScreen.PATH_NAMES[nodeIdx / 4 | 0];
+		var name = screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES[nodeIdx];
+		var info;
+		switch(state) {
+		case "notEnoughPoints":
+			info = "[" + path + "] " + name + " (" + screens_gamelike_SkillTreeDemoScreen.COSTS[nodeIdx] + " SP) — not enough SP";
+			break;
+		case "upgradable":
+			info = "[" + path + "] " + name + " (" + screens_gamelike_SkillTreeDemoScreen.COSTS[nodeIdx] + " SP) — click to unlock";
+			break;
+		case "upgraded":
+			info = "[" + path + "] " + name + " — unlocked";
+			break;
+		default:
+			info = "??? — unlock previous tier to reveal";
+		}
+		this.updateInfoText(info);
 	}
-	,hideHoverHighlight: function() {
-		if(this.demoResult == null) {
-			return;
+	,clearHover: function() {
+		if(this.hoveredNode >= 0 && this.demoResult != null) {
+			this.nodeSlot(this.hoveredNode).setParameter("hover","off");
+			this.hoveredNode = -1;
 		}
-		var obj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("hoverHighlight").object);
-		obj.alpha = 0.0;
 	}
-	,updateSelectHighlight: function() {
-		if(this.demoResult == null) {
-			return;
-		}
-		var obj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("selectHighlight").object);
-		if(this.selected >= 0 && this.selected < 12) {
-			var x = screens_gamelike_SkillTreeDemoScreen.NODE_X[this.selected] - 2;
-			var y = screens_gamelike_SkillTreeDemoScreen.NODE_Y[this.selected] - 2;
-			obj.posChanged = true;
-			obj.x = x;
-			obj.posChanged = true;
-			obj.y = y;
-			obj.alpha = 1.0;
-		} else {
-			obj.alpha = 0.0;
-		}
+	,addSkillPoint: function() {
+		this.skillPoints++;
+		this.recalcStates();
+		this.updateInfoText("Added 1 SP! Total: " + this.skillPoints);
 	}
 	,resetSkills: function() {
 		this.skillPoints = 5;
-		this.selected = -1;
-		this.unlocked = [true,false,false,false,true,false,false,false,true,false,false,false];
-		this.demoResult.setParameter("u" + 0,this.unlocked[0] ? 1 : 0);
-		this.demoResult.setParameter("u" + 1,this.unlocked[1] ? 1 : 0);
-		this.demoResult.setParameter("u" + 2,this.unlocked[2] ? 1 : 0);
-		this.demoResult.setParameter("u" + 3,this.unlocked[3] ? 1 : 0);
-		this.demoResult.setParameter("u" + 4,this.unlocked[4] ? 1 : 0);
-		this.demoResult.setParameter("u" + 5,this.unlocked[5] ? 1 : 0);
-		this.demoResult.setParameter("u" + 6,this.unlocked[6] ? 1 : 0);
-		this.demoResult.setParameter("u" + 7,this.unlocked[7] ? 1 : 0);
-		this.demoResult.setParameter("u" + 8,this.unlocked[8] ? 1 : 0);
-		this.demoResult.setParameter("u" + 9,this.unlocked[9] ? 1 : 0);
-		this.demoResult.setParameter("u" + 10,this.unlocked[10] ? 1 : 0);
-		this.demoResult.setParameter("u" + 11,this.unlocked[11] ? 1 : 0);
-		this.demoResult.setParameter("pts",this.skillPoints);
-		var selObj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("selectHighlight").object);
-		selObj.alpha = 0.0;
-		this.hideHoverHighlight();
-		this.updateInfoText("Skills reset!");
+		this.hoveredNode = -1;
+		var _g = [];
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		_g.push(false);
+		this.unlocked = _g;
+		this.recalcStates();
+		this.updateInfoText("Equipment tree reset!");
 	}
 	,updateInfoText: function(text) {
 		if(this.demoResult != null) {
 			this.demoResult.getUpdatable("skillInfoText").updateText(text);
+		}
+	}
+	,updateSkillPointsText: function() {
+		if(this.demoResult != null) {
+			this.demoResult.getUpdatable("skillPointsText").updateText("Skill Points: " + this.skillPoints);
 		}
 	}
 	,onScreenEvent: function(event,source) {
@@ -90034,6 +90101,8 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		case 0:
 			if(source == this.resetButton) {
 				this.resetSkills();
+			} else if(source == this.addPointButton) {
+				this.addSkillPoint();
 			} else if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
 				var wrapper = source;
 				var nodeIdx = Std.parseInt(wrapper.id);
@@ -90052,8 +90121,8 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			break;
 		case 10:
-			this.hideHoverHighlight();
-			this.updateInfoText("Hover over a skill to see details");
+			this.clearHover();
+			this.updateInfoText("Hover over equipment to see details");
 			break;
 		default:
 		}
@@ -90064,8 +90133,9 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.demoBuilder = null;
 		this.demoResult = null;
 		this.resetButton = null;
+		this.addPointButton = null;
 		this.skillPoints = 5;
-		this.selected = -1;
+		this.hoveredNode = -1;
 		this.unlocked = null;
 	}
 	,__class__: screens_gamelike_SkillTreeDemoScreen
@@ -93291,9 +93361,11 @@ screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowCol
 screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [16711680,16755200,0,255];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
-screens_gamelike_SkillTreeDemoScreen.NODE_X = [75,195,315,435,75,195,315,435,75,195,315,435];
-screens_gamelike_SkillTreeDemoScreen.NODE_Y = [70,70,70,70,155,155,155,155,240,240,240,240];
-screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Power","Cleave","Fury","Titan","Agility","Dodge","Swift","Shadow","Focus","Arcane","Mystic","Cosmic"];
+screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];
+screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Helm","Plate","Axe","Aegis","Boots","Gloves","Bow","Signet","Staff","Tome","Scroll","Gem"];
+screens_gamelike_SkillTreeDemoScreen.PATH_NAMES = ["WAR","ROG","MAG"];
+screens_gamelike_SkillTreeDemoScreen.PATH_SLOT_NAMES = ["warNode","rogNode","magNode"];
+screens_gamelike_SkillTreeDemoScreen.ICONS = ["helm","armor","axe","tshield","boots","gloves","bow","ring","staff","book","scroll","gem"];
 screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS = [{ name : "Regeneration", desc : "Restores 5 HP/sec", color : -11751600, duration : 8.0},{ name : "Strength Up", desc : "ATK +20%", color : -32944, duration : 10.0},{ name : "Shield", desc : "DEF +15", color : -11890524, duration : 6.0},{ name : "Haste", desc : "Speed +30%", color : -5317, duration : 5.0}];
 screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS = [{ name : "Poison", desc : "Lose 3 HP/sec", color : -7667457, duration : 7.0},{ name : "Slow", desc : "Speed -25%", color : -10066330, duration : 6.0},{ name : "Weakness", desc : "ATK -15%", color : -48060, duration : 8.0},{ name : "Curse", desc : "All stats -10%", color : -12320700, duration : 12.0}];
 screens_layout_ComboStatesDemoScreen.MODES = ["idle","active","warning","error"];

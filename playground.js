@@ -1243,7 +1243,6 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("blob47",new screens_gamelike_Blob47DemoScreen(this.screenManager));
 		this.screenManager.addScreen("battleHud",new screens_gamelike_BattleHudDemoScreen(this.screenManager));
 		this.screenManager.addScreen("skillTree",new screens_gamelike_SkillTreeDemoScreen(this.screenManager));
-		this.screenManager.addScreen("shop",new screens_gamelike_ShopDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogue",new screens_gamelike_DialogueDemoScreen(this.screenManager));
 		this.screenManager.addScreen("statusEffects",new screens_gamelike_StatusEffectsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("incremental",new screens_advanced_IncrementalDemoScreen(this.screenManager));
@@ -89866,227 +89865,6 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	}
 	,__class__: screens_gamelike_InventoryDemoScreen
 });
-var screens_gamelike_ShopDemoScreen = function(screenManager,layers) {
-	this.selectedIdx = -1;
-	this.gold = 500;
-	DemoScreenBase.call(this,screenManager,layers);
-};
-$hxClasses["screens.gamelike.ShopDemoScreen"] = screens_gamelike_ShopDemoScreen;
-screens_gamelike_ShopDemoScreen.__name__ = "screens.gamelike.ShopDemoScreen";
-screens_gamelike_ShopDemoScreen.__super__ = DemoScreenBase;
-screens_gamelike_ShopDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
-	load: function() {
-		var _gthis = this;
-		this.setupDemo("Shop UI","Item shop with buy/sell, gold tracking, and inventory");
-		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/shop.manim",false);
-		var generatedByMacroBuildWithParametersload1390Builder = function() {
-			var sellButton;
-			var buyButton;
-			var _gthis1 = _gthis.demoBuilder;
-			var builderResults = new haxe_ds_StringMap();
-			var _g = new haxe_ds_StringMap();
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Sell");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				sellButton = _el;
-				return _el.getObject();
-			});
-			_g.h["sellButton"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Buy");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				buyButton = _el;
-				return _el.getObject();
-			});
-			_g.h["buyButton"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("shopDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { sellButton : sellButton, buyButton : buyButton, builderResults : builderResults1};
-			if(retVal.sellButton == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sellButton" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.buyButton == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "buyButton" + " is null (check if placeholder object is named correctly)");
-			}
-			return retVal;
-		};
-		var ui = generatedByMacroBuildWithParametersload1390Builder();
-		this.demoResult = ui.builderResults;
-		this.buyButton = ui.buyButton;
-		this.sellButton = ui.sellButton;
-		this.addBuilderResult(this.demoResult);
-		this.playerInventory = [];
-		this.itemInteractives = [];
-		var container = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("itemContainer").object);
-		this.itemHighlight = new h2d_Bitmap(h2d_Tile.fromColor(864017370,330,32));
-		this.itemHighlight.set_visible(false);
-		container.addChild(this.itemHighlight);
-		var _g = 0;
-		var _g1 = screens_gamelike_ShopDemoScreen.SHOP_ITEMS.length;
-		while(_g < _g1) {
-			var i = _g++;
-			var item = screens_gamelike_ShopDemoScreen.SHOP_ITEMS[i];
-			var y = i * 36;
-			var colorBmp = new h2d_Bitmap(h2d_Tile.fromColor(item.color,20,20));
-			colorBmp.posChanged = true;
-			colorBmp.x = 0;
-			colorBmp.posChanged = true;
-			colorBmp.y = y + 6;
-			container.addChild(colorBmp);
-			var nameText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_14"));
-			nameText.set_text(item.name);
-			nameText.set_textColor(16777215);
-			nameText.posChanged = true;
-			nameText.x = 30;
-			nameText.posChanged = true;
-			nameText.y = y + 4;
-			container.addChild(nameText);
-			var priceText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_14"));
-			priceText.set_text("" + item.price + "g");
-			priceText.set_textColor(16771899);
-			priceText.posChanged = true;
-			priceText.x = 250;
-			priceText.posChanged = true;
-			priceText.y = y + 4;
-			container.addChild(priceText);
-			var inter = new h2d_Interactive(330,32,container);
-			inter.posChanged = true;
-			inter.x = 0;
-			inter.posChanged = true;
-			inter.y = y;
-			var idx = [i];
-			inter.onClick = (function(idx) {
-				return function(_) {
-					_gthis.selectItem(idx[0]);
-				};
-			})(idx);
-			this.itemInteractives.push(inter);
-		}
-		this.refreshGold();
-	}
-	,selectItem: function(idx) {
-		if(this.demoResult == null) {
-			return;
-		}
-		this.selectedIdx = idx;
-		var item = screens_gamelike_ShopDemoScreen.SHOP_ITEMS[idx];
-		this.demoResult.getUpdatable("selectedNameText").updateText(item.name);
-		this.demoResult.getUpdatable("selectedPriceText").updateText("Price: " + item.price + "g");
-		this.demoResult.getUpdatable("selectedDescText").updateText(item.desc);
-		this.demoResult.getUpdatable("feedbackText").updateText("");
-		if(this.itemHighlight != null) {
-			this.itemHighlight.set_visible(true);
-			var _this = this.itemHighlight;
-			_this.posChanged = true;
-			_this.x = 0;
-			_this.posChanged = true;
-			_this.y = idx * 36;
-		}
-	}
-	,buyItem: function() {
-		if(this.selectedIdx < 0 || this.demoResult == null) {
-			return;
-		}
-		var item = screens_gamelike_ShopDemoScreen.SHOP_ITEMS[this.selectedIdx];
-		if(this.gold < item.price) {
-			this.demoResult.getUpdatable("feedbackText").updateText("Insufficient funds!");
-			return;
-		}
-		this.gold -= item.price;
-		this.playerInventory.push(item.name);
-		this.demoResult.getUpdatable("feedbackText").updateText("Bought " + item.name + "!");
-		this.refreshGold();
-		this.refreshInventory();
-	}
-	,sellItem: function() {
-		if(this.selectedIdx < 0 || this.demoResult == null) {
-			return;
-		}
-		var item = screens_gamelike_ShopDemoScreen.SHOP_ITEMS[this.selectedIdx];
-		var invIdx = this.playerInventory.indexOf(item.name);
-		if(invIdx < 0) {
-			this.demoResult.getUpdatable("feedbackText").updateText("You don't have that item!");
-			return;
-		}
-		this.playerInventory.splice(invIdx,1);
-		var sellPrice = item.price / 2 | 0;
-		this.gold += sellPrice;
-		this.demoResult.getUpdatable("feedbackText").updateText("Sold " + item.name + " for " + sellPrice + "g!");
-		this.refreshGold();
-		this.refreshInventory();
-	}
-	,refreshGold: function() {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("goldText").updateText("" + this.gold);
-		}
-	}
-	,refreshInventory: function() {
-		if(this.demoResult == null) {
-			return;
-		}
-		if(this.playerInventory.length == 0) {
-			this.demoResult.getUpdatable("inventoryText").updateText("(empty)");
-		} else {
-			var counts_h = Object.create(null);
-			var _g = 0;
-			var _g1 = this.playerInventory;
-			while(_g < _g1.length) {
-				var item = _g1[_g];
-				++_g;
-				var cur = Object.prototype.hasOwnProperty.call(counts_h,item) ? counts_h[item] : 0;
-				counts_h[item] = cur + 1;
-			}
-			var parts = [];
-			var h = counts_h;
-			var _g_h = h;
-			var _g_keys = Object.keys(h);
-			var _g_length = _g_keys.length;
-			var _g_current = 0;
-			while(_g_current < _g_length) {
-				var key = _g_keys[_g_current++];
-				var _g_key = key;
-				var _g_value = _g_h[key];
-				var name = _g_key;
-				var count = _g_value;
-				parts.push(count > 1 ? "" + name + " x" + count : name);
-			}
-			this.demoResult.getUpdatable("inventoryText").updateText(parts.join(", "));
-		}
-	}
-	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 0) {
-			if(source == this.buyButton) {
-				this.buyItem();
-			} else if(source == this.sellButton) {
-				this.sellItem();
-			}
-		}
-		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
-	}
-	,onClear: function() {
-		DemoScreenBase.prototype.onClear.call(this);
-		if(this.itemInteractives != null) {
-			var _g = 0;
-			var _g1 = this.itemInteractives;
-			while(_g < _g1.length) {
-				var inter = _g1[_g];
-				++_g;
-				if(inter != null && inter.parent != null) {
-					inter.parent.removeChild(inter);
-				}
-			}
-			this.itemInteractives = null;
-		}
-		this.demoBuilder = null;
-		this.demoResult = null;
-		this.buyButton = null;
-		this.sellButton = null;
-		this.playerInventory = null;
-		this.itemHighlight = null;
-		this.selectedIdx = -1;
-		this.gold = 500;
-	}
-	,__class__: screens_gamelike_ShopDemoScreen
-});
 var screens_gamelike_SkillTreeDemoScreen = function(screenManager,layers) {
 	this.selected = -1;
 	this.skillPoints = 5;
@@ -93134,7 +92912,7 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-NavScreen.CATEGORIES = [{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "minimap", title : "Minimap"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Skill Tree"},{ id : "shop", title : "Shop UI"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]},{ name : "Advanced Features", screens : [{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "featureShowcase", title : "Feature Showcase"}]}];
+NavScreen.CATEGORIES = [{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "minimap", title : "Minimap"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Skill Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]},{ name : "Advanced Features", screens : [{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "featureShowcase", title : "Feature Showcase"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -93513,7 +93291,6 @@ screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowCol
 screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [16711680,16755200,0,255];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
-screens_gamelike_ShopDemoScreen.SHOP_ITEMS = [{ name : "Health Potion", price : 50, color : -48060, desc : "Restores 50 HP"},{ name : "Mana Potion", price : 40, color : -11890524, desc : "Restores 30 MP"},{ name : "Iron Sword", price : 150, color : -5197648, desc : "ATK +10"},{ name : "Leather Armor", price : 120, color : -7640812, desc : "DEF +8"},{ name : "Magic Ring", price : 200, color : -5317, desc : "INT +5"},{ name : "Speed Boots", price : 180, color : -11751600, desc : "DEX +6"}];
 screens_gamelike_SkillTreeDemoScreen.NODE_X = [75,195,315,435,75,195,315,435,75,195,315,435];
 screens_gamelike_SkillTreeDemoScreen.NODE_Y = [70,70,70,70,155,155,155,155,240,240,240,240];
 screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Power","Cleave","Fury","Titan","Agility","Dodge","Swift","Shadow","Focus","Arcane","Mystic","Cosmic"];

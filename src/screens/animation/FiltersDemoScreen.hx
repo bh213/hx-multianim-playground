@@ -15,27 +15,71 @@ class FiltersDemoScreen extends DemoScreenBase {
 	var scrollableList:Null<UIMultiAnimScrollableList>;
 	var activeBitmapType:String = "rectBlack";
 
-	// 6 filter cells (outline, glow, blur, saturate, brightness, dropShadow)
 	var cellResults:Array<Null<BuilderResult>> = [];
 	var cellPreviews:Array<Null<BuilderResult>> = [];
 	var cellSliders:Array<Array<UIStandardMultiAnimSlider>> = [];
 	var cellChecks:Array<Array<UIStandardMultiCheckbox>> = [];
 
-	static final NUM_FILTERS = 6;
-	static final FILTER_NAMES = ["outline", "glow", "blur", "saturate", "brightness", "dropShadow"];
+	static final NUM_FILTERS = 9;
+	static final PREVIEW_NAMES = [
+		"outlinePreview", "glowPreview", "blurPreview", "saturatePreview", "brightnessPreview", "dropShadowPreview",
+		"grayscalePreview", "huePreview", "pixelOutlinePreview",
+	];
+	static final SLIDER_PARAMS = [
+		["outlineSize"],
+		["glowAlpha", "glowRadius"],
+		["blurRadius", "blurGain"],
+		["satValue"],
+		["brightValue"],
+		["dsDist", "dsAngle", "dsAlpha", "dsRadius"],
+		["gsValue"],
+		["hueValue"],
+		["poStrength"],
+	];
+	static final CHECK_PARAMS:Array<Array<String>> = [
+		[],
+		["glowSmooth", "glowKnockout"],
+		[],
+		[],
+		[],
+		["dsSmooth"],
+		[],
+		[],
+		[],
+	];
+	static final VALUE_LABELS = [
+		["sizeValue"],
+		["alphaValue", "radiusValue"],
+		["radiusValue", "gainValue"],
+		["valueText"],
+		["valueText"],
+		["distValue", "angleValue", "alphaValue", "radiusValue"],
+		["valueText"],
+		["valueText"],
+		["strengthValue"],
+	];
+	static final SLIDER_DEFAULTS:Array<Array<Float>> = [
+		[1.0],
+		[0.8, 8],
+		[4, 1.0],
+		[0.0],
+		[1.5],
+		[3, 30, 0.5, 6],
+		[1.0],
+		[0.0],
+		[0.5],
+	];
 
 	override public function load():Void {
-		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow");
+		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow, grayscale, hue, pixelOutline");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/filters.manim", false);
 		checkboxBuilder = screenManager.buildFromResourceName("checkbox.manim", false);
 
-		// Build scrollable list for bitmap selection
 		scrollableList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", TestBitmaps.ALL_ITEMS,
 			null, 0, 160, 200);
 		addElement(scrollableList, null);
 
-		// Initialize cell arrays
 		for (i in 0...NUM_FILTERS) {
 			cellResults.push(null);
 			cellPreviews.push(null);
@@ -43,11 +87,65 @@ class FiltersDemoScreen extends DemoScreenBase {
 			cellChecks.push([]);
 		}
 
-		// Build all 6 filter cells first (registers sliders/checkboxes for events via macro)
-		for (i in 0...NUM_FILTERS)
-			buildFilterCell(i);
+		// Build each filter cell with its specific sliders/checkboxes
+		var o = MacroUtils.macroBuildWithParameters(demoBuilder, "outlineCell", [], [sSize => addSlider(stdBuilder, 0)]);
+		cellResults[0] = o.builderResults;
+		cellSliders[0] = [o.sSize];
 
-		// Build layout with bitmap list + all 6 cells injected into grid placeholders
+		var g = MacroUtils.macroBuildWithParameters(demoBuilder, "glowCell", [], [
+			sAlpha => addSlider(stdBuilder, 0),
+			sRadius => addSlider(stdBuilder, 0),
+			cSmooth => addCheckbox(checkboxBuilder, null),
+			cKnockout => addCheckbox(checkboxBuilder, null),
+		]);
+		cellResults[1] = g.builderResults;
+		cellSliders[1] = [g.sAlpha, g.sRadius];
+		cellChecks[1] = [g.cSmooth, g.cKnockout];
+
+		var b = MacroUtils.macroBuildWithParameters(demoBuilder, "blurCell", [], [
+			sRadius => addSlider(stdBuilder, 0),
+			sGain => addSlider(stdBuilder, 0),
+		]);
+		cellResults[2] = b.builderResults;
+		cellSliders[2] = [b.sRadius, b.sGain];
+
+		var s = MacroUtils.macroBuildWithParameters(demoBuilder, "saturateCell", [], [sValue => addSlider(stdBuilder, 0)]);
+		cellResults[3] = s.builderResults;
+		cellSliders[3] = [s.sValue];
+
+		var br = MacroUtils.macroBuildWithParameters(demoBuilder, "brightnessCell", [], [sValue => addSlider(stdBuilder, 0)]);
+		cellResults[4] = br.builderResults;
+		cellSliders[4] = [br.sValue];
+
+		var ds = MacroUtils.macroBuildWithParameters(demoBuilder, "dropShadowCell", [], [
+			sDist => addSlider(stdBuilder, 0),
+			sAngle => addSlider(stdBuilder, 0),
+			sAlpha => addSlider(stdBuilder, 0),
+			sRadius => addSlider(stdBuilder, 0),
+			cSmooth => addCheckbox(checkboxBuilder, null),
+		]);
+		cellResults[5] = ds.builderResults;
+		cellSliders[5] = [ds.sDist, ds.sAngle, ds.sAlpha, ds.sRadius];
+		cellChecks[5] = [ds.cSmooth];
+
+		var gs = MacroUtils.macroBuildWithParameters(demoBuilder, "grayscaleCell", [], [sValue => addSlider(stdBuilder, 0)]);
+		cellResults[6] = gs.builderResults;
+		cellSliders[6] = [gs.sValue];
+
+		var hu = MacroUtils.macroBuildWithParameters(demoBuilder, "hueCell", [], [sValue => addSlider(stdBuilder, 0)]);
+		cellResults[7] = hu.builderResults;
+		cellSliders[7] = [hu.sValue];
+
+		var po = MacroUtils.macroBuildWithParameters(demoBuilder, "pixelOutlineCell", [], [sStrength => addSlider(stdBuilder, 0)]);
+		cellResults[8] = po.builderResults;
+		cellSliders[8] = [po.sStrength];
+
+		// Set initial slider values (after min/max/step configured from manim settings)
+		for (cellIdx in 0...NUM_FILTERS)
+			for (sIdx in 0...cellSliders[cellIdx].length)
+				cellSliders[cellIdx][sIdx].setFloatValue(SLIDER_DEFAULTS[cellIdx][sIdx]);
+
+		// Build layout with all cells
 		layoutResult = demoBuilder.buildWithParameters("filtersLayout", [], {
 			placeholderObjects: [
 				"bitmapList" => PVObject(scrollableList.getObject()),
@@ -57,104 +155,53 @@ class FiltersDemoScreen extends DemoScreenBase {
 				"cell3" => PVObject(cellResults[3].object),
 				"cell4" => PVObject(cellResults[4].object),
 				"cell5" => PVObject(cellResults[5].object),
+				"cell6" => PVObject(cellResults[6].object),
+				"cell7" => PVObject(cellResults[7].object),
+				"cell8" => PVObject(cellResults[8].object),
 			]
 		});
 		addBuilderResult(layoutResult);
 
-		// Configure cells and build previews
-		for (i in 0...NUM_FILTERS) {
-			configureCell(i);
+		for (i in 0...NUM_FILTERS)
 			buildPreview(i);
-		}
 	}
 
-	function buildFilterCell(idx:Int):Void {
-		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "filterCell", [], [
-			s1 => addSlider(stdBuilder, 0),
-			s2 => addSlider(stdBuilder, 0),
-			s3 => addSlider(stdBuilder, 0),
-			s4 => addSlider(stdBuilder, 0),
-			c1 => addCheckbox(checkboxBuilder, false),
-			c2 => addCheckbox(checkboxBuilder, false),
-		]);
-
-		cellResults[idx] = ui.builderResults;
-		cellSliders[idx] = [ui.s1, ui.s2, ui.s3, ui.s4];
-		cellChecks[idx] = [ui.c1, ui.c2];
-	}
-
-	function configureCell(idx:Int):Void {
-		final result = cellResults[idx];
+	function buildPreview(cellIdx:Int):Void {
+		if (cellPreviews[cellIdx] != null)
+			cellPreviews[cellIdx].object.remove();
+		final result = cellResults[cellIdx];
 		if (result == null) return;
-		final sliders = cellSliders[idx];
-		final checks = cellChecks[idx];
 
-		// Set filter name
-		setCellText(idx, "cellName", FILTER_NAMES[idx]);
+		var params:Map<String, Dynamic> = ["bitmapType" => activeBitmapType];
+		for (i in 0...cellSliders[cellIdx].length)
+			params.set(SLIDER_PARAMS[cellIdx][i], cellSliders[cellIdx][i].getFloatValue());
+		for (i in 0...cellChecks[cellIdx].length)
+			params.set(CHECK_PARAMS[cellIdx][i], cellChecks[cellIdx][i].selected ? 1 : 0);
 
-		// Hide all controls first
-		for (i in 0...4)
-			setSliderVisible(sliders[i], false);
-		for (i in 0...2)
-			setCheckVisible(checks[i], false);
+		var preview = demoBuilder.buildWithParameters(PREVIEW_NAMES[cellIdx], params);
+		preview.object.setPosition(10, 14);
+		result.object.addChild(preview.object);
+		cellPreviews[cellIdx] = preview;
+	}
 
-		// Clear all labels
-		for (i in 1...5) {
-			setCellText(idx, 's${i}Label', "");
-			setCellText(idx, 's${i}Value', "");
+	function findCellForSource(source:Null<UIElement>):Int {
+		for (cellIdx in 0...NUM_FILTERS) {
+			for (s in cellSliders[cellIdx])
+				if (source == s) return cellIdx;
+			for (c in cellChecks[cellIdx])
+				if (source == c) return cellIdx;
 		}
-		setCellText(idx, "c1Label", "");
-		setCellText(idx, "c2Label", "");
-
-		switch (FILTER_NAMES[idx]) {
-			case "outline":
-				configSlider(idx, 0, "Size", 0, 5, 0.1, 1.0);
-			case "glow":
-				configSlider(idx, 0, "Alpha", 0, 1, 0.05, 0.8);
-				configSlider(idx, 1, "Radius", 0, 50, 1, 8);
-				configCheck(idx, 0, "Smooth", true);
-				configCheck(idx, 1, "Knockout", false);
-			case "blur":
-				configSlider(idx, 0, "Radius", 0, 20, 0.5, 4);
-				configSlider(idx, 1, "Gain", 0, 5, 0.1, 1.0);
-			case "saturate":
-				configSlider(idx, 0, "Value", 0, 2, 0.05, 0.0);
-			case "brightness":
-				configSlider(idx, 0, "Value", 0, 3, 0.05, 1.5);
-			case "dropShadow":
-				configSlider(idx, 0, "Dist", 0, 20, 0.5, 3);
-				configSlider(idx, 1, "Angle", 0, 360, 5, 30);
-				configSlider(idx, 2, "Alpha", 0, 1, 0.05, 0.5);
-				configSlider(idx, 3, "Radius", 0, 20, 0.5, 6);
-				configCheck(idx, 0, "Smooth", false);
-			default:
-		}
+		return -1;
 	}
 
-	function configSlider(cellIdx:Int, sliderIdx:Int, label:String, min:Float, max:Float, step:Float, initial:Float):Void {
-		final slider = cellSliders[cellIdx][sliderIdx];
-		slider.min = min;
-		slider.max = max;
-		slider.step = step;
-		slider.setFloatValue(initial);
-		setSliderVisible(slider, true);
-		setCellText(cellIdx, 's${sliderIdx + 1}Label', label);
-		setCellText(cellIdx, 's${sliderIdx + 1}Value', formatFloat(initial));
+	function findSliderIdx(cellIdx:Int, source:Null<UIElement>):Int {
+		for (i in 0...cellSliders[cellIdx].length)
+			if (source == cellSliders[cellIdx][i]) return i;
+		return -1;
 	}
 
-	function configCheck(cellIdx:Int, checkIdx:Int, label:String, initial:Bool):Void {
-		final cb = cellChecks[cellIdx][checkIdx];
-		cb.selected = initial;
-		setCheckVisible(cb, true);
-		setCellText(cellIdx, 'c${checkIdx + 1}Label', label);
-	}
-
-	function setSliderVisible(slider:UIStandardMultiAnimSlider, visible:Bool):Void {
-		slider.getObject().visible = visible;
-	}
-
-	function setCheckVisible(cb:UIStandardMultiCheckbox, visible:Bool):Void {
-		cb.getObject().visible = visible;
+	function formatFloat(v:Float):String {
+		return Std.string(Math.round(v * 100) / 100);
 	}
 
 	function setCellText(cellIdx:Int, name:String, text:String):Void {
@@ -162,77 +209,6 @@ class FiltersDemoScreen extends DemoScreenBase {
 		if (result == null) return;
 		final updatable = result.getUpdatable(name);
 		if (updatable != null) updatable.updateText(text);
-	}
-
-	function buildPreview(cellIdx:Int):Void {
-		if (cellPreviews[cellIdx] != null) {
-			cellPreviews[cellIdx].object.remove();
-		}
-		final result = cellResults[cellIdx];
-		if (result == null) return;
-
-		var preview = demoBuilder.buildWithParameters("bitmapPreview", ["bitmapType" => activeBitmapType]);
-		preview.object.setPosition(10, 20);
-		result.object.addChild(preview.object);
-		cellPreviews[cellIdx] = preview;
-		applyFilter(cellIdx);
-	}
-
-	function applyFilter(cellIdx:Int):Void {
-		final preview = cellPreviews[cellIdx];
-		if (preview == null) return;
-		final obj = preview.object;
-		final sliders = cellSliders[cellIdx];
-		final checks = cellChecks[cellIdx];
-
-		switch (FILTER_NAMES[cellIdx]) {
-			case "outline":
-				obj.filter = new h2d.filter.Outline(sliders[0].getFloatValue(), 0xff0000);
-			case "glow":
-				final f = new h2d.filter.Glow(0xffaa00, sliders[0].getFloatValue(), sliders[1].getFloatValue(), 1.0, 1.0, checks[0].selected);
-				f.knockout = checks[1].selected;
-				obj.filter = f;
-			case "blur":
-				obj.filter = new h2d.filter.Blur(sliders[0].getFloatValue(), sliders[1].getFloatValue(), 1.0, 0.0);
-			case "saturate":
-				var m = new h3d.Matrix();
-				m.identity();
-				m.colorSaturate(sliders[0].getFloatValue());
-				obj.filter = new h2d.filter.ColorMatrix(m);
-			case "brightness":
-				var m = new h3d.Matrix();
-				m.identity();
-				m.colorLightness(sliders[0].getFloatValue());
-				obj.filter = new h2d.filter.ColorMatrix(m);
-			case "dropShadow":
-				obj.filter = new h2d.filter.DropShadow(sliders[0].getFloatValue(), hxd.Math.degToRad(sliders[1].getFloatValue()),
-					0x000000, sliders[2].getFloatValue(), sliders[3].getFloatValue(), 1.0, 1.0, checks[0].selected);
-			default:
-		}
-	}
-
-	function findCellForSource(source:Null<UIElement>):Int {
-		for (cellIdx in 0...NUM_FILTERS) {
-			for (s in cellSliders[cellIdx]) {
-				if (source == s) return cellIdx;
-			}
-			for (c in cellChecks[cellIdx]) {
-				if (source == c) return cellIdx;
-			}
-		}
-		return -1;
-	}
-
-	function findSliderIdx(cellIdx:Int, source:Null<UIElement>):Int {
-		for (i in 0...cellSliders[cellIdx].length) {
-			if (source == cellSliders[cellIdx][i]) return i;
-		}
-		return -1;
-	}
-
-	function formatFloat(v:Float):String {
-		final rounded = Math.round(v * 100) / 100;
-		return Std.string(rounded);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
@@ -250,23 +226,23 @@ class FiltersDemoScreen extends DemoScreenBase {
 			case UIChangeValue(value):
 				final cellIdx = findCellForSource(source);
 				if (cellIdx >= 0) {
-					applyFilter(cellIdx);
+					buildPreview(cellIdx);
 					final sIdx = findSliderIdx(cellIdx, source);
 					if (sIdx >= 0)
-						setCellText(cellIdx, 's${sIdx + 1}Value', formatFloat(cellSliders[cellIdx][sIdx].getFloatValue()));
+						setCellText(cellIdx, VALUE_LABELS[cellIdx][sIdx], formatFloat(cellSliders[cellIdx][sIdx].getFloatValue()));
 				}
 			case UIChangeFloatValue(value):
 				final cellIdx = findCellForSource(source);
 				if (cellIdx >= 0) {
-					applyFilter(cellIdx);
+					buildPreview(cellIdx);
 					final sIdx = findSliderIdx(cellIdx, source);
 					if (sIdx >= 0)
-						setCellText(cellIdx, 's${sIdx + 1}Value', formatFloat(cellSliders[cellIdx][sIdx].getFloatValue()));
+						setCellText(cellIdx, VALUE_LABELS[cellIdx][sIdx], formatFloat(cellSliders[cellIdx][sIdx].getFloatValue()));
 				}
 			case UIToggle(pressed):
 				final cellIdx = findCellForSource(source);
 				if (cellIdx >= 0)
-					applyFilter(cellIdx);
+					buildPreview(cellIdx);
 			default:
 		}
 		super.onScreenEvent(event, source);

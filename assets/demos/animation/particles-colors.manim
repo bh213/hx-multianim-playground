@@ -1,0 +1,111 @@
+version: 0.5
+
+// Particles Demo — Colors & Curves
+// colorCurve segments, sizeCurve, velocityCurve with inline easings
+
+relativeLayouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+curves {
+    #growShrink curve {
+        points: [(0, 0.2), (0.3, 1.0), (1.0, 0.1)]
+    }
+    #pulse curve {
+        points: [(0, 0.5), (0.25, 1.2), (0.5, 0.6), (0.75, 1.1), (1.0, 0.3)]
+    }
+    #slowdown curve {
+        points: [(0, 1.0), (0.3, 0.5), (1.0, 0.05)]
+    }
+}
+
+// Multi-segment color gradient: red -> yellow -> cyan -> blue
+#rainbow particles {
+    count: 80
+    emit: cone(5, 3, 270, 20)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 50
+    speedRandom: 0.2
+    gravity: 20
+    gravityAngle: 270
+    size: 0.5
+    sizeRandom: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.8
+    0.0: colorCurve: linear, #FF2200, #FFCC00
+    0.33: colorCurve: linear, #FFCC00, #00FFCC
+    0.66: colorCurve: linear, #00FFCC, #4444FF
+    blendMode: add
+}
+
+// Size curve: grow then shrink using named curve
+#sizeCurveDemo particles {
+    count: 50
+    emit: point(0, 10)
+    tiles: file("ring.png")
+    loop: true
+    maxLife: 2.0
+    speed: 40
+    speedRandom: 0.3
+    size: 0.3
+    sizeRandom: 0.1
+    fadeIn: 0.1
+    fadeOut: 0.7
+    0.0: colorCurve: linear, #FFFFFF, #FF88FF
+    sizeCurve: growShrink
+    blendMode: add
+}
+
+// Velocity curve: particles slow down over time
+#velocityCurveDemo particles {
+    count: 60
+    emit: point(0, 20)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 1.5
+    speed: 120
+    speedRandom: 0.3
+    size: 0.8
+    sizeRandom: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.6
+    0.0: colorCurve: linear, #88FF88, #228822
+    velocityCurve: slowdown
+}
+
+// Pulsing size with easing color
+#pulseDemo particles {
+    count: 40
+    emit: circle(30, 10, 0, 0)
+    tiles: file("glow.png")
+    loop: true
+    maxLife: 2.0
+    speed: 10
+    speedRandom: 0.5
+    size: 0.4
+    sizeRandom: 0.2
+    fadeIn: 0.15
+    fadeOut: 0.7
+    0.0: colorCurve: easeInQuad, #FF00FF, #00FFFF
+    0.5: colorCurve: easeOutQuad, #00FFFF, #FFFF00
+    sizeCurve: pulse
+    blendMode: add
+}
+
+#colorsUI programmable() {
+    text(m6x11, "Rainbow", #FFCC00, center, 120): 120, 20
+    text(m3x6, "multi-segment color", #888888, center, 120): 120, 36
+    text(m6x11, "Size Curve", #FF88FF, center, 120): 380, 20
+    text(m3x6, "grow + shrink", #888888, center, 120): 380, 36
+    text(m6x11, "Velocity", #88FF88, center, 120): 640, 20
+    text(m3x6, "slowdown curve", #888888, center, 120): 640, 36
+    text(m6x11, "Pulse", #FF00FF, center, 120): 900, 20
+    text(m3x6, "size + color easing", #888888, center, 120): 900, 36
+}

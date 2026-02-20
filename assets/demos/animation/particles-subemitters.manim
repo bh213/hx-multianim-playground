@@ -1,0 +1,111 @@
+version: 0.5
+
+// Particles Demo — Sub-Emitters
+// onBirth, onDeath, onCollision triggers with spawning
+
+relativeLayouts {
+    #positions list {
+        point: 320, 380
+        point: 700, 380
+    }
+}
+
+// Main firework — launches upward, spawns sparks on death
+#fireworkMain particles {
+    count: 8
+    emit: cone(0, 5, 270, 10)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 1.0
+    lifeRandom: 0.2
+    speed: 120
+    speedRandom: 0.2
+    gravity: 100
+    gravityAngle: 90
+    size: 0.4
+    fadeIn: 0.0
+    fadeOut: 0.8
+    0.0: colorCurve: linear, #FFFFFF, #FFFF88
+    blendMode: add
+    emitSync: 0.1
+    subEmitters: [{
+        groupId: "fireworkBurst"
+        trigger: ondeath
+        probability: 1.0
+    }]
+}
+
+// Burst of sparks on firework death
+#fireworkBurst particles {
+    count: 0
+    emit: point(0, 25)
+    tiles: file("star.png") file("dot.png")
+    loop: false
+    maxLife: 1.2
+    lifeRandom: 0.3
+    speed: 80
+    speedRandom: 0.5
+    gravity: 60
+    gravityAngle: 90
+    size: 0.3
+    sizeRandom: 0.3
+    fadeIn: 0.0
+    fadeOut: 0.5
+    0.0: colorCurve: linear, #FFFF44, #FF4400
+    0.5: colorCurve: linear, #FF4400, #880000
+    blendMode: add
+}
+
+// Bouncing ball that spawns sparks on collision
+#bounceBall particles {
+    count: 5
+    emit: point(0, 10)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 5.0
+    speed: 80
+    speedRandom: 0.3
+    gravity: 120
+    gravityAngle: 90
+    size: 0.6
+    fadeIn: 0.0
+    fadeOut: 0.95
+    0.0: colorCurve: linear, #44CCFF, #44CCFF
+    blendMode: add
+    boundsMode: bounce(0.85)
+    boundsMinX: -120
+    boundsMaxX: 120
+    boundsMinY: -100
+    boundsMaxY: 100
+    subEmitters: [{
+        groupId: "bounceSparks"
+        trigger: oncollision
+        probability: 1.0
+    }]
+}
+
+// Sparks on bounce
+#bounceSparks particles {
+    count: 0
+    emit: point(0, 8)
+    tiles: file("dot.png")
+    loop: false
+    maxLife: 0.5
+    speed: 40
+    speedRandom: 0.5
+    gravity: 30
+    gravityAngle: 90
+    size: 0.5
+    sizeRandom: 0.3
+    fadeIn: 0.0
+    fadeOut: 0.3
+    0.0: colorCurve: linear, #FFFFFF, #44CCFF
+    blendMode: add
+}
+
+#subEmittersUI programmable() {
+    text(m6x11, "Fireworks", #FFFF44, center, 140): 280, 20
+    text(m3x6, "onDeath spawns burst", #888888, center, 140): 280, 36
+    text(m6x11, "Bounce Sparks", #44CCFF, center, 140): 660, 20
+    text(m3x6, "onCollision spawns sparks", #888888, center, 160): 660, 36
+}

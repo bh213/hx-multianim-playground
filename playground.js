@@ -4154,10 +4154,11 @@ var bh_base_PartEmitMode = $hxEnums["bh.base.PartEmitMode"] = { __ename__:true,_
 	,Point: ($_=function(emitDistance,emitDistanceRandom) { return {_hx_index:0,emitDistance:emitDistance,emitDistanceRandom:emitDistanceRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Point",$_.__params__ = ["emitDistance","emitDistanceRandom"],$_)
 	,Cone: ($_=function(emitDistance,emitDistanceRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:1,emitDistance:emitDistance,emitDistanceRandom:emitDistanceRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Cone",$_.__params__ = ["emitDistance","emitDistanceRandom","emitConeAngle","emitConeAngleRandom"],$_)
 	,Box: ($_=function(width,height,emitConeAngle,emitConeAngleRandom) { return {_hx_index:2,width:width,height:height,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Box",$_.__params__ = ["width","height","emitConeAngle","emitConeAngleRandom"],$_)
-	,Path: ($_=function(points,emitConeAngle,emitConeAngleRandom) { return {_hx_index:3,points:points,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Path",$_.__params__ = ["points","emitConeAngle","emitConeAngleRandom"],$_)
-	,Circle: ($_=function(radius,radiusRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:4,radius:radius,radiusRandom:radiusRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Circle",$_.__params__ = ["radius","radiusRandom","emitConeAngle","emitConeAngleRandom"],$_)
+	,Circle: ($_=function(radius,radiusRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:3,radius:radius,radiusRandom:radiusRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="Circle",$_.__params__ = ["radius","radiusRandom","emitConeAngle","emitConeAngleRandom"],$_)
+	,ManimPath: ($_=function(path) { return {_hx_index:4,path:path,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="ManimPath",$_.__params__ = ["path"],$_)
+	,ManimPathTangent: ($_=function(path) { return {_hx_index:5,path:path,__enum__:"bh.base.PartEmitMode",toString:$estr}; },$_._hx_name="ManimPathTangent",$_.__params__ = ["path"],$_)
 };
-bh_base_PartEmitMode.__constructs__ = [bh_base_PartEmitMode.Point,bh_base_PartEmitMode.Cone,bh_base_PartEmitMode.Box,bh_base_PartEmitMode.Path,bh_base_PartEmitMode.Circle];
+bh_base_PartEmitMode.__constructs__ = [bh_base_PartEmitMode.Point,bh_base_PartEmitMode.Cone,bh_base_PartEmitMode.Box,bh_base_PartEmitMode.Circle,bh_base_PartEmitMode.ManimPath,bh_base_PartEmitMode.ManimPathTangent];
 bh_base_PartEmitMode.__empty_constructs__ = [];
 var bh_base_ForceField = $hxEnums["bh.base.ForceField"] = { __ename__:true,__constructs__:null
 	,Attractor: ($_=function(x,y,strength,radius) { return {_hx_index:0,x:x,y:y,strength:strength,radius:radius,__enum__:"bh.base.ForceField",toString:$estr}; },$_._hx_name="Attractor",$_.__params__ = ["x","y","strength","radius"],$_)
@@ -4212,10 +4213,10 @@ h2d_BatchElement.prototype = {
 	,__class__: h2d_BatchElement
 };
 var bh_base__$Particles_Particle = function(group) {
+	this.currentAnimStateIndex = 0;
 	this.baseScaleY = 1;
 	this.baseScaleX = 1;
 	this.noiseSeed = 0;
-	this.trailHistory = null;
 	this.lastSubEmitTime = 0;
 	this.delay = 0;
 	this.life = 0;
@@ -4254,22 +4255,11 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 		this.group.applyForceFields(this,dt);
 		var effectiveVx = this.vx * velocityMult;
 		var effectiveVy = this.vy * velocityMult;
-		var history = this.trailHistory;
-		if(this.group.trailEnabled && history != null) {
-			var i = history.length - 1;
-			while(i > 0) {
-				history[i] = history[i - 1];
-				--i;
-			}
-			if(history.length > 0) {
-				history[0] = { x : this.x, y : this.y, alpha : this.a};
-			}
-		}
 		this.x += effectiveVx * dt;
 		this.y += effectiveVy * dt;
 		this.life += dt;
 		if(this.group.rotAuto) {
-			this.rotation = Math.atan2(effectiveVy,effectiveVx) + this.life * this.vr + this.group.rotInit * Math.PI;
+			this.rotation = Math.atan2(effectiveVy,effectiveVx) - this.group.forwardAngle + this.life * this.vr;
 		} else {
 			this.rotation += this.vr * dt;
 		}
@@ -4290,12 +4280,25 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 			this.a = 1;
 		}
 		if(this.group.colorEnabled) {
-			var col = this.group.getInterpolatedColor(timeNormalized);
+			var col = this.group.evaluateColorCurve(timeNormalized);
 			this.r = (col >> 16 & 255) / 255.0;
 			this.g = (col >> 8 & 255) / 255.0;
 			this.b = (col & 255) / 255.0;
 		}
-		if(this.group.animationRepeat > 0 && this.group.tiles.length > 1) {
+		if(this.group.animStates.length > 0) {
+			var stateIdx = this.currentAnimStateIndex;
+			while(stateIdx + 1 < this.group.animStates.length && timeNormalized >= this.group.animStates[stateIdx + 1].startLifeRate) ++stateIdx;
+			this.currentAnimStateIndex = stateIdx;
+			var animState = this.group.animStates[stateIdx];
+			if(animState.tiles.length > 0) {
+				var stateStart = animState.startLifeRate;
+				var stateEnd = stateIdx + 1 < this.group.animStates.length ? this.group.animStates[stateIdx + 1].startLifeRate : 1.0;
+				var localT = stateEnd <= stateStart ? 0. : (timeNormalized - stateStart) / (stateEnd - stateStart);
+				localT = Math.min(Math.max(localT,0.),1.);
+				var frameIndex = (localT * animState.tiles.length | 0) % animState.tiles.length;
+				this.t = animState.tiles[frameIndex];
+			}
+		} else if(this.group.animationRepeat > 0 && this.group.tiles.length > 1) {
 			var animProgress = timeNormalized * this.group.animationRepeat;
 			var frameIndex = (animProgress * this.group.tiles.length | 0) % this.group.tiles.length;
 			this.t = this.group.tiles[frameIndex];
@@ -4320,28 +4323,29 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 	,__class__: bh_base__$Particles_Particle
 });
 var bh_base_ParticleGroup = function(id,p,tiles) {
+	this.emissionAccumulator = 0;
+	this.spawnCurve = null;
+	this.attachedPath = null;
+	this.animEventOverrides = new haxe_ds_StringMap();
+	this.animStates = [];
 	this.subEmitters = [];
+	this.boundsLines = [];
 	this.boundsMaxY = 600;
 	this.boundsMinY = 0;
 	this.boundsMaxX = 800;
 	this.boundsMinX = 0;
 	this.boundsMode = bh_base_BoundsMode.None;
-	this.trailFadeOut = true;
-	this.trailLength = 10;
-	this.trailEnabled = false;
-	this.sizeCurve = [];
-	this.velocityCurve = [];
+	this.sizeCurve = null;
+	this.velocityCurve = null;
 	this.forceFields = [];
-	this.colorMidPos = 0.5;
-	this.colorMid = -1;
-	this.colorEnd = 16777215;
-	this.colorStart = 16777215;
+	this.colorCurveSegments = [];
 	this.colorEnabled = false;
 	this.isRelative = true;
 	this.animationRepeat = 1;
 	this.fadePower = 1;
 	this.fadeOut = 0.8;
 	this.fadeIn = 0.2;
+	this.forwardAngle = 0;
 	this.rotAuto = false;
 	this.rotSpeedRand = 0;
 	this.rotSpeed = 0;
@@ -4383,7 +4387,32 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 $hxClasses["bh.base.ParticleGroup"] = bh_base_ParticleGroup;
 bh_base_ParticleGroup.__name__ = "bh.base.ParticleGroup";
 bh_base_ParticleGroup.prototype = {
-	start: function() {
+	addColorCurveSegment: function(startRate,curve,startColor,endColor) {
+		var left = 0;
+		var right = this.colorCurveSegments.length;
+		while(left < right) {
+			var mid = (left + right) / 2 | 0;
+			if(this.colorCurveSegments[mid].startRate < startRate) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+		this.colorCurveSegments.splice(left,0,{ startRate : startRate, curve : curve, startColor : startColor, endColor : endColor});
+		this.colorEnabled = true;
+	}
+	,addBoundsLine: function(x1,y1,x2,y2) {
+		var dx = x2 - x1;
+		var dy = y2 - y1;
+		var len = Math.sqrt(dx * dx + dy * dy);
+		if(len < 1e-10) {
+			return;
+		}
+		var nx = dy / len;
+		var ny = -dx / len;
+		this.boundsLines.push({ x1 : x1, y1 : y1, x2 : x2, y2 : y2, nx : nx, ny : ny});
+	}
+	,start: function() {
 		this.batch.clear();
 		this.started = true;
 		this.globalTime = 0;
@@ -4393,18 +4422,31 @@ bh_base_ParticleGroup.prototype = {
 			var i = _g++;
 			var p = new bh_base__$Particles_Particle(this);
 			p.delay = Math.random() * this.life * (1 - this.emitSync) + this.emitDelay;
-			if(this.trailEnabled) {
-				var history = [];
-				var _g2 = 0;
-				var _g3 = this.trailLength;
-				while(_g2 < _g3) {
-					var j = _g2++;
-					history.push({ x : 0.0, y : 0.0, alpha : 0.0});
-				}
-				p.trailHistory = history;
-			}
 			this.batch.add(p);
 		}
+	}
+	,emitBurstAt: function(atX,atY,inheritVx,inheritVy,count) {
+		if(!this.started) {
+			this.batch.set_visible(true);
+			this.started = true;
+			this.globalTime = 0;
+		}
+		var _g = 0;
+		var _g1 = count;
+		while(_g < _g1) {
+			var i = _g++;
+			var p = new bh_base__$Particles_Particle(this);
+			this.init(p);
+			p.x += atX;
+			p.y += atY;
+			p.vx += inheritVx;
+			p.vy += inheritVy;
+			p.visible = true;
+			this.batch.add(p);
+		}
+	}
+	,emitBurst: function(count) {
+		this.emitBurstAt(0,0,0,0,count);
 	}
 	,init: function(p) {
 		var g = this;
@@ -4471,50 +4513,6 @@ bh_base_ParticleGroup.prototype = {
 			p.vy = Math.sin(phi);
 			break;
 		case 3:
-			var points = _g.points;
-			var emitConeAngle = _g.emitConeAngle;
-			var emitConeAngleRandom = _g.emitConeAngleRandom;
-			if(points.length > 0) {
-				var t = Math.random();
-				var totalLen = 0.0;
-				var segments = [];
-				var _g1 = 0;
-				var _g2 = points.length - 1;
-				while(_g1 < _g2) {
-					var i = _g1++;
-					var pdx = points[i + 1].x - points[i].x;
-					var pdy = points[i + 1].y - points[i].y;
-					var slen = Math.sqrt(pdx * pdx + pdy * pdy);
-					segments.push(slen);
-					totalLen += slen;
-				}
-				var targetDist = t * totalLen;
-				var accum = 0.0;
-				var _g1 = 0;
-				var _g2 = segments.length;
-				while(_g1 < _g2) {
-					var i = _g1++;
-					if(accum + segments[i] >= targetDist) {
-						var localT = (targetDist - accum) / segments[i];
-						p.x += points[i].x + (points[i + 1].x - points[i].x) * localT;
-						p.y += points[i].y + (points[i + 1].y - points[i].y) * localT;
-						break;
-					}
-					accum += segments[i];
-				}
-			}
-			var da = emitConeAngle + emitConeAngleRandom * hxd_Math.srand();
-			da %= 6.28318530717958623;
-			if(da > 3.14159265358979323) {
-				da -= 6.28318530717958623;
-			} else if(da <= -3.14159265358979312) {
-				da += 6.28318530717958623;
-			}
-			var phi = da;
-			p.vx = Math.cos(phi);
-			p.vy = Math.sin(phi);
-			break;
-		case 4:
 			var radius = _g.radius;
 			var radiusRandom = _g.radiusRandom;
 			var emitConeAngle = _g.emitConeAngle;
@@ -4539,6 +4537,29 @@ bh_base_ParticleGroup.prototype = {
 			p.vx = Math.cos(phi);
 			p.vy = Math.sin(phi);
 			break;
+		case 4:
+			var path = _g.path;
+			var rate = Math.random();
+			var pt = path.getPoint(rate);
+			p.x += pt.x;
+			p.y += pt.y;
+			p.vx = hxd_Math.srand();
+			p.vy = hxd_Math.srand();
+			var len = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+			if(len > 0) {
+				speed *= 1 / len;
+			}
+			break;
+		case 5:
+			var path = _g.path;
+			var rate = Math.random();
+			var pt = path.getPoint(rate);
+			p.x += pt.x;
+			p.y += pt.y;
+			var tangent = path.getTangentAngle(rate);
+			p.vx = Math.cos(tangent);
+			p.vy = Math.sin(tangent);
+			break;
 		}
 		p.scaleX = p.scaleY = size;
 		p.baseScaleX = size;
@@ -4558,19 +4579,11 @@ bh_base_ParticleGroup.prototype = {
 		p.lastSubEmitTime = 0;
 		var initRot = this.emitDirectionAsAngle ? Math.atan2(p.vy,p.vx) : hxd_Math.srand() * Math.PI * g.rotInit;
 		p.rotation = initRot;
-		if(this.colorEnabled) {
-			p.r = (this.colorStart >> 16 & 255) / 255.0;
-			p.g = (this.colorStart >> 8 & 255) / 255.0;
-			p.b = (this.colorStart & 255) / 255.0;
-		}
-		var history = p.trailHistory;
-		if(this.trailEnabled && history != null) {
-			var _g = 0;
-			var _g1 = history.length;
-			while(_g < _g1) {
-				var i = _g++;
-				history[i] = { x : p.x, y : p.y, alpha : 0.0};
-			}
+		if(this.colorEnabled && this.colorCurveSegments.length > 0) {
+			var initColor = this.colorCurveSegments[0].startColor;
+			p.r = (initColor >> 16 & 255) / 255.0;
+			p.g = (initColor >> 8 & 255) / 255.0;
+			p.b = (initColor & 255) / 255.0;
 		}
 		if(!this.isRelative) {
 			var parts = this.parts;
@@ -4592,77 +4605,53 @@ bh_base_ParticleGroup.prototype = {
 			p.vy = px * sin + p.vy * cos;
 		}
 	}
-	,getInterpolatedColor: function(t) {
-		if(this.colorMid >= 0) {
-			if(t < this.colorMidPos) {
-				var localT = t / this.colorMidPos;
-				var c1 = this.colorStart;
-				var c2 = this.colorMid;
-				var r1 = c1 >> 16 & 255;
-				var g1 = c1 >> 8 & 255;
-				var b1 = c1 & 255;
-				var r2 = c2 >> 16 & 255;
-				var g2 = c2 >> 8 & 255;
-				var b2 = c2 & 255;
-				var r = r1 + (r2 - r1) * localT | 0;
-				var g = g1 + (g2 - g1) * localT | 0;
-				var b = b1 + (b2 - b1) * localT | 0;
-				return r << 16 | g << 8 | b;
+	,evaluateColorCurve: function(rate) {
+		var activeIndex = -1;
+		var _g = 0;
+		var _g1 = this.colorCurveSegments.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.colorCurveSegments[i].startRate <= rate) {
+				activeIndex = i;
 			} else {
-				var localT = (t - this.colorMidPos) / (1.0 - this.colorMidPos);
-				var c1 = this.colorMid;
-				var c2 = this.colorEnd;
-				var r1 = c1 >> 16 & 255;
-				var g1 = c1 >> 8 & 255;
-				var b1 = c1 & 255;
-				var r2 = c2 >> 16 & 255;
-				var g2 = c2 >> 8 & 255;
-				var b2 = c2 & 255;
-				var r = r1 + (r2 - r1) * localT | 0;
-				var g = g1 + (g2 - g1) * localT | 0;
-				var b = b1 + (b2 - b1) * localT | 0;
-				return r << 16 | g << 8 | b;
+				break;
 			}
-		} else {
-			var c1 = this.colorStart;
-			var c2 = this.colorEnd;
-			var r1 = c1 >> 16 & 255;
-			var g1 = c1 >> 8 & 255;
-			var b1 = c1 & 255;
-			var r2 = c2 >> 16 & 255;
-			var g2 = c2 >> 8 & 255;
-			var b2 = c2 & 255;
-			var r = r1 + (r2 - r1) * t | 0;
-			var g = g1 + (g2 - g1) * t | 0;
-			var b = b1 + (b2 - b1) * t | 0;
-			return r << 16 | g << 8 | b;
 		}
+		if(activeIndex < 0) {
+			return 16777215;
+		}
+		var segment = this.colorCurveSegments[activeIndex];
+		var segStart = segment.startRate;
+		var segEnd = activeIndex + 1 < this.colorCurveSegments.length ? this.colorCurveSegments[activeIndex + 1].startRate : 1.0;
+		var localT = segEnd <= segStart ? 0. : (rate - segStart) / (segEnd - segStart);
+		localT = Math.min(Math.max(localT,0.),1.);
+		var curveValue = segment.curve.getValue(localT);
+		var c1 = segment.startColor;
+		var c2 = segment.endColor;
+		var r1 = c1 >> 16 & 255;
+		var g1 = c1 >> 8 & 255;
+		var b1 = c1 & 255;
+		var r2 = c2 >> 16 & 255;
+		var g2 = c2 >> 8 & 255;
+		var b2 = c2 & 255;
+		var r = r1 + (r2 - r1) * curveValue | 0;
+		var g = g1 + (g2 - g1) * curveValue | 0;
+		var b = b1 + (b2 - b1) * curveValue | 0;
+		return r << 16 | g << 8 | b;
 	}
 	,getVelocityCurveValue: function(t) {
-		return this.getCurveValue(this.velocityCurve,t);
-	}
-	,getSizeCurveValue: function(t) {
-		return this.getCurveValue(this.sizeCurve,t);
-	}
-	,getCurveValue: function(curve,t) {
-		if(curve == null || curve.length == 0) {
+		if(this.velocityCurve != null) {
+			return this.velocityCurve.getValue(t);
+		} else {
 			return 1.0;
 		}
-		if(curve.length == 1) {
-			return curve[0].value;
+	}
+	,getSizeCurveValue: function(t) {
+		if(this.sizeCurve != null) {
+			return this.sizeCurve.getValue(t);
+		} else {
+			return 1.0;
 		}
-		var i = 0;
-		while(i < curve.length - 1 && curve[i + 1].time < t) ++i;
-		if(i >= curve.length - 1) {
-			return curve[curve.length - 1].value;
-		}
-		if(t <= curve[0].time) {
-			return curve[0].value;
-		}
-		var p1 = curve[i];
-		var p2 = curve[i + 1];
-		var localT = (t - p1.time) / (p2.time - p1.time);
-		return p1.value + (p2.value - p1.value) * localT;
 	}
 	,applyForceFields: function(p,dt) {
 		var fields = this.forceFields;
@@ -4771,6 +4760,17 @@ bh_base_ParticleGroup.prototype = {
 				this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnCollision);
 				return false;
 			}
+			var _g1 = 0;
+			var _g2 = this.boundsLines;
+			while(_g1 < _g2.length) {
+				var line = _g2[_g1];
+				++_g1;
+				var dot = (p.x - line.x1) * line.nx + (p.y - line.y1) * line.ny;
+				if(dot < 0) {
+					this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnCollision);
+					return false;
+				}
+			}
 			return true;
 		case 2:
 			var damping = _g.damping;
@@ -4793,8 +4793,24 @@ bh_base_ParticleGroup.prototype = {
 				p.vy = -p.vy * damping;
 				collided = true;
 			}
+			var _g = 0;
+			var _g1 = this.boundsLines;
+			while(_g < _g1.length) {
+				var line = _g1[_g];
+				++_g;
+				var dot = (p.x - line.x1) * line.nx + (p.y - line.y1) * line.ny;
+				if(dot < 0) {
+					var vDot = p.vx * line.nx + p.vy * line.ny;
+					p.vx = (p.vx - 2 * vDot * line.nx) * damping;
+					p.vy = (p.vy - 2 * vDot * line.ny) * damping;
+					p.x -= dot * line.nx;
+					p.y -= dot * line.ny;
+					collided = true;
+				}
+			}
 			if(collided) {
 				this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnCollision);
+				this.applyAnimEventOverride(p,"onBounce");
 			}
 			return true;
 		case 3:
@@ -4832,6 +4848,7 @@ bh_base_ParticleGroup.prototype = {
 			if(subGroup == null) {
 				continue;
 			}
+			subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,1);
 		}
 	}
 	,matchesTrigger: function(configured,actual) {
@@ -4868,6 +4885,16 @@ bh_base_ParticleGroup.prototype = {
 			break;
 		}
 	}
+	,applyAnimEventOverride: function(p,triggerName) {
+		var stateIndex = this.animEventOverrides.h[triggerName];
+		if(stateIndex != null && stateIndex < this.animStates.length) {
+			p.currentAnimStateIndex = stateIndex;
+			var animState = this.animStates[stateIndex];
+			if(animState.tiles.length > 0) {
+				p.t = animState.tiles[0];
+			}
+		}
+	}
 	,checkIntervalSubEmitters: function(p,timeNormalized) {
 		var emitters = this.subEmitters;
 		if(emitters == null || emitters.length == 0) {
@@ -4884,7 +4911,9 @@ bh_base_ParticleGroup.prototype = {
 					p.lastSubEmitTime = p.life;
 					if(Math.random() <= se.probability) {
 						var subGroup = this.parts.getGroup(se.groupId);
-						var tmp = subGroup != null;
+						if(subGroup != null) {
+							subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,1);
+						}
 					}
 				}
 			}
@@ -4892,6 +4921,19 @@ bh_base_ParticleGroup.prototype = {
 	}
 	,updateTime: function(dt) {
 		this.globalTime += dt;
+		if(this.attachedPath != null) {
+			var state = this.attachedPath.update(dt);
+			this.dx = state.position.x | 0;
+			this.dy = state.position.y | 0;
+			if(this.spawnCurve != null) {
+				var rate = this.spawnCurve.getValue(state.rate);
+				this.emissionAccumulator += rate * this.nparts * dt / this.life;
+				while(this.emissionAccumulator >= 1.0) {
+					this.emissionAccumulator -= 1.0;
+					this.emitBurst(1);
+				}
+			}
+		}
 	}
 	,__class__: bh_base_ParticleGroup
 };
@@ -10851,8 +10893,26 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 	}
 	,parseParticles: function() {
-		var p = { count : null, loop : null, relative : null, emitDelay : null, emitSync : null, maxLife : null, lifeRandom : null, size : null, sizeRandom : null, blendMode : null, speed : null, speedRandom : null, speedIncrease : null, gravity : null, gravityAngle : null, fadeIn : null, fadeOut : null, fadePower : null, tiles : [], emit : bh_multianim_ParticlesEmitMode.Point(bh_multianim_ReferenceableValue.RVFloat(0),bh_multianim_ReferenceableValue.RVFloat(0)), rotationInitial : null, rotationSpeed : null, rotationSpeedRandom : null, rotateAuto : null, colorStart : null, colorEnd : null, colorMid : null, colorMidPos : null, forceFields : null, velocityCurve : null, sizeCurve : null, trailEnabled : null, trailLength : null, trailFadeOut : null, boundsMode : null, boundsMinX : null, boundsMaxX : null, boundsMinY : null, boundsMaxY : null, subEmitters : null, animationRepeat : null};
+		var p = { count : null, loop : null, relative : null, emitDelay : null, emitSync : null, maxLife : null, lifeRandom : null, size : null, sizeRandom : null, blendMode : null, speed : null, speedRandom : null, speedIncrease : null, gravity : null, gravityAngle : null, fadeIn : null, fadeOut : null, fadePower : null, tiles : [], emit : bh_multianim_ParticlesEmitMode.Point(bh_multianim_ReferenceableValue.RVFloat(0),bh_multianim_ReferenceableValue.RVFloat(0)), rotationInitial : null, rotationSpeed : null, rotationSpeedRandom : null, rotateAuto : null, forwardAngle : null, colorCurves : null, forceFields : null, velocityCurve : null, sizeCurve : null, boundsMode : null, boundsMinX : null, boundsMaxX : null, boundsMinY : null, boundsMaxY : null, boundsLines : null, subEmitters : null, animationRepeat : null, attachTo : null, spawnCurve : null, animFile : null, animSelector : null, animStates : null, animEventOverrides : null};
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 28:
+				var _g1 = _g.s;
+				var rate = this.parseFloatOrReference();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				this.parseParticleRateAction(rate,p);
+				this.eatSemicolon();
+				continue;
+			case 29:
+				var _g2 = _g.s;
+				var rate1 = this.parseFloatOrReference();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				this.parseParticleRateAction(rate1,p);
+				this.eatSemicolon();
+				continue;
+			default:
+			}
 			if(!this.isNamedParamNext()) {
 				this.eatComma();
 				this.eatSemicolon();
@@ -10864,12 +10924,40 @@ bh_multianim_MacroManimParser.prototype = {
 			case "animationrepeat":
 				p.animationRepeat = this.parseFloatOrReference();
 				break;
+			case "animfile":
+				p.animFile = this.expectIdentifierOrString();
+				break;
+			case "animselector":
+				if(p.animSelector == null) {
+					p.animSelector = new haxe_ds_StringMap();
+				}
+				var key = this.expectIdentifierOrString();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
+				var val = this.expectIdentifierOrString();
+				p.animSelector.h[key] = val;
+				break;
+			case "attachto":
+				p.attachTo = this.expectIdentifierOrString();
+				break;
 			case "blendmode":
 				var bm = this.tryParseBlendMode();
 				if(bm == null) {
 					this.error("unknown blend mode");
 				}
 				p.blendMode = bm;
+				break;
+			case "boundsline":
+				var x1 = this.parseFloatOrReference();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				var y1 = this.parseFloatOrReference();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				var x2 = this.parseFloatOrReference();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				var y2 = this.parseFloatOrReference();
+				if(p.boundsLines == null) {
+					p.boundsLines = [];
+				}
+				p.boundsLines.push({ x1 : x1, y1 : y1, x2 : x2, y2 : y2});
 				break;
 			case "boundsmaxx":
 				p.boundsMaxX = this.parseFloatOrReference();
@@ -10885,18 +10973,6 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			case "boundsmode":
 				p.boundsMode = this.parseBoundsMode();
-				break;
-			case "colorend":
-				p.colorEnd = this.parseColorOrReference();
-				break;
-			case "colormid":
-				p.colorMid = this.parseColorOrReference();
-				break;
-			case "colormidpos":
-				p.colorMidPos = this.parseFloatOrReference();
-				break;
-			case "colorstart":
-				p.colorStart = this.parseColorOrReference();
 				break;
 			case "count":
 				p.count = this.parseIntegerOrReference();
@@ -10922,6 +10998,9 @@ bh_multianim_MacroManimParser.prototype = {
 			case "forcefields":
 				p.forceFields = this.parseForceFields();
 				break;
+			case "forwardangle":
+				p.forwardAngle = this.parseFloatOrReference();
+				break;
 			case "gravity":
 				p.gravity = this.parseFloatOrReference();
 				break;
@@ -10936,6 +11015,34 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			case "maxlife":
 				p.maxLife = this.parseFloatOrReference();
+				break;
+			case "onbounce":
+				var animActionName = this.expectIdentifierOrString();
+				if(bh_multianim_MacroManimParser.isKeyword(animActionName,"anim")) {
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+					var animName = this.expectIdentifierOrString();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+					if(p.animEventOverrides == null) {
+						p.animEventOverrides = [];
+					}
+					p.animEventOverrides.push({ trigger : "onBounce", animName : animName});
+				} else {
+					this.error("expected anim(\"name\") after onBounce:");
+				}
+				break;
+			case "ondeath":
+				var animActionName2 = this.expectIdentifierOrString();
+				if(bh_multianim_MacroManimParser.isKeyword(animActionName2,"anim")) {
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+					var animName1 = this.expectIdentifierOrString();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+					if(p.animEventOverrides == null) {
+						p.animEventOverrides = [];
+					}
+					p.animEventOverrides.push({ trigger : "onDeath", animName : animName1});
+				} else {
+					this.error("expected anim(\"name\") after onDeath:");
+				}
 				break;
 			case "relative":
 				p.relative = this.parseBool();
@@ -10956,10 +11063,13 @@ bh_multianim_MacroManimParser.prototype = {
 				p.size = this.parseFloatOrReference();
 				break;
 			case "sizecurve":
-				p.sizeCurve = this.parseCurvePoints();
+				p.sizeCurve = this.parseCurveNameOrEasing();
 				break;
 			case "sizerandom":
 				p.sizeRandom = this.parseFloatOrReference();
+				break;
+			case "spawncurve":
+				p.spawnCurve = this.parseCurveNameOrEasing();
 				break;
 			case "speed":
 				p.speed = this.parseFloatOrReference();
@@ -10976,17 +11086,8 @@ bh_multianim_MacroManimParser.prototype = {
 			case "tiles":
 				p.tiles = this.parseTileSources();
 				break;
-			case "trailenabled":
-				p.trailEnabled = this.parseBool();
-				break;
-			case "trailfadeout":
-				p.trailFadeOut = this.parseBool();
-				break;
-			case "traillength":
-				p.trailLength = this.parseFloatOrReference();
-				break;
 			case "velocitycurve":
-				p.velocityCurve = this.parseCurvePoints();
+				p.velocityCurve = this.parseCurveNameOrEasing();
 				break;
 			default:
 				this.parseStringOrReference();
@@ -10994,6 +11095,34 @@ bh_multianim_MacroManimParser.prototype = {
 			this.eatSemicolon();
 		}
 		return p;
+	}
+	,parseParticleRateAction: function(atRate,p) {
+		var actionName = this.expectIdentifierOrString();
+		switch(actionName.toLowerCase()) {
+		case "anim":
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+			var animName = this.expectIdentifierOrString();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+			if(p.animStates == null) {
+				p.animStates = [];
+			}
+			p.animStates.push({ atRate : atRate, animName : animName});
+			break;
+		case "colorcurve":
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+			var c = this.parseCurveNameOrEasing();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+			var startColor = this.parseColorOrReference();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+			var endColor = this.parseColorOrReference();
+			if(p.colorCurves == null) {
+				p.colorCurves = [];
+			}
+			p.colorCurves.push({ atRate : atRate, curveName : c.curveName, inlineEasing : c.inlineEasing, startColor : startColor, endColor : endColor});
+			break;
+		default:
+			this.error("unknown particle rate action: " + actionName);
+		}
 	}
 	,parseTileSources: function() {
 		var tiles = [];
@@ -11074,13 +11203,35 @@ bh_multianim_MacroManimParser.prototype = {
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 							return bh_multianim_ParticlesEmitMode.Circle(r,rRand,angle,angleRand);
 						} else {
-							return this.error("expected emit mode: point, cone, box, circle");
+							var s = _g1;
+							if(bh_multianim_MacroManimParser.isKeyword(s,"path")) {
+								this.advance();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+								var pathName = this.expectIdentifierOrString();
+								var tangent = false;
+								if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+									var flag = this.expectIdentifierOrString();
+									if(bh_multianim_MacroManimParser.isKeyword(flag,"tangent")) {
+										tangent = true;
+									} else {
+										this.error("unknown path emit flag: " + flag + ", expected \"tangent\"");
+									}
+								}
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+								if(tangent) {
+									return bh_multianim_ParticlesEmitMode.ManimPathTangent(pathName);
+								} else {
+									return bh_multianim_ParticlesEmitMode.ManimPath(pathName);
+								}
+							} else {
+								return this.error("expected emit mode: point, cone, box, circle, path");
+							}
 						}
 					}
 				}
 			}
 		} else {
-			return this.error("expected emit mode: point, cone, box, circle");
+			return this.error("expected emit mode: point, cone, box, circle, path");
 		}
 	}
 	,parseCurvePoints: function() {
@@ -18803,7 +18954,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3013, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3012, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -19667,22 +19818,34 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(particlesDef.rotateAuto != null) {
 			group.rotAuto = particlesDef.rotateAuto;
 		}
+		if(particlesDef.forwardAngle != null) {
+			group.forwardAngle = this.resolveAsNumber(particlesDef.forwardAngle) * 3.14159265358979323 / 180.0;
+		}
 		if(particlesDef.animationRepeat != null) {
 			group.animationRepeat = this.resolveAsNumber(particlesDef.animationRepeat);
 		}
-		if(particlesDef.colorStart != null) {
+		if(particlesDef.colorCurves != null) {
 			group.colorEnabled = true;
-			group.colorStart = this.resolveAsInteger(particlesDef.colorStart);
-		}
-		if(particlesDef.colorEnd != null) {
-			group.colorEnabled = true;
-			group.colorEnd = this.resolveAsInteger(particlesDef.colorEnd);
-		}
-		if(particlesDef.colorMid != null) {
-			group.colorMid = this.resolveAsInteger(particlesDef.colorMid);
-		}
-		if(particlesDef.colorMidPos != null) {
-			group.colorMidPos = this.resolveAsNumber(particlesDef.colorMidPos);
+			var colorCurvesArray = particlesDef.colorCurves;
+			var _g = 0;
+			while(_g < colorCurvesArray.length) {
+				var cc = colorCurvesArray[_g];
+				++_g;
+				var curve;
+				if(cc.inlineEasing != null) {
+					curve = new bh_paths_Curve(null,cc.inlineEasing,null);
+				} else if(cc.curveName != null) {
+					var curves = this.getCurves();
+					var found = curves.h[cc.curveName];
+					if(found == null) {
+						throw haxe_Exception.thrown("color curve not found: " + cc.curveName + "");
+					}
+					curve = found;
+				} else {
+					throw haxe_Exception.thrown("color curve must have either curveName or inlineEasing");
+				}
+				group.addColorCurveSegment(this.resolveAsNumber(cc.atRate),curve,this.resolveAsInteger(cc.startColor),this.resolveAsInteger(cc.endColor));
+			}
 		}
 		if(particlesDef.forceFields != null) {
 			group.forceFields = [];
@@ -19738,33 +19901,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 		}
 		if(particlesDef.velocityCurve != null) {
-			group.velocityCurve = [];
-			var velocityCurveArray = particlesDef.velocityCurve;
-			var _g = 0;
-			while(_g < velocityCurveArray.length) {
-				var cp = velocityCurveArray[_g];
-				++_g;
-				group.velocityCurve.push({ time : this.resolveAsNumber(cp.time), value : this.resolveAsNumber(cp.value)});
-			}
+			group.velocityCurve = this.resolveParticleCurveRef(particlesDef.velocityCurve);
 		}
 		if(particlesDef.sizeCurve != null) {
-			group.sizeCurve = [];
-			var sizeCurveArray = particlesDef.sizeCurve;
-			var _g = 0;
-			while(_g < sizeCurveArray.length) {
-				var cp = sizeCurveArray[_g];
-				++_g;
-				group.sizeCurve.push({ time : this.resolveAsNumber(cp.time), value : this.resolveAsNumber(cp.value)});
-			}
-		}
-		if(particlesDef.trailEnabled != null) {
-			group.trailEnabled = particlesDef.trailEnabled;
-		}
-		if(particlesDef.trailLength != null) {
-			group.trailLength = this.resolveAsInteger(particlesDef.trailLength);
-		}
-		if(particlesDef.trailFadeOut != null) {
-			group.trailFadeOut = particlesDef.trailFadeOut;
+			group.sizeCurve = this.resolveParticleCurveRef(particlesDef.sizeCurve);
 		}
 		if(particlesDef.boundsMode != null) {
 			var _g = particlesDef.boundsMode;
@@ -19797,6 +19937,15 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		if(particlesDef.boundsMaxY != null) {
 			group.boundsMaxY = this.resolveAsNumber(particlesDef.boundsMaxY);
+		}
+		if(particlesDef.boundsLines != null) {
+			var boundsLinesArray = particlesDef.boundsLines;
+			var _g = 0;
+			while(_g < boundsLinesArray.length) {
+				var bl = boundsLinesArray[_g];
+				++_g;
+				group.addBoundsLine(this.resolveAsNumber(bl.x1),this.resolveAsNumber(bl.y1),this.resolveAsNumber(bl.x2),this.resolveAsNumber(bl.y2));
+			}
 		}
 		if(particlesDef.subEmitters != null) {
 			group.subEmitters = [];
@@ -19847,28 +19996,124 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			group.emitMode = bh_base_PartEmitMode.Box(this.resolveAsNumber(width),this.resolveAsNumber(height),this.resolveAsNumber(emitConeAngle) * 3.14159265358979323 / 180.0,this.resolveAsNumber(emitConeAngleRandom) * 3.14159265358979323 / 180.0);
 			break;
 		case 3:
-			var points = _g.points;
-			var emitConeAngle = _g.emitConeAngle;
-			var emitConeAngleRandom = _g.emitConeAngleRandom;
-			var resolvedPoints = [];
-			var _g1 = 0;
-			while(_g1 < points.length) {
-				var p = points[_g1];
-				++_g1;
-				resolvedPoints.push({ x : this.resolveAsNumber(p.x), y : this.resolveAsNumber(p.y)});
-			}
-			group.emitMode = bh_base_PartEmitMode.Path(resolvedPoints,this.resolveAsNumber(emitConeAngle) * 3.14159265358979323 / 180.0,this.resolveAsNumber(emitConeAngleRandom) * 3.14159265358979323 / 180.0);
-			break;
-		case 4:
 			var radius = _g.radius;
 			var radiusRandom = _g.radiusRandom;
 			var emitConeAngle = _g.emitConeAngle;
 			var emitConeAngleRandom = _g.emitConeAngleRandom;
 			group.emitMode = bh_base_PartEmitMode.Circle(this.resolveAsNumber(radius),this.resolveAsNumber(radiusRandom),this.resolveAsNumber(emitConeAngle) * 3.14159265358979323 / 180.0,this.resolveAsNumber(emitConeAngleRandom) * 3.14159265358979323 / 180.0);
 			break;
+		case 4:
+			var pathName = _g.pathName;
+			var path = this.getPaths().getPath(pathName);
+			group.emitMode = bh_base_PartEmitMode.ManimPath(path);
+			break;
+		case 5:
+			var pathName = _g.pathName;
+			var path = this.getPaths().getPath(pathName);
+			group.emitMode = bh_base_PartEmitMode.ManimPathTangent(path);
+			break;
+		}
+		if(particlesDef.attachTo != null) {
+			group.attachedPath = this.createAnimatedPath(particlesDef.attachTo);
+		}
+		if(particlesDef.spawnCurve != null) {
+			group.spawnCurve = this.resolveParticleCurveRef(particlesDef.spawnCurve);
+		}
+		if(particlesDef.animFile != null && particlesDef.animStates != null) {
+			var selector = particlesDef.animSelector != null ? particlesDef.animSelector : new haxe_ds_StringMap();
+			var animParser = this.resourceLoader.loadAnimParser(particlesDef.animFile);
+			var animSM = animParser.createAnimSM(selector);
+			var animStatesArray = particlesDef.animStates;
+			var _g = 0;
+			while(_g < animStatesArray.length) {
+				var asDef = animStatesArray[_g];
+				++_g;
+				var animName = asDef.animName;
+				var descriptor = animSM.animationStates.h[animName];
+				if(descriptor == null) {
+					throw haxe_Exception.thrown("particle animation \"" + animName + "\" not found in \"" + particlesDef.animFile + "\"" + "");
+				}
+				var frameTiles = [];
+				var _g1 = 0;
+				var _g2 = descriptor.states;
+				while(_g1 < _g2.length) {
+					var state = _g2[_g1];
+					++_g1;
+					if(state._hx_index == 0) {
+						var frame = state.frame;
+						if(frame.tile != null) {
+							frameTiles.push(frame.tile);
+						}
+					}
+				}
+				group.animStates.push({ name : animName, tiles : frameTiles, fps : 0, startLifeRate : this.resolveAsNumber(asDef.atRate)});
+			}
+			group.animStates.sort(function(a,b) {
+				if(a.startLifeRate < b.startLifeRate) {
+					return -1;
+				} else if(a.startLifeRate > b.startLifeRate) {
+					return 1;
+				} else {
+					return 0;
+				}
+			});
+			if(particlesDef.animEventOverrides != null) {
+				var animEventOverridesArray = particlesDef.animEventOverrides;
+				var _g = 0;
+				while(_g < animEventOverridesArray.length) {
+					var eo = animEventOverridesArray[_g];
+					++_g;
+					var foundIndex = -1;
+					var _g1 = 0;
+					var _g2 = group.animStates.length;
+					while(_g1 < _g2) {
+						var i = _g1++;
+						if(group.animStates[i].name == eo.animName) {
+							foundIndex = i;
+							break;
+						}
+					}
+					if(foundIndex < 0) {
+						var descriptor = animSM.animationStates.h[eo.animName];
+						if(descriptor == null) {
+							throw haxe_Exception.thrown("particle event animation \"" + eo.animName + "\" not found in \"" + particlesDef.animFile + "\"" + "");
+						}
+						var frameTiles = [];
+						var _g3 = 0;
+						var _g4 = descriptor.states;
+						while(_g3 < _g4.length) {
+							var state = _g4[_g3];
+							++_g3;
+							if(state._hx_index == 0) {
+								var frame = state.frame;
+								if(frame.tile != null) {
+									frameTiles.push(frame.tile);
+								}
+							}
+						}
+						foundIndex = group.animStates.length;
+						group.animStates.push({ name : eo.animName, tiles : frameTiles, fps : 0, startLifeRate : 1.0});
+					}
+					group.animEventOverrides.h[eo.trigger] = foundIndex;
+				}
+			}
 		}
 		particles.addGroup(group);
 		return particles;
+	}
+	,createParticles: function(name,builderParams) {
+		var tmp = this.multiParserResult;
+		var node = tmp != null ? tmp.nodes.h[name] : null;
+		if(node == null) {
+			throw haxe_Exception.thrown("could not get particles node #" + name + "");
+		}
+		var _g = node.type;
+		if(_g._hx_index == 14) {
+			var particlesDef = _g.particles;
+			return this.createParticleImpl(particlesDef,node.uniqueNodeName);
+		} else {
+			throw haxe_Exception.thrown("" + name + " has to be particles" + "");
+		}
 	}
 	,createAnimatedPath: function(name,normalization) {
 		var tmp = this.multiParserResult;
@@ -20082,6 +20327,20 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		} else {
 			throw haxe_Exception.thrown("curves is of unexpected type " + Std.string(node.type) + "");
 		}
+	}
+	,resolveParticleCurveRef: function(ref) {
+		if(ref.inlineEasing != null) {
+			return new bh_paths_Curve(null,ref.inlineEasing,null);
+		}
+		if(ref.curveName != null) {
+			var curves = this.getCurves();
+			var curve = curves.h[ref.curveName];
+			if(curve == null) {
+				throw haxe_Exception.thrown("curve not found: " + ref.curveName + "");
+			}
+			return curve;
+		}
+		throw haxe_Exception.thrown("curve reference must have either curveName or inlineEasing");
 	}
 	,buildAutotile: function(name,grid) {
 		var tmp = this.multiParserResult;
@@ -20766,7 +21025,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4856, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4946, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -20873,7 +21132,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5060, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5150, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -20907,7 +21166,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5076, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5166, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -21443,10 +21702,11 @@ var bh_multianim_ParticlesEmitMode = $hxEnums["bh.multianim.ParticlesEmitMode"] 
 	,Point: ($_=function(emitDistance,emitDistanceRandom) { return {_hx_index:0,emitDistance:emitDistance,emitDistanceRandom:emitDistanceRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Point",$_.__params__ = ["emitDistance","emitDistanceRandom"],$_)
 	,Cone: ($_=function(emitDistance,emitDistanceRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:1,emitDistance:emitDistance,emitDistanceRandom:emitDistanceRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Cone",$_.__params__ = ["emitDistance","emitDistanceRandom","emitConeAngle","emitConeAngleRandom"],$_)
 	,Box: ($_=function(width,height,emitConeAngle,emitConeAngleRandom) { return {_hx_index:2,width:width,height:height,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Box",$_.__params__ = ["width","height","emitConeAngle","emitConeAngleRandom"],$_)
-	,Path: ($_=function(points,emitConeAngle,emitConeAngleRandom) { return {_hx_index:3,points:points,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Path",$_.__params__ = ["points","emitConeAngle","emitConeAngleRandom"],$_)
-	,Circle: ($_=function(radius,radiusRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:4,radius:radius,radiusRandom:radiusRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Circle",$_.__params__ = ["radius","radiusRandom","emitConeAngle","emitConeAngleRandom"],$_)
+	,Circle: ($_=function(radius,radiusRandom,emitConeAngle,emitConeAngleRandom) { return {_hx_index:3,radius:radius,radiusRandom:radiusRandom,emitConeAngle:emitConeAngle,emitConeAngleRandom:emitConeAngleRandom,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="Circle",$_.__params__ = ["radius","radiusRandom","emitConeAngle","emitConeAngleRandom"],$_)
+	,ManimPath: ($_=function(pathName) { return {_hx_index:4,pathName:pathName,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="ManimPath",$_.__params__ = ["pathName"],$_)
+	,ManimPathTangent: ($_=function(pathName) { return {_hx_index:5,pathName:pathName,__enum__:"bh.multianim.ParticlesEmitMode",toString:$estr}; },$_._hx_name="ManimPathTangent",$_.__params__ = ["pathName"],$_)
 };
-bh_multianim_ParticlesEmitMode.__constructs__ = [bh_multianim_ParticlesEmitMode.Point,bh_multianim_ParticlesEmitMode.Cone,bh_multianim_ParticlesEmitMode.Box,bh_multianim_ParticlesEmitMode.Path,bh_multianim_ParticlesEmitMode.Circle];
+bh_multianim_ParticlesEmitMode.__constructs__ = [bh_multianim_ParticlesEmitMode.Point,bh_multianim_ParticlesEmitMode.Cone,bh_multianim_ParticlesEmitMode.Box,bh_multianim_ParticlesEmitMode.Circle,bh_multianim_ParticlesEmitMode.ManimPath,bh_multianim_ParticlesEmitMode.ManimPathTangent];
 bh_multianim_ParticlesEmitMode.__empty_constructs__ = [];
 var bh_multianim_ParticleForceFieldDef = $hxEnums["bh.multianim.ParticleForceFieldDef"] = { __ename__:true,__constructs__:null
 	,FFAttractor: ($_=function(x,y,strength,radius) { return {_hx_index:0,x:x,y:y,strength:strength,radius:radius,__enum__:"bh.multianim.ParticleForceFieldDef",toString:$estr}; },$_._hx_name="FFAttractor",$_.__params__ = ["x","y","strength","radius"],$_)
@@ -88130,9 +88390,13 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	,__class__: screens_animation_FiltersDemoScreen
 });
 var screens_animation_ParticlesDemoScreen = function(screenManager,layers) {
-	this.activePreset = 0;
-	this.presetButtons = [];
-	this.particleResults = [];
+	this.descText = null;
+	this.boundsGraphics = [];
+	this.particleObjects = [];
+	this.tabUIResult = null;
+	this.tabBuilder = null;
+	this.activeTab = 0;
+	this.tabButtons = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.animation.ParticlesDemoScreen"] = screens_animation_ParticlesDemoScreen;
@@ -88140,89 +88404,183 @@ screens_animation_ParticlesDemoScreen.__name__ = "screens.animation.ParticlesDem
 screens_animation_ParticlesDemoScreen.__super__ = DemoScreenBase;
 screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		var _gthis = this;
-		this.setupDemo("Particles","Particle effects defined in .manim using particles{} blocks");
-		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/particles.manim",false);
-		var generatedByMacroBuildWithParametersload798Builder = function() {
-			var btnSparkles;
-			var btnSmoke;
-			var btnFire;
-			var _gthis1 = _gthis.demoBuilder;
-			var builderResults = new haxe_ds_StringMap();
-			var _g = new haxe_ds_StringMap();
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"sparkles");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnSparkles = _el;
-				return _el.getObject();
-			});
-			_g.h["btnSparkles"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"smoke");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnSmoke = _el;
-				return _el.getObject();
-			});
-			_g.h["btnSmoke"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"fire");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnFire = _el;
-				return _el.getObject();
-			});
-			_g.h["btnFire"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("particlesDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { btnSparkles : btnSparkles, btnSmoke : btnSmoke, btnFire : btnFire, builderResults : builderResults1};
-			if(retVal.btnSparkles == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnSparkles" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.btnSmoke == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnSmoke" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.btnFire == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnFire" + " is null (check if placeholder object is named correctly)");
-			}
-			return retVal;
-		};
-		var ui = generatedByMacroBuildWithParametersload798Builder();
-		this.demoResult = ui.builderResults;
-		this.presetButtons = [ui.btnFire,ui.btnSparkles,ui.btnSmoke];
-		this.addBuilderResult(this.demoResult);
-		var presets = ["fire","sparkles","smoke"];
+		this.setupDemo("Particles","Particle effects — click tabs to explore features");
 		var _g = 0;
-		var _g1 = presets.length;
+		var _g1 = screens_animation_ParticlesDemoScreen.TAB_NAMES.length;
 		while(_g < _g1) {
 			var i = _g++;
-			var result = this.demoBuilder.buildWithParameters(presets[i],new haxe_ds_StringMap());
-			var _this = result.object;
+			var btn = bh_ui_UIStandardMultiAnimButton.create(this.commonBuilder,"backButton",screens_animation_ParticlesDemoScreen.TAB_NAMES[i]);
+			var _this = btn.getObject();
 			_this.posChanged = true;
-			_this.x = 200 + i * 350;
+			_this.x = 50 + i * 120;
 			_this.posChanged = true;
-			_this.y = 350;
-			this.addBuilderResult(result);
-			this.particleResults.push(result);
+			_this.y = 70;
+			this.addElement(btn,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.tabButtons.push(btn);
 		}
-		this.labelText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
-		this.labelText.set_text("Active: fire | Click preset to highlight");
-		this.labelText.set_textColor(13421772);
-		var _this = this.labelText;
+		this.descText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
+		this.descText.set_textColor(11184810);
+		var _this = this.descText;
 		_this.posChanged = true;
 		_this.x = 50;
 		_this.posChanged = true;
-		_this.y = 630;
-		this.addObjectToLayer(this.labelText,bh_ui_screens_LayersEnum.DefaultLayer);
+		_this.y = 105;
+		this.addObjectToLayer(this.descText,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.loadTab(0);
+	}
+	,clearTab: function() {
+		var _g = 0;
+		var _g1 = this.particleObjects;
+		while(_g < _g1.length) {
+			var p = _g1[_g];
+			++_g;
+			if(p != null && p.parent != null) {
+				p.parent.removeChild(p);
+			}
+		}
+		this.particleObjects = [];
+		var _g = 0;
+		var _g1 = this.boundsGraphics;
+		while(_g < _g1.length) {
+			var g = _g1[_g];
+			++_g;
+			if(g != null && g.parent != null) {
+				g.parent.removeChild(g);
+			}
+		}
+		this.boundsGraphics = [];
+		if(this.tabUIResult != null) {
+			var _this = this.tabUIResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.tabUIResult = null;
+		}
+		this.tabBuilder = null;
+	}
+	,loadTab: function(index) {
+		this.clearTab();
+		this.activeTab = index;
+		if(this.descText != null) {
+			this.descText.set_text(screens_animation_ParticlesDemoScreen.TAB_DESCRIPTIONS[index]);
+		}
+		this.tabBuilder = this.screenManager.buildFromResourceName(screens_animation_ParticlesDemoScreen.TAB_FILES[index],false);
+		if(this.tabBuilder == null) {
+			return;
+		}
+		var uiResult = this.tabBuilder.buildWithParameters(screens_animation_ParticlesDemoScreen.TAB_UI_NAMES[index],new haxe_ds_StringMap());
+		var _this = uiResult.object;
+		_this.posChanged = true;
+		_this.x = 0;
+		_this.posChanged = true;
+		_this.y = 125;
+		this.addObjectToLayer(uiResult.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.tabUIResult = uiResult;
+		var groups = screens_animation_ParticlesDemoScreen.TAB_GROUPS[index];
+		var layouts = this.tabBuilder.getLayouts();
+		var _g = 0;
+		var _g1 = groups.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var pos = layouts.getPoint("positions",i);
+			var particles = this.tabBuilder.createParticles(groups[i]);
+			particles.posChanged = true;
+			particles.x = pos.x;
+			particles.posChanged = true;
+			particles.y = pos.y;
+			this.addObjectToLayer(particles,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.particleObjects.push(particles);
+			if(index == 3) {
+				this.drawBoundsIndicator(pos.x,pos.y,i);
+			}
+		}
+	}
+	,drawBoundsIndicator: function(cx,cy,groupIndex) {
+		var g = new h2d_Graphics();
+		if(groupIndex < 3) {
+			g.lineStyle(1,6710886);
+			var minX = cx - 80;
+			var minY = cy - 80;
+			var maxX = cx + 80;
+			var maxY = cy + 80;
+			this.drawDashedRect(g,minX,minY,maxX,maxY);
+		} else {
+			g.lineStyle(1,8939076);
+			var x = cx - 80;
+			var y = cy + 80;
+			g.flush();
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx + 80;
+			var y = cy + 80;
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx - 80;
+			var y = cy - 80;
+			g.flush();
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx - 80;
+			var y = cy + 80;
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx + 80;
+			var y = cy - 80;
+			g.flush();
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx - 80;
+			var y = cy - 80;
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx + 80;
+			var y = cy + 80;
+			g.flush();
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+			var x = cx + 80;
+			var y = cy - 80;
+			g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+		}
+		this.addObjectToLayer(g,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.boundsGraphics.push(g);
+	}
+	,drawDashedRect: function(g,x1,y1,x2,y2) {
+		this.drawDashedLine(g,x1,y1,x2,y1);
+		this.drawDashedLine(g,x2,y1,x2,y2);
+		this.drawDashedLine(g,x2,y2,x1,y2);
+		this.drawDashedLine(g,x1,y2,x1,y1);
+	}
+	,drawDashedLine: function(g,x1,y1,x2,y2) {
+		var dx = x2 - x1;
+		var dy = y2 - y1;
+		var len = Math.sqrt(dx * dx + dy * dy);
+		var dashLen = 6.0;
+		var gapLen = 4.0;
+		var dist = 0.0;
+		var drawing = true;
+		while(dist < len) {
+			var segLen = drawing ? dashLen : gapLen;
+			if(dist + segLen > len) {
+				segLen = len - dist;
+			}
+			var t0 = dist / len;
+			var t1 = (dist + segLen) / len;
+			if(drawing) {
+				var x = x1 + dx * t0;
+				var y = y1 + dy * t0;
+				g.flush();
+				g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+				var x2 = x1 + dx * t1;
+				var y2 = y1 + dy * t1;
+				g.addVertex(x2,y2,g.curR,g.curG,g.curB,g.curA,x2 * g.ma + y2 * g.mc + g.mx,x2 * g.mb + y2 * g.md + g.my);
+			}
+			dist += segLen;
+			drawing = !drawing;
+		}
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
 			var _g = 0;
-			var _g1 = this.presetButtons.length;
+			var _g1 = this.tabButtons.length;
 			while(_g < _g1) {
 				var i = _g++;
-				if(source == this.presetButtons[i]) {
-					this.activePreset = i;
-					var presets = ["fire","sparkles","smoke"];
-					if(this.labelText != null) {
-						this.labelText.set_text("Active: " + presets[i]);
+				if(source == this.tabButtons[i]) {
+					if(i != this.activeTab) {
+						this.loadTab(i);
 					}
 					return;
 				}
@@ -88230,12 +88588,10 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		}
 	}
 	,onClear: function() {
+		this.clearTab();
+		this.tabButtons = [];
+		this.descText = null;
 		DemoScreenBase.prototype.onClear.call(this);
-		this.demoBuilder = null;
-		this.demoResult = null;
-		this.particleResults = [];
-		this.presetButtons = [];
-		this.labelText = null;
 	}
 	,__class__: screens_animation_ParticlesDemoScreen
 });
@@ -93359,6 +93715,11 @@ screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[0.
 screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES = [0,1,5,8];
 screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowColor","dsColor","poColor"];
 screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [16711680,16755200,0,255];
+screens_animation_ParticlesDemoScreen.TAB_NAMES = ["Basics","Colors","Motion","Bounds","Paths","SubEmit"];
+screens_animation_ParticlesDemoScreen.TAB_FILES = ["demos/animation/particles-basics.manim","demos/animation/particles-colors.manim","demos/animation/particles-motion.manim","demos/animation/particles-bounds.manim","demos/animation/particles-paths.manim","demos/animation/particles-subemitters.manim"];
+screens_animation_ParticlesDemoScreen.TAB_DESCRIPTIONS = ["Emission modes: point, cone, box, circle — with basic properties","Color curve segments, size curves, and velocity curves with inline easings","Gravity, vortex, turbulence, wind, attractor, and repulsor force fields","Boundary modes: kill, bounce, wrap — plus line bounds","Emit along paths, tangent velocity, and pathguide force fields","Sub-emitter triggers: onDeath bursts and onCollision sparks"];
+screens_animation_ParticlesDemoScreen.TAB_GROUPS = [["fire","rain","sparkles","explosion"],["rainbow","sizeCurveDemo","velocityCurveDemo","pulseDemo"],["vortex","turbulence","pushPull","fountain"],["killBounds","bounceBounds","wrapBounds","lineBounds"],["pathEmit","pathTangent","pathGuideDemo","waveStream"],["fireworkMain","bounceBall"]];
+screens_animation_ParticlesDemoScreen.TAB_UI_NAMES = ["basicsUI","colorsUI","motionUI","boundsUI","pathsUI","subEmittersUI"];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
 screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];

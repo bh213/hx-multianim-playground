@@ -1,0 +1,101 @@
+version: 0.5
+
+// Particles Demo — Motion & Force Fields
+// gravity, attractor, repulsor, vortex, wind, turbulence
+
+relativeLayouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+// Central vortex swirl
+#vortex particles {
+    count: 100
+    emit: circle(80, 20, 0, 0)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 3.0
+    speed: 5
+    speedRandom: 0.5
+    size: 0.6
+    sizeRandom: 0.3
+    fadeIn: 0.15
+    fadeOut: 0.7
+    0.0: colorCurve: linear, #4488FF, #FF44FF
+    0.5: colorCurve: linear, #FF44FF, #44FFFF
+    blendMode: add
+    forceFields: [vortex(0, 0, 150, 200), attractor(0, 0, 30, 180)]
+}
+
+// Rising smoke with turbulence and wind
+#turbulence particles {
+    count: 80
+    emit: cone(5, 3, 270, 10)
+    tiles: file("smoke.png")
+    loop: true
+    maxLife: 3.0
+    speed: 25
+    speedRandom: 0.3
+    gravity: 15
+    gravityAngle: 270
+    size: 0.3
+    sizeRandom: 0.2
+    fadeIn: 0.2
+    fadeOut: 0.5
+    0.0: colorCurve: linear, #AAAAAA, #666666
+    forceFields: [turbulence(25, 0.015, 1.5), wind(20, 0)]
+}
+
+// Attractor + repulsor battle
+#pushPull particles {
+    count: 80
+    emit: box(200, 200, 0, 360)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 30
+    speedRandom: 0.4
+    size: 0.3
+    sizeRandom: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.6
+    0.0: colorCurve: linear, #FF8844, #44FF88
+    blendMode: add
+    forceFields: [attractor(-50, 0, 120, 200), repulsor(50, 0, 120, 200)]
+}
+
+// Heavy gravity fountain
+#fountain particles {
+    count: 60
+    emit: cone(0, 5, 270, 15)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 2.0
+    lifeRandom: 0.2
+    speed: 150
+    speedRandom: 0.2
+    gravity: 200
+    gravityAngle: 90
+    size: 0.4
+    sizeRandom: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.8
+    0.0: colorCurve: linear, #4488FF, #88CCFF
+    0.5: colorCurve: linear, #88CCFF, #224488
+    blendMode: add
+}
+
+#motionUI programmable() {
+    text(m6x11, "Vortex", #8888FF, center, 120): 120, 20
+    text(m3x6, "vortex + attractor", #888888, center, 120): 120, 36
+    text(m6x11, "Turbulence", #999999, center, 120): 380, 20
+    text(m3x6, "turbulence + wind", #888888, center, 120): 380, 36
+    text(m6x11, "Push/Pull", #FF8844, center, 120): 640, 20
+    text(m3x6, "attractor + repulsor", #888888, center, 120): 640, 36
+    text(m6x11, "Fountain", #4488FF, center, 120): 900, 20
+    text(m3x6, "heavy gravity", #888888, center, 120): 900, 36
+}

@@ -10,143 +10,169 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var resetButton:Null<UIStandardMultiAnimButton>;
+	var addPointButton:Null<UIStandardMultiAnimButton>;
 
 	static inline var COLS = 4;
-	static inline var ROWS = 3;
 	static inline var NODE_COUNT = 12;
+	static inline var START_POINTS = 5;
 
-	var skillPoints:Int = 5;
+	var skillPoints:Int = START_POINTS;
 	var unlocked:Array<Bool>;
-	var selected:Int = -1;
+	var hoveredNode:Int = -1;
 
-	// Node positions relative to the programmable origin (must match .manim)
-	static final NODE_X = [75, 195, 315, 435, 75, 195, 315, 435, 75, 195, 315, 435];
-	static final NODE_Y = [70, 70, 70, 70, 155, 155, 155, 155, 240, 240, 240, 240];
+	static final COSTS = [1, 2, 3, 5, 1, 2, 3, 5, 1, 2, 3, 5];
 
 	static final SKILL_NAMES = [
-		"Power", "Cleave", "Fury", "Titan",
-		"Agility", "Dodge", "Swift", "Shadow",
-		"Focus", "Arcane", "Mystic", "Cosmic",
+		"Helm", "Plate", "Axe", "Aegis",
+		"Boots", "Gloves", "Bow", "Signet",
+		"Staff", "Tome", "Scroll", "Gem",
+	];
+
+	static final PATH_NAMES = ["WAR", "ROG", "MAG"];
+	static final PATH_SLOT_NAMES = ["warNode", "rogNode", "magNode"];
+
+	static final ICONS = [
+		"helm", "armor", "axe", "tshield",
+		"boots", "gloves", "bow", "ring",
+		"staff", "book", "scroll", "gem",
 	];
 
 	override public function load():Void {
-		setupDemo("Skill Tree", "Dynamic refs with incremental updates, interactives for hover/click");
+		setupDemo("Equipment Tree", "Roguelike icons with grayscale filters, tiered costs, state-driven visuals");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/skill-tree.manim", false);
 
-		unlocked = [true, false, false, false, true, false, false, false, true, false, false, false];
+		unlocked = [for (_ in 0...NODE_COUNT) false];
 
-		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "skillTreeDemo", [
-			"u0" => 1, "u1" => 0, "u2" => 0, "u3" => 0,
-			"u4" => 1, "u5" => 0, "u6" => 0, "u7" => 0,
-			"u8" => 1, "u9" => 0, "u10" => 0, "u11" => 0,
-			"pts" => skillPoints,
-		], [
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "eqTreeDemo", [], [
 			resetButton => addButtonWithSingleBuilder(stdBuilder, "button", "Reset"),
-		], true);
+			addPointButton => addButtonWithSingleBuilder(stdBuilder, "button", "+1 SP"),
+		]);
 
 		demoResult = ui.builderResults;
 		resetButton = ui.resetButton;
+		addPointButton = ui.addPointButton;
 		addBuilderResult(demoResult);
 		addInteractives(demoResult);
+
+		// Populate all node slots
+		for (i in 0...NODE_COUNT) buildNodeContent(i);
+		updateSkillPointsText();
 	}
 
-	function isUnlockable(nodeIdx:Int):Bool {
-		if (unlocked[nodeIdx]) return false;
-		if (skillPoints <= 0) return false;
-		final col = nodeIdx % COLS;
-		final row = Std.int(nodeIdx / COLS);
-		return col == 0 || unlocked[row * COLS + (col - 1)];
+	function nodeSlot(idx:Int) {
+		return demoResult.getSlot(PATH_SLOT_NAMES[Std.int(idx / COLS)], idx % COLS);
+	}
+
+	// Returns slot state string matching the .manim enum
+	function nodeState(idx:Int):String {
+		if (unlocked[idx]) return "upgraded";
+		final col = idx % COLS;
+		final row = Std.int(idx / COLS);
+		final prevUnlocked = col == 0 || unlocked[row * COLS + (col - 1)];
+		if (!prevUnlocked) return "hidden";
+		return if (skillPoints >= COSTS[idx]) "upgradable" else "notEnoughPoints";
+	}
+
+	// Build icon and place into slot, set slot state
+	function buildNodeContent(idx:Int):Void {
+		if (demoResult == null || demoBuilder == null) return;
+		final slot = nodeSlot(idx);
+		slot.clear();
+		final state = nodeState(idx);
+		slot.setParameter("state", state);
+
+		if (state == "hidden") return;
+
+		final gray = state != "upgraded";
+		final result = demoBuilder.buildWithParameters("eqIcon", [
+			"icon" => ICONS[idx],
+			"style" => if (gray) "gray" else "full",
+		]);
+		final obj = result.object;
+		if (state == "upgradable") obj.alpha = 0.5;
+		slot.setContent(obj);
+	}
+
+	function recalcStates():Void {
+		if (demoResult == null) return;
+		for (i in 0...NODE_COUNT) buildNodeContent(i);
+		updateSkillPointsText();
 	}
 
 	function onNodeClick(nodeIdx:Int):Void {
 		if (nodeIdx < 0 || nodeIdx >= NODE_COUNT) return;
 
-		final col = nodeIdx % COLS;
-		final row = Std.int(nodeIdx / COLS);
+		final state = nodeState(nodeIdx);
+		final name = SKILL_NAMES[nodeIdx];
+		final path = PATH_NAMES[Std.int(nodeIdx / COLS)];
 
-		if (unlocked[nodeIdx]) {
-			selected = nodeIdx;
-			updateSelectHighlight();
-			updateInfoText('${SKILL_NAMES[nodeIdx]} — already unlocked');
+		if (state == "upgraded") {
+			updateInfoText('[$path] $name — already unlocked');
 			return;
 		}
 
-		if (col > 0 && !unlocked[row * COLS + (col - 1)]) {
-			updateInfoText('Requires ${SKILL_NAMES[row * COLS + (col - 1)]} first!');
+		if (state == "hidden") {
+			updateInfoText("??? — unlock previous tier to reveal");
 			return;
 		}
 
-		if (skillPoints <= 0) {
-			updateInfoText("No skill points remaining!");
+		if (state == "notEnoughPoints") {
+			updateInfoText('[$path] $name — needs ${COSTS[nodeIdx]} SP (have $skillPoints)');
 			return;
 		}
 
-		// Unlock via incremental parameter update
-		skillPoints--;
+		// Upgrade (state == "upgradable")
+		skillPoints -= COSTS[nodeIdx];
 		unlocked[nodeIdx] = true;
-		selected = nodeIdx;
-
-		demoResult.setParameter('u$nodeIdx', 1);
-		demoResult.setParameter("pts", skillPoints);
-
-		updateSelectHighlight();
-		updateInfoText('Unlocked ${SKILL_NAMES[nodeIdx]}!');
+		recalcStates();
+		updateInfoText('Unlocked $name! (-${COSTS[nodeIdx]} SP)');
 	}
 
 	function onNodeHover(nodeIdx:Int):Void {
 		if (nodeIdx < 0 || nodeIdx >= NODE_COUNT) {
-			hideHoverHighlight();
+			clearHover();
 			return;
 		}
 
-		// Highlight unlockable nodes
-		if (isUnlockable(nodeIdx)) {
-			final obj = demoResult.getSingleItemByName("hoverHighlight").object.toh2dObject();
-			obj.setPosition(NODE_X[nodeIdx] - 2, NODE_Y[nodeIdx] - 2);
-			obj.alpha = 1.0;
-		} else {
-			hideHoverHighlight();
+		if (hoveredNode >= 0 && hoveredNode != nodeIdx) {
+			nodeSlot(hoveredNode).setParameter("hover", "off");
 		}
+		hoveredNode = nodeIdx;
+		nodeSlot(nodeIdx).setParameter("hover", "on");
 
-		final suffix = if (unlocked[nodeIdx]) " (unlocked)"
-			else if (isUnlockable(nodeIdx)) " — click to unlock"
-			else " (locked)";
-		updateInfoText(SKILL_NAMES[nodeIdx] + suffix);
+		final state = nodeState(nodeIdx);
+		final path = PATH_NAMES[Std.int(nodeIdx / COLS)];
+		final name = SKILL_NAMES[nodeIdx];
+
+		final info = switch state {
+			case "upgraded": '[$path] $name — unlocked';
+			case "upgradable": '[$path] $name (${COSTS[nodeIdx]} SP) — click to unlock';
+			case "notEnoughPoints": '[$path] $name (${COSTS[nodeIdx]} SP) — not enough SP';
+			default: "??? — unlock previous tier to reveal";
+		};
+		updateInfoText(info);
 	}
 
-	function hideHoverHighlight():Void {
-		if (demoResult == null) return;
-		final obj = demoResult.getSingleItemByName("hoverHighlight").object.toh2dObject();
-		obj.alpha = 0.0;
+	function clearHover():Void {
+		if (hoveredNode >= 0 && demoResult != null) {
+			nodeSlot(hoveredNode).setParameter("hover", "off");
+			hoveredNode = -1;
+		}
 	}
 
-	function updateSelectHighlight():Void {
-		if (demoResult == null) return;
-		final obj = demoResult.getSingleItemByName("selectHighlight").object.toh2dObject();
-		if (selected >= 0 && selected < NODE_COUNT) {
-			obj.setPosition(NODE_X[selected] - 2, NODE_Y[selected] - 2);
-			obj.alpha = 1.0;
-		} else {
-			obj.alpha = 0.0;
-		}
+	function addSkillPoint():Void {
+		skillPoints++;
+		recalcStates();
+		updateInfoText('Added 1 SP! Total: $skillPoints');
 	}
 
 	function resetSkills():Void {
-		skillPoints = 5;
-		selected = -1;
-		unlocked = [true, false, false, false, true, false, false, false, true, false, false, false];
-
-		for (i in 0...NODE_COUNT) {
-			demoResult.setParameter('u$i', unlocked[i] ? 1 : 0);
-		}
-		demoResult.setParameter("pts", skillPoints);
-
-		// Hide highlights
-		final selObj = demoResult.getSingleItemByName("selectHighlight").object.toh2dObject();
-		selObj.alpha = 0.0;
-		hideHoverHighlight();
-		updateInfoText("Skills reset!");
+		skillPoints = START_POINTS;
+		hoveredNode = -1;
+		unlocked = [for (_ in 0...NODE_COUNT) false];
+		recalcStates();
+		updateInfoText("Equipment tree reset!");
 	}
 
 	function updateInfoText(text:String):Void {
@@ -155,11 +181,19 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 		}
 	}
 
+	function updateSkillPointsText():Void {
+		if (demoResult != null) {
+			demoResult.getUpdatable("skillPointsText").updateText('Skill Points: $skillPoints');
+		}
+	}
+
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
 				if (source == resetButton) {
 					resetSkills();
+				} else if (source == addPointButton) {
+					addSkillPoint();
 				} else if (Std.isOfType(source, UIInteractiveWrapper)) {
 					final wrapper:UIInteractiveWrapper = cast source;
 					final nodeIdx = Std.parseInt(wrapper.id);
@@ -172,8 +206,8 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 					if (nodeIdx != null) onNodeHover(nodeIdx);
 				}
 			case UILeaving:
-				hideHoverHighlight();
-				updateInfoText("Hover over a skill to see details");
+				clearHover();
+				updateInfoText("Hover over equipment to see details");
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -184,8 +218,9 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 		demoBuilder = null;
 		demoResult = null;
 		resetButton = null;
-		skillPoints = 5;
-		selected = -1;
+		addPointButton = null;
+		skillPoints = START_POINTS;
+		hoveredNode = -1;
 		unlocked = null;
 	}
 }

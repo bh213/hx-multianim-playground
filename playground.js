@@ -87014,7 +87014,8 @@ screens_animation_FiltersDemoScreen.__name__ = "screens.animation.FiltersDemoScr
 screens_animation_FiltersDemoScreen.__super__ = DemoScreenBase;
 screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Filters","Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow");
+		var _gthis = this;
+		this.setupDemo("Filters","Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow, grayscale, hue, pixelOutline");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/filters.manim",false);
 		this.checkboxBuilder = this.screenManager.buildFromResourceName("checkbox.manim",false);
 		this.scrollableList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",TestBitmaps.get_ALL_ITEMS(),null,0,160,200);
@@ -87028,11 +87029,304 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			this.cellSliders.push([]);
 			this.cellChecks.push([]);
 		}
+		var generatedByMacroBuildWithParametersload2665Builder = function() {
+			var sSize;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sSize = _el;
+				return _el.getObject();
+			});
+			_g.h["sSize"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("outlineCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sSize : sSize, builderResults : builderResults1};
+			if(retVal.sSize == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sSize" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var o = generatedByMacroBuildWithParametersload2665Builder();
+		this.cellResults[0] = o.builderResults;
+		this.cellSliders[0] = [o.sSize];
+		var generatedByMacroBuildWithParametersload2849Builder = function() {
+			var sRadius;
+			var sAlpha;
+			var cSmooth;
+			var cKnockout;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sRadius = _el;
+				return _el.getObject();
+			});
+			_g.h["sRadius"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sAlpha = _el;
+				return _el.getObject();
+			});
+			_g.h["sAlpha"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.checkboxBuilder,settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cSmooth = _el;
+				return _el.getObject();
+			});
+			_g.h["cSmooth"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.checkboxBuilder,settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cKnockout = _el;
+				return _el.getObject();
+			});
+			_g.h["cKnockout"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("glowCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sRadius : sRadius, sAlpha : sAlpha, cSmooth : cSmooth, cKnockout : cKnockout, builderResults : builderResults1};
+			if(retVal.sRadius == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sRadius" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sAlpha == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sAlpha" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.cSmooth == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cSmooth" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.cKnockout == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cKnockout" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var g = generatedByMacroBuildWithParametersload2849Builder();
+		this.cellResults[1] = g.builderResults;
+		this.cellSliders[1] = [g.sAlpha,g.sRadius];
+		this.cellChecks[1] = [g.cSmooth,g.cKnockout];
+		var generatedByMacroBuildWithParametersload3237Builder = function() {
+			var sRadius;
+			var sGain;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sRadius = _el;
+				return _el.getObject();
+			});
+			_g.h["sRadius"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sGain = _el;
+				return _el.getObject();
+			});
+			_g.h["sGain"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("blurCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sRadius : sRadius, sGain : sGain, builderResults : builderResults1};
+			if(retVal.sRadius == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sRadius" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sGain == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sGain" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var b = generatedByMacroBuildWithParametersload3237Builder();
+		this.cellResults[2] = b.builderResults;
+		this.cellSliders[2] = [b.sRadius,b.sGain];
+		var generatedByMacroBuildWithParametersload3477Builder = function() {
+			var sValue;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sValue = _el;
+				return _el.getObject();
+			});
+			_g.h["sValue"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("saturateCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sValue : sValue, builderResults : builderResults1};
+			if(retVal.sValue == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sValue" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var s = generatedByMacroBuildWithParametersload3477Builder();
+		this.cellResults[3] = s.builderResults;
+		this.cellSliders[3] = [s.sValue];
+		var generatedByMacroBuildWithParametersload3665Builder = function() {
+			var sValue;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sValue = _el;
+				return _el.getObject();
+			});
+			_g.h["sValue"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("brightnessCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sValue : sValue, builderResults : builderResults1};
+			if(retVal.sValue == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sValue" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var br = generatedByMacroBuildWithParametersload3665Builder();
+		this.cellResults[4] = br.builderResults;
+		this.cellSliders[4] = [br.sValue];
+		var generatedByMacroBuildWithParametersload3857Builder = function() {
+			var sRadius;
+			var sDist;
+			var sAngle;
+			var sAlpha;
+			var cSmooth;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sRadius = _el;
+				return _el.getObject();
+			});
+			_g.h["sRadius"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sDist = _el;
+				return _el.getObject();
+			});
+			_g.h["sDist"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sAngle = _el;
+				return _el.getObject();
+			});
+			_g.h["sAngle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sAlpha = _el;
+				return _el.getObject();
+			});
+			_g.h["sAlpha"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.checkboxBuilder,settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cSmooth = _el;
+				return _el.getObject();
+			});
+			_g.h["cSmooth"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("dropShadowCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sRadius : sRadius, sDist : sDist, sAngle : sAngle, sAlpha : sAlpha, cSmooth : cSmooth, builderResults : builderResults1};
+			if(retVal.sRadius == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sRadius" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sDist == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sDist" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sAngle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sAngle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.sAlpha == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sAlpha" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.cSmooth == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cSmooth" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ds = generatedByMacroBuildWithParametersload3857Builder();
+		this.cellResults[5] = ds.builderResults;
+		this.cellSliders[5] = [ds.sDist,ds.sAngle,ds.sAlpha,ds.sRadius];
+		this.cellChecks[5] = [ds.cSmooth];
+		var generatedByMacroBuildWithParametersload4289Builder = function() {
+			var sValue;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sValue = _el;
+				return _el.getObject();
+			});
+			_g.h["sValue"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("grayscaleCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sValue : sValue, builderResults : builderResults1};
+			if(retVal.sValue == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sValue" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var gs = generatedByMacroBuildWithParametersload4289Builder();
+		this.cellResults[6] = gs.builderResults;
+		this.cellSliders[6] = [gs.sValue];
+		var generatedByMacroBuildWithParametersload4480Builder = function() {
+			var sValue;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sValue = _el;
+				return _el.getObject();
+			});
+			_g.h["sValue"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("hueCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sValue : sValue, builderResults : builderResults1};
+			if(retVal.sValue == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sValue" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var hu = generatedByMacroBuildWithParametersload4480Builder();
+		this.cellResults[7] = hu.builderResults;
+		this.cellSliders[7] = [hu.sValue];
+		var generatedByMacroBuildWithParametersload4665Builder = function() {
+			var sStrength;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				sStrength = _el;
+				return _el.getObject();
+			});
+			_g.h["sStrength"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("pixelOutlineCell",builderResults,{ placeholderObjects : _g});
+			var retVal = { sStrength : sStrength, builderResults : builderResults1};
+			if(retVal.sStrength == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sStrength" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var po = generatedByMacroBuildWithParametersload4665Builder();
+		this.cellResults[8] = po.builderResults;
+		this.cellSliders[8] = [po.sStrength];
 		var _g = 0;
 		var _g1 = screens_animation_FiltersDemoScreen.NUM_FILTERS;
 		while(_g < _g1) {
-			var i = _g++;
-			this.buildFilterCell(i);
+			var cellIdx = _g++;
+			var _g2 = 0;
+			var _g3 = this.cellSliders[cellIdx].length;
+			while(_g2 < _g3) {
+				var sIdx = _g2++;
+				this.cellSliders[cellIdx][sIdx].setFloatValue(screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS[cellIdx][sIdx]);
+			}
 		}
 		var tmp = this.demoBuilder;
 		var tmp1 = new haxe_ds_StringMap();
@@ -87045,181 +87339,16 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		_g.h["cell3"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[3].object);
 		_g.h["cell4"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[4].object);
 		_g.h["cell5"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[5].object);
+		_g.h["cell6"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[6].object);
+		_g.h["cell7"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[7].object);
+		_g.h["cell8"] = bh_multianim_PlaceholderValues.PVObject(this.cellResults[8].object);
 		this.layoutResult = tmp.buildWithParameters("filtersLayout",tmp1,{ placeholderObjects : _g});
 		this.addBuilderResult(this.layoutResult);
 		var _g = 0;
 		var _g1 = screens_animation_FiltersDemoScreen.NUM_FILTERS;
 		while(_g < _g1) {
 			var i = _g++;
-			this.configureCell(i);
 			this.buildPreview(i);
-		}
-	}
-	,buildFilterCell: function(idx) {
-		var _gthis = this;
-		var generatedByMacroBuildWithParametersbuildFilterCell2670Builder = function() {
-			var s4;
-			var s3;
-			var s2;
-			var s1;
-			var c2;
-			var c1;
-			var _gthis1 = _gthis.demoBuilder;
-			var builderResults = new haxe_ds_StringMap();
-			var _g = new haxe_ds_StringMap();
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				s4 = _el;
-				return _el.getObject();
-			});
-			_g.h["s4"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				s3 = _el;
-				return _el.getObject();
-			});
-			_g.h["s3"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				s2 = _el;
-				return _el.getObject();
-			});
-			_g.h["s2"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,0);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				s1 = _el;
-				return _el.getObject();
-			});
-			_g.h["s1"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addCheckbox(_gthis.checkboxBuilder,settings,false);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				c2 = _el;
-				return _el.getObject();
-			});
-			_g.h["c2"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addCheckbox(_gthis.checkboxBuilder,settings,false);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				c1 = _el;
-				return _el.getObject();
-			});
-			_g.h["c1"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("filterCell",builderResults,{ placeholderObjects : _g});
-			var retVal = { s4 : s4, s3 : s3, s2 : s2, s1 : s1, c2 : c2, c1 : c1, builderResults : builderResults1};
-			if(retVal.s4 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "s4" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.s3 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "s3" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.s2 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "s2" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.s1 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "s1" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.c2 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.c1 == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c1" + " is null (check if placeholder object is named correctly)");
-			}
-			return retVal;
-		};
-		var ui = generatedByMacroBuildWithParametersbuildFilterCell2670Builder();
-		this.cellResults[idx] = ui.builderResults;
-		this.cellSliders[idx] = [ui.s1,ui.s2,ui.s3,ui.s4];
-		this.cellChecks[idx] = [ui.c1,ui.c2];
-	}
-	,configureCell: function(idx) {
-		var result = this.cellResults[idx];
-		if(result == null) {
-			return;
-		}
-		var sliders = this.cellSliders[idx];
-		var checks = this.cellChecks[idx];
-		this.setCellText(idx,"cellName",screens_animation_FiltersDemoScreen.FILTER_NAMES[idx]);
-		this.setSliderVisible(sliders[0],false);
-		this.setSliderVisible(sliders[1],false);
-		this.setSliderVisible(sliders[2],false);
-		this.setSliderVisible(sliders[3],false);
-		this.setCheckVisible(checks[0],false);
-		this.setCheckVisible(checks[1],false);
-		this.setCellText(idx,"s" + 1 + "Label","");
-		this.setCellText(idx,"s" + 1 + "Value","");
-		this.setCellText(idx,"s" + 2 + "Label","");
-		this.setCellText(idx,"s" + 2 + "Value","");
-		this.setCellText(idx,"s" + 3 + "Label","");
-		this.setCellText(idx,"s" + 3 + "Value","");
-		this.setCellText(idx,"s" + 4 + "Label","");
-		this.setCellText(idx,"s" + 4 + "Value","");
-		this.setCellText(idx,"c1Label","");
-		this.setCellText(idx,"c2Label","");
-		switch(screens_animation_FiltersDemoScreen.FILTER_NAMES[idx]) {
-		case "blur":
-			this.configSlider(idx,0,"Radius",0,20,0.5,4);
-			this.configSlider(idx,1,"Gain",0,5,0.1,1.0);
-			break;
-		case "brightness":
-			this.configSlider(idx,0,"Value",0,3,0.05,1.5);
-			break;
-		case "dropShadow":
-			this.configSlider(idx,0,"Dist",0,20,0.5,3);
-			this.configSlider(idx,1,"Angle",0,360,5,30);
-			this.configSlider(idx,2,"Alpha",0,1,0.05,0.5);
-			this.configSlider(idx,3,"Radius",0,20,0.5,6);
-			this.configCheck(idx,0,"Smooth",false);
-			break;
-		case "glow":
-			this.configSlider(idx,0,"Alpha",0,1,0.05,0.8);
-			this.configSlider(idx,1,"Radius",0,50,1,8);
-			this.configCheck(idx,0,"Smooth",true);
-			this.configCheck(idx,1,"Knockout",false);
-			break;
-		case "outline":
-			this.configSlider(idx,0,"Size",0,5,0.1,1.0);
-			break;
-		case "saturate":
-			this.configSlider(idx,0,"Value",0,2,0.05,0.0);
-			break;
-		default:
-		}
-	}
-	,configSlider: function(cellIdx,sliderIdx,label,min,max,step,initial) {
-		var slider = this.cellSliders[cellIdx][sliderIdx];
-		slider.min = min;
-		slider.max = max;
-		slider.step = step;
-		slider.setFloatValue(initial);
-		this.setSliderVisible(slider,true);
-		this.setCellText(cellIdx,"s" + (sliderIdx + 1) + "Label",label);
-		this.setCellText(cellIdx,"s" + (sliderIdx + 1) + "Value",this.formatFloat(initial));
-	}
-	,configCheck: function(cellIdx,checkIdx,label,initial) {
-		var cb = this.cellChecks[cellIdx][checkIdx];
-		cb.set_selected(initial);
-		this.setCheckVisible(cb,true);
-		this.setCellText(cellIdx,"c" + (checkIdx + 1) + "Label",label);
-	}
-	,setSliderVisible: function(slider,visible) {
-		slider.getObject().set_visible(visible);
-	}
-	,setCheckVisible: function(cb,visible) {
-		cb.getObject().set_visible(visible);
-	}
-	,setCellText: function(cellIdx,name,text) {
-		var result = this.cellResults[cellIdx];
-		if(result == null) {
-			return;
-		}
-		var updatable = result.getUpdatable(name);
-		if(updatable != null) {
-			updatable.updateText(text);
 		}
 	}
 	,buildPreview: function(cellIdx) {
@@ -87233,56 +87362,30 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		if(result == null) {
 			return;
 		}
-		var preview = this.demoBuilder;
 		var _g = new haxe_ds_StringMap();
 		_g.h["bitmapType"] = this.activeBitmapType;
-		var preview1 = preview.buildWithParameters("bitmapPreview",_g);
-		var _this = preview1.object;
+		var params = _g;
+		var _g = 0;
+		var _g1 = this.cellSliders[cellIdx].length;
+		while(_g < _g1) {
+			var i = _g++;
+			var value = this.cellSliders[cellIdx][i].getFloatValue();
+			params.h[screens_animation_FiltersDemoScreen.SLIDER_PARAMS[cellIdx][i]] = value;
+		}
+		var _g = 0;
+		var _g1 = this.cellChecks[cellIdx].length;
+		while(_g < _g1) {
+			var i = _g++;
+			params.h[screens_animation_FiltersDemoScreen.CHECK_PARAMS[cellIdx][i]] = this.cellChecks[cellIdx][i].selected ? 1 : 0;
+		}
+		var preview = this.demoBuilder.buildWithParameters(screens_animation_FiltersDemoScreen.PREVIEW_NAMES[cellIdx],params);
+		var _this = preview.object;
 		_this.posChanged = true;
 		_this.x = 10;
 		_this.posChanged = true;
-		_this.y = 20;
-		result.object.addChild(preview1.object);
-		this.cellPreviews[cellIdx] = preview1;
-		this.applyFilter(cellIdx);
-	}
-	,applyFilter: function(cellIdx) {
-		var preview = this.cellPreviews[cellIdx];
-		if(preview == null) {
-			return;
-		}
-		var obj = preview.object;
-		var sliders = this.cellSliders[cellIdx];
-		var checks = this.cellChecks[cellIdx];
-		switch(screens_animation_FiltersDemoScreen.FILTER_NAMES[cellIdx]) {
-		case "blur":
-			obj.set_filter(new h2d_filter_Blur(sliders[0].getFloatValue(),sliders[1].getFloatValue(),1.0,0.0));
-			break;
-		case "brightness":
-			var m = new h3d_MatrixImpl();
-			m.identity();
-			m.colorLightness(sliders[0].getFloatValue());
-			obj.set_filter(new h2d_filter_ColorMatrix(m));
-			break;
-		case "dropShadow":
-			obj.set_filter(new h2d_filter_DropShadow(sliders[0].getFloatValue(),sliders[1].getFloatValue() * 3.14159265358979323 / 180.0,0,sliders[2].getFloatValue(),sliders[3].getFloatValue(),1.0,1.0,checks[0].selected));
-			break;
-		case "glow":
-			var f = new h2d_filter_Glow(16755200,sliders[0].getFloatValue(),sliders[1].getFloatValue(),1.0,1.0,checks[0].selected);
-			f.knockout = checks[1].selected;
-			obj.set_filter(f);
-			break;
-		case "outline":
-			obj.set_filter(new h2d_filter_Outline(sliders[0].getFloatValue(),16711680));
-			break;
-		case "saturate":
-			var m = new h3d_MatrixImpl();
-			m.identity();
-			m.colorSaturate(sliders[0].getFloatValue());
-			obj.set_filter(new h2d_filter_ColorMatrix(m));
-			break;
-		default:
-		}
+		_this.y = 14;
+		result.object.addChild(preview.object);
+		this.cellPreviews[cellIdx] = preview;
 	}
 	,findCellForSource: function(source) {
 		var _g = 0;
@@ -87322,11 +87425,16 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		return -1;
 	}
 	,formatFloat: function(v) {
-		var rounded = Math.round(v * 100) / 100;
-		if(rounded == null) {
-			return "null";
-		} else {
-			return "" + rounded;
+		return Std.string(Math.round(v * 100) / 100);
+	}
+	,setCellText: function(cellIdx,name,text) {
+		var result = this.cellResults[cellIdx];
+		if(result == null) {
+			return;
+		}
+		var updatable = result.getUpdatable(name);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,onScreenEvent: function(event,source) {
@@ -87335,17 +87443,17 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			var pressed = event.pressed;
 			var cellIdx = this.findCellForSource(source);
 			if(cellIdx >= 0) {
-				this.applyFilter(cellIdx);
+				this.buildPreview(cellIdx);
 			}
 			break;
 		case 3:
 			var value = event.value;
 			var cellIdx = this.findCellForSource(source);
 			if(cellIdx >= 0) {
-				this.applyFilter(cellIdx);
+				this.buildPreview(cellIdx);
 				var sIdx = this.findSliderIdx(cellIdx,source);
 				if(sIdx >= 0) {
-					this.setCellText(cellIdx,"s" + (sIdx + 1) + "Value",this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
+					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
 				}
 			}
 			break;
@@ -87353,10 +87461,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			var value = event.value;
 			var cellIdx = this.findCellForSource(source);
 			if(cellIdx >= 0) {
-				this.applyFilter(cellIdx);
+				this.buildPreview(cellIdx);
 				var sIdx = this.findSliderIdx(cellIdx,source);
 				if(sIdx >= 0) {
-					this.setCellText(cellIdx,"s" + (sIdx + 1) + "Value",this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
+					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
 				}
 			}
 			break;
@@ -92489,8 +92597,12 @@ screens_animation_AnimPathDemoScreen.COLORS = [8379354,16729156,4521796,4491519,
 screens_animation_AnimPathDemoScreen.COLOR_NAMES = ["Cyan","Red","Green","Blue","Yellow","Magenta","White"];
 screens_animation_CurvesDemoScreen.CURVE_TYPES = ["linear","easeInQuad","easeOutQuad","easeInOutQuad","easeInCubic","easeOutCubic","easeInOutCubic","easeInBack","easeOutBack","easeInOutBack","easeOutBounce","easeOutElastic","accelDecel","snapBack","cubicBezier","custom"];
 screens_animation_CurvesDemoScreen.CURVE_ITEMS = [{ name : "Linear"},{ name : "Ease In Quad"},{ name : "Ease Out Quad"},{ name : "Ease In/Out Quad"},{ name : "Ease In Cubic"},{ name : "Ease Out Cubic"},{ name : "Ease In/Out Cubic"},{ name : "Ease In Back"},{ name : "Ease Out Back"},{ name : "Ease In/Out Back"},{ name : "Ease Out Bounce"},{ name : "Ease Out Elastic"},{ name : "Accel/Decel"},{ name : "Snap Back"},{ name : "Cubic Bezier"},{ name : "Custom Points"}];
-screens_animation_FiltersDemoScreen.NUM_FILTERS = 6;
-screens_animation_FiltersDemoScreen.FILTER_NAMES = ["outline","glow","blur","saturate","brightness","dropShadow"];
+screens_animation_FiltersDemoScreen.NUM_FILTERS = 9;
+screens_animation_FiltersDemoScreen.PREVIEW_NAMES = ["outlinePreview","glowPreview","blurPreview","saturatePreview","brightnessPreview","dropShadowPreview","grayscalePreview","huePreview","pixelOutlinePreview"];
+screens_animation_FiltersDemoScreen.SLIDER_PARAMS = [["outlineSize"],["glowAlpha","glowRadius"],["blurRadius","blurGain"],["satValue"],["brightValue"],["dsDist","dsAngle","dsAlpha","dsRadius"],["gsValue"],["hueValue"],["poStrength"]];
+screens_animation_FiltersDemoScreen.CHECK_PARAMS = [[],["glowSmooth","glowKnockout"],[],[],[],["dsSmooth"],[],[],[]];
+screens_animation_FiltersDemoScreen.VALUE_LABELS = [["sizeValue"],["alphaValue","radiusValue"],["radiusValue","gainValue"],["valueText"],["valueText"],["distValue","angleValue","alphaValue","radiusValue"],["valueText"],["valueText"],["strengthValue"]];
+screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[0.0],[1.5],[3,30,0.5,6],[1.0],[0.0],[0.5]];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
 screens_gamelike_ShopDemoScreen.SHOP_ITEMS = [{ name : "Health Potion", price : 50, color : -48060, desc : "Restores 50 HP"},{ name : "Mana Potion", price : 40, color : -11890524, desc : "Restores 30 MP"},{ name : "Iron Sword", price : 150, color : -5197648, desc : "ATK +10"},{ name : "Leather Armor", price : 120, color : -7640812, desc : "DEF +8"},{ name : "Magic Ring", price : 200, color : -5317, desc : "INT +5"},{ name : "Speed Boots", price : 180, color : -11751600, desc : "DEX +6"}];

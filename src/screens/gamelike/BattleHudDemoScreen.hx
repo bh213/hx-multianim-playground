@@ -2,13 +2,12 @@ package screens.gamelike;
 
 import bh.ui.*;
 import bh.multianim.MultiAnimBuilder;
-import bh.base.MacroUtils;
 
 class BattleHudDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
-	var demoResult:Null<BuilderResult>;
+	var demoResults:Array<BuilderResult> = [];
 
-	// State
+	// State (shared across all HUD variants)
 	var heroHp:Int = 100;
 	var heroMaxHp:Int = 100;
 	var heroMp:Int = 50;
@@ -30,34 +29,49 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	static inline var DEAD_DURATION = 1.5;
 
 	override public function load():Void {
-		setupDemo("Hero HUD", "Animated HP/MP bars with Dota 2-style damage trail and death cycle");
+		setupDemo("Battle HUD", "Three visual styles, same code — the .manim defines the look, the code drives the data");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/battle-hud.manim", false);
 
-		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "battleHudDemo", [
-			"hp" => heroHp,
-			"maxHp" => heroMaxHp,
-			"hpTrail" => heroHp,
-			"mp" => heroMp,
-			"maxMp" => heroMaxMp,
-			"mpTrail" => heroMp,
-			"dead" => 0,
-		], [], true);
-
-		demoResult = ui.builderResults;
-		addBuilderResult(demoResult);
+		// Build all 3 HUD variants — same parameters, different visuals
+		for (name in ["battleHudDemo", "pixelBattleHud", "verticalBattleHud"]) {
+			final result = buildHud(name);
+			demoResults.push(result);
+			addBuilderResult(result);
+		}
 	}
 
-	function refreshDisplay():Void {
-		if (demoResult == null) return;
-		demoResult.beginUpdate();
-		demoResult.setParameter("hp", heroHp);
-		demoResult.setParameter("hpTrail", hpTrail);
-		demoResult.setParameter("mp", heroMp);
-		demoResult.setParameter("mpTrail", mpTrail);
-		demoResult.endUpdate();
+	function buildHud(name:String):BuilderResult {
+		var params = new Map<String, Dynamic>();
+		params.set("hp", heroHp);
+		params.set("maxHp", heroMaxHp);
+		params.set("hpTrail", heroHp);
+		params.set("mp", heroMp);
+		params.set("maxMp", heroMaxMp);
+		params.set("mpTrail", heroMp);
+		params.set("dead", 0);
+		return demoBuilder.buildWithParameters(name, params, null, null, true);
 	}
 
+	// Same function drives any HUD variant — doesn't know which visual style it's updating
+	function refreshHud(result:BuilderResult):Void {
+		result.beginUpdate();
+		result.setParameter("hp", heroHp);
+		result.setParameter("hpTrail", hpTrail);
+		result.setParameter("mp", heroMp);
+		result.setParameter("mpTrail", mpTrail);
+		result.endUpdate();
+	}
+
+	function refreshAllHuds():Void {
+		for (result in demoResults)
+			refreshHud(result);
+	}
+
+	function setAllDead(dead:Int):Void {
+		for (result in demoResults)
+			result.setParameter("dead", dead);
+	}
 
 	function dealDamage():Void {
 		final damage = 8 + Std.int(Math.random() * 20);
@@ -89,12 +103,12 @@ class BattleHudDemoScreen extends DemoScreenBase {
 
 	override public function update(dt:Float):Void {
 		super.update(dt);
-		if (demoResult == null) return;
+		if (demoResults.length == 0) return;
 
 		if (isDead) {
 			deadTimer -= dt;
 			updateTrails(dt);
-			refreshDisplay();
+			refreshAllHuds();
 
 			if (deadTimer <= 0) {
 				isDead = false;
@@ -106,8 +120,8 @@ class BattleHudDemoScreen extends DemoScreenBase {
 				mpTrailDelay = 0;
 				nextDamageTimer = 1.5;
 				nextMpUseTimer = 2.0;
-				demoResult.setParameter("dead", 0);
-				refreshDisplay();
+				setAllDead(0);
+				refreshAllHuds();
 			}
 			return;
 		}
@@ -125,19 +139,19 @@ class BattleHudDemoScreen extends DemoScreenBase {
 		}
 
 		updateTrails(dt);
-		refreshDisplay();
+		refreshAllHuds();
 
 		if (heroHp <= 0) {
 			isDead = true;
 			deadTimer = DEAD_DURATION;
-			demoResult.setParameter("dead", 1);
+			setAllDead(1);
 		}
 	}
 
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
-		demoResult = null;
+		demoResults = [];
 		heroHp = 100;
 		heroMaxHp = 100;
 		heroMp = 50;

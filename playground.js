@@ -87756,6 +87756,7 @@ var screens_gamelike_BattleHudDemoScreen = function(screenManager,layers) {
 	this.heroMp = 50;
 	this.heroMaxHp = 100;
 	this.heroHp = 100;
+	this.demoResults = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.gamelike.BattleHudDemoScreen"] = screens_gamelike_BattleHudDemoScreen;
@@ -87763,37 +87764,57 @@ screens_gamelike_BattleHudDemoScreen.__name__ = "screens.gamelike.BattleHudDemoS
 screens_gamelike_BattleHudDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		var _gthis = this;
-		this.setupDemo("Hero HUD","Animated HP/MP bars with Dota 2-style damage trail and death cycle");
+		this.setupDemo("Battle HUD","Three visual styles, same code — the .manim defines the look, the code drives the data");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/battle-hud.manim",false);
-		var generatedByMacroBuildWithParametersload988Builder = function() {
-			var _gthis1 = _gthis.demoBuilder;
-			var _g = new haxe_ds_StringMap();
-			_g.h["hp"] = _gthis.heroHp;
-			_g.h["maxHp"] = _gthis.heroMaxHp;
-			_g.h["hpTrail"] = _gthis.heroHp;
-			_g.h["mp"] = _gthis.heroMp;
-			_g.h["maxMp"] = _gthis.heroMaxMp;
-			_g.h["mpTrail"] = _gthis.heroMp;
-			_g.h["dead"] = 0;
-			var builderResults = _gthis1.buildWithParameters("battleHudDemo",_g,{ placeholderObjects : new haxe_ds_StringMap()},null,true);
-			var retVal = { builderResults : builderResults};
-			return retVal;
-		};
-		var ui = generatedByMacroBuildWithParametersload988Builder();
-		this.demoResult = ui.builderResults;
-		this.addBuilderResult(this.demoResult);
+		var name = "battleHudDemo";
+		var result = this.buildHud(name);
+		this.demoResults.push(result);
+		this.addBuilderResult(result);
+		var name = "pixelBattleHud";
+		var result = this.buildHud(name);
+		this.demoResults.push(result);
+		this.addBuilderResult(result);
+		var name = "verticalBattleHud";
+		var result = this.buildHud(name);
+		this.demoResults.push(result);
+		this.addBuilderResult(result);
 	}
-	,refreshDisplay: function() {
-		if(this.demoResult == null) {
-			return;
+	,buildHud: function(name) {
+		var params = new haxe_ds_StringMap();
+		params.h["hp"] = this.heroHp;
+		params.h["maxHp"] = this.heroMaxHp;
+		params.h["hpTrail"] = this.heroHp;
+		params.h["mp"] = this.heroMp;
+		params.h["maxMp"] = this.heroMaxMp;
+		params.h["mpTrail"] = this.heroMp;
+		params.h["dead"] = 0;
+		return this.demoBuilder.buildWithParameters(name,params,null,null,true);
+	}
+	,refreshHud: function(result) {
+		result.beginUpdate();
+		result.setParameter("hp",this.heroHp);
+		result.setParameter("hpTrail",this.hpTrail);
+		result.setParameter("mp",this.heroMp);
+		result.setParameter("mpTrail",this.mpTrail);
+		result.endUpdate();
+	}
+	,refreshAllHuds: function() {
+		var _g = 0;
+		var _g1 = this.demoResults;
+		while(_g < _g1.length) {
+			var result = _g1[_g];
+			++_g;
+			this.refreshHud(result);
 		}
-		this.demoResult.beginUpdate();
-		this.demoResult.setParameter("hp",this.heroHp);
-		this.demoResult.setParameter("hpTrail",this.hpTrail);
-		this.demoResult.setParameter("mp",this.heroMp);
-		this.demoResult.setParameter("mpTrail",this.mpTrail);
-		this.demoResult.endUpdate();
+	}
+	,setAllDead: function(dead) {
+		var _g = 0;
+		var _g1 = this.demoResults;
+		while(_g < _g1.length) {
+			var result = _g1[_g];
+			++_g;
+			result.setParameter("dead",dead);
+		}
 	}
 	,dealDamage: function() {
 		var damage = 8 + (Math.random() * 20 | 0);
@@ -87821,13 +87842,13 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	}
 	,update: function(dt) {
 		DemoScreenBase.prototype.update.call(this,dt);
-		if(this.demoResult == null) {
+		if(this.demoResults.length == 0) {
 			return;
 		}
 		if(this.isDead) {
 			this.deadTimer -= dt;
 			this.updateTrails(dt);
-			this.refreshDisplay();
+			this.refreshAllHuds();
 			if(this.deadTimer <= 0) {
 				this.isDead = false;
 				this.heroHp = this.heroMaxHp;
@@ -87838,8 +87859,8 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.mpTrailDelay = 0;
 				this.nextDamageTimer = 1.5;
 				this.nextMpUseTimer = 2.0;
-				this.demoResult.setParameter("dead",0);
-				this.refreshDisplay();
+				this.setAllDead(0);
+				this.refreshAllHuds();
 			}
 			return;
 		}
@@ -87854,17 +87875,17 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			this.nextMpUseTimer = 1.5 + Math.random() * 2.5;
 		}
 		this.updateTrails(dt);
-		this.refreshDisplay();
+		this.refreshAllHuds();
 		if(this.heroHp <= 0) {
 			this.isDead = true;
 			this.deadTimer = 1.5;
-			this.demoResult.setParameter("dead",1);
+			this.setAllDead(1);
 		}
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
-		this.demoResult = null;
+		this.demoResults = [];
 		this.heroHp = 100;
 		this.heroMaxHp = 100;
 		this.heroMp = 50;

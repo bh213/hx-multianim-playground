@@ -1,5 +1,25 @@
 version: 0.5
 
+paths {
+    #straightLine path {
+        lineTo(100, 0)
+    }
+}
+
+#returnAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.5
+    easing: easeoutelastic
+}
+
+#snapAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.7
+    easing: easeoutcubic
+}
+
 #ninepatchShowcase programmable() {
   // Section 1: Same ninepatch at different sizes
   text(exo2_16, "Window_3x3_idle at 5 different sizes:", #cccccc): 0, 0
@@ -45,4 +65,9 @@ version: 0.5
 
   @scale(3) ninepatch("ui", "Window_3x3_idle", 60, 30): 200, 520
   text(m6x11, "scale 3", #888888): 200, 620
+}
+
+#resizablePanel programmable(width:60..510=210, height:60..210=150) {
+    ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
+    #sizeText(updatable) text(m6x11, "210 x 150", #ffffff, left, 200): 10, 10
 }

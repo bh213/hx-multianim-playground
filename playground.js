@@ -5137,7 +5137,6 @@ bh_base_PixelLines.prototype = $extend(h2d_Bitmap.prototype,{
 	}
 	,filledRect: function(x,y,width,height,colorARGB) {
 		this.data.lock();
-		haxe_Log.trace("" + x + ", " + y + ", " + width + ", " + height,{ fileName : "../hx-multianim/src/bh/base/PixelLine.hx", lineNumber : 40, className : "bh.base.PixelLines", methodName : "filledRect"});
 		this.data.fill(x,y,width,height,colorARGB);
 	}
 	,pixel: function(x,y,colorARGB) {
@@ -5145,8 +5144,8 @@ bh_base_PixelLines.prototype = $extend(h2d_Bitmap.prototype,{
 		this.data.setPixel(x,y,colorARGB);
 	}
 	,updateBitmap: function() {
-		this.data.unlock();
 		var pixels = this.data.getPixels();
+		this.data.unlock();
 		var tile = h2d_Tile.fromPixels(pixels);
 		var px = this.centerX;
 		var py = this.centerY;
@@ -16478,10 +16477,19 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var shapesCapture = shapes;
 					var gridCapture = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
 					var hexCapture = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
+					var pixelScaleCapture = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
 					this.incrementalContext.trackExpression(function() {
 						var result = _gthis.drawPixels(shapesCapture,gridCapture,hexCapture);
 						pl.set_tile(result.pixelLines.tile);
 						pl.data = result.pixelLines.data;
+						pl.set_width(result.pixelLines.tile.width);
+						pl.set_height(result.pixelLines.tile.height);
+						var x = result.minX * pixelScaleCapture;
+						var y = result.minY * pixelScaleCapture;
+						pl.posChanged = true;
+						pl.x = x;
+						pl.posChanged = true;
+						pl.y = y;
 					},pxRefs);
 				}
 			}
@@ -18796,7 +18804,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3007, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3013, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -20759,7 +20767,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4850, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4856, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -20866,7 +20874,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5054, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5060, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -20900,7 +20908,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5070, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5076, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -86486,8 +86494,6 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 	,__class__: screens_advanced_PerfProgrammables_$PerfSimpleInstance
 });
 var screens_advanced_SettingsDemoScreen = function(screenManager,layers) {
-	this.panelHeight = 200;
-	this.panelWidth = 150;
 	this.currentTheme = "dark";
 	this.themeButtons = [];
 	DemoScreenBase.call(this,screenManager,layers);
@@ -86500,7 +86506,7 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		var _gthis = this;
 		this.setupDemo("Settings","Settings configuration demo: shows settings{key:type=>value} usage");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/advanced/settings.manim",false);
-		var generatedByMacroBuildWithParametersload1112Builder = function() {
+		var generatedByMacroBuildWithParametersload801Builder = function() {
 			var btnLight;
 			var btnDark;
 			var btnBlue;
@@ -86541,7 +86547,7 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1112Builder();
+		var ui = generatedByMacroBuildWithParametersload801Builder();
 		this.demoResult = ui.builderResults;
 		this.themeButtons = [ui.btnDark,ui.btnLight,ui.btnBlue];
 		this.addBuilderResult(this.demoResult);
@@ -86561,53 +86567,6 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		_this.posChanged = true;
 		_this.y = 630;
 		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
-		var label = new h2d_Text(bh_base_FontManager.getFontByName("m6x11"));
-		label.set_text("Drag corner to resize:");
-		label.set_textColor(13421772);
-		label.posChanged = true;
-		label.x = 450;
-		label.posChanged = true;
-		label.y = 280;
-		this.addObjectToLayer(label,bh_ui_screens_LayersEnum.DefaultLayer);
-		var tmp = this.demoBuilder;
-		var _g = new haxe_ds_StringMap();
-		_g.h["width"] = this.panelWidth;
-		_g.h["height"] = this.panelHeight;
-		this.panelResult = tmp.buildWithParameters("resizablePanel",_g,null,null,true);
-		var _this = this.panelResult.object;
-		_this.posChanged = true;
-		_this.x = 450;
-		_this.posChanged = true;
-		_this.y = 300;
-		this.addBuilderResult(this.panelResult);
-		var handleTile = h2d_Tile.fromColor(8379354,12,12);
-		var handleBitmap = new h2d_Bitmap(handleTile);
-		this.handleDraggable = bh_ui_UIMultiAnimDraggable.create(handleBitmap);
-		this.handleDraggable.onDragEvent = function(event,pos,wrapper) {
-			if(event != bh_ui_DragEvent.DragMove) {
-				return;
-			}
-			var mouseX = wrapper.eventPos.x;
-			var mouseY = wrapper.eventPos.y;
-			var newW = Math.max(50,Math.min(500,mouseX - 450)) | 0;
-			var newH = Math.max(50,Math.min(500,mouseY - 300)) | 0;
-			_gthis.panelWidth = newW;
-			_gthis.panelHeight = newH;
-			if(_gthis.panelResult != null) {
-				_gthis.panelResult.setParameter("width",newW);
-				_gthis.panelResult.setParameter("height",newH);
-				var upd = _gthis.panelResult.getUpdatable("sizeText");
-				if(upd != null) {
-					upd.updateText("" + newW + " x " + newH);
-				}
-			}
-			var _this = _gthis.handleDraggable.getObject();
-			_this.posChanged = true;
-			_this.x = 450 + newW - 12;
-			_this.posChanged = true;
-			_this.y = 300 + newH - 12;
-		};
-		this.addElementWithPos(this.handleDraggable,450 + this.panelWidth - 12,300 + this.panelHeight - 12,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
@@ -86633,8 +86592,6 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.settingsResult = null;
 		this.statusText = null;
 		this.themeButtons = [];
-		this.panelResult = null;
-		this.handleDraggable = null;
 	}
 	,__class__: screens_advanced_SettingsDemoScreen
 });
@@ -90606,6 +90563,8 @@ screens_graphics_BitmapsAtlasDemoScreen.prototype = $extend(DemoScreenBase.proto
 	,__class__: screens_graphics_BitmapsAtlasDemoScreen
 });
 var screens_graphics_NinepatchDemoScreen = function(screenManager,layers) {
+	this.panelHeight = 150;
+	this.panelWidth = 210;
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.graphics.NinepatchDemoScreen"] = screens_graphics_NinepatchDemoScreen;
@@ -90613,7 +90572,8 @@ screens_graphics_NinepatchDemoScreen.__name__ = "screens.graphics.NinepatchDemoS
 screens_graphics_NinepatchDemoScreen.__super__ = DemoScreenBase;
 screens_graphics_NinepatchDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Ninepatch","Same 9-patch at different sizes showing proper stretching");
+		var _gthis = this;
+		this.setupDemo("Ninepatch","9-patch stretching at various sizes, plus a resizable panel with drag handle");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/graphics/ninepatch.manim",false);
 		var result = this.demoBuilder.buildWithParameters("ninepatchShowcase",new haxe_ds_StringMap());
 		var _this = result.object;
@@ -90622,10 +90582,87 @@ screens_graphics_NinepatchDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		_this.posChanged = true;
 		_this.y = 80;
 		this.addBuilderResult(result);
+		var label = new h2d_Text(bh_base_FontManager.getFontByName("m6x11"));
+		label.set_text("Drag corner to resize:");
+		label.set_textColor(13421772);
+		label.posChanged = true;
+		label.x = 500;
+		label.posChanged = true;
+		label.y = 500;
+		this.addObjectToLayer(label,bh_ui_screens_LayersEnum.DefaultLayer);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["width"] = this.panelWidth;
+		_g.h["height"] = this.panelHeight;
+		this.panelResult = tmp.buildWithParameters("resizablePanel",_g,null,null,true);
+		var _this = this.panelResult.object;
+		_this.posChanged = true;
+		_this.x = 500;
+		_this.posChanged = true;
+		_this.y = 520;
+		this.addBuilderResult(this.panelResult);
+		var handleTile = h2d_Tile.fromColor(8379354,12,12);
+		var handleBitmap = new h2d_Bitmap(handleTile);
+		this.handleDraggable = bh_ui_UIMultiAnimDraggable.create(handleBitmap);
+		this.handleDraggable.setSnapAnimPath(this.demoBuilder,"snapAnim");
+		this.handleDraggable.dragConstraint = function(pos) {
+			var x = Math.max(548,Math.min(998,pos.x));
+			var y = Math.max(568,Math.min(718,pos.y));
+			var x1 = x;
+			var y1 = y;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			return new h2d_col_PointImpl(x1,y1);
+		};
+		var tmp = this.handleDraggable;
+		var b = new h2d_col_Bounds();
+		b.xMin = 0;
+		b.yMin = 0;
+		b.xMax = 2000;
+		b.yMax = 2000;
+		tmp.addDropZone(new bh_ui_DropZone("resize",b,null,null,null,null,null,null,function() {
+			var snappedW = (_gthis.panelWidth / 30 + 0.5 | 0) * 30;
+			var snappedH = (_gthis.panelHeight / 30 + 0.5 | 0) * 30;
+			var x = 500 + snappedW - 12;
+			var y = 520 + snappedH - 12;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			return new h2d_col_PointImpl(x,y);
+		},null));
+		this.addElementWithPos(this.handleDraggable,500 + this.panelWidth - 12,520 + this.panelHeight - 12,bh_ui_screens_LayersEnum.DefaultLayer);
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.handleDraggable == null || this.panelResult == null) {
+			return;
+		}
+		var obj = this.handleDraggable.getObject();
+		var newW = Math.max(60,obj.x + 12 - 500) | 0;
+		var newH = Math.max(60,obj.y + 12 - 520) | 0;
+		if(newW != this.panelWidth || newH != this.panelHeight) {
+			this.panelWidth = newW;
+			this.panelHeight = newH;
+			this.panelResult.setParameter("width",newW);
+			this.panelResult.setParameter("height",newH);
+			var upd = this.panelResult.getUpdatable("sizeText");
+			if(upd != null) {
+				upd.updateText("" + newW + " x " + newH);
+			}
+		}
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
+		this.panelResult = null;
+		this.handleDraggable = null;
 	}
 	,__class__: screens_graphics_NinepatchDemoScreen
 });

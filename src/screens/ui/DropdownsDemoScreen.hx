@@ -15,6 +15,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 	var dropdownAutoFew:Null<UIStandardMultiAnimDropdown>;
 	var dropdownAutoMany:Null<UIStandardMultiAnimDropdown>;
 	var dropdownCustom:Null<UIStandardMultiAnimDropdown>;
+	var dropdownWide:Null<UIStandardMultiAnimDropdown>;
+	var dropdownLarge:Null<UIStandardMultiAnimDropdown>;
+	var dropdownShadow:Null<UIStandardMultiAnimDropdown>;
 
 	static final FRUITS:Array<UIElementListItem> = [
 		{name: "Apple"},
@@ -58,6 +61,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 			dropdownAutoFew => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FEW_ITEMS, 0),
 			dropdownAutoMany => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", MANY_ITEMS, 0),
 			dropdownCustom => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			dropdownWide => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			dropdownLarge => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			dropdownShadow => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
 		]);
 
 		demoResult = ui.builderResults;
@@ -65,6 +71,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownAutoFew = ui.dropdownAutoFew;
 		dropdownAutoMany = ui.dropdownAutoMany;
 		dropdownCustom = ui.dropdownCustom;
+		dropdownWide = ui.dropdownWide;
+		dropdownLarge = ui.dropdownLarge;
+		dropdownShadow = ui.dropdownShadow;
 
 		addBuilderResult(demoResult);
 	}
@@ -80,6 +89,12 @@ class DropdownsDemoScreen extends DemoScreenBase {
 					updateSelectedText(index, items, "autoManyText");
 				} else if (source == dropdownCustom) {
 					updateSelectedText(index, items, "customText");
+				} else if (source == dropdownWide) {
+					updateSelectedText(index, items, "wideText");
+				} else if (source == dropdownLarge) {
+					updateSelectedText(index, items, "largeText");
+				} else if (source == dropdownShadow) {
+					updateSelectedText(index, items, "shadowText");
 				}
 			default:
 		}
@@ -106,5 +121,8 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownAutoFew = null;
 		dropdownAutoMany = null;
 		dropdownCustom = null;
+		dropdownWide = null;
+		dropdownLarge = null;
+		dropdownShadow = null;
 	}
 }

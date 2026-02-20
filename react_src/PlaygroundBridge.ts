@@ -40,7 +40,7 @@ export const CATEGORIES: CategoryInfo[] = [
         name: 'Animation & Effects',
         screens: [
             { name: 'stateAnim', displayName: 'State Animations', category: 'Animation & Effects', manimFile: 'demos/animation/state-anim.manim' },
-            { name: 'particles', displayName: 'Particles', category: 'Animation & Effects', manimFile: 'demos/animation/particles.manim' },
+            { name: 'particles', displayName: 'Particles', category: 'Animation & Effects', manimFile: 'demos/animation/particles-basics.manim' },
             { name: 'paths', displayName: 'Paths', category: 'Animation & Effects', manimFile: 'demos/animation/paths.manim' },
             { name: 'curves', displayName: 'Curves', category: 'Animation & Effects', manimFile: 'demos/animation/curves.manim' },
             { name: 'animPath', displayName: 'Anim Paths', category: 'Animation & Effects', manimFile: 'demos/animation/anim-path.manim' },

@@ -1,0 +1,113 @@
+version: 0.5
+
+// Particles Demo — Path Emission & PathGuide
+// emit: path(), pathguide force field
+
+relativeLayouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+paths {
+    #orbit path {
+        arc(80, 360)
+        close
+    }
+    #figure8 path {
+        bezier(relative, 80, -60, 20, -80, 80, -20)
+        bezier(relative, -80, 60, -20, 80, -80, 20)
+        close
+    }
+    #wave path {
+        wave(40, 80, 3)
+    }
+}
+
+// Emit along circular path
+#pathEmit particles {
+    count: 60
+    emit: path(orbit)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 1.5
+    speed: 15
+    speedRandom: 0.5
+    size: 0.6
+    sizeRandom: 0.3
+    fadeIn: 0.1
+    fadeOut: 0.6
+    0.0: colorCurve: linear, #44FFFF, #4444FF
+    blendMode: add
+}
+
+// Emit along path with tangent velocity
+#pathTangent particles {
+    count: 50
+    emit: path(figure8, tangent)
+    tiles: file("spark.png")
+    loop: true
+    maxLife: 1.0
+    speed: 60
+    speedRandom: 0.2
+    size: 0.4
+    sizeRandom: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.5
+    0.0: colorCurve: linear, #FF88FF, #FF44AA
+    blendMode: add
+    rotateAuto: true
+}
+
+// PathGuide force field — particles attracted to and flowing along path
+#pathGuideDemo particles {
+    count: 80
+    emit: box(200, 200, 0, 360)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 3.0
+    speed: 20
+    speedRandom: 0.5
+    size: 0.3
+    sizeRandom: 0.2
+    fadeIn: 0.15
+    fadeOut: 0.7
+    0.0: colorCurve: linear, #88FF44, #FFFF44
+    0.5: colorCurve: linear, #FFFF44, #FF8844
+    blendMode: add
+    forceFields: [pathguide(wave, 60, 80, 120)]
+}
+
+// Emit along wave + flow along it
+#waveStream particles {
+    count: 70
+    emit: path(wave, tangent)
+    tiles: file("flare.png")
+    loop: true
+    maxLife: 2.0
+    speed: 40
+    speedRandom: 0.3
+    size: 0.2
+    sizeRandom: 0.15
+    fadeIn: 0.1
+    fadeOut: 0.6
+    0.0: colorCurve: linear, #FFFFFF, #88AAFF
+    0.5: colorCurve: linear, #88AAFF, #4466CC
+    blendMode: add
+    rotateAuto: true
+    forceFields: [pathguide(wave, 40, 30, 80)]
+}
+
+#pathsUI programmable() {
+    text(m6x11, "Path Emit", #44FFFF, center, 120): 120, 20
+    text(m3x6, "circle path", #888888, center, 120): 120, 36
+    text(m6x11, "Tangent", #FF88FF, center, 120): 380, 20
+    text(m3x6, "figure-8 + tangent", #888888, center, 120): 380, 36
+    text(m6x11, "PathGuide", #88FF44, center, 120): 640, 20
+    text(m3x6, "attract + flow", #888888, center, 120): 640, 36
+    text(m6x11, "Wave Stream", #88AAFF, center, 120): 900, 20
+    text(m3x6, "emit + guide", #888888, center, 120): 900, 36
+}

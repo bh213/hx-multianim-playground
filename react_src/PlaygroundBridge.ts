@@ -55,7 +55,6 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'blob47', displayName: 'Blob47 Autotile', category: 'Game-Like Demos', manimFile: 'demos/gamelike/blob47.manim' },
             { name: 'battleHud', displayName: 'Battle HUD', category: 'Game-Like Demos', manimFile: 'demos/gamelike/battle-hud.manim' },
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
-            { name: 'shop', displayName: 'Shop UI', category: 'Game-Like Demos', manimFile: 'demos/gamelike/shop.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },
             { name: 'statusEffects', displayName: 'Status Effects', category: 'Game-Like Demos', manimFile: 'demos/gamelike/status-effects.manim' },
         ]

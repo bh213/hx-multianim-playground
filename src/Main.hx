@@ -162,7 +162,6 @@ class Main extends hxd.App {
 		screenManager.addScreen("blob47", new Blob47DemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
-		screenManager.addScreen("shop", new ShopDemoScreen(screenManager));
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));
 		screenManager.addScreen("statusEffects", new StatusEffectsDemoScreen(screenManager));
 

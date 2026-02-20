@@ -64,8 +64,7 @@ class NavScreen extends UIScreenBase {
 				{id: "minimap", title: "Minimap"},
 				{id: "battleHud", title: "Battle HUD"},
 				{id: "skillTree", title: "Skill Tree"},
-				{id: "shop", title: "Shop UI"},
-				{id: "dialogue", title: "Dialogue Box"},
+					{id: "dialogue", title: "Dialogue Box"},
 				{id: "statusEffects", title: "Status Effects"},
 			]
 		},

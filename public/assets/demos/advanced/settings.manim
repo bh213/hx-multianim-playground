@@ -26,11 +26,6 @@ version: 0.5
     }
 }
 
-#resizablePanel programmable(width:50..500=150, height:50..500=200) {
-    ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
-    #sizeText(updatable) text(m6x11, "150 x 200", #ffffff, left, 200): 10, 10
-}
-
 #settingsExamples programmable() {
     // Example 1: Component with string settings
     text(m6x11, "Example 1: String settings", #cccccc, left, 400): 0, 0

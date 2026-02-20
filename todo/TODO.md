@@ -1,6 +1,5 @@
 - Dialogs: add dialogs with more options, not just confirm
 - slots: parametrized slots are weird, don't auto update them, write status with text so it is obvious what is going on. Add some text that describes how slots work
-- ninepatch: add resizable panel, take the one from settings, maybe add draggable with animPaths if it makes things better
 - particles need more work, buttons don't work correctly. Maybe wait until animPaths are used for particles
 - inventory: colors of the slots are strange. Maybe use text to describe state instead of just color. X is great though.
 - skill tree doesn't work correctly

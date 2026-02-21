@@ -4305,7 +4305,12 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 		}
 		if(this.group.boundsMode != bh_base_BoundsMode.None) {
 			if(!this.group.checkBounds(this)) {
-				return false;
+				if(this.group.emitLoop) {
+					this.group.init(this);
+					this.delay = 0;
+				} else {
+					return false;
+				}
 			}
 		}
 		this.group.checkIntervalSubEmitters(this,timeNormalized);
@@ -4848,7 +4853,7 @@ bh_base_ParticleGroup.prototype = {
 			if(subGroup == null) {
 				continue;
 			}
-			subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,1);
+			subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount);
 		}
 	}
 	,matchesTrigger: function(configured,actual) {
@@ -4912,7 +4917,7 @@ bh_base_ParticleGroup.prototype = {
 					if(Math.random() <= se.probability) {
 						var subGroup = this.parts.getGroup(se.groupId);
 						if(subGroup != null) {
-							subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,1);
+							subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount);
 						}
 					}
 				}
@@ -6099,8 +6104,9 @@ var bh_multianim_Coordinates = $hxEnums["bh.multianim.Coordinates"] = { __ename_
 	,SELECTED_HEX_CELL_CORNER: ($_=function(cell,cornerIndex,factor) { return {_hx_index:11,cell:cell,cornerIndex:cornerIndex,factor:factor,__enum__:"bh.multianim.Coordinates",toString:$estr}; },$_._hx_name="SELECTED_HEX_CELL_CORNER",$_.__params__ = ["cell","cornerIndex","factor"],$_)
 	,SELECTED_HEX_CELL_EDGE: ($_=function(cell,direction,factor) { return {_hx_index:12,cell:cell,direction:direction,factor:factor,__enum__:"bh.multianim.Coordinates",toString:$estr}; },$_._hx_name="SELECTED_HEX_CELL_EDGE",$_.__params__ = ["cell","direction","factor"],$_)
 	,NAMED_COORD: ($_=function(name,coord) { return {_hx_index:13,name:name,coord:coord,__enum__:"bh.multianim.Coordinates",toString:$estr}; },$_._hx_name="NAMED_COORD",$_.__params__ = ["name","coord"],$_)
+	,WITH_OFFSET: ($_=function(base,offsetX,offsetY) { return {_hx_index:14,base:base,offsetX:offsetX,offsetY:offsetY,__enum__:"bh.multianim.Coordinates",toString:$estr}; },$_._hx_name="WITH_OFFSET",$_.__params__ = ["base","offsetX","offsetY"],$_)
 };
-bh_multianim_Coordinates.__constructs__ = [bh_multianim_Coordinates.ZERO,bh_multianim_Coordinates.OFFSET,bh_multianim_Coordinates.LAYOUT,bh_multianim_Coordinates.SELECTED_GRID_POSITION,bh_multianim_Coordinates.SELECTED_GRID_POSITION_WITH_OFFSET,bh_multianim_Coordinates.SELECTED_HEX_CORNER,bh_multianim_Coordinates.SELECTED_HEX_EDGE,bh_multianim_Coordinates.SELECTED_HEX_CUBE,bh_multianim_Coordinates.SELECTED_HEX_OFFSET,bh_multianim_Coordinates.SELECTED_HEX_DOUBLED,bh_multianim_Coordinates.SELECTED_HEX_PIXEL,bh_multianim_Coordinates.SELECTED_HEX_CELL_CORNER,bh_multianim_Coordinates.SELECTED_HEX_CELL_EDGE,bh_multianim_Coordinates.NAMED_COORD];
+bh_multianim_Coordinates.__constructs__ = [bh_multianim_Coordinates.ZERO,bh_multianim_Coordinates.OFFSET,bh_multianim_Coordinates.LAYOUT,bh_multianim_Coordinates.SELECTED_GRID_POSITION,bh_multianim_Coordinates.SELECTED_GRID_POSITION_WITH_OFFSET,bh_multianim_Coordinates.SELECTED_HEX_CORNER,bh_multianim_Coordinates.SELECTED_HEX_EDGE,bh_multianim_Coordinates.SELECTED_HEX_CUBE,bh_multianim_Coordinates.SELECTED_HEX_OFFSET,bh_multianim_Coordinates.SELECTED_HEX_DOUBLED,bh_multianim_Coordinates.SELECTED_HEX_PIXEL,bh_multianim_Coordinates.SELECTED_HEX_CELL_CORNER,bh_multianim_Coordinates.SELECTED_HEX_CELL_EDGE,bh_multianim_Coordinates.NAMED_COORD,bh_multianim_Coordinates.WITH_OFFSET];
 bh_multianim_Coordinates.__empty_constructs__ = [bh_multianim_Coordinates.ZERO];
 var bh_multianim_HexCoordinateSystemHelper = function() { };
 $hxClasses["bh.multianim.HexCoordinateSystemHelper"] = bh_multianim_HexCoordinateSystemHelper;
@@ -7761,6 +7767,7 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 	}
 	,parseXY: function() {
+		var coord;
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
 		case 31:
@@ -7772,15 +7779,16 @@ bh_multianim_MacroManimParser.prototype = {
 				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 					var index = this.parseIntegerOrReference();
 					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-					return bh_multianim_Coordinates.LAYOUT(layoutName,index);
+					coord = bh_multianim_Coordinates.LAYOUT(layoutName,index);
+				} else {
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+					coord = bh_multianim_Coordinates.LAYOUT(layoutName,null);
 				}
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-				return bh_multianim_Coordinates.LAYOUT(layoutName,null);
 			} else {
 				var x = this.parseIntegerOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 				var y = this.parseIntegerOrReference();
-				return bh_multianim_Coordinates.OFFSET(x,y);
+				coord = bh_multianim_Coordinates.OFFSET(x,y);
 			}
 			break;
 		case 33:
@@ -7788,18 +7796,33 @@ bh_multianim_MacroManimParser.prototype = {
 			this.advance();
 			this.validateRef(s);
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
-				return this.parseCoordinateMethodChain(s);
+				coord = this.parseCoordinateMethodChain(s);
+			} else {
+				var x = this.parseNextIntExpression(bh_multianim_ReferenceableValue.RVReference(s));
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				var y = this.parseIntegerOrReference();
+				coord = bh_multianim_Coordinates.OFFSET(x,y);
 			}
-			var x = this.parseNextIntExpression(bh_multianim_ReferenceableValue.RVReference(s));
-			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-			var y = this.parseIntegerOrReference();
-			return bh_multianim_Coordinates.OFFSET(x,y);
+			break;
 		default:
 			var x = this.parseIntegerOrReference();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 			var y = this.parseIntegerOrReference();
-			return bh_multianim_Coordinates.OFFSET(x,y);
+			coord = bh_multianim_Coordinates.OFFSET(x,y);
 		}
+		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
+			var method = this.expectIdentifierOrString();
+			if(!bh_multianim_MacroManimParser.isKeyword(method,"offset")) {
+				this.error("Unknown coordinate suffix: ." + method + ". Expected .offset(x, y)");
+			}
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+			var ox = this.parseFloatOrReference();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+			var oy = this.parseFloatOrReference();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+			coord = bh_multianim_Coordinates.WITH_OFFSET(coord,ox,oy);
+		}
+		return coord;
 	}
 	,parseCoordinateMethodChain: function(ref) {
 		var effectiveRef = ref;
@@ -9495,61 +9518,251 @@ bh_multianim_MacroManimParser.prototype = {
 		if(_g._hx_index == 32) {
 			var name = _g.s;
 			this.advance();
+			var layoutType = null;
 			var content = this.parseLayoutContent();
 			if(content != null) {
-				this.eatSemicolon();
-				var value = { name : name, type : bh_multianim_layouts_LayoutsType.Single(content), grid : grid, hex : hex, offset : this.foldOffsets(offsets)};
-				layouts.h[name] = value;
-				return;
-			}
-			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
-				var _g1 = _g.s;
-				var s = _g1;
-				if(bh_multianim_MacroManimParser.isKeyword(s,"sequence")) {
-					this.advance();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-					var varName = this.expectReferenceOrIdentifier();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-					var from = this.parseInteger();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot);
-					var to = this.parseInteger();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-					var lc = this.parseLayoutContent();
-					if(lc == null) {
-						this.error("layout content expected");
-					}
-					this.eatSemicolon();
-					var value = { name : name, type : bh_multianim_layouts_LayoutsType.Sequence(varName,from,to,lc), grid : grid, hex : hex, offset : this.foldOffsets(offsets)};
-					layouts.h[name] = value;
-				} else {
+				layoutType = bh_multianim_layouts_LayoutsType.Single(content);
+			} else {
+				var _g = this.tokens[this.tpos].type;
+				if(_g._hx_index == 31) {
+					var _g1 = _g.s;
 					var s = _g1;
-					if(bh_multianim_MacroManimParser.isKeyword(s,"list")) {
+					if(bh_multianim_MacroManimParser.isKeyword(s,"sequence")) {
 						this.advance();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-						var contentList = [];
-						while(true) {
-							var lc = this.parseLayoutContent();
-							if(lc != null) {
-								this.eatSemicolon();
-								contentList.push(lc);
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+						var varName = this.expectReferenceOrIdentifier();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+						var from = this.parseInteger();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot);
+						var to = this.parseInteger();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+						var lc = this.parseLayoutContent();
+						if(lc == null) {
+							this.error("layout content expected");
+						}
+						layoutType = bh_multianim_layouts_LayoutsType.Sequence(varName,from,to,lc);
+					} else {
+						var s = _g1;
+						if(bh_multianim_MacroManimParser.isKeyword(s,"list")) {
+							this.advance();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+							var contentList = [];
+							while(true) {
+								var lc = this.parseLayoutContent();
+								if(lc != null) {
+									this.eatSemicolon();
+									contentList.push(lc);
+								} else {
+									break;
+								}
+							}
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
+							layoutType = bh_multianim_layouts_LayoutsType.List(contentList);
+						} else {
+							var s = _g1;
+							if(bh_multianim_MacroManimParser.isKeyword(s,"cells")) {
+								this.advance();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+								var cols = 0;
+								var rows = 0;
+								var cellWidth = 0;
+								var cellHeight = 0;
+								var key = this.expectIdentifierOrString();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								var val = this.parseInteger();
+								switch(key) {
+								case "cellHeight":
+									cellHeight = val;
+									break;
+								case "cellWidth":
+									cellWidth = val;
+									break;
+								case "cols":
+									cols = val;
+									break;
+								case "rows":
+									rows = val;
+									break;
+								default:
+									this.error("unknown cells param: " + key);
+								}
+								this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+								var key = this.expectIdentifierOrString();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								var val = this.parseInteger();
+								switch(key) {
+								case "cellHeight":
+									cellHeight = val;
+									break;
+								case "cellWidth":
+									cellWidth = val;
+									break;
+								case "cols":
+									cols = val;
+									break;
+								case "rows":
+									rows = val;
+									break;
+								default:
+									this.error("unknown cells param: " + key);
+								}
+								this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+								var key = this.expectIdentifierOrString();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								var val = this.parseInteger();
+								switch(key) {
+								case "cellHeight":
+									cellHeight = val;
+									break;
+								case "cellWidth":
+									cellWidth = val;
+									break;
+								case "cols":
+									cols = val;
+									break;
+								case "rows":
+									rows = val;
+									break;
+								default:
+									this.error("unknown cells param: " + key);
+								}
+								this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+								var key = this.expectIdentifierOrString();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								var val = this.parseInteger();
+								switch(key) {
+								case "cellHeight":
+									cellHeight = val;
+									break;
+								case "cellWidth":
+									cellWidth = val;
+									break;
+								case "cols":
+									cols = val;
+									break;
+								case "rows":
+									rows = val;
+									break;
+								default:
+									this.error("unknown cells param: " + key);
+								}
+								this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+								layoutType = bh_multianim_layouts_LayoutsType.Grid(cols,rows,cellWidth,cellHeight);
 							} else {
-								break;
+								this.error("expected sequence, list, cells, or point");
 							}
 						}
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
-						var value = { name : name, type : bh_multianim_layouts_LayoutsType.List(contentList), grid : grid, hex : hex, offset : this.foldOffsets(offsets)};
-						layouts.h[name] = value;
-					} else {
-						this.error("expected sequence, list, or point");
 					}
+				} else {
+					this.error("expected sequence, list, cells, or point");
 				}
-			} else {
-				this.error("expected sequence, list, or point");
 			}
+			var align = this.parseLayoutAlign();
+			this.eatSemicolon();
+			var value = { name : name, type : layoutType, grid : grid, hex : hex, offset : this.foldOffsets(offsets), alignX : align.alignX, alignY : align.alignY};
+			layouts.h[name] = value;
 		} else {
 			this.error("expected layout name (#name), got " + Std.string(this.tokens[this.tpos].type));
 		}
+	}
+	,parseLayoutAlign: function() {
+		var alignX = bh_multianim_layouts_LayoutAlignX.Left;
+		var alignY = bh_multianim_layouts_LayoutAlignY.Top;
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 31) {
+			var s = _g.s;
+			if(bh_multianim_MacroManimParser.isKeyword(s,"align")) {
+				this.advance();
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var hasCenter = false;
+				var setX = false;
+				var setY = false;
+				var count = 0;
+				while(!(count > 0 && !this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma))) {
+					var _g = this.tokens[this.tpos].type;
+					if(_g._hx_index == 31) {
+						var _g1 = _g.s;
+						var v = _g1;
+						if(bh_multianim_MacroManimParser.isKeyword(v,"center")) {
+							this.advance();
+							if(setX || setY) {
+								this.error("center cannot be combined with other align values");
+							}
+							hasCenter = true;
+							alignX = bh_multianim_layouts_LayoutAlignX.Center;
+							alignY = bh_multianim_layouts_LayoutAlignY.Center;
+							setX = true;
+							setY = true;
+						} else {
+							var v1 = _g1;
+							if(bh_multianim_MacroManimParser.isKeyword(v1,"centerX")) {
+								this.advance();
+								if(hasCenter) {
+									this.error("center cannot be combined with other align values");
+								}
+								if(setX) {
+									this.error("duplicate X alignment");
+								}
+								alignX = bh_multianim_layouts_LayoutAlignX.Center;
+								setX = true;
+							} else {
+								var v2 = _g1;
+								if(bh_multianim_MacroManimParser.isKeyword(v2,"right")) {
+									this.advance();
+									if(hasCenter) {
+										this.error("center cannot be combined with other align values");
+									}
+									if(setX) {
+										this.error("duplicate X alignment");
+									}
+									alignX = bh_multianim_layouts_LayoutAlignX.Right;
+									setX = true;
+								} else {
+									var v3 = _g1;
+									if(bh_multianim_MacroManimParser.isKeyword(v3,"centerY")) {
+										this.advance();
+										if(hasCenter) {
+											this.error("center cannot be combined with other align values");
+										}
+										if(setY) {
+											this.error("duplicate Y alignment");
+										}
+										alignY = bh_multianim_layouts_LayoutAlignY.Center;
+										setY = true;
+									} else {
+										var v4 = _g1;
+										if(bh_multianim_MacroManimParser.isKeyword(v4,"bottom")) {
+											this.advance();
+											if(hasCenter) {
+												this.error("center cannot be combined with other align values");
+											}
+											if(setY) {
+												this.error("duplicate Y alignment");
+											}
+											alignY = bh_multianim_layouts_LayoutAlignY.Bottom;
+											setY = true;
+										} else {
+											if(count == 0) {
+												this.error("unknown align value: " + Std.string(this.tokens[this.tpos].type));
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
+					} else {
+						if(count == 0) {
+							this.error("unknown align value: " + Std.string(this.tokens[this.tpos].type));
+						}
+						break;
+					}
+					++count;
+				}
+			}
+		}
+		return { alignX : alignX, alignY : alignY};
 	}
 	,foldOffsets: function(offsets) {
 		var x = 0;
@@ -10114,7 +10327,7 @@ bh_multianim_MacroManimParser.prototype = {
 																node = this.createNode(bh_multianim_NodeType.PROGRAMMABLE(isTileGroup,parsed.defs,parsed.order),parent,conditional,scale,alpha,tint,layerIndex,updatableName);
 															} else {
 																var s = _g1;
-																if(bh_multianim_MacroManimParser.isKeyword(s,"relativelayouts")) {
+																if(bh_multianim_MacroManimParser.isKeyword(s,"layouts") || bh_multianim_MacroManimParser.isKeyword(s,"relativelayouts")) {
 																	this.advance();
 																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 																	var layoutsDef = this.parseLayouts();
@@ -11401,10 +11614,14 @@ bh_multianim_MacroManimParser.prototype = {
 			var inheritVelocity = null;
 			var offsetX = null;
 			var offsetY = null;
+			var burstCount = null;
 			while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 				var name = this.expectIdentifierOrString();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 				switch(name.toLowerCase()) {
+				case "burstcount":
+					burstCount = this.parseFloatOrReference();
+					break;
 				case "groupid":
 					groupId = this.expectIdentifierOrString();
 					break;
@@ -11447,7 +11664,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 				this.eatSemicolon();
 			}
-			emitters.push({ groupId : groupId, trigger : trigger, probability : probability, inheritVelocity : inheritVelocity, offsetX : offsetX, offsetY : offsetY});
+			emitters.push({ groupId : groupId, trigger : trigger, probability : probability, inheritVelocity : inheritVelocity, offsetX : offsetX, offsetY : offsetY, burstCount : burstCount});
 		}
 		return emitters;
 	}
@@ -16144,7 +16361,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var textHeight = textObj.get_textHeight();
 		textObj.posChanged = true;
 		textObj.x = 0;
-		var v = Math.floor((h - textHeight) / 2);
+		var v = Math.floor((h - font.lineHeight) / 2);
 		textObj.posChanged = true;
 		textObj.y = v;
 		var texture = new h3d_mat_Texture(w,h,[h3d_mat_TextureFlags.Target]);
@@ -16962,6 +17179,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				pos = this.calculatePosition(coord,gridCoordinateSystem,system);
 				break;
 			}
+			break;
+		case 14:
+			var base = position.base;
+			var offsetX = position.offsetX;
+			var offsetY = position.offsetY;
+			var basePt = this.calculatePosition(base,gridCoordinateSystem,hexCoordinateSystem);
+			pos = new bh_base_FPoint(basePt.x + this.resolveAsNumber(offsetX),basePt.y + this.resolveAsNumber(offsetY));
 			break;
 		}
 		return pos;
@@ -18954,7 +19178,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3012, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3019, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -19728,9 +19952,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("" + name + " has to be palette" + "");
 		}
 	}
-	,createParticleImpl: function(particlesDef,name) {
+	,createParticleImpl: function(particlesDef,name,existingParticles) {
 		var _gthis = this;
-		var particles = new bh_base_Particles();
+		var particles = existingParticles != null ? existingParticles : new bh_base_Particles();
 		var _g = [];
 		var x = $getIterator(particlesDef.tiles);
 		while(x.hasNext()) {
@@ -19971,7 +20195,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					trigger = bh_base_SubEmitTrigger.OnInterval(this.resolveAsNumber(interval));
 					break;
 				}
-				group.subEmitters.push({ groupId : se.groupId, trigger : trigger, probability : this.resolveAsNumber(se.probability), inheritVelocity : se.inheritVelocity != null ? this.resolveAsNumber(se.inheritVelocity) : 0.0, offsetX : se.offsetX != null ? this.resolveAsNumber(se.offsetX) : 0.0, offsetY : se.offsetY != null ? this.resolveAsNumber(se.offsetY) : 0.0});
+				group.subEmitters.push({ groupId : se.groupId, trigger : trigger, probability : this.resolveAsNumber(se.probability), inheritVelocity : se.inheritVelocity != null ? this.resolveAsNumber(se.inheritVelocity) : 0.0, offsetX : se.offsetX != null ? this.resolveAsNumber(se.offsetX) : 0.0, offsetY : se.offsetY != null ? this.resolveAsNumber(se.offsetY) : 0.0, burstCount : se.burstCount != null ? this.resolveAsInteger(se.burstCount) : 1});
 			}
 		}
 		var _g = particlesDef.emit;
@@ -20110,7 +20334,21 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var _g = node.type;
 		if(_g._hx_index == 14) {
 			var particlesDef = _g.particles;
-			return this.createParticleImpl(particlesDef,node.uniqueNodeName);
+			return this.createParticleImpl(particlesDef,name);
+		} else {
+			throw haxe_Exception.thrown("" + name + " has to be particles" + "");
+		}
+	}
+	,addParticleGroupTo: function(name,particles) {
+		var tmp = this.multiParserResult;
+		var node = tmp != null ? tmp.nodes.h[name] : null;
+		if(node == null) {
+			throw haxe_Exception.thrown("could not get particles node #" + name + "");
+		}
+		var _g = node.type;
+		if(_g._hx_index == 14) {
+			var particlesDef = _g.particles;
+			this.createParticleImpl(particlesDef,name,particles);
 		} else {
 			throw haxe_Exception.thrown("" + name + " has to be particles" + "");
 		}
@@ -20253,14 +20491,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var tmp = this.multiParserResult;
 		var node = tmp != null ? tmp.nodes.h[bh_multianim_MultiAnimParser.defaultLayoutNodeName] : null;
 		if(node == null) {
-			throw haxe_Exception.thrown("relativeLayouts does not exist");
+			throw haxe_Exception.thrown("layouts block does not exist");
 		}
 		var _g = node.type;
 		if(_g._hx_index == 10) {
 			var layoutsDef = _g.layoutsDef;
 			return new bh_multianim_layouts_MultiAnimLayouts(layoutsDef,this);
 		} else {
-			throw haxe_Exception.thrown("relativeLayouts is of unexpected type " + Std.string(node.type) + "");
+			throw haxe_Exception.thrown("layouts block is of unexpected type " + Std.string(node.type) + "");
 		}
 	}
 	,getPaths: function(builderParams) {
@@ -21025,7 +21263,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4946, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4967, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -21132,7 +21370,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5150, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5171, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -21166,7 +21404,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5166, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5187, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -22127,9 +22365,24 @@ var bh_multianim_layouts_LayoutsType = $hxEnums["bh.multianim.layouts.LayoutsTyp
 	,Single: ($_=function(content) { return {_hx_index:0,content:content,__enum__:"bh.multianim.layouts.LayoutsType",toString:$estr}; },$_._hx_name="Single",$_.__params__ = ["content"],$_)
 	,List: ($_=function(list) { return {_hx_index:1,list:list,__enum__:"bh.multianim.layouts.LayoutsType",toString:$estr}; },$_._hx_name="List",$_.__params__ = ["list"],$_)
 	,Sequence: ($_=function(varName,from,to,content) { return {_hx_index:2,varName:varName,from:from,to:to,content:content,__enum__:"bh.multianim.layouts.LayoutsType",toString:$estr}; },$_._hx_name="Sequence",$_.__params__ = ["varName","from","to","content"],$_)
+	,Grid: ($_=function(cols,rows,cellW,cellH) { return {_hx_index:3,cols:cols,rows:rows,cellW:cellW,cellH:cellH,__enum__:"bh.multianim.layouts.LayoutsType",toString:$estr}; },$_._hx_name="Grid",$_.__params__ = ["cols","rows","cellW","cellH"],$_)
 };
-bh_multianim_layouts_LayoutsType.__constructs__ = [bh_multianim_layouts_LayoutsType.Single,bh_multianim_layouts_LayoutsType.List,bh_multianim_layouts_LayoutsType.Sequence];
+bh_multianim_layouts_LayoutsType.__constructs__ = [bh_multianim_layouts_LayoutsType.Single,bh_multianim_layouts_LayoutsType.List,bh_multianim_layouts_LayoutsType.Sequence,bh_multianim_layouts_LayoutsType.Grid];
 bh_multianim_layouts_LayoutsType.__empty_constructs__ = [];
+var bh_multianim_layouts_LayoutAlignX = $hxEnums["bh.multianim.layouts.LayoutAlignX"] = { __ename__:true,__constructs__:null
+	,Left: {_hx_name:"Left",_hx_index:0,__enum__:"bh.multianim.layouts.LayoutAlignX",toString:$estr}
+	,Center: {_hx_name:"Center",_hx_index:1,__enum__:"bh.multianim.layouts.LayoutAlignX",toString:$estr}
+	,Right: {_hx_name:"Right",_hx_index:2,__enum__:"bh.multianim.layouts.LayoutAlignX",toString:$estr}
+};
+bh_multianim_layouts_LayoutAlignX.__constructs__ = [bh_multianim_layouts_LayoutAlignX.Left,bh_multianim_layouts_LayoutAlignX.Center,bh_multianim_layouts_LayoutAlignX.Right];
+bh_multianim_layouts_LayoutAlignX.__empty_constructs__ = [bh_multianim_layouts_LayoutAlignX.Left,bh_multianim_layouts_LayoutAlignX.Center,bh_multianim_layouts_LayoutAlignX.Right];
+var bh_multianim_layouts_LayoutAlignY = $hxEnums["bh.multianim.layouts.LayoutAlignY"] = { __ename__:true,__constructs__:null
+	,Top: {_hx_name:"Top",_hx_index:0,__enum__:"bh.multianim.layouts.LayoutAlignY",toString:$estr}
+	,Center: {_hx_name:"Center",_hx_index:1,__enum__:"bh.multianim.layouts.LayoutAlignY",toString:$estr}
+	,Bottom: {_hx_name:"Bottom",_hx_index:2,__enum__:"bh.multianim.layouts.LayoutAlignY",toString:$estr}
+};
+bh_multianim_layouts_LayoutAlignY.__constructs__ = [bh_multianim_layouts_LayoutAlignY.Top,bh_multianim_layouts_LayoutAlignY.Center,bh_multianim_layouts_LayoutAlignY.Bottom];
+bh_multianim_layouts_LayoutAlignY.__empty_constructs__ = [bh_multianim_layouts_LayoutAlignY.Top,bh_multianim_layouts_LayoutAlignY.Center,bh_multianim_layouts_LayoutAlignY.Bottom];
 var bh_multianim_layouts_LayoutPointIterator = function(layout,animLayout) {
 	this.animLayout = animLayout;
 	this.layout = layout;
@@ -22176,6 +22429,12 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var to = _g.to;
 			var content = _g.content;
 			return to - from + 1;
+		case 3:
+			var _g1 = _g.cellW;
+			var _g1 = _g.cellH;
+			var cols = _g.cols;
+			var rows = _g.rows;
+			return cols * rows;
 		}
 	}
 	,getIterator: function(name) {
@@ -22189,6 +22448,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 		if(index < 0) {
 			throw haxe_Exception.thrown("index < 0 for layout " + l.name);
 		}
+		var pt;
 		var _g = l.type;
 		switch(_g._hx_index) {
 		case 0:
@@ -22203,10 +22463,11 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			this.builder.indexedParams = _g1;
 			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.builder.indexedParams = oldIndexed;
-			var pt = pos1;
-			pt.x += offset.x;
-			pt.y += offset.y;
-			return pt;
+			var pt1 = pos1;
+			pt1.x += offset.x;
+			pt1.y += offset.y;
+			pt = pt1;
+			break;
 		case 1:
 			var list = _g.list;
 			if(list.length <= index) {
@@ -22222,10 +22483,11 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			this.builder.indexedParams = _g1;
 			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.builder.indexedParams = oldIndexed;
-			var pt = pos1;
-			pt.x += offset.x;
-			pt.y += offset.y;
-			return pt;
+			var pt1 = pos1;
+			pt1.x += offset.x;
+			pt1.y += offset.y;
+			pt = pt1;
+			break;
 		case 2:
 			var variable = _g.varName;
 			var from = _g.from;
@@ -22239,16 +22501,70 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var offset = l.offset;
 			var pos = content.pos;
 			var oldIndexed = this.builder.indexedParams;
-			var _g = new haxe_ds_StringMap();
-			_g.h[variable] = bh_multianim_ResolvedIndexParameters.Value(from + index);
-			this.builder.indexedParams = _g;
+			var _g1 = new haxe_ds_StringMap();
+			_g1.h[variable] = bh_multianim_ResolvedIndexParameters.Value(from + index);
+			this.builder.indexedParams = _g1;
 			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.builder.indexedParams = oldIndexed;
-			var pt = pos1;
-			pt.x += offset.x;
-			pt.y += offset.y;
+			var pt1 = pos1;
+			pt1.x += offset.x;
+			pt1.y += offset.y;
+			pt = pt1;
+			break;
+		case 3:
+			var cols = _g.cols;
+			var rows = _g.rows;
+			var cellW = _g.cellW;
+			var cellH = _g.cellH;
+			if(index >= cols * rows) {
+				throw haxe_Exception.thrown("index " + index + " out of bounds for grid layout " + l.name + " (" + cols + "x" + rows + ")");
+			}
+			var col = index % cols;
+			var row = index / cols | 0;
+			pt = new bh_base_FPoint(l.offset.x + col * cellW,l.offset.y + row * cellH);
+			break;
+		}
+		return this.applyAlignment(pt,l);
+	}
+	,applyAlignment: function(pt,l) {
+		if(l.alignX == bh_multianim_layouts_LayoutAlignX.Left && l.alignY == bh_multianim_layouts_LayoutAlignY.Top) {
 			return pt;
 		}
+		var scene = this.builder.builderParams.scene;
+		if(scene == null) {
+			throw haxe_Exception.thrown("layout \"" + l.name + "\" uses align but no scene is available");
+		}
+		if(l.alignX != bh_multianim_layouts_LayoutAlignX.Left) {
+			var tmp;
+			switch(l.alignX._hx_index) {
+			case 0:
+				tmp = pt.x;
+				break;
+			case 1:
+				tmp = scene.width / 2 + pt.x;
+				break;
+			case 2:
+				tmp = scene.width - pt.x;
+				break;
+			}
+			pt.x = tmp;
+		}
+		if(l.alignY != bh_multianim_layouts_LayoutAlignY.Top) {
+			var tmp;
+			switch(l.alignY._hx_index) {
+			case 0:
+				tmp = pt.y;
+				break;
+			case 1:
+				tmp = scene.height / 2 + pt.y;
+				break;
+			case 2:
+				tmp = scene.height - pt.y;
+				break;
+			}
+			pt.y = tmp;
+		}
+		return pt;
 	}
 	,getPoint: function(name,index) {
 		if(index == null) {
@@ -88484,6 +88800,18 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			var i = _g++;
 			var pos = layouts.getPoint("positions",i);
 			var particles = this.tabBuilder.createParticles(groups[i]);
+			var subMap = screens_animation_ParticlesDemoScreen.SUB_EMITTER_GROUPS.h[index];
+			if(subMap != null) {
+				var subGroups = subMap.h[i];
+				if(subGroups != null) {
+					var _g2 = 0;
+					while(_g2 < subGroups.length) {
+						var subName = subGroups[_g2];
+						++_g2;
+						this.tabBuilder.addParticleGroupTo(subName,particles);
+					}
+				}
+			}
 			particles.posChanged = true;
 			particles.x = pos.x;
 			particles.posChanged = true;
@@ -88493,6 +88821,9 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			if(index == 3) {
 				this.drawBoundsIndicator(pos.x,pos.y,i);
 			}
+		}
+		if(index == 4 && this.tabBuilder != null) {
+			this.drawPathIndicators(layouts);
 		}
 	}
 	,drawBoundsIndicator: function(cx,cy,groupIndex) {
@@ -88537,6 +88868,42 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		}
 		this.addObjectToLayer(g,bh_ui_screens_LayersEnum.DefaultLayer);
 		this.boundsGraphics.push(g);
+	}
+	,drawPathIndicators: function(layouts) {
+		if(this.tabBuilder == null) {
+			return;
+		}
+		var paths = this.tabBuilder.getPaths();
+		var pathNames = ["orbit","orbit","orbit","wave"];
+		var _g = 0;
+		var _g1 = pathNames.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var pos = layouts.getPoint("positions",i);
+			var path = paths.getPath(pathNames[i]);
+			var g = new h2d_Graphics();
+			g.lineStyle(1,5592405);
+			var steps = 80;
+			var _g2 = 0;
+			var _g3 = steps + 1;
+			while(_g2 < _g3) {
+				var s = _g2++;
+				var rate = s / steps;
+				var pt = path.getPoint(rate);
+				if(s == 0) {
+					var x = pos.x + pt.x;
+					var y = pos.y + pt.y;
+					g.flush();
+					g.addVertex(x,y,g.curR,g.curG,g.curB,g.curA,x * g.ma + y * g.mc + g.mx,x * g.mb + y * g.md + g.my);
+				} else {
+					var x1 = pos.x + pt.x;
+					var y1 = pos.y + pt.y;
+					g.addVertex(x1,y1,g.curR,g.curG,g.curB,g.curA,x1 * g.ma + y1 * g.mc + g.mx,x1 * g.mb + y1 * g.md + g.my);
+				}
+			}
+			this.addObjectToLayer(g,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.boundsGraphics.push(g);
+		}
 	}
 	,drawDashedRect: function(g,x1,y1,x2,y2) {
 		this.drawDashedLine(g,x1,y1,x2,y1);
@@ -93720,6 +94087,18 @@ screens_animation_ParticlesDemoScreen.TAB_FILES = ["demos/animation/particles-ba
 screens_animation_ParticlesDemoScreen.TAB_DESCRIPTIONS = ["Emission modes: point, cone, box, circle — with basic properties","Color curve segments, size curves, and velocity curves with inline easings","Gravity, vortex, turbulence, wind, attractor, and repulsor force fields","Boundary modes: kill, bounce, wrap — plus line bounds","Emit along paths, tangent velocity, and pathguide force fields","Sub-emitter triggers: onDeath bursts and onCollision sparks"];
 screens_animation_ParticlesDemoScreen.TAB_GROUPS = [["fire","rain","sparkles","explosion"],["rainbow","sizeCurveDemo","velocityCurveDemo","pulseDemo"],["vortex","turbulence","pushPull","fountain"],["killBounds","bounceBounds","wrapBounds","lineBounds"],["pathEmit","pathTangent","pathGuideDemo","waveStream"],["fireworkMain","bounceBall"]];
 screens_animation_ParticlesDemoScreen.TAB_UI_NAMES = ["basicsUI","colorsUI","motionUI","boundsUI","pathsUI","subEmittersUI"];
+screens_animation_ParticlesDemoScreen.SUB_EMITTER_GROUPS = (function($this) {
+	var $r;
+	var _g = new haxe_ds_IntMap();
+	{
+		var _g1 = new haxe_ds_IntMap();
+		_g1.h[0] = ["fireworkBurst"];
+		_g1.h[1] = ["bounceSparks"];
+		_g.h[5] = _g1;
+	}
+	$r = _g;
+	return $r;
+}(this));
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
 screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];

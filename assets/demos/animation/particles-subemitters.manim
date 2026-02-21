@@ -32,6 +32,7 @@ relativeLayouts {
         groupId: "fireworkBurst"
         trigger: ondeath
         probability: 1.0
+        burstCount: 20
     }]
 }
 
@@ -81,6 +82,7 @@ relativeLayouts {
         groupId: "bounceSparks"
         trigger: oncollision
         probability: 1.0
+        burstCount: 5
     }]
 }
 

@@ -99,6 +99,10 @@ relativeLayouts {
     0.0: colorCurve: linear, #8844FF, #CC88FF
     blendMode: add
     boundsMode: bounce(0.8)
+    boundsMinX: -1000
+    boundsMaxX: 1000
+    boundsMinY: -1000
+    boundsMaxY: 1000
     boundsLine: -80, 80, 80, 80
     boundsLine: -80, -80, -80, 80
     boundsLine: 80, -80, -80, -80

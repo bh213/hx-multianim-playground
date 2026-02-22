@@ -3,12 +3,12 @@ version: 0.5
 // Particles Demo — Basics
 // Emission modes, lifetime, speed, size, fading
 
-relativeLayouts {
+layouts {
     #positions list {
-        point: 160, 380
-        point: 400, 180
-        point: 680, 380
-        point: 940, 380
+        point: 160, 280
+        point: 400, 80
+        point: 680, 280
+        point: 940, 280
     }
 }
 

@@ -1,0 +1,55 @@
+version: 0.5
+
+// Tab 3: Points & Events — Extra point visualization and animation event log
+
+#pointsUI programmable() {
+
+    // Left: animation preview with point overlay
+    text(exo2_14, "Extra Points Visualization", #7fdbda): 20, 0
+    bitmap(generated(color(240, 1, #7fdbda33))): 20, 18
+    bitmap(generated(color(200, 200, #1a1a2e))): 20, 30
+
+    // Named state anims — marine and shield have direction(l,r), turret and arrows have no state selectors
+    #marineR stateanim("marine.anim", "idle", direction=>"r"): 120, 180
+    #marineL stateanim("marine.anim", "idle", direction=>"l"): 120, 180
+    #shieldR stateanim("shield.anim", "idle_0", direction=>"r"): 120, 180
+    #shieldL stateanim("shield.anim", "idle_0", direction=>"l"): 120, 180
+    #turret stateanim("turret.anim", "idle"): 120, 180
+    #arrows stateanim("arrows.anim", "dir0"): 120, 180
+
+    // Right: controls
+    text(exo2_14, "Controls", #7fdbda): 260, 0
+    bitmap(generated(color(400, 1, #7fdbda33))): 260, 18
+
+    // State selector attribute
+    text(m6x11, "direction =>", #aaaaaa): 260, 35
+    placeholder(generated(cross(16, 16, #FF0000)), builderParameter("ptsLeftChk")) {
+        pos: 360, 31
+    }
+    #ptsDirValue(updatable) text(m6x11, "r", #7fdbda, left, 40): 390, 35
+
+    // Point Coordinates panel
+    text(exo2_14, "Point Coordinates", #7fdbda): 260, 190
+    bitmap(generated(color(400, 1, #7fdbda33))): 260, 208
+    ninepatch("ui", "Window_3x3_idle", 380, 130): 260, 220
+
+    #pointInfo0(updatable) text(m6x11, "", #ff7f50, left, 340): 275, 235
+    #pointInfo1(updatable) text(m6x11, "", #ff7f50, left, 340): 275, 255
+    #pointInfo2(updatable) text(m6x11, "", #ff7f50, left, 340): 275, 275
+    #pointInfo3(updatable) text(m6x11, "", #ff7f50, left, 340): 275, 295
+    #pointInfo4(updatable) text(m6x11, "", #ff7f50, left, 340): 275, 315
+
+    // Event Log panel
+    text(exo2_14, "Event Log", #7fdbda): 260, 365
+    bitmap(generated(color(400, 1, #7fdbda33))): 260, 383
+    ninepatch("ui", "Window_3x3_idle", 380, 170): 260, 395
+
+    #eventLog0(updatable) text(m6x11, "", #4caf50, left, 340): 275, 410
+    #eventLog1(updatable) text(m6x11, "", #4caf50, left, 340): 275, 430
+    #eventLog2(updatable) text(m6x11, "", #4caf50, left, 340): 275, 450
+    #eventLog3(updatable) text(m6x11, "", #4caf50, left, 340): 275, 470
+    #eventLog4(updatable) text(m6x11, "", #4caf50, left, 340): 275, 490
+    #eventLog5(updatable) text(m6x11, "", #4caf50, left, 340): 275, 510
+    #eventLog6(updatable) text(m6x11, "", #4caf50, left, 340): 275, 530
+    #eventLog7(updatable) text(m6x11, "", #4caf50, left, 340): 275, 550
+}

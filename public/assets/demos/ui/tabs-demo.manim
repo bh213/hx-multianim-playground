@@ -12,7 +12,7 @@ version: 0.5
 
     placeholder(generated(cross(400, 40, #FF0000)), builderParameter("basicTabs")) {
         pos: 0, 40
-        settings{offset=>8, panelOffset:int=>20, tabButtonBuildName=>tab, tabPanel.width=>600, tabPanel.height=>200}
+        settings{tabButtonBuildName=>tab, tabPanel.width=>600, tabPanel.height=>200}
     }
 
     #basicContent(updatable) text(exo2_16, "Tab content area", #ffffff, left, 480): 15, 79
@@ -23,7 +23,7 @@ version: 0.5
 
     placeholder(generated(cross(500, 40, #FF0000)), builderParameter("wideTabs")) {
         pos: 0, 335
-        settings{offset=>8, panelOffset:int=>26, spacing=>10, tabButtonBuildName=>tab, tabButton.width=>180, tabButton.height=>35, tabPanel.width=>768, tabPanel.height=>150}
+        settings{spacing=>10, tabButtonBuildName=>tab, tabButton.width=>180, tabButton.height=>35, tabPanel.width=>768, tabPanel.height=>150}
     }
 
     #wideContent(updatable) text(exo2_16, "Wide tab content", #ffffff, left, 540): 15, 379
@@ -34,7 +34,7 @@ version: 0.5
 
     placeholder(generated(cross(400, 40, #FF0000)), builderParameter("disabledTabs")) {
         pos: 0, 590
-        settings{offset=>8, panelOffset:int=>21, tabButtonBuildName=>tab, tabPanel.width=>500, tabPanel.height=>100}
+        settings{tabButtonBuildName=>tab, tabPanel.width=>500, tabPanel.height=>100}
     }
 
     #disabledContent(updatable) text(exo2_16, "Disabled tab content", #ffffff, left, 480): 15, 629

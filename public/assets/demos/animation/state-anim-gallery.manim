@@ -1,0 +1,150 @@
+version: 0.5
+
+// Tab 1: State Animation Gallery
+// Shows all animations organized by .anim file, highlighting the state selector concept
+
+#galleryUI programmable() {
+
+    // === Marine — direction: right ===
+    text(exo2_14, "Marine  states: direction(l, r)  |  direction => r", #7fdbda): 0, 0
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 18
+
+    text(m6x11, "idle", #888888): 10, 28
+    bitmap(generated(color(64, 64, #222233))): 10, 42
+    stateanim("marine.anim", "idle", direction=>"r"): 42, 90
+
+    text(m6x11, "stand", #888888): 90, 28
+    bitmap(generated(color(64, 64, #222233))): 90, 42
+    stateanim("marine.anim", "stand", direction=>"r"): 122, 90
+
+    text(m6x11, "hit", #888888): 170, 28
+    bitmap(generated(color(64, 64, #222233))): 170, 42
+    stateanim("marine.anim", "hit", direction=>"r"): 202, 90
+
+    text(m6x11, "killed", #888888): 250, 28
+    bitmap(generated(color(64, 64, #222233))): 250, 42
+    stateanim("marine.anim", "killed", direction=>"r"): 282, 90
+
+    text(m6x11, "dead", #888888): 330, 28
+    bitmap(generated(color(64, 64, #222233))): 330, 42
+    stateanim("marine.anim", "dead", direction=>"r"): 362, 90
+
+    text(m6x11, "dodge", #888888): 410, 28
+    bitmap(generated(color(64, 64, #222233))): 410, 42
+    stateanim("marine.anim", "dodge", direction=>"r"): 442, 90
+
+    // Fire animations (row 2)
+    text(m6x11, "fire-up", #888888): 490, 28
+    bitmap(generated(color(64, 64, #222233))): 490, 42
+    stateanim("marine.anim", "fire-up", direction=>"r"): 522, 90
+
+    text(m6x11, "fire-down", #888888): 570, 28
+    bitmap(generated(color(64, 64, #222233))): 570, 42
+    stateanim("marine.anim", "fire-down", direction=>"r"): 602, 90
+
+    text(m6x11, "fire-left", #888888): 650, 28
+    bitmap(generated(color(64, 64, #222233))): 650, 42
+    stateanim("marine.anim", "fire-left", direction=>"r"): 682, 90
+
+    text(m6x11, "fire-right", #888888): 730, 28
+    bitmap(generated(color(64, 64, #222233))): 730, 42
+    stateanim("marine.anim", "fire-right", direction=>"r"): 762, 90
+
+    // === Marine — direction: left ===
+    text(exo2_14, "Marine  |  direction => l", #7fdbda): 0, 115
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 133
+
+    text(m6x11, "idle", #888888): 10, 143
+    bitmap(generated(color(64, 64, #222233))): 10, 157
+    stateanim("marine.anim", "idle", direction=>"l"): 42, 205
+
+    text(m6x11, "stand", #888888): 90, 143
+    bitmap(generated(color(64, 64, #222233))): 90, 157
+    stateanim("marine.anim", "stand", direction=>"l"): 122, 205
+
+    text(m6x11, "hit", #888888): 170, 143
+    bitmap(generated(color(64, 64, #222233))): 170, 157
+    stateanim("marine.anim", "hit", direction=>"l"): 202, 205
+
+    text(m6x11, "killed", #888888): 250, 143
+    bitmap(generated(color(64, 64, #222233))): 250, 157
+    stateanim("marine.anim", "killed", direction=>"l"): 282, 205
+
+    text(m6x11, "dead", #888888): 330, 143
+    bitmap(generated(color(64, 64, #222233))): 330, 157
+    stateanim("marine.anim", "dead", direction=>"l"): 362, 205
+
+    text(m6x11, "dodge", #888888): 410, 143
+    bitmap(generated(color(64, 64, #222233))): 410, 157
+    stateanim("marine.anim", "dodge", direction=>"l"): 442, 205
+
+    // === Turret (no direction state) ===
+    text(exo2_14, "Turret  (no state selectors)", #7fdbda): 0, 230
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 248
+
+    text(m6x11, "idle", #888888): 10, 258
+    bitmap(generated(color(64, 64, #222233))): 10, 272
+    stateanim("turret.anim", "idle"): 42, 320
+
+    text(m6x11, "shoot", #888888): 90, 258
+    bitmap(generated(color(64, 64, #222233))): 90, 272
+    stateanim("turret.anim", "shoot"): 122, 320
+
+    text(m6x11, "hit", #888888): 170, 258
+    bitmap(generated(color(64, 64, #222233))): 170, 272
+    stateanim("turret.anim", "hit"): 202, 320
+
+    text(m6x11, "explode", #888888): 250, 258
+    bitmap(generated(color(64, 64, #222233))): 250, 272
+    stateAnim construct("explode",
+        "explode" => sheet "crew2", Turret_Explode_SW, 16, loop
+    ): 282, 320
+
+    text(m6x11, "destroyed", #888888): 330, 258
+    bitmap(generated(color(64, 64, #222233))): 330, 272
+    stateAnim construct("destroyed",
+        "destroyed" => sheet "crew2", Turret_Destroyed_SW, 1, loop
+    ): 362, 320
+
+    // === Shield (direction state) ===
+    text(exo2_14, "Shield  states: direction(l, r)", #7fdbda): 0, 345
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 363
+
+    text(m6x11, "idle_0 (R)", #888888): 10, 373
+    bitmap(generated(color(64, 64, #222233))): 10, 387
+    stateanim("shield.anim", "idle_0", direction=>"r"): 42, 435
+
+    text(m6x11, "idle_0 (L)", #888888): 90, 373
+    bitmap(generated(color(64, 64, #222233))): 90, 387
+    stateanim("shield.anim", "idle_0", direction=>"l"): 122, 435
+
+    text(m6x11, "idle_1 (R)", #888888): 170, 373
+    bitmap(generated(color(64, 64, #222233))): 170, 387
+    stateanim("shield.anim", "idle_1", direction=>"r"): 202, 435
+
+    text(m6x11, "impact (R)", #888888): 250, 373
+    bitmap(generated(color(64, 64, #222233))): 250, 387
+    stateanim("shield.anim", "impact", direction=>"r"): 282, 435
+
+    // === Arrows (no direction state) ===
+    text(exo2_14, "Arrows  (no state selectors)", #7fdbda): 0, 460
+    bitmap(generated(color(560, 1, #7fdbda33))): 0, 478
+
+    text(m6x11, "dir0", #888888): 10, 488
+    stateanim("arrows.anim", "dir0"): 42, 548
+
+    text(m6x11, "dir1", #888888): 90, 488
+    stateanim("arrows.anim", "dir1"): 122, 548
+
+    text(m6x11, "dir2", #888888): 170, 488
+    stateanim("arrows.anim", "dir2"): 202, 548
+
+    text(m6x11, "dir3", #888888): 250, 488
+    stateanim("arrows.anim", "dir3"): 282, 548
+
+    text(m6x11, "dir4", #888888): 330, 488
+    stateanim("arrows.anim", "dir4"): 362, 548
+
+    text(m6x11, "dir5", #888888): 410, 488
+    stateanim("arrows.anim", "dir5"): 442, 548
+}

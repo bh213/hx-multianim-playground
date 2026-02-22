@@ -302,13 +302,16 @@ ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeigh
       text($font, $buttonText, $fontColor, center, $width): 0, ($height - 6 - $ctx.font($font).lineHeight) / 2
 }
 
-#tabBar programmable(count:int, panelWidth:uint=0, panelHeight:uint=0, panelOffset:uint=24, spacing:int=0, offset:int=0) {
+#tabBar programmable(count:int, panelWidth:uint=0, panelHeight:uint=0, tabButtonHeight:uint=30, spacing:int=0, offset:int=8, contentPadTop:int=3, contentPadLeft:int=8) {
+      // offset=8: matches Window_tabbed_3x3 pad-left so tabs align with panel content area
+      // panelOffset formula: tabButtonHeight - 9 = (6px tab transparent bottom) + (3px panel top border overlap)
       flow(layout: horizontal, horizontalSpacing: $spacing, paddingLeft: $offset) {
             repeatable($index, range(0, $count)) {
                   placeholder(generated(cross(15, 15, #FF0000)), callback("tabButton", $index));
             }
       }
-      @(panelHeight > 0) @layer(-100) ninepatch("ui", "Window_tabbed_3x3_idle", $panelWidth, $panelHeight): 0, $panelOffset
+      @(panelHeight > 0) @layer(-100) ninepatch("ui", "Window_tabbed_3x3_idle", $panelWidth, $panelHeight): 0, $tabButtonHeight - 9
+      @(panelHeight > 0) #contentArea point: $contentPadLeft, $tabButtonHeight - 9 + $contentPadTop
 }
 
 #tabBarVertical programmable(count:int, spacing:int=0, offset:int=0) {

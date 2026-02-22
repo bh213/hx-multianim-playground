@@ -2,13 +2,19 @@ package screens.animation;
 
 import bh.ui.UIElement;
 import bh.ui.*;
-import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
+import bh.ui.UIMultiAnimTabs;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
-import bh.base.FontManager;
 
 class ParticlesDemoScreen extends DemoScreenBase {
-	static final TAB_NAMES = ["Basics", "Colors", "Motion", "Bounds", "Paths", "SubEmit"];
+	static final TAB_ITEMS:Array<UIElementListItem> = [
+		{name: "Basics"},
+		{name: "Colors"},
+		{name: "Motion"},
+		{name: "Bounds"},
+		{name: "Paths"},
+		{name: "SubEmit"},
+	];
 	static final TAB_FILES = [
 		"demos/animation/particles-basics.manim",
 		"demos/animation/particles-colors.manim",
@@ -25,7 +31,6 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		"Emit along paths, tangent velocity, and pathguide force fields",
 		"Sub-emitter triggers: onDeath bursts and onCollision sparks",
 	];
-	// Particle group names per tab (up to 4 per tab)
 	static final TAB_GROUPS:Array<Array<String>> = [
 		["fire", "rain", "sparkles", "explosion"],
 		["rainbow", "sizeCurveDemo", "velocityCurveDemo", "pulseDemo"],
@@ -34,129 +39,93 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		["pathEmit", "pathTangent", "pathGuideDemo", "waveStream"],
 		["fireworkMain", "bounceBall"],
 	];
-	// UI programmable names per tab
 	static final TAB_UI_NAMES = ["basicsUI", "colorsUI", "motionUI", "boundsUI", "pathsUI", "subEmittersUI"];
-	// Sub-emitter groups to add to each main group (tab index => group index => sub-group names)
 	static final SUB_EMITTER_GROUPS:Map<Int, Map<Int, Array<String>>> = [
 		5 => [0 => ["fireworkBurst"], 1 => ["bounceSparks"]],
 	];
 
-	var tabButtons:Array<UIStandardMultiAnimButton> = [];
-	var activeTab:Int = 0;
-	var tabBuilder:Null<MultiAnimBuilder> = null;
-	var tabUIResult:Null<BuilderResult> = null;
-	var particleObjects:Array<bh.base.Particles> = [];
-	var boundsGraphics:Array<h2d.Graphics> = [];
-	var descText:Null<h2d.Text> = null;
+	var tabs:Null<UIMultiAnimTabs> = null;
+	var demoBuilder:Null<MultiAnimBuilder> = null;
+	var demoResult:Null<BuilderResult> = null;
 
 	override public function load():Void {
 		setupDemo("Particles", "Particle effects — click tabs to explore features");
 
-		// Tab buttons below master title bar
-		for (i in 0...TAB_NAMES.length) {
-			var btn = UIStandardMultiAnimButton.create(commonBuilder, "backButton", TAB_NAMES[i]);
-			btn.getObject().setPosition(50 + i * 120, 70);
-			addElement(btn, DefaultLayer);
-			tabButtons.push(btn);
+		demoBuilder = screenManager.buildFromResourceName("demos/animation/particles-demo.manim", false);
+
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "particlesDemo", [], [
+			particleTabs => addTabs(stdBuilder, TAB_ITEMS, 0),
+		]);
+
+		demoResult = ui.builderResults;
+		tabs = ui.particleTabs;
+
+		addBuilderResult(demoResult);
+
+		// Set initial description
+		if (demoResult != null) {
+			var updatable = demoResult.getUpdatable("description");
+			if (updatable != null)
+				updatable.updateText(TAB_DESCRIPTIONS[0]);
 		}
 
-		// Per-tab description text
-		descText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		descText.textColor = 0xAAAAAA;
-		descText.setPosition(50, 105);
-		addObjectToLayer(descText, DefaultLayer);
-
-		loadTab(0);
+		// Pre-load all tab content via beginTab/endTab
+		for (t in 0...TAB_FILES.length) {
+			loadTabContent(t);
+		}
 	}
 
-	function clearTab():Void {
-		// Remove particle objects
-		for (p in particleObjects) {
-			p.remove();
-		}
-		particleObjects = [];
+	function loadTabContent(index:Int):Void {
+		tabs.beginTab(index);
 
-		// Remove bounds graphics
-		for (g in boundsGraphics) {
-			g.remove();
-		}
-		boundsGraphics = [];
-
-		// Remove UI result
-		if (tabUIResult != null) {
-			tabUIResult.object.remove();
-			tabUIResult = null;
-		}
-		tabBuilder = null;
-	}
-
-	function loadTab(index:Int):Void {
-		clearTab();
-		activeTab = index;
-
-		// Update description
-		if (descText != null) {
-			descText.text = TAB_DESCRIPTIONS[index];
+		var builder = screenManager.buildFromResourceName(TAB_FILES[index], false);
+		if (builder == null) {
+			tabs.endTab();
+			return;
 		}
 
-		// Load the tab's .manim file
-		tabBuilder = screenManager.buildFromResourceName(TAB_FILES[index], false);
-		if (tabBuilder == null) return;
+		// UI labels — positions are panel-relative via contentArea
+		addBuilderResult(builder.buildWithParameters(TAB_UI_NAMES[index], []));
 
-		// Build UI labels
-		var uiResult = tabBuilder.buildWithParameters(TAB_UI_NAMES[index], []);
-		uiResult.object.setPosition(0, 125);
-		addObjectToLayer(uiResult.object, DefaultLayer);
-		tabUIResult = uiResult;
-
-		// Create particle groups at layout positions
+		// Particle groups at layout positions (panel-relative)
 		var groups = TAB_GROUPS[index];
-		var layouts = tabBuilder.getLayouts();
+		var layouts = builder.getLayouts();
 
 		for (i in 0...groups.length) {
 			var pos = layouts.getPoint("positions", i);
-			var particles = tabBuilder.createParticles(groups[i]);
+			var particles = builder.createParticles(groups[i]);
 
-			// Add sub-emitter groups to the same Particles container
 			var subMap = SUB_EMITTER_GROUPS.get(index);
 			if (subMap != null) {
 				var subGroups = subMap.get(i);
 				if (subGroups != null) {
-					for (subName in subGroups) {
-						tabBuilder.addParticleGroupTo(subName, particles);
-					}
+					for (subName in subGroups)
+						builder.addParticleGroupTo(subName, particles);
 				}
 			}
 
 			particles.setPosition(pos.x, pos.y);
 			addObjectToLayer(particles, DefaultLayer);
-			particleObjects.push(particles);
 
-			// Draw bounds indicator for bounds tab
 			if (index == 3) {
 				drawBoundsIndicator(pos.x, pos.y, i);
 			}
 		}
 
-		// Draw path indicators for paths tab
-		if (index == 4 && tabBuilder != null) {
-			drawPathIndicators(layouts);
+		if (index == 4) {
+			drawPathIndicators(builder, layouts);
 		}
+
+		tabs.endTab();
 	}
 
 	function drawBoundsIndicator(cx:Float, cy:Float, groupIndex:Int):Void {
 		var g = new h2d.Graphics();
 
 		if (groupIndex < 3) {
-			// AABB indicator — dashed rectangle
 			g.lineStyle(1, 0x666666);
-			var minX = cx - 80;
-			var minY = cy - 80;
-			var maxX = cx + 80;
-			var maxY = cy + 80;
-			drawDashedRect(g, minX, minY, maxX, maxY);
+			drawDashedRect(g, cx - 80, cy - 80, cx + 80, cy + 80);
 		} else {
-			// Line bounds — draw the 4 lines forming a box
 			g.lineStyle(1, 0x886644);
 			g.moveTo(cx - 80, cy + 80);
 			g.lineTo(cx + 80, cy + 80);
@@ -169,12 +138,10 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		}
 
 		addObjectToLayer(g, DefaultLayer);
-		boundsGraphics.push(g);
 	}
 
-	function drawPathIndicators(layouts:bh.multianim.layouts.MultiAnimLayouts):Void {
-		if (tabBuilder == null) return;
-		var paths = tabBuilder.getPaths();
+	function drawPathIndicators(builder:MultiAnimBuilder, layouts:bh.multianim.layouts.MultiAnimLayouts):Void {
+		var paths = builder.getPaths();
 		var pathNames = ["orbit", "orbit", "orbit", "wave"];
 
 		for (i in 0...pathNames.length) {
@@ -196,7 +163,6 @@ class ParticlesDemoScreen extends DemoScreenBase {
 			}
 
 			addObjectToLayer(g, DefaultLayer);
-			boundsGraphics.push(g);
 		}
 	}
 
@@ -217,7 +183,8 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		var drawing = true;
 		while (dist < len) {
 			var segLen = drawing ? dashLen : gapLen;
-			if (dist + segLen > len) segLen = len - dist;
+			if (dist + segLen > len)
+				segLen = len - dist;
 			var t0 = dist / len;
 			var t1 = (dist + segLen) / len;
 			if (drawing) {
@@ -231,13 +198,13 @@ class ParticlesDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClick:
-				for (i in 0...tabButtons.length) {
-					if (source == tabButtons[i]) {
-						if (i != activeTab) {
-							loadTab(i);
-						}
-						return;
+			case UIChangeItem(index, items):
+				if (source == tabs) {
+					// Only update description — tab system handles content visibility
+					if (demoResult != null) {
+						var updatable = demoResult.getUpdatable("description");
+						if (updatable != null)
+							updatable.updateText(TAB_DESCRIPTIONS[index]);
 					}
 				}
 			default:
@@ -245,9 +212,9 @@ class ParticlesDemoScreen extends DemoScreenBase {
 	}
 
 	override public function onClear():Void {
-		clearTab();
-		tabButtons = [];
-		descText = null;
+		tabs = null;
+		demoBuilder = null;
+		demoResult = null;
 		super.onClear();
 	}
 }

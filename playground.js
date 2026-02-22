@@ -1415,6 +1415,14 @@ Main.prototype = $extend(hxd_App.prototype,{
 });
 Math.__name__ = "Math";
 var NavScreen = function(screenManager,layers) {
+	this.isPaused = false;
+	this.animTimer = 0.0;
+	this.lastNpH = -1;
+	this.lastNpW = -1;
+	this.lastCondState = -1;
+	this.lastCondValue = -1;
+	this.slideTimer = 0.0;
+	this.currentSlide = 0;
 	bh_ui_screens_UIScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["NavScreen"] = NavScreen;
@@ -1422,88 +1430,286 @@ NavScreen.__name__ = "NavScreen";
 NavScreen.__super__ = bh_ui_screens_UIScreenBase;
 NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	load: function() {
+		var _gthis = this;
 		this.commonBuilder = this.screenManager.buildFromResourceName("demo-common.manim",false);
+		this.carouselBuilder = this.screenManager.buildFromResourceName("nav-carousel.manim",false);
+		this.navBuilder = this.screenManager.buildFromResourceName("nav-screen.manim",false);
 		this.cards = [];
-		var titleText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_black_30"));
-		titleText.set_text("hx-multianim Showcase");
-		titleText.set_textColor(16777215);
-		titleText.posChanged = true;
-		titleText.x = 40;
-		titleText.posChanged = true;
-		titleText.y = 15;
-		this.addObjectToLayer(titleText,bh_ui_screens_LayersEnum.DefaultLayer);
-		var subtitleText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
-		subtitleText.set_text("Click any demo to explore");
-		subtitleText.set_textColor(8947848);
-		subtitleText.posChanged = true;
-		subtitleText.x = 40;
-		subtitleText.posChanged = true;
-		subtitleText.y = 50;
-		this.addObjectToLayer(subtitleText,bh_ui_screens_LayersEnum.DefaultLayer);
-		var yPos = 80;
-		var colWidth = 200;
-		var cardHeight = 36;
-		var cardSpacingX = 10;
-		var cardSpacingY = 6;
-		var categorySpacing = 26;
-		var xStart = 40;
+		this.currentSlide = 0;
+		this.slideTimer = 0.0;
+		var generatedByMacroBuildWithParametersload5864Builder = function() {
+			var viewDemoButton;
+			var prevBtn;
+			var playBtn;
+			var pauseBtn;
+			var nextBtn;
+			var _gthis1 = _gthis.navBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"viewDemoButton",settings,"View Demo >");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				viewDemoButton = _el;
+				return _el.getObject();
+			});
+			_g.h["viewDemoButton"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"carouselCtrlBtn",settings,"<");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				prevBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["prevBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"carouselCtrlBtn",settings,">");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				playBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["playBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"carouselCtrlBtn",settings,"||");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				pauseBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["pauseBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"carouselCtrlBtn",settings,">");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				nextBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["nextBtn"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("navLayout",builderResults,{ placeholderObjects : _g});
+			var retVal = { viewDemoButton : viewDemoButton, prevBtn : prevBtn, playBtn : playBtn, pauseBtn : pauseBtn, nextBtn : nextBtn, builderResults : builderResults1};
+			if(retVal.viewDemoButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "viewDemoButton" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.prevBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "prevBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.playBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "playBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.pauseBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "pauseBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.nextBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "nextBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload5864Builder();
+		this.navResult = ui.builderResults;
+		this.viewDemoButton = ui.viewDemoButton;
+		this.prevBtn = ui.prevBtn;
+		this.nextBtn = ui.nextBtn;
+		this.pauseBtn = ui.pauseBtn;
+		this.playBtn = ui.playBtn;
+		this.addBuilderResult(this.navResult);
+		this.playBtn.getObject().set_visible(false);
+		var layouts = this.navBuilder.getLayouts();
+		var carouselPos = layouts.getPoint("positions",0);
+		var tmp = this.carouselBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["currentSlide"] = 0;
+		this.carouselResult = tmp.buildWithParameters("carouselContent",_g,null,null,true);
+		var _this = this.carouselResult.object;
+		_this.posChanged = true;
+		_this.x = carouselPos.x;
+		_this.posChanged = true;
+		_this.y = carouselPos.y;
+		this.addBuilderResult(this.carouselResult);
+		var particlePos = layouts.getPoint("positions",1);
+		var fireworks = this.carouselBuilder.createParticles("navFireworkLauncher");
+		this.carouselBuilder.addParticleGroupTo("navFireworkBurst",fireworks);
+		fireworks.posChanged = true;
+		fireworks.x = particlePos.x;
+		fireworks.posChanged = true;
+		fireworks.y = particlePos.y;
+		fireworks.set_visible(false);
+		this.addObjectToLayer(fireworks,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.particleObject = fireworks;
+		this.updateInfoPanel();
+		var _g = 0;
+		var _g1 = NavScreen.CATEGORIES.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var pos = layouts.getPoint("catHeaders",i);
+			var headerResult = this.commonBuilder;
+			var _g2 = new haxe_ds_StringMap();
+			_g2.h["title"] = NavScreen.CATEGORIES[i].name;
+			var headerResult1 = headerResult.buildWithParameters("categoryHeader",_g2);
+			var _this = headerResult1.object;
+			_this.posChanged = true;
+			_this.x = pos.x;
+			_this.posChanged = true;
+			_this.y = pos.y;
+			this.addBuilderResult(headerResult1);
+		}
+		var cardIdx = 0;
 		var _g = 0;
 		var _g1 = NavScreen.CATEGORIES;
 		while(_g < _g1.length) {
 			var cat = _g1[_g];
 			++_g;
-			var headerResult = this.commonBuilder;
-			var _g2 = new haxe_ds_StringMap();
-			_g2.h["title"] = cat.name;
-			var headerResult1 = headerResult.buildWithParameters("categoryHeader",_g2);
-			var _this = headerResult1.object;
-			_this.posChanged = true;
-			_this.x = xStart;
-			_this.posChanged = true;
-			_this.y = yPos;
-			this.addBuilderResult(headerResult1);
-			yPos += categorySpacing;
-			var xPos = xStart;
-			var rowHeight = 0;
-			var _g3 = 0;
-			var _g4 = cat.screens;
-			while(_g3 < _g4.length) {
-				var screen = _g4[_g3];
-				++_g3;
-				if(xPos + colWidth > 1240) {
-					xPos = xStart;
-					yPos += cardHeight + cardSpacingY;
-				}
-				var cardButton = this.addButtonWithSingleBuilder(this.commonBuilder,"navCard",null,screen.title);
+			var _g2 = 0;
+			var _g3 = cat.screens;
+			while(_g2 < _g3.length) {
+				var screen = _g3[_g2];
+				++_g2;
+				var pos = layouts.getPoint("navCards",cardIdx);
+				var cardButton = this.addButtonWithSingleBuilder(this.commonBuilder,"navCardSmall",null,screen.title);
 				this.addElement(cardButton,bh_ui_screens_LayersEnum.DefaultLayer);
-				var _this1 = cardButton.getObject();
-				_this1.posChanged = true;
-				_this1.x = xPos;
-				_this1.posChanged = true;
-				_this1.y = yPos;
+				var _this = cardButton.getObject();
+				_this.posChanged = true;
+				_this.x = pos.x;
+				_this.posChanged = true;
+				_this.y = pos.y;
 				this.cards.push({ button : cardButton, screenName : screen.id});
-				xPos += colWidth + cardSpacingX;
-				rowHeight = cardHeight;
+				++cardIdx;
 			}
-			yPos += rowHeight + cardSpacingY + 10;
 		}
+	}
+	,update: function(dt) {
+		bh_ui_screens_UIScreenBase.prototype.update.call(this,dt);
+		this.animTimer += dt;
+		if(!this.isPaused) {
+			this.slideTimer += dt;
+			if(this.slideTimer >= 5.0) {
+				this.slideTimer = 0.0;
+				this.goToSlide((this.currentSlide + 1) % 7);
+			}
+		}
+		if(this.carouselResult != null) {
+			this.updateSlideAnimations();
+		}
+	}
+	,updateSlideAnimations: function() {
+		var t = this.animTimer;
+		if(this.currentSlide == 2) {
+			var cycle = t % 5.0;
+			var w;
+			var h;
+			if(cycle < 1.5) {
+				var p = cycle / 1.5;
+				w = Math.round(120 + 330 * p);
+				h = 50;
+			} else if(cycle < 3.0) {
+				var p = (cycle - 1.5) / 1.5;
+				w = 450;
+				h = Math.round(50 + 100 * p);
+			} else {
+				var p = (cycle - 3.0) / 2.0;
+				w = Math.round(450 - 330 * p);
+				h = Math.round(150 - 100 * p);
+			}
+			if(w != this.lastNpW) {
+				this.lastNpW = w;
+				this.carouselResult.setParameter("npW",w);
+			}
+			if(h != this.lastNpH) {
+				this.lastNpH = h;
+				this.carouselResult.setParameter("npH",h);
+			}
+			var sizeUpd = this.carouselResult.getUpdatable("npSizeText");
+			if(sizeUpd != null) {
+				sizeUpd.updateText("" + w + " x " + h);
+			}
+		}
+		if(this.currentSlide == 3) {
+			var val = Math.round(50 + 49 * Math.sin(t * Math.PI * 2 / 5));
+			if(val != this.lastCondValue) {
+				this.lastCondValue = val;
+				this.carouselResult.setParameter("condValue",val);
+				var barUpd = this.carouselResult.getUpdatable("condBarValue");
+				if(barUpd != null) {
+					barUpd.updateText("" + val);
+				}
+			}
+			var state = Math.floor(t / 1.5) % 3;
+			if(state != this.lastCondState) {
+				this.lastCondState = state;
+				this.carouselResult.setParameter("condState",state);
+			}
+		}
+	}
+	,goToSlide: function(index) {
+		this.currentSlide = index;
+		this.slideTimer = 0.0;
+		this.animTimer = 0.0;
+		this.lastCondValue = -1;
+		this.lastCondState = -1;
+		this.lastNpW = -1;
+		this.lastNpH = -1;
+		if(this.carouselResult != null) {
+			this.carouselResult.setParameter("currentSlide",index);
+		}
+		if(this.particleObject != null) {
+			this.particleObject.set_visible(index == 6);
+		}
+		this.updateInfoPanel();
+	}
+	,updateInfoPanel: function() {
+		if(this.navResult == null) {
+			return;
+		}
+		var data = NavScreen.SLIDE_DATA[this.currentSlide];
+		var titleUpd = this.navResult.getUpdatable("slideTitle");
+		if(titleUpd != null) {
+			titleUpd.updateText(data.title);
+		}
+		var descUpd = this.navResult.getUpdatable("slideDesc");
+		if(descUpd != null) {
+			descUpd.updateText(data.desc);
+		}
+		var syntaxUpd = this.navResult.getUpdatable("slideSyntax");
+		if(syntaxUpd != null) {
+			syntaxUpd.updateText(data.syntax);
+		}
+	}
+	,navigateToScreen: function(screenId) {
+		var targetScreen = this.screenManager.getScreen(screenId);
+		var masterScreen = js_Boot.__cast(this.screenManager.getScreen("demoMaster") , DemoMasterScreen);
+		if(((targetScreen) instanceof DemoScreenBase)) {
+			var demo = targetScreen;
+			masterScreen.setDemoInfo(demo.demoTitle,demo.demoDescription);
+		}
+		this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle(masterScreen,targetScreen));
+		window.location.hash = "screen=" + screenId;
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
+			if(source == this.prevBtn) {
+				this.goToSlide((this.currentSlide - 1 + 7) % 7);
+				return;
+			}
+			if(source == this.nextBtn) {
+				this.goToSlide((this.currentSlide + 1) % 7);
+				return;
+			}
+			if(source == this.pauseBtn || source == this.playBtn) {
+				this.isPaused = !this.isPaused;
+				if(this.pauseBtn != null) {
+					this.pauseBtn.getObject().set_visible(!this.isPaused);
+				}
+				if(this.playBtn != null) {
+					this.playBtn.getObject().set_visible(this.isPaused);
+				}
+				return;
+			}
+			if(source == this.viewDemoButton) {
+				this.navigateToScreen(NavScreen.SLIDE_DATA[this.currentSlide].target);
+				return;
+			}
 			var _g = 0;
 			var _g1 = this.cards;
 			while(_g < _g1.length) {
 				var card = _g1[_g];
 				++_g;
 				if(source == card.button) {
-					var targetScreen = this.screenManager.getScreen(card.screenName);
-					var masterScreen = js_Boot.__cast(this.screenManager.getScreen("demoMaster") , DemoMasterScreen);
-					if(((targetScreen) instanceof DemoScreenBase)) {
-						var demo = targetScreen;
-						masterScreen.setDemoInfo(demo.demoTitle,demo.demoDescription);
-					}
-					this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle(masterScreen,targetScreen));
-					window.location.hash = "screen=" + card.screenName;
+					this.navigateToScreen(card.screenName);
 					return;
 				}
 			}
@@ -1511,7 +1717,18 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	}
 	,onClear: function() {
 		this.commonBuilder = null;
+		this.carouselBuilder = null;
+		this.navBuilder = null;
 		this.cards = [];
+		this.carouselResult = null;
+		this.navResult = null;
+		this.viewDemoButton = null;
+		this.particleObject = null;
+		this.prevBtn = null;
+		this.nextBtn = null;
+		this.pauseBtn = null;
+		this.playBtn = null;
+		this.isPaused = false;
 	}
 	,__class__: NavScreen
 });
@@ -5321,15 +5538,25 @@ bh_base_PixelLines.prototype = $extend(h2d_Bitmap.prototype,{
 	}
 	,filledRect: function(x,y,width,height,colorARGB) {
 		this.data.lock();
-		this.data.fill(x,y,width,height,colorARGB);
+		var _g = y;
+		var _g1 = y + height;
+		while(_g < _g1) {
+			var py = _g++;
+			var _g2 = x;
+			var _g3 = x + width;
+			while(_g2 < _g3) {
+				var px = _g2++;
+				this.data.setPixel(px,py,colorARGB);
+			}
+		}
 	}
 	,pixel: function(x,y,colorARGB) {
 		this.data.lock();
 		this.data.setPixel(x,y,colorARGB);
 	}
 	,updateBitmap: function() {
-		var pixels = this.data.getPixels();
 		this.data.unlock();
+		var pixels = this.data.getPixels();
 		var tile = h2d_Tile.fromPixels(pixels);
 		var px = this.centerX;
 		var py = this.centerY;
@@ -14398,7 +14625,63 @@ var bh_multianim_BuilderResolvedSettings = function(settings) {
 $hxClasses["bh.multianim.BuilderResolvedSettings"] = bh_multianim_BuilderResolvedSettings;
 bh_multianim_BuilderResolvedSettings.__name__ = "bh.multianim.BuilderResolvedSettings";
 bh_multianim_BuilderResolvedSettings.prototype = {
-	getFloatOrException: function(settingName) {
+	getStringOrDefault: function(settingName,defaultString) {
+		if(this.settings == null) {
+			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+		}
+		var r = this.settings.h[settingName];
+		if(r == null) {
+			return defaultString;
+		}
+		switch(r._hx_index) {
+		case 0:
+			var s = r.s;
+			return s;
+		case 1:
+			var i = r.i;
+			return "" + i;
+		case 2:
+			var f = r.f;
+			return "" + f;
+		case 3:
+			var b = r.b;
+			if(b) {
+				return "true";
+			} else {
+				return "false";
+			}
+			break;
+		}
+	}
+	,getIntOrDefault: function(settingName,defaultValue) {
+		if(this.settings == null) {
+			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+		}
+		var r = this.settings.h[settingName];
+		if(r == null) {
+			return defaultValue;
+		}
+		switch(r._hx_index) {
+		case 0:
+			var s = r.s;
+			throw haxe_Exception.thrown("expected int setting " + settingName + " to valid int number but was string " + s);
+		case 1:
+			var i = r.i;
+			return i;
+		case 2:
+			var f = r.f;
+			throw haxe_Exception.thrown("expected int setting " + settingName + " to valid int number but was float " + f);
+		case 3:
+			var b = r.b;
+			if(b) {
+				return 1;
+			} else {
+				return 0;
+			}
+			break;
+		}
+	}
+	,getFloatOrException: function(settingName) {
 		if(this.settings == null) {
 			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
 		}
@@ -62233,11 +62516,7 @@ var hxd_BitmapData = function(width,height) {
 $hxClasses["hxd.BitmapData"] = hxd_BitmapData;
 hxd_BitmapData.__name__ = "hxd.BitmapData";
 hxd_BitmapData.prototype = {
-	fill: function(x,y,width,height,color) {
-		this.ctx.fillStyle = "rgba(" + (color >> 16 & 255) + ", " + (color >> 8 & 255) + ", " + (color & 255) + ", " + (color >>> 24) / 255 + ")";
-		this.ctx.fillRect(x,y,width,height);
-	}
-	,line: function(x0,y0,x1,y1,color) {
+	line: function(x0,y0,x1,y1,color) {
 		var dx = x1 - x0;
 		var dy = y1 - y0;
 		if(dx == 0) {
@@ -87918,8 +88197,8 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 	,__class__: screens_advanced_PerfProgrammables_$PerfSimpleInstance
 });
 var screens_advanced_SettingsDemoScreen = function(screenManager,layers) {
-	this.currentTheme = "dark";
-	this.themeButtons = [];
+	this.currentPanels = [];
+	this.variantButtons = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.advanced.SettingsDemoScreen"] = screens_advanced_SettingsDemoScreen;
@@ -87928,82 +88207,108 @@ screens_advanced_SettingsDemoScreen.__super__ = DemoScreenBase;
 screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Settings","Settings configuration demo: shows settings{key:type=>value} usage");
+		this.setupDemo("Settings","settings{} metadata configures code behavior — same code, different layout");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/advanced/settings.manim",false);
-		var generatedByMacroBuildWithParametersload801Builder = function() {
-			var btnLight;
-			var btnDark;
-			var btnBlue;
+		var generatedByMacroBuildWithParametersload887Builder = function() {
+			var btnWide;
+			var btnTall;
+			var btnCompact;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"light");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Wide");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnLight = _el;
+				btnWide = _el;
 				return _el.getObject();
 			});
-			_g.h["btnLight"] = value;
+			_g.h["btnWide"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"dark");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Tall");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnDark = _el;
+				btnTall = _el;
 				return _el.getObject();
 			});
-			_g.h["btnDark"] = value;
+			_g.h["btnTall"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.commonBuilder,"backButton",settings,"blue");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Compact");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				btnBlue = _el;
+				btnCompact = _el;
 				return _el.getObject();
 			});
-			_g.h["btnBlue"] = value;
+			_g.h["btnCompact"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("settingsDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { btnLight : btnLight, btnDark : btnDark, btnBlue : btnBlue, builderResults : builderResults1};
-			if(retVal.btnLight == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnLight" + " is null (check if placeholder object is named correctly)");
+			var retVal = { btnWide : btnWide, btnTall : btnTall, btnCompact : btnCompact, builderResults : builderResults1};
+			if(retVal.btnWide == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnWide" + " is null (check if placeholder object is named correctly)");
 			}
-			if(retVal.btnDark == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnDark" + " is null (check if placeholder object is named correctly)");
+			if(retVal.btnTall == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnTall" + " is null (check if placeholder object is named correctly)");
 			}
-			if(retVal.btnBlue == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnBlue" + " is null (check if placeholder object is named correctly)");
+			if(retVal.btnCompact == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnCompact" + " is null (check if placeholder object is named correctly)");
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload801Builder();
+		var ui = generatedByMacroBuildWithParametersload887Builder();
 		this.demoResult = ui.builderResults;
-		this.themeButtons = [ui.btnDark,ui.btnLight,ui.btnBlue];
+		this.variantButtons = [ui.btnCompact,ui.btnWide,ui.btnTall];
 		this.addBuilderResult(this.demoResult);
-		this.settingsResult = this.demoBuilder.buildWithParameters("settingsExamples",new haxe_ds_StringMap());
-		var _this = this.settingsResult.object;
+		this.panelContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("panelContainer").object);
+		this.currentPanels = [];
+		this.setVariant(0);
+	}
+	,setVariant: function(index) {
+		var _g = 0;
+		var _g1 = this.currentPanels;
+		while(_g < _g1.length) {
+			var p = _g1[_g];
+			++_g;
+			if(p != null && p.parent != null) {
+				p.parent.removeChild(p);
+			}
+		}
+		this.currentPanels = [];
+		var panelName = screens_advanced_SettingsDemoScreen.PANEL_NAMES[index];
+		var first = this.demoBuilder.buildWithParameters(panelName,new haxe_ds_StringMap());
+		var s = first.rootSettings;
+		var width = s.getIntOrDefault("width",100);
+		var height = s.getIntOrDefault("height",100);
+		var gap = s.getIntOrDefault("gap",10);
+		var category = s.getStringOrDefault("category","?");
+		this.panelContainer.addChild(first.object);
+		this.currentPanels.push(first.object);
+		var instance = this.demoBuilder.buildWithParameters(panelName,new haxe_ds_StringMap());
+		var _this = instance.object;
 		_this.posChanged = true;
-		_this.x = 50;
+		_this.x = width + gap;
 		_this.posChanged = true;
-		_this.y = 300;
-		this.addBuilderResult(this.settingsResult);
-		this.statusText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
-		this.statusText.set_text("Theme: " + this.currentTheme);
-		this.statusText.set_textColor(13421772);
-		var _this = this.statusText;
+		_this.y = 0;
+		this.panelContainer.addChild(instance.object);
+		this.currentPanels.push(instance.object);
+		var instance = this.demoBuilder.buildWithParameters(panelName,new haxe_ds_StringMap());
+		var _this = instance.object;
 		_this.posChanged = true;
-		_this.x = 50;
+		_this.x = 2 * (width + gap);
 		_this.posChanged = true;
-		_this.y = 630;
-		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
+		_this.y = 0;
+		this.panelContainer.addChild(instance.object);
+		this.currentPanels.push(instance.object);
+		this.demoResult.getUpdatable("inspWidth").updateText("width: " + width);
+		this.demoResult.getUpdatable("inspHeight").updateText("height: " + height);
+		this.demoResult.getUpdatable("inspGap").updateText("gap: " + gap);
+		this.demoResult.getUpdatable("inspCategory").updateText("category: \"" + category + "\"");
+		var total = 3 * width + 2 * gap;
+		this.demoResult.getUpdatable("logText").updateText("" + screens_advanced_SettingsDemoScreen.PANEL_LABELS[index] + ": 3 x " + width + "px + " + gap + "px gap = " + total + "px total");
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
 			var _g = 0;
-			var _g1 = this.themeButtons.length;
+			var _g1 = this.variantButtons.length;
 			while(_g < _g1) {
 				var i = _g++;
-				if(source == this.themeButtons[i]) {
-					var themes = ["dark","light","blue"];
-					this.currentTheme = themes[i];
-					if(this.statusText != null) {
-						this.statusText.set_text("Theme: " + this.currentTheme);
-					}
+				if(source == this.variantButtons[i]) {
+					this.setVariant(i);
 					return;
 				}
 			}
@@ -88013,9 +88318,9 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
 		this.demoResult = null;
-		this.settingsResult = null;
-		this.statusText = null;
-		this.themeButtons = [];
+		this.variantButtons = [];
+		this.panelContainer = null;
+		this.currentPanels = [];
 	}
 	,__class__: screens_advanced_SettingsDemoScreen
 });
@@ -95247,7 +95552,8 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-NavScreen.CATEGORIES = [{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "minimap", title : "Minimap"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Skill Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]},{ name : "Advanced Features", screens : [{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "featureShowcase", title : "Feature Showcase"}]}];
+NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "minimap", title : "Minimap"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Skill Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -95603,6 +95909,8 @@ screens_ColorPickerDialog.PRESET_COLORS = [16711680,16746496,16776960,65280,6553
 screens_advanced_MacroPerformanceDemoScreen.COUNT_ITEMS = [{ name : "1"},{ name : "100"},{ name : "1000"},{ name : "10000"}];
 screens_advanced_MacroPerformanceDemoScreen.COUNT_VALUES = [1,100,1000,10000];
 screens_advanced_MacroPerformanceDemoScreen.COLORS = [4482696,8930406,6719556,8939076,4491366,6702216];
+screens_advanced_SettingsDemoScreen.PANEL_NAMES = ["panelCompact","panelWide","panelTall"];
+screens_advanced_SettingsDemoScreen.PANEL_LABELS = ["Compact","Wide","Tall"];
 screens_animation_AnimPathDemoScreen.PATH_NAMES = ["circuit","star","spiral","waves","bezierLoop","circle"];
 screens_animation_AnimPathDemoScreen.PATH_ITEMS = [{ name : "Circuit"},{ name : "Star"},{ name : "Spiral"},{ name : "Waves"},{ name : "Bezier Loop"},{ name : "Circle"}];
 screens_animation_AnimPathDemoScreen.CURVE_NAMES = ["linear","easeInQuad","easeOutQuad","easeInOutQuad","easeInCubic","easeOutCubic","easeInOutCubic","easeInBack","easeOutBack","easeInOutBack","easeOutBounce","easeOutElastic","accelDecel","snapBack","cubicBezier","custom","fadeIn","pulse"];

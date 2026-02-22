@@ -1,0 +1,269 @@
+version: 0.5
+
+// NavScreen Carousel — 7 feature highlight slides
+// Controlled by currentSlide parameter, switched via setParameter() in NavScreen.hx
+
+// ── Helper: animated ninepatch for slide 2 ────────────────────
+#npPreview programmable(w:uint=200, h:uint=80) {
+    ninepatch("ui", "Window_3x3_idle", $w, $h): 0, 0
+}
+
+// ── Helper: animated health bar for slide 3 ───────────────────
+#condBar programmable(value:uint=50) {
+    bitmap(generated(color(200, 14, #222233))): 0, 0
+    @(value >= 50) bitmap(generated(color($value * 2, 14, #44cc44))): 0, 0
+    @(value < 50) bitmap(generated(color($value * 2, 14, #cc4444))): 0, 0
+}
+
+// ── Particle systems for slide 6 (top-level, managed by Haxe) ─
+#navFireworkLauncher particles {
+    count: 6
+    emit: cone(0, 3, 270, 15)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 1.0
+    lifeRandom: 0.3
+    speed: 90
+    speedRandom: 0.3
+    gravity: 60
+    gravityAngle: 90
+    size: 0.35
+    fadeIn: 0.0
+    fadeOut: 0.8
+    0.0: colorCurve: linear, #FFFFFF, #FFFF88
+    blendMode: add
+    emitSync: 0.15
+    boundsMode: kill
+    boundsMinX: -260
+    boundsMaxX: 260
+    boundsMinY: -150
+    boundsMaxY: 75
+    subEmitters: [{
+        groupId: "navFireworkBurst"
+        trigger: ondeath
+        probability: 1.0
+        burstCount: 18
+    }]
+}
+
+#navFireworkBurst particles {
+    count: 0
+    emit: point(0, 20)
+    tiles: file("star.png") file("dot.png")
+    loop: false
+    maxLife: 1.4
+    lifeRandom: 0.3
+    speed: 70
+    speedRandom: 0.5
+    gravity: 40
+    gravityAngle: 90
+    size: 0.35
+    sizeRandom: 0.3
+    fadeIn: 0.0
+    fadeOut: 0.5
+    0.0: colorCurve: linear, #FFFFFF, #88DDFF
+    0.3: colorCurve: linear, #88DDFF, #FF44AA
+    0.7: colorCurve: linear, #FF44AA, #4400AA
+    blendMode: add
+    rotationSpeed: 60
+    rotationSpeedRandom: 0.5
+    boundsMode: bounce(0.6)
+    boundsMinX: -260
+    boundsMaxX: 260
+    boundsMinY: -150
+    boundsMaxY: 75
+}
+
+#carouselContent programmable(currentSlide:0..6=0, condValue:uint=50, condState:0..2=0, npW:uint=200, npH:uint=80) {
+
+  // Dark background for carousel area
+  bitmap(generated(color(540, 240, #0d0d1a))): 0, 0
+
+  // ── Slide 0: Sprite Animations ──────────────────────────────
+  @(currentSlide => 0) point {
+    pos: 20, 15
+
+    text(m6x11, "shooting", #888888): 30, 0
+    bitmap(generated(color(64, 64, #181828))): 20, 14
+    stateAnim construct("s",
+      "s" => sheet "crew2", marine_r_shooting_u, 10, loop
+    ): 52, 62
+
+    text(m6x11, "killed", #888888): 130, 0
+    bitmap(generated(color(64, 64, #181828))): 120, 14
+    stateAnim construct("s",
+      "s" => sheet "crew2", marine_l_killed, 10, loop
+    ): 152, 62
+
+    text(m6x11, "idle", #888888): 230, 0
+    bitmap(generated(color(64, 64, #181828))): 220, 14
+    stateAnim construct("s",
+      "s" => sheet "crew2", marine_r_standing, 10, loop
+    ): 252, 62
+
+    text(exo2_black_16, "Sprite Animations", #7fdbda): 0, 110
+    text(m5x7, "State machine animations from .anim files", #888888): 0, 132
+  }
+
+  // ── Slide 1: Visual Filters ─────────────────────────────────
+  @(currentSlide => 1) point {
+    pos: 20, 15
+
+    // Normal
+    text(m6x11, "normal", #888888): 30, 0
+    bitmap(generated(color(64, 64, #181828))): 20, 14
+    @scale(2) bitmap(sheet("crew2", "marine_r_standing")): 35, 20
+
+    // Glow
+    text(m6x11, "glow", #888888): 150, 0
+    bitmap(generated(color(64, 64, #181828))): 140, 14
+    point {
+      pos: 155, 20
+      filter: glow(color: #ffaa00, alpha: 0.8, radius: 10, smoothColor: true)
+      @scale(2) bitmap(sheet("crew2", "marine_r_standing")): 0, 0
+    }
+
+    // Outline
+    text(m6x11, "outline", #888888): 280, 0
+    bitmap(generated(color(64, 64, #181828))): 270, 14
+    point {
+      pos: 285, 20
+      filter: outline(2, 0xff4444)
+      @scale(2) bitmap(sheet("crew2", "marine_r_standing")): 0, 0
+    }
+
+    text(exo2_black_16, "Visual Filters", #7fdbda): 0, 110
+    text(m5x7, "GPU filters: glow, outline, blur, saturate, dropShadow...", #888888): 0, 132
+  }
+
+  // ── Slide 2: 9-Patch Animated Resize ────────────────────────
+  @(currentSlide => 2) point {
+    pos: 20, 15
+
+    dynamicRef($npPreview, w=>$npW, h=>$npH): 0, 0
+    #npSizeText(updatable) text(m6x11, "200 x 80", #aaaaaa): 0, 90
+
+    text(exo2_black_16, "9-Patch Panels", #7fdbda): 0, 110
+    text(m5x7, "Scalable UI panels — define once, render at any size", #888888): 0, 132
+  }
+
+  // ── Slide 3: Conditionals (animated) ────────────────────────
+  @(currentSlide => 3) point {
+    pos: 20, 15
+
+    // A/B/C state cycling
+    text(m6x11, "param state:", #888888): 0, 0
+    @(condState => 0) text(m6x11, "A", #44ff44): 100, 0
+    @(condState => 0) text(m6x11, "(not C)", #666666): 120, 0
+    @(condState => 1) text(m6x11, "B", #ff4444): 100, 0
+    @(condState => 1) text(m6x11, "(not C)", #666666): 120, 0
+    @(condState => 2) text(m6x11, "C", #4444ff): 100, 0
+
+    // Active indicator
+    text(m6x11, "A", #888888): 0, 24
+    text(m6x11, "B", #888888): 20, 24
+    text(m6x11, "C", #888888): 40, 24
+    @(condState => 0) bitmap(generated(color(8, 2, #44ff44))): 0, 36
+    @(condState => 1) bitmap(generated(color(8, 2, #ff4444))): 20, 36
+    @(condState => 2) bitmap(generated(color(8, 2, #4444ff))): 40, 36
+
+    // Animated health bar
+    text(m6x11, "value-driven bar:", #888888): 0, 52
+    dynamicRef($condBar, value=>$condValue): 0, 68
+    #condBarValue(updatable) text(m6x11, "50", #ffffff, right, 195): 0, 68
+
+    text(exo2_black_16, "Runtime Conditionals", #7fdbda): 0, 110
+    text(m5x7, "@(param=>value) switching, expressions, and negation", #888888): 0, 132
+  }
+
+  // ── Slide 4: Repeatable Patterns ────────────────────────────
+  @(currentSlide => 4) point {
+    pos: 20, 15
+
+    // Grid with div/mod and fading
+    text(m6x11, "div/mod grid:", #888888): 0, 0
+    tileGroup {
+      pos: 0, 14
+      repeatable($i, step(20, dx:0)) {
+        @alpha(1.0 - $i / 20.0) bitmap(generated(color(14, 14, #ff4444))): ($i % 5) * 18, ($i div 5) * 18
+      }
+    }
+
+    // Marine afterimage
+    text(m6x11, "afterimage trail:", #888888): 130, 0
+    point {
+      pos: 130, 14
+      repeatable($n, step(5, dx:6, dy:1)) {
+        @alpha(1.0 - $n/5.0) scale(2) bitmap(sheet("crew2", "marine_r_shooting_d")): 0, 50
+      }
+    }
+
+    // Fading row
+    text(m6x11, "fading tileGroup:", #888888): 330, 0
+    tileGroup {
+      pos: 330, 14
+      repeatable($j, step(8, dx:6, dy:1)) {
+        @alpha(1.0 - $j/8.0) bitmap(generated(color(20, 20, white))): 0, 0
+      }
+    }
+
+    text(exo2_black_16, "Repeatable Patterns", #7fdbda): 0, 110
+    text(m5x7, "repeatable($i, step(...)) with expressions for alpha, position, color", #888888): 0, 132
+  }
+
+  // ── Slide 5: Pixel Art & Text ───────────────────────────────
+  @(currentSlide => 5) point {
+    pos: 20, 15
+
+    // Crossed lines
+    pixels (
+      line 0, 0, 40, 40, #ff4444
+      line 40, 0, 0, 40, #44ff44
+      line 0, 20, 40, 20, #4444ff
+      line 20, 0, 20, 40, #ffff44
+    ) {
+      scale: 2
+    }
+
+    // Font samples
+    text(m6x11, "m6x11 pixel font", #ff4444): 160, 0
+    text(m5x7, "m5x7 tiny font", #44ff44): 160, 16
+    text(exo2_14, "Exo2 SDF scalable", #4488cc): 160, 30
+    text(pixeled6, "pixeled6 retro", #ffcc44): 160, 50
+
+    // Alignment demo
+    text(m6x11, "text alignment:", #888888): 160, 76
+    bitmap(generated(color(200, 1, #333333))): 160, 90
+    text(m6x11, "left", #ff4444, left): 160, 92
+    text(m6x11, "center", #44ff44, center, 200): 160, 92
+    text(m6x11, "right", #4444ff, right, 200): 160, 92
+
+    text(exo2_black_16, "Pixel Art & Text", #7fdbda): 0, 110
+    text(m5x7, "Procedural line drawing and multi-font text rendering", #888888): 0, 132
+  }
+
+  // ── Slide 6: Particle Effects (labels only, particles managed by Haxe) ──
+  @(currentSlide => 6) point {
+    pos: 20, 15
+
+    text(exo2_black_16, "Particle Effects", #7fdbda): 0, 110
+    text(m5x7, "Fireworks with subEmitters — burst spawns on particle death", #888888): 0, 132
+  }
+
+  // ── Dot indicators ─────────────────────────────────────────────
+  // Base dots (always visible, inactive color)
+  tileGroup {
+    pos: 98, 250
+    repeatable($d, step(7, dx:18)) {
+      bitmap(generated(color(10, 10, #444444))): 0, 0
+    }
+  }
+  // Active dot overlay (only matching slide visible)
+  @(currentSlide => 0) bitmap(generated(color(10, 10, #7fdbda))): 98, 250
+  @(currentSlide => 1) bitmap(generated(color(10, 10, #7fdbda))): 116, 250
+  @(currentSlide => 2) bitmap(generated(color(10, 10, #7fdbda))): 134, 250
+  @(currentSlide => 3) bitmap(generated(color(10, 10, #7fdbda))): 152, 250
+  @(currentSlide => 4) bitmap(generated(color(10, 10, #7fdbda))): 170, 250
+  @(currentSlide => 5) bitmap(generated(color(10, 10, #7fdbda))): 188, 250
+  @(currentSlide => 6) bitmap(generated(color(10, 10, #7fdbda))): 206, 250
+}

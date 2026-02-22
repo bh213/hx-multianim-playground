@@ -1,8 +1,5 @@
 # Demo Suggestions & Rework Plan
 
-## Immediate Fixes (bugs)
-- Skill Tree: fix broken functionality
-
 ## Rework Existing Demos
 
 ### Status Effects → "Status Bar"
@@ -17,17 +14,6 @@
 - Animated fog-of-war reveal
 - Interactive terrain editing
 
-### Battle HUD → "Game HUD Composition"
-- Focus on composing a game HUD rather than simulating combat
-- Health/mana bars using progress bars
-- Cooldown indicators using anim paths
-- Action bar with flow layout
-- Dynamic text updates with incremental mode
-
-### Shop → Remove
-- Redundant with Inventory demo (which has drag-drop, equipment, weight)
-- Broken and ugly per TODO
-
 ## New Demos — High Value (no coverage)
 
 ### Autotile
@@ -35,17 +21,10 @@
 - Show cross/blob47 terrain generation
 - Interactive tile painting
 
-### Tabs
-- std.manim defines tab components, no demo exists
-- Tab widget, content switching, tab states
-
 ### Data Blocks
 - @:data annotations and typed data definitions from .manim
 - Compile-time codegen showcase
 
-### Programmables / @:manim
-- Compile-time factory generation via ProgrammableCodeGen
-- Typed component reuse, factory and instance classes
 
 ## New Demos — Medium Value
 

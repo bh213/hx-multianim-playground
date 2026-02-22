@@ -7,3 +7,4 @@
 -js public/playground.js
 -dce full
 -D js-source-map
+-debug

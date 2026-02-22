@@ -472,7 +472,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 		}
 		var panelModeStr = this.getSettings(settings,"panelMode","scrollable");
 		var sizeMode = panelModeStr == "scalable" ? bh_ui_PanelSizeMode.AutoSize : bh_ui_PanelSizeMode.FixedScroll;
-		var split = this.splitSettings(settings,["panelBuildName","itemBuildName","scrollbarBuildName","scrollbarInPanelName","panelMode","width","height","topClearance"],["scrollSpeed","doubleClickThreshold","wheelScrollMultiplier"],["item","scrollbar"],["font","fontColor"],"scrollableList");
+		var split = this.splitSettings(settings,["panelBuildName","itemBuildName","scrollbarBuildName","scrollbarInPanelName","panelMode","width","height","topClearance"],["scrollSpeed","doubleClickThreshold","wheelScrollMultiplier","clickMode"],["item","scrollbar"],["font","fontColor"],"scrollableList");
 		var itemPrefixed = split.prefixed.h["item"];
 		if(itemPrefixed != null) {
 			itemBuilder = itemBuilder.withExtraParams(itemPrefixed);
@@ -493,6 +493,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 		}
 		if(this.hasSettings(settings,"wheelScrollMultiplier")) {
 			list.wheelScrollMultiplier = this.getFloatSettings(settings,"wheelScrollMultiplier",10);
+		}
+		if(this.hasSettings(settings,"clickMode")) {
+			list.clickMode = this.getSettings(settings,"clickMode","double") == "single" ? bh_ui_ClickMode.SingleClick : bh_ui_ClickMode.DoubleClick;
 		}
 		return list;
 	}
@@ -8846,8 +8849,16 @@ bh_multianim_MacroManimParser.prototype = {
 			if(inlStringMapKeyIterator_current < inlStringMapKeyIterator_length) {
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 			}
-			var paramName = this.expectIdentifierOrString();
-			if(!Object.prototype.hasOwnProperty.call(defs.h,paramName)) {
+			var paramName;
+			var _g = this.tokens[this.tpos].type;
+			if(_g._hx_index == 33) {
+				var s = _g.s;
+				this.advance();
+				paramName = s;
+			} else {
+				paramName = this.expectIdentifierOrString();
+			}
+			if(!Object.prototype.hasOwnProperty.call(defs.h,paramName) && (this.scopeVars == null || this.scopeVars.indexOf(paramName) == -1)) {
 				this.error("conditional parameter \"" + paramName + "\" does not have definition");
 			}
 			if(Object.prototype.hasOwnProperty.call(result.h,paramName)) {
@@ -8870,47 +8881,43 @@ bh_multianim_MacroManimParser.prototype = {
 					break;
 				case 9:
 					this.advance();
-					var val = this.expectIdentifierOrString();
+					var val = this.parseConditionalValue();
 					var paramDef = defs.h[paramName];
-					if(paramDef != null) {
-						var cv = this.stringToConditional(val,paramDef.type);
-						result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv);
-					} else {
-						result.h[paramName] = bh_multianim_ConditionalValues.CoNot(bh_multianim_ConditionalValues.CoStringValue(val));
-					}
+					var cv = paramDef != null ? this.stringToConditional(val,paramDef.type) : this.stringToConditionalGeneric(val);
+					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv);
 					break;
 				case 16:
 					this.advance();
 					result.h[paramName] = bh_multianim_ConditionalValues.CoAny;
 					break;
 				default:
-					var _g = this.tokens[this.tpos].type;
-					if(_g._hx_index == 31) {
-						var _g1 = _g.s;
-						var s = _g1;
-						if(bh_multianim_MacroManimParser.isKeyword(s,"greaterthanorequal")) {
+					var _g1 = this.tokens[this.tpos].type;
+					if(_g1._hx_index == 31) {
+						var _g2 = _g1.s;
+						var s1 = _g2;
+						if(bh_multianim_MacroManimParser.isKeyword(s1,"greaterthanorequal")) {
 							this.advance();
 							var val1 = this.parseAnything();
 							var value = bh_multianim_ConditionalValues.CoRange(this.resolveToFloat(val1),null,false,false);
 							result.h[paramName] = value;
 						} else {
-							var s1 = _g1;
-							if(bh_multianim_MacroManimParser.isKeyword(s1,"lessthanorequal")) {
+							var s2 = _g2;
+							if(bh_multianim_MacroManimParser.isKeyword(s2,"lessthanorequal")) {
 								this.advance();
 								var val2 = this.parseAnything();
 								var value1 = bh_multianim_ConditionalValues.CoRange(null,this.resolveToFloat(val2),false,false);
 								result.h[paramName] = value1;
 							} else {
-								var s2 = _g1;
-								if(bh_multianim_MacroManimParser.isKeyword(s2,"bit")) {
+								var s3 = _g2;
+								if(bh_multianim_MacroManimParser.isKeyword(s3,"bit")) {
 									this.advance();
 									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
 									var bitIndex = this.parseInteger();
 									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
 									result.h[paramName] = bh_multianim_ConditionalValues.CoFlag(1 << bitIndex);
 								} else {
-									var s3 = _g1;
-									if(bh_multianim_MacroManimParser.isKeyword(s3,"between")) {
+									var s4 = _g2;
+									if(bh_multianim_MacroManimParser.isKeyword(s4,"between")) {
 										this.advance();
 										var from = this.parseConditionalValue();
 										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot);
@@ -8931,7 +8938,8 @@ bh_multianim_MacroManimParser.prototype = {
 												var cv1 = this.stringToConditional(val3,paramDef1.type);
 												result.h[paramName] = cv1;
 											} else {
-												result.h[paramName] = bh_multianim_ConditionalValues.CoStringValue(val3);
+												var cv2 = this.stringToConditionalGeneric(val3);
+												result.h[paramName] = cv2;
 											}
 										}
 									}
@@ -8948,10 +8956,11 @@ bh_multianim_MacroManimParser.prototype = {
 						} else {
 							var paramDef2 = defs.h[paramName];
 							if(paramDef2 != null) {
-								var cv2 = this.stringToConditional(val4,paramDef2.type);
-								result.h[paramName] = cv2;
+								var cv3 = this.stringToConditional(val4,paramDef2.type);
+								result.h[paramName] = cv3;
 							} else {
-								result.h[paramName] = bh_multianim_ConditionalValues.CoStringValue(val4);
+								var cv21 = this.stringToConditionalGeneric(val4);
+								result.h[paramName] = cv21;
 							}
 						}
 					}
@@ -8994,14 +9003,10 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(bh_multianim_ConditionalValues.CoEnums(enums1));
 				} else {
-					var val9 = this.expectIdentifierOrString();
+					var val9 = this.parseConditionalValue();
 					var paramDef3 = defs.h[paramName];
-					if(paramDef3 != null) {
-						var cv3 = this.stringToConditional(val9,paramDef3.type);
-						result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv3);
-					} else {
-						result.h[paramName] = bh_multianim_ConditionalValues.CoNot(bh_multianim_ConditionalValues.CoStringValue(val9));
-					}
+					var cv4 = paramDef3 != null ? this.stringToConditional(val9,paramDef3.type) : this.stringToConditionalGeneric(val9);
+					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv4);
 				}
 				break;
 			default:
@@ -9096,6 +9101,14 @@ bh_multianim_MacroManimParser.prototype = {
 			} else {
 				return bh_multianim_ConditionalValues.CoStringValue(val);
 			}
+		}
+	}
+	,stringToConditionalGeneric: function(val) {
+		var n = Std.parseInt(val);
+		if(n != null) {
+			return bh_multianim_ConditionalValues.CoValue(n);
+		} else {
+			return bh_multianim_ConditionalValues.CoStringValue(val);
 		}
 	}
 	,resolveToFloat: function(rv) {
@@ -16940,6 +16953,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return false;
 				}
 				break;
+			case 1:
+				var val = currentValue.val;
+				if((val == null ? "null" : "" + val) != s) {
+					return false;
+				}
+				break;
 			case 4:
 				var sv = currentValue.s;
 				if(s != sv) {
@@ -19448,7 +19467,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3018, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3019, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -21533,7 +21552,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4966, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4967, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -21640,7 +21659,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5170, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5171, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -21674,7 +21693,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5186, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5187, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -26745,12 +26764,13 @@ var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__c
 	,UIChangeFloatValue: ($_=function(value) { return {_hx_index:4,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeFloatValue",$_.__params__ = ["value"],$_)
 	,UIChangeItem: ($_=function(index,items) { return {_hx_index:5,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeItem",$_.__params__ = ["index","items"],$_)
 	,UIDoubleClickItem: ($_=function(index,items) { return {_hx_index:6,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIDoubleClickItem",$_.__params__ = ["index","items"],$_)
-	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:7,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
-	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:8,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
-	,UIEntering: {_hx_name:"UIEntering",_hx_index:9,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UILeaving: {_hx_name:"UILeaving",_hx_index:10,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIClickItem: ($_=function(index,items) { return {_hx_index:7,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
+	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:8,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
+	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:9,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
+	,UIEntering: {_hx_name:"UIEntering",_hx_index:10,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UILeaving: {_hx_name:"UILeaving",_hx_index:11,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 };
-bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
+bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
 bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
@@ -27320,6 +27340,48 @@ bh_ui_UIMultiAnimDraggable.create = function(target) {
 bh_ui_UIMultiAnimDraggable.prototype = {
 	addDropZone: function(zone) {
 		this.dropZones.push(zone);
+		return this;
+	}
+	,addDropZoneFromSlot: function(id,slot,accepts) {
+		this.dropZones.push(new bh_ui_DropZone(id,slot.container.getBounds(),slot,null,null,accepts,null,function() {
+			return slot.container.getBounds();
+		},function() {
+			var x = 0;
+			var y = 0;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			return slot.container.localToGlobal(new h2d_col_PointImpl(x,y));
+		},null));
+		return this;
+	}
+	,addDropZonesFromSlots: function(baseName,builderResult,accepts) {
+		var _g = 0;
+		var _g1 = builderResult.slots;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			var _g2 = entry.key;
+			switch(_g2._hx_index) {
+			case 0:
+				var name = _g2.name;
+				if(name == baseName) {
+					this.addDropZoneFromSlot(baseName,entry.handle,accepts);
+				}
+				break;
+			case 1:
+				var name1 = _g2.name;
+				var index = _g2.index;
+				if(name1 == baseName) {
+					this.addDropZoneFromSlot(baseName + "_" + index,entry.handle,accepts);
+				}
+				break;
+			default:
+			}
+		}
 		return this;
 	}
 	,setReturnAnimPath: function(builder,name) {
@@ -28263,6 +28325,12 @@ var bh_ui_PanelSizeMode = $hxEnums["bh.ui.PanelSizeMode"] = { __ename__:true,__c
 };
 bh_ui_PanelSizeMode.__constructs__ = [bh_ui_PanelSizeMode.FixedScroll,bh_ui_PanelSizeMode.AutoSize];
 bh_ui_PanelSizeMode.__empty_constructs__ = [bh_ui_PanelSizeMode.FixedScroll,bh_ui_PanelSizeMode.AutoSize];
+var bh_ui_ClickMode = $hxEnums["bh.ui.ClickMode"] = { __ename__:true,__constructs__:null
+	,SingleClick: {_hx_name:"SingleClick",_hx_index:0,__enum__:"bh.ui.ClickMode",toString:$estr}
+	,DoubleClick: {_hx_name:"DoubleClick",_hx_index:1,__enum__:"bh.ui.ClickMode",toString:$estr}
+};
+bh_ui_ClickMode.__constructs__ = [bh_ui_ClickMode.SingleClick,bh_ui_ClickMode.DoubleClick];
+bh_ui_ClickMode.__empty_constructs__ = [bh_ui_ClickMode.SingleClick,bh_ui_ClickMode.DoubleClick];
 var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollbarBuilder,scrollbarInPanelName,width,height,items,topClearance,initialIndex,panelSizeMode) {
 	if(initialIndex == null) {
 		initialIndex = 0;
@@ -28280,6 +28348,7 @@ var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollba
 	this.items = [];
 	this.itemYPositions = new haxe_ds_IntMap();
 	this.displayItems = new haxe_ds_IntMap();
+	this.clickMode = bh_ui_ClickMode.DoubleClick;
 	this.wheelScrollMultiplier = 10;
 	this.doubleClickThreshold = 0.3;
 	this.scrollSpeedOverride = null;
@@ -28341,6 +28410,29 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		this.scrollbar = null;
 		this.scrollbarResult = null;
 		this.interactives = [];
+	}
+	,setItems: function(newItems,selectedIndex) {
+		if(selectedIndex == null) {
+			selectedIndex = 0;
+		}
+		this.set_currentHoverIndex(-1);
+		this.set_currentPressedIndex(-1);
+		this.items.length = 0;
+		var _g = 0;
+		while(_g < newItems.length) {
+			var item = newItems[_g];
+			++_g;
+			this.items.push(item);
+		}
+		if(this.panelSizeMode == bh_ui_PanelSizeMode.AutoSize) {
+			this.height = this.computeAutoSizeHeight(this.items);
+			this.mask.height = this.height;
+			this.panelResults = this.buildPanel();
+		}
+		this.mask.set_scrollY(0);
+		this.buildItems();
+		this.set_currentItemIndex(newItems.length > 0 ? selectedIndex : -1);
+		this.requestRedraw = true;
 	}
 	,buildPanel: function() {
 		var builtPanel = this.panelBuilder.builder;
@@ -28495,6 +28587,18 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 				_this.parent.removeChild(_this);
 			}
 		}
+		if(this.disabled) {
+			if(this.currentItemIndex != -1) {
+				var builtMultiItem = this.displayItems.h[this.currentItemIndex];
+				this.selectedItem = this.getBuiltItem(builtMultiItem,"normal",true,true).object;
+				this.mask.addChild(this.selectedItem);
+				var _this = this.selectedItem;
+				var v = this.itemYPositions.h[this.currentItemIndex];
+				_this.posChanged = true;
+				_this.y = v;
+			}
+			return;
+		}
 		var stateName = "normal";
 		if(this.currentHoverIndex == this.currentItemIndex) {
 			stateName = "hover";
@@ -28543,7 +28647,7 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			var button = _g.button;
 			if(newIndex != null) {
 				if(this.items[newIndex].disabled == null || this.items[newIndex].disabled == false) {
-					if(time - this.lastClick < this.doubleClickThreshold && this.lastClickIndex == newIndex) {
+					if(this.clickMode == bh_ui_ClickMode.DoubleClick && time - this.lastClick < this.doubleClickThreshold && this.lastClickIndex == newIndex) {
 						this.set_currentItemIndex(newIndex);
 						this.triggerItemChanged(newIndex,wrapper);
 						this.onItemDoubleClicked(newIndex,this.items,wrapper);
@@ -28562,6 +28666,10 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			if(newIndex == this.currentPressedIndex && this.currentItemIndex != newIndex) {
 				this.set_currentItemIndex(newIndex);
 				this.triggerItemChanged(newIndex,wrapper);
+				if(this.clickMode == bh_ui_ClickMode.SingleClick) {
+					this.onItemClicked(newIndex,this.items,wrapper);
+					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIClickItem(newIndex,this.items),this);
+				}
 			}
 			this.set_currentPressedIndex(-1);
 			this.hoverMode = true;
@@ -28653,6 +28761,8 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 	,onItemChanged: function(newIndex,items,wrapper) {
 	}
 	,onItemDoubleClicked: function(newIndex,items,wrapper) {
+	}
+	,onItemClicked: function(newIndex,items,wrapper) {
 	}
 	,__class__: bh_ui_UIMultiAnimScrollableList
 };
@@ -86451,7 +86561,7 @@ screens_ColorPickerDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototy
 				this.updatePreview();
 			}
 			break;
-		case 7:
+		case 8:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -86527,7 +86637,7 @@ screens_OkCancelDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,
 				this.getController().exitResponse = false;
 			}
 			break;
-		case 7:
+		case 8:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -86788,7 +86898,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 				}
 			}
 			break;
-		case 9:
+		case 10:
 			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
 				var wrapper = source;
 				if(this.statusText != null) {
@@ -86796,7 +86906,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 				}
 			}
 			break;
-		case 10:
+		case 11:
 			if(this.statusText != null) {
 				this.statusText.set_text("Click on any interactive region to see its id and metadata");
 			}
@@ -89407,7 +89517,7 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
-		case 8:
+		case 9:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -89892,7 +90002,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		var _gthis = this;
 		this.setupDemo("State Animations","Interactive exploration of .anim state machine animations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/state-anim.manim",false);
-		var generatedByMacroBuildWithParametersload4641Builder = function() {
+		var generatedByMacroBuildWithParametersload4597Builder = function() {
 			var animTabs;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -89911,7 +90021,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4641Builder();
+		var ui = generatedByMacroBuildWithParametersload4597Builder();
 		this.demoResult = ui.builderResults;
 		this.tabs = ui.animTabs;
 		this.addBuilderResult(this.demoResult);
@@ -89930,16 +90040,21 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 	}
 	,loadTabContent: function(index) {
 		this.tabs.beginTab(index);
-		switch(index) {
-		case 0:
-			this.loadGalleryTab();
-			break;
-		case 1:
-			this.loadInteractiveTab();
-			break;
-		case 2:
-			this.loadPointsTab();
-			break;
+		try {
+			switch(index) {
+			case 0:
+				this.loadGalleryTab();
+				break;
+			case 1:
+				this.loadInteractiveTab();
+				break;
+			case 2:
+				this.loadPointsTab();
+				break;
+			}
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g);
+			haxe_Log.trace("Error loading tab " + index + ": " + Std.string(e),{ fileName : "src/screens/animation/StateAnimDemoScreen.hx", lineNumber : 144, className : "screens.animation.StateAnimDemoScreen", methodName : "loadTabContent"});
 		}
 		this.tabs.endTab();
 	}
@@ -89956,7 +90071,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		if(this.interactiveBuilder == null) {
 			return;
 		}
-		var generatedByMacroBuildWithParametersloadInteractiveTab5752Builder = function() {
+		var generatedByMacroBuildWithParametersloadInteractiveTab5786Builder = function() {
 			var speedSlider;
 			var progressSlider;
 			var pauseChk;
@@ -90019,7 +90134,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadInteractiveTab5752Builder();
+		var ui = generatedByMacroBuildWithParametersloadInteractiveTab5786Builder();
 		this.interactiveResult = ui.builderResults;
 		this.speedSlider = ui.speedSlider;
 		this.extDrivenChk = ui.extDrivenChk;
@@ -90030,7 +90145,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		if(this.progressSlider != null) {
 			this.progressSlider.getObject().alpha = 0.3;
 		}
-		this.animList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS,null,0,160,200);
+		this.animList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS.slice(),null,0,160,200);
 		var _this = this.animList.getObject();
 		_this.posChanged = true;
 		_this.x = 260;
@@ -90150,7 +90265,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		if(this.pointsBuilder == null) {
 			return;
 		}
-		var generatedByMacroBuildWithParametersloadPointsTab9695Builder = function() {
+		var generatedByMacroBuildWithParametersloadPointsTab9797Builder = function() {
 			var ptsLeftChk;
 			var _gthis1 = _gthis.pointsBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -90169,7 +90284,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadPointsTab9695Builder();
+		var ui = generatedByMacroBuildWithParametersloadPointsTab9797Builder();
 		this.pointsResult = ui.builderResults;
 		this.ptsLeftChk = ui.ptsLeftChk;
 		this.addBuilderResult(this.pointsResult);
@@ -90180,14 +90295,13 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		_this.posChanged = true;
 		_this.y = 55;
 		this.addElement(this.ptsSourceList,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.ptsAnimListContainer = new h2d_Object();
-		var _this = this.ptsAnimListContainer;
+		this.ptsAnimList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS.slice(),null,0,160,120);
+		var _this = this.ptsAnimList.getObject();
 		_this.posChanged = true;
 		_this.x = 430;
 		_this.posChanged = true;
 		_this.y = 55;
-		this.addObjectToLayer(this.ptsAnimListContainer,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.rebuildAnimList(screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS);
+		this.addElement(this.ptsAnimList,bh_ui_screens_LayersEnum.DefaultLayer);
 		this.pointsGraphics = new h2d_Graphics();
 		this.addObjectToLayer(this.pointsGraphics,bh_ui_screens_LayersEnum.DefaultLayer);
 		this.ptsMarineR = bh_multianim_MultiAnimParser_asStateAnim(this.pointsResult.getSingleItemByName("marineR"));
@@ -90208,19 +90322,6 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		this.setupPointsAnimEvents(this.ptsShieldL);
 		this.setupPointsAnimEvents(this.ptsTurret);
 		this.setupPointsAnimEvents(this.ptsArrows);
-	}
-	,rebuildAnimList: function(items) {
-		if(this.ptsAnimList != null) {
-			this.removeElement(this.ptsAnimList);
-			var _this = this.ptsAnimList.getObject();
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-			this.ptsAnimList = null;
-		}
-		this.ptsAnimList = this.addScrollableListWithSingleBuilder(this.stdBuilder,"list-panel","list-item-120","scrollbar","scrollbar",items,null,0,160,120);
-		this.addElement(this.ptsAnimList,null);
-		this.ptsAnimListContainer.addChild(this.ptsAnimList.getObject());
 	}
 	,setupPointsAnimEvents: function(anim) {
 		var _gthis = this;
@@ -90270,7 +90371,9 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 	}
 	,switchPointsSource: function(sourceIdx) {
 		this.ptsCurrentSource = sourceIdx;
-		this.rebuildAnimList(screens_animation_StateAnimDemoScreen.SOURCE_ANIM_ITEMS[sourceIdx]);
+		if(this.ptsAnimList != null) {
+			this.ptsAnimList.setItems(screens_animation_StateAnimDemoScreen.SOURCE_ANIM_ITEMS[sourceIdx].slice());
+		}
 		var hasDir = screens_animation_StateAnimDemoScreen.SOURCE_HAS_DIRECTION[sourceIdx];
 		if(this.ptsLeftChk != null) {
 			this.ptsLeftChk.getObject().alpha = hasDir ? 1.0 : 0.3;
@@ -90535,7 +90638,6 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		this.ptsLeftChk = null;
 		this.ptsSourceList = null;
 		this.ptsAnimList = null;
-		this.ptsAnimListContainer = null;
 		this.eventLog = [];
 		DemoScreenBase.prototype.onClear.call(this);
 	}
@@ -91240,7 +91342,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		var _gthis = this;
 		this.setupDemo("Inventory Grid","Shop, inventory & equipment with drag-drop, gold & weight");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/inventory.manim",false);
-		var generatedByMacroBuildWithParametersload3106Builder = function() {
+		var generatedByMacroBuildWithParametersload2163Builder = function() {
 			var resetBtn;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -91259,7 +91361,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload3106Builder();
+		var ui = generatedByMacroBuildWithParametersload2163Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.addBuilderResult(this.demoResult);
@@ -91331,11 +91433,10 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		ps.clear();
 		ps.setParameter("state","normal");
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-		while(_g < _g1.length) {
-			var eq = _g1[_g];
-			++_g;
-			var s = this.demoResult.getSlot(eq.name);
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var s = this.equipSlot(i);
 			s.data = null;
 			s.clear();
 			s.setParameter("state","normal");
@@ -91375,8 +91476,8 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,shopSlot: function(idx) {
 		return this.demoResult.getSlot("shop",idx);
 	}
-	,equipSlot: function(name) {
-		return this.demoResult.getSlot(name);
+	,equipSlot: function(idx) {
+		return this.demoResult.getSlot("equip",idx);
 	}
 	,invWeight: function() {
 		var w = 0;
@@ -91396,11 +91497,10 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,equipWeight: function() {
 		var w = 0;
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-		while(_g < _g1.length) {
-			var eq = _g1[_g];
-			++_g;
-			var s = this.equipSlot(eq.name);
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var s = this.equipSlot(i);
 			if(s.isOccupied()) {
 				var def = this.itemDef(s.data);
 				if(def != null) {
@@ -91456,34 +91556,31 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,equipCount: function() {
 		var n = 0;
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-		while(_g < _g1.length) {
-			var eq = _g1[_g];
-			++_g;
-			if(this.equipSlot(eq.name).isOccupied()) {
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.equipSlot(i).isOccupied()) {
 				++n;
 			}
 		}
 		return n;
 	}
-	,invSlotScreenX: function(idx) {
-		return 30 + idx % 4 * 58;
-	}
-	,invSlotScreenY: function(idx) {
-		return 225 + (idx / 4 | 0) * 58;
-	}
-	,equipScreenX: function(eq) {
-		return 340 + eq.dx;
-	}
-	,equipScreenY: function(eq) {
-		return 225 + eq.dy;
+	,slotScreenPos: function(slot) {
+		var x = 0;
+		var y = 0;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		return slot.container.localToGlobal(new h2d_col_PointImpl(x,y));
 	}
 	,isEquipZone: function(zoneId) {
-		return StringTools.startsWith(zoneId,"eq_");
+		return StringTools.startsWith(zoneId,"equip_");
 	}
-	,getInvZoneIdx: function(zoneId) {
-		var parts = zoneId.split("_");
-		return Std.parseInt(parts[1]);
+	,zoneIdx: function(zoneId) {
+		return Std.parseInt(zoneId.split("_").pop());
 	}
 	,rebuildAllDraggables: function() {
 		var _g = 0;
@@ -91495,16 +91592,12 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		}
 		this.draggables = [];
 		this.stockShop();
-		this.setupShopDraggable(0);
-		this.setupShopDraggable(1);
-		this.setupShopDraggable(2);
-		this.setupShopDraggable(3);
-		this.setupShopDraggable(4);
-		this.setupShopDraggable(5);
-		this.setupShopDraggable(6);
-		this.setupShopDraggable(7);
-		this.setupShopDraggable(8);
-		this.setupShopDraggable(9);
+		var _g = 0;
+		var _g1 = screens_gamelike_InventoryDemoScreen.ITEMS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			this.setupShopDraggable(i);
+		}
 		if(this.playerSlot(0).isOccupied()) {
 			this.setupInvDraggable(0);
 		}
@@ -91542,10 +91635,10 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			this.setupInvDraggable(11);
 		}
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS.length;
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
 		while(_g < _g1) {
-			var eqIdx = _g++;
-			this.setupEquipDraggable(eqIdx);
+			var i = _g++;
+			this.setupEquipDraggable(i);
 		}
 	}
 	,makeDraggable: function(content) {
@@ -91557,44 +91650,15 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		drag.returnToOrigin = true;
 		return drag;
 	}
-	,addInvDropZones: function(drag) {
-		var _g = 0;
-		while(_g < 12) {
-			var i = _g++;
-			var slot = this.playerSlot(i);
-			var x = this.invSlotScreenX(i);
-			var y = this.invSlotScreenY(i);
-			var b = new h2d_col_Bounds();
-			b.xMin = x;
-			b.yMin = y;
-			b.xMax = x + 52;
-			b.yMax = y + 52;
-			drag.addDropZone(new bh_ui_DropZone("p_" + i,b,slot,x,y,null,null,null,null,null));
-		}
-	}
-	,addEquipDropZones: function(drag,itemKey) {
+	,addDropZones: function(drag,itemKey) {
+		var _gthis = this;
+		drag.addDropZonesFromSlots("inv",this.demoResult);
 		var def = this.itemDef(itemKey);
-		if(def == null || def.equip == "") {
-			return;
-		}
-		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-		while(_g < _g1.length) {
-			var eq = _g1[_g];
-			++_g;
-			if(eq.accepts != def.equip) {
-				continue;
-			}
-			var slot = this.equipSlot(eq.name);
-			var x = this.equipScreenX(eq);
-			var y = this.equipScreenY(eq);
-			var _g2 = eq.name;
-			var b = new h2d_col_Bounds();
-			b.xMin = x;
-			b.yMin = y;
-			b.xMax = x + 52;
-			b.yMax = y + 52;
-			drag.addDropZone(new bh_ui_DropZone(_g2,b,slot,x,y,null,null,null,null,null));
+		if(def != null && def.equip != "") {
+			drag.addDropZonesFromSlots("equip",this.demoResult,function(d,zone) {
+				var idx = _gthis.zoneIdx(zone.id);
+				return screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS[idx] == def.equip;
+			});
 		}
 	}
 	,setupZoneHighlighting: function(drag,itemKey) {
@@ -91608,23 +91672,16 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 					z.slot.setParameter("state","highlight");
 				}
 			}
-			var _g = 0;
-			var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-			while(_g < _g1.length) {
-				var eq = _g1[_g];
-				++_g;
-				var isValid = false;
-				var _g2 = 0;
-				while(_g2 < zones.length) {
-					var z = zones[_g2];
-					++_g2;
-					if(z.id == eq.name) {
-						isValid = true;
-						break;
+			var def = _gthis.itemDef(itemKey);
+			if(def != null) {
+				var _g = 0;
+				var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
+				while(_g < _g1) {
+					var i = _g++;
+					if(screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS[i] == def.equip) {
+						continue;
 					}
-				}
-				if(!isValid) {
-					var s = _gthis.equipSlot(eq.name);
+					var s = _gthis.equipSlot(i);
 					if(s.isEmpty()) {
 						s.setParameter("state","unavailable");
 					}
@@ -91651,8 +91708,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			return;
 		}
 		var drag = this.makeDraggable(content);
-		this.addInvDropZones(drag);
-		this.addEquipDropZones(drag,itemKey);
+		this.addDropZones(drag,itemKey);
 		this.setupZoneHighlighting(drag,itemKey);
 		drag.onDragDrop = function(result,wrapper) {
 			if(result.zone == null) {
@@ -91691,8 +91747,9 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 		};
+		var p = this.slotScreenPos(slot);
 		this.draggables.push(drag);
-		this.addElementWithPos(drag,30 + shopIdx * 56,100,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addElementWithPos(drag,p.x,p.y,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,setupInvDraggable: function(slotIdx) {
 		var _gthis = this;
@@ -91706,8 +91763,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		}
 		var itemKey = slot.data;
 		var drag = this.makeDraggable(content);
-		this.addInvDropZones(drag);
-		this.addEquipDropZones(drag,itemKey);
+		this.addDropZones(drag,itemKey);
 		this.setupZoneHighlighting(drag,itemKey);
 		drag.onDragDrop = function(result,wrapper) {
 			if(result.zone == null) {
@@ -91738,7 +91794,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 					_gthis.setLog("Equipped " + def.name);
 				}
 			} else {
-				var tgtIdx = _gthis.getInvZoneIdx(result.zone.id);
+				var tgtIdx = _gthis.zoneIdx(result.zone.id);
 				if(tgtIdx == slotIdx) {
 					return false;
 				}
@@ -91770,13 +91826,13 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 		};
+		var p = this.slotScreenPos(slot);
 		this.draggables.push(drag);
-		this.addElementWithPos(drag,this.invSlotScreenX(slotIdx),this.invSlotScreenY(slotIdx),bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addElementWithPos(drag,p.x,p.y,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,setupEquipDraggable: function(eqIdx) {
 		var _gthis = this;
-		var eq = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS[eqIdx];
-		var slot = this.equipSlot(eq.name);
+		var slot = this.equipSlot(eqIdx);
 		if(slot.isEmpty()) {
 			return;
 		}
@@ -91786,10 +91842,10 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		}
 		var itemKey = slot.data;
 		var drag = this.makeDraggable(content);
-		this.addInvDropZones(drag);
-		this.addEquipDropZones(drag,itemKey);
+		this.addDropZones(drag,itemKey);
 		this.setupZoneHighlighting(drag,itemKey);
-		var srcName = eq.name;
+		var srcZoneId = "equip_" + eqIdx;
+		var srcAccepts = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS[eqIdx];
 		drag.onDragDrop = function(result,wrapper) {
 			if(result.zone == null) {
 				return false;
@@ -91803,7 +91859,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return false;
 			}
 			if(_gthis.isEquipZone(result.zone.id)) {
-				if(result.zone.id == srcName) {
+				if(result.zone.id == srcZoneId) {
 					return false;
 				}
 				if(tgtSlot.isOccupied()) {
@@ -91824,7 +91880,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			} else if(tgtSlot.isOccupied()) {
 				var otherKey = tgtSlot.data;
 				var otherDef = _gthis.itemDef(otherKey);
-				if(otherDef == null || otherDef.equip != eq.accepts) {
+				if(otherDef == null || otherDef.equip != srcAccepts) {
 					_gthis.setLog("Can't swap: " + (otherDef != null ? otherDef.name : "?") + " can't be equipped here");
 					return false;
 				}
@@ -91852,8 +91908,9 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 		};
+		var p = this.slotScreenPos(slot);
 		this.draggables.push(drag);
-		this.addElementWithPos(drag,this.equipScreenX(eq),this.equipScreenY(eq),bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addElementWithPos(drag,p.x,p.y,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,refreshUI: function() {
 		if(this.demoResult == null) {
@@ -91865,7 +91922,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.demoResult.getUpdatable("goldText").updateText("" + this.gold);
 		this.demoResult.getUpdatable("weightText").updateText("" + tw + " / " + 60 + " kg");
 		this.demoResult.getUpdatable("playerWeightText").updateText("Weight: " + tw + " / " + 60 + " kg");
-		this.demoResult.getUpdatable("playerCountText").updateText("Items: " + ic + " / " + 12 + "  Equipped: " + ec + " / " + screens_gamelike_InventoryDemoScreen.EQUIP_DEFS.length);
+		this.demoResult.getUpdatable("playerCountText").updateText("Items: " + ic + " / " + 12 + "  Equipped: " + ec + " / " + screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length);
 		this.updateSlotStates();
 	}
 	,updateSlotStates: function() {
@@ -91896,11 +91953,10 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			slot.setParameter("state",disabled ? "disabled" : "normal");
 		}
 		var _g = 0;
-		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_DEFS;
-		while(_g < _g1.length) {
-			var eq = _g1[_g];
-			++_g;
-			var s = this.equipSlot(eq.name);
+		var _g1 = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var s = this.equipSlot(i);
 			if(s.isOccupied()) {
 				continue;
 			}
@@ -92176,7 +92232,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 			break;
-		case 9:
+		case 10:
 			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
 				var wrapper = source;
 				var nodeIdx = Std.parseInt(wrapper.id);
@@ -92185,7 +92241,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 			break;
-		case 10:
+		case 11:
 			this.clearHover();
 			this.updateInfoText("Hover over equipment to see details");
 			break;
@@ -92795,7 +92851,7 @@ screens_layout_FlowLayoutDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		var _gthis = this;
 		this.setupDemo("Flow Layout","Flow containers with vertical, horizontal, stack layouts and overflow modes");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/layout/flow-layout.manim",false);
-		var generatedByMacroBuildWithParametersload824Builder = function() {
+		var generatedByMacroBuildWithParametersload716Builder = function() {
 			var countSlider;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -92814,14 +92870,9 @@ screens_layout_FlowLayoutDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload824Builder();
+		var ui = generatedByMacroBuildWithParametersload716Builder();
 		this.controlsResult = ui.builderResults;
 		this.countSlider = ui.countSlider;
-		var _this = this.controlsResult.object;
-		_this.posChanged = true;
-		_this.x = 40;
-		_this.posChanged = true;
-		_this.y = 80;
 		this.addBuilderResult(this.controlsResult);
 		this.buildShowcase(3);
 	}
@@ -92836,11 +92887,6 @@ screens_layout_FlowLayoutDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		var _g = new haxe_ds_StringMap();
 		_g.h["count"] = count;
 		this.showcaseResult = tmp.buildWithParameters("flowLayoutShowcase",_g);
-		var _this = this.showcaseResult.object;
-		_this.posChanged = true;
-		_this.x = 40;
-		_this.posChanged = true;
-		_this.y = 130;
 		this.addBuilderResult(this.showcaseResult);
 	}
 	,onScreenEvent: function(event,source) {
@@ -94003,7 +94049,7 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.openDialog("dialog2","Are you sure you want to confirm?");
 			}
 			break;
-		case 8:
+		case 9:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -95611,7 +95657,7 @@ screens_animation_StateAnimDemoScreen.SOURCE_ANIMS = [screens_animation_StateAni
 screens_animation_StateAnimDemoScreen.SOURCE_ANIM_ITEMS = [screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.SHIELD_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.TURRET_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.ARROWS_ANIM_ITEMS];
 screens_animation_StateAnimDemoScreen.SOURCE_HAS_DIRECTION = [true,true,false,false];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
-screens_gamelike_InventoryDemoScreen.EQUIP_DEFS = [{ name : "eq_head", accepts : "head", dx : 58, dy : 0},{ name : "eq_larm", accepts : "arm", dx : 0, dy : 66},{ name : "eq_armor", accepts : "armor", dx : 58, dy : 66},{ name : "eq_rarm", accepts : "arm", dx : 116, dy : 66},{ name : "eq_legs", accepts : "legs", dx : 58, dy : 132}];
+screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS = ["head","arm","armor","arm","legs"];
 screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];
 screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Helm","Plate","Axe","Aegis","Boots","Gloves","Bow","Signet","Staff","Tome","Scroll","Gem"];
 screens_gamelike_SkillTreeDemoScreen.PATH_NAMES = ["WAR","ROG","MAG"];

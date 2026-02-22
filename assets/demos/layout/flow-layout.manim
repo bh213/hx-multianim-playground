@@ -7,6 +7,7 @@ version: 0.5
 }
 
 #flowControls programmable() {
+  pos: 40, 80
   text(m6x11, "Flow item count:", #cccccc, left, 200): 0, 0
   #countText(updatable) text(m6x11, "3", #7fdbda, left, 50): 140, 0
 
@@ -20,6 +21,7 @@ version: 0.5
 }
 
 #flowLayoutShowcase programmable(count: 0..5 = 3) {
+  pos: 40, 130
   // Section 1: Basic layouts
   text(exo2_16, "Vertical layout:", #cccccc): 0, 0
 

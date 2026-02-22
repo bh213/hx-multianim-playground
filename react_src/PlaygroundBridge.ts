@@ -3,6 +3,18 @@ import { getFileContent, fileExists } from './fileLoader';
 
 export const CATEGORIES: CategoryInfo[] = [
     {
+        name: 'Advanced Features',
+        screens: [
+            { name: 'featureShowcase', displayName: 'Feature Showcase', category: 'Advanced Features', manimFile: 'demos/advanced/feature-showcase.manim' },
+            { name: 'incremental', displayName: 'Incremental', category: 'Advanced Features', manimFile: 'demos/advanced/incremental.manim' },
+            { name: 'interactives', displayName: 'Interactives', category: 'Advanced Features', manimFile: 'demos/advanced/interactives.manim' },
+            { name: 'conditionals', displayName: 'Conditionals', category: 'Advanced Features', manimFile: 'demos/advanced/conditionals.manim' },
+            { name: 'expressions', displayName: 'Expressions', category: 'Advanced Features', manimFile: 'demos/advanced/expressions.manim' },
+            { name: 'settings', displayName: 'Settings', category: 'Advanced Features', manimFile: 'demos/advanced/settings.manim' },
+            { name: 'macroPerformance', displayName: 'Macro Performance', category: 'Advanced Features', manimFile: 'demos/advanced/macro-performance.manim' },
+        ]
+    },
+    {
         name: 'UI Components',
         screens: [
             { name: 'buttons', displayName: 'Buttons', category: 'UI Components', manimFile: 'demos/ui/buttons-demo.manim' },
@@ -58,18 +70,6 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },
             { name: 'statusEffects', displayName: 'Status Effects', category: 'Game-Like Demos', manimFile: 'demos/gamelike/status-effects.manim' },
-        ]
-    },
-    {
-        name: 'Advanced Features',
-        screens: [
-            { name: 'incremental', displayName: 'Incremental', category: 'Advanced Features', manimFile: 'demos/advanced/incremental.manim' },
-            { name: 'interactives', displayName: 'Interactives', category: 'Advanced Features', manimFile: 'demos/advanced/interactives.manim' },
-            { name: 'conditionals', displayName: 'Conditionals', category: 'Advanced Features', manimFile: 'demos/advanced/conditionals.manim' },
-            { name: 'expressions', displayName: 'Expressions', category: 'Advanced Features', manimFile: 'demos/advanced/expressions.manim' },
-            { name: 'settings', displayName: 'Settings', category: 'Advanced Features', manimFile: 'demos/advanced/settings.manim' },
-            { name: 'macroPerformance', displayName: 'Macro Performance', category: 'Advanced Features', manimFile: 'demos/advanced/macro-performance.manim' },
-            { name: 'featureShowcase', displayName: 'Feature Showcase', category: 'Advanced Features', manimFile: 'demos/advanced/feature-showcase.manim' },
         ]
     }
 ];

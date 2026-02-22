@@ -1,67 +1,95 @@
 version: 0.5
 
 // Settings Demo
-// Shows settings{key:type=>value} usage in components
+// Two use cases: .manim styling configures code | .manim info flows back to code
 
-#settingsDemo programmable() {
-    pos: 50, 140
+// === Panel variants — same role, different settings ===
+// The Haxe code reads width/height/gap to lay out 3 instances.
 
-    text(exo2_16, "Settings Configuration", #7fdbda, left, 400): 0, 0
-    text(exo2_light_14, "Components can declare settings{} blocks with typed key=>value pairs.", #aaaaaa, left, 700): 0, 30
-
-    // Explain settings syntax
-    text(m6x11, "Settings are metadata attached to .manim components:", #cccccc, left, 500): 0, 80
-    text(m6x11, "  settings{key:type=>value}", #7fdbda, left, 400): 0, 100
-    text(m6x11, "  Types: string, int, float, bool", #aaaaaa, left, 400): 0, 120
-
-    // Theme selector buttons
-    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnDark")) {
-        pos: 0, 520
-    }
-    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnLight")) {
-        pos: 120, 520
-    }
-    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBlue")) {
-        pos: 240, 520
-    }
+#panelCompact programmable() {
+    ninepatch("ui", "Window_3x3_idle", 180, 70): 0, 0
+    text(exo2_14, "Compact", #7fdbda): 12, 10
+    text(m6x11, "180 x 70", #888888): 12, 32
+    text(m5x7, "gap: 10", #666666): 12, 50
+    settings{width:int => 180, height:int => 70, gap:int => 10, category => "compact"}
 }
 
-#settingsExamples programmable() {
-    // Example 1: Component with string settings
-    text(m6x11, "Example 1: String settings", #cccccc, left, 400): 0, 0
+#panelWide programmable() {
+    ninepatch("ui", "Window_3x3_idle", 220, 55): 0, 0
+    text(exo2_14, "Wide", #7fdbda): 12, 6
+    text(m6x11, "220 x 55", #888888): 12, 28
+    text(m5x7, "gap: 15", #666666): 120, 6
+    settings{width:int => 220, height:int => 55, gap:int => 15, category => "banner"}
+}
+
+#panelTall programmable() {
+    ninepatch("ui", "Window_3x3_idle", 110, 130): 0, 0
+    text(exo2_14, "Tall", #7fdbda): 12, 10
+    text(m6x11, "110 x 130", #888888): 12, 32
+    text(m5x7, "gap: 8", #666666): 12, 50
+    settings{width:int => 110, height:int => 130, gap:int => 8, category => "sidebar"}
+}
+
+// === Main layout ===
+
+#settingsDemo programmable() {
+    pos: 50, 80
+
+    // Section 1: Syntax reference
+    text(exo2_16, "Settings Syntax", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "settings{key:type => value} — typed metadata readable by Haxe code.", #aaaaaa, left, 700): 0, 30
+
     point {
-        pos: 0, 20
-        bitmap(generated(color(300, 40, #222233))): 0, 0
-        text(m6x11, "theme => dark", #ffffff, left, 280): 10, 12
-        settings{theme => "dark"}
+        pos: 0, 55
+        bitmap(generated(color(165, 36, #222233))): 0, 0
+        text(m5x7, "string", #666666): 8, 3
+        text(m6x11, "category => \"ui\"", #7fdbda): 8, 14
+
+        bitmap(generated(color(165, 36, #222233))): 175, 0
+        text(m5x7, "int", #666666): 183, 3
+        text(m6x11, "width:int => 180", #7fdbda): 183, 14
+
+        bitmap(generated(color(165, 36, #222233))): 350, 0
+        text(m5x7, "float", #666666): 358, 3
+        text(m6x11, "speed:float => 2.5", #7fdbda): 358, 14
+
+        bitmap(generated(color(165, 36, #222233))): 525, 0
+        text(m5x7, "color", #666666): 533, 3
+        text(m6x11, "bg:color => #1a1a2e", #7fdbda): 533, 14
     }
 
-    // Example 2: Component with int settings
-    text(m6x11, "Example 2: Integer settings", #cccccc, left, 400): 0, 80
-    point {
-        pos: 0, 100
-        bitmap(generated(color(300, 40, #222233))): 0, 0
-        text(m6x11, "width:int => 200, height:int => 100", #ffffff, left, 280): 10, 12
-        settings{width:int => 200}
-        settings{height:int => 100}
+    // Section 2: Settings-driven layout
+    text(exo2_16, "Settings-Driven Layout", #7fdbda): 0, 115
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 137
+    text(exo2_light_14, "Same code builds 3 panels. It reads width/height/gap from settings to position them.", #aaaaaa, left, 700): 0, 143
+
+    // Variant buttons
+    placeholder(generated(cross(90, 30, #FF0000)), builderParameter("btnCompact")) {
+        pos: 0, 170
+        settings{width:int => 90, height:int => 28}
+    }
+    placeholder(generated(cross(90, 30, #FF0000)), builderParameter("btnWide")) {
+        pos: 100, 170
+        settings{width:int => 90, height:int => 28}
+    }
+    placeholder(generated(cross(90, 30, #FF0000)), builderParameter("btnTall")) {
+        pos: 200, 170
+        settings{width:int => 90, height:int => 28}
     }
 
-    // Example 3: Component with float settings
-    text(m6x11, "Example 3: Float settings", #cccccc, left, 400): 0, 160
-    point {
-        pos: 0, 180
-        bitmap(generated(color(300, 40, #222233))): 0, 0
-        text(m6x11, "scrollSpeed:float => 2.5", #ffffff, left, 280): 10, 12
-        settings{scrollSpeed:float => 2.5}
-    }
+    // Container — Haxe code adds panel instances here
+    #panelContainer point: 0, 210
 
-    // Example 4: Multiple settings on one component
-    text(m6x11, "Example 4: Combined settings", #cccccc, left, 400): 0, 240
-    point {
-        pos: 0, 260
-        bitmap(generated(color(300, 60, #222233))): 0, 0
-        text(m6x11, "transitionTimer:float => 0.3", #ffffff, left, 280): 10, 8
-        text(m6x11, "autoClose => true", #ffffff, left, 280): 10, 28
-        settings{transitionTimer:float => 0.3}
-    }
+    // Inspector — shows what settings the code read
+    ninepatch("ui", "Window_3x3_idle", 300, 120): 0, 365
+    text(exo2_14, "Settings Read by Code", #7fdbda): 15, 375
+    #inspWidth(updatable) text(m6x11, "width: 180", #cccccc, left, 270): 15, 398
+    #inspHeight(updatable) text(m6x11, "height: 70", #cccccc, left, 270): 15, 415
+    #inspGap(updatable) text(m6x11, "gap: 10", #cccccc, left, 270): 15, 432
+    #inspCategory(updatable) text(m6x11, "category: \"compact\"", #cccccc, left, 270): 15, 449
+    text(m5x7, "rootSettings.getIntOrDefault() / getStringOrDefault()", #888, left, 280): 15, 472
+
+    // Layout result info
+    #logText(updatable) text(exo2_light_14, "Click a variant to see settings drive layout.", #666666): 0, 500
 }

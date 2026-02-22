@@ -5,54 +5,82 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
-import bh.base.FontManager;
 
 class SettingsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
-	var settingsResult:Null<BuilderResult>;
-	var statusText:Null<h2d.Text>;
-	var themeButtons:Array<UIStandardMultiAnimButton> = [];
-	var currentTheme:String = "dark";
+	var variantButtons:Array<UIStandardMultiAnimButton> = [];
+	var panelContainer:Null<h2d.Object>;
+	var currentPanels:Array<h2d.Object> = [];
+
+	static final PANEL_NAMES = ["panelCompact", "panelWide", "panelTall"];
+	static final PANEL_LABELS = ["Compact", "Wide", "Tall"];
 
 	override public function load():Void {
-		setupDemo("Settings", "Settings configuration demo: shows settings{key:type=>value} usage");
+		setupDemo("Settings", "settings{} metadata configures code behavior — same code, different layout");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/advanced/settings.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "settingsDemo", [], [
-			btnDark => addButtonWithSingleBuilder(commonBuilder, "backButton", "dark"),
-			btnLight => addButtonWithSingleBuilder(commonBuilder, "backButton", "light"),
-			btnBlue => addButtonWithSingleBuilder(commonBuilder, "backButton", "blue"),
+			btnCompact => addButtonWithSingleBuilder(stdBuilder, "button", "Compact"),
+			btnWide => addButtonWithSingleBuilder(stdBuilder, "button", "Wide"),
+			btnTall => addButtonWithSingleBuilder(stdBuilder, "button", "Tall"),
 		]);
 
 		demoResult = ui.builderResults;
-		themeButtons = [ui.btnDark, ui.btnLight, ui.btnBlue];
+		variantButtons = [ui.btnCompact, ui.btnWide, ui.btnTall];
 		addBuilderResult(demoResult);
 
-		// Build settings component examples (separate element, no interactive controls)
-		settingsResult = demoBuilder.buildWithParameters("settingsExamples", []);
-		settingsResult.object.setPosition(50, 300);
-		addBuilderResult(settingsResult);
+		panelContainer = demoResult.getSingleItemByName("panelContainer").object.toh2dObject();
+		currentPanels = [];
 
-		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = 'Theme: $currentTheme';
-		statusText.textColor = 0xCCCCCC;
-		statusText.setPosition(50, 630);
-		addObjectToLayer(statusText, DefaultLayer);
+		setVariant(0);
+	}
 
+	function setVariant(index:Int):Void {
+		// Clear previous panels
+		for (p in currentPanels)
+			p.remove();
+		currentPanels = [];
+
+		final panelName = PANEL_NAMES[index];
+
+		// Build first instance to read its settings
+		final first = demoBuilder.buildWithParameters(panelName, []);
+		final s = first.rootSettings;
+		final width = s.getIntOrDefault("width", 100);
+		final height = s.getIntOrDefault("height", 100);
+		final gap = s.getIntOrDefault("gap", 10);
+		final category = s.getStringOrDefault("category", "?");
+
+		// Place first panel
+		panelContainer.addChild(first.object);
+		currentPanels.push(first.object);
+
+		// Build 2 more, positioned using settings-driven layout
+		for (i in 1...3) {
+			final instance = demoBuilder.buildWithParameters(panelName, []);
+			instance.object.setPosition(i * (width + gap), 0);
+			panelContainer.addChild(instance.object);
+			currentPanels.push(instance.object);
+		}
+
+		// Update inspector with the settings the code just used
+		demoResult.getUpdatable("inspWidth").updateText('width: $width');
+		demoResult.getUpdatable("inspHeight").updateText('height: $height');
+		demoResult.getUpdatable("inspGap").updateText('gap: $gap');
+		demoResult.getUpdatable("inspCategory").updateText('category: "$category"');
+
+		final total = 3 * width + 2 * gap;
+		demoResult.getUpdatable("logText").updateText('${PANEL_LABELS[index]}: 3 x ${width}px + ${gap}px gap = ${total}px total');
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				for (i in 0...themeButtons.length) {
-					if (source == themeButtons[i]) {
-						final themes = ["dark", "light", "blue"];
-						currentTheme = themes[i];
-						if (statusText != null) {
-							statusText.text = 'Theme: $currentTheme';
-						}
+				for (i in 0...variantButtons.length) {
+					if (source == variantButtons[i]) {
+						setVariant(i);
 						return;
 					}
 				}
@@ -64,8 +92,8 @@ class SettingsDemoScreen extends DemoScreenBase {
 		super.onClear();
 		demoBuilder = null;
 		demoResult = null;
-		settingsResult = null;
-		statusText = null;
-		themeButtons = [];
+		variantButtons = [];
+		panelContainer = null;
+		currentPanels = [];
 	}
 }

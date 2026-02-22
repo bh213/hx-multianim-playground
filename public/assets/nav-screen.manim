@@ -1,0 +1,96 @@
+version: 0.5
+
+// NavScreen layout — positions, info panel, control buttons
+// Carousel visual and particles are built separately, positioned via layouts
+
+relativeLayouts {
+    // Component positions (carousel visual, particle center)
+    #positions list {
+        point: 40, 42
+        point: 310, 200
+    }
+
+    // Category header positions
+    #catHeaders list {
+        point: 40, 310
+        point: 40, 368
+        point: 40, 458
+        point: 40, 516
+        point: 40, 574
+        point: 40, 632
+    }
+
+    // All 44 nav card positions (colWidth=155, spacingX=5, 7 per row)
+    #navCards list {
+        // Advanced Features (7)
+        point: 40, 330
+        point: 200, 330
+        point: 360, 330
+        point: 520, 330
+        point: 680, 330
+        point: 840, 330
+        point: 1000, 330
+        // UI Components (10, wraps to 2 rows)
+        point: 40, 388
+        point: 200, 388
+        point: 360, 388
+        point: 520, 388
+        point: 680, 388
+        point: 840, 388
+        point: 1000, 388
+        point: 40, 420
+        point: 200, 420
+        point: 360, 420
+        // Layout & Composition (6)
+        point: 40, 478
+        point: 200, 478
+        point: 360, 478
+        point: 520, 478
+        point: 680, 478
+        point: 840, 478
+        // Graphics & Rendering (4)
+        point: 40, 536
+        point: 200, 536
+        point: 360, 536
+        point: 520, 536
+        // Animation & Effects (6)
+        point: 40, 594
+        point: 200, 594
+        point: 360, 594
+        point: 520, 594
+        point: 680, 594
+        point: 840, 594
+        // Game-Like Demos (7)
+        point: 40, 652
+        point: 200, 652
+        point: 360, 652
+        point: 520, 652
+        point: 680, 652
+        point: 840, 652
+        point: 1000, 652
+    }
+}
+
+#navLayout programmable() {
+    // Title
+    text(exo2_black_30, "hx-multianim Showcase", #ffffff): 40, 8
+
+    // Info panel (right side of carousel)
+    point {
+        pos: 600, 42
+        ninepatch("ui", "Window_3x3_idle", 450, 240): 0,0
+        #slideTitle(updatable) text(exo2_black_20, "Sprite Animations", #7fdbda, left, 420): 15,15
+        #slideDesc(updatable) text(exo2_light_14, "Description", #aaaaaa, left, 420): 15,50
+        text(m6x11, "Syntax:", #555555, left, 60): 15,90
+        #slideSyntax(updatable) text(m5x7, "syntax example", #44ff44, left, 420): 15,106
+        placeholder(generated(cross(140, 30, #FF0000)), builderParameter("viewDemoButton")) {
+            pos: 15,190
+        }
+    }
+
+    // Carousel control buttons
+    placeholder(generated(cross(26, 22, #FF0000)), builderParameter("prevBtn")): 40, 286
+    placeholder(generated(cross(26, 22, #FF0000)), builderParameter("pauseBtn")): 70, 286
+    placeholder(generated(cross(26, 22, #FF0000)), builderParameter("playBtn")): 70, 286
+    placeholder(generated(cross(26, 22, #FF0000)), builderParameter("nextBtn")): 100, 286
+}

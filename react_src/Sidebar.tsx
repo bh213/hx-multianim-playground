@@ -39,7 +39,10 @@ export default function Sidebar({ currentScreen, onScreenSelect, collapsed, onTo
   return (
     <div className="w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full">
       <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-base font-bold text-gray-100">Demos</span>
+        <button
+          onClick={() => onScreenSelect('nav')}
+          className="text-base font-bold text-gray-100 hover:text-blue-300 transition-colors"
+        >Demos</button>
         <button
           onClick={onToggleCollapse}
           className="text-gray-400 hover:text-white text-sm px-2 py-1"

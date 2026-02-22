@@ -35,3 +35,27 @@ version: 0.5
 #valueLabel programmable(text="value") {
     text(m6x11, $text, #ffffff, left, 200): 0,0
 }
+
+// ── Smaller nav card for carousel NavScreen ───────────────────
+#navCardSmall programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Demo") {
+    @(status=>normal) ninepatch("ui", "Window_3x3_idle", 155, 28): 0,0
+    @(status=>hover) ninepatch("ui", "button-hover", 155, 28): 0,0
+    @(status=>pressed) ninepatch("ui", "button-pressed", 155, 28): 0,0
+    text(m6x11, $buttonText, #ffffff, center, 155): 0,8
+}
+
+// ── View Demo button for carousel ─────────────────────────────
+#viewDemoButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="View Demo >") {
+    @(status=>normal) ninepatch("ui", "button-idle", 140, 30): 0,0
+    @(status=>hover) ninepatch("ui", "button-hover", 140, 30): 0,-1
+    @(status=>pressed) ninepatch("ui", "button-pressed", 140, 30): 0,0
+    text(exo2_14, $buttonText, #ffffff, center, 140): 0,7
+}
+
+// ── Carousel control buttons (prev/next/pause) ───────────────
+#carouselCtrlBtn programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="<") {
+    @(status=>normal) ninepatch("ui", "button-idle", 26, 22): 0,0
+    @(status=>hover) ninepatch("ui", "button-hover", 26, 22): 0,-1
+    @(status=>pressed) ninepatch("ui", "button-pressed", 26, 22): 0,0
+    text(m6x11, $buttonText, #ffffff, center, 26): 0,5
+}

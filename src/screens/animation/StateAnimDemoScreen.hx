@@ -101,7 +101,6 @@ class StateAnimDemoScreen extends DemoScreenBase {
 	var ptsLeftChk:Null<UIStandardMultiCheckbox>;
 	var ptsSourceList:Null<UIMultiAnimScrollableList>;
 	var ptsAnimList:Null<UIMultiAnimScrollableList>;
-	var ptsAnimListContainer:Null<h2d.Object>;
 	var eventLog:Array<String> = [];
 	var ptsCurrentSource:Int = 0; // 0=marine, 1=shield, 2=turret, 3=arrows
 	var ptsCurrentDir:Bool = false; // false=right, true=left
@@ -132,13 +131,17 @@ class StateAnimDemoScreen extends DemoScreenBase {
 	function loadTabContent(index:Int):Void {
 		tabs.beginTab(index);
 
-		switch (index) {
-			case 0:
-				loadGalleryTab();
-			case 1:
-				loadInteractiveTab();
-			case 2:
-				loadPointsTab();
+		try {
+			switch (index) {
+				case 0:
+					loadGalleryTab();
+				case 1:
+					loadInteractiveTab();
+				case 2:
+					loadPointsTab();
+			}
+		} catch (e) {
+			trace('Error loading tab $index: $e');
 		}
 
 		tabs.endTab();
@@ -179,9 +182,9 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		if (progressSlider != null)
 			progressSlider.getObject().alpha = 0.3;
 
-		// Animation list
+		// Animation list (copy to avoid shared array mutation from setItems in Tab 3)
 		animList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
-			MARINE_ANIM_ITEMS, null, 0, 160, 200);
+			MARINE_ANIM_ITEMS.copy(), null, 0, 160, 200);
 		animList.getObject().setPosition(260, 35);
 		addElement(animList, DefaultLayer);
 
@@ -304,13 +307,11 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		ptsSourceList.getObject().setPosition(260, 55);
 		addElement(ptsSourceList, DefaultLayer);
 
-		// Animation list container (registered with tab for visibility)
-		ptsAnimListContainer = new h2d.Object();
-		ptsAnimListContainer.setPosition(430, 55);
-		addObjectToLayer(ptsAnimListContainer, DefaultLayer);
-
-		// Create initial animation list
-		rebuildAnimList(MARINE_ANIM_ITEMS);
+		// Animation list (copy to own the array, since setItems mutates in-place)
+		ptsAnimList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
+			MARINE_ANIM_ITEMS.copy(), null, 0, 160, 120);
+		ptsAnimList.getObject().setPosition(430, 55);
+		addElement(ptsAnimList, DefaultLayer);
 
 		// Graphics overlay for crosshairs
 		pointsGraphics = new h2d.Graphics();
@@ -338,21 +339,6 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		setupPointsAnimEvents(ptsShieldL);
 		setupPointsAnimEvents(ptsTurret);
 		setupPointsAnimEvents(ptsArrows);
-	}
-
-	function rebuildAnimList(items:Array<UIElementListItem>):Void {
-		// Remove old list
-		if (ptsAnimList != null) {
-			removeElement(ptsAnimList);
-			ptsAnimList.getObject().remove();
-			ptsAnimList = null;
-		}
-
-		// Create new list as child of container (not registered with tab)
-		ptsAnimList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
-			items, null, 0, 160, 120);
-		addElement(ptsAnimList, null);
-		ptsAnimListContainer.addChild(ptsAnimList.getObject());
 	}
 
 	function setupPointsAnimEvents(anim:AnimationSM):Void {
@@ -383,8 +369,9 @@ class StateAnimDemoScreen extends DemoScreenBase {
 	function switchPointsSource(sourceIdx:Int):Void {
 		ptsCurrentSource = sourceIdx;
 
-		// Rebuild animation list with new source's items
-		rebuildAnimList(SOURCE_ANIM_ITEMS[sourceIdx]);
+		// Update animation list items (copy to avoid setItems mutating the static array in-place)
+		if (ptsAnimList != null)
+			ptsAnimList.setItems(SOURCE_ANIM_ITEMS[sourceIdx].copy());
 
 		// Update direction UI based on whether source has direction state
 		var hasDir = SOURCE_HAS_DIRECTION[sourceIdx];
@@ -630,7 +617,6 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		ptsLeftChk = null;
 		ptsSourceList = null;
 		ptsAnimList = null;
-		ptsAnimListContainer = null;
 		eventLog = [];
 		super.onClear();
 	}

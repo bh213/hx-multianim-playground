@@ -10,7 +10,6 @@ import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimBuilder.SlotHandle;
 import bh.base.MacroUtils;
 import h2d.col.Point;
-import h2d.col.Bounds;
 
 class InventoryDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -18,32 +17,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 	var resetButton:Null<UIStandardMultiAnimButton>;
 	var draggables:Array<UIMultiAnimDraggable> = [];
 
-	// Base position of the programmable
-	static inline var BX = 30;
-	static inline var BY = 70;
-
-	// Grid layout
-	static inline var GRID_COLS = 4;
-	static inline var GRID_ROWS = 3;
 	static inline var GRID_TOTAL = 12;
-	static inline var CELL_STEP = 58;
-	static inline var CELL_SIZE = 52;
 	static inline var ITEM_PAD = 2;
-
-	// Shop
-	static inline var SHOP_COLS = 10;
-	static inline var SHOP_STEP = 56;
-	static inline var SHOP_X = 0;
-	static inline var SHOP_Y = 30;
-
-	// Inventory grid origin relative to programmable
-	static inline var INV_X = 0;
-	static inline var INV_Y = 155;
-
-	// Equipment area origin relative to programmable
-	static inline var EQ_X = 310;
-	static inline var EQ_Y = 155;
-
 	static inline var MAX_WEIGHT = 60;
 	static inline var START_GOLD = 600;
 	static inline var MIN_ITEM_WEIGHT = 2;
@@ -64,14 +39,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 		{key: "armor", name: "Armor", cost: 150, weight: 20, equip: "armor"},
 	];
 
-	// Equipment slot definitions: name matches manim slot, accepts = item equip type, dx/dy relative to EQ_X/EQ_Y
-	static final EQUIP_DEFS:Array<{name:String, accepts:String, dx:Int, dy:Int}> = [
-		{name: "eq_head", accepts: "head", dx: 58, dy: 0},
-		{name: "eq_larm", accepts: "arm", dx: 0, dy: 66},
-		{name: "eq_armor", accepts: "armor", dx: 58, dy: 66},
-		{name: "eq_rarm", accepts: "arm", dx: 116, dy: 66},
-		{name: "eq_legs", accepts: "legs", dx: 58, dy: 132},
-	];
+	// Equipment slot accepts types (indexed: 0=head, 1=larm, 2=armor, 3=rarm, 4=legs)
+	static final EQUIP_ACCEPTS:Array<String> = ["head", "arm", "armor", "arm", "legs"];
 
 	override public function load():Void {
 		setupDemo("Inventory Grid", "Shop, inventory & equipment with drag-drop, gold & weight");
@@ -109,8 +78,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 			ps.setParameter("state", "normal");
 		}
 
-		for (eq in EQUIP_DEFS) {
-			final s = demoResult.getSlot(eq.name);
+		for (i in 0...EQUIP_ACCEPTS.length) {
+			final s = equipSlot(i);
 			s.data = null;
 			s.clear();
 			s.setParameter("state", "normal");
@@ -146,8 +115,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 		return demoResult.getSlot("shop", idx);
 	}
 
-	function equipSlot(name:String):SlotHandle {
-		return demoResult.getSlot(name);
+	function equipSlot(idx:Int):SlotHandle {
+		return demoResult.getSlot("equip", idx);
 	}
 
 	// ----- Weight / count helpers -----
@@ -166,8 +135,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 	function equipWeight():Int {
 		var w = 0;
-		for (eq in EQUIP_DEFS) {
-			final s = equipSlot(eq.name);
+		for (i in 0...EQUIP_ACCEPTS.length) {
+			final s = equipSlot(i);
 			if (s.isOccupied()) {
 				final def = itemDef(s.data);
 				if (def != null) w += def.weight;
@@ -189,44 +158,23 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 	function equipCount():Int {
 		var n = 0;
-		for (eq in EQUIP_DEFS)
-			if (equipSlot(eq.name).isOccupied()) n++;
+		for (i in 0...EQUIP_ACCEPTS.length)
+			if (equipSlot(i).isOccupied()) n++;
 		return n;
-	}
-
-	// ----- Pixel position helpers -----
-
-	function invSlotScreenX(idx:Int):Float {
-		return BX + INV_X + (idx % GRID_COLS) * CELL_STEP;
-	}
-
-	function invSlotScreenY(idx:Int):Float {
-		return BY + INV_Y + Std.int(idx / GRID_COLS) * CELL_STEP;
-	}
-
-	function equipScreenX(eq:{name:String, accepts:String, dx:Int, dy:Int}):Float {
-		return BX + EQ_X + eq.dx;
-	}
-
-	function equipScreenY(eq:{name:String, accepts:String, dx:Int, dy:Int}):Float {
-		return BY + EQ_Y + eq.dy;
 	}
 
 	// ----- Zone helpers -----
 
+	function slotScreenPos(slot:SlotHandle):Point {
+		return slot.container.localToGlobal(new Point(0, 0));
+	}
+
 	function isEquipZone(zoneId:String):Bool {
-		return StringTools.startsWith(zoneId, "eq_");
+		return StringTools.startsWith(zoneId, "equip_");
 	}
 
-	function getInvZoneIdx(zoneId:String):Int {
-		final parts = zoneId.split("_");
-		return Std.parseInt(parts[1]);
-	}
-
-	function getEquipAccepts(slotName:String):String {
-		for (eq in EQUIP_DEFS)
-			if (eq.name == slotName) return eq.accepts;
-		return "";
+	function zoneIdx(zoneId:String):Int {
+		return Std.parseInt(zoneId.split("_").pop());
 	}
 
 	// ----- Draggable setup -----
@@ -237,15 +185,15 @@ class InventoryDemoScreen extends DemoScreenBase {
 		draggables = [];
 
 		stockShop();
-		for (i in 0...SHOP_COLS)
+		for (i in 0...ITEMS.length)
 			setupShopDraggable(i);
 
 		for (i in 0...GRID_TOTAL)
 			if (playerSlot(i).isOccupied())
 				setupInvDraggable(i);
 
-		for (eqIdx in 0...EQUIP_DEFS.length)
-			setupEquipDraggable(eqIdx);
+		for (i in 0...EQUIP_ACCEPTS.length)
+			setupEquipDraggable(i);
 	}
 
 	function makeDraggable(content:h2d.Object):UIMultiAnimDraggable {
@@ -258,59 +206,31 @@ class InventoryDemoScreen extends DemoScreenBase {
 		return drag;
 	}
 
-	function addInvDropZones(drag:UIMultiAnimDraggable):Void {
-		for (i in 0...GRID_TOTAL) {
-			final slot = playerSlot(i);
-			final x = invSlotScreenX(i);
-			final y = invSlotScreenY(i);
-			drag.addDropZone({
-				id: 'p_${i}',
-				bounds: Bounds.fromValues(x, y, CELL_SIZE, CELL_SIZE),
-				snapX: x,
-				snapY: y,
-				slot: slot,
-			});
-		}
-	}
+	function addDropZones(drag:UIMultiAnimDraggable, itemKey:String):Void {
+		drag.addDropZonesFromSlots("inv", demoResult);
 
-	function addEquipDropZones(drag:UIMultiAnimDraggable, itemKey:String):Void {
 		final def = itemDef(itemKey);
-		if (def == null || def.equip == "") return;
-
-		for (eq in EQUIP_DEFS) {
-			if (eq.accepts != def.equip) continue;
-			final slot = equipSlot(eq.name);
-			final x = equipScreenX(eq);
-			final y = equipScreenY(eq);
-			drag.addDropZone({
-				id: eq.name,
-				bounds: Bounds.fromValues(x, y, CELL_SIZE, CELL_SIZE),
-				snapX: x,
-				snapY: y,
-				slot: slot,
+		if (def != null && def.equip != "") {
+			drag.addDropZonesFromSlots("equip", demoResult, (d, zone) -> {
+				final idx = zoneIdx(zone.id);
+				return EQUIP_ACCEPTS[idx] == def.equip;
 			});
 		}
 	}
 
 	function setupZoneHighlighting(drag:UIMultiAnimDraggable, itemKey:String):Void {
 		drag.onDragStartHighlightZones = (zones) -> {
-			// Highlight all valid drop zones (empty and occupied — occupied allows swap)
 			for (z in zones) {
 				if (z.slot != null)
 					z.slot.setParameter("state", "highlight");
 			}
 
 			// Mark incompatible equipment slots as unavailable
-			for (eq in EQUIP_DEFS) {
-				var isValid = false;
-				for (z in zones) {
-					if (z.id == eq.name) {
-						isValid = true;
-						break;
-					}
-				}
-				if (!isValid) {
-					final s = equipSlot(eq.name);
+			final def = itemDef(itemKey);
+			if (def != null) {
+				for (i in 0...EQUIP_ACCEPTS.length) {
+					if (EQUIP_ACCEPTS[i] == def.equip) continue;
+					final s = equipSlot(i);
 					if (s.isEmpty())
 						s.setParameter("state", "unavailable");
 				}
@@ -334,8 +254,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 		final drag = makeDraggable(content);
 
-		addInvDropZones(drag);
-		addEquipDropZones(drag, itemKey);
+		addDropZones(drag, itemKey);
 		setupZoneHighlighting(drag, itemKey);
 
 		drag.onDragDrop = (result, wrapper) -> {
@@ -377,8 +296,9 @@ class InventoryDemoScreen extends DemoScreenBase {
 			}
 		};
 
+		final p = slotScreenPos(slot);
 		draggables.push(drag);
-		addElementWithPos(drag, BX + SHOP_X + shopIdx * SHOP_STEP, BY + SHOP_Y, DefaultLayer);
+		addElementWithPos(drag, p.x, p.y, DefaultLayer);
 	}
 
 	function setupInvDraggable(slotIdx:Int):Void {
@@ -390,8 +310,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 		final itemKey:String = slot.data;
 		final drag = makeDraggable(content);
 
-		addInvDropZones(drag);
-		addEquipDropZones(drag, itemKey);
+		addDropZones(drag, itemKey);
 		setupZoneHighlighting(drag, itemKey);
 
 		drag.onDragDrop = (result, wrapper) -> {
@@ -422,7 +341,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 				}
 			} else {
 				// Inventory → Inventory
-				final tgtIdx = getInvZoneIdx(result.zone.id);
+				final tgtIdx = zoneIdx(result.zone.id);
 				if (tgtIdx == slotIdx) return false;
 
 				if (tgtSlot.isOccupied()) {
@@ -456,13 +375,13 @@ class InventoryDemoScreen extends DemoScreenBase {
 			}
 		};
 
+		final p = slotScreenPos(slot);
 		draggables.push(drag);
-		addElementWithPos(drag, invSlotScreenX(slotIdx), invSlotScreenY(slotIdx), DefaultLayer);
+		addElementWithPos(drag, p.x, p.y, DefaultLayer);
 	}
 
 	function setupEquipDraggable(eqIdx:Int):Void {
-		final eq = EQUIP_DEFS[eqIdx];
-		final slot = equipSlot(eq.name);
+		final slot = equipSlot(eqIdx);
 		if (slot.isEmpty()) return;
 		final content = slot.getContent();
 		if (content == null) return;
@@ -470,11 +389,11 @@ class InventoryDemoScreen extends DemoScreenBase {
 		final itemKey:String = slot.data;
 		final drag = makeDraggable(content);
 
-		addInvDropZones(drag);
-		addEquipDropZones(drag, itemKey);
+		addDropZones(drag, itemKey);
 		setupZoneHighlighting(drag, itemKey);
 
-		final srcName = eq.name;
+		final srcZoneId = 'equip_$eqIdx';
+		final srcAccepts = EQUIP_ACCEPTS[eqIdx];
 
 		drag.onDragDrop = (result, wrapper) -> {
 			if (result.zone == null) return false;
@@ -486,7 +405,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 			if (isEquipZone(result.zone.id)) {
 				// Equipment → Equipment (e.g. L.Arm ↔ R.Arm)
-				if (result.zone.id == srcName) return false;
+				if (result.zone.id == srcZoneId) return false;
 
 				if (tgtSlot.isOccupied()) {
 					final otherKey:String = tgtSlot.data;
@@ -509,7 +428,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 					// Swap: check if inventory item can equip here
 					final otherKey:String = tgtSlot.data;
 					final otherDef = itemDef(otherKey);
-					if (otherDef == null || otherDef.equip != eq.accepts) {
+					if (otherDef == null || otherDef.equip != srcAccepts) {
 						setLog('Can\'t swap: ${otherDef != null ? otherDef.name : "?"} can\'t be equipped here');
 						return false;
 					}
@@ -541,8 +460,9 @@ class InventoryDemoScreen extends DemoScreenBase {
 			}
 		};
 
+		final p = slotScreenPos(slot);
 		draggables.push(drag);
-		addElementWithPos(drag, equipScreenX(eq), equipScreenY(eq), DefaultLayer);
+		addElementWithPos(drag, p.x, p.y, DefaultLayer);
 	}
 
 	// ----- UI refresh -----
@@ -557,7 +477,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 		demoResult.getUpdatable("goldText").updateText('$gold');
 		demoResult.getUpdatable("weightText").updateText('$tw / $MAX_WEIGHT kg');
 		demoResult.getUpdatable("playerWeightText").updateText('Weight: $tw / $MAX_WEIGHT kg');
-		demoResult.getUpdatable("playerCountText").updateText('Items: $ic / $GRID_TOTAL  Equipped: $ec / ${EQUIP_DEFS.length}');
+		demoResult.getUpdatable("playerCountText").updateText('Items: $ic / $GRID_TOTAL  Equipped: $ec / ${EQUIP_ACCEPTS.length}');
 
 		updateSlotStates();
 	}
@@ -585,8 +505,8 @@ class InventoryDemoScreen extends DemoScreenBase {
 			slot.setParameter("state", if (disabled) "disabled" else "normal");
 		}
 
-		for (eq in EQUIP_DEFS) {
-			final s = equipSlot(eq.name);
+		for (i in 0...EQUIP_ACCEPTS.length) {
+			final s = equipSlot(i);
 			if (s.isOccupied()) continue;
 			s.setParameter("state", if (disabled) "disabled" else "normal");
 		}

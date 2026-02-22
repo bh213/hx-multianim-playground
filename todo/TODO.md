@@ -37,34 +37,103 @@ that all duplicate what inventory.manim already knows.
 
 ### Suggested improvements
 
-#### 1. Inventory: read drop-zone positions from relativeLayouts instead of constants
-The .manim already has `#invGrid` layout. Add equipment positions too:
+#### 1. Inventory: use `cells` layout + `addDropZonesFromSlots` to eliminate ALL position code
+
+**Key new features that change the approach:**
+- `cells(cols, rows, cellWidth, cellHeight)` layout — generates grid points automatically
+- `addDropZonesFromSlots(baseName, result, ?accepts)` — auto-creates drop zones from slot
+  container bounds. No manual position calculation needed.
+- `offset: x, y { ... }` blocks in layouts — group offsets cleanly
+- Indexed `#equip[$e] slot` via repeatable + layout — enables batch drop zone creation
+- `slot.container.localToGlobal()` — gives screen position for draggable placement
+
+**Step A — .manim layout changes:**
 ```
-relativeLayouts {
-    #invGrid list { ... }          // already exists
-    #equipSlots list {             // NEW — equipment slot positions
-        point: 368, 155            // head  (310+58, 155+0)
-        point: 310, 221            // larm  (310+0, 155+66)
-        point: 368, 221            // armor (310+58, 155+66)
-        point: 426, 221            // rarm  (310+116, 155+66)
-        point: 368, 287            // legs  (310+58, 155+132)
+layouts {
+    // Replace 12 hand-listed points with cells (row-major 4x3 grid)
+    offset: 0, 155 {
+        #invGrid cells(cols: 4, rows: 3, cellWidth: 58, cellHeight: 58)
     }
-    #shopSlots sequence($s, 0, 9) point: $s * 56, 30
+    // Equipment slot positions (non-uniform, need explicit list)
+    offset: 310, 155 {
+        #equipSlots list {
+            point: 58, 0              // head
+            point: 0, 66              // larm
+            point: 58, 66             // armor
+            point: 116, 66            // rarm
+            point: 58, 132            // legs
+        }
+    }
 }
 ```
-Then in InventoryDemoScreen.hx, replace `invSlotScreenX/Y` and `equipScreenX/Y` with
-`layouts.getPoint("invGrid", idx)` and `layouts.getPoint("equipSlots", eqIdx)`.
-This eliminates BX/BY/INV_X/INV_Y/EQ_X/EQ_Y constants and the 4 helper functions.
 
-The remaining question is the root offset (BX=30, BY=70) — the .manim programmable already
-has `pos: 30, 70`, so the layout points are relative to that. Code needs to add the root
-object's screen position. Options:
-  a) Store the root pos in a separate layout `#root single { point: 30, 70 }`
-  b) Read it from `demoResult.object.x / .y` at runtime
-  c) Make the layout points absolute (include the 30,70 offset in every point) — simplest
+**Step B — convert equipment slots to indexed `#equip[$e]` via repeatable:**
+Replace the 5 copy-pasted `point { ... #eq_head slot ... }` blocks with:
+```
+point {
+    pos: 310, 155
+    // stick figure bitmaps stay here...
+
+    repeatable($e, layout("main", "equipSlots")) {
+        bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+        @($e => 0) text(m5x7, "HEAD",  #333355, center, 52): 0, 20
+        @($e => 1) text(m5x7, "L.ARM", #333355, center, 52): 0, 20
+        @($e => 2) text(m5x7, "ARMOR", #333355, center, 52): 0, 20
+        @($e => 3) text(m5x7, "R.ARM", #333355, center, 52): 0, 20
+        @($e => 4) text(m5x7, "LEGS",  #333355, center, 52): 0, 20
+        #equip[$e] slot(state:[normal, disabled, highlight, unavailable] = normal) {
+            @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+            @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+            @(state => highlight)   graphics(
+                line(#ffffff, 1, 0, 0, 51, 0);
+                line(#ffffff, 1, 0, 51, 51, 51);
+                line(#ffffff, 1, 0, 0, 0, 51);
+                line(#ffffff, 1, 51, 0, 51, 51);
+            ): 0, 0
+            @(state => unavailable) graphics(
+                line(#cc4444, 2, 6, 6, 46, 46);
+                line(#cc4444, 2, 46, 6, 6, 46);
+            ): 0, 0
+        }
+    }
+}
+```
+This eliminates ~100 lines of duplicated slot definitions.
+
+**Step C — Haxe code: replace manual drop zones with `addDropZonesFromSlots`:**
+```haxe
+// BEFORE — manual bounds calculation with 8 constants + 4 helpers:
+// addDropZone({ id: 'p_${i}', bounds: Bounds.fromValues(x, y, ...), snapX: x, snapY: y })
+
+// AFTER — one line per zone group:
+drag.addDropZonesFromSlots("inv", demoResult);
+drag.addDropZonesFromSlots("equip", demoResult,
+    (d, zone) -> EQUIP_ACCEPTS[zone.slot.index] == itemDef(d.data).equip);
+```
+Delete `addInvDropZones()`, `addEquipDropZones()`, and ALL position helper functions.
+
+**Step D — Haxe code: position draggables from slot containers:**
+```haxe
+// BEFORE:
+// addElementWithPos(drag, BX + SHOP_X + shopIdx * SHOP_STEP, BY + SHOP_Y, DefaultLayer);
+
+// AFTER — read position from the slot itself:
+final pos = slot.container.localToGlobal(new Point(0, 0));
+addElementWithPos(drag, pos.x, pos.y, DefaultLayer);
+```
+Root offset question is now moot — `localToGlobal` accounts for `pos: 30, 70` automatically.
+
+**Constants eliminated:** BX, BY, INV_X, INV_Y, EQ_X, EQ_Y, SHOP_X, SHOP_Y, CELL_STEP,
+CELL_SIZE (10 constants), plus `invSlotScreenX/Y`, `equipScreenX/Y` (4 functions),
+plus `addInvDropZones`, `addEquipDropZones` (2 functions).
+
+**EQUIP_DEFS simplifies to just an accepts mapping:**
+```haxe
+static final EQUIP_ACCEPTS = ["head", "arm", "armor", "arm", "legs"];
+```
 
 #### 2. Flow layout screen: move setPosition into .manim
-FlowLayoutDemoScreen has BASE_X=40, BASE_Y=80, SHOWCASE_Y=130. Instead, add `pos:` to the
+FlowLayoutDemoScreen has BASE_X=40, BASE_Y=80, SHOWCASE_Y=130. Add `pos:` to the
 .manim programmables:
 ```
 #flowControls programmable() {
@@ -76,177 +145,24 @@ FlowLayoutDemoScreen has BASE_X=40, BASE_Y=80, SHOWCASE_Y=130. Instead, add `pos
     ...
 }
 ```
-Then just `addBuilderResult()` — no setPosition needed.
+Then just `addBuilderResult()` — no `setPosition()` needed. Delete all 3 constants.
 
-#### 3. Particles: move tab button positions to .manim
-ParticlesDemoScreen hardcodes `btn.setPosition(50 + i * 120, 70)` for tab buttons and
-`descText.setPosition(50, 105)`. These could be a sequence layout or the tab bar could be
-built as a .manim programmable with flow layout.
+#### ~~4. Possible library improvement: `getLayoutPointAbsolute()`~~
+**Resolved** — `addDropZonesFromSlots` reads positions from slot containers via
+`localToGlobal()` internally, so absolute layout points are never needed in user code.
 
-#### 4. Possible library improvement: `getLayoutPointAbsolute()`
-A helper that returns layout points already offset by the programmable's root `pos:` would
-eliminate the need to track root position separately. This is the pattern:
-```haxe
-// Instead of:
-var pos = layouts.getPoint("invGrid", i);
-var absX = demoResult.object.x + pos.x;
-// Just:
-var absPos = demoResult.getLayoutPointAbsolute("invGrid", i);
-```
-
-#### 5. Possible library improvement: expose slot screen bounds
-For drag-drop, what code really needs is the screen-space bounding rect of each slot.
-If BuilderResult could expose `getSlotBounds(name, index): Bounds` that accounts for
-the full position chain (root pos + parent offsets + slot position), the Haxe side
-wouldn't need any position knowledge at all.
+#### ~~5. Possible library improvement: expose slot screen bounds~~
+**Resolved** — `addDropZonesFromSlots` already does exactly this. Each drop zone gets a
+`boundsProvider` that dynamically reads `slot.container.getBounds()` and a `snapProvider`
+from `slot.container.localToGlobal()`. No manual position knowledge needed.
 
 ### Rule of thumb going forward
 | What | Where |
 |------|-------|
 | Static visual layout, child positions | `.manim` `pos:` and `flow` |
-| Named position data for runtime placement | `.manim` `relativeLayouts` |
+| Grid positions for repeatable elements | `.manim` `layouts` with `cells` / `sequence` |
+| Named position data for runtime placement | `.manim` `layouts` (was `relativeLayouts`) |
+| Drop zone setup | `addDropZonesFromSlots(baseName, result)` — reads from slots |
 | Code `setPosition()` | Only for truly dynamic positions (mouse, camera, animation) |
-| Code position constants | Avoid — read from relativeLayouts or let .manim own it |
+| Code position constants | Avoid — `.manim` owns all positions |
 
----
-
-## relativeLayouts: library-level improvements
-
-### Current state
-relativeLayouts are pixel-only named point stores: `single`, `list`, `sequence`. They support
-grid/hex coordinate systems and expression math (`$s * 56`), but nothing viewport-aware or
-flow-integrated. Positions resolve to FPoint via `calculatePosition()` which handles all
-coordinate types but has no concept of screen size, anchoring, or relative-to-parent sizing.
-
-The expression system (`ReferenceableValue`) already supports `+`, `-`, `*`, `/`, `%`,
-ternaries, parameter refs, and `$ctx.callback()` — so it's extensible. But there's no
-built-in `$ctx.screenWidth` or `$ctx.screenHeight`.
-
-### Improvement ideas (roughly ordered by impact vs effort)
-
-#### A. `SlotHandle.getScreenBounds()` — highest impact, simplest
-SlotHandle already holds a reference to its `container: h2d.Object`. The h2d scene graph
-knows the full transform chain. Adding a method:
-```haxe
-// SlotHandle
-public function getScreenBounds():h2d.col.Bounds {
-    return container.getBounds();  // h2d.Object.getBounds() walks parents
-}
-```
-This immediately solves inventory drag-drop — code asks each slot for its bounds directly,
-no position math needed at all. The slot knows where it is on screen because h2d propagates
-transforms through the scene graph.
-
-Drag-drop setup becomes:
-```haxe
-var slot = demoResult.getSlot("inv", i);
-var bounds = slot.getScreenBounds();
-drag.addDropZone({ id: 'p_$i', bounds: bounds, snapX: bounds.x, snapY: bounds.y, slot: slot });
-```
-All BX/BY/INV_X/INV_Y constants and helper functions vanish.
-
-#### B. `BuilderResult.getLayoutPoint()` — convenience wrapper
-Shorthand that reads from the builder's layouts with the root object offset already applied:
-```haxe
-// BuilderResult
-public function getLayoutPoint(name:String, index:Int = 0):FPoint {
-    var pt = builder.getLayouts().getPoint(name, index);
-    return new FPoint(object.x + pt.x, object.y + pt.y);
-}
-```
-Useful for positioning non-slot runtime objects (particles, h2d.Graphics overlays) without
-manually tracking root position.
-
-#### C. ~~Viewport-aware expressions~~ — ALREADY EXISTS as `$ctx.width`, `$ctx.height`
-`$ctx.width` and `$ctx.height` already resolve to h2d.Scene dimensions via
-`builderParams.scene` (MultiAnimBuilder.hx:961-966). Can be used in any expression context:
-```
-relativeLayouts {
-    #centered single { point: $ctx.width / 2, $ctx.height / 2 }
-    #rightPanel single { point: $ctx.width - 220, 60 }
-}
-#hud programmable() {
-    pos: $ctx.width - 420, 20
-    flow(maxWidth: $ctx.width - 40, layout: vertical) { ... }
-}
-```
-Also available: `$ctx.grid.width/height`, `$ctx.hex.*`, `$ctx.random(min, max)`.
-Requires `scene` in BuilderParameters (throws otherwise).
-**No work needed** — just use it and document it in playground demos.
-
-#### D. Anchor/origin system for layout points
-Currently all positions are top-left origin. An anchor modifier would let positions mean
-"center of this element" or "right edge":
-```
-relativeLayouts {
-    #panels list {
-        point: 640, 360, anchor: center         // centered at this coordinate
-        point: 1280, 0, anchor: topRight         // right-aligned
-        point: 0, 720, anchor: bottomLeft
-    }
-}
-```
-At resolve time, the anchor shifts the final position by the element's computed size.
-Requires knowing element dimensions, which is only available after build — so this would
-only work for `getLayoutPoint()` calls that pass in a size, or as a flow alignment property.
-
-**Simpler alternative**: add `halign` and `valign` as layout-level properties:
-```
-relativeLayouts {
-    #centered list {
-        halign: center
-        valign: middle
-        point: 640, 360
-    }
-}
-```
-The layout stores the alignment and `getPoint()` takes an optional `width, height` to
-apply the offset.
-
-#### E. Flow-integrated position queries
-h2d.Flow positions children internally, but their final `.x/.y` are readable on the child
-objects after layout. A new layout type could reference flow children:
-```
-relativeLayouts {
-    #shopPositions flowChildren("shopFlow")   // reads positions from named flow
-}
-```
-At runtime, `getPoint("shopPositions", i)` would return the ith child's position in the
-named flow container. This bridges the gap between flow auto-layout and code that needs
-to create drop zones at flow-computed positions.
-
-**Simpler alternative**: since `SlotHandle.getScreenBounds()` (idea A) already solves the
-drop-zone case, this is mainly useful for non-slot scenarios where code needs to know where
-flow placed something. Could be deferred.
-
-#### F. Parametric layout with `step` shorthand
-relativeLayouts already have `sequence`, but for grids the syntax is verbose. A `grid`
-layout type would cover common cases:
-```
-relativeLayouts {
-    #invGrid grid(cols: 4, rows: 3, cellW: 58, cellH: 58, origin: 0, 155)
-    #shopSlots grid(cols: 10, rows: 1, cellW: 56, cellH: 52, origin: 0, 30)
-}
-```
-Desugars to the equivalent list of points. More readable than a 12-point `list` block
-and more capable than a 1D `sequence`.
-
-#### G. ~~Named layout references in `pos:`~~ — ALREADY EXISTS
-`pos: layout(name, index)` already works everywhere. The parser's `parseXY()` handles
-`layout(name)` and `layout(name, index)` → `LAYOUT` coordinate type, and `pos:` calls
-`parseXY()`. The builder resolves it via `getLayouts().getPoint(name, idx)`.
-```
-#panel programmable() {
-    pos: layout("positions", 2)     // use 3rd point from "positions" layout
-}
-text(exo2_14, "hello"): layout("labels", 0)   // inline position also works
-```
-**No work needed** — just use it.
-
-### Priority recommendation
-1. **A (slot bounds)** — eliminates the worst code-side duplication, minimal library change
-2. **B (BuilderResult.getLayoutPoint)** — small convenience, useful immediately
-3. **F (grid layout shorthand)** — reduces boilerplate for grid-based layouts
-4. **C (screen expressions)** — already exists (`$ctx.width/height`), just needs demo coverage
-5. **G (layout in pos:)** — already exists, just needs demo coverage
-6. **D/E** — nice to have, lower priority

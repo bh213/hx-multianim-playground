@@ -72,23 +72,18 @@ paths {
     @(itemType => armor)   text(m5x7, "Armor", #7799bb, center, 48): 0, 32
 }
 
-relativeLayouts {
-    #invGrid list {
-        // Row 0
-        point: 0, 155
-        point: 58, 155
-        point: 116, 155
-        point: 174, 155
-        // Row 1
-        point: 0, 213
-        point: 58, 213
-        point: 116, 213
-        point: 174, 213
-        // Row 2
-        point: 0, 271
-        point: 58, 271
-        point: 116, 271
-        point: 174, 271
+layouts {
+    // Inventory grid: 4 cols x 3 rows, 58px step, offset 155px down
+    offset: 0, 155 {
+        #invGrid cells(cols: 4, rows: 3, cellWidth: 58, cellHeight: 58)
+    }
+    // Equipment slot positions (relative to the equipment point block at 310, 155)
+    #equipSlots list {
+        point: 58, 0              // head
+        point: 0, 66              // larm
+        point: 58, 66             // armor
+        point: 116, 66            // rarm
+        point: 58, 132            // legs
     }
 }
 
@@ -161,96 +156,15 @@ relativeLayouts {
         bitmap(generated(color(4, 10, #2a2a4e))): 76, 124
         bitmap(generated(color(4, 10, #2a2a4e))): 88, 124
 
-        // Head slot
-        point {
-            pos: 58, 0
+        // Equipment slots (positioned via equipSlots layout)
+        repeatable($e, layout("main", "equipSlots")) {
             bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            text(m5x7, "HEAD", #333355, center, 52): 0, 20
-            #eq_head slot(state:[normal, disabled, highlight, unavailable] = normal) {
-                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight)   graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-                @(state => unavailable) graphics(
-                    line(#cc4444, 2, 6, 6, 46, 46);
-                    line(#cc4444, 2, 46, 6, 6, 46);
-                ): 0, 0
-            }
-        }
-
-        // Left Arm slot
-        point {
-            pos: 0, 66
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            text(m5x7, "L.ARM", #333355, center, 52): 0, 20
-            #eq_larm slot(state:[normal, disabled, highlight, unavailable] = normal) {
-                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight)   graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-                @(state => unavailable) graphics(
-                    line(#cc4444, 2, 6, 6, 46, 46);
-                    line(#cc4444, 2, 46, 6, 6, 46);
-                ): 0, 0
-            }
-        }
-
-        // Armor slot
-        point {
-            pos: 58, 66
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            text(m5x7, "ARMOR", #333355, center, 52): 0, 20
-            #eq_armor slot(state:[normal, disabled, highlight, unavailable] = normal) {
-                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight)   graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-                @(state => unavailable) graphics(
-                    line(#cc4444, 2, 6, 6, 46, 46);
-                    line(#cc4444, 2, 46, 6, 6, 46);
-                ): 0, 0
-            }
-        }
-
-        // Right Arm slot
-        point {
-            pos: 116, 66
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            text(m5x7, "R.ARM", #333355, center, 52): 0, 20
-            #eq_rarm slot(state:[normal, disabled, highlight, unavailable] = normal) {
-                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
-                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
-                @(state => highlight)   graphics(
-                    line(#ffffff, 1, 0, 0, 51, 0);
-                    line(#ffffff, 1, 0, 51, 51, 51);
-                    line(#ffffff, 1, 0, 0, 0, 51);
-                    line(#ffffff, 1, 51, 0, 51, 51);
-                ): 0, 0
-                @(state => unavailable) graphics(
-                    line(#cc4444, 2, 6, 6, 46, 46);
-                    line(#cc4444, 2, 46, 6, 6, 46);
-                ): 0, 0
-            }
-        }
-
-        // Legs slot
-        point {
-            pos: 58, 132
-            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
-            text(m5x7, "LEGS", #333355, center, 52): 0, 20
-            #eq_legs slot(state:[normal, disabled, highlight, unavailable] = normal) {
+            @($e => 0) text(m5x7, "HEAD",  #333355, center, 52): 0, 20
+            @($e => 1) text(m5x7, "L.ARM", #333355, center, 52): 0, 20
+            @($e => 2) text(m5x7, "ARMOR", #333355, center, 52): 0, 20
+            @($e => 3) text(m5x7, "R.ARM", #333355, center, 52): 0, 20
+            @($e => 4) text(m5x7, "LEGS",  #333355, center, 52): 0, 20
+            #equip[$e] slot(state:[normal, disabled, highlight, unavailable] = normal) {
                 @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
                 @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
                 @(state => highlight)   graphics(

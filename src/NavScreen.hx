@@ -23,6 +23,7 @@ class NavScreen extends UIScreenBase {
 				{id: "progressBar", title: "Progress Bars"},
 				{id: "draggable", title: "Draggable"},
 				{id: "dialogs", title: "Dialogs"},
+				{id: "tabs", title: "Tabs"},
 			]
 		},
 		{

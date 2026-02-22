@@ -38,26 +38,36 @@ class Main extends hxd.App {
 
 	public function reload(?screen:String) {
 		trace('haxe Reloading with screen: $screen');
-		final res = screenManager.reload(null, false);
-		if (!res.success) {
-			trace('error loading main: ${res.error}');
-			error('Error loading screen: ${res.error}');
-			return res;
-		}
-		errorText.remove();
-		final screenName = screen ?? DEFAULT_SCREEN;
-		if (screenName == DEFAULT_SCREEN) {
-			screenManager.updateScreenMode(Single(screenManager.getScreen(screenName)));
-		} else {
-			final targetScreen = screenManager.getScreen(screenName);
-			final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
-			if (Std.isOfType(targetScreen, DemoScreenBase)) {
-				final demo:DemoScreenBase = cast targetScreen;
-				masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
+		try {
+			final res = screenManager.reload(null, false);
+			if (!res.success) {
+				trace('error loading main: ${res.error}');
+				error('Error loading screen: ${res.error}');
+				return res;
 			}
-			screenManager.updateScreenMode(MasterAndSingle(masterScreen, targetScreen));
+			errorText.remove();
+			final screenName = screen ?? DEFAULT_SCREEN;
+			if (screenName == DEFAULT_SCREEN) {
+				screenManager.updateScreenMode(Single(screenManager.getScreen(screenName)));
+			} else {
+				final targetScreen = screenManager.getScreen(screenName);
+				final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
+				if (Std.isOfType(targetScreen, DemoScreenBase)) {
+					final demo:DemoScreenBase = cast targetScreen;
+					masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
+				}
+				screenManager.updateScreenMode(MasterAndSingle(masterScreen, targetScreen));
+			}
+			return res;
+		} catch (e) {
+			final msg = 'Error during reload: $e';
+			trace(msg);
+			error(msg);
+			#if js
+			js.Browser.alert(msg);
+			#end
+			return {success: false, error: msg, file: null, line: null, col: null};
 		}
-		return res;
 	}
 
 	override function init() {
@@ -133,6 +143,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("progressBar", new ProgressBarDemoScreen(screenManager));
 		screenManager.addScreen("draggable", new DraggableDemoScreen(screenManager));
 		screenManager.addScreen("dialogs", new DialogsDemoScreen(screenManager));
+		screenManager.addScreen("tabs", new TabsDemoScreen(screenManager));
 
 		// Layout demos
 		screenManager.addScreen("staticRefs", new StaticRefsDemoScreen(screenManager));
@@ -349,7 +360,16 @@ class Main extends hxd.App {
 
 	override function update(dt:Float) {
 		super.update(dt);
-		screenManager.update(dt);
+		try {
+			screenManager.update(dt);
+		} catch (e) {
+			final msg = 'Error during update: $e';
+			trace(msg);
+			error(msg);
+			#if js
+			js.Browser.alert(msg);
+			#end
+		}
 	}
 
 	public static function main() {

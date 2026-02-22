@@ -15,7 +15,9 @@
       "Bash(xxd:*)",
       "Bash(xargs basename:*)",
       "WebFetch(domain:)",
-      "Bash(haxelib path:*)"
+      "Bash(haxelib path:*)",
+      "Bash(/dev/null -exec grep -l \"flow\\\\|relativeLayouts\" {} ;)",
+      "Bash(python3:*)"
     ]
   }
 }

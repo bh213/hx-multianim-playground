@@ -82,17 +82,7 @@ version: 0.5
       @(disabled=>true, checked=>true) bitmap(sheet("ui", "RadioButton_on_disabled"));
  }
 
- #tab programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false], width:uint=120, height:uint=30) {
-      @(status=>normal, checked=>false) ninepatch("ui", "Tab_off_idle", $width, $height);
-      @(status=>hover, checked=>false) ninepatch("ui", "Tab_off_hover", $width, $height);
-      @(status=>pressed, checked=>false) ninepatch("ui", "Tab_off_pressed", $width, $height);
-      @(disabled=>true, checked=>false) ninepatch("ui", "Tab_off_disabled", $width, $height);
-      @(status=>normal, checked=>true) ninepatch("ui", "Tab_on_idle", $width, $height);
-      @(status=>hover, checked=>true) ninepatch("ui", "Tab_on_hover", $width, $height);
-      @(status=>pressed, checked=>true) ninepatch("ui", "Tab_on_pressed", $width, $height);
-      @(disabled=>true, checked=>true) ninepatch("ui", "Tab_on_disabled", $width, $height);
-       
-}
+ 
 
  #radio2 programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
       @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton2_off_idle"));
@@ -298,5 +288,33 @@ ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeigh
           
         }
         placeholder(generated(cross(20, 20, white)), builderParameter("cancel")):250,0
+      }
+}
+
+#tab programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false], width:uint=120, height:uint=30, font="m6x11", fontColor:int=0xffffff12, buttonText="Tab") {
+      @(status=>normal, checked=>false) ninepatch("ui", "Tab_off_idle", $width, $height);
+      @(status=>hover, checked=>false) ninepatch("ui", "Tab_off_hover", $width, $height);
+      @(status=>pressed, checked=>false) ninepatch("ui", "Tab_off_pressed", $width, $height);
+      @(status=>normal, checked=>true) ninepatch("ui", "Tab_on_idle", $width, $height);
+      @(status=>hover, checked=>true) ninepatch("ui", "Tab_on_hover", $width, $height);
+      @(status=>pressed, checked=>true) ninepatch("ui", "Tab_on_pressed", $width, $height);
+      @(disabled=>true) ninepatch("ui", "Tab_off_disabled", $width, $height);
+      text($font, $buttonText, $fontColor, center, $width): 0, ($height - 6 - $ctx.font($font).lineHeight) / 2
+}
+
+#tabBar programmable(count:int, panelWidth:uint=0, panelHeight:uint=0, panelOffset:uint=24, spacing:int=0, offset:int=0) {
+      flow(layout: horizontal, horizontalSpacing: $spacing, paddingLeft: $offset) {
+            repeatable($index, range(0, $count)) {
+                  placeholder(generated(cross(15, 15, #FF0000)), callback("tabButton", $index));
+            }
+      }
+      @(panelHeight > 0) @layer(-100) ninepatch("ui", "Window_tabbed_3x3_idle", $panelWidth, $panelHeight): 0, $panelOffset
+}
+
+#tabBarVertical programmable(count:int, spacing:int=0, offset:int=0) {
+      flow(layout: vertical, verticalSpacing: $spacing, paddingTop: $offset) {
+            repeatable($index, range(0, $count)) {
+                  placeholder(generated(cross(15, 15, #FF0000)), callback("tabButton", $index));
+            }
       }
 }

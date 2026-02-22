@@ -14,6 +14,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'progressBar', displayName: 'Progress Bars', category: 'UI Components', manimFile: 'demos/ui/progress-bar.manim' },
             { name: 'draggable', displayName: 'Draggable', category: 'UI Components', manimFile: 'demos/ui/draggable.manim' },
             { name: 'dialogs', displayName: 'Dialogs', category: 'UI Components', manimFile: 'demos/ui/dialogs.manim' },
+            { name: 'tabs', displayName: 'Tabs', category: 'UI Components', manimFile: 'demos/ui/tabs-demo.manim' },
         ]
     },
     {

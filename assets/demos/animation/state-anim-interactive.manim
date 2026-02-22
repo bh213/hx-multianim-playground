@@ -1,0 +1,77 @@
+version: 0.5
+
+// Tab 2: Interactive — Externally driven animation control
+
+#interactiveUI programmable() {
+
+    // Left: animation preview area
+    text(exo2_14, "Animation Preview", #7fdbda): 20, 0
+    bitmap(generated(color(240, 1, #7fdbda33))): 20, 18
+    bitmap(generated(color(200, 200, #1a1a2e))): 20, 30
+
+    // Named state anims — extracted in Haxe via getSingleItemByName().asStateAnim()
+    #previewR stateanim("marine.anim", "idle", direction=>"r"): 120, 180
+    #previewL stateanim("marine.anim", "idle", direction=>"l"): 120, 180
+
+    // Right: controls
+    text(exo2_14, "Controls", #7fdbda): 260, 0
+    bitmap(generated(color(400, 1, #7fdbda33))): 260, 18
+
+    // Speed
+    text(m6x11, "Speed:", #aaaaaa): 260, 248
+    placeholder(generated(cross(200, 16, #FF0000)), builderParameter("speedSlider")) {
+        pos: 320, 244
+        settings{size:int=>200}
+    }
+    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 60): 540, 248
+
+    // Externally driven toggle
+    text(m6x11, "Ext. Driven:", #aaaaaa): 260, 278
+    placeholder(generated(cross(16, 16, #FF0000)), builderParameter("extDrivenChk")) {
+        pos: 360, 274
+    }
+
+    // Pause toggle
+    text(m6x11, "Paused:", #aaaaaa): 450, 278
+    placeholder(generated(cross(16, 16, #FF0000)), builderParameter("pauseChk")) {
+        pos: 520, 274
+    }
+
+    // Progress scrubber (for externally driven mode)
+    text(m6x11, "Progress:", #aaaaaa): 260, 308
+    placeholder(generated(cross(200, 16, #FF0000)), builderParameter("progressSlider")) {
+        pos: 340, 304
+        settings{size:int=>200}
+    }
+    #progressValue(updatable) text(m6x11, "0%", #7fdbda, left, 60): 560, 308
+
+    // State selector attribute
+    text(m6x11, "direction =>", #aaaaaa): 260, 338
+    placeholder(generated(cross(16, 16, #FF0000)), builderParameter("leftChk")) {
+        pos: 360, 334
+    }
+    #dirValue(updatable) text(m6x11, "r", #7fdbda, left, 40): 390, 338
+
+    // Metadata panel
+    text(exo2_14, "Metadata", #7fdbda): 260, 380
+    bitmap(generated(color(400, 1, #7fdbda33))): 260, 398
+    ninepatch("ui", "Window_3x3_idle", 380, 160): 260, 410
+
+    text(m6x11, "Animation:", #aaaaaa): 275, 425
+    #infoName(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 425
+
+    text(m6x11, "FPS:", #aaaaaa): 275, 445
+    #infoFps(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 445
+
+    text(m6x11, "Frame Count:", #aaaaaa): 275, 465
+    #infoFrames(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 465
+
+    text(m6x11, "Loop Type:", #aaaaaa): 275, 485
+    #infoLoop(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 485
+
+    text(m6x11, "Current Frame:", #aaaaaa): 275, 505
+    #infoCurrentFrame(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 505
+
+    text(m6x11, "Finished:", #aaaaaa): 275, 525
+    #infoFinished(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 525
+}

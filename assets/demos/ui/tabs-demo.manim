@@ -1,0 +1,50 @@
+version: 0.5
+
+// Tabs Demo
+// Shows tab bars with content switching, disabled tabs, and custom sizes.
+
+#tabsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Basic Tabs
+    text(exo2_16, "Basic Tabs", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    placeholder(generated(cross(400, 40, #FF0000)), builderParameter("basicTabs")) {
+        pos: 0, 40
+        settings{tabButtonBuildName=>tab, tabPanel.width=>600, tabPanel.height=>200}
+    }
+
+    #basicContent(updatable) text(exo2_16, "Tab content area", #ffffff, left, 480): 15, 79
+
+    // Section: Wide Tabs
+    text(exo2_16, "Wide Tabs (custom width)", #7fdbda): 0, 295
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 317
+
+    placeholder(generated(cross(500, 40, #FF0000)), builderParameter("wideTabs")) {
+        pos: 0, 335
+        settings{spacing=>10, tabButtonBuildName=>tab, tabButton.width=>180, tabButton.height=>35, tabPanel.width=>768, tabPanel.height=>150}
+    }
+
+    #wideContent(updatable) text(exo2_16, "Wide tab content", #ffffff, left, 540): 15, 379
+
+    // Section: Disabled Tabs
+    text(exo2_16, "Disabled Tabs", #7fdbda): 0, 550
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 572
+
+    placeholder(generated(cross(400, 40, #FF0000)), builderParameter("disabledTabs")) {
+        pos: 0, 590
+        settings{tabButtonBuildName=>tab, tabPanel.width=>500, tabPanel.height=>100}
+    }
+
+    #disabledContent(updatable) text(exo2_16, "Disabled tab content", #ffffff, left, 480): 15, 629
+
+    // Controls
+    text(exo2_16, "Controls", #7fdbda): 0, 750
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 772
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disableToggle")) {
+        pos: 0, 790
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Toggle disable all tabs", #aaaaaa): 60, 792
+}

@@ -1079,10 +1079,11 @@ hxd_App.prototype = {
 	}
 	,__class__: hxd_App
 };
-var Main = $hx_exports["PlaygroundMain"] = function() {
+var Main = function() {
 	hxd_App.call(this);
 };
 $hxClasses["Main"] = Main;
+$hx_exports["PlaygroundMain"] = Main;
 Main.__name__ = "Main";
 Main.createJSLoader = function() {
 	var loader = new bh_base_CachingResourceLoader();
@@ -10751,7 +10752,9 @@ bh_multianim_MacroManimParser.prototype = {
 																	break;
 																}
 																if(!this.isNamedParamNext()) {
-																	this.eatComma();
+																	if(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																		this.error("unexpected token in flow parameters: " + Std.string(this.tokens[this.tpos].type));
+																	}
 																	continue;
 																}
 																var pname = this.expectIdentifierOrString();
@@ -11655,8 +11658,9 @@ bh_multianim_MacroManimParser.prototype = {
 			default:
 			}
 			if(!this.isNamedParamNext()) {
-				this.eatComma();
-				this.eatSemicolon();
+				if(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma) && !this.match(bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon)) {
+					this.error("unexpected token in particles block: " + Std.string(this.tokens[this.tpos].type));
+				}
 				continue;
 			}
 			var name = this.expectIdentifierOrString();
@@ -27041,20 +27045,21 @@ bh_ui_ControllerEvents.__constructs__ = [bh_ui_ControllerEvents.Leaving,bh_ui_Co
 bh_ui_ControllerEvents.__empty_constructs__ = [bh_ui_ControllerEvents.Leaving,bh_ui_ControllerEvents.Entering];
 var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__constructs__:null
 	,UIClick: {_hx_name:"UIClick",_hx_index:0,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UICustomEvent: ($_=function(eventName,data) { return {_hx_index:1,eventName:eventName,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UICustomEvent",$_.__params__ = ["eventName","data"],$_)
-	,UIToggle: ($_=function(pressed) { return {_hx_index:2,pressed:pressed,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIToggle",$_.__params__ = ["pressed"],$_)
-	,UIChangeValue: ($_=function(value) { return {_hx_index:3,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeValue",$_.__params__ = ["value"],$_)
-	,UIChangeFloatValue: ($_=function(value) { return {_hx_index:4,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeFloatValue",$_.__params__ = ["value"],$_)
-	,UIChangeItem: ($_=function(index,items) { return {_hx_index:5,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeItem",$_.__params__ = ["index","items"],$_)
-	,UIDoubleClickItem: ($_=function(index,items) { return {_hx_index:6,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIDoubleClickItem",$_.__params__ = ["index","items"],$_)
-	,UIClickItem: ($_=function(index,items) { return {_hx_index:7,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
-	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:8,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
-	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:9,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
-	,UIEntering: {_hx_name:"UIEntering",_hx_index:10,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UILeaving: {_hx_name:"UILeaving",_hx_index:11,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIPush: {_hx_name:"UIPush",_hx_index:1,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UICustomEvent: ($_=function(eventName,data) { return {_hx_index:2,eventName:eventName,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UICustomEvent",$_.__params__ = ["eventName","data"],$_)
+	,UIToggle: ($_=function(pressed) { return {_hx_index:3,pressed:pressed,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIToggle",$_.__params__ = ["pressed"],$_)
+	,UIChangeValue: ($_=function(value) { return {_hx_index:4,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeValue",$_.__params__ = ["value"],$_)
+	,UIChangeFloatValue: ($_=function(value) { return {_hx_index:5,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeFloatValue",$_.__params__ = ["value"],$_)
+	,UIChangeItem: ($_=function(index,items) { return {_hx_index:6,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeItem",$_.__params__ = ["index","items"],$_)
+	,UIDoubleClickItem: ($_=function(index,items) { return {_hx_index:7,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIDoubleClickItem",$_.__params__ = ["index","items"],$_)
+	,UIClickItem: ($_=function(index,items) { return {_hx_index:8,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
+	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:9,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
+	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:10,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
+	,UIEntering: {_hx_name:"UIEntering",_hx_index:11,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UILeaving: {_hx_name:"UILeaving",_hx_index:12,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 };
-bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
-bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
+bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
+bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
 bh_ui_UIElementIdentifiable.__name__ = "bh.ui.UIElementIdentifiable";
@@ -27207,6 +27212,8 @@ bh_ui_UIElementBuilder.prototype = {
 	,__class__: bh_ui_UIElementBuilder
 };
 var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
+	this.hovered = false;
+	this.disabled = false;
 	this.interactive = interactive;
 	this.prefix = prefix;
 	var extracted = bh_ui_UIInteractiveWrapper.extractInteractiveData(interactive,prefix);
@@ -27215,7 +27222,7 @@ var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
 };
 $hxClasses["bh.ui.UIInteractiveWrapper"] = bh_ui_UIInteractiveWrapper;
 bh_ui_UIInteractiveWrapper.__name__ = "bh.ui.UIInteractiveWrapper";
-bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
+bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementDisablable,bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
 bh_ui_UIInteractiveWrapper.extractInteractiveData = function(obj,prefix) {
 	var _g = obj.multiAnimType;
 	if(_g._hx_index == 0) {
@@ -27243,16 +27250,25 @@ bh_ui_UIInteractiveWrapper.prototype = {
 	,clear: function() {
 	}
 	,onEvent: function(wrapper) {
+		if(this.disabled) {
+			return;
+		}
 		var _g = wrapper.event;
 		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.button;
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIPush,this);
+			break;
 		case 1:
 			var _g1 = _g.button;
 			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIClick,this);
 			break;
 		case 4:
+			this.hovered = true;
 			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIEntering,this);
 			break;
 		case 5:
+			this.hovered = false;
 			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UILeaving,this);
 			break;
 		default:
@@ -55482,6 +55498,7 @@ var h3d_scene_Scene = function(createRenderer,createLightSystem) {
 	if(createRenderer == null) {
 		createRenderer = true;
 	}
+	this.checkPasses = true;
 	this.interactiveOffset = 0;
 	this.ratioY = 1;
 	this.ratioX = 1;
@@ -56072,6 +56089,16 @@ h3d_scene_Scene.prototype = $extend(h3d_scene_Object.prototype,{
 			this.lightSystem.initLights(this.ctx);
 		}
 		this.renderer.process(passes);
+		if(!this.ctx.computingStatic && this.checkPasses) {
+			var _g = 0;
+			while(_g < passes.length) {
+				var p = passes[_g];
+				++_g;
+				if(!p.rendered) {
+					haxe_Log.trace("Pass " + p.name + " has not been rendered : don't know how to handle.",{ fileName : "h3d/scene/Scene.hx", lineNumber : 397, className : "h3d.scene.Scene", methodName : "render"});
+				}
+			}
+		}
 		if(this.camera.rightHanded) {
 			engine.driver.setRenderFlag(h3d_impl_RenderFlag.CameraHandness,0);
 		}
@@ -68164,6 +68191,9 @@ hxd_res_NanoJpeg.prototype = {
 			this.bufbits += 8;
 			this.buf = this.buf << 8 | newbyte;
 			if(newbyte == 255) {
+				if(this.size == 0) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				var marker = this.bytes.b[this.pos];
 				this.pos++;
 				this.size--;
@@ -68174,6 +68204,9 @@ hxd_res_NanoJpeg.prototype = {
 				case 0:case 255:
 					break;
 				default:
+					if((marker & 248) != 208) {
+						throw haxe_Exception.thrown("Invalid JPEG file");
+					}
 					this.buf = this.buf << 8 | marker;
 					this.bufbits += 8;
 				}
@@ -68182,10 +68215,22 @@ hxd_res_NanoJpeg.prototype = {
 		return this.buf >> this.bufbits - bits & (1 << bits) - 1;
 	}
 	,njDecodeSOF: function() {
+		if(this.size < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		if(this.length > this.size) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
+		if(this.length < 9) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		if(this.bytes.b[this.pos] != 8) {
 			this.notSupported();
 		}
@@ -68195,11 +68240,17 @@ hxd_res_NanoJpeg.prototype = {
 		this.pos += 6;
 		this.size -= 6;
 		this.length -= 6;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		switch(this.ncomp) {
 		case 1:case 3:
 			break;
 		default:
 			this.notSupported();
+		}
+		if(this.length < this.ncomp * 3) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
 		}
 		var ssxmax = 0;
 		var ssymax = 0;
@@ -68210,17 +68261,29 @@ hxd_res_NanoJpeg.prototype = {
 			var c = this.comps[i];
 			c.cid = this.bytes.b[this.pos];
 			c.ssx = this.bytes.b[this.pos + 1] >> 4;
+			if(c.ssx == 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			if((c.ssx & c.ssx - 1) != 0) {
 				this.notSupported();
 			}
 			c.ssy = this.bytes.b[this.pos + 1] & 15;
+			if(c.ssy == 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			if((c.ssy & c.ssy - 1) != 0) {
 				this.notSupported();
 			}
 			c.qtsel = this.bytes.b[this.pos + 2];
+			if((c.qtsel & 252) != 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			this.pos += 3;
 			this.size -= 3;
 			this.length -= 3;
+			if(this.size < 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			this.qtused |= 1 << c.qtsel;
 			if(c.ssx > ssxmax) {
 				ssxmax = c.ssx;
@@ -68257,14 +68320,29 @@ hxd_res_NanoJpeg.prototype = {
 		this.pos += count;
 		this.size -= count;
 		this.length -= count;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 	}
 	,njDecodeDQT: function() {
+		if(this.size < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		if(this.length > this.size) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		while(this.length >= 65) {
 			var i = this.bytes.b[this.pos];
+			if((i & 252) != 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			this.qtavail |= 1 << i;
 			var t = this.qtab[i];
 			var _g = 0;
@@ -68275,15 +68353,33 @@ hxd_res_NanoJpeg.prototype = {
 			this.pos += 65;
 			this.size -= 65;
 			this.length -= 65;
+			if(this.size < 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
+		}
+		if(this.length != 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
 		}
 	}
 	,njDecodeDHT: function() {
+		if(this.size < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		if(this.length > this.size) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		while(this.length >= 17) {
 			var i = this.bytes.b[this.pos];
+			if((i & 236) != 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			i = i >> 4 & 1 | (i & 3) << 1;
 			this.counts[0] = this.bytes.b[this.pos + 1];
 			this.counts[1] = this.bytes.b[this.pos + 2];
@@ -68304,6 +68400,9 @@ hxd_res_NanoJpeg.prototype = {
 			this.pos += 17;
 			this.size -= 17;
 			this.length -= 17;
+			if(this.size < 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			var vlc = this.vlctab[i];
 			var vpos = 0;
 			var remain = 65536;
@@ -68316,7 +68415,13 @@ hxd_res_NanoJpeg.prototype = {
 				if(currcnt == 0) {
 					continue;
 				}
+				if(this.length < currcnt) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				remain -= currcnt << 16 - codelen;
+				if(remain < 0) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				var _g1 = 0;
 				var _g2 = currcnt;
 				while(_g1 < _g2) {
@@ -68333,23 +68438,44 @@ hxd_res_NanoJpeg.prototype = {
 				this.pos += currcnt;
 				this.size -= currcnt;
 				this.length -= currcnt;
+				if(this.size < 0) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 			}
 			while(remain-- != 0) {
 				vlc.b[vpos] = 0;
 				vpos += 2;
 			}
 		}
+		if(this.length != 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 	}
 	,njDecodeDRI: function() {
+		if(this.size < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		if(this.length > this.size) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
+		if(this.length < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.rstinterval = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
 		var count = this.length;
 		this.pos += count;
 		this.size -= count;
 		this.length -= count;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 	}
 	,njDecodeBlock: function(c,po) {
 		var out = c.pixels;
@@ -68365,6 +68491,9 @@ hxd_res_NanoJpeg.prototype = {
 		var vlc = this.vlctab[c.dctabsel];
 		var value1 = this.njShowBits(16);
 		var bits = vlc.b[value1 << 1];
+		if(bits == 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		if(this.bufbits < bits) {
 			this.njShowBits(bits);
 		}
@@ -68391,6 +68520,9 @@ hxd_res_NanoJpeg.prototype = {
 		do {
 			var value1 = this.njShowBits(16);
 			var bits = at.b[value1 << 1];
+			if(bits == 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			if(this.bufbits < bits) {
 				this.njShowBits(bits);
 			}
@@ -68412,7 +68544,13 @@ hxd_res_NanoJpeg.prototype = {
 			if(this.vlcCode == 0) {
 				break;
 			}
+			if((this.vlcCode & 15) == 0 && this.vlcCode != 240) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			coef += (this.vlcCode >> 4) + 1;
+			if(coef > 63) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			this.block[this.njZZ[coef]] = value * qt[coef];
 		} while(coef < 63);
 		var bp = 0;
@@ -69444,26 +69582,50 @@ hxd_res_NanoJpeg.prototype = {
 		throw haxe_Exception.thrown("This JPG file is not supported");
 	}
 	,njDecodeScan: function() {
+		if(this.size < 2) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		if(this.length > this.size) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
+		if(this.length < 4 + 2 * this.ncomp) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		if(this.bytes.b[this.pos] != this.ncomp) {
 			this.notSupported();
 		}
 		this.pos += 1;
 		this.size -= 1;
 		this.length -= 1;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		var _g = 0;
 		var _g1 = this.ncomp;
 		while(_g < _g1) {
 			var i = _g++;
 			var c = this.comps[i];
+			if(this.bytes.b[this.pos] != c.cid) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
+			if((this.bytes.b[this.pos + 1] & 236) != 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			c.dctabsel = this.bytes.b[this.pos + 1] >> 4 << 1;
 			c.actabsel = (this.bytes.b[this.pos + 1] & 3) << 1 | 1;
 			this.pos += 2;
 			this.size -= 2;
 			this.length -= 2;
+			if(this.size < 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 		}
 		var start = this.bytes.b[this.pos];
 		var count = this.bytes.b[this.pos + 1];
@@ -69475,6 +69637,9 @@ hxd_res_NanoJpeg.prototype = {
 		this.pos += count;
 		this.size -= count;
 		this.length -= count;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		var mbx = 0;
 		var mby = 0;
 		var rstcount = this.rstinterval;
@@ -69508,6 +69673,9 @@ hxd_res_NanoJpeg.prototype = {
 				var r = this.njShowBits(16);
 				this.bufbits -= 16;
 				var i1 = r;
+				if((i1 & 65528) != 65488 || (i1 & 7) != nextrst) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				nextrst = nextrst + 1 & 7;
 				rstcount = this.rstinterval;
 				this.comps[0].dcpred = 0;
@@ -69711,10 +69879,19 @@ hxd_res_NanoJpeg.prototype = {
 		this.pos += 2;
 		this.size -= 2;
 		this.length -= 2;
+		if(this.size < 0) {
+			throw haxe_Exception.thrown("Invalid JPEG file");
+		}
 		_hx_loop1: while(true) {
+			if(this.size < 2 || this.bytes.b[this.pos] != 255) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			this.pos += 2;
 			this.size -= 2;
 			this.length -= 2;
+			if(this.size < 0) {
+				throw haxe_Exception.thrown("Invalid JPEG file");
+			}
 			switch(this.bytes.b[this.pos + (-1)]) {
 			case 192:
 				this.njDecodeSOF();
@@ -69753,28 +69930,52 @@ hxd_res_NanoJpeg.prototype = {
 				this.njDecodeDRI();
 				break;
 			case 254:
+				if(this.size < 2) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+				if(this.length > this.size) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				this.pos += 2;
 				this.size -= 2;
 				this.length -= 2;
+				if(this.size < 0) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				var count = this.length;
 				this.pos += count;
 				this.size -= count;
 				this.length -= count;
+				if(this.size < 0) {
+					throw haxe_Exception.thrown("Invalid JPEG file");
+				}
 				break;
 			default:
 				switch(this.bytes.b[this.pos + (-1)] & 240) {
 				case 192:
 					throw haxe_Exception.thrown("Unsupported jpeg type " + (this.bytes.b[this.pos + (-1)] & 15));
 				case 224:
+					if(this.size < 2) {
+						throw haxe_Exception.thrown("Invalid JPEG file");
+					}
 					this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+					if(this.length > this.size) {
+						throw haxe_Exception.thrown("Invalid JPEG file");
+					}
 					this.pos += 2;
 					this.size -= 2;
 					this.length -= 2;
+					if(this.size < 0) {
+						throw haxe_Exception.thrown("Invalid JPEG file");
+					}
 					var count1 = this.length;
 					this.pos += count1;
 					this.size -= count1;
 					this.length -= count1;
+					if(this.size < 0) {
+						throw haxe_Exception.thrown("Invalid JPEG file");
+					}
 					break;
 				default:
 					throw haxe_Exception.thrown("Unsupported jpeg tag 0x" + StringTools.hex(this.bytes.b[this.pos + (-1)],2));
@@ -71253,6 +71454,12 @@ hxsl_Cache.prototype = {
 		haxe_ds_ArraySort.sort(shaderDatas,function(s1,s2) {
 			return s2.p - s1.p;
 		});
+		var _g = 0;
+		while(_g < shaderDatas.length) {
+			var s = shaderDatas[_g];
+			++_g;
+			hxsl_Printer.check(s.inst.shader);
+		}
 		var linker = new hxsl_Linker(mode);
 		var s;
 		try {
@@ -71315,6 +71522,14 @@ hxsl_Cache.prototype = {
 				checkRec(v);
 			}
 		}
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < shaderDatas.length) {
+			var s1 = shaderDatas[_g1];
+			++_g1;
+			_g.push(s1.inst.shader);
+		}
+		hxsl_Printer.check(s,_g);
 		var prev = s;
 		var splitter = new hxsl_Splitter();
 		var sl;
@@ -71347,8 +71562,23 @@ hxsl_Cache.prototype = {
 				paramVars.h[nv == null ? v.id : nv.id] = { instance : inf.index, index : inf.inst.params.h[v.merged[0].id]};
 			}
 		}
+		var _g = 0;
+		while(_g < sl.length) {
+			var s = sl[_g];
+			++_g;
+			hxsl_Printer.check(s,[prev]);
+		}
 		var prev = sl;
 		var sl1 = new hxsl_Dce().dce(sl);
+		var _g_current = 0;
+		var _g_array = sl1;
+		while(_g_current < _g_array.length) {
+			var _g_value = _g_array[_g_current];
+			var _g_key = _g_current++;
+			var i = _g_key;
+			var s = _g_value;
+			hxsl_Printer.check(s,[prev[i]]);
+		}
 		var r = this.buildRuntimeShader(sl1,paramVars);
 		r.mode = mode;
 		var _g = [];
@@ -71433,6 +71663,7 @@ hxsl_Cache.prototype = {
 				throw haxe_Exception.thrown("assert");
 			}
 			this.initGlobals(r,fl);
+			hxsl_Printer.check(fl.data,[s]);
 		}
 		return r;
 	}
@@ -84522,6 +84753,130 @@ hxsl_Printer.shaderToString = function(s,varId) {
 	}
 	return new hxsl_Printer(varId).shaderString(s);
 };
+hxsl_Printer.check = function(s,from) {
+	try {
+		var vars = new haxe_ds_IntMap();
+		var regVars = [];
+		var regVar = null;
+		regVar = function(v,reg) {
+			if(reg) {
+				if(vars.h.hasOwnProperty(v.id)) {
+					throw haxe_Exception.thrown("Duplicate var " + v.id);
+				}
+				vars.h[v.id] = v;
+				regVars.push(v);
+			} else {
+				vars.remove(v.id);
+			}
+			var _g = v.type;
+			if(_g._hx_index == 13) {
+				var vl = _g.vl;
+				var _g = 0;
+				while(_g < vl.length) {
+					var v = vl[_g];
+					++_g;
+					regVar(v,reg);
+				}
+			}
+		};
+		var checkExpr = null;
+		checkExpr = function(e) {
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 1:
+				var v = _g.v;
+				if(!vars.h.hasOwnProperty(v.id)) {
+					throw haxe_Exception.thrown("Unbound var " + v.name + "@" + v.id);
+				}
+				break;
+			case 4:
+				var el = _g.el;
+				var old = regVars;
+				regVars = [];
+				var _g1 = 0;
+				while(_g1 < el.length) {
+					var e1 = el[_g1];
+					++_g1;
+					checkExpr(e1);
+				}
+				var _g1 = 0;
+				while(_g1 < regVars.length) {
+					var v = regVars[_g1];
+					++_g1;
+					regVar(v,false);
+				}
+				regVars = old;
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				if(init != null) {
+					checkExpr(init);
+				}
+				regVar(v,true);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				checkExpr(it);
+				regVar(v,true);
+				checkExpr(loop);
+				regVar(v,false);
+				break;
+			default:
+				hxsl_Tools.iter(e,checkExpr);
+			}
+		};
+		var _g = 0;
+		var _g1 = s.vars;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			regVar(v,true);
+		}
+		var _g = 0;
+		var _g1 = s.funs;
+		while(_g < _g1.length) {
+			var f = _g1[_g];
+			++_g;
+			var _g2 = 0;
+			var _g3 = f.args;
+			while(_g2 < _g3.length) {
+				var v = _g3[_g2];
+				++_g2;
+				regVar(v,true);
+			}
+			checkExpr(f.expr);
+			var _g4 = 0;
+			var _g5 = f.args;
+			while(_g4 < _g5.length) {
+				var v1 = _g5[_g4];
+				++_g4;
+				regVar(v1,false);
+			}
+		}
+	} catch( _g ) {
+		var _g1 = haxe_Exception.caught(_g).unwrap();
+		if(typeof(_g1) == "string") {
+			var e = _g1;
+			var msg = e + "\n    in\n" + hxsl_Printer.shaderToString(s,true);
+			if(from != null) {
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < from.length) {
+					var s = from[_g2];
+					++_g2;
+					_g1.push(hxsl_Printer.shaderToString(s,true));
+				}
+				msg += "\n    from\n\n" + _g1.join("\n\n");
+			}
+			throw haxe_Exception.thrown(msg);
+		} else {
+			throw _g;
+		}
+	}
+};
 hxsl_Printer.prototype = {
 	shaderString: function(s) {
 		this.buffer = new StringBuf();
@@ -85884,6 +86239,7 @@ hxsl_SharedShader.prototype = {
 		var edata = $eval.eval(this.data);
 		edata = hxsl_SharedShader.compactMem(edata);
 		var i = new hxsl_ShaderInstance(edata);
+		hxsl_Printer.check(i.shader,[this.data]);
 		this.paramsCount = 0;
 		var _g = 0;
 		var _g1 = this.data.vars;
@@ -86828,19 +87184,19 @@ screens_ColorPickerDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototy
 				}
 			}
 			break;
-		case 3:
-			var value = event.value;
-			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
-				this.updatePreview();
-			}
-			break;
 		case 4:
 			var value = event.value;
 			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
 				this.updatePreview();
 			}
 			break;
-		case 8:
+		case 5:
+			var value = event.value;
+			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
+				this.updatePreview();
+			}
+			break;
+		case 9:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -86916,7 +87272,7 @@ screens_OkCancelDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,
 				this.getController().exitResponse = false;
 			}
 			break;
-		case 8:
+		case 9:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -86969,7 +87325,7 @@ screens_advanced_ConditionalsDemoScreen.prototype = $extend(DemoScreenBase.proto
 		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				this.currentValue = val;
@@ -87027,7 +87383,7 @@ screens_advanced_ExpressionsDemoScreen.prototype = $extend(DemoScreenBase.protot
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				if(this.demoResult != null) {
@@ -87107,7 +87463,7 @@ screens_advanced_IncrementalDemoScreen.prototype = $extend(DemoScreenBase.protot
 		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				this.currentValue = val;
@@ -87177,7 +87533,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 				}
 			}
 			break;
-		case 10:
+		case 11:
 			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
 				var wrapper = source;
 				if(this.statusText != null) {
@@ -87185,7 +87541,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 				}
 			}
 			break;
-		case 11:
+		case 12:
 			if(this.statusText != null) {
 				this.statusText.set_text("Click on any interactive region to see its id and metadata");
 			}
@@ -87720,7 +88076,7 @@ screens_advanced_MacroPerformanceDemoScreen.prototype = $extend(DemoScreenBase.p
 				this.clearObjects();
 			}
 			break;
-		case 5:
+		case 6:
 			var _g = event.items;
 			var index = event.index;
 			if(source == this.countDropdown && index >= 0 && index < screens_advanced_MacroPerformanceDemoScreen.COUNT_VALUES.length) {
@@ -88800,7 +89156,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return;
 			}
 			break;
-		case 2:
+		case 3:
 			var checked = event.pressed;
 			if(source == this.alphaChk) {
 				this.applyAlpha = checked;
@@ -88819,7 +89175,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 3:
+		case 4:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = val;
@@ -88832,7 +89188,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 5:
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.countDropdown && index >= 0 && index < screens_animation_AnimPathDemoScreen.COUNT_VALUES.length) {
@@ -88845,7 +89201,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 6:
+		case 7:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.pathList && index >= 0 && index < screens_animation_AnimPathDemoScreen.PATH_NAMES.length) {
@@ -89166,7 +89522,7 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 2:
+		case 3:
 			var checked = event.pressed;
 			if(source == this.inverseCheckbox) {
 				this.inverse = checked;
@@ -89174,14 +89530,14 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 				this.drawCurveGraph();
 			}
 			break;
-		case 3:
+		case 4:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = val;
 				this.demoResult.getUpdatable("speedValue").updateText("" + val + "%");
 			}
 			break;
-		case 6:
+		case 7:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.curveList && index >= 0 && index < screens_animation_CurvesDemoScreen.CURVE_TYPES.length) {
@@ -89774,22 +90130,11 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				this.openColorPicker(ci);
 			}
 			break;
-		case 2:
+		case 3:
 			var pressed = event.pressed;
 			var cellIdx = this.findCellForSource(source);
 			if(cellIdx >= 0) {
 				this.buildPreview(cellIdx);
-			}
-			break;
-		case 3:
-			var value = event.value;
-			var cellIdx = this.findCellForSource(source);
-			if(cellIdx >= 0) {
-				this.buildPreview(cellIdx);
-				var sIdx = this.findSliderIdx(cellIdx,source);
-				if(sIdx >= 0) {
-					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
-				}
 			}
 			break;
 		case 4:
@@ -89803,7 +90148,18 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
-		case 6:
+		case 5:
+			var value = event.value;
+			var cellIdx = this.findCellForSource(source);
+			if(cellIdx >= 0) {
+				this.buildPreview(cellIdx);
+				var sIdx = this.findSliderIdx(cellIdx,source);
+				if(sIdx >= 0) {
+					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
+				}
+			}
+			break;
+		case 7:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList && index >= 0 && index < TestBitmaps.ALL_TYPES.length) {
@@ -89822,7 +90178,7 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
-		case 9:
+		case 10:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -90056,7 +90412,7 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		}
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 5) {
+		if(event._hx_index == 6) {
 			var index = event.index;
 			var items = event.items;
 			if(source == this.tabs) {
@@ -90264,7 +90620,7 @@ screens_animation_PathsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 3:
+		case 4:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speed = 0.8 * val;
@@ -90849,7 +91205,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 2:
+		case 3:
 			var checked = event.pressed;
 			if(source == this.extDrivenChk) {
 				this.isExtDriven = checked;
@@ -90873,7 +91229,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				}
 			}
 			break;
-		case 3:
+		case 4:
 			var value = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = value;
@@ -90886,7 +91242,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				this.setUpdatable(this.interactiveResult,"progressValue","" + value + "%");
 			}
 			break;
-		case 5:
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.tabs) {
@@ -90898,7 +91254,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				}
 			}
 			break;
-		case 6:
+		case 7:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.animList && index >= 0 && index < screens_animation_StateAnimDemoScreen.MARINE_ANIMS.length) {
@@ -92537,7 +92893,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 			break;
-		case 10:
+		case 11:
 			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
 				var wrapper = source;
 				var nodeIdx = Std.parseInt(wrapper.id);
@@ -92546,7 +92902,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				}
 			}
 			break;
-		case 11:
+		case 12:
 			this.clearHover();
 			this.updateInfoText("Hover over equipment to see details");
 			break;
@@ -92576,9 +92932,9 @@ screens_gamelike_StatusEffectsDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Status Effects","Buff/debuff slots with countdown timers and hover tooltip");
+		this.setupDemo("Status Bar","Flow layout with buff/debuff cards, progress bars, and particles");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/status-effects.manim",false);
-		var generatedByMacroBuildWithParametersload1986Builder = function() {
+		var generatedByMacroBuildWithParametersload2583Builder = function() {
 			var clearAllButton;
 			var addDebuffButton;
 			var addBuffButton;
@@ -92606,7 +92962,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 				return _el.getObject();
 			});
 			_g.h["addBuffButton"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("statusEffectsDemo",builderResults,{ placeholderObjects : _g});
+			var builderResults1 = _gthis1.buildWithParameters("statusBarDemo",builderResults,{ placeholderObjects : _g});
 			var retVal = { clearAllButton : clearAllButton, addDebuffButton : addDebuffButton, addBuffButton : addBuffButton, builderResults : builderResults1};
 			if(retVal.clearAllButton == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "clearAllButton" + " is null (check if placeholder object is named correctly)");
@@ -92619,38 +92975,21 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1986Builder();
+		var ui = generatedByMacroBuildWithParametersload2583Builder();
 		this.demoResult = ui.builderResults;
 		this.addBuffButton = ui.addBuffButton;
 		this.addDebuffButton = ui.addDebuffButton;
 		this.clearAllButton = ui.clearAllButton;
 		this.addBuilderResult(this.demoResult);
 		this.effects = [];
-		this.slotBitmaps = [];
-		this.slotTimerTexts = [];
 		this.slotInteractives = [];
-		var container = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("slotContainer").object);
+		this.refreshAnims = [];
+		var container = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
 		var _g = 0;
 		while(_g < 8) {
 			var i = _g++;
-			var x = i * 70;
-			var bmp = new h2d_Bitmap(h2d_Tile.fromColor(-13421773,50,50));
-			bmp.posChanged = true;
-			bmp.x = x;
-			bmp.posChanged = true;
-			bmp.y = 0;
-			container.addChild(bmp);
-			this.slotBitmaps.push(bmp);
-			var timerText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_12"));
-			timerText.set_text("");
-			timerText.set_textColor(16777215);
-			timerText.posChanged = true;
-			timerText.x = x + 10;
-			timerText.posChanged = true;
-			timerText.y = 52;
-			container.addChild(timerText);
-			this.slotTimerTexts.push(timerText);
-			var inter = new h2d_Interactive(50,50,container);
+			var x = i * 72;
+			var inter = new h2d_Interactive(64,88,container);
 			inter.posChanged = true;
 			inter.x = x;
 			inter.posChanged = true;
@@ -92682,45 +93021,129 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var defs = isBuff ? screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS : screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS;
 		var def = defs[Math.random() * defs.length | 0];
 		var _g = 0;
-		var _g1 = this.effects;
-		while(_g < _g1.length) {
-			var e = _g1[_g];
-			++_g;
+		var _g1 = this.effects.length;
+		while(_g < _g1) {
+			var idx = _g++;
+			var e = this.effects[idx];
 			if(e.name == def.name) {
 				e.remaining = def.duration;
+				if(e.cardResult != null) {
+					e.cardResult.setParameter("pct",100);
+					e.cardResult.getUpdatable("cardTimer").updateText("" + (def.duration | 0) + "s");
+				}
+				this.spawnRefreshAnim(idx,e.isBuff);
 				this.setLog("Refreshed " + def.name + "!");
-				this.refreshSlots();
 				return;
 			}
 		}
-		this.effects.push({ name : def.name, desc : def.desc, color : def.color, duration : def.duration, remaining : def.duration, isBuff : isBuff});
+		var kind = isBuff ? "buff" : "debuff";
+		var cardResult = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["kind"] = kind;
+		_g.h["pct"] = 100;
+		var cardResult1 = cardResult.buildWithParameters("statusCard",_g,null,null,true);
+		cardResult1.getUpdatable("cardName").updateText(def.name);
+		cardResult1.getUpdatable("cardTimer").updateText("" + (def.duration | 0) + "s");
+		var iconType = screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP.h[def.name];
+		if(iconType != null) {
+			var iconResult = this.demoBuilder;
+			var _g = new haxe_ds_StringMap();
+			_g.h["effectType"] = iconType;
+			var iconResult1 = iconResult.buildWithParameters("effectIcon",_g);
+			var _this = iconResult1.object;
+			_this.posChanged = true;
+			_this.x = 8;
+			_this.posChanged = true;
+			_this.y = 6;
+			cardResult1.getSlot("cardIcon").setContent(iconResult1.object);
+		}
+		var particleName = isBuff ? "buffSparkle" : "debuffSmoke";
+		var particles = this.demoBuilder.createParticles(particleName);
+		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
+		particleContainer.addChild(particles);
+		var effect = { name : def.name, desc : def.desc, duration : def.duration, remaining : def.duration, isBuff : isBuff, cardResult : cardResult1, particleObj : particles, fadeAlpha : 1.0, fading : false};
+		this.effects.push(effect);
+		var slotIndex = this.effects.length - 1;
+		this.demoResult.getSlot("effectSlot",slotIndex).setContent(cardResult1.object);
+		var px = slotIndex * 72 + 32.;
+		var py = isBuff ? 44. : 0;
+		particles.posChanged = true;
+		particles.x = px;
+		particles.posChanged = true;
+		particles.y = py;
 		var type = isBuff ? "buff" : "debuff";
 		this.setLog("Added " + type + ": " + def.name + " (" + def.duration + "s)");
-		this.refreshSlots();
+		this.updateEffectCount();
 	}
 	,clearAll: function() {
+		var _g = 0;
+		var _g1 = this.effects.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var e = this.effects[i];
+			this.demoResult.getSlot("effectSlot",i).clear();
+			if(e.particleObj != null) {
+				var _this = e.particleObj;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+			}
+		}
 		this.effects = [];
 		this.hoveredSlot = -1;
 		this.clearTooltip();
 		this.setLog("All effects cleared.");
-		this.refreshSlots();
+		this.updateEffectCount();
 	}
-	,refreshSlots: function() {
-		var _g = 0;
-		while(_g < 8) {
-			var i = _g++;
-			if(i < this.effects.length) {
-				var e = this.effects[i];
-				this.slotBitmaps[i].set_tile(h2d_Tile.fromColor(e.color,50,50));
-				this.slotTimerTexts[i].set_text("" + (e.remaining | 0) + "s");
-			} else {
-				this.slotBitmaps[i].set_tile(h2d_Tile.fromColor(-13421773,50,50));
-				this.slotTimerTexts[i].set_text("");
+	,removeEffect: function(index) {
+		var e = this.effects[index];
+		this.demoResult.getSlot("effectSlot",index).clear();
+		if(e.particleObj != null) {
+			var _this = e.particleObj;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
 			}
 		}
+		this.effects.splice(index,1);
+		this.reassignSlots();
+		if(this.hoveredSlot >= this.effects.length) {
+			this.hoveredSlot = -1;
+			this.clearTooltip();
+		}
+		this.updateEffectCount();
+	}
+	,reassignSlots: function() {
+		this.demoResult.getSlot("effectSlot",0).clear();
+		this.demoResult.getSlot("effectSlot",1).clear();
+		this.demoResult.getSlot("effectSlot",2).clear();
+		this.demoResult.getSlot("effectSlot",3).clear();
+		this.demoResult.getSlot("effectSlot",4).clear();
+		this.demoResult.getSlot("effectSlot",5).clear();
+		this.demoResult.getSlot("effectSlot",6).clear();
+		this.demoResult.getSlot("effectSlot",7).clear();
+		var _g = 0;
+		var _g1 = this.effects.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var e = this.effects[i];
+			if(e.cardResult != null) {
+				this.demoResult.getSlot("effectSlot",i).setContent(e.cardResult.object);
+			}
+			if(e.particleObj != null) {
+				var py = e.isBuff ? 44. : 0;
+				var _this = e.particleObj;
+				_this.posChanged = true;
+				_this.x = i * 72 + 32.;
+				_this.posChanged = true;
+				_this.y = py;
+			}
+		}
+	}
+	,updateEffectCount: function() {
 		if(this.demoResult != null) {
 			this.demoResult.getUpdatable("effectCountText").updateText("Effects: " + this.effects.length + " / " + 8);
 		}
+		this.updateButtonStates();
 	}
 	,updateTooltip: function() {
 		if(this.demoResult == null) {
@@ -92728,6 +93151,9 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		}
 		if(this.hoveredSlot >= 0 && this.hoveredSlot < this.effects.length) {
 			var e = this.effects[this.hoveredSlot];
+			if(e.fading) {
+				return;
+			}
 			var type = e.isBuff ? "[Buff]" : "[Debuff]";
 			this.demoResult.getUpdatable("tooltipName").updateText("" + e.name + " " + type);
 			this.demoResult.getUpdatable("tooltipDesc").updateText(e.desc);
@@ -92748,30 +93174,127 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			this.demoResult.getUpdatable("logText").updateText(text);
 		}
 	}
+	,updateButtonStates: function() {
+		var full = this.effects.length >= 8;
+		var empty = this.effects.length == 0;
+		if(this.addBuffButton != null) {
+			this.addBuffButton.set_disabled(full);
+		}
+		if(this.addDebuffButton != null) {
+			this.addDebuffButton.set_disabled(full);
+		}
+		if(this.clearAllButton != null) {
+			this.clearAllButton.set_disabled(empty);
+		}
+	}
+	,spawnRefreshAnim: function(slotIndex,isBuff) {
+		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
+		var cx = slotIndex * 72 + 32.;
+		var cy = 44.;
+		var burstName = isBuff ? "buffRefreshBurst" : "debuffRefreshBurst";
+		var burst = this.demoBuilder.createParticles(burstName);
+		burst.posChanged = true;
+		burst.x = cx;
+		burst.posChanged = true;
+		burst.y = cy;
+		particleContainer.addChild(burst);
+		var font = hxd_Res.load("font/m5x7.fnt").to(hxd_res_BitmapFont).toFont();
+		var txt = new h2d_Text(font,particleContainer);
+		txt.set_text("Refreshed!");
+		txt.set_textColor(16772676);
+		txt.set_textAlign(h2d_Align.Center);
+		txt.posChanged = true;
+		txt.x = cx;
+		txt.posChanged = true;
+		txt.y = cy - 20;
+		txt.posChanged = true;
+		txt.scaleX = 0.01;
+		txt.posChanged = true;
+		txt.scaleY = 0.01;
+		this.refreshAnims.push({ text : txt, burst : burst, elapsed : 0.0});
+	}
+	,updateRefreshAnims: function(dt) {
+		var i = this.refreshAnims.length - 1;
+		while(i >= 0) {
+			var a = this.refreshAnims[i];
+			a.elapsed += dt;
+			var t = a.elapsed / 0.8;
+			if(t >= 1.0) {
+				var _this = a.text;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+				var _this1 = a.burst;
+				if(_this1 != null && _this1.parent != null) {
+					_this1.parent.removeChild(_this1);
+				}
+				this.refreshAnims.splice(i,1);
+			} else {
+				var st = Math.min(t / 0.4,1.0);
+				var c1 = 1.70158;
+				var c3 = c1 + 1.0;
+				var scale = 1.0 + c3 * (st - 1.0) * (st - 1.0) * (st - 1.0) + c1 * (st - 1.0) * (st - 1.0);
+				var _this2 = a.text;
+				_this2.posChanged = true;
+				_this2.scaleX = scale;
+				_this2.posChanged = true;
+				_this2.scaleY = scale;
+				a.text.alpha = t > 0.5 ? 1.0 - (t - 0.5) * 2.0 : 1.0;
+				var fh = a.text;
+				fh.posChanged = true;
+				fh.y -= 30.0 * dt;
+			}
+			--i;
+		}
+	}
+	,refreshSlots: function() {
+		this.updateEffectCount();
+		this.updateButtonStates();
+	}
 	,update: function(dt) {
 		DemoScreenBase.prototype.update.call(this,dt);
 		var changed = false;
 		var i = this.effects.length - 1;
 		while(i >= 0) {
-			this.effects[i].remaining -= dt;
-			if(this.effects[i].remaining <= 0) {
-				var name = this.effects[i].name;
-				this.effects.splice(i,1);
-				this.setLog("" + name + " has expired.");
-				changed = true;
-				if(this.hoveredSlot >= this.effects.length) {
-					this.hoveredSlot = -1;
-					this.clearTooltip();
+			var e = this.effects[i];
+			if(e.fading) {
+				e.fadeAlpha -= 4.0 * dt;
+				if(e.fadeAlpha <= 0) {
+					var name = e.name;
+					this.removeEffect(i);
+					this.setLog("" + name + " has expired.");
+					changed = true;
+				} else {
+					if(e.cardResult != null) {
+						e.cardResult.object.alpha = e.fadeAlpha;
+					}
+					if(e.particleObj != null) {
+						e.particleObj.alpha = e.fadeAlpha;
+					}
+				}
+			} else {
+				e.remaining -= dt;
+				if(e.remaining <= 0) {
+					e.remaining = 0;
+					e.fading = true;
+					e.fadeAlpha = 1.0;
+				}
+				if(e.cardResult != null) {
+					var pct = Math.max(0,Math.min(100,e.remaining / e.duration * 100)) | 0;
+					e.cardResult.setParameter("pct",pct);
+					var secs = Math.max(0,Math.round(e.remaining * 10) / 10);
+					e.cardResult.getUpdatable("cardTimer").updateText("" + secs + "s");
 				}
 			}
 			--i;
 		}
-		if(changed || this.effects.length > 0) {
-			this.refreshSlots();
-		}
+		this.updateRefreshAnims(dt);
 		if(this.hoveredSlot >= 0 && this.hoveredSlot < this.effects.length && this.demoResult != null) {
-			var secs = Math.round(this.effects[this.hoveredSlot].remaining * 10) / 10;
-			this.demoResult.getUpdatable("tooltipTimer").updateText("" + secs + "s left");
+			var e = this.effects[this.hoveredSlot];
+			if(!e.fading) {
+				var secs = Math.round(e.remaining * 10) / 10;
+				this.demoResult.getUpdatable("tooltipTimer").updateText("" + secs + "s left");
+			}
 		}
 	}
 	,onScreenEvent: function(event,source) {
@@ -92800,14 +93323,43 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			}
 			this.slotInteractives = null;
 		}
+		if(this.effects != null) {
+			var _g = 0;
+			var _g1 = this.effects;
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				if(e.particleObj != null) {
+					var _this = e.particleObj;
+					if(_this != null && _this.parent != null) {
+						_this.parent.removeChild(_this);
+					}
+				}
+			}
+		}
+		if(this.refreshAnims != null) {
+			var _g = 0;
+			var _g1 = this.refreshAnims;
+			while(_g < _g1.length) {
+				var a = _g1[_g];
+				++_g;
+				var _this = a.text;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+				var _this1 = a.burst;
+				if(_this1 != null && _this1.parent != null) {
+					_this1.parent.removeChild(_this1);
+				}
+			}
+			this.refreshAnims = null;
+		}
 		this.demoBuilder = null;
 		this.demoResult = null;
 		this.addBuffButton = null;
 		this.addDebuffButton = null;
 		this.clearAllButton = null;
 		this.effects = null;
-		this.slotBitmaps = null;
-		this.slotTimerTexts = null;
 		this.hoveredSlot = -1;
 	}
 	,__class__: screens_gamelike_StatusEffectsDemoScreen
@@ -93126,7 +93678,7 @@ screens_layout_DynamicRefsDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var value = event.value;
 			if(source == this.slider && this.demoResult != null) {
 				this.demoResult.setParameter("barValue",value);
@@ -93195,7 +93747,7 @@ screens_layout_FlowLayoutDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.addBuilderResult(this.showcaseResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var value = event.value;
 			if(source == this.countSlider) {
 				this.buildShowcase(value);
@@ -93277,7 +93829,7 @@ screens_layout_RepeatableDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.addBuilderResult(this.showcaseResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var value = event.value;
 			if(source == this.countSlider) {
 				this.buildShowcase(value);
@@ -94089,7 +94641,7 @@ screens_ui_ButtonsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 2:
+		case 3:
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				var _g = 0;
@@ -94254,7 +94806,7 @@ screens_ui_CheckboxesDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.updateCount();
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 2) {
+		if(event._hx_index == 3) {
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				this.disabledCheckbox1.set_disabled(pressed);
@@ -94354,7 +94906,7 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.openDialog("dialog2","Are you sure you want to confirm?");
 			}
 			break;
-		case 9:
+		case 10:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -94728,7 +95280,7 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 5) {
+		if(event._hx_index == 6) {
 			var index = event.index;
 			var items = event.items;
 			if(source == this.dropdownScrollable) {
@@ -95018,13 +95570,13 @@ screens_ui_RadioDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 2:
+		case 3:
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				this.disabledRadio.set_disabled(pressed);
 			}
 			break;
-		case 5:
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.radioVertical) {
@@ -95101,14 +95653,14 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 5:
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList) {
 				this.updateSelectedText(index);
 			}
 			break;
-		case 6:
+		case 7:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList) {
@@ -95307,7 +95859,7 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 4) {
 			var value = event.value;
 			if(source == this.slider1) {
 				this.updateValueDisplay("value1",value);
@@ -95434,7 +95986,7 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 2:
+		case 3:
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				if(this.basicTabs != null) {
@@ -95448,7 +96000,7 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 5:
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.basicTabs) {
@@ -95563,7 +96115,7 @@ Xml.Comment = 3;
 Xml.DocType = 4;
 Xml.ProcessingInstruction = 5;
 Xml.Document = 6;
-hxd_res_Resource.LIVE_UPDATE = false;
+hxd_res_Resource.LIVE_UPDATE = true;
 bh_base_FontManager.fontRegistry = new haxe_ds_StringMap();
 bh_base_OffsetCoord.EVEN = 1;
 bh_base_OffsetCoord.ODD = -1;
@@ -95971,6 +96523,20 @@ screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Helm","Plate","Axe","Aegis"
 screens_gamelike_SkillTreeDemoScreen.PATH_NAMES = ["WAR","ROG","MAG"];
 screens_gamelike_SkillTreeDemoScreen.PATH_SLOT_NAMES = ["warNode","rogNode","magNode"];
 screens_gamelike_SkillTreeDemoScreen.ICONS = ["helm","armor","axe","tshield","boots","gloves","bow","ring","staff","book","scroll","gem"];
+screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP = (function($this) {
+	var $r;
+	var _g = new haxe_ds_StringMap();
+	_g.h["Regeneration"] = "regen";
+	_g.h["Strength Up"] = "strength";
+	_g.h["Shield"] = "shield";
+	_g.h["Haste"] = "haste";
+	_g.h["Poison"] = "poison";
+	_g.h["Slow"] = "slow";
+	_g.h["Weakness"] = "weakness";
+	_g.h["Curse"] = "curse";
+	$r = _g;
+	return $r;
+}(this));
 screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS = [{ name : "Regeneration", desc : "Restores 5 HP/sec", color : -11751600, duration : 8.0},{ name : "Strength Up", desc : "ATK +20%", color : -32944, duration : 10.0},{ name : "Shield", desc : "DEF +15", color : -11890524, duration : 6.0},{ name : "Haste", desc : "Speed +30%", color : -5317, duration : 5.0}];
 screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS = [{ name : "Poison", desc : "Lose 3 HP/sec", color : -7667457, duration : 7.0},{ name : "Slow", desc : "Speed -25%", color : -10066330, duration : 6.0},{ name : "Weakness", desc : "ATK -15%", color : -48060, duration : 8.0},{ name : "Curse", desc : "All stats -10%", color : -12320700, duration : 12.0}];
 screens_layout_ComboStatesDemoScreen.MODES = ["idle","active","warning","error"];

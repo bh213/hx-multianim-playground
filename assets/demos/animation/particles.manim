@@ -17,10 +17,8 @@ version: 0.5
     sizeRandom: 0.3
     fadeOut: 0.7
     fadeIn: 0.1
-    colorStart: #FF4400
-    colorMid: #FFAA00
-    colorMidPos: 0.4
-    colorEnd: #FF220044
+    0.0: colorCurve: linear, #FF4400, #FFAA00
+    0.4: colorCurve: linear, #FFAA00, #FF220044
     blendMode: add
 }
 
@@ -38,10 +36,8 @@ version: 0.5
     sizeRandom: 0.2
     fadeIn: 0.2
     fadeOut: 0.6
-    colorStart: #FFFFFF
-    colorMid: #88DDFF
-    colorMidPos: 0.5
-    colorEnd: #4488FF00
+    0.0: colorCurve: linear, #FFFFFF, #88DDFF
+    0.5: colorCurve: linear, #88DDFF, #4488FF00
     blendMode: add
 }
 
@@ -59,10 +55,8 @@ version: 0.5
     sizeRandom: 0.4
     fadeIn: 0.3
     fadeOut: 0.5
-    colorStart: #888888
-    colorMid: #666666
-    colorMidPos: 0.5
-    colorEnd: #44444400
+    0.0: colorCurve: linear, #888888, #666666
+    0.5: colorCurve: linear, #666666, #44444400
     blendMode: alpha
 }
 

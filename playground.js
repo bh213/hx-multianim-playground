@@ -1438,7 +1438,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload5864Builder = function() {
+		var generatedByMacroBuildWithParametersload5875Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1501,7 +1501,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload5864Builder();
+		var ui = generatedByMacroBuildWithParametersload5875Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -91648,7 +91648,7 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,__class__: screens_gamelike_BattleHudDemoScreen
 });
 var screens_gamelike_Blob47DemoScreen = function(screenManager,layers) {
-	this.paintValue = 1;
+	this.paintValue = 0;
 	this.isPainting = false;
 	DemoScreenBase.call(this,screenManager,layers);
 };
@@ -96292,7 +96292,7 @@ hx__registerFont = function(name,data) {
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "minimap", title : "Minimap"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Skill Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;

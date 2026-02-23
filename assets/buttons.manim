@@ -6,7 +6,7 @@ version: 0.5
 // #small   - Compact pixel button (ui-new atlas: btn_*_32x16)
 // #color   - Color swatch button (shows colored rect instead of text)
 
-#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
+#main programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffffff, textShadow:[true, false]=false) {
     @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
     @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
     @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
@@ -17,7 +17,7 @@ version: 0.5
     settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
+#warning programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="Warning", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffffff, textShadow:[true, false]=false) {
     @(status=>normal, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", $width, $height):     0,1
     @(status=>hover, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_hover", $width, $height):     0,0
     @(status=>pressed, disabled=>false) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_pressed", $width, $height): 0,0
@@ -28,7 +28,7 @@ version: 0.5
     settings{width:int=>$width, height:int=>$height, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#small programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="OK", font="f7x5", fontColor:int=0xffffff12) {
+#small programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="OK", font="f7x5", fontColor:int=0xffffffff) {
     scale: 2
     @(status=>normal, disabled=>false) bitmap(sheet("ui-new", "btn_normal_32x16")):   0,0
     @(status=>hover, disabled=>false) bitmap(sheet("ui-new", "btn_hover_32x16")):     0,0

@@ -1,0 +1,241 @@
+version: 0.5
+
+// Tooltips & Panels Demo
+// Hover tooltips (UITooltipHelper) and click panels (UIPanelHelper)
+
+// ─── Tooltip Builds ────────────────────────────────────────
+
+#tooltipSimple programmable(label:string="Tooltip") {
+    ninepatch("ui", "Window_3x3_idle", 140, 28): 0, 0
+    text(m6x11, $label, #ffffff, center, 130): 5, 8
+}
+
+#tooltipRich programmable(name:string="Item", desc:string="Description", color:color=#7fdbda) {
+    ninepatch("ui", "Window_3x3_idle", 180, 60): 0, 0
+    text(exo2_14, $name, $color, left, 160): 10, 8
+    text(m6x11, $desc, #aaaaaa, left, 160): 10, 30
+    bitmap(generated(color(160, 1, $color))): 10, 50
+}
+
+#tooltipItem programmable(name:string="Item", rarity:string="Common", damage:string="Damage: 0", color:color=#aaaaaa) {
+    ninepatch("ui", "Window_3x3_idle", 190, 80): 0, 0
+    bitmap(generated(color(4, 60, $color))): 10, 10
+    text(exo2_14, $name, $color, left, 160): 22, 8
+    text(m6x11, $rarity, #888888, left, 160): 22, 28
+    text(m6x11, $damage, #cccccc, left, 160): 22, 44
+    bitmap(generated(color(170, 1, $color))): 10, 66
+}
+
+// ─── Panel Builds ──────────────────────────────────────────
+
+#panelActions programmable() {
+    ninepatch("ui", "Window_3x3_idle", 130, 100): 0, 0
+    text(m5x7, "Actions", #888888, left, 120): 10, 6
+
+    point {
+        pos: 10, 22
+        bitmap(generated(color(110, 22, #334466))): 0, 0
+        text(m6x11, "Equip", #7fdbda, center, 110): 0, 5
+        interactive(110, 22, "equip"): 0, 0
+    }
+
+    point {
+        pos: 10, 48
+        bitmap(generated(color(110, 22, #334466))): 0, 0
+        text(m6x11, "Drop", #ff8888, center, 110): 0, 5
+        interactive(110, 22, "drop"): 0, 0
+    }
+
+    point {
+        pos: 10, 74
+        bitmap(generated(color(110, 22, #334466))): 0, 0
+        text(m6x11, "Info", #aaaaaa, center, 110): 0, 5
+        interactive(110, 22, "info"): 0, 0
+    }
+}
+
+#panelColors programmable() {
+    ninepatch("ui", "Window_3x3_idle", 100, 80): 0, 0
+    text(m5x7, "Pick Color", #888888, left, 90): 10, 6
+
+    // Row 1
+    point {
+        pos: 10, 22
+        bitmap(generated(color(24, 22, #ff4444))): 0, 0
+        interactive(24, 22, "colorRed"): 0, 0
+        bitmap(generated(color(24, 22, #44ff44))): 28, 0
+        interactive(24, 22, "colorGreen"): 28, 0
+        bitmap(generated(color(24, 22, #4488ff))): 56, 0
+        interactive(24, 22, "colorBlue"): 56, 0
+    }
+
+    // Row 2
+    point {
+        pos: 10, 48
+        bitmap(generated(color(24, 22, #ffff44))): 0, 0
+        interactive(24, 22, "colorYellow"): 0, 0
+        bitmap(generated(color(24, 22, #ff44ff))): 28, 0
+        interactive(24, 22, "colorPurple"): 28, 0
+        bitmap(generated(color(24, 22, #44ffff))): 56, 0
+        interactive(24, 22, "colorCyan"): 56, 0
+    }
+}
+
+#panelManual programmable() {
+    ninepatch("ui", "Window_3x3_idle", 170, 65): 0, 0
+    text(m6x11, "Manual close panel", #cccccc, left, 150): 10, 10
+    text(m5x7, "Only closes via button below", #888888, left, 150): 10, 26
+
+    point {
+        pos: 10, 40
+        bitmap(generated(color(60, 18, #553333))): 0, 0
+        text(m6x11, "Close", #ff8888, center, 60): 0, 3
+        interactive(60, 18, "closeBtn"): 0, 0
+    }
+}
+
+// ─── Combo Panel (for Section 4) ───────────────────────────
+
+#panelCombo programmable() {
+    ninepatch("ui", "Window_3x3_idle", 140, 78): 0, 0
+    text(m5x7, "Item Options", #888888, left, 120): 10, 6
+
+    point {
+        pos: 10, 22
+        bitmap(generated(color(120, 22, #334466))): 0, 0
+        text(m6x11, "Equip", #7fdbda, center, 120): 0, 5
+        interactive(120, 22, "comboEquip"): 0, 0
+    }
+
+    point {
+        pos: 10, 48
+        bitmap(generated(color(120, 22, #553333))): 0, 0
+        text(m6x11, "Discard", #ff8888, center, 120): 0, 5
+        interactive(120, 22, "comboDiscard"): 0, 0
+    }
+}
+
+// ─── Main Layout ───────────────────────────────────────────
+
+#tooltipsPanelsDemo programmable() {
+    pos: 50, 80
+
+    // ── Section 1: Tooltip Positioning ─────────────────────
+    text(exo2_16, "Tooltip Positioning", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Hover to see tooltips at different positions (Above, Below, Left, Right).", #aaaaaa, left, 700): 0, 30
+
+    // Above
+    point {
+        pos: 0, 60
+        bitmap(generated(color(120, 40, #334466))): 0, 0
+        text(m6x11, "Above", #7fdbda, center, 120): 0, 13
+        interactive(120, 40, "btnAbove", tooltip => "tooltipSimple", label => "Above!"): 0, 0
+    }
+
+    // Below
+    point {
+        pos: 140, 60
+        bitmap(generated(color(120, 40, #334466))): 0, 0
+        text(m6x11, "Below", #7fdbda, center, 120): 0, 13
+        interactive(120, 40, "btnBelow", tooltip => "tooltipSimple", label => "Below!"): 0, 0
+    }
+
+    // Left
+    point {
+        pos: 280, 60
+        bitmap(generated(color(120, 40, #334466))): 0, 0
+        text(m6x11, "Left", #7fdbda, center, 120): 0, 13
+        interactive(120, 40, "btnLeft", tooltip => "tooltipSimple", label => "Left!"): 0, 0
+    }
+
+    // Right
+    point {
+        pos: 420, 60
+        bitmap(generated(color(120, 40, #334466))): 0, 0
+        text(m6x11, "Right", #7fdbda, center, 120): 0, 13
+        interactive(120, 40, "btnRight", tooltip => "tooltipSimple", label => "Right!"): 0, 0
+    }
+
+    #statusTooltip(updatable) text(m6x11, "Hover a button to see a tooltip", #666666): 0, 110
+
+    // ── Section 2: Rich Tooltips ───────────────────────────
+    text(exo2_16, "Rich Tooltips", #7fdbda): 0, 145
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 167
+    text(exo2_light_14, "Metadata-driven content. Instant (0s), default (0.3s), and slow (1.0s) delays.", #aaaaaa, left, 700): 0, 175
+
+    // Item: Sword (instant)
+    point {
+        pos: 0, 205
+        ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        text(m6x11, "Iron Sword", #aaaaaa, left, 120): 10, 8
+        text(m5x7, "common  |  delay: 0s", #666666, left, 120): 10, 26
+        interactive(140, 50, "itemSword", tooltip => "tooltipItem", name => "Iron Sword", rarity => "Common", damage => "Damage: 12", color => "#aaaaaa"): 0, 0
+    }
+
+    // Item: Shield (default delay)
+    point {
+        pos: 160, 205
+        ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        text(m6x11, "Mana Shield", #7fdbda, left, 120): 10, 8
+        text(m5x7, "rare  |  delay: 0.3s", #666666, left, 120): 10, 26
+        interactive(140, 50, "itemShield", tooltip => "tooltipItem", name => "Mana Shield", rarity => "Rare", damage => "Block: 28", color => "#7fdbda"): 0, 0
+    }
+
+    // Item: Crown (slow delay)
+    point {
+        pos: 320, 205
+        ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        text(m6x11, "Dragon Crown", #ffeb3b, left, 120): 10, 8
+        text(m5x7, "legendary  |  delay: 1s", #666666, left, 120): 10, 26
+        interactive(140, 50, "itemCrown", tooltip => "tooltipItem", name => "Dragon Crown", rarity => "Legendary", damage => "Power: 99", color => "#ffeb3b"): 0, 0
+    }
+
+    #statusRich(updatable) text(m6x11, "Hover an item card to see a rich tooltip", #666666): 0, 265
+
+    // ── Section 3: Click Panels ────────────────────────────
+    text(exo2_16, "Click Panels", #ffeb3b): 0, 300
+    bitmap(generated(color(700, 1, #ffeb3b33))): 0, 322
+    text(exo2_light_14, "Click to open panels. OutsideClick auto-closes; Manual requires close button.", #aaaaaa, left, 700): 0, 330
+
+    // Actions panel trigger
+    point {
+        pos: 0, 360
+        bitmap(generated(color(120, 40, #443366))): 0, 0
+        text(m6x11, "Actions", #ffeb3b, center, 120): 0, 13
+        interactive(120, 40, "triggerActions", panel => "panelActions"): 0, 0
+    }
+
+    // Color picker trigger
+    point {
+        pos: 140, 360
+        bitmap(generated(color(120, 40, #336644))): 0, 0
+        text(m6x11, "Colors", #ffeb3b, center, 120): 0, 13
+        interactive(120, 40, "triggerColors", panel => "panelColors"): 0, 0
+    }
+
+    // Manual close trigger
+    point {
+        pos: 280, 360
+        bitmap(generated(color(120, 40, #664433))): 0, 0
+        text(m6x11, "Manual", #ffeb3b, center, 120): 0, 13
+        interactive(120, 40, "triggerManual", panel => "panelManual"): 0, 0
+    }
+
+    #statusPanel(updatable) text(m6x11, "Click a button to open a panel", #666666): 0, 510
+
+    // ── Section 4: Tooltip + Panel Combo ───────────────────
+    text(exo2_16, "Tooltip + Panel Combo", #b0b0b0): 0, 540
+    bitmap(generated(color(700, 1, #b0b0b033))): 0, 562
+    text(exo2_light_14, "Hover shows tooltip. Click opens panel (tooltip hides). Demonstrates lifecycle.", #aaaaaa, left, 700): 0, 570
+
+    point {
+        pos: 0, 600
+        ninepatch("ui", "Window_3x3_idle", 160, 50): 0, 0
+        text(m6x11, "Magic Ring", #ff88ff, left, 140): 10, 8
+        text(m5x7, "hover + click me", #666666, left, 140): 10, 26
+        interactive(160, 50, "comboItem", tooltip => "tooltipRich", panel => "panelCombo", name => "Magic Ring", desc => "Hover=tooltip, Click=panel", color => "#ff88ff"): 0, 0
+    }
+
+    #statusCombo(updatable) text(m6x11, "Hover for tooltip, click for panel", #666666): 0, 660
+}

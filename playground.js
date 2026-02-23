@@ -25,6 +25,9 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.inElementRouting = false;
 	this.contentTargetOwnership = new haxe_ds_ObjectMap();
 	this.contentTarget = null;
+	this.initialSyncDone = false;
+	this._autoSyncInitialState = false;
+	this.interactiveMap = new haxe_ds_StringMap();
 	this.interactiveWrappers = [];
 	this.postCustomAddToLayer = new haxe_ds_ObjectMap();
 	this.groups = new haxe_ds_StringMap();
@@ -57,7 +60,13 @@ $hxClasses["bh.ui.screens.UIScreenBase"] = bh_ui_screens_UIScreenBase;
 bh_ui_screens_UIScreenBase.__name__ = "bh.ui.screens.UIScreenBase";
 bh_ui_screens_UIScreenBase.__interfaces__ = [bh_ui_controllers_UIControllerScreenIntegration,bh_ui_screens_UIScreen];
 bh_ui_screens_UIScreenBase.prototype = {
-	get_controller: function() {
+	set_autoSyncInitialState: function(value) {
+		if(this.initialSyncDone) {
+			throw haxe_Exception.thrown("autoSyncInitialState cannot be changed after initial sync has already run");
+		}
+		return this._autoSyncInitialState = value;
+	}
+	,get_controller: function() {
 		if(this.controllersStack.length == 0) {
 			throw haxe_Exception.thrown("no controller in stack");
 		}
@@ -74,10 +83,13 @@ bh_ui_screens_UIScreenBase.prototype = {
 		this.groups.h = Object.create(null);
 		this.elements = [];
 		this.subElementProviders = [];
+		this.interactiveWrappers = [];
+		this.interactiveMap.h = Object.create(null);
 		this.postCustomAddToLayer.h = { __keys__ : { }};
 		this.contentTarget = null;
 		this.contentTargetOwnership.h = { __keys__ : { }};
 		this.inElementRouting = false;
+		this.initialSyncDone = false;
 		this.getSceneRoot().removeChildren();
 		this.onClear();
 	}
@@ -98,6 +110,16 @@ bh_ui_screens_UIScreenBase.prototype = {
 	,update: function(dt) {
 		if(this.contentTarget != null) {
 			throw haxe_Exception.thrown("content target still set during update — missing endTab() call?");
+		}
+		if(this._autoSyncInitialState && !this.initialSyncDone) {
+			this.initialSyncDone = true;
+			var _g = 0;
+			var _g1 = this.elements;
+			while(_g < _g1.length) {
+				var el = _g1[_g];
+				++_g;
+				this.syncInitialState(el);
+			}
 		}
 		var map = this.postCustomAddToLayer;
 		var _g_map = map;
@@ -159,6 +181,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 				return "false";
 			}
 			break;
+		case 4:
+			var c = val.c;
+			return "" + c;
 		}
 	}
 	,getIntSettings: function(settings,settingName,defaultValue) {
@@ -191,6 +216,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 				return 0;
 			}
 			break;
+		case 4:
+			var c = val.c;
+			return c;
 		}
 	}
 	,getFloatSettings: function(settings,settingName,defaultValue) {
@@ -223,6 +251,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 				return 0.0;
 			}
 			break;
+		case 4:
+			var c = val.c;
+			return c * 1.0;
 		}
 	}
 	,getBoolSettings: function(settings,settingName,defaultValue) {
@@ -254,6 +285,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 		case 3:
 			var b = val.b;
 			return b;
+		case 4:
+			var c = val.c;
+			return c != 0;
 		}
 	}
 	,settingValueToDynamic: function(v) {
@@ -270,6 +304,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 		case 3:
 			var b = v.b;
 			return b;
+		case 4:
+			var c = v.c;
+			return c;
 		}
 	}
 	,splitSettings: function(settings,controlSettings,behavioralSettings,registeredPrefixes,multiForwardSettings,elementName) {
@@ -601,6 +638,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 	,addInteractive: function(obj,prefix) {
 		var wrapper = new bh_ui_UIInteractiveWrapper(obj,prefix);
 		this.interactiveWrappers.push(wrapper);
+		this.interactiveMap.h[wrapper.id] = wrapper;
 		this.addElement(wrapper,null);
 		return wrapper;
 	}
@@ -614,6 +652,33 @@ bh_ui_screens_UIScreenBase.prototype = {
 			wrappers.push(this.addInteractive(obj,prefix));
 		}
 		return wrappers;
+	}
+	,removeInteractives: function(prefix) {
+		var toRemove = [];
+		var _g = 0;
+		var _g1 = this.interactiveWrappers;
+		while(_g < _g1.length) {
+			var w = _g1[_g];
+			++_g;
+			if(prefix == null || w.prefix == prefix) {
+				toRemove.push(w);
+			}
+		}
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var w = toRemove[_g];
+			++_g;
+			HxOverrides.remove(this.interactiveWrappers,w);
+			var key = w.id;
+			var _this = this.interactiveMap;
+			if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
+				delete(_this.h[key]);
+			}
+			this.removeElement(w);
+		}
+	}
+	,getInteractive: function(id) {
+		return this.interactiveMap.h[id];
 	}
 	,addElement: function(element,layer) {
 		if(this.contentTarget != null) {
@@ -670,6 +735,22 @@ bh_ui_screens_UIScreenBase.prototype = {
 			this.addObjectToLayer(element.getObject(),layer);
 		}
 		return element;
+	}
+	,syncInitialState: function(element) {
+		if(js_Boot.__implements(element,bh_ui_UIElementFloatValue)) {
+			var floatEl = js_Boot.__cast(element , bh_ui_UIElementFloatValue);
+			this.onScreenEvent(bh_ui_UIScreenEvent.UIChangeFloatValue(floatEl.getFloatValue()),element);
+		}
+		if(js_Boot.__implements(element,bh_ui_UIElementNumberValue)) {
+			var numEl = js_Boot.__cast(element , bh_ui_UIElementNumberValue);
+			this.onScreenEvent(bh_ui_UIScreenEvent.UIChangeValue(numEl.getIntValue()),element);
+		} else if(js_Boot.__implements(element,bh_ui_UIElementListValue)) {
+			var listEl = js_Boot.__cast(element , bh_ui_UIElementListValue);
+			this.onScreenEvent(bh_ui_UIScreenEvent.UIChangeItem(listEl.getSelectedIndex(),listEl.getList()),element);
+		} else if(js_Boot.__implements(element,bh_ui_UIElementSelectable)) {
+			var selEl = js_Boot.__cast(element , bh_ui_UIElementSelectable);
+			this.onScreenEvent(bh_ui_UIScreenEvent.UIToggle(selEl.selected),element);
+		}
 	}
 	,removeElement: function(element) {
 		var _this = element.getObject();
@@ -1350,6 +1431,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("draggable",new screens_ui_DraggableDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogs",new screens_ui_DialogsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("tabs",new screens_ui_TabsDemoScreen(this.screenManager));
+		this.screenManager.addScreen("tooltipsPanels",new screens_ui_TooltipsPanelsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("staticRefs",new screens_layout_StaticRefsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dynamicRefs",new screens_layout_DynamicRefsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("flowLayout",new screens_layout_FlowLayoutDemoScreen(this.screenManager));
@@ -1407,7 +1489,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 367, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 368, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -1438,7 +1520,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload5875Builder = function() {
+		var generatedByMacroBuildWithParametersload5931Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1501,7 +1583,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload5875Builder();
+		var ui = generatedByMacroBuildWithParametersload5931Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -3383,6 +3465,30 @@ h2d_Object.prototype = {
 			out.xMax = out.xMin = (out.xMax + out.xMin) * 0.5;
 			out.yMax = out.yMin = (out.yMax + out.yMin) * 0.5;
 		}
+		return out;
+	}
+	,getSize: function(out) {
+		if(out == null) {
+			out = new h2d_col_Bounds();
+		} else {
+			out.xMin = 1e20;
+			out.yMin = 1e20;
+			out.xMax = -1e20;
+			out.yMax = -1e20;
+		}
+		this.syncPos();
+		this.getBoundsRec(this.parent,out,true);
+		if(out.xMax <= out.xMin || out.yMax <= out.yMin) {
+			this.addBounds(this.parent,out,-1,-1,2,2);
+			out.xMax = out.xMin = (out.xMax + out.xMin) * 0.5;
+			out.yMax = out.yMin = (out.yMax + out.yMin) * 0.5;
+		}
+		var dx = -this.x;
+		var dy = -this.y;
+		out.xMin += dx;
+		out.xMax += dx;
+		out.yMin += dy;
+		out.yMax += dy;
 		return out;
 	}
 	,set_filter: function(f) {
@@ -6086,7 +6192,16 @@ bh_base_filters__$PixelOutline_PixelOutlinePass.prototype = $extend(h3d_pass_Scr
 		_this.y = (c >> 8 & 255) / 255;
 		_this.z = (c & 255) / 255;
 		var _this = this.shader.inlineColor__;
-		var c = this.inlineColor;
+		var c;
+		if(this.inlineColor != 0) {
+			var color = this.inlineColor;
+			if(color >>> 24 == 0) {
+				color |= -16777216;
+			}
+			c = color;
+		} else {
+			c = 0;
+		}
 		_this.x = (c >> 16 & 255) / 255;
 		_this.y = (c >> 8 & 255) / 255;
 		_this.z = (c & 255) / 255;
@@ -7176,55 +7291,97 @@ bh_multianim_MacroManimParser.tryStringToColor = function(s) {
 	var color;
 	switch(s.toLowerCase()) {
 	case "aqua":case "cyan":
-		color = 65535;
+		color = -16711681;
 		break;
 	case "black":
-		color = 0;
+		color = -16777216;
 		break;
 	case "blue":
-		color = 255;
+		color = -16776961;
+		break;
+	case "brown":
+		color = -7650029;
+		break;
+	case "coral":
+		color = -32944;
+		break;
+	case "crimson":
+		color = -2354116;
+		break;
+	case "darkgray":
+		color = -12566464;
+		break;
+	case "forestgreen":
+		color = -14513374;
 		break;
 	case "fuchsia":
-		color = 16711935;
+		color = -65281;
+		break;
+	case "gold":
+		color = -10496;
 		break;
 	case "gray":
-		color = 8421504;
+		color = -8355712;
 		break;
 	case "green":
-		color = 32768;
+		color = -16744448;
+		break;
+	case "indigo":
+		color = -11861886;
+		break;
+	case "lightgray":
+		color = -3092272;
 		break;
 	case "lime":
-		color = 65280;
+		color = -16711936;
 		break;
 	case "maroon":
-		color = 8388608;
+		color = -8388608;
 		break;
 	case "navy":
-		color = 128;
+		color = -16777088;
 		break;
 	case "olive":
-		color = 8421376;
+		color = -8355840;
 		break;
 	case "orange":
-		color = 16753920;
+		color = -23296;
+		break;
+	case "pink":
+		color = -16181;
 		break;
 	case "purple":
-		color = 8388736;
+		color = -8388480;
 		break;
 	case "red":
-		color = 16711680;
+		color = -65536;
 		break;
 	case "silver":
-		color = 12632256;
+		color = -4144960;
+		break;
+	case "skyblue":
+		color = -7876885;
+		break;
+	case "slate":
+		color = -9404272;
 		break;
 	case "teal":
-		color = 32896;
+		color = -16744320;
+		break;
+	case "tomato":
+		color = -40121;
+		break;
+	case "transparent":
+		color = 0;
+		break;
+	case "wheat":
+		color = -663885;
 		break;
 	case "white":
-		color = 16777215;
+		color = -1;
 		break;
 	case "yellow":
-		color = 16776960;
+		color = -256;
 		break;
 	default:
 		color = null;
@@ -7245,9 +7402,17 @@ bh_multianim_MacroManimParser.tryStringToColor = function(s) {
 			r |= r << 4;
 			g |= g << 4;
 			b |= b << 4;
-			return r << 16 | g << 8 | b;
+			return -16777216 | r << 16 | g << 8 | b;
 		}
-		return colorVal;
+		if(colorStr.length == 8 && colorVal != null) {
+			var aa = colorVal & 255;
+			var rrggbb = colorVal >>> 8;
+			return aa << 24 | rrggbb;
+		}
+		if(colorStr.length != 6 || colorVal == null) {
+			return null;
+		}
+		return -16777216 | colorVal;
 	}
 	return Std.parseInt(s);
 };
@@ -7979,7 +8144,7 @@ bh_multianim_MacroManimParser.prototype = {
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 31:
 			var _g1 = _g.s;
 			var s = _g1;
@@ -8183,6 +8348,9 @@ bh_multianim_MacroManimParser.prototype = {
 			if(c != null) {
 				this.advance();
 				return c;
+			}
+			if(s.length != 3 && s.length != 6 && s.length != 8) {
+				this.error("Invalid color '#" + s + "' — expected #RGB (3), #RRGGBB (6), or #RRGGBBAA (8) hex digits");
 			}
 			return null;
 		default:
@@ -11045,8 +11213,18 @@ bh_multianim_MacroManimParser.prototype = {
 																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																										var initialState = this.parseStringOrReference();
 																										this.eatComma();
+																										var externallyDriven = false;
+																										var _g = this.tokens[this.tpos].type;
+																										if(_g._hx_index == 31) {
+																											var s3 = _g.s;
+																											if(bh_multianim_MacroManimParser.isKeyword(s3,"externallydriven")) {
+																												this.advance();
+																												externallyDriven = true;
+																												this.eatComma();
+																											}
+																										}
 																										var constructs = this.parseStateAnimConstruct();
-																										node = this.createNode(bh_multianim_NodeType.STATEANIM_CONSTRUCT(initialState,constructs),parent,conditional,scale,alpha,tint,layerIndex,updatableName);
+																										node = this.createNode(bh_multianim_NodeType.STATEANIM_CONSTRUCT(initialState,constructs,externallyDriven),parent,conditional,scale,alpha,tint,layerIndex,updatableName);
 																									} else {
 																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																										var filename = this.expectIdentifierOrString();
@@ -11348,7 +11526,7 @@ bh_multianim_MacroManimParser.prototype = {
 																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
 																																								this.error("setting " + key + " already defined");
 																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTInt, value : value1};
+																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTColor, value : value1};
 																																							break;
 																																						case "float":
 																																							var value2 = this.parseFloatOrReference();
@@ -11377,11 +11555,24 @@ bh_multianim_MacroManimParser.prototype = {
 																																						break;
 																																					case 15:
 																																						this.advance();
-																																						var value5 = this.parseStringOrReference();
+																																						var value5 = this.parseAnything();
 																																						if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
 																																							this.error("setting " + key + " already defined");
 																																						}
-																																						parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTString, value : value5};
+																																						var svType;
+																																						switch(value5._hx_index) {
+																																						case 2:
+																																							var _g = value5.i;
+																																							svType = bh_multianim_SettingValueType.SVTInt;
+																																							break;
+																																						case 5:
+																																							var _g1 = value5.f;
+																																							svType = bh_multianim_SettingValueType.SVTFloat;
+																																							break;
+																																						default:
+																																							svType = bh_multianim_SettingValueType.SVTString;
+																																						}
+																																						parent.settings.h[key] = { type : svType, value : value5};
 																																						break;
 																																					default:
 																																						this.error("expected :type=> or => after setting key");
@@ -12268,6 +12459,8 @@ bh_multianim_MacroManimParser.prototype = {
 			switch(typeName.toLowerCase()) {
 			case "bool":
 				return { key : key, type : bh_multianim_SettingValueType.SVTBool, value : this.parseBoolOrReference()};
+			case "color":
+				return { key : key, type : bh_multianim_SettingValueType.SVTColor, value : this.parseColorOrReference()};
 			case "float":
 				return { key : key, type : bh_multianim_SettingValueType.SVTFloat, value : this.parseFloatOrReference()};
 			case "int":
@@ -12275,7 +12468,7 @@ bh_multianim_MacroManimParser.prototype = {
 			case "string":
 				return { key : key, type : bh_multianim_SettingValueType.SVTString, value : this.parseStringOrReference()};
 			default:
-				return this.error("expected int, float, string, or bool after : in metadata");
+				return this.error("expected int, float, string, color, or bool after : in metadata");
 			}
 			break;
 		case 15:
@@ -14637,7 +14830,7 @@ bh_multianim_BuilderResolvedSettings.__name__ = "bh.multianim.BuilderResolvedSet
 bh_multianim_BuilderResolvedSettings.prototype = {
 	getStringOrDefault: function(settingName,defaultString) {
 		if(this.settings == null) {
-			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+			return defaultString;
 		}
 		var r = this.settings.h[settingName];
 		if(r == null) {
@@ -14661,11 +14854,14 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 				return "false";
 			}
 			break;
+		case 4:
+			var c = r.c;
+			return "" + c;
 		}
 	}
 	,getIntOrDefault: function(settingName,defaultValue) {
 		if(this.settings == null) {
-			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+			return defaultValue;
 		}
 		var r = this.settings.h[settingName];
 		if(r == null) {
@@ -14689,6 +14885,9 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 				return 0;
 			}
 			break;
+		case 4:
+			var c = r.c;
+			return c;
 		}
 	}
 	,getFloatOrException: function(settingName) {
@@ -14717,11 +14916,14 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 				return 0.0;
 			}
 			break;
+		case 4:
+			var c = r.c;
+			return c;
 		}
 	}
 	,getFloatOrDefault: function(settingName,defaultValue) {
 		if(this.settings == null) {
-			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+			return defaultValue;
 		}
 		var r = this.settings.h[settingName];
 		if(r == null) {
@@ -14745,6 +14947,9 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 				return 0.0;
 			}
 			break;
+		case 4:
+			var c = r.c;
+			return c;
 		}
 	}
 	,__class__: bh_multianim_BuilderResolvedSettings
@@ -15872,6 +16077,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return builder;
 		};
 		switch(v._hx_index) {
+		case 1:
+			var s = v.s;
+			var c = bh_multianim_MacroManimParser.tryStringToColor(s);
+			if(c != null) {
+				return c;
+			}
+			var parsed = Std.parseInt(s);
+			if(parsed != null) {
+				return parsed;
+			}
+			throw haxe_Exception.thrown("cannot resolve color from string \"" + s + "\"" + "");
 		case 2:
 			var i = v.i;
 			return i;
@@ -16837,11 +17053,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var w = type.width;
 			var h = type.height;
 			var color = type.color;
-			var color1 = color;
-			if(color1 >>> 24 == 0) {
-				color1 |= -16777216;
-			}
-			return h2d_Tile.fromColor(color1,w,h);
+			return h2d_Tile.fromColor(color,w,h);
 		case 2:
 			var w = type.width;
 			var h = type.height;
@@ -16849,30 +17061,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var text = type.text;
 			var textColor = type.textColor;
 			var fontName = type.font;
-			var color = bgColor;
-			if(color >>> 24 == 0) {
-				color |= -16777216;
-			}
-			var color1 = textColor;
-			if(color1 >>> 24 == 0) {
-				color1 |= -16777216;
-			}
-			return this.generateTileWithText(w,h,color,text,color1,fontName);
+			return this.generateTileWithText(w,h,bgColor,text,textColor,fontName);
 		case 3:
 			var format = type.format;
 			var tileIndex = type.tileIndex;
 			var tileSize = type.tileSize;
 			var edgeColor = type.edgeColor;
 			var fillColor = type.fillColor;
-			var color = edgeColor;
-			if(color >>> 24 == 0) {
-				color |= -16777216;
-			}
-			var color1 = fillColor;
-			if(color1 >>> 24 == 0) {
-				color1 |= -16777216;
-			}
-			return this.generateAutotileDemoTile(format,tileIndex,tileSize,color,color1);
+			return this.generateAutotileDemoTile(format,tileIndex,tileSize,edgeColor,fillColor);
 		case 4:
 			var baseTile = type.baseTile;
 			var regionX = type.regionX;
@@ -17540,12 +17736,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							var hCapture = h;
 							var colorCapture = color;
 							this.incrementalContext.trackExpression(function() {
-								var bmp1 = bmp;
-								var color = _gthis.resolveAsColorInteger(colorCapture);
-								if(color >>> 24 == 0) {
-									color |= -16777216;
-								}
-								bmp1.set_tile(h2d_Tile.fromColor(color,_gthis.resolveAsInteger(wCapture),_gthis.resolveAsInteger(hCapture)));
+								bmp.set_tile(h2d_Tile.fromColor(_gthis.resolveAsColorInteger(colorCapture),_gthis.resolveAsInteger(wCapture),_gthis.resolveAsInteger(hCapture)));
 							},bmpRefs);
 						}
 					}
@@ -18201,11 +18392,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var style = _g1.style;
 				var width = _g1.width;
 				var height = _g1.height;
-				var color1 = this.resolveAsColorInteger(color);
-				if(color1 >>> 24 == 0) {
-					color1 |= -16777216;
-				}
-				var resolvedColor = color1;
+				var resolvedColor = this.resolveAsColorInteger(color);
 				switch(style._hx_index) {
 				case 0:
 					g.beginFill(resolvedColor);
@@ -18221,14 +18408,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 1:
-				var color2 = _g1.color;
+				var color1 = _g1.color;
 				var style1 = _g1.style;
 				var points = _g1.points;
-				var color3 = this.resolveAsColorInteger(color2);
-				if(color3 >>> 24 == 0) {
-					color3 |= -16777216;
-				}
-				var resolvedColor1 = color3;
+				var resolvedColor1 = this.resolveAsColorInteger(color1);
 				switch(style1._hx_index) {
 				case 0:
 					g.beginFill(resolvedColor1);
@@ -18266,14 +18449,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 2:
-				var color4 = _g1.color;
+				var color2 = _g1.color;
 				var style2 = _g1.style;
 				var radius = _g1.radius;
-				var color5 = this.resolveAsColorInteger(color4);
-				if(color5 >>> 24 == 0) {
-					color5 |= -16777216;
-				}
-				var resolvedColor2 = color5;
+				var resolvedColor2 = this.resolveAsColorInteger(color2);
 				switch(style2._hx_index) {
 				case 0:
 					g.beginFill(resolvedColor2);
@@ -18289,15 +18468,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 3:
-				var color6 = _g1.color;
+				var color3 = _g1.color;
 				var style3 = _g1.style;
 				var width1 = _g1.width;
 				var height1 = _g1.height;
-				var color7 = this.resolveAsColorInteger(color6);
-				if(color7 >>> 24 == 0) {
-					color7 |= -16777216;
-				}
-				var resolvedColor3 = color7;
+				var resolvedColor3 = this.resolveAsColorInteger(color3);
 				switch(style3._hx_index) {
 				case 0:
 					g.beginFill(resolvedColor3);
@@ -18313,16 +18488,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 4:
-				var color8 = _g1.color;
+				var color4 = _g1.color;
 				var style4 = _g1.style;
 				var radius1 = _g1.radius;
 				var startAngle = _g1.startAngle;
 				var arcAngle = _g1.arcAngle;
-				var color9 = this.resolveAsColorInteger(color8);
-				if(color9 >>> 24 == 0) {
-					color9 |= -16777216;
-				}
-				var resolvedColor4 = color9;
+				var resolvedColor4 = this.resolveAsColorInteger(color4);
 				switch(style4._hx_index) {
 				case 0:
 					g.lineStyle(1.0,resolvedColor4);
@@ -18338,16 +18509,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 5:
-				var color10 = _g1.color;
+				var color5 = _g1.color;
 				var style5 = _g1.style;
 				var width2 = _g1.width;
 				var height2 = _g1.height;
 				var radius2 = _g1.radius;
-				var color11 = this.resolveAsColorInteger(color10);
-				if(color11 >>> 24 == 0) {
-					color11 |= -16777216;
-				}
-				var resolvedColor5 = color11;
+				var resolvedColor5 = this.resolveAsColorInteger(color5);
 				var rad = this.resolveAsNumber(radius2);
 				switch(style5._hx_index) {
 				case 0:
@@ -18364,15 +18531,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			case 6:
-				var color12 = _g1.color;
+				var color6 = _g1.color;
 				var lineWidth = _g1.lineWidth;
 				var start = _g1.start;
 				var end = _g1.end;
-				var color13 = this.resolveAsColorInteger(color12);
-				if(color13 >>> 24 == 0) {
-					color13 |= -16777216;
-				}
-				var resolvedColor6 = color13;
+				var resolvedColor6 = this.resolveAsColorInteger(color6);
 				var startPos = this.calculatePosition(start,gridCoordinateSystem,hexCoordinateSystem);
 				var endPos = this.calculatePosition(end,gridCoordinateSystem,hexCoordinateSystem);
 				g.lineStyle(this.resolveAsNumber(lineWidth),resolvedColor6);
@@ -19050,6 +19213,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 5:
 			var initialState = _g.initialState;
 			var construct = _g.construct;
+			var externallyDriven = _g.externallyDriven;
 			var animSM = new bh_stateanim_AnimationSM(new haxe_ds_StringMap());
 			var h = construct.h;
 			var _g_h = h;
@@ -19094,6 +19258,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				throw haxe_Exception.thrown("initialState " + initialStateResolved + " does not exist in constructed stateanim" + "");
 			}
 			animSM.play(initialStateResolved);
+			if(externallyDriven) {
+				animSM.externallyDriven = true;
+			}
 			builtObject = bh_multianim_BuiltHeapsComponent.StateAnim(animSM);
 			break;
 		case 6:
@@ -19900,7 +20067,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3085, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3104, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -19971,6 +20138,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						break;
 					case 3:
 						value = bh_multianim_SettingValue.RSVBool(this.resolveAsBool(entry.value));
+						break;
+					case 4:
+						value = bh_multianim_SettingValue.RSVColor(this.resolveAsColorInteger(entry.value));
 						break;
 					}
 					resolvedMeta.h[key] = value;
@@ -20376,6 +20546,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					break;
 				case 3:
 					v = bh_multianim_SettingValue.RSVBool(this.resolveAsBool(settingValue.value));
+					break;
+				case 4:
+					v = bh_multianim_SettingValue.RSVColor(this.resolveAsColorInteger(settingValue.value));
 					break;
 				}
 				retSettings.h[key1] = v;
@@ -20790,7 +20963,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				} else {
 					throw haxe_Exception.thrown("color curve must have either curveName or inlineEasing");
 				}
-				group.addColorCurveSegment(this.resolveAsNumber(cc.atRate),curve,this.resolveAsInteger(cc.startColor),this.resolveAsInteger(cc.endColor));
+				group.addColorCurveSegment(this.resolveAsNumber(cc.atRate),curve,this.resolveAsColorInteger(cc.startColor),this.resolveAsColorInteger(cc.endColor));
 			}
 		}
 		if(particlesDef.forceFields != null) {
@@ -21177,7 +21350,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				case 6:
 					var startColor = _g3.startColor;
 					var endColor = _g3.endColor;
-					retVal.addColorCurveSegment(atRate,curve,this.resolveAsNumber(startColor) | 0,this.resolveAsNumber(endColor) | 0);
+					retVal.addColorCurveSegment(atRate,curve,this.resolveAsColorInteger(startColor),this.resolveAsColorInteger(endColor));
 					break;
 				}
 			}
@@ -21529,6 +21702,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,generateAutotileDemoTile: function(format,tileIndex,tileSize,edgeColor,fillColor) {
 		var borderWidth = Math.max(1,tileSize / 8) | 0;
 		var cornerSize = Math.max(2,tileSize / 2) | 0;
+		var color = edgeColor;
+		if(color >>> 24 == 0) {
+			color |= -16777216;
+		}
+		edgeColor = color;
+		var color = fillColor;
+		if(color >>> 24 == 0) {
+			color |= -16777216;
+		}
+		fillColor = color;
 		var pl = new bh_base_PixelLines(tileSize,tileSize);
 		pl.filledRect(0,0,tileSize,tileSize,fillColor);
 		var edges = this.getAutotileEdges(format,tileIndex);
@@ -21985,7 +22168,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5033, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5059, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -22092,7 +22275,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5237, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5263, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -22126,7 +22309,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5253, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5279, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -22401,16 +22584,18 @@ var bh_multianim_SettingValueType = $hxEnums["bh.multianim.SettingValueType"] = 
 	,SVTInt: {_hx_name:"SVTInt",_hx_index:1,__enum__:"bh.multianim.SettingValueType",toString:$estr}
 	,SVTFloat: {_hx_name:"SVTFloat",_hx_index:2,__enum__:"bh.multianim.SettingValueType",toString:$estr}
 	,SVTBool: {_hx_name:"SVTBool",_hx_index:3,__enum__:"bh.multianim.SettingValueType",toString:$estr}
+	,SVTColor: {_hx_name:"SVTColor",_hx_index:4,__enum__:"bh.multianim.SettingValueType",toString:$estr}
 };
-bh_multianim_SettingValueType.__constructs__ = [bh_multianim_SettingValueType.SVTString,bh_multianim_SettingValueType.SVTInt,bh_multianim_SettingValueType.SVTFloat,bh_multianim_SettingValueType.SVTBool];
-bh_multianim_SettingValueType.__empty_constructs__ = [bh_multianim_SettingValueType.SVTString,bh_multianim_SettingValueType.SVTInt,bh_multianim_SettingValueType.SVTFloat,bh_multianim_SettingValueType.SVTBool];
+bh_multianim_SettingValueType.__constructs__ = [bh_multianim_SettingValueType.SVTString,bh_multianim_SettingValueType.SVTInt,bh_multianim_SettingValueType.SVTFloat,bh_multianim_SettingValueType.SVTBool,bh_multianim_SettingValueType.SVTColor];
+bh_multianim_SettingValueType.__empty_constructs__ = [bh_multianim_SettingValueType.SVTString,bh_multianim_SettingValueType.SVTInt,bh_multianim_SettingValueType.SVTFloat,bh_multianim_SettingValueType.SVTBool,bh_multianim_SettingValueType.SVTColor];
 var bh_multianim_SettingValue = $hxEnums["bh.multianim.SettingValue"] = { __ename__:true,__constructs__:null
 	,RSVString: ($_=function(s) { return {_hx_index:0,s:s,__enum__:"bh.multianim.SettingValue",toString:$estr}; },$_._hx_name="RSVString",$_.__params__ = ["s"],$_)
 	,RSVInt: ($_=function(i) { return {_hx_index:1,i:i,__enum__:"bh.multianim.SettingValue",toString:$estr}; },$_._hx_name="RSVInt",$_.__params__ = ["i"],$_)
 	,RSVFloat: ($_=function(f) { return {_hx_index:2,f:f,__enum__:"bh.multianim.SettingValue",toString:$estr}; },$_._hx_name="RSVFloat",$_.__params__ = ["f"],$_)
 	,RSVBool: ($_=function(b) { return {_hx_index:3,b:b,__enum__:"bh.multianim.SettingValue",toString:$estr}; },$_._hx_name="RSVBool",$_.__params__ = ["b"],$_)
+	,RSVColor: ($_=function(c) { return {_hx_index:4,c:c,__enum__:"bh.multianim.SettingValue",toString:$estr}; },$_._hx_name="RSVColor",$_.__params__ = ["c"],$_)
 };
-bh_multianim_SettingValue.__constructs__ = [bh_multianim_SettingValue.RSVString,bh_multianim_SettingValue.RSVInt,bh_multianim_SettingValue.RSVFloat,bh_multianim_SettingValue.RSVBool];
+bh_multianim_SettingValue.__constructs__ = [bh_multianim_SettingValue.RSVString,bh_multianim_SettingValue.RSVInt,bh_multianim_SettingValue.RSVFloat,bh_multianim_SettingValue.RSVBool,bh_multianim_SettingValue.RSVColor];
 bh_multianim_SettingValue.__empty_constructs__ = [];
 var bh_multianim_BuiltHeapsComponent = $hxEnums["bh.multianim.BuiltHeapsComponent"] = { __ename__:true,__constructs__:null
 	,HeapsObject: ($_=function(obj) { return {_hx_index:0,obj:obj,__enum__:"bh.multianim.BuiltHeapsComponent",toString:$estr}; },$_._hx_name="HeapsObject",$_.__params__ = ["obj"],$_)
@@ -22788,7 +22973,7 @@ var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true
 	,BITMAP: ($_=function(tileSource,hAlign,vAlign) { return {_hx_index:2,tileSource:tileSource,hAlign:hAlign,vAlign:vAlign,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="BITMAP",$_.__params__ = ["tileSource","hAlign","vAlign"],$_)
 	,POINT: {_hx_name:"POINT",_hx_index:3,__enum__:"bh.multianim.NodeType",toString:$estr}
 	,STATEANIM: ($_=function(filename,initialState,selector) { return {_hx_index:4,filename:filename,initialState:initialState,selector:selector,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATEANIM",$_.__params__ = ["filename","initialState","selector"],$_)
-	,STATEANIM_CONSTRUCT: ($_=function(initialState,construct) { return {_hx_index:5,initialState:initialState,construct:construct,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATEANIM_CONSTRUCT",$_.__params__ = ["initialState","construct"],$_)
+	,STATEANIM_CONSTRUCT: ($_=function(initialState,construct,externallyDriven) { return {_hx_index:5,initialState:initialState,construct:construct,externallyDriven:externallyDriven,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATEANIM_CONSTRUCT",$_.__params__ = ["initialState","construct","externallyDriven"],$_)
 	,PIXELS: ($_=function(shapes) { return {_hx_index:6,shapes:shapes,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PIXELS",$_.__params__ = ["shapes"],$_)
 	,TEXT: ($_=function(textDef) { return {_hx_index:7,textDef:textDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TEXT",$_.__params__ = ["textDef"],$_)
 	,PROGRAMMABLE: ($_=function(isTileGroup,parameters,paramOrder) { return {_hx_index:8,isTileGroup:isTileGroup,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PROGRAMMABLE",$_.__params__ = ["isTileGroup","parameters","paramOrder"],$_)
@@ -26997,12 +27182,14 @@ bh_ui_controllers_UIControllerBase.prototype = {
 		if(this.integration.onMouseClick(mousePoint,button,release) == false) {
 			return;
 		}
-		var triggeredElements = this.controllable.outsideClick.triggerOutsideEvents(element);
-		var _g = 0;
-		while(_g < triggeredElements.length) {
-			var value = triggeredElements[_g];
-			++_g;
-			this.handleEvent(value,release ? bh_ui_UIElementEvents.OnReleaseOutside(button) : bh_ui_UIElementEvents.OnPushOutside(button),mousePoint);
+		if(release) {
+			var triggeredElements = this.controllable.outsideClick.triggerOutsideEvents(element);
+			var _g = 0;
+			while(_g < triggeredElements.length) {
+				var value = triggeredElements[_g];
+				++_g;
+				this.handleEvent(value,bh_ui_UIElementEvents.OnReleaseOutside(button),mousePoint);
+			}
 		}
 		if(element == null) {
 			return;
@@ -27138,14 +27325,23 @@ var bh_ui_UIElementNumberValue = function() { };
 $hxClasses["bh.ui.UIElementNumberValue"] = bh_ui_UIElementNumberValue;
 bh_ui_UIElementNumberValue.__name__ = "bh.ui.UIElementNumberValue";
 bh_ui_UIElementNumberValue.__isInterface__ = true;
+bh_ui_UIElementNumberValue.prototype = {
+	__class__: bh_ui_UIElementNumberValue
+};
 var bh_ui_UIElementFloatValue = function() { };
 $hxClasses["bh.ui.UIElementFloatValue"] = bh_ui_UIElementFloatValue;
 bh_ui_UIElementFloatValue.__name__ = "bh.ui.UIElementFloatValue";
 bh_ui_UIElementFloatValue.__isInterface__ = true;
+bh_ui_UIElementFloatValue.prototype = {
+	__class__: bh_ui_UIElementFloatValue
+};
 var bh_ui_UIElementListValue = function() { };
 $hxClasses["bh.ui.UIElementListValue"] = bh_ui_UIElementListValue;
 bh_ui_UIElementListValue.__name__ = "bh.ui.UIElementListValue";
 bh_ui_UIElementListValue.__isInterface__ = true;
+bh_ui_UIElementListValue.prototype = {
+	__class__: bh_ui_UIElementListValue
+};
 var bh_ui_Controllable = function() { };
 $hxClasses["bh.ui.Controllable"] = bh_ui_Controllable;
 bh_ui_Controllable.__name__ = "bh.ui.Controllable";
@@ -27208,9 +27404,11 @@ var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__c
 	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:10,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
 	,UIEntering: {_hx_name:"UIEntering",_hx_index:11,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UILeaving: {_hx_name:"UILeaving",_hx_index:12,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIClickOutside: {_hx_name:"UIClickOutside",_hx_index:13,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIInteractiveEvent: ($_=function(event,id,metadata) { return {_hx_index:14,event:event,id:id,metadata:metadata,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIInteractiveEvent",$_.__params__ = ["event","id","metadata"],$_)
 };
-bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
-bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving];
+bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent];
+bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
 bh_ui_UIElementIdentifiable.__name__ = "bh.ui.UIElementIdentifiable";
@@ -27223,6 +27421,9 @@ var bh_ui_UIElementSelectable = function() { };
 $hxClasses["bh.ui.UIElementSelectable"] = bh_ui_UIElementSelectable;
 bh_ui_UIElementSelectable.__name__ = "bh.ui.UIElementSelectable";
 bh_ui_UIElementSelectable.__isInterface__ = true;
+bh_ui_UIElementSelectable.prototype = {
+	__class__: bh_ui_UIElementSelectable
+};
 var bh_ui_UIElementUpdatable = function() { };
 $hxClasses["bh.ui.UIElementUpdatable"] = bh_ui_UIElementUpdatable;
 bh_ui_UIElementUpdatable.__name__ = "bh.ui.UIElementUpdatable";
@@ -27408,19 +27609,24 @@ bh_ui_UIInteractiveWrapper.prototype = {
 		switch(_g._hx_index) {
 		case 0:
 			var _g1 = _g.button;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIPush,this);
+			wrapper.control.outsideClick.trackOutsideClick(true);
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIPush,this.id,this.metadata),this);
 			break;
 		case 1:
 			var _g1 = _g.button;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIClick,this);
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClick,this.id,this.metadata),this);
+			break;
+		case 3:
+			var _g1 = _g.button;
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClickOutside,this.id,this.metadata),this);
 			break;
 		case 4:
 			this.hovered = true;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIEntering,this);
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIEntering,this.id,this.metadata),this);
 			break;
 		case 5:
 			this.hovered = false;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UILeaving,this);
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UILeaving,this.id,this.metadata),this);
 			break;
 		default:
 		}
@@ -27674,6 +27880,13 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 	,onToggle: function(checked) {
 	}
 	,onInternalToggle: function(checked,controllable) {
+	}
+	,getIntValue: function() {
+		if(this.selected) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 	,__class__: bh_ui_UIStandardMultiCheckbox
 };
@@ -28543,6 +28756,12 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	}
 	,onItemChanged: function(newIndex,items) {
 	}
+	,getSelectedIndex: function() {
+		return this.currentItemIndex;
+	}
+	,getList: function() {
+		return this.items;
+	}
 	,getSubElements: function(type) {
 		switch(type._hx_index) {
 		case 0:
@@ -28644,6 +28863,9 @@ bh_ui_UIMultiAnimProgressBar.prototype = {
 		}
 		this.currentValue = (v < min ? min : v > max ? max : v) | 0;
 		this.requestRedraw = true;
+	}
+	,getIntValue: function() {
+		return this.currentValue;
 	}
 	,clear: function() {
 		this.currentResult = null;
@@ -28758,6 +28980,12 @@ bh_ui_UIMultiAnimRadioButtons.prototype = {
 		controllable.pushEvent(bh_ui_UIScreenEvent.UIChangeItem(newIndex,this.items),this);
 	}
 	,onItemChanged: function(newIndex,items) {
+	}
+	,getSelectedIndex: function() {
+		return this.selectedIndex;
+	}
+	,getList: function() {
+		return this.items;
 	}
 	,getSubElements: function(type) {
 		switch(type._hx_index) {
@@ -29163,6 +29391,12 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			break;
 		}
 	}
+	,getSelectedIndex: function() {
+		return this.currentItemIndex;
+	}
+	,getList: function() {
+		return this.items;
+	}
 	,set_currentPressedIndex: function(value) {
 		if(value < -1 || value >= this.items.length) {
 			throw haxe_Exception.thrown("currentPressedIndex " + value + " is out of bounds [-1.." + this.items.length + "].");
@@ -29469,6 +29703,9 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 	,getFloatValue: function() {
 		return this.currentValue;
 	}
+	,getIntValue: function() {
+		return Math.round(this.currentValue) | 0;
+	}
 	,__class__: bh_ui_UIStandardMultiAnimSlider
 };
 var bh_ui_ContentTarget = function() { };
@@ -29745,6 +29982,12 @@ bh_ui_UIMultiAnimTabs.prototype = {
 			btn.set_selected(i == idx);
 		}
 	}
+	,getSelectedIndex: function() {
+		return this.selectedIndex;
+	}
+	,getList: function() {
+		return this.items;
+	}
 	,registerElement: function(element) {
 		var list = this.tabContent.h[this.populatingTabIndex];
 		if(list == null) {
@@ -29905,6 +30148,285 @@ bh_ui_UIMultiAnimTabs.prototype = {
 		}
 	}
 	,__class__: bh_ui_UIMultiAnimTabs
+};
+var bh_ui_PanelCloseMode = $hxEnums["bh.ui.PanelCloseMode"] = { __ename__:true,__constructs__:null
+	,OutsideClick: {_hx_name:"OutsideClick",_hx_index:0,__enum__:"bh.ui.PanelCloseMode",toString:$estr}
+	,Manual: {_hx_name:"Manual",_hx_index:1,__enum__:"bh.ui.PanelCloseMode",toString:$estr}
+};
+bh_ui_PanelCloseMode.__constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_PanelCloseMode.Manual];
+bh_ui_PanelCloseMode.__empty_constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_PanelCloseMode.Manual];
+var bh_ui_UIPanelHelper = function(screen,builder,defaults) {
+	this._pendingClose = false;
+	this.activePanelPrefix = null;
+	this.activeResult = null;
+	this.activeInteractiveId = null;
+	this.screen = screen;
+	this.builder = builder;
+	var tmp = defaults != null ? defaults.position : null;
+	this.defaultPosition = tmp != null ? tmp : bh_ui_TooltipPosition.Below;
+	var tmp = defaults != null ? defaults.offset : null;
+	this.defaultOffset = tmp != null ? tmp : 4;
+	var tmp = defaults != null ? defaults.layer : null;
+	this.layer = tmp != null ? tmp : bh_ui_screens_LayersEnum.ModalLayer;
+	var tmp = defaults != null ? defaults.closeOn : null;
+	this.defaultCloseMode = tmp != null ? tmp : bh_ui_PanelCloseMode.OutsideClick;
+	this.activeCloseMode = this.defaultCloseMode;
+};
+$hxClasses["bh.ui.UIPanelHelper"] = bh_ui_UIPanelHelper;
+bh_ui_UIPanelHelper.__name__ = "bh.ui.UIPanelHelper";
+bh_ui_UIPanelHelper.prototype = {
+	open: function(interactiveId,buildName,params,closeMode) {
+		this.close();
+		var wrapper = this.screen.getInteractive(interactiveId);
+		if(wrapper == null) {
+			return;
+		}
+		var tmp = params;
+		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap());
+		var position = this.defaultPosition;
+		var offset = this.defaultOffset;
+		this.positionPanel(result.object,wrapper.interactive,position,offset);
+		this.screen.addObjectToLayer(result.object,this.layer);
+		var prefix = "" + interactiveId + "." + buildName;
+		if(result.interactives.length > 0) {
+			this.screen.addInteractives(result,prefix);
+		}
+		this.activeInteractiveId = interactiveId;
+		this.activeResult = result;
+		this.activePanelPrefix = prefix;
+		var tmp = closeMode;
+		this.activeCloseMode = tmp != null ? tmp : this.defaultCloseMode;
+	}
+	,close: function() {
+		if(this.activeResult != null) {
+			if(this.activePanelPrefix != null) {
+				this.screen.removeInteractives(this.activePanelPrefix);
+			}
+			var _this = this.activeResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.activeResult = null;
+		}
+		this.activeInteractiveId = null;
+		this.activePanelPrefix = null;
+	}
+	,isOpen: function() {
+		return this.activeResult != null;
+	}
+	,getActiveId: function() {
+		return this.activeInteractiveId;
+	}
+	,isOwnInteractive: function(id) {
+		if(this.activePanelPrefix == null) {
+			return false;
+		}
+		return StringTools.startsWith(id,this.activePanelPrefix);
+	}
+	,handleOutsideClick: function(event) {
+		if(!this.isOpen() || this.activeCloseMode != bh_ui_PanelCloseMode.OutsideClick) {
+			return false;
+		}
+		if(event._hx_index == 14) {
+			var _g = event.id;
+			var _g1 = event.metadata;
+			switch(event.event._hx_index) {
+			case 0:
+				var id = _g;
+				if(id == this.activeInteractiveId || this.isOwnInteractive(id)) {
+					this._pendingClose = false;
+					return false;
+				}
+				this._pendingClose = false;
+				this.close();
+				return true;
+			case 13:
+				var id = _g;
+				if(id == this.activeInteractiveId) {
+					this._pendingClose = true;
+				}
+				return false;
+			default:
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+	,checkPendingClose: function() {
+		if(this._pendingClose) {
+			this._pendingClose = false;
+			this.close();
+			return true;
+		}
+		return false;
+	}
+	,positionPanel: function(panel,anchor,position,offset) {
+		var anchorBounds = anchor.getBounds();
+		var panelBounds = panel.getSize();
+		switch(position._hx_index) {
+		case 0:
+			panel.posChanged = true;
+			panel.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin - (panelBounds.xMax - panelBounds.xMin)) / 2;
+			panel.posChanged = true;
+			panel.y = anchorBounds.yMin - (panelBounds.yMax - panelBounds.yMin) - offset;
+			break;
+		case 1:
+			panel.posChanged = true;
+			panel.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin - (panelBounds.xMax - panelBounds.xMin)) / 2;
+			panel.posChanged = true;
+			panel.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin) + offset;
+			break;
+		case 2:
+			panel.posChanged = true;
+			panel.x = anchorBounds.xMin - (panelBounds.xMax - panelBounds.xMin) - offset;
+			panel.posChanged = true;
+			panel.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin - (panelBounds.yMax - panelBounds.yMin)) / 2;
+			break;
+		case 3:
+			panel.posChanged = true;
+			panel.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin) + offset;
+			panel.posChanged = true;
+			panel.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin - (panelBounds.yMax - panelBounds.yMin)) / 2;
+			break;
+		}
+	}
+	,__class__: bh_ui_UIPanelHelper
+};
+var bh_ui_TooltipPosition = $hxEnums["bh.ui.TooltipPosition"] = { __ename__:true,__constructs__:null
+	,Above: {_hx_name:"Above",_hx_index:0,__enum__:"bh.ui.TooltipPosition",toString:$estr}
+	,Below: {_hx_name:"Below",_hx_index:1,__enum__:"bh.ui.TooltipPosition",toString:$estr}
+	,Left: {_hx_name:"Left",_hx_index:2,__enum__:"bh.ui.TooltipPosition",toString:$estr}
+	,Right: {_hx_name:"Right",_hx_index:3,__enum__:"bh.ui.TooltipPosition",toString:$estr}
+};
+bh_ui_TooltipPosition.__constructs__ = [bh_ui_TooltipPosition.Above,bh_ui_TooltipPosition.Below,bh_ui_TooltipPosition.Left,bh_ui_TooltipPosition.Right];
+bh_ui_TooltipPosition.__empty_constructs__ = [bh_ui_TooltipPosition.Above,bh_ui_TooltipPosition.Below,bh_ui_TooltipPosition.Left,bh_ui_TooltipPosition.Right];
+var bh_ui_UITooltipHelper = function(screen,builder,defaults) {
+	this.activeResult = null;
+	this.activeTooltipId = null;
+	this.hoverTimer = 0;
+	this.hoverParams = null;
+	this.hoverBuildName = null;
+	this.hoverInteractiveId = null;
+	this.positionOverrides = new haxe_ds_StringMap();
+	this.delayOverrides = new haxe_ds_StringMap();
+	this.screen = screen;
+	this.builder = builder;
+	var tmp = defaults != null ? defaults.delay : null;
+	this.defaultDelay = tmp != null ? tmp : 0.3;
+	var tmp = defaults != null ? defaults.position : null;
+	this.defaultPosition = tmp != null ? tmp : bh_ui_TooltipPosition.Above;
+	var tmp = defaults != null ? defaults.offset : null;
+	this.defaultOffset = tmp != null ? tmp : 4;
+	var tmp = defaults != null ? defaults.layer : null;
+	this.layer = tmp != null ? tmp : bh_ui_screens_LayersEnum.ModalLayer;
+};
+$hxClasses["bh.ui.UITooltipHelper"] = bh_ui_UITooltipHelper;
+bh_ui_UITooltipHelper.__name__ = "bh.ui.UITooltipHelper";
+bh_ui_UITooltipHelper.prototype = {
+	startHover: function(interactiveId,buildName,params) {
+		if(this.activeTooltipId == interactiveId) {
+			return;
+		}
+		this.hide();
+		this.hoverInteractiveId = interactiveId;
+		this.hoverBuildName = buildName;
+		this.hoverParams = params;
+		this.hoverTimer = 0;
+	}
+	,cancelHover: function(interactiveId) {
+		if(this.hoverInteractiveId == interactiveId) {
+			this.hoverInteractiveId = null;
+			this.hoverBuildName = null;
+			this.hoverParams = null;
+			this.hoverTimer = 0;
+		}
+		if(this.activeTooltipId == interactiveId) {
+			this.hide();
+		}
+	}
+	,hide: function() {
+		if(this.activeResult != null) {
+			var _this = this.activeResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.activeResult = null;
+		}
+		this.activeTooltipId = null;
+	}
+	,setDelay: function(interactiveId,delay) {
+		this.delayOverrides.h[interactiveId] = delay;
+	}
+	,setPosition: function(interactiveId,position) {
+		this.positionOverrides.h[interactiveId] = position;
+	}
+	,update: function(dt) {
+		if(this.hoverInteractiveId == null) {
+			return;
+		}
+		var tmp = this.delayOverrides.h[this.hoverInteractiveId];
+		var delay = tmp != null ? tmp : this.defaultDelay;
+		this.hoverTimer += dt;
+		if(this.hoverTimer >= delay) {
+			var id = this.hoverInteractiveId;
+			var buildName = this.hoverBuildName;
+			var params = this.hoverParams;
+			this.hoverInteractiveId = null;
+			this.hoverBuildName = null;
+			this.hoverParams = null;
+			this.hoverTimer = 0;
+			if(id != null && buildName != null) {
+				this.showTooltip(id,buildName,params);
+			}
+		}
+	}
+	,showTooltip: function(interactiveId,buildName,params) {
+		var wrapper = this.screen.getInteractive(interactiveId);
+		if(wrapper == null) {
+			return;
+		}
+		var tmp = params;
+		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap());
+		var tmp = this.positionOverrides.h[interactiveId];
+		var position = tmp != null ? tmp : this.defaultPosition;
+		var offset = this.defaultOffset;
+		this.positionTooltip(result.object,wrapper.interactive,position,offset);
+		this.screen.addObjectToLayer(result.object,this.layer);
+		this.activeTooltipId = interactiveId;
+		this.activeResult = result;
+	}
+	,positionTooltip: function(tooltip,anchor,position,offset) {
+		var anchorBounds = anchor.getBounds();
+		var tooltipBounds = tooltip.getSize();
+		switch(position._hx_index) {
+		case 0:
+			tooltip.posChanged = true;
+			tooltip.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin - (tooltipBounds.xMax - tooltipBounds.xMin)) / 2;
+			tooltip.posChanged = true;
+			tooltip.y = anchorBounds.yMin - (tooltipBounds.yMax - tooltipBounds.yMin) - offset;
+			break;
+		case 1:
+			tooltip.posChanged = true;
+			tooltip.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin - (tooltipBounds.xMax - tooltipBounds.xMin)) / 2;
+			tooltip.posChanged = true;
+			tooltip.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin) + offset;
+			break;
+		case 2:
+			tooltip.posChanged = true;
+			tooltip.x = anchorBounds.xMin - (tooltipBounds.xMax - tooltipBounds.xMin) - offset;
+			tooltip.posChanged = true;
+			tooltip.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin - (tooltipBounds.yMax - tooltipBounds.yMin)) / 2;
+			break;
+		case 3:
+			tooltip.posChanged = true;
+			tooltip.x = anchorBounds.xMin + (anchorBounds.xMax - anchorBounds.xMin) + offset;
+			tooltip.posChanged = true;
+			tooltip.y = anchorBounds.yMin + (anchorBounds.yMax - anchorBounds.yMin - (tooltipBounds.yMax - tooltipBounds.yMin)) / 2;
+			break;
+		}
+	}
+	,__class__: bh_ui_UITooltipHelper
 };
 var bh_ui_controllers_UIControllerLifecycleEvent = $hxEnums["bh.ui.controllers.UIControllerLifecycleEvent"] = { __ename__:true,__constructs__:null
 	,LifecycleControllerStarted: {_hx_name:"LifecycleControllerStarted",_hx_index:0,__enum__:"bh.ui.controllers.UIControllerLifecycleEvent",toString:$estr}
@@ -88376,7 +88898,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._maxMp = _maxMp;
 	this._name = _name;
 	this._level = _level;
-	var c = 3359829;
+	var c = -13417387;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88391,7 +88913,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._e1 = new h2d_Text(this._pb.loadFont("m6x11"));
 	this._e1.set_textAlign(h2d_Align.Left);
 	this._e1.set_lineBreak(true);
-	this._e1.set_textColor(16777215);
+	this._e1.set_textColor(-1);
 	this._e1.set_text(this._name);
 	var _this = this._e1;
 	_this.posChanged = true;
@@ -88402,7 +88924,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._e2 = new h2d_Text(this._pb.loadFont("m6x11"));
 	this._e2.set_textAlign(h2d_Align.Left);
 	this._e2.set_lineBreak(true);
-	this._e2.set_textColor(11184810);
+	this._e2.set_textColor(-5592406);
 	this._e2.set_text(Std.string("Lv." + this._level));
 	var _this = this._e2;
 	_this.posChanged = true;
@@ -88410,7 +88932,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 12;
 	this.addChild(this._e2);
-	var c = 1710618;
+	var c = -15066598;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88422,7 +88944,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 24;
 	this.addChild(this._e3);
-	var c = 16729156;
+	var c = -48060;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88438,7 +88960,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._e5.set_textAlign(h2d_Align.Left);
 	this._e5.set_maxWidth(100.);
 	this._e5.set_lineBreak(true);
-	this._e5.set_textColor(16777215);
+	this._e5.set_textColor(-1);
 	this._e5.set_text(Std.string(this._hp + "/" + this._maxHp));
 	var _this = this._e5;
 	_this.posChanged = true;
@@ -88446,7 +88968,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 22;
 	this.addChild(this._e5);
-	var c = 1710618;
+	var c = -15066598;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88458,7 +88980,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 32;
 	this.addChild(this._e6);
-	var c = 4491468;
+	var c = -12285748;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88474,7 +88996,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._e8.set_textAlign(h2d_Align.Left);
 	this._e8.set_maxWidth(100.);
 	this._e8.set_lineBreak(true);
-	this._e8.set_textColor(16777215);
+	this._e8.set_textColor(-1);
 	this._e8.set_text(Std.string(this._mp + "/" + this._maxMp));
 	var _this = this._e8;
 	_this.posChanged = true;
@@ -88482,7 +89004,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 30;
 	this.addChild(this._e8);
-	var c = 4508740;
+	var c = -12268476;
 	if(c >>> 24 == 0) {
 		c |= -16777216;
 	}
@@ -88592,7 +89114,7 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			_rt_cont.posChanged = true;
 			_rt_cont.y = 0 * _rt_i;
 			this._e0.addChild(_rt_cont);
-			var c = 4482696;
+			var c = -12294520;
 			if(c >>> 24 == 0) {
 				c |= -16777216;
 			}
@@ -88625,7 +89147,7 @@ screens_advanced_PerfProgrammables_$PerfSimple.__super__ = bh_multianim_Programm
 screens_advanced_PerfProgrammables_$PerfSimple.prototype = $extend(bh_multianim_ProgrammableBuilder.prototype,{
 	create: function(value,color) {
 		if(color == null) {
-			color = 4482696;
+			color = -12294520;
 		}
 		if(value == null) {
 			value = 0;
@@ -88637,7 +89159,7 @@ screens_advanced_PerfProgrammables_$PerfSimple.prototype = $extend(bh_multianim_
 });
 var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,color) {
 	if(color == null) {
-		color = 4482696;
+		color = -12294520;
 	}
 	if(value == null) {
 		value = 0;
@@ -88663,7 +89185,7 @@ var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,
 	this._e1 = new h2d_Text(this._pb.loadFont("m6x11"));
 	this._e1.set_textAlign(h2d_Align.Left);
 	this._e1.set_lineBreak(true);
-	this._e1.set_textColor(16777215);
+	this._e1.set_textColor(-1);
 	this._e1.set_text(Std.string(this._value));
 	var _this = this._e1;
 	_this.posChanged = true;
@@ -95368,9 +95890,10 @@ screens_ui_DropdownsDemoScreen.__super__ = DemoScreenBase;
 screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
+		this.set_autoSyncInitialState(true);
 		this.setupDemo("Dropdowns","Dropdown menus: scrollable (fixed height) and autoscale (auto-sizing) modes");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/dropdowns.manim",false);
-		var generatedByMacroBuildWithParametersload1689Builder = function() {
+		var generatedByMacroBuildWithParametersload1720Builder = function() {
 			var dropdownWide;
 			var dropdownShadow;
 			var dropdownScrollable;
@@ -95455,7 +95978,7 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1689Builder();
+		var ui = generatedByMacroBuildWithParametersload1720Builder();
 		this.demoResult = ui.builderResults;
 		this.dropdownScrollable = ui.dropdownScrollable;
 		this.dropdownAutoFew = ui.dropdownAutoFew;
@@ -96249,6 +96772,219 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,__class__: screens_ui_TabsDemoScreen
 });
+var screens_ui_TooltipsPanelsDemoScreen = function(screenManager,layers) {
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.ui.TooltipsPanelsDemoScreen"] = screens_ui_TooltipsPanelsDemoScreen;
+screens_ui_TooltipsPanelsDemoScreen.__name__ = "screens.ui.TooltipsPanelsDemoScreen";
+screens_ui_TooltipsPanelsDemoScreen.__super__ = DemoScreenBase;
+screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		this.setupDemo("Tooltips & Panels","Hover tooltips (UITooltipHelper) and click panels (UIPanelHelper)");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/tooltips-panels.manim",false);
+		this.demoResult = this.demoBuilder.buildWithParameters("tooltipsPanelsDemo",new haxe_ds_StringMap());
+		this.addBuilderResult(this.demoResult);
+		this.addInteractives(this.demoResult);
+		this.tooltipHelper = new bh_ui_UITooltipHelper(this,this.demoBuilder,{ delay : 0.3, position : bh_ui_TooltipPosition.Above});
+		this.tooltipHelper.setPosition("btnAbove",bh_ui_TooltipPosition.Above);
+		this.tooltipHelper.setPosition("btnBelow",bh_ui_TooltipPosition.Below);
+		this.tooltipHelper.setPosition("btnLeft",bh_ui_TooltipPosition.Left);
+		this.tooltipHelper.setPosition("btnRight",bh_ui_TooltipPosition.Right);
+		this.tooltipHelper.setDelay("itemSword",0);
+		this.tooltipHelper.setDelay("itemCrown",1.0);
+		this.panelHelper = new bh_ui_UIPanelHelper(this,this.demoBuilder,{ position : bh_ui_TooltipPosition.Below, closeOn : bh_ui_PanelCloseMode.OutsideClick});
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.tooltipHelper != null) {
+			this.tooltipHelper.update(dt);
+		}
+		if(this.panelHelper != null) {
+			if(this.panelHelper.checkPendingClose()) {
+				this.updateStatus("statusPanel","Panel closed (outside click)");
+			}
+		}
+	}
+	,onScreenEvent: function(event,source) {
+		if(this.panelHelper != null) {
+			if(this.panelHelper.handleOutsideClick(event)) {
+				this.updateStatus("statusPanel","Panel closed (outside click)");
+				return;
+			}
+		}
+		if(event._hx_index == 14) {
+			var _g = event.id;
+			var _g1 = event.metadata;
+			switch(event.event._hx_index) {
+			case 0:
+				var id = _g;
+				var metadata = _g1;
+				this.handleClick(id,metadata);
+				break;
+			case 11:
+				var id = _g;
+				var metadata = _g1;
+				this.handleEnter(id,metadata);
+				break;
+			case 12:
+				var id = _g;
+				this.handleLeave(id);
+				break;
+			default:
+			}
+		}
+	}
+	,handleEnter: function(id,metadata) {
+		var tooltipBuild = metadata.getStringOrDefault("tooltip","");
+		if(tooltipBuild == "" || this.tooltipHelper == null) {
+			return;
+		}
+		if(this.panelHelper != null && this.panelHelper.isOpen() && this.panelHelper.getActiveId() == id) {
+			return;
+		}
+		var params = this.buildTooltipParams(metadata);
+		this.tooltipHelper.startHover(id,tooltipBuild,params);
+		this.updateStatus("statusTooltip","Hovering: " + id);
+		this.updateStatus("statusRich","Hovering: " + id);
+		this.updateStatus("statusCombo","Hovering: " + id + " (tooltip pending...)");
+	}
+	,handleLeave: function(id) {
+		if(this.tooltipHelper != null) {
+			this.tooltipHelper.cancelHover(id);
+		}
+		this.updateStatus("statusTooltip","Hover a button to see a tooltip");
+		this.updateStatus("statusRich","Hover an item card to see a rich tooltip");
+		this.updateStatus("statusCombo","Hover for tooltip, click for panel");
+	}
+	,handleClick: function(id,metadata) {
+		if(this.panelHelper != null && this.panelHelper.isOpen()) {
+			if(this.panelHelper.isOwnInteractive(id)) {
+				this.handlePanelAction(id);
+				return;
+			}
+		}
+		var panelBuild = metadata.getStringOrDefault("panel","");
+		if(panelBuild != "") {
+			if(this.tooltipHelper != null) {
+				this.tooltipHelper.hide();
+			}
+			if(this.panelHelper != null) {
+				if(this.panelHelper.isOpen() && this.panelHelper.getActiveId() == id) {
+					this.panelHelper.close();
+					this.updateStatus("statusPanel","Panel closed");
+					this.updateStatus("statusCombo","Panel closed. Hover again for tooltip.");
+					return;
+				}
+				var closeMode = id == "triggerManual" ? bh_ui_PanelCloseMode.Manual : bh_ui_PanelCloseMode.OutsideClick;
+				this.panelHelper.open(id,panelBuild,null,closeMode);
+				this.updateStatus("statusPanel","Opened: " + panelBuild + " (" + (closeMode == bh_ui_PanelCloseMode.Manual ? "manual close" : "outside-click close") + ")");
+				this.updateStatus("statusCombo","Panel opened for " + id);
+			}
+			return;
+		}
+	}
+	,handlePanelAction: function(fullId) {
+		var parts = fullId.split(".");
+		var action = parts[parts.length - 1];
+		switch(action) {
+		case "closeBtn":
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			this.updateStatus("statusPanel","Panel closed (manual)");
+			break;
+		case "comboDiscard":
+			this.updateStatus("statusCombo","Discarded the Magic Ring!");
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			break;
+		case "comboEquip":
+			this.updateStatus("statusCombo","Equipped the Magic Ring!");
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			break;
+		case "drop":
+			this.updateStatus("statusPanel","Action: Drop!");
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			break;
+		case "equip":
+			this.updateStatus("statusPanel","Action: Equip!");
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			break;
+		case "info":
+			this.updateStatus("statusPanel","Action: Info!");
+			if(this.panelHelper != null) {
+				this.panelHelper.close();
+			}
+			break;
+		default:
+			if(StringTools.startsWith(action,"color")) {
+				var color = HxOverrides.substr(action,5,null);
+				this.updateStatus("statusPanel","Picked color: " + color);
+				if(this.panelHelper != null) {
+					this.panelHelper.close();
+				}
+			}
+		}
+	}
+	,buildTooltipParams: function(metadata) {
+		var params = new haxe_ds_StringMap();
+		var key = "label";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		var key = "name";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		var key = "desc";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		var key = "rarity";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		var key = "damage";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		var key = "color";
+		var val = metadata.getStringOrDefault(key,"");
+		if(val != "") {
+			params.h[key] = val;
+		}
+		return params;
+	}
+	,updateStatus: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		this.demoBuilder = null;
+		this.demoResult = null;
+		this.tooltipHelper = null;
+		this.panelHelper = null;
+	}
+	,__class__: screens_ui_TooltipsPanelsDemoScreen
+});
 function $getIterator(o) { if( o instanceof Array ) return new haxe_iterators_ArrayIterator(o); else return o.iterator(); }
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; }
 $global.$haxeUID |= 0;
@@ -96292,7 +97028,7 @@ hx__registerFont = function(name,data) {
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -96313,7 +97049,7 @@ h2d_filter_Filter.defaultUseScreenResolution = false;
 bh_base_filters__$PixelOutline_PixelOutlinePass.__meta__ = { obj : { ignore : ["shader"]}};
 h3d_shader_ScreenShader.SRC = "HXSMF2gzZC5zaGFkZXIuU2NyZWVuU2hhZGVyBwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACghfX2luaXRfXw4GAAALBnZlcnRleA4GAAACAgoAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAALAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAA";
 h3d_shader_ScreenShader._MODULE = "h3d.shader.ScreenShader";
-bh_base_filters__$PixelOutline_PixelOutlineShader.SRC = "HXSMMGJoLmJhc2UuZmlsdGVycy5fUGl4ZWxPdXRsaW5lLlBpeGVsT3V0bGluZVNoYWRlcg0BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwlwaXhlbFNpemUFCgIAAAwMb3V0bGluZUNvbG9yBQsCAAANC2lubGluZUNvbG9yBQwCAAAOC2tub2NrT3V0TXVsAwIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAERAAAFAggSCGN1ckNvbG9yBQwEAAAJAyIOAgIKCgICAwUKBQwACwYFCgISBQwMAAMBAwAAAAAAAAAAAwIFAQsGDwYPBg8GBgoJAyIOAgIKCgIJAykOAgYACgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwIGBgoJAyIOAgIKCgIJAykOAgYDCgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwICBgYKCQMiDgICCgoCCQMpDgIKAgMFCgAAAwYACgIDBQoEAAMKAgsFCgQAAwMFCgUMDAADAQMAAAAAAAAAAAMCAgYGCgkDIg4CAgoKAgkDKQ4CCgIDBQoAAAMGAwoCAwUKBAADCgILBQoEAAMDBQoFDAwAAwEDAAAAAAAAAAADAgIGBAIHBQwJAysOAgIMBQsBAwAAAAAAAPA/AwUMBQwAAAALBgYJAxwOAQINBQwDAQMAAAAAAAAAAAMCBQEGBAIHBQwCDQUMBQwABgQCBwUMBgECEgUMAg4DBQwFDAAAAA";
+bh_base_filters__$PixelOutline_PixelOutlineShader.SRC = "HXSMMGJoLmJhc2UuZmlsdGVycy5fUGl4ZWxPdXRsaW5lLlBpeGVsT3V0bGluZVNoYWRlcg0BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwlwaXhlbFNpemUFCgIAAAwMb3V0bGluZUNvbG9yBQsCAAANC2lubGluZUNvbG9yBQwCAAAOC2tub2NrT3V0TXVsAwIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAERAAAFAggSCGN1ckNvbG9yBQwEAAAJAyIOAgIKCgICAwUKBQwACwYFCgISBQwMAAMBAwAAAAAAAAAAAwIFAQsGDwYPBg8GBgoJAyIOAgIKCgIJAykOAgYACgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwIGBgoJAyIOAgIKCgIJAykOAgYDCgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwICBgYKCQMiDgICCgoCCQMpDgIKAgMFCgAAAwYACgIDBQoEAAMKAgsFCgQAAwMFCgUMDAADAQMAAAAAAAAAAAMCAgYGCgkDIg4CAgoKAgkDKQ4CCgIDBQoAAAMGAwoCAwUKBAADCgILBQoEAAMDBQoFDAwAAwEDAAAAAAAAAAADAgIGBAIHBQwJAysOAgIMBQsBAwAAAAAAAPA/AwUMBQwGBAIHBQwCEgUMBQwAAAsGBgkDHA4BAg0FDAMBAwAAAAAAAAAAAwIFAQYEAgcFDAINBQwFDAAGBAIHBQwGAQISBQwCDgMFDAUMAAAA";
 bh_base_filters__$PixelOutline_PixelOutlineShader._MODULE = "bh.base.filters.PixelOutline";
 bh_base_filters_ReplacePaletteShader.SRC = "HXSMJGJoLmJhc2UuZmlsdGVycy5SZXBsYWNlUGFsZXR0ZVNoYWRlcg4BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoMUEFMRVRURV9TSVpFAQIAAQAAAAAACwpURVNUX0FMUEhBAgIAAQAAAAAADAdTUkNfQ09MDwUMCgIAAA0HRFNUX0NPTA8FDAoCAAAOB3RleHR1cmUKAgIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQZ0ZXN0ZXEOBgAAEghmcmFnbWVudA4GAAAEAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMRAhMBYQUMBAAAFAFiBQwEAAACBQELAgsCBQENBg4GDgYOBgkJAw8OAQYDCgITBQwAAAMKAhQFDAAAAwMDAQP8qfHSTWJgPwMCBgkJAw8OAQYDCgITBQwEAAMKAhQFDAQAAwMDAQP8qfHSTWJgPwMCAgYJCQMPDgEGAwoCEwUMCAADCgIUBQwIAAMDAwED/Knx0k1iYD8DAgIGCQkDDw4BBgMKAhMFDAwAAwoCFAUMDAADAwMBA/yp8dJNYmA/AwICAAAFAQ0GDgYOBgkJAw8OAQYDCgITBQwAAAMKAhQFDAAAAwMDAQP8qfHSTWJgPwMCBgkJAw8OAQYDCgITBQwEAAMKAhQFDAQAAwMDAQP8qfHSTWJgPwMCAgYJCQMPDgEGAwoCEwUMCAADCgIUBQwIAAMDAwED/Knx0k1iYD8DAgIAAAAAARIAAAUDCBUCdGMFDAQAAAkDIg4CAg4KAgoCCQUKEQAFCgUMAAYEAggFDAIVBQwFDA4WAWkBBAAABhUBAgAAAAABAgoBDwEAAAUBCwkCEQ4CAhUFDBECDA8FDAoCFgEFDAIFAgYEAggFDBECDQ8FDAoCFgEFDAUMEAAAAAAAAAA";
 bh_base_filters_ReplacePaletteShader._MODULE = "bh.base.filters.ReplacePaletteShader";

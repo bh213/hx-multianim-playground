@@ -1,6 +1,11 @@
-- Dialogs: add dialogs with more options, not just confirm
-- slots: parametrized slots are weird, don't auto update them, write status with text so it is obvious what is going on. Add some text that describes how slots work
-- inventory: colors of the slots are strange. Maybe use text to describe state instead of just color. X is great though.
-- dialog box - need to review
-- dropdowns - initial settings doesn't apply if clicked again
-- interactives need revisit/rework
+# TODO
+
+## Open
+
+- Dialogs: add dialogs with more options, not just confirm (currently only OK/Cancel)
+- Dropdowns: initial settings doesn't apply if clicked again
+- Slots: add descriptive text explaining how slots work and what the status indicators mean
+- Inventory: use text labels to describe slot state instead of relying solely on color
+- Duplicate .manim files: `radio.manim` and `radios-demo.manim` contain similar content — consolidate or clarify purpose
+- settings are still a mess
+

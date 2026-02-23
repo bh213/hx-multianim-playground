@@ -149,9 +149,9 @@ class NavScreen extends UIScreenBase {
 			screens: [
 				{id: "inventory", title: "Inventory Grid"},
 				{id: "characterSheet", title: "Character Sheet"},
-				{id: "minimap", title: "Minimap"},
+				{id: "blob47", title: "Blob47 Autotile"},
 				{id: "battleHud", title: "Battle HUD"},
-				{id: "skillTree", title: "Skill Tree"},
+				{id: "skillTree", title: "Equipment Tree"},
 				{id: "dialogue", title: "Dialogue Box"},
 				{id: "statusEffects", title: "Status Effects"},
 			]

@@ -26,7 +26,7 @@ class Blob47DemoScreen extends DemoScreenBase {
 	var mapContainer:Null<h2d.Object>;
 	var mapInteractive:Null<h2d.Interactive>;
 	var isPainting:Bool = false;
-	var paintValue:Int = 1;
+	var paintValue:Int = 0;
 
 	override public function load():Void {
 		setupDemo("Blob47 Autotile", "Interactive terrain painter with blob47 autotiling");

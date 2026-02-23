@@ -111,6 +111,7 @@ class NavScreen extends UIScreenBase {
 				{id: "draggable", title: "Draggable"},
 				{id: "dialogs", title: "Dialogs"},
 				{id: "tabs", title: "Tabs"},
+				{id: "tooltipsPanels", title: "Tooltips & Panels"},
 			]
 		},
 		{

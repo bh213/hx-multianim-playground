@@ -5,9 +5,7 @@ version: 0.5
       }
 
   #slider programmable(status:[hover, pressed, normal]=normal, value:0..100=0, size:[100,200,300], disabled:[true, false]) {
-    //@(value=>between 50..70) text(dd, "HEEEEEEEEEEEEEEEEEY", 0xffffff12, center, 200): 0,10
-
-    //@(value=>[between 3..30]) text(dd, "HEEEEEEEEEEEEEEEEEY", 0xffffff12, center, 200): 0,10
+    
     @if(size=>300) point {
       ninepatch("ui", "Sliderbar_H_3x1", 310, 8) {
         grid: 3, 1;
@@ -53,7 +51,7 @@ version: 0.5
   }
 
 
- #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffff12, textShadow:[true, false]=false) {
+ #button programmable(status:[hover, pressed,normal], disabled:[true, false], buttonText="Button", width:uint=200, height:uint=30, font="dd", fontColor:int=0xffffffff, textShadow:[true, false]=false) {
       @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
       @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
       @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0
@@ -155,7 +153,7 @@ version: 0.5
 #radioButtons programmable(count:int){
       repeatable($index, step($count, dy:20)) {
             placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
-            text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
+            text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
             
       }
 }
@@ -163,7 +161,7 @@ version: 0.5
 #radioButtonsHorizontal programmable(count:int){
       repeatable($index, step($count, dx:120 )) {
             placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
-            text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
+            text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
             
       }
 }
@@ -171,13 +169,13 @@ version: 0.5
 #radioButtonsVertical programmable(count:int){
       repeatable($index, step($count, dy:30 )) {
             placeholder(generated(cross(15, 15, white)), callback("checkbox", $index)):0,0
-            text(m6x11, callback("label", $index), 0xffffff12, left, 120): 24,4
+            text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
             
       }
 }
 
 
-#dropdown programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled,normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffff12) {
+#dropdown programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled,normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffffff) {
       
       #panelPoint (updatable) point: 0, 30;
       //placeholder(generated(cross(120, 200)), builderParameter("panel")):5,10
@@ -192,7 +190,7 @@ version: 0.5
       settings{transitionTimer:float=>0.2}
 }
 
-#dropdown-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], btnWidth:uint=120, btnHeight:uint=30, font="m6x11", fontColor:int=0xffffff12) {
+#dropdown-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], btnWidth:uint=120, btnHeight:uint=30, font="m6x11", fontColor:int=0xffffffff) {
       #panelPoint (updatable) point: 0, $btnHeight;
       @(status=>hover) ninepatch("ui", "dropdown-button-hover", $btnWidth, $btnHeight);
       @(status=>normal) ninepatch("ui", "dropdown-button-idle", $btnWidth, $btnHeight);
@@ -204,7 +202,7 @@ version: 0.5
       settings{transitionTimer:float=>0.2}
 }
 
-#dropdown-shadow programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffff12) {
+#dropdown-shadow programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, disabled, normal], panel:[open, closed], font="m6x11", fontColor:int=0xffffffff) {
       #panelPoint (updatable) point: 0, 30;
       @(status=>hover) ninepatch("ui", "dropdown-button-hover", 120, 30);
       @(status=>normal) ninepatch("ui", "dropdown-button-idle", 120, 30);
@@ -216,7 +214,7 @@ version: 0.5
       settings{transitionTimer:float=>0.2}
 }
 
-#list-item-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114, itemHeight:uint=20, index:uint=0, title="title", font="m6x11", fontColor:int=0xffffff12) {
+#list-item-w programmable(images:[none,placeholder,tile]=placeholder, status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114, itemHeight:uint=20, index:uint=0, title="title", font="m6x11", fontColor:int=0xffffffff) {
         @(status=>normal, selected=>false, disabled=>false) ninepatch("ui", "droppanel-mid-idle", $itemWidth+4, $itemHeight): -2,0
         @(status=>normal, selected=>true, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, $itemHeight): -2,0
         @(status=>pressed, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, $itemHeight) {
@@ -237,7 +235,7 @@ version: 0.5
         settings{height:float=>$itemHeight, font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#list-item-120 programmable(images:[none,placeholder,tile]=placeholder,status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114,  index:uint=0, title="title", font="m6x11", fontColor:int=0xffffff12) {
+#list-item-120 programmable(images:[none,placeholder,tile]=placeholder,status:[hover, pressed, normal], selected:[true, false], disabled:[true, false], tile:tile, itemWidth:uint=114,  index:uint=0, title="title", font="m6x11", fontColor:int=0xffffffff) {
 
         @(status=>normal, selected=>false, disabled=>false) ninepatch("ui", "droppanel-mid-idle", $itemWidth+4, 20): -2,0
         @(status=>normal, selected=>true, disabled=>false) ninepatch("ui", "droppanel-mid-pressed", $itemWidth+4, 20): -2,0
@@ -291,7 +289,7 @@ ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeigh
       }
 }
 
-#tab programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false], width:uint=120, height:uint=30, font="m6x11", fontColor:int=0xffffff12, buttonText="Tab") {
+#tab programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false], width:uint=120, height:uint=30, font="m6x11", fontColor:int=0xffffffff, buttonText="Tab") {
       @(status=>normal, checked=>false) ninepatch("ui", "Tab_off_idle", $width, $height);
       @(status=>hover, checked=>false) ninepatch("ui", "Tab_off_hover", $width, $height);
       @(status=>pressed, checked=>false) ninepatch("ui", "Tab_off_pressed", $width, $height);

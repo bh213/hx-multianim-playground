@@ -27,6 +27,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'draggable', displayName: 'Draggable', category: 'UI Components', manimFile: 'demos/ui/draggable.manim' },
             { name: 'dialogs', displayName: 'Dialogs', category: 'UI Components', manimFile: 'demos/ui/dialogs.manim' },
             { name: 'tabs', displayName: 'Tabs', category: 'UI Components', manimFile: 'demos/ui/tabs-demo.manim' },
+            { name: 'tooltipsPanels', displayName: 'Tooltips & Panels', category: 'UI Components', manimFile: 'demos/ui/tooltips-panels.manim' },
         ]
     },
     {

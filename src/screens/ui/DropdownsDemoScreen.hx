@@ -52,6 +52,7 @@ class DropdownsDemoScreen extends DemoScreenBase {
 	];
 
 	override public function load():Void {
+		autoSyncInitialState = true;
 		setupDemo("Dropdowns", "Dropdown menus: scrollable (fixed height) and autoscale (auto-sizing) modes");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/dropdowns.manim", false);

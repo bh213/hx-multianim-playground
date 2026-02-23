@@ -13,6 +13,8 @@ class Blob47DemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 	var randomizeButton:Null<UIStandardMultiAnimButton>;
 	var clearButton:Null<UIStandardMultiAnimButton>;
+	var grassButton:Null<UIStandardMultiAnimButton>;
+	var dirtButton:Null<UIStandardMultiAnimButton>;
 
 	static inline var GRID_W = 40;
 	static inline var GRID_H = 28;
@@ -24,7 +26,7 @@ class Blob47DemoScreen extends DemoScreenBase {
 	var mapContainer:Null<h2d.Object>;
 	var mapInteractive:Null<h2d.Interactive>;
 	var isPainting:Bool = false;
-	var paintValue:Int = 0;
+	var paintValue:Int = 1;
 
 	override public function load():Void {
 		setupDemo("Blob47 Autotile", "Interactive terrain painter with blob47 autotiling");
@@ -37,10 +39,14 @@ class Blob47DemoScreen extends DemoScreenBase {
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "blob47Demo", [], [
 			randomizeBtn => addButtonWithSingleBuilder(buttonsBuilder, "main", "Randomize"),
 			clearBtn => addButtonWithSingleBuilder(buttonsBuilder, "main", "Clear"),
+			grassBtn => addButtonWithSingleBuilder(buttonsBuilder, "color", null),
+			dirtBtn => addButtonWithSingleBuilder(buttonsBuilder, "color", null),
 		]);
 		demoResult = ui.builderResults;
 		randomizeButton = ui.randomizeBtn;
 		clearButton = ui.clearBtn;
+		grassButton = ui.grassBtn;
+		dirtButton = ui.dirtBtn;
 		addBuilderResult(demoResult);
 
 		// Initialize grid to all grass
@@ -51,12 +57,12 @@ class Blob47DemoScreen extends DemoScreenBase {
 
 		// Create interactive overlay for painting (screen-space size accounts for tile scale)
 		mapInteractive = new h2d.Interactive(GRID_W * TILE_SIZE * SCALE, GRID_H * TILE_SIZE * SCALE, mapContainer);
-		mapInteractive.enableRightButton = true;
 
 		mapInteractive.onPush = function(e:hxd.Event) {
-			isPainting = true;
-			paintValue = (e.button == 0) ? 1 : 0;
-			paintAt(e.relX, e.relY);
+			if (e.button == 0) {
+				isPainting = true;
+				paintAt(e.relX, e.relY);
+			}
 		};
 
 		mapInteractive.onRelease = function(_) {
@@ -75,6 +81,7 @@ class Blob47DemoScreen extends DemoScreenBase {
 
 		rebuildAutotile();
 		updateStatus();
+		updateTileSelection();
 	}
 
 	function paintAt(relX:Float, relY:Float):Void {
@@ -111,7 +118,7 @@ class Blob47DemoScreen extends DemoScreenBase {
 	function clearMap():Void {
 		for (y in 0...GRID_H) {
 			for (x in 0...GRID_W) {
-				grid[y][x] = 0;
+				grid[y][x] = paintValue;
 			}
 		}
 		rebuildAutotile();
@@ -128,13 +135,28 @@ class Blob47DemoScreen extends DemoScreenBase {
 		demoResult.getUpdatable("statusText").updateText('Grass: $grassCount / $total tiles');
 	}
 
+	function updateTileSelection():Void {
+		if (grassButton != null) grassButton.getObject().alpha = paintValue == 1 ? 1.0 : 0.4;
+		if (dirtButton != null) dirtButton.getObject().alpha = paintValue == 0 ? 1.0 : 0.4;
+	}
+
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
 				if (source == randomizeButton)
 					randomize();
-				else if (source == clearButton)
+				else if (source == clearButton) {
 					clearMap();
+					paintValue = 1 - paintValue;
+					updateTileSelection();
+				}
+				else if (source == grassButton) {
+					paintValue = 1;
+					updateTileSelection();
+				} else if (source == dirtButton) {
+					paintValue = 0;
+					updateTileSelection();
+				}
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -156,6 +178,8 @@ class Blob47DemoScreen extends DemoScreenBase {
 		demoResult = null;
 		randomizeButton = null;
 		clearButton = null;
+		grassButton = null;
+		dirtButton = null;
 		grid = null;
 		mapContainer = null;
 	}

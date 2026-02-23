@@ -1,7 +1,7 @@
 version: 0.5
 
 // Blob47 Autotile Demo
-// Interactive 2D terrain painter. Left click = dig dirt, right click = plant grass.
+// Interactive 2D terrain painter. Select tile type then click/drag to paint.
 // Uses Forgotten Plains tileset (Minifantasy by Krishna Palacio)
 
 #blob47Grass autotile {
@@ -53,8 +53,19 @@ version: 0.5
         settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>0xffffff}
     }
 
+    // Tile selector
+    text(exo2_14, "Tile:", #aaaaaa): 200, 38
+    placeholder(generated(cross(30, 26, white)), builderParameter("grassBtn")) {
+        pos: 240, 32
+        settings{color=>0xAA8844, width:int=>30, height:int=>26}
+    }
+    placeholder(generated(cross(30, 26, white)), builderParameter("dirtBtn")) {
+        pos: 280, 32
+        settings{color=>0x44AA44, width:int=>30, height:int=>26}
+    }
+
     // Status
-    #statusText(updatable) text(exo2_14, "Draw on the map!", #aaaaaa, left, 400): 260, 38
+    #statusText(updatable) text(exo2_14, "Draw on the map!", #aaaaaa, left, 400): 400, 38
 
     // Dirt background
     bitmap(generated(color(640, 448, #66AA44))): 0, 70
@@ -63,5 +74,5 @@ version: 0.5
     #mapContainer(updatable) point: 0, 70
 
     // Instructions
-    text(exo2_light_14, "Left click: grass | Right click: dirt | Drag to paint", #666666): 0, 525
+    text(exo2_light_14, "Left click to paint | Drag to paint | Select tile type above", #666666): 0, 525
 }

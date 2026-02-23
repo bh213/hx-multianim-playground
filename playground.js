@@ -3051,6 +3051,8 @@ bh_base_FontManager.registerFont = function(name,font,offsetX,offsetY) {
 	}
 	if(offsetX != 0 || offsetY != 0) {
 		font.setOffset(offsetX,offsetY);
+		font.baseLine += offsetY;
+		font.lineHeight += offsetY;
 	}
 	bh_base_FontManager.fontRegistry.h[lowerName] = font;
 };
@@ -4580,7 +4582,7 @@ var bh_base__$Particles_Particle = function(group) {
 	this.vx = 0;
 	h2d_BatchElement.call(this,null);
 	this.group = group;
-	this.noiseSeed = Math.random() * 1000;
+	this.noiseSeed = group.randomFunc() * 1000;
 };
 $hxClasses["bh.base._Particles.Particle"] = bh_base__$Particles_Particle;
 bh_base__$Particles_Particle.__name__ = "bh.base._Particles.Particle";
@@ -4734,6 +4736,9 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 	this.enabled = true;
 	this.globalTime = 0;
 	this.started = false;
+	this.randomFunc = function() {
+		return Math.random();
+	};
 	this.id = id;
 	this.parts = p;
 	this.tiles = tiles;
@@ -4779,7 +4784,7 @@ bh_base_ParticleGroup.prototype = {
 		while(_g < _g1) {
 			var i = _g++;
 			var p = new bh_base__$Particles_Particle(this);
-			p.delay = Math.random() * this.life * (1 - this.emitSync) + this.emitDelay;
+			p.delay = this.randomFunc() * this.life * (1 - this.emitSync) + this.emitDelay;
 			this.batch.add(p);
 		}
 	}
@@ -4808,11 +4813,11 @@ bh_base_ParticleGroup.prototype = {
 	}
 	,init: function(p) {
 		var g = this;
-		var size = g.size * (1 + hxd_Math.srand() * g.sizeRand);
-		var rot = hxd_Math.srand() * Math.PI * g.rotInit;
-		var vrot = g.rotSpeed * (1 + Math.random() * g.rotSpeedRand) * (hxd_Math.srand() < 0 ? -1 : 1);
-		var life = g.life * (1 + hxd_Math.srand() * g.lifeRand);
-		var speed = g.speed * (1 + hxd_Math.srand() * g.speedRand);
+		var size = g.size * (1 + (this.randomFunc() * 2.0 - 1.0) * g.sizeRand);
+		var rot = (this.randomFunc() * 2.0 - 1.0) * Math.PI * g.rotInit;
+		var vrot = g.rotSpeed * (1 + this.randomFunc() * g.rotSpeedRand) * (this.randomFunc() * 2.0 - 1.0 < 0 ? -1 : 1);
+		var life = g.life * (1 + (this.randomFunc() * 2.0 - 1.0) * g.lifeRand);
+		var speed = g.speed * (1 + (this.randomFunc() * 2.0 - 1.0) * g.speedRand);
 		if(g.life == 0) {
 			life = 1e10;
 		}
@@ -4823,13 +4828,13 @@ bh_base_ParticleGroup.prototype = {
 		case 0:
 			var emitDistance = _g.emitDistance;
 			var emitdistanceRandom = _g.emitDistanceRandom;
-			p.vx = hxd_Math.srand();
-			p.vy = hxd_Math.srand();
+			p.vx = this.randomFunc() * 2.0 - 1.0;
+			p.vy = this.randomFunc() * 2.0 - 1.0;
 			var len = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
 			if(len > 0) {
 				speed *= 1 / len;
 			}
-			var r = emitDistance + emitdistanceRandom * Math.random();
+			var r = emitDistance + emitdistanceRandom * this.randomFunc();
 			p.x += p.vx * r;
 			p.y += p.vy * r;
 			break;
@@ -4838,7 +4843,7 @@ bh_base_ParticleGroup.prototype = {
 			var emitDistanceRandom = _g.emitDistanceRandom;
 			var emitConeAngle = _g.emitConeAngle;
 			var emitConeAngleRandom = _g.emitConeAngleRandom;
-			var da = emitConeAngle + emitConeAngleRandom * hxd_Math.srand();
+			var da = emitConeAngle + emitConeAngleRandom * (this.randomFunc() * 2.0 - 1.0);
 			da %= 6.28318530717958623;
 			if(da > 3.14159265358979323) {
 				da -= 6.28318530717958623;
@@ -4848,7 +4853,7 @@ bh_base_ParticleGroup.prototype = {
 			var phi = da;
 			p.vx = Math.cos(phi);
 			p.vy = Math.sin(phi);
-			var r = emitDistance + emitDistanceRandom * Math.random();
+			var r = emitDistance + emitDistanceRandom * this.randomFunc();
 			p.x += p.vx * r;
 			p.y += p.vy * r;
 			break;
@@ -4857,9 +4862,9 @@ bh_base_ParticleGroup.prototype = {
 			var height = _g.height;
 			var emitConeAngle = _g.emitConeAngle;
 			var emitConeAngleRandom = _g.emitConeAngleRandom;
-			p.x += width * Math.random();
-			p.y += height * Math.random();
-			var da = emitConeAngle + emitConeAngleRandom * hxd_Math.srand();
+			p.x += width * this.randomFunc();
+			p.y += height * this.randomFunc();
+			var da = emitConeAngle + emitConeAngleRandom * (this.randomFunc() * 2.0 - 1.0);
 			da %= 6.28318530717958623;
 			if(da > 3.14159265358979323) {
 				da -= 6.28318530717958623;
@@ -4875,15 +4880,15 @@ bh_base_ParticleGroup.prototype = {
 			var radiusRandom = _g.radiusRandom;
 			var emitConeAngle = _g.emitConeAngle;
 			var emitConeAngleRandom = _g.emitConeAngleRandom;
-			var angle = Math.random() * Math.PI * 2;
-			var r = radius + radiusRandom * Math.random();
+			var angle = this.randomFunc() * Math.PI * 2;
+			var r = radius + radiusRandom * this.randomFunc();
 			p.x += Math.cos(angle) * r;
 			p.y += Math.sin(angle) * r;
 			var phi;
 			if(emitConeAngle == 0 && emitConeAngleRandom == 0) {
 				phi = angle;
 			} else {
-				var da = emitConeAngle + emitConeAngleRandom * hxd_Math.srand();
+				var da = emitConeAngle + emitConeAngleRandom * (this.randomFunc() * 2.0 - 1.0);
 				da %= 6.28318530717958623;
 				if(da > 3.14159265358979323) {
 					da -= 6.28318530717958623;
@@ -4897,12 +4902,12 @@ bh_base_ParticleGroup.prototype = {
 			break;
 		case 4:
 			var path = _g.path;
-			var rate = Math.random();
+			var rate = this.randomFunc();
 			var pt = path.getPoint(rate);
 			p.x += pt.x;
 			p.y += pt.y;
-			p.vx = hxd_Math.srand();
-			p.vy = hxd_Math.srand();
+			p.vx = this.randomFunc() * 2.0 - 1.0;
+			p.vy = this.randomFunc() * 2.0 - 1.0;
 			var len = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
 			if(len > 0) {
 				speed *= 1 / len;
@@ -4910,7 +4915,7 @@ bh_base_ParticleGroup.prototype = {
 			break;
 		case 5:
 			var path = _g.path;
-			var rate = Math.random();
+			var rate = this.randomFunc();
 			var pt = path.getPoint(rate);
 			p.x += pt.x;
 			p.y += pt.y;
@@ -4929,7 +4934,8 @@ bh_base_ParticleGroup.prototype = {
 			return;
 		}
 		if(this.animationRepeat == 0 && this.tiles.length > 1) {
-			p.t = this.tiles[Std.random(this.tiles.length)];
+			var n = this.tiles.length;
+			p.t = this.tiles[this.randomFunc() * n | 0];
 		} else {
 			p.t = this.tiles[0];
 		}
@@ -4938,7 +4944,7 @@ bh_base_ParticleGroup.prototype = {
 		p.life = 0;
 		p.maxLife = life;
 		p.lastSubEmitTime = 0;
-		var initRot = this.emitDirectionAsAngle ? Math.atan2(p.vy,p.vx) : hxd_Math.srand() * Math.PI * g.rotInit;
+		var initRot = this.emitDirectionAsAngle ? Math.atan2(p.vy,p.vx) : (this.randomFunc() * 2.0 - 1.0) * Math.PI * g.rotInit;
 		p.rotation = initRot;
 		if(this.colorEnabled && this.colorCurveSegments.length > 0) {
 			var initColor = this.colorCurveSegments[0].startColor;
@@ -5202,7 +5208,7 @@ bh_base_ParticleGroup.prototype = {
 			if(!this.matchesTrigger(se.trigger,trigger)) {
 				continue;
 			}
-			if(Math.random() > se.probability) {
+			if(this.randomFunc() > se.probability) {
 				continue;
 			}
 			var subGroup = this.parts.getGroup(se.groupId);
@@ -5270,7 +5276,7 @@ bh_base_ParticleGroup.prototype = {
 				var interval = _g1.interval;
 				if(p.life - p.lastSubEmitTime >= interval) {
 					p.lastSubEmitTime = p.life;
-					if(Math.random() <= se.probability) {
+					if(this.randomFunc() <= se.probability) {
 						var subGroup = this.parts.getGroup(se.groupId);
 						if(subGroup != null) {
 							subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount);
@@ -15470,6 +15476,128 @@ bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs = function(coord,result
 	default:
 	}
 };
+bh_multianim_MultiAnimBuilder.collectFilterParamRefs = function(filter,result) {
+	if(filter == null) {
+		return;
+	}
+	switch(filter._hx_index) {
+	case 0:
+		break;
+	case 1:
+		var filters = filter.filters;
+		var _g = 0;
+		while(_g < filters.length) {
+			var f = filters[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectFilterParamRefs(f,result);
+		}
+		break;
+	case 2:
+		var size = filter.s;
+		var color = filter.color;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(size,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+		break;
+	case 3:
+		var v = filter.v;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(v,result);
+		break;
+	case 4:
+		var v = filter.v;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(v,result);
+		break;
+	case 5:
+		var v = filter.v;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(v,result);
+		break;
+	case 6:
+		var v = filter.v;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(v,result);
+		break;
+	case 7:
+		var _g = filter.smoothColor;
+		var _g = filter.knockout;
+		var color = filter.color;
+		var alpha = filter.alpha;
+		var radius = filter.radius;
+		var gain = filter.gain;
+		var quality = filter.quality;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(alpha,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(radius,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(gain,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(quality,result);
+		break;
+	case 8:
+		var radius = filter.radius;
+		var gain = filter.gain;
+		var quality = filter.quality;
+		var linear = filter.linear;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(radius,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(gain,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(quality,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(linear,result);
+		break;
+	case 9:
+		var _g = filter.smoothColor;
+		var distance = filter.distance;
+		var angle = filter.angle;
+		var color = filter.color;
+		var alpha = filter.alpha;
+		var radius = filter.radius;
+		var gain = filter.gain;
+		var quality = filter.quality;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(distance,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(angle,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(alpha,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(radius,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(gain,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(quality,result);
+		break;
+	case 10:
+		var _g = filter.smoothColor;
+		var mode = filter.mode;
+		switch(mode._hx_index) {
+		case 0:
+			var color = mode.color;
+			var knockout = mode.knockout;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(knockout,result);
+			break;
+		case 1:
+			var color = mode.color;
+			var inlineColor = mode.inlineColor;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(inlineColor,result);
+			break;
+		}
+		break;
+	case 11:
+		var _g = filter.paletteName;
+		var sourceRow = filter.sourceRow;
+		var replacementRow = filter.replacementRow;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(sourceRow,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(replacementRow,result);
+		break;
+	case 12:
+		var sourceColors = filter.sourceColors;
+		var replacementColors = filter.replacementColors;
+		var _g = 0;
+		while(_g < sourceColors.length) {
+			var c = sourceColors[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(c,result);
+		}
+		var _g = 0;
+		while(_g < replacementColors.length) {
+			var c = replacementColors[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(c,result);
+		}
+		break;
+	}
+};
 bh_multianim_MultiAnimBuilder.collectGraphicsElementParamRefs = function(element,result) {
 	switch(element._hx_index) {
 	case 0:
@@ -17627,6 +17755,24 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				},posRefs);
 			}
 		}
+		var extRefs = [];
+		if(node.scale != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(node.scale,extRefs);
+		}
+		if(node.alpha != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(node.alpha,extRefs);
+		}
+		if(node.tint != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(node.tint,extRefs);
+		}
+		if(node.filter != null) {
+			bh_multianim_MultiAnimBuilder.collectFilterParamRefs(node.filter,extRefs);
+		}
+		if(extRefs.length > 0) {
+			this.incrementalContext.trackExpression(function() {
+				_gthis.applyExtendedFormProperties(object,node);
+			},extRefs);
+		}
 	}
 	,addPosition: function(obj,x,y) {
 		obj.posChanged = true;
@@ -19754,7 +19900,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3019, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3085, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -21839,7 +21985,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4967, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5033, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -21946,7 +22092,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5171, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5237, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -21980,7 +22126,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5187, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5253, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -24222,11 +24368,15 @@ bh_paths_Path.prototype = {
 		return this.transformAll(Math.cos(angle),Math.sin(angle),1.0,position.x,position.y);
 	}
 	,applyFitBounds: function(topLeft,bottomRight) {
+		var minX = Math.min(topLeft.x,bottomRight.x);
+		var minY = Math.min(topLeft.y,bottomRight.y);
+		var maxX = Math.max(topLeft.x,bottomRight.x);
+		var maxY = Math.max(topLeft.y,bottomRight.y);
 		var bounds = this.computeBounds();
 		var pathW = bounds.maxX - bounds.minX;
 		var pathH = bounds.maxY - bounds.minY;
-		var boxW = bottomRight.x - topLeft.x;
-		var boxH = bottomRight.y - topLeft.y;
+		var boxW = maxX - minX;
+		var boxH = maxY - minY;
 		var scale = 1.0;
 		if(pathW > 1e-10 && pathH > 1e-10) {
 			scale = Math.min(boxW / pathW,boxH / pathH);
@@ -24239,8 +24389,8 @@ bh_paths_Path.prototype = {
 		var scaledBounds = scaled.computeBounds();
 		var scaledW = scaledBounds.maxX - scaledBounds.minX;
 		var scaledH = scaledBounds.maxY - scaledBounds.minY;
-		var tx = topLeft.x + (boxW - scaledW) / 2 - scaledBounds.minX;
-		var ty = topLeft.y + (boxH - scaledH) / 2 - scaledBounds.minY;
+		var tx = minX + (boxW - scaledW) / 2 - scaledBounds.minX;
+		var ty = minY + (boxH - scaledH) / 2 - scaledBounds.minY;
 		return scaled.translateAll(tx,ty);
 	}
 	,transformAll: function(cosA,sinA,scale,tx,ty) {
@@ -26562,6 +26712,7 @@ var bh_stateanim_AnimationSM = function(selector,externallyDriven) {
 	this.currentStateIndex = 0;
 	this.elapsedTime = 0;
 	this.speed = 1.0;
+	this.randomFunc = Math.random;
 	this.paused = false;
 	h2d_Object.call(this,null);
 	this.currentSelector = selector;
@@ -26707,8 +26858,8 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					var name2 = event.name;
 					var point1 = event.point;
 					var randomRadius = event.randomRadius;
-					var randomAngle = Math.random() * 2 * Math.PI;
-					var r = Math.random() * randomRadius;
+					var randomAngle = this.randomFunc() * 2 * Math.PI;
+					var r = this.randomFunc() * randomRadius;
 					var randomPoint = new h2d_col_IPoint(point1.x,point1.y);
 					randomPoint.x += r * Math.cos(randomAngle) | 0;
 					randomPoint.y += r * Math.sin(randomAngle) | 0;
@@ -63434,15 +63585,6 @@ hxd_Key.onEvent = function(e) {
 	default:
 	}
 };
-var hxd_Math = function() { };
-$hxClasses["hxd.Math"] = hxd_Math;
-hxd_Math.__name__ = "hxd.Math";
-hxd_Math.srand = function(max) {
-	if(max == null) {
-		max = 1.0;
-	}
-	return (Math.random() - 0.5) * (max * 2);
-};
 var hxd_Flags = $hxEnums["hxd.Flags"] = { __ename__:true,__constructs__:null
 	,ReadOnly: {_hx_name:"ReadOnly",_hx_index:0,__enum__:"hxd.Flags",toString:$estr}
 	,AlphaPremultiplied: {_hx_name:"AlphaPremultiplied",_hx_index:1,__enum__:"hxd.Flags",toString:$estr}
@@ -91506,7 +91648,7 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,__class__: screens_gamelike_BattleHudDemoScreen
 });
 var screens_gamelike_Blob47DemoScreen = function(screenManager,layers) {
-	this.paintValue = 0;
+	this.paintValue = 1;
 	this.isPainting = false;
 	DemoScreenBase.call(this,screenManager,layers);
 };
@@ -91520,8 +91662,10 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/blob47.manim",false);
 		this.autotileBuilder = this.screenManager.buildFromResourceName("demos/gamelike/blob47.manim",false);
 		this.buttonsBuilder = this.screenManager.buildFromResourceName("buttons.manim",false);
-		var generatedByMacroBuildWithParametersload1369Builder = function() {
+		var generatedByMacroBuildWithParametersload1468Builder = function() {
 			var randomizeBtn;
+			var grassBtn;
+			var dirtBtn;
 			var clearBtn;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -91534,6 +91678,20 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["randomizeBtn"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				grassBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["grassBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dirtBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["dirtBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Clear");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				clearBtn = _el;
@@ -91541,19 +91699,27 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["clearBtn"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("blob47Demo",builderResults,{ placeholderObjects : _g});
-			var retVal = { randomizeBtn : randomizeBtn, clearBtn : clearBtn, builderResults : builderResults1};
+			var retVal = { randomizeBtn : randomizeBtn, grassBtn : grassBtn, dirtBtn : dirtBtn, clearBtn : clearBtn, builderResults : builderResults1};
 			if(retVal.randomizeBtn == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "randomizeBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.grassBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "grassBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dirtBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dirtBtn" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.clearBtn == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "clearBtn" + " is null (check if placeholder object is named correctly)");
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1369Builder();
+		var ui = generatedByMacroBuildWithParametersload1468Builder();
 		this.demoResult = ui.builderResults;
 		this.randomizeButton = ui.randomizeBtn;
 		this.clearButton = ui.clearBtn;
+		this.grassButton = ui.grassBtn;
+		this.dirtButton = ui.dirtBtn;
 		this.addBuilderResult(this.demoResult);
 		var _g = [];
 		var _g1 = 0;
@@ -91605,11 +91771,11 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.grid = _g;
 		this.mapContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("mapContainer").object);
 		this.mapInteractive = new h2d_Interactive(640,448,this.mapContainer);
-		this.mapInteractive.enableRightButton = true;
 		this.mapInteractive.onPush = function(e) {
-			_gthis.isPainting = true;
-			_gthis.paintValue = e.button == 0 ? 1 : 0;
-			_gthis.paintAt(e.relX,e.relY);
+			if(e.button == 0) {
+				_gthis.isPainting = true;
+				_gthis.paintAt(e.relX,e.relY);
+			}
 		};
 		this.mapInteractive.onRelease = function(_) {
 			_gthis.isPainting = false;
@@ -91624,6 +91790,7 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		};
 		this.rebuildAutotile();
 		this.updateStatus();
+		this.updateTileSelection();
 	}
 	,paintAt: function(relX,relY) {
 		var gx = relX / 16 | 0;
@@ -91671,7 +91838,7 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var _g1 = 0;
 			while(_g1 < 40) {
 				var x = _g1++;
-				this.grid[y][x] = 0;
+				this.grid[y][x] = this.paintValue;
 			}
 		}
 		this.rebuildAutotile();
@@ -91696,12 +91863,30 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var total = 1120;
 		this.demoResult.getUpdatable("statusText").updateText("Grass: " + grassCount + " / " + total + " tiles");
 	}
+	,updateTileSelection: function() {
+		if(this.grassButton != null) {
+			var tmp = this.paintValue == 1 ? 1.0 : 0.4;
+			this.grassButton.getObject().alpha = tmp;
+		}
+		if(this.dirtButton != null) {
+			var tmp = this.paintValue == 0 ? 1.0 : 0.4;
+			this.dirtButton.getObject().alpha = tmp;
+		}
+	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
 			if(source == this.randomizeButton) {
 				this.randomize();
 			} else if(source == this.clearButton) {
 				this.clearMap();
+				this.paintValue = 1 - this.paintValue;
+				this.updateTileSelection();
+			} else if(source == this.grassButton) {
+				this.paintValue = 1;
+				this.updateTileSelection();
+			} else if(source == this.dirtButton) {
+				this.paintValue = 0;
+				this.updateTileSelection();
 			}
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
@@ -91728,6 +91913,8 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoResult = null;
 		this.randomizeButton = null;
 		this.clearButton = null;
+		this.grassButton = null;
+		this.dirtButton = null;
 		this.grid = null;
 		this.mapContainer = null;
 	}

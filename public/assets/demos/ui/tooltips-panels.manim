@@ -1,7 +1,8 @@
 version: 0.5
 
 // Tooltips & Panels Demo
-// Hover tooltips (UITooltipHelper) and click panels (UIPanelHelper)
+// Hover tooltips (UITooltipHelper), click panels (UIPanelHelper),
+// and rich interactive state binding (UIRichInteractiveHelper + bind metadata)
 
 // ─── Tooltip Builds ────────────────────────────────────────
 
@@ -26,35 +27,41 @@ version: 0.5
     bitmap(generated(color(170, 1, $color))): 10, 66
 }
 
-// ─── Panel Builds ──────────────────────────────────────────
+// ─── Panel Builds (with interactive bind for hover/pressed) ─
 
-#panelActions programmable() {
+#panelActions programmable(equipS:[normal, hover, pressed]=normal, dropS:[normal, hover, pressed]=normal, infoS:[normal, hover, pressed]=normal) {
     ninepatch("ui", "Window_3x3_idle", 130, 100): 0, 0
     text(m5x7, "Actions", #888888, left, 120): 10, 6
 
     point {
         pos: 10, 22
-        bitmap(generated(color(110, 22, #334466))): 0, 0
+        @(equipS => normal)  bitmap(generated(color(110, 22, #334466))): 0, 0
+        @(equipS => hover)   bitmap(generated(color(110, 22, #445577))): 0, 0
+        @(equipS => pressed) bitmap(generated(color(110, 22, #223355))): 0, 0
         text(m6x11, "Equip", #7fdbda, center, 110): 0, 5
-        interactive(110, 22, "equip"): 0, 0
+        interactive(110, 22, "equip", bind => "equipS"): 0, 0
     }
 
     point {
         pos: 10, 48
-        bitmap(generated(color(110, 22, #334466))): 0, 0
+        @(dropS => normal)  bitmap(generated(color(110, 22, #553333))): 0, 0
+        @(dropS => hover)   bitmap(generated(color(110, 22, #664444))): 0, 0
+        @(dropS => pressed) bitmap(generated(color(110, 22, #442222))): 0, 0
         text(m6x11, "Drop", #ff8888, center, 110): 0, 5
-        interactive(110, 22, "drop"): 0, 0
+        interactive(110, 22, "drop", bind => "dropS"): 0, 0
     }
 
     point {
         pos: 10, 74
-        bitmap(generated(color(110, 22, #334466))): 0, 0
+        @(infoS => normal)  bitmap(generated(color(110, 22, #334466))): 0, 0
+        @(infoS => hover)   bitmap(generated(color(110, 22, #445577))): 0, 0
+        @(infoS => pressed) bitmap(generated(color(110, 22, #223355))): 0, 0
         text(m6x11, "Info", #aaaaaa, center, 110): 0, 5
-        interactive(110, 22, "info"): 0, 0
+        interactive(110, 22, "info", bind => "infoS"): 0, 0
     }
 }
 
-#panelColors programmable() {
+#panelColors programmable(redS:[normal, hover]=normal, greenS:[normal, hover]=normal, blueS:[normal, hover]=normal, yellowS:[normal, hover]=normal, purpleS:[normal, hover]=normal, cyanS:[normal, hover]=normal) {
     ninepatch("ui", "Window_3x3_idle", 100, 80): 0, 0
     text(m5x7, "Pick Color", #888888, left, 90): 10, 6
 
@@ -62,99 +69,129 @@ version: 0.5
     point {
         pos: 10, 22
         bitmap(generated(color(24, 22, #ff4444))): 0, 0
-        interactive(24, 22, "colorRed"): 0, 0
+        @(redS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 0, 0
+        interactive(24, 22, "colorRed", bind => "redS"): 0, 0
+
         bitmap(generated(color(24, 22, #44ff44))): 28, 0
-        interactive(24, 22, "colorGreen"): 28, 0
+        @(greenS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 28, 0
+        interactive(24, 22, "colorGreen", bind => "greenS"): 28, 0
+
         bitmap(generated(color(24, 22, #4488ff))): 56, 0
-        interactive(24, 22, "colorBlue"): 56, 0
+        @(blueS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 56, 0
+        interactive(24, 22, "colorBlue", bind => "blueS"): 56, 0
     }
 
     // Row 2
     point {
         pos: 10, 48
         bitmap(generated(color(24, 22, #ffff44))): 0, 0
-        interactive(24, 22, "colorYellow"): 0, 0
+        @(yellowS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 0, 0
+        interactive(24, 22, "colorYellow", bind => "yellowS"): 0, 0
+
         bitmap(generated(color(24, 22, #ff44ff))): 28, 0
-        interactive(24, 22, "colorPurple"): 28, 0
+        @(purpleS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 28, 0
+        interactive(24, 22, "colorPurple", bind => "purpleS"): 28, 0
+
         bitmap(generated(color(24, 22, #44ffff))): 56, 0
-        interactive(24, 22, "colorCyan"): 56, 0
+        @(cyanS => hover) graphics(line(#ffffff, 1, 0, 0, 23, 0); line(#ffffff, 1, 23, 0, 23, 21); line(#ffffff, 1, 23, 21, 0, 21); line(#ffffff, 1, 0, 21, 0, 0);): 56, 0
+        interactive(24, 22, "colorCyan", bind => "cyanS"): 56, 0
     }
 }
 
-#panelManual programmable() {
+#panelManual programmable(closeS:[normal, hover, pressed]=normal) {
     ninepatch("ui", "Window_3x3_idle", 170, 65): 0, 0
     text(m6x11, "Manual close panel", #cccccc, left, 150): 10, 10
     text(m5x7, "Only closes via button below", #888888, left, 150): 10, 26
 
     point {
         pos: 10, 40
-        bitmap(generated(color(60, 18, #553333))): 0, 0
+        @(closeS => normal)  bitmap(generated(color(60, 18, #553333))): 0, 0
+        @(closeS => hover)   bitmap(generated(color(60, 18, #664444))): 0, 0
+        @(closeS => pressed) bitmap(generated(color(60, 18, #442222))): 0, 0
         text(m6x11, "Close", #ff8888, center, 60): 0, 3
-        interactive(60, 18, "closeBtn"): 0, 0
+        interactive(60, 18, "closeBtn", bind => "closeS"): 0, 0
     }
 }
 
 // ─── Combo Panel (for Section 4) ───────────────────────────
 
-#panelCombo programmable() {
+#panelCombo programmable(equipS:[normal, hover, pressed]=normal, discardS:[normal, hover, pressed]=normal) {
     ninepatch("ui", "Window_3x3_idle", 140, 78): 0, 0
     text(m5x7, "Item Options", #888888, left, 120): 10, 6
 
     point {
         pos: 10, 22
-        bitmap(generated(color(120, 22, #334466))): 0, 0
+        @(equipS => normal)  bitmap(generated(color(120, 22, #334466))): 0, 0
+        @(equipS => hover)   bitmap(generated(color(120, 22, #445577))): 0, 0
+        @(equipS => pressed) bitmap(generated(color(120, 22, #223355))): 0, 0
         text(m6x11, "Equip", #7fdbda, center, 120): 0, 5
-        interactive(120, 22, "comboEquip"): 0, 0
+        interactive(120, 22, "comboEquip", bind => "equipS"): 0, 0
     }
 
     point {
         pos: 10, 48
-        bitmap(generated(color(120, 22, #553333))): 0, 0
+        @(discardS => normal)  bitmap(generated(color(120, 22, #553333))): 0, 0
+        @(discardS => hover)   bitmap(generated(color(120, 22, #664444))): 0, 0
+        @(discardS => pressed) bitmap(generated(color(120, 22, #442222))): 0, 0
         text(m6x11, "Discard", #ff8888, center, 120): 0, 5
-        interactive(120, 22, "comboDiscard"): 0, 0
+        interactive(120, 22, "comboDiscard", bind => "discardS"): 0, 0
     }
 }
 
 // ─── Main Layout ───────────────────────────────────────────
 
-#tooltipsPanelsDemo programmable() {
+#tooltipsPanelsDemo programmable(
+    aboveS:[normal, hover, pressed]=normal, belowS:[normal, hover, pressed]=normal,
+    leftS:[normal, hover, pressed]=normal, rightS:[normal, hover, pressed]=normal,
+    swordS:[normal, hover]=normal, shieldS:[normal, hover]=normal, crownS:[normal, hover]=normal,
+    actionsS:[normal, hover, pressed]=normal, colorsS:[normal, hover, pressed]=normal, manualS:[normal, hover, pressed]=normal,
+    comboS:[normal, hover, pressed]=normal
+) {
     pos: 50, 80
 
     // ── Section 1: Tooltip Positioning ─────────────────────
     text(exo2_16, "Tooltip Positioning", #7fdbda): 0, 0
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
-    text(exo2_light_14, "Hover to see tooltips at different positions (Above, Below, Left, Right).", #aaaaaa, left, 700): 0, 30
+    text(exo2_light_14, "Hover to see tooltips at different positions. Buttons highlight on hover/press (bind).", #aaaaaa, left, 700): 0, 30
 
     // Above
     point {
         pos: 0, 60
-        bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(aboveS => normal)  bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(aboveS => hover)   bitmap(generated(color(120, 40, #445588))): 0, 0
+        @(aboveS => pressed) bitmap(generated(color(120, 40, #283a54))): 0, 0
         text(m6x11, "Above", #7fdbda, center, 120): 0, 13
-        interactive(120, 40, "btnAbove", tooltip => "tooltipSimple", label => "Above!"): 0, 0
+        interactive(120, 40, "btnAbove", tooltip => "tooltipSimple", label => "Above!", bind => "aboveS"): 0, 0
     }
 
     // Below
     point {
         pos: 140, 60
-        bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(belowS => normal)  bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(belowS => hover)   bitmap(generated(color(120, 40, #445588))): 0, 0
+        @(belowS => pressed) bitmap(generated(color(120, 40, #283a54))): 0, 0
         text(m6x11, "Below", #7fdbda, center, 120): 0, 13
-        interactive(120, 40, "btnBelow", tooltip => "tooltipSimple", label => "Below!"): 0, 0
+        interactive(120, 40, "btnBelow", tooltip => "tooltipSimple", label => "Below!", bind => "belowS"): 0, 0
     }
 
     // Left
     point {
         pos: 280, 60
-        bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(leftS => normal)  bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(leftS => hover)   bitmap(generated(color(120, 40, #445588))): 0, 0
+        @(leftS => pressed) bitmap(generated(color(120, 40, #283a54))): 0, 0
         text(m6x11, "Left", #7fdbda, center, 120): 0, 13
-        interactive(120, 40, "btnLeft", tooltip => "tooltipSimple", label => "Left!"): 0, 0
+        interactive(120, 40, "btnLeft", tooltip => "tooltipSimple", label => "Left!", bind => "leftS"): 0, 0
     }
 
     // Right
     point {
         pos: 420, 60
-        bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(rightS => normal)  bitmap(generated(color(120, 40, #334466))): 0, 0
+        @(rightS => hover)   bitmap(generated(color(120, 40, #445588))): 0, 0
+        @(rightS => pressed) bitmap(generated(color(120, 40, #283a54))): 0, 0
         text(m6x11, "Right", #7fdbda, center, 120): 0, 13
-        interactive(120, 40, "btnRight", tooltip => "tooltipSimple", label => "Right!"): 0, 0
+        interactive(120, 40, "btnRight", tooltip => "tooltipSimple", label => "Right!", bind => "rightS"): 0, 0
     }
 
     #statusTooltip(updatable) text(m6x11, "Hover a button to see a tooltip", #666666): 0, 110
@@ -162,33 +199,36 @@ version: 0.5
     // ── Section 2: Rich Tooltips ───────────────────────────
     text(exo2_16, "Rich Tooltips", #7fdbda): 0, 145
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 167
-    text(exo2_light_14, "Metadata-driven content. Instant (0s), default (0.3s), and slow (1.0s) delays.", #aaaaaa, left, 700): 0, 175
+    text(exo2_light_14, "Metadata-driven content. Items use events:[hover] filter + hover border highlight.", #aaaaaa, left, 700): 0, 175
 
-    // Item: Sword (instant)
+    // Item: Sword (instant) — events: [hover] = hover-only, no click/push
     point {
         pos: 0, 205
         ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        @(swordS => hover) graphics(line(#aaaaaa, 1, 0, 0, 139, 0); line(#aaaaaa, 1, 139, 0, 139, 49); line(#aaaaaa, 1, 139, 49, 0, 49); line(#aaaaaa, 1, 0, 49, 0, 0);): 0, 0
         text(m6x11, "Iron Sword", #aaaaaa, left, 120): 10, 8
         text(m5x7, "common  |  delay: 0s", #666666, left, 120): 10, 26
-        interactive(140, 50, "itemSword", tooltip => "tooltipItem", name => "Iron Sword", rarity => "Common", damage => "Damage: 12", color => "#aaaaaa"): 0, 0
+        interactive(140, 50, "itemSword", tooltip => "tooltipItem", name => "Iron Sword", rarity => "Common", damage => "Damage: 12", color => "#aaaaaa", bind => "swordS", events: [hover]): 0, 0
     }
 
     // Item: Shield (default delay)
     point {
         pos: 160, 205
         ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        @(shieldS => hover) graphics(line(#7fdbda, 1, 0, 0, 139, 0); line(#7fdbda, 1, 139, 0, 139, 49); line(#7fdbda, 1, 139, 49, 0, 49); line(#7fdbda, 1, 0, 49, 0, 0);): 0, 0
         text(m6x11, "Mana Shield", #7fdbda, left, 120): 10, 8
         text(m5x7, "rare  |  delay: 0.3s", #666666, left, 120): 10, 26
-        interactive(140, 50, "itemShield", tooltip => "tooltipItem", name => "Mana Shield", rarity => "Rare", damage => "Block: 28", color => "#7fdbda"): 0, 0
+        interactive(140, 50, "itemShield", tooltip => "tooltipItem", name => "Mana Shield", rarity => "Rare", damage => "Block: 28", color => "#7fdbda", bind => "shieldS", events: [hover]): 0, 0
     }
 
     // Item: Crown (slow delay)
     point {
         pos: 320, 205
         ninepatch("ui", "Window_3x3_idle", 140, 50): 0, 0
+        @(crownS => hover) graphics(line(#ffeb3b, 1, 0, 0, 139, 0); line(#ffeb3b, 1, 139, 0, 139, 49); line(#ffeb3b, 1, 139, 49, 0, 49); line(#ffeb3b, 1, 0, 49, 0, 0);): 0, 0
         text(m6x11, "Dragon Crown", #ffeb3b, left, 120): 10, 8
         text(m5x7, "legendary  |  delay: 1s", #666666, left, 120): 10, 26
-        interactive(140, 50, "itemCrown", tooltip => "tooltipItem", name => "Dragon Crown", rarity => "Legendary", damage => "Power: 99", color => "#ffeb3b"): 0, 0
+        interactive(140, 50, "itemCrown", tooltip => "tooltipItem", name => "Dragon Crown", rarity => "Legendary", damage => "Power: 99", color => "#ffeb3b", bind => "crownS", events: [hover]): 0, 0
     }
 
     #statusRich(updatable) text(m6x11, "Hover an item card to see a rich tooltip", #666666): 0, 265
@@ -196,30 +236,36 @@ version: 0.5
     // ── Section 3: Click Panels ────────────────────────────
     text(exo2_16, "Click Panels", #ffeb3b): 0, 300
     bitmap(generated(color(700, 1, #ffeb3b33))): 0, 322
-    text(exo2_light_14, "Click to open panels. OutsideClick auto-closes; Manual requires close button.", #aaaaaa, left, 700): 0, 330
+    text(exo2_light_14, "Click to open panels. Panel buttons also use bind for hover/pressed states.", #aaaaaa, left, 700): 0, 330
 
     // Actions panel trigger
     point {
         pos: 0, 360
-        bitmap(generated(color(120, 40, #443366))): 0, 0
+        @(actionsS => normal)  bitmap(generated(color(120, 40, #443366))): 0, 0
+        @(actionsS => hover)   bitmap(generated(color(120, 40, #554477))): 0, 0
+        @(actionsS => pressed) bitmap(generated(color(120, 40, #332255))): 0, 0
         text(m6x11, "Actions", #ffeb3b, center, 120): 0, 13
-        interactive(120, 40, "triggerActions", panel => "panelActions"): 0, 0
+        interactive(120, 40, "triggerActions", panel => "panelActions", bind => "actionsS"): 0, 0
     }
 
     // Color picker trigger
     point {
         pos: 140, 360
-        bitmap(generated(color(120, 40, #336644))): 0, 0
+        @(colorsS => normal)  bitmap(generated(color(120, 40, #336644))): 0, 0
+        @(colorsS => hover)   bitmap(generated(color(120, 40, #447755))): 0, 0
+        @(colorsS => pressed) bitmap(generated(color(120, 40, #225533))): 0, 0
         text(m6x11, "Colors", #ffeb3b, center, 120): 0, 13
-        interactive(120, 40, "triggerColors", panel => "panelColors"): 0, 0
+        interactive(120, 40, "triggerColors", panel => "panelColors", bind => "colorsS"): 0, 0
     }
 
     // Manual close trigger
     point {
         pos: 280, 360
-        bitmap(generated(color(120, 40, #664433))): 0, 0
+        @(manualS => normal)  bitmap(generated(color(120, 40, #664433))): 0, 0
+        @(manualS => hover)   bitmap(generated(color(120, 40, #775544))): 0, 0
+        @(manualS => pressed) bitmap(generated(color(120, 40, #553322))): 0, 0
         text(m6x11, "Manual", #ffeb3b, center, 120): 0, 13
-        interactive(120, 40, "triggerManual", panel => "panelManual"): 0, 0
+        interactive(120, 40, "triggerManual", panel => "panelManual", bind => "manualS"): 0, 0
     }
 
     #statusPanel(updatable) text(m6x11, "Click a button to open a panel", #666666): 0, 510
@@ -232,9 +278,10 @@ version: 0.5
     point {
         pos: 0, 600
         ninepatch("ui", "Window_3x3_idle", 160, 50): 0, 0
+        @(comboS => hover) graphics(line(#ff88ff, 1, 0, 0, 159, 0); line(#ff88ff, 1, 159, 0, 159, 49); line(#ff88ff, 1, 159, 49, 0, 49); line(#ff88ff, 1, 0, 49, 0, 0);): 0, 0
         text(m6x11, "Magic Ring", #ff88ff, left, 140): 10, 8
         text(m5x7, "hover + click me", #666666, left, 140): 10, 26
-        interactive(160, 50, "comboItem", tooltip => "tooltipRich", panel => "panelCombo", name => "Magic Ring", desc => "Hover=tooltip, Click=panel", color => "#ff88ff"): 0, 0
+        interactive(160, 50, "comboItem", tooltip => "tooltipRich", panel => "panelCombo", name => "Magic Ring", desc => "Hover=tooltip, Click=panel", color => "#ff88ff", bind => "comboS"): 0, 0
     }
 
     #statusCombo(updatable) text(m6x11, "Hover for tooltip, click for panel", #666666): 0, 660

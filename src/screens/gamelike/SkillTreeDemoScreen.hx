@@ -1,7 +1,6 @@
 package screens.gamelike;
 
 import bh.ui.UIElement;
-import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
@@ -194,18 +193,14 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 					resetSkills();
 				} else if (source == addPointButton) {
 					addSkillPoint();
-				} else if (Std.isOfType(source, UIInteractiveWrapper)) {
-					final wrapper:UIInteractiveWrapper = cast source;
-					final nodeIdx = Std.parseInt(wrapper.id);
-					if (nodeIdx != null) onNodeClick(nodeIdx);
 				}
-			case UIEntering:
-				if (Std.isOfType(source, UIInteractiveWrapper)) {
-					final wrapper:UIInteractiveWrapper = cast source;
-					final nodeIdx = Std.parseInt(wrapper.id);
-					if (nodeIdx != null) onNodeHover(nodeIdx);
-				}
-			case UILeaving:
+			case UIInteractiveEvent(UIClick, id, _):
+				final nodeIdx = Std.parseInt(id);
+				if (nodeIdx != null) onNodeClick(nodeIdx);
+			case UIInteractiveEvent(UIEntering, id, _):
+				final nodeIdx = Std.parseInt(id);
+				if (nodeIdx != null) onNodeHover(nodeIdx);
+			case UIInteractiveEvent(UILeaving, _, _):
 				clearHover();
 				updateInfoText("Hover over equipment to see details");
 			default:

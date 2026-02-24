@@ -6,6 +6,7 @@ import bh.ui.UITooltipHelper;
 import bh.ui.UITooltipHelper.TooltipPosition;
 import bh.ui.UIPanelHelper;
 import bh.ui.UIPanelHelper.PanelCloseMode;
+import bh.ui.UIRichInteractiveHelper;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimBuilder.BuilderResolvedSettings;
 import bh.ui.screens.UIScreen;
@@ -16,12 +17,13 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 	var tooltipHelper:Null<UITooltipHelper>;
 	var panelHelper:Null<UIPanelHelper>;
+	var richHelper:Null<UIRichInteractiveHelper>;
 
 	override public function load():Void {
 		setupDemo("Tooltips & Panels", "Hover tooltips (UITooltipHelper) and click panels (UIPanelHelper)");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/tooltips-panels.manim", false);
-		demoResult = demoBuilder.buildWithParameters("tooltipsPanelsDemo", []);
+		demoResult = demoBuilder.buildWithParameters("tooltipsPanelsDemo", [], null, null, true);
 		addBuilderResult(demoResult);
 		addInteractives(demoResult);
 
@@ -40,6 +42,10 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 
 		// Panel helper — default: Below, OutsideClick close
 		panelHelper = new UIPanelHelper(this, demoBuilder, {position: Below, closeOn: OutsideClick});
+
+		// Rich interactive helper — auto-binds all interactives with bind metadata
+		richHelper = new UIRichInteractiveHelper(this);
+		richHelper.register(demoResult);
 	}
 
 	override public function update(dt:Float):Void {
@@ -47,16 +53,29 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 		if (tooltipHelper != null)
 			tooltipHelper.update(dt);
 		if (panelHelper != null) {
-			if (panelHelper.checkPendingClose())
-				updateStatus("statusPanel", "Panel closed (outside click)");
+			final closingId = panelHelper.getActiveId();
+			if (panelHelper.checkPendingClose()) {
+				unregisterPanelBindings();
+				final sf = closingId != null ? getStatusFieldForId(closingId) : "statusPanel";
+				if (sf != null)
+					updateStatus(sf, "Panel closed (outside click)");
+			}
 		}
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
-		// Let panel helper handle outside-click close logic first
+		// Visual state updates (hover/pressed) — always forward
+		if (richHelper != null)
+			richHelper.handleEvent(event);
+
+		// Let panel helper handle outside-click close logic
 		if (panelHelper != null) {
+			final closingId = panelHelper.getActiveId();
 			if (panelHelper.handleOutsideClick(event)) {
-				updateStatus("statusPanel", "Panel closed (outside click)");
+				unregisterPanelBindings();
+				final sf = closingId != null ? getStatusFieldForId(closingId) : "statusPanel";
+				if (sf != null)
+					updateStatus(sf, "Panel closed (outside click)");
 				return;
 			}
 		}
@@ -86,19 +105,40 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 		var params = buildTooltipParams(metadata);
 		tooltipHelper.startHover(id, tooltipBuild, params);
 
-		// Update status text
-		updateStatus("statusTooltip", 'Hovering: $id');
-		updateStatus("statusRich", 'Hovering: $id');
-		updateStatus("statusCombo", 'Hovering: $id (tooltip pending...)');
+		// Update only this section's status text
+		final statusField = getStatusFieldForId(id);
+		if (statusField != null) {
+			final suffix = if (statusField == "statusCombo") ' (tooltip pending...)' else '';
+			updateStatus(statusField, 'Hovering: $id$suffix');
+		}
 	}
 
 	function handleLeave(id:String):Void {
 		if (tooltipHelper != null)
 			tooltipHelper.cancelHover(id);
 
-		updateStatus("statusTooltip", "Hover a button to see a tooltip");
-		updateStatus("statusRich", "Hover an item card to see a rich tooltip");
-		updateStatus("statusCombo", "Hover for tooltip, click for panel");
+		// Reset only this section's status text
+		final statusField = getStatusFieldForId(id);
+		if (statusField != null) {
+			switch statusField {
+				case "statusTooltip": updateStatus(statusField, "Hover a button to see a tooltip");
+				case "statusRich": updateStatus(statusField, "Hover an item card to see a rich tooltip");
+				case "statusCombo": updateStatus(statusField, "Hover for tooltip, click for panel");
+				default:
+			}
+		}
+	}
+
+	function getStatusFieldForId(id:String):Null<String> {
+		if (StringTools.startsWith(id, "btn"))
+			return "statusTooltip";
+		if (StringTools.startsWith(id, "item"))
+			return "statusRich";
+		if (StringTools.startsWith(id, "combo"))
+			return "statusCombo";
+		if (StringTools.startsWith(id, "trigger"))
+			return "statusPanel";
+		return null;
 	}
 
 	function handleClick(id:String, metadata:BuilderResolvedSettings):Void {
@@ -120,58 +160,90 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 			if (panelHelper != null) {
 				// Toggle: if clicking the same trigger, close the panel
 				if (panelHelper.isOpen() && panelHelper.getActiveId() == id) {
+					unregisterPanelBindings();
 					panelHelper.close();
-					updateStatus("statusPanel", "Panel closed");
-					updateStatus("statusCombo", "Panel closed. Hover again for tooltip.");
+					final sf = getStatusFieldForId(id);
+					if (sf != null) {
+						final msg = if (sf == "statusCombo") "Panel closed. Hover again for tooltip." else "Panel closed";
+						updateStatus(sf, msg);
+					}
 					return;
 				}
+
+				// Close previous panel bindings before opening new one
+				unregisterPanelBindings();
 
 				// Determine close mode
 				final closeMode = if (id == "triggerManual") Manual else OutsideClick;
 				panelHelper.open(id, panelBuild, null, closeMode);
-				updateStatus("statusPanel", 'Opened: $panelBuild (${closeMode == Manual ? "manual close" : "outside-click close"})');
-				updateStatus("statusCombo", 'Panel opened for $id');
+				registerPanelBindings();
+				final sf = getStatusFieldForId(id);
+				if (sf != null) {
+					final msg = if (sf == "statusCombo") 'Panel opened for $id' else 'Opened: $panelBuild (${closeMode == Manual ? "manual close" : "outside-click close"})';
+					updateStatus(sf, msg);
+				}
 			}
 			return;
 		}
 	}
 
+	function registerPanelBindings():Void {
+		if (richHelper == null || panelHelper == null)
+			return;
+		final panelResult = panelHelper.getPanelResult();
+		final prefix = panelHelper.getActivePrefix();
+		if (panelResult != null && prefix != null)
+			richHelper.register(panelResult, prefix);
+	}
+
+	function unregisterPanelBindings():Void {
+		if (richHelper == null || panelHelper == null)
+			return;
+		final panelResult = panelHelper.getPanelResult();
+		if (panelResult != null)
+			richHelper.unregister(panelResult);
+	}
+
 	function handlePanelAction(fullId:String):Void {
 		// Panel interactive IDs are prefixed: "triggerId.panelBuild.actionId"
-		// Extract the action part (last segment)
 		final parts = fullId.split(".");
+		final triggerId = parts[0];
 		final action = parts[parts.length - 1];
+		final sf = getStatusFieldForId(triggerId) ?? "statusPanel";
 
 		switch action {
 			case "equip":
-				updateStatus("statusPanel", 'Action: Equip!');
-				if (panelHelper != null) panelHelper.close();
+				updateStatus(sf, 'Action: Equip!');
+				closePanelWithUnregister();
 			case "drop":
-				updateStatus("statusPanel", 'Action: Drop!');
-				if (panelHelper != null) panelHelper.close();
+				updateStatus(sf, 'Action: Drop!');
+				closePanelWithUnregister();
 			case "info":
-				updateStatus("statusPanel", 'Action: Info!');
-				if (panelHelper != null) panelHelper.close();
+				updateStatus(sf, 'Action: Info!');
+				closePanelWithUnregister();
 			case "closeBtn":
-				if (panelHelper != null)
-					panelHelper.close();
-				updateStatus("statusPanel", "Panel closed (manual)");
+				closePanelWithUnregister();
+				updateStatus(sf, "Panel closed (manual)");
 			case "comboEquip":
-				updateStatus("statusCombo", "Equipped the Magic Ring!");
-				if (panelHelper != null)
-					panelHelper.close();
+				updateStatus(sf, "Equipped the Magic Ring!");
+				closePanelWithUnregister();
 			case "comboDiscard":
-				updateStatus("statusCombo", "Discarded the Magic Ring!");
-				if (panelHelper != null)
-					panelHelper.close();
+				updateStatus(sf, "Discarded the Magic Ring!");
+				closePanelWithUnregister();
 			default:
 				// Color picker
 				if (StringTools.startsWith(action, "color")) {
 					final color = action.substr(5); // "colorRed" → "Red"
-					updateStatus("statusPanel", 'Picked color: $color');
-					if (panelHelper != null) panelHelper.close();
+					updateStatus(sf, 'Picked color: $color');
+					closePanelWithUnregister();
 				}
 		}
+	}
+
+	function closePanelWithUnregister():Void {
+		unregisterPanelBindings();
+		if (panelHelper != null)
+			panelHelper.close();
 	}
 
 	function buildTooltipParams(metadata:BuilderResolvedSettings):Map<String, Dynamic> {
@@ -198,5 +270,6 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 		demoResult = null;
 		tooltipHelper = null;
 		panelHelper = null;
+		richHelper = null;
 	}
 }

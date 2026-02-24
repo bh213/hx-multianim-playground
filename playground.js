@@ -12432,7 +12432,11 @@ bh_multianim_MacroManimParser.prototype = {
 			case 31:
 				var name = _g.s;
 				this.advance();
-				metadata.push(this.parseMetadataValue(bh_multianim_ReferenceableValue.RVString(name)));
+				if(bh_multianim_MacroManimParser.isKeyword(name,"events")) {
+					metadata.push(this.parseInteractiveEventsMetadata());
+				} else {
+					metadata.push(this.parseMetadataValue(bh_multianim_ReferenceableValue.RVString(name)));
+				}
 				this.eatComma();
 				break;
 			case 33:
@@ -12449,6 +12453,29 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 		}
+	}
+	,parseInteractiveEventsMetadata: function() {
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+		var flags = 0;
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+			var eventName = this.expectIdentifierOrString();
+			switch(eventName.toLowerCase()) {
+			case "click":
+				flags |= 2;
+				break;
+			case "hover":
+				flags |= 1;
+				break;
+			case "push":
+				flags |= 4;
+				break;
+			default:
+				this.error("unknown event type \"" + eventName + "\", expected hover, click, or push");
+			}
+			this.eatComma();
+		}
+		return { key : bh_multianim_ReferenceableValue.RVString("events"), type : bh_multianim_SettingValueType.SVTInt, value : bh_multianim_ReferenceableValue.RVInteger(flags)};
 	}
 	,parseMetadataValue: function(key) {
 		switch(this.tokens[this.tpos].type._hx_index) {
@@ -27571,6 +27598,7 @@ var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
 	var extracted = bh_ui_UIInteractiveWrapper.extractInteractiveData(interactive,prefix);
 	this.id = extracted.id;
 	this.metadata = extracted.metadata;
+	this.eventFlags = extracted.eventFlags;
 };
 $hxClasses["bh.ui.UIInteractiveWrapper"] = bh_ui_UIInteractiveWrapper;
 bh_ui_UIInteractiveWrapper.__name__ = "bh.ui.UIInteractiveWrapper";
@@ -27582,7 +27610,9 @@ bh_ui_UIInteractiveWrapper.extractInteractiveData = function(obj,prefix) {
 		var _g1 = _g.height;
 		var identifier = _g.identifier;
 		var meta = _g.metadata;
-		return { id : prefix != null ? "" + prefix + "." + identifier : identifier, metadata : new bh_multianim_BuilderResolvedSettings(meta)};
+		var brs = new bh_multianim_BuilderResolvedSettings(meta);
+		var flags = brs.getIntOrDefault("events",7);
+		return { id : prefix != null ? "" + prefix + "." + identifier : identifier, metadata : brs, eventFlags : flags};
 	} else {
 		throw haxe_Exception.thrown("UIInteractiveWrapper requires MAInteractive");
 	}
@@ -27609,24 +27639,34 @@ bh_ui_UIInteractiveWrapper.prototype = {
 		switch(_g._hx_index) {
 		case 0:
 			var _g1 = _g.button;
-			wrapper.control.outsideClick.trackOutsideClick(true);
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIPush,this.id,this.metadata),this);
+			if((this.eventFlags & 4) != 0) {
+				wrapper.control.outsideClick.trackOutsideClick(true);
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIPush,this.id,this.metadata),this);
+			}
 			break;
 		case 1:
 			var _g1 = _g.button;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClick,this.id,this.metadata),this);
+			if((this.eventFlags & 2) != 0) {
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClick,this.id,this.metadata),this);
+			}
 			break;
 		case 3:
 			var _g1 = _g.button;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClickOutside,this.id,this.metadata),this);
+			if((this.eventFlags & 4) != 0) {
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIClickOutside,this.id,this.metadata),this);
+			}
 			break;
 		case 4:
-			this.hovered = true;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIEntering,this.id,this.metadata),this);
+			if((this.eventFlags & 1) != 0) {
+				this.hovered = true;
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIEntering,this.id,this.metadata),this);
+			}
 			break;
 		case 5:
-			this.hovered = false;
-			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UILeaving,this.id,this.metadata),this);
+			if((this.eventFlags & 1) != 0) {
+				this.hovered = false;
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UILeaving,this.id,this.metadata),this);
+			}
 			break;
 		default:
 		}
@@ -27634,11 +27674,11 @@ bh_ui_UIInteractiveWrapper.prototype = {
 	,__class__: bh_ui_UIInteractiveWrapper
 };
 var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraParams) {
-	this.requestRedraw = true;
 	this.disabled = false;
-	this.status = bh_ui_StandardUIElementStates.SUINormal;
 	var _g = new haxe_ds_StringMap();
 	_g.h["buttonText"] = buttonText;
+	_g.h["status"] = "normal";
+	_g.h["disabled"] = "false";
 	var params = _g;
 	if(extraParams != null) {
 		var h = extraParams.h;
@@ -27655,35 +27695,27 @@ var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraPara
 			params.h[key1] = value;
 		}
 	}
-	this.multiResult = builder.buildWithComboParameters(name,params,["status","disabled"]);
-	this.root = new h2d_Object();
+	this.result = builder.buildWithParameters(name,params,null,null,true);
 };
 $hxClasses["bh.ui.UIStandardMultiAnimButton"] = bh_ui_UIStandardMultiAnimButton;
 bh_ui_UIStandardMultiAnimButton.__name__ = "bh.ui.UIStandardMultiAnimButton";
-bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimButton.create = function(builder,name,buttonText,extraParams) {
 	return new bh_ui_UIStandardMultiAnimButton(builder,name,buttonText,extraParams);
 };
 bh_ui_UIStandardMultiAnimButton.prototype = {
-	clear: function() {
-		this.currentButtonObject = null;
-	}
-	,set_status: function(value) {
-		if(this.status != value) {
-			this.status = value;
-			this.requestRedraw = true;
-		}
-		return value;
-	}
-	,set_disabled: function(value) {
+	set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
-			this.requestRedraw = true;
+			this.result.beginUpdate();
+			this.result.setParameter("status",value ? "disabled" : "normal");
+			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			this.result.endUpdate();
 		}
 		return value;
 	}
 	,getObject: function() {
-		return this.root;
+		return this.result.object;
 	}
 	,containsPoint: function(pos) {
 		var _this = this.getObject().getBounds();
@@ -27693,6 +27725,8 @@ bh_ui_UIStandardMultiAnimButton.prototype = {
 			return false;
 		}
 	}
+	,clear: function() {
+	}
 	,onEvent: function(wrapper) {
 		if(this.disabled) {
 			return;
@@ -27701,24 +27735,25 @@ bh_ui_UIStandardMultiAnimButton.prototype = {
 		switch(_g._hx_index) {
 		case 0:
 			var button = _g.button;
-			this.set_status(bh_ui_StandardUIElementStates.SUIPressed);
+			this.result.setParameter("status","pressed");
 			break;
 		case 1:
 			var button = _g.button;
 			this.triggerClicked(wrapper.control);
-			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","hover");
 			break;
 		case 2:
 			var _g1 = _g.button;
 			break;
 		case 3:
 			var _g1 = _g.button;
+			this.result.setParameter("status","normal");
 			break;
 		case 4:
-			this.set_status(bh_ui_StandardUIElementStates.SUIHover);
+			this.result.setParameter("status","hover");
 			break;
 		case 5:
-			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","normal");
 			break;
 		case 6:
 			var up = _g.keyCode;
@@ -27737,28 +27772,17 @@ bh_ui_UIStandardMultiAnimButton.prototype = {
 	}
 	,onClick: function() {
 	}
-	,doRedraw: function() {
-		this.requestRedraw = false;
-		if(this.currentButtonObject != null) {
-			var _this = this.currentButtonObject;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		var result = this.multiResult.findResultByCombo(bh_ui_UIElement_standardUIElementStatusToString(this.status),"" + Std.string(this.disabled));
-		this.currentButtonObject = result.object;
-		this.root.addChild(result.object);
-	}
 	,__class__: bh_ui_UIStandardMultiAnimButton
 };
 var bh_ui_UIStandardMultiCheckbox = function(builder,name,startsChecked,extraParams) {
 	this.ignoreSelectEvents = false;
-	this.requestRedraw = true;
 	this.selected = false;
 	this.disabled = false;
-	this.status = bh_ui_StandardUIElementStates.SUINormal;
-	this.root = new h2d_Object();
-	var params = new haxe_ds_StringMap();
+	var _g = new haxe_ds_StringMap();
+	_g.h["status"] = "normal";
+	_g.h["disabled"] = "false";
+	_g.h["checked"] = "" + (startsChecked == null ? "null" : "" + startsChecked);
+	var params = _g;
 	if(extraParams != null) {
 		var h = extraParams.h;
 		var _g_h = h;
@@ -27774,54 +27798,34 @@ var bh_ui_UIStandardMultiCheckbox = function(builder,name,startsChecked,extraPar
 			params.h[key1] = value;
 		}
 	}
-	this.multiResult = builder.buildWithComboParameters(name,params,["status","disabled","checked"]);
+	this.result = builder.buildWithParameters(name,params,null,null,true);
 	this.set_selected(startsChecked);
 };
 $hxClasses["bh.ui.UIStandardMultiCheckbox"] = bh_ui_UIStandardMultiCheckbox;
 bh_ui_UIStandardMultiCheckbox.__name__ = "bh.ui.UIStandardMultiCheckbox";
-bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementSyncRedraw,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiCheckbox.create = function(builder,name,checked,extraParams) {
 	return new bh_ui_UIStandardMultiCheckbox(builder,name,checked,extraParams);
 };
 bh_ui_UIStandardMultiCheckbox.prototype = {
 	clear: function() {
-		this.checkboxObject = null;
-	}
-	,set_status: function(value) {
-		if(this.status != value) {
-			this.status = value;
-			this.requestRedraw = true;
-		}
-		return value;
 	}
 	,set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
-			this.requestRedraw = true;
+			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
 		}
 		return value;
 	}
 	,set_selected: function(value) {
 		if(this.selected != value) {
 			this.selected = value;
-			this.requestRedraw = true;
+			this.result.setParameter("checked","" + (value == null ? "null" : "" + value));
 		}
 		return value;
 	}
-	,doRedraw: function() {
-		this.requestRedraw = false;
-		if(this.checkboxObject != null) {
-			var _this = this.checkboxObject;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		var result = this.multiResult.findResultByCombo(bh_ui_UIElement_standardUIElementStatusToString(this.status),"" + Std.string(this.disabled),"" + Std.string(this.selected));
-		this.checkboxObject = result.object;
-		this.root.addChild(result.object);
-	}
 	,getObject: function() {
-		return this.root;
+		return this.result.object;
 	}
 	,containsPoint: function(pos) {
 		var _this = this.getObject().getBounds();
@@ -27841,13 +27845,16 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 			var button = _g.button;
 			if(!this.ignoreSelectEvents) {
 				this.set_selected(!this.selected);
-				this.set_status(bh_ui_StandardUIElementStates.SUIPressed);
+				this.result.beginUpdate();
+				this.result.setParameter("status","pressed");
+				this.result.setParameter("checked","" + Std.string(this.selected));
+				this.result.endUpdate();
 				this.triggerToggle(this.selected,wrapper.control);
 			}
 			break;
 		case 1:
 			var button = _g.button;
-			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","normal");
 			break;
 		case 2:
 			var _g1 = _g.button;
@@ -27856,10 +27863,10 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 			var _g1 = _g.button;
 			break;
 		case 4:
-			this.set_status(bh_ui_StandardUIElementStates.SUIHover);
+			this.result.setParameter("status","hover");
 			break;
 		case 5:
-			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","normal");
 			break;
 		case 6:
 			var up = _g.keyCode;
@@ -29716,12 +29723,13 @@ bh_ui_ContentTarget.prototype = {
 	__class__: bh_ui_ContentTarget
 };
 var bh_ui_UIMultiAnimTabButton = function(builder,name,extraParams) {
-	this.requestRedraw = true;
 	this.selected = false;
 	this.disabled = false;
-	this.status = bh_ui_StandardUIElementStates.SUINormal;
-	this.root = new h2d_Object();
-	var params = new haxe_ds_StringMap();
+	var _g = new haxe_ds_StringMap();
+	_g.h["status"] = "normal";
+	_g.h["disabled"] = "false";
+	_g.h["checked"] = "false";
+	var params = _g;
 	if(extraParams != null) {
 		var h = extraParams.h;
 		var _g_h = h;
@@ -29737,50 +29745,30 @@ var bh_ui_UIMultiAnimTabButton = function(builder,name,extraParams) {
 			params.h[key1] = value;
 		}
 	}
-	this.multiResult = builder.buildWithComboParameters(name,params,["status","disabled","checked"]);
+	this.result = builder.buildWithParameters(name,params,null,null,true);
 };
 $hxClasses["bh.ui.UIMultiAnimTabButton"] = bh_ui_UIMultiAnimTabButton;
 bh_ui_UIMultiAnimTabButton.__name__ = "bh.ui.UIMultiAnimTabButton";
-bh_ui_UIMultiAnimTabButton.__interfaces__ = [bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIMultiAnimTabButton.__interfaces__ = [bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIMultiAnimTabButton.prototype = {
-	set_status: function(value) {
-		if(this.status != value) {
-			this.status = value;
-			this.requestRedraw = true;
-		}
-		return value;
-	}
-	,set_disabled: function(value) {
+	set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
-			this.requestRedraw = true;
+			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
 		}
 		return value;
 	}
 	,set_selected: function(value) {
 		if(this.selected != value) {
 			this.selected = value;
-			this.requestRedraw = true;
+			this.result.setParameter("checked","" + (value == null ? "null" : "" + value));
 		}
 		return value;
 	}
 	,clear: function() {
-		this.checkboxObject = null;
-	}
-	,doRedraw: function() {
-		this.requestRedraw = false;
-		if(this.checkboxObject != null) {
-			var _this = this.checkboxObject;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		var result = this.multiResult.findResultByCombo(bh_ui_UIElement_standardUIElementStatusToString(this.status),"" + Std.string(this.disabled),"" + Std.string(this.selected));
-		this.checkboxObject = result.object;
-		this.root.addChild(result.object);
 	}
 	,getObject: function() {
-		return this.root;
+		return this.result.object;
 	}
 	,containsPoint: function(pos) {
 		var _this = this.getObject().getBounds();
@@ -29799,13 +29787,13 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 		case 0:
 			var button = _g.button;
 			if(!this.selected) {
-				this.set_status(bh_ui_StandardUIElementStates.SUIPressed);
+				this.result.setParameter("status","pressed");
 				this.onInternalClick(wrapper.control);
 			}
 			break;
 		case 1:
 			var button = _g.button;
-			this.set_status(this.selected ? bh_ui_StandardUIElementStates.SUINormal : bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","normal");
 			break;
 		case 2:
 			var _g1 = _g.button;
@@ -29814,10 +29802,10 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 			var _g1 = _g.button;
 			break;
 		case 4:
-			this.set_status(bh_ui_StandardUIElementStates.SUIHover);
+			this.result.setParameter("status","hover");
 			break;
 		case 5:
-			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
+			this.result.setParameter("status","normal");
 			break;
 		case 6:
 			var up = _g.keyCode;
@@ -30182,7 +30170,7 @@ bh_ui_UIPanelHelper.prototype = {
 			return;
 		}
 		var tmp = params;
-		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap());
+		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap(),null,null,true);
 		var position = this.defaultPosition;
 		var offset = this.defaultOffset;
 		this.positionPanel(result.object,wrapper.interactive,position,offset);
@@ -30216,6 +30204,12 @@ bh_ui_UIPanelHelper.prototype = {
 	}
 	,getActiveId: function() {
 		return this.activeInteractiveId;
+	}
+	,getPanelResult: function() {
+		return this.activeResult;
+	}
+	,getActivePrefix: function() {
+		return this.activePanelPrefix;
 	}
 	,isOwnInteractive: function(id) {
 		if(this.activePanelPrefix == null) {
@@ -30292,6 +30286,123 @@ bh_ui_UIPanelHelper.prototype = {
 		}
 	}
 	,__class__: bh_ui_UIPanelHelper
+};
+var bh_ui_InteractiveState = $hxEnums["bh.ui.InteractiveState"] = { __ename__:true,__constructs__:null
+	,Normal: {_hx_name:"Normal",_hx_index:0,__enum__:"bh.ui.InteractiveState",toString:$estr}
+	,Hover: {_hx_name:"Hover",_hx_index:1,__enum__:"bh.ui.InteractiveState",toString:$estr}
+	,Pressed: {_hx_name:"Pressed",_hx_index:2,__enum__:"bh.ui.InteractiveState",toString:$estr}
+	,Disabled: {_hx_name:"Disabled",_hx_index:3,__enum__:"bh.ui.InteractiveState",toString:$estr}
+};
+bh_ui_InteractiveState.__constructs__ = [bh_ui_InteractiveState.Normal,bh_ui_InteractiveState.Hover,bh_ui_InteractiveState.Pressed,bh_ui_InteractiveState.Disabled];
+bh_ui_InteractiveState.__empty_constructs__ = [bh_ui_InteractiveState.Normal,bh_ui_InteractiveState.Hover,bh_ui_InteractiveState.Pressed,bh_ui_InteractiveState.Disabled];
+var bh_ui_UIRichInteractiveHelper = function(screen) {
+	this.bindings = new haxe_ds_StringMap();
+	this.screen = screen;
+};
+$hxClasses["bh.ui.UIRichInteractiveHelper"] = bh_ui_UIRichInteractiveHelper;
+bh_ui_UIRichInteractiveHelper.__name__ = "bh.ui.UIRichInteractiveHelper";
+bh_ui_UIRichInteractiveHelper.prototype = {
+	register: function(result,prefix) {
+		var _g = 0;
+		var _g1 = result.interactives;
+		while(_g < _g1.length) {
+			var obj = _g1[_g];
+			++_g;
+			var _g2 = obj.multiAnimType;
+			if(_g2._hx_index == 0) {
+				var _g3 = _g2.width;
+				var _g4 = _g2.height;
+				var identifier = _g2.identifier;
+				var meta = _g2.metadata;
+				if(meta != null) {
+					var brs = new bh_multianim_BuilderResolvedSettings(meta);
+					var bindParam = brs.getStringOrDefault("bind","");
+					if(bindParam != "") {
+						var fullId = prefix != null ? "" + prefix + "." + identifier : identifier;
+						this.bind(fullId,result,bindParam);
+					}
+				}
+			}
+		}
+	}
+	,unregister: function(result) {
+		var toRemove = [];
+		var h = this.bindings.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var id = _g_key;
+			var binding = _g_value;
+			if(binding.result == result) {
+				toRemove.push(id);
+			}
+		}
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var id = toRemove[_g];
+			++_g;
+			var _this = this.bindings;
+			if(Object.prototype.hasOwnProperty.call(_this.h,id)) {
+				delete(_this.h[id]);
+			}
+		}
+	}
+	,bind: function(interactiveId,result,stateParam) {
+		if(stateParam == null) {
+			stateParam = "status";
+		}
+		this.bindings.h[interactiveId] = { result : result, stateParam : stateParam, currentState : bh_ui_InteractiveState.Normal};
+	}
+	,handleEvent: function(event) {
+		if(event._hx_index == 14) {
+			var _g = event.metadata;
+			var innerEvent = event.event;
+			var id = event.id;
+			var binding = this.bindings.h[id];
+			if(binding == null) {
+				return false;
+			}
+			if(binding.currentState == bh_ui_InteractiveState.Disabled) {
+				return true;
+			}
+			switch(innerEvent._hx_index) {
+			case 0:
+				if(binding.currentState == bh_ui_InteractiveState.Pressed) {
+					binding.currentState = bh_ui_InteractiveState.Hover;
+					binding.result.setParameter(binding.stateParam,"hover");
+				}
+				break;
+			case 1:
+				if(binding.currentState == bh_ui_InteractiveState.Hover) {
+					binding.currentState = bh_ui_InteractiveState.Pressed;
+					binding.result.setParameter(binding.stateParam,"pressed");
+				}
+				break;
+			case 11:
+				if(binding.currentState == bh_ui_InteractiveState.Normal) {
+					binding.currentState = bh_ui_InteractiveState.Hover;
+					binding.result.setParameter(binding.stateParam,"hover");
+				}
+				break;
+			case 12:
+				if(binding.currentState == bh_ui_InteractiveState.Hover || binding.currentState == bh_ui_InteractiveState.Pressed) {
+					binding.currentState = bh_ui_InteractiveState.Normal;
+					binding.result.setParameter(binding.stateParam,"normal");
+				}
+				break;
+			default:
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+	,__class__: bh_ui_UIRichInteractiveHelper
 };
 var bh_ui_TooltipPosition = $hxEnums["bh.ui.TooltipPosition"] = { __ename__:true,__constructs__:null
 	,Above: {_hx_name:"Above",_hx_index:0,__enum__:"bh.ui.TooltipPosition",toString:$estr}
@@ -93383,7 +93494,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		_g.push(false);
 		_g.push(false);
 		this.unlocked = _g;
-		var generatedByMacroBuildWithParametersload1433Builder = function() {
+		var generatedByMacroBuildWithParametersload1417Builder = function() {
 			var resetButton;
 			var addPointButton;
 			var _gthis1 = _gthis.demoBuilder;
@@ -93413,7 +93524,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1433Builder();
+		var ui = generatedByMacroBuildWithParametersload1417Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetButton;
 		this.addPointButton = ui.addPointButton;
@@ -93594,26 +93705,32 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.resetSkills();
 			} else if(source == this.addPointButton) {
 				this.addSkillPoint();
-			} else if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
-				var wrapper = source;
-				var nodeIdx = Std.parseInt(wrapper.id);
+			}
+			break;
+		case 14:
+			var _g = event.id;
+			var _g1 = event.metadata;
+			switch(event.event._hx_index) {
+			case 0:
+				var id = _g;
+				var nodeIdx = Std.parseInt(id);
 				if(nodeIdx != null) {
 					this.onNodeClick(nodeIdx);
 				}
-			}
-			break;
-		case 11:
-			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
-				var wrapper = source;
-				var nodeIdx = Std.parseInt(wrapper.id);
+				break;
+			case 11:
+				var id = _g;
+				var nodeIdx = Std.parseInt(id);
 				if(nodeIdx != null) {
 					this.onNodeHover(nodeIdx);
 				}
+				break;
+			case 12:
+				this.clearHover();
+				this.updateInfoText("Hover over equipment to see details");
+				break;
+			default:
 			}
-			break;
-		case 12:
-			this.clearHover();
-			this.updateInfoText("Hover over equipment to see details");
 			break;
 		default:
 		}
@@ -96782,7 +96899,7 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	load: function() {
 		this.setupDemo("Tooltips & Panels","Hover tooltips (UITooltipHelper) and click panels (UIPanelHelper)");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/tooltips-panels.manim",false);
-		this.demoResult = this.demoBuilder.buildWithParameters("tooltipsPanelsDemo",new haxe_ds_StringMap());
+		this.demoResult = this.demoBuilder.buildWithParameters("tooltipsPanelsDemo",new haxe_ds_StringMap(),null,null,true);
 		this.addBuilderResult(this.demoResult);
 		this.addInteractives(this.demoResult);
 		this.tooltipHelper = new bh_ui_UITooltipHelper(this,this.demoBuilder,{ delay : 0.3, position : bh_ui_TooltipPosition.Above});
@@ -96793,6 +96910,8 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.tooltipHelper.setDelay("itemSword",0);
 		this.tooltipHelper.setDelay("itemCrown",1.0);
 		this.panelHelper = new bh_ui_UIPanelHelper(this,this.demoBuilder,{ position : bh_ui_TooltipPosition.Below, closeOn : bh_ui_PanelCloseMode.OutsideClick});
+		this.richHelper = new bh_ui_UIRichInteractiveHelper(this);
+		this.richHelper.register(this.demoResult);
 	}
 	,update: function(dt) {
 		DemoScreenBase.prototype.update.call(this,dt);
@@ -96800,15 +96919,28 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			this.tooltipHelper.update(dt);
 		}
 		if(this.panelHelper != null) {
+			var closingId = this.panelHelper.getActiveId();
 			if(this.panelHelper.checkPendingClose()) {
-				this.updateStatus("statusPanel","Panel closed (outside click)");
+				this.unregisterPanelBindings();
+				var sf = closingId != null ? this.getStatusFieldForId(closingId) : "statusPanel";
+				if(sf != null) {
+					this.updateStatus(sf,"Panel closed (outside click)");
+				}
 			}
 		}
 	}
 	,onScreenEvent: function(event,source) {
+		if(this.richHelper != null) {
+			this.richHelper.handleEvent(event);
+		}
 		if(this.panelHelper != null) {
+			var closingId = this.panelHelper.getActiveId();
 			if(this.panelHelper.handleOutsideClick(event)) {
-				this.updateStatus("statusPanel","Panel closed (outside click)");
+				this.unregisterPanelBindings();
+				var sf = closingId != null ? this.getStatusFieldForId(closingId) : "statusPanel";
+				if(sf != null) {
+					this.updateStatus(sf,"Panel closed (outside click)");
+				}
 				return;
 			}
 		}
@@ -96844,17 +96976,48 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		}
 		var params = this.buildTooltipParams(metadata);
 		this.tooltipHelper.startHover(id,tooltipBuild,params);
-		this.updateStatus("statusTooltip","Hovering: " + id);
-		this.updateStatus("statusRich","Hovering: " + id);
-		this.updateStatus("statusCombo","Hovering: " + id + " (tooltip pending...)");
+		var statusField = this.getStatusFieldForId(id);
+		if(statusField != null) {
+			var suffix = statusField == "statusCombo" ? " (tooltip pending...)" : "";
+			this.updateStatus(statusField,"Hovering: " + id + suffix);
+		}
 	}
 	,handleLeave: function(id) {
 		if(this.tooltipHelper != null) {
 			this.tooltipHelper.cancelHover(id);
 		}
-		this.updateStatus("statusTooltip","Hover a button to see a tooltip");
-		this.updateStatus("statusRich","Hover an item card to see a rich tooltip");
-		this.updateStatus("statusCombo","Hover for tooltip, click for panel");
+		var statusField = this.getStatusFieldForId(id);
+		if(statusField != null) {
+			if(statusField != null) {
+				switch(statusField) {
+				case "statusCombo":
+					this.updateStatus(statusField,"Hover for tooltip, click for panel");
+					break;
+				case "statusRich":
+					this.updateStatus(statusField,"Hover an item card to see a rich tooltip");
+					break;
+				case "statusTooltip":
+					this.updateStatus(statusField,"Hover a button to see a tooltip");
+					break;
+				default:
+				}
+			}
+		}
+	}
+	,getStatusFieldForId: function(id) {
+		if(StringTools.startsWith(id,"btn")) {
+			return "statusTooltip";
+		}
+		if(StringTools.startsWith(id,"item")) {
+			return "statusRich";
+		}
+		if(StringTools.startsWith(id,"combo")) {
+			return "statusCombo";
+		}
+		if(StringTools.startsWith(id,"trigger")) {
+			return "statusPanel";
+		}
+		return null;
 	}
 	,handleClick: function(id,metadata) {
 		if(this.panelHelper != null && this.panelHelper.isOpen()) {
@@ -96870,67 +97033,90 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			if(this.panelHelper != null) {
 				if(this.panelHelper.isOpen() && this.panelHelper.getActiveId() == id) {
+					this.unregisterPanelBindings();
 					this.panelHelper.close();
-					this.updateStatus("statusPanel","Panel closed");
-					this.updateStatus("statusCombo","Panel closed. Hover again for tooltip.");
+					var sf = this.getStatusFieldForId(id);
+					if(sf != null) {
+						var msg = sf == "statusCombo" ? "Panel closed. Hover again for tooltip." : "Panel closed";
+						this.updateStatus(sf,msg);
+					}
 					return;
 				}
+				this.unregisterPanelBindings();
 				var closeMode = id == "triggerManual" ? bh_ui_PanelCloseMode.Manual : bh_ui_PanelCloseMode.OutsideClick;
 				this.panelHelper.open(id,panelBuild,null,closeMode);
-				this.updateStatus("statusPanel","Opened: " + panelBuild + " (" + (closeMode == bh_ui_PanelCloseMode.Manual ? "manual close" : "outside-click close") + ")");
-				this.updateStatus("statusCombo","Panel opened for " + id);
+				this.registerPanelBindings();
+				var sf = this.getStatusFieldForId(id);
+				if(sf != null) {
+					var msg = sf == "statusCombo" ? "Panel opened for " + id : "Opened: " + panelBuild + " (" + (closeMode == bh_ui_PanelCloseMode.Manual ? "manual close" : "outside-click close") + ")";
+					this.updateStatus(sf,msg);
+				}
 			}
 			return;
 		}
 	}
+	,registerPanelBindings: function() {
+		if(this.richHelper == null || this.panelHelper == null) {
+			return;
+		}
+		var panelResult = this.panelHelper.getPanelResult();
+		var prefix = this.panelHelper.getActivePrefix();
+		if(panelResult != null && prefix != null) {
+			this.richHelper.register(panelResult,prefix);
+		}
+	}
+	,unregisterPanelBindings: function() {
+		if(this.richHelper == null || this.panelHelper == null) {
+			return;
+		}
+		var panelResult = this.panelHelper.getPanelResult();
+		if(panelResult != null) {
+			this.richHelper.unregister(panelResult);
+		}
+	}
 	,handlePanelAction: function(fullId) {
 		var parts = fullId.split(".");
+		var triggerId = parts[0];
 		var action = parts[parts.length - 1];
+		var tmp = this.getStatusFieldForId(triggerId);
+		var sf = tmp != null ? tmp : "statusPanel";
 		switch(action) {
 		case "closeBtn":
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
-			this.updateStatus("statusPanel","Panel closed (manual)");
+			this.closePanelWithUnregister();
+			this.updateStatus(sf,"Panel closed (manual)");
 			break;
 		case "comboDiscard":
-			this.updateStatus("statusCombo","Discarded the Magic Ring!");
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
+			this.updateStatus(sf,"Discarded the Magic Ring!");
+			this.closePanelWithUnregister();
 			break;
 		case "comboEquip":
-			this.updateStatus("statusCombo","Equipped the Magic Ring!");
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
+			this.updateStatus(sf,"Equipped the Magic Ring!");
+			this.closePanelWithUnregister();
 			break;
 		case "drop":
-			this.updateStatus("statusPanel","Action: Drop!");
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
+			this.updateStatus(sf,"Action: Drop!");
+			this.closePanelWithUnregister();
 			break;
 		case "equip":
-			this.updateStatus("statusPanel","Action: Equip!");
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
+			this.updateStatus(sf,"Action: Equip!");
+			this.closePanelWithUnregister();
 			break;
 		case "info":
-			this.updateStatus("statusPanel","Action: Info!");
-			if(this.panelHelper != null) {
-				this.panelHelper.close();
-			}
+			this.updateStatus(sf,"Action: Info!");
+			this.closePanelWithUnregister();
 			break;
 		default:
 			if(StringTools.startsWith(action,"color")) {
 				var color = HxOverrides.substr(action,5,null);
-				this.updateStatus("statusPanel","Picked color: " + color);
-				if(this.panelHelper != null) {
-					this.panelHelper.close();
-				}
+				this.updateStatus(sf,"Picked color: " + color);
+				this.closePanelWithUnregister();
 			}
+		}
+	}
+	,closePanelWithUnregister: function() {
+		this.unregisterPanelBindings();
+		if(this.panelHelper != null) {
+			this.panelHelper.close();
 		}
 	}
 	,buildTooltipParams: function(metadata) {
@@ -96982,6 +97168,7 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.demoResult = null;
 		this.tooltipHelper = null;
 		this.panelHelper = null;
+		this.richHelper = null;
 	}
 	,__class__: screens_ui_TooltipsPanelsDemoScreen
 });

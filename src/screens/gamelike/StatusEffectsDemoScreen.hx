@@ -9,6 +9,7 @@ import bh.base.MacroUtils;
 private typedef StatusEffect = {
 	name:String,
 	desc:String,
+	color:String,
 	duration:Float,
 	remaining:Float,
 	isBuff:Bool,
@@ -35,7 +36,8 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	static inline var CARD_WIDTH = 64;
 	static inline var CARD_HEIGHT = 88;
 	static inline var CARD_SPACING = 8;
-	static inline var FADE_SPEED = 4.0; // alpha per second (0.25s fade)
+	static inline var FADE_SPEED = 4.0;
+	static inline var GLOW_THRESHOLD = 2.0;
 
 	var effects:Array<StatusEffect>;
 	var slotInteractives:Array<h2d.Interactive>;
@@ -43,7 +45,13 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	var refreshAnims:Array<RefreshAnim>;
 	static inline var REFRESH_DURATION = 0.8;
 
-	// Effect name → effectIcon programmable type
+	// Tooltip popup
+	var tooltipResult:Null<BuilderResult> = null;
+	var tooltipSlot:Int = -1;
+
+	// Glow pulse timer
+	var glowTimer:Float = 0;
+
 	static final ICON_TYPE_MAP:Map<String, String> = [
 		"Regeneration" => "regen",
 		"Strength Up" => "strength",
@@ -55,22 +63,22 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		"Curse" => "curse",
 	];
 
-	static final BUFF_DEFS:Array<{name:String, desc:String, color:Int, duration:Float}> = [
-		{name: "Regeneration", desc: "Restores 5 HP/sec", color: 0xFF4CAF50, duration: 8.0},
-		{name: "Strength Up", desc: "ATK +20%", color: 0xFFFF7F50, duration: 10.0},
-		{name: "Shield", desc: "DEF +15", color: 0xFF4A90A4, duration: 6.0},
-		{name: "Haste", desc: "Speed +30%", color: 0xFFFFEB3B, duration: 5.0},
+	static final BUFF_DEFS:Array<{name:String, desc:String, color:String, duration:Float}> = [
+		{name: "Regeneration", desc: "Restores 5 HP/sec", color: "#4CAF50", duration: 8.0},
+		{name: "Strength Up", desc: "ATK +20%", color: "#FF7F50", duration: 10.0},
+		{name: "Shield", desc: "DEF +15", color: "#4A90A4", duration: 6.0},
+		{name: "Haste", desc: "Speed +30%", color: "#CCBB33", duration: 5.0},
 	];
 
-	static final DEBUFF_DEFS:Array<{name:String, desc:String, color:Int, duration:Float}> = [
-		{name: "Poison", desc: "Lose 3 HP/sec", color: 0xFF8B00FF, duration: 7.0},
-		{name: "Slow", desc: "Speed -25%", color: 0xFF666666, duration: 6.0},
-		{name: "Weakness", desc: "ATK -15%", color: 0xFFFF4444, duration: 8.0},
-		{name: "Curse", desc: "All stats -10%", color: 0xFF440044, duration: 12.0},
+	static final DEBUFF_DEFS:Array<{name:String, desc:String, color:String, duration:Float}> = [
+		{name: "Poison", desc: "Lose 3 HP/sec", color: "#8B00FF", duration: 7.0},
+		{name: "Slow", desc: "Speed -25%", color: "#666666", duration: 6.0},
+		{name: "Weakness", desc: "ATK -15%", color: "#FF4444", duration: 8.0},
+		{name: "Curse", desc: "All stats -10%", color: "#440044", duration: 12.0},
 	];
 
 	override public function load():Void {
-		setupDemo("Status Bar", "Flow layout with buff/debuff cards, progress bars, and particles");
+		setupDemo("Status Bar", "Flow layout with buff/debuff cards, progress bars, particles, and hover tooltips");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/status-effects.manim", false);
 
@@ -99,12 +107,12 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			final idx = i;
 			inter.onOver = function(_) {
 				hoveredSlot = idx;
-				updateTooltip();
+				showTooltip(idx);
 			};
 			inter.onOut = function(_) {
 				if (hoveredSlot == idx) {
 					hoveredSlot = -1;
-					clearTooltip();
+					hideTooltip();
 				}
 			};
 			slotInteractives.push(inter);
@@ -137,15 +145,18 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			}
 		}
 
-		// Build the card with incremental mode for progress bar updates
+		// Build card with per-effect accent color
 		final kind = isBuff ? "buff" : "debuff";
-		final cardResult = demoBuilder.buildWithParameters("statusCard", ["kind" => kind, "pct" => 100], null, null, true);
+		final cardResult = demoBuilder.buildWithParameters("statusCard", [
+			"kind" => kind,
+			"pct" => 100,
+			"accentColor" => def.color
+		], null, null, true);
 
-		// Set card name and timer text
 		cardResult.getUpdatable("cardName").updateText(def.name);
 		cardResult.getUpdatable("cardTimer").updateText('${Std.int(def.duration)}s');
 
-		// Build icon via .manim and insert into card's icon slot
+		// Build icon and insert into card slot
 		final iconType = ICON_TYPE_MAP.get(def.name);
 		if (iconType != null) {
 			final iconResult = demoBuilder.buildWithParameters("effectIcon", ["effectType" => iconType]);
@@ -162,6 +173,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		final effect:StatusEffect = {
 			name: def.name,
 			desc: def.desc,
+			color: def.color,
 			duration: def.duration,
 			remaining: def.duration,
 			isBuff: isBuff,
@@ -173,11 +185,9 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 
 		effects.push(effect);
 
-		// Insert card into slot
 		final slotIndex = effects.length - 1;
 		demoResult.getSlot("effectSlot", slotIndex).setContent(cardResult.object);
 
-		// Position particles: buff at card center, debuff at top edge
 		final px = slotIndex * (CARD_WIDTH + CARD_SPACING) + CARD_WIDTH / 2;
 		final py = isBuff ? CARD_HEIGHT / 2 : 0;
 		particles.setPosition(px, py);
@@ -188,15 +198,17 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	}
 
 	function clearAll():Void {
+		hideTooltip();
 		for (i in 0...effects.length) {
 			final e = effects[i];
 			demoResult.getSlot("effectSlot", i).clear();
 			if (e.particleObj != null)
 				e.particleObj.remove();
+			if (e.cardResult != null)
+				e.cardResult.object.filter = null;
 		}
 		effects = [];
 		hoveredSlot = -1;
-		clearTooltip();
 		setLog("All effects cleared.");
 		updateEffectCount();
 	}
@@ -204,35 +216,36 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	function removeEffect(index:Int):Void {
 		final e = effects[index];
 
-		// Clear slot and remove particle
+		if (tooltipSlot == index)
+			hideTooltip()
+		else if (tooltipSlot > index)
+			tooltipSlot--;
+
 		demoResult.getSlot("effectSlot", index).clear();
 		if (e.particleObj != null)
 			e.particleObj.remove();
+		if (e.cardResult != null)
+			e.cardResult.object.filter = null;
 
 		effects.splice(index, 1);
-
-		// Shift remaining effects into correct slots
 		reassignSlots();
 
 		if (hoveredSlot >= effects.length) {
 			hoveredSlot = -1;
-			clearTooltip();
+			hideTooltip();
 		}
 		updateEffectCount();
 	}
 
 	function reassignSlots():Void {
-		// Clear all slots first
 		for (i in 0...MAX_SLOTS) {
 			demoResult.getSlot("effectSlot", i).clear();
 		}
-		// Re-insert all effects into contiguous slots
 		for (i in 0...effects.length) {
 			final e = effects[i];
 			if (e.cardResult != null) {
 				demoResult.getSlot("effectSlot", i).setContent(e.cardResult.object);
 			}
-			// Reposition particles: buff at center, debuff at top
 			if (e.particleObj != null) {
 				final py = e.isBuff ? CARD_HEIGHT / 2 : 0;
 				e.particleObj.setPosition(i * (CARD_WIDTH + CARD_SPACING) + CARD_WIDTH / 2, py);
@@ -247,25 +260,91 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		updateButtonStates();
 	}
 
-	function updateTooltip():Void {
-		if (demoResult == null) return;
-		if (hoveredSlot >= 0 && hoveredSlot < effects.length) {
-			final e = effects[hoveredSlot];
-			if (e.fading) return;
-			final type = e.isBuff ? "[Buff]" : "[Debuff]";
-			demoResult.getUpdatable("tooltipName").updateText('${e.name} $type');
-			demoResult.getUpdatable("tooltipDesc").updateText(e.desc);
-			final secs = Math.round(e.remaining * 10) / 10;
-			demoResult.getUpdatable("tooltipTimer").updateText('${secs}s left');
+	// ── Hover Tooltip Popup ──
+
+	function showTooltip(slotIndex:Int):Void {
+		if (slotIndex < 0 || slotIndex >= effects.length)
+			return;
+		final e = effects[slotIndex];
+		if (e.fading)
+			return;
+
+		hideTooltip();
+
+		final pct = Std.int(Math.max(0, Math.min(100, e.remaining / e.duration * 100)));
+		final result = demoBuilder.buildWithParameters("effectTooltip", [
+			"accentColor" => e.color,
+			"pct" => pct
+		], null, null, true);
+
+		result.getUpdatable("ttName").updateText(e.name);
+		result.getUpdatable("ttType").updateText(e.isBuff ? "[Buff]" : "[Debuff]");
+		result.getUpdatable("ttDesc").updateText(e.desc);
+		final secs = Math.round(e.remaining * 10) / 10;
+		result.getUpdatable("ttTimer").updateText('${secs}s remaining');
+
+		// Position above the hovered card
+		if (e.cardResult != null) {
+			final cardBounds = e.cardResult.object.getBounds();
+			final tooltipSize = result.object.getSize();
+			result.object.x = cardBounds.x + (cardBounds.width - tooltipSize.width) / 2;
+			result.object.y = cardBounds.y - tooltipSize.height - 4;
+		}
+
+		addObjectToLayer(result.object, ModalLayer);
+		tooltipResult = result;
+		tooltipSlot = slotIndex;
+	}
+
+	function hideTooltip():Void {
+		if (tooltipResult != null) {
+			tooltipResult.object.remove();
+			tooltipResult = null;
+		}
+		tooltipSlot = -1;
+	}
+
+	function updateTooltipLive():Void {
+		if (tooltipResult == null || tooltipSlot < 0 || tooltipSlot >= effects.length)
+			return;
+		final e = effects[tooltipSlot];
+		if (e.fading) {
+			hideTooltip();
+			return;
+		}
+		final pct = Std.int(Math.max(0, Math.min(100, e.remaining / e.duration * 100)));
+		tooltipResult.setParameter("pct", pct);
+		final secs = Math.round(e.remaining * 10) / 10;
+		tooltipResult.getUpdatable("ttTimer").updateText('${secs}s remaining');
+	}
+
+	// ── Low-TTL Pulsing Glow ──
+
+	function updateGlowEffects(dt:Float):Void {
+		glowTimer += dt;
+		for (e in effects) {
+			if (e.cardResult == null || e.fading)
+				continue;
+			if (e.remaining <= GLOW_THRESHOLD) {
+				// Pulse faster as TTL approaches 0
+				final urgency = 1.0 - (e.remaining / GLOW_THRESHOLD);
+				final speed = 4.0 + urgency * 4.0;
+				final pulse = 0.3 + 0.3 * Math.sin(glowTimer * speed);
+				final glowColor = colorStringToInt(e.color);
+				e.cardResult.object.filter = new h2d.filter.Glow(glowColor, pulse, 4, 1, 1);
+			} else if (e.cardResult.object.filter != null) {
+				e.cardResult.object.filter = null;
+			}
 		}
 	}
 
-	function clearTooltip():Void {
-		if (demoResult == null) return;
-		demoResult.getUpdatable("tooltipName").updateText("Hover over an effect");
-		demoResult.getUpdatable("tooltipDesc").updateText("");
-		demoResult.getUpdatable("tooltipTimer").updateText("");
+	static function colorStringToInt(color:String):Int {
+		if (color.charAt(0) == "#")
+			return Std.parseInt("0x" + color.substr(1));
+		return 0xFFFFFF;
 	}
+
+	// ── Shared Utilities ──
 
 	function setLog(text:String):Void {
 		if (demoResult != null) {
@@ -286,13 +365,11 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		final cx = slotIndex * (CARD_WIDTH + CARD_SPACING) + CARD_WIDTH / 2;
 		final cy = CARD_HEIGHT / 2;
 
-		// Burst particles (one-shot, color matches effect type)
 		final burstName = isBuff ? "buffRefreshBurst" : "debuffRefreshBurst";
 		final burst = demoBuilder.createParticles(burstName);
 		burst.setPosition(cx, cy);
 		particleContainer.addChild(burst);
 
-		// "Refreshed!" text
 		final font = hxd.Res.load("font/m5x7.fnt").to(hxd.res.BitmapFont).toFont();
 		final txt = new h2d.Text(font, particleContainer);
 		txt.text = "Refreshed!";
@@ -315,15 +392,12 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 				a.burst.remove();
 				refreshAnims.splice(i, 1);
 			} else {
-				// Scale: easeOutBack in first 40%, then hold at 1.0
 				final st = Math.min(t / 0.4, 1.0);
 				final c1 = 1.70158;
 				final c3 = c1 + 1.0;
 				final scale = 1.0 + c3 * (st - 1.0) * (st - 1.0) * (st - 1.0) + c1 * (st - 1.0) * (st - 1.0);
 				a.text.setScale(scale);
-				// Fade out in last 50%
 				a.text.alpha = if (t > 0.5) 1.0 - (t - 0.5) * 2.0 else 1.0;
-				// Float upward
 				a.text.y -= 30.0 * dt;
 			}
 			i--;
@@ -338,30 +412,26 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	override public function update(dt:Float):Void {
 		super.update(dt);
 
-		var changed = false;
 		var i = effects.length - 1;
 		while (i >= 0) {
 			final e = effects[i];
 
 			if (e.fading) {
-				// Animate fade-out
 				e.fadeAlpha -= FADE_SPEED * dt;
 				if (e.fadeAlpha <= 0) {
 					final name = e.name;
 					removeEffect(i);
 					setLog('${name} has expired.');
-					changed = true;
 				} else {
-					// Apply alpha to card
 					if (e.cardResult != null) {
 						e.cardResult.object.alpha = e.fadeAlpha;
+						e.cardResult.object.filter = null;
 					}
 					if (e.particleObj != null) {
 						e.particleObj.alpha = e.fadeAlpha;
 					}
 				}
 			} else {
-				// Tick down timer
 				e.remaining -= dt;
 				if (e.remaining <= 0) {
 					e.remaining = 0;
@@ -369,12 +439,9 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 					e.fadeAlpha = 1.0;
 				}
 
-				// Update progress bar via incremental parameter
 				if (e.cardResult != null) {
 					final pct = Std.int(Math.max(0, Math.min(100, e.remaining / e.duration * 100)));
 					e.cardResult.setParameter("pct", pct);
-
-					// Update timer text
 					final secs = Math.max(0, Math.round(e.remaining * 10) / 10);
 					e.cardResult.getUpdatable("cardTimer").updateText('${secs}s');
 				}
@@ -383,17 +450,9 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			i--;
 		}
 
-		// Update refresh animations
 		updateRefreshAnims(dt);
-
-		// Update hovered tooltip timer
-		if (hoveredSlot >= 0 && hoveredSlot < effects.length && demoResult != null) {
-			final e = effects[hoveredSlot];
-			if (!e.fading) {
-				final secs = Math.round(e.remaining * 10) / 10;
-				demoResult.getUpdatable("tooltipTimer").updateText('${secs}s left');
-			}
-		}
+		updateTooltipLive();
+		updateGlowEffects(dt);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
@@ -413,6 +472,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 
 	override public function onClear():Void {
 		super.onClear();
+		hideTooltip();
 		if (slotInteractives != null) {
 			for (inter in slotInteractives) inter.remove();
 			slotInteractives = null;
@@ -421,6 +481,8 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			for (e in effects) {
 				if (e.particleObj != null)
 					e.particleObj.remove();
+				if (e.cardResult != null)
+					e.cardResult.object.filter = null;
 			}
 		}
 		if (refreshAnims != null) {

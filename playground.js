@@ -93749,18 +93749,27 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	,__class__: screens_gamelike_SkillTreeDemoScreen
 });
 var screens_gamelike_StatusEffectsDemoScreen = function(screenManager,layers) {
+	this.glowTimer = 0;
+	this.tooltipSlot = -1;
+	this.tooltipResult = null;
 	this.hoveredSlot = -1;
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.gamelike.StatusEffectsDemoScreen"] = screens_gamelike_StatusEffectsDemoScreen;
 screens_gamelike_StatusEffectsDemoScreen.__name__ = "screens.gamelike.StatusEffectsDemoScreen";
+screens_gamelike_StatusEffectsDemoScreen.colorStringToInt = function(color) {
+	if(color.charAt(0) == "#") {
+		return Std.parseInt("0x" + HxOverrides.substr(color,1,null));
+	}
+	return 16777215;
+};
 screens_gamelike_StatusEffectsDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Status Bar","Flow layout with buff/debuff cards, progress bars, and particles");
+		this.setupDemo("Status Bar","Flow layout with buff/debuff cards, progress bars, particles, and hover tooltips");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/status-effects.manim",false);
-		var generatedByMacroBuildWithParametersload2583Builder = function() {
+		var generatedByMacroBuildWithParametersload2714Builder = function() {
 			var clearAllButton;
 			var addDebuffButton;
 			var addBuffButton;
@@ -93801,7 +93810,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload2583Builder();
+		var ui = generatedByMacroBuildWithParametersload2714Builder();
 		this.demoResult = ui.builderResults;
 		this.addBuffButton = ui.addBuffButton;
 		this.addDebuffButton = ui.addDebuffButton;
@@ -93824,14 +93833,14 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			inter.onOver = (function(idx) {
 				return function(_) {
 					_gthis.hoveredSlot = idx[0];
-					_gthis.updateTooltip();
+					_gthis.showTooltip(idx[0]);
 				};
 			})(idx);
 			inter.onOut = (function(idx) {
 				return function(_) {
 					if(_gthis.hoveredSlot == idx[0]) {
 						_gthis.hoveredSlot = -1;
-						_gthis.clearTooltip();
+						_gthis.hideTooltip();
 					}
 				};
 			})(idx);
@@ -93867,6 +93876,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var _g = new haxe_ds_StringMap();
 		_g.h["kind"] = kind;
 		_g.h["pct"] = 100;
+		_g.h["accentColor"] = def.color;
 		var cardResult1 = cardResult.buildWithParameters("statusCard",_g,null,null,true);
 		cardResult1.getUpdatable("cardName").updateText(def.name);
 		cardResult1.getUpdatable("cardTimer").updateText("" + (def.duration | 0) + "s");
@@ -93887,7 +93897,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var particles = this.demoBuilder.createParticles(particleName);
 		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
 		particleContainer.addChild(particles);
-		var effect = { name : def.name, desc : def.desc, duration : def.duration, remaining : def.duration, isBuff : isBuff, cardResult : cardResult1, particleObj : particles, fadeAlpha : 1.0, fading : false};
+		var effect = { name : def.name, desc : def.desc, color : def.color, duration : def.duration, remaining : def.duration, isBuff : isBuff, cardResult : cardResult1, particleObj : particles, fadeAlpha : 1.0, fading : false};
 		this.effects.push(effect);
 		var slotIndex = this.effects.length - 1;
 		this.demoResult.getSlot("effectSlot",slotIndex).setContent(cardResult1.object);
@@ -93902,6 +93912,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		this.updateEffectCount();
 	}
 	,clearAll: function() {
+		this.hideTooltip();
 		var _g = 0;
 		var _g1 = this.effects.length;
 		while(_g < _g1) {
@@ -93914,15 +93925,22 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 					_this.parent.removeChild(_this);
 				}
 			}
+			if(e.cardResult != null) {
+				e.cardResult.object.set_filter(null);
+			}
 		}
 		this.effects = [];
 		this.hoveredSlot = -1;
-		this.clearTooltip();
 		this.setLog("All effects cleared.");
 		this.updateEffectCount();
 	}
 	,removeEffect: function(index) {
 		var e = this.effects[index];
+		if(this.tooltipSlot == index) {
+			this.hideTooltip();
+		} else if(this.tooltipSlot > index) {
+			this.tooltipSlot--;
+		}
 		this.demoResult.getSlot("effectSlot",index).clear();
 		if(e.particleObj != null) {
 			var _this = e.particleObj;
@@ -93930,11 +93948,14 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 				_this.parent.removeChild(_this);
 			}
 		}
+		if(e.cardResult != null) {
+			e.cardResult.object.set_filter(null);
+		}
 		this.effects.splice(index,1);
 		this.reassignSlots();
 		if(this.hoveredSlot >= this.effects.length) {
 			this.hoveredSlot = -1;
-			this.clearTooltip();
+			this.hideTooltip();
 		}
 		this.updateEffectCount();
 	}
@@ -93971,29 +93992,85 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		}
 		this.updateButtonStates();
 	}
-	,updateTooltip: function() {
-		if(this.demoResult == null) {
+	,showTooltip: function(slotIndex) {
+		if(slotIndex < 0 || slotIndex >= this.effects.length) {
 			return;
 		}
-		if(this.hoveredSlot >= 0 && this.hoveredSlot < this.effects.length) {
-			var e = this.effects[this.hoveredSlot];
-			if(e.fading) {
-				return;
-			}
-			var type = e.isBuff ? "[Buff]" : "[Debuff]";
-			this.demoResult.getUpdatable("tooltipName").updateText("" + e.name + " " + type);
-			this.demoResult.getUpdatable("tooltipDesc").updateText(e.desc);
-			var secs = Math.round(e.remaining * 10) / 10;
-			this.demoResult.getUpdatable("tooltipTimer").updateText("" + secs + "s left");
+		var e = this.effects[slotIndex];
+		if(e.fading) {
+			return;
 		}
+		this.hideTooltip();
+		var pct = Math.max(0,Math.min(100,e.remaining / e.duration * 100)) | 0;
+		var result = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["accentColor"] = e.color;
+		_g.h["pct"] = pct;
+		var result1 = result.buildWithParameters("effectTooltip",_g,null,null,true);
+		result1.getUpdatable("ttName").updateText(e.name);
+		var tmp = e.isBuff ? "[Buff]" : "[Debuff]";
+		result1.getUpdatable("ttType").updateText(tmp);
+		result1.getUpdatable("ttDesc").updateText(e.desc);
+		var secs = Math.round(e.remaining * 10) / 10;
+		result1.getUpdatable("ttTimer").updateText("" + secs + "s remaining");
+		if(e.cardResult != null) {
+			var cardBounds = e.cardResult.object.getBounds();
+			var tooltipSize = result1.object.getSize();
+			var _this = result1.object;
+			_this.posChanged = true;
+			_this.x = cardBounds.xMin + (cardBounds.xMax - cardBounds.xMin - (tooltipSize.xMax - tooltipSize.xMin)) / 2;
+			var _this = result1.object;
+			_this.posChanged = true;
+			_this.y = cardBounds.yMin - (tooltipSize.yMax - tooltipSize.yMin) - 4;
+		}
+		this.addObjectToLayer(result1.object,bh_ui_screens_LayersEnum.ModalLayer);
+		this.tooltipResult = result1;
+		this.tooltipSlot = slotIndex;
 	}
-	,clearTooltip: function() {
-		if(this.demoResult == null) {
+	,hideTooltip: function() {
+		if(this.tooltipResult != null) {
+			var _this = this.tooltipResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.tooltipResult = null;
+		}
+		this.tooltipSlot = -1;
+	}
+	,updateTooltipLive: function() {
+		if(this.tooltipResult == null || this.tooltipSlot < 0 || this.tooltipSlot >= this.effects.length) {
 			return;
 		}
-		this.demoResult.getUpdatable("tooltipName").updateText("Hover over an effect");
-		this.demoResult.getUpdatable("tooltipDesc").updateText("");
-		this.demoResult.getUpdatable("tooltipTimer").updateText("");
+		var e = this.effects[this.tooltipSlot];
+		if(e.fading) {
+			this.hideTooltip();
+			return;
+		}
+		var pct = Math.max(0,Math.min(100,e.remaining / e.duration * 100)) | 0;
+		this.tooltipResult.setParameter("pct",pct);
+		var secs = Math.round(e.remaining * 10) / 10;
+		this.tooltipResult.getUpdatable("ttTimer").updateText("" + secs + "s remaining");
+	}
+	,updateGlowEffects: function(dt) {
+		this.glowTimer += dt;
+		var _g = 0;
+		var _g1 = this.effects;
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			if(e.cardResult == null || e.fading) {
+				continue;
+			}
+			if(e.remaining <= 2.0) {
+				var urgency = 1.0 - e.remaining / 2.0;
+				var speed = 4.0 + urgency * 4.0;
+				var pulse = 0.3 + 0.3 * Math.sin(this.glowTimer * speed);
+				var glowColor = screens_gamelike_StatusEffectsDemoScreen.colorStringToInt(e.color);
+				e.cardResult.object.set_filter(new h2d_filter_Glow(glowColor,pulse,4,1,1));
+			} else if(e.cardResult.object.filter != null) {
+				e.cardResult.object.set_filter(null);
+			}
+		}
 	}
 	,setLog: function(text) {
 		if(this.demoResult != null) {
@@ -94079,7 +94156,6 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 	}
 	,update: function(dt) {
 		DemoScreenBase.prototype.update.call(this,dt);
-		var changed = false;
 		var i = this.effects.length - 1;
 		while(i >= 0) {
 			var e = this.effects[i];
@@ -94089,10 +94165,10 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 					var name = e.name;
 					this.removeEffect(i);
 					this.setLog("" + name + " has expired.");
-					changed = true;
 				} else {
 					if(e.cardResult != null) {
 						e.cardResult.object.alpha = e.fadeAlpha;
+						e.cardResult.object.set_filter(null);
 					}
 					if(e.particleObj != null) {
 						e.particleObj.alpha = e.fadeAlpha;
@@ -94115,13 +94191,8 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 			--i;
 		}
 		this.updateRefreshAnims(dt);
-		if(this.hoveredSlot >= 0 && this.hoveredSlot < this.effects.length && this.demoResult != null) {
-			var e = this.effects[this.hoveredSlot];
-			if(!e.fading) {
-				var secs = Math.round(e.remaining * 10) / 10;
-				this.demoResult.getUpdatable("tooltipTimer").updateText("" + secs + "s left");
-			}
-		}
+		this.updateTooltipLive();
+		this.updateGlowEffects(dt);
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
@@ -94137,6 +94208,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
+		this.hideTooltip();
 		if(this.slotInteractives != null) {
 			var _g = 0;
 			var _g1 = this.slotInteractives;
@@ -94160,6 +94232,9 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 					if(_this != null && _this.parent != null) {
 						_this.parent.removeChild(_this);
 					}
+				}
+				if(e.cardResult != null) {
+					e.cardResult.object.set_filter(null);
 				}
 			}
 		}
@@ -97647,8 +97722,8 @@ screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
-screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS = [{ name : "Regeneration", desc : "Restores 5 HP/sec", color : -11751600, duration : 8.0},{ name : "Strength Up", desc : "ATK +20%", color : -32944, duration : 10.0},{ name : "Shield", desc : "DEF +15", color : -11890524, duration : 6.0},{ name : "Haste", desc : "Speed +30%", color : -5317, duration : 5.0}];
-screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS = [{ name : "Poison", desc : "Lose 3 HP/sec", color : -7667457, duration : 7.0},{ name : "Slow", desc : "Speed -25%", color : -10066330, duration : 6.0},{ name : "Weakness", desc : "ATK -15%", color : -48060, duration : 8.0},{ name : "Curse", desc : "All stats -10%", color : -12320700, duration : 12.0}];
+screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS = [{ name : "Regeneration", desc : "Restores 5 HP/sec", color : "#4CAF50", duration : 8.0},{ name : "Strength Up", desc : "ATK +20%", color : "#FF7F50", duration : 10.0},{ name : "Shield", desc : "DEF +15", color : "#4A90A4", duration : 6.0},{ name : "Haste", desc : "Speed +30%", color : "#CCBB33", duration : 5.0}];
+screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS = [{ name : "Poison", desc : "Lose 3 HP/sec", color : "#8B00FF", duration : 7.0},{ name : "Slow", desc : "Speed -25%", color : "#666666", duration : 6.0},{ name : "Weakness", desc : "ATK -15%", color : "#FF4444", duration : 8.0},{ name : "Curse", desc : "All stats -10%", color : "#440044", duration : 12.0}];
 screens_layout_ComboStatesDemoScreen.MODES = ["idle","active","warning","error"];
 screens_layout_ComboStatesDemoScreen.LEVELS = ["low","medium","high","critical"];
 screens_layout_ComboStatesDemoScreen.DEVICE_STATES = ["on","off","standby","unknown"];

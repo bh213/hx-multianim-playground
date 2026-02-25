@@ -20,7 +20,7 @@ relativeLayouts {
         point: 40, 632
     }
 
-    // All 44 nav card positions (colWidth=155, spacingX=5, 7 per row)
+    // All nav card positions (colWidth=155, spacingX=5, 7 per row)
     #navCards list {
         // Advanced Features (7)
         point: 40, 330
@@ -30,7 +30,7 @@ relativeLayouts {
         point: 680, 330
         point: 840, 330
         point: 1000, 330
-        // UI Components (11, wraps to 2 rows)
+        // UI Components (12, wraps to 2 rows)
         point: 40, 388
         point: 200, 388
         point: 360, 388
@@ -42,6 +42,7 @@ relativeLayouts {
         point: 200, 420
         point: 360, 420
         point: 520, 420
+        point: 680, 420
         // Layout & Composition (6)
         point: 40, 478
         point: 200, 478

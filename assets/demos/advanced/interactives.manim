@@ -1,61 +1,187 @@
 version: 0.5
 
-// Interactives Demo
-// Hit regions with typed metadata
+// Interactives Demo — hit regions, cursors, rich highlights, event filters
 
-#interactivesDemo programmable() {
-    text(exo2_16, "Interactive Regions", #7fdbda, left, 400): 0, 0
-    text(exo2_light_14, "Click on colored regions. Each has an id and metadata.", #aaaaaa, left, 600): 0, 30
+#interactivesDemo programmable(card1S:[normal,hover,pressed,disabled]=normal, card2S:[normal,hover,pressed,disabled]=normal, card3S:[normal,hover,pressed,disabled]=normal, toggleS:[normal,hover,pressed]=normal, hoverOnlyS:[normal,hover]=normal, allEventsS:[normal,hover,pressed]=normal) {
+    text(exo2_16, "Interactive Regions", #7fdbda, left, 600): 0, 0
+    text(exo2_light_14, "Hit regions with typed metadata, cursors, highlights, and event filters.", #aaaaaa, left, 700): 0, 30
 
-    // Interactive region 1: simple
+    // ── Section 1: Basic Interactives ────────────────────────
+    text(exo2_16, "Basic", #7fdbda): 0, 65
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 87
+
+    // Simple id
     point {
-        pos: 0, 80
+        pos: 0, 100
         bitmap(generated(color(200, 50, #334466))): 0, 0
         text(m6x11, "Button A - simple id", #ffffff, left, 180): 10, 18
         interactive(200, 50, "buttonA"): 0, 0
     }
 
-    // Interactive region 2: with action metadata
+    // With action metadata
     point {
-        pos: 0, 150
+        pos: 220, 100
         bitmap(generated(color(200, 50, #443366))): 0, 0
         text(m6x11, "Button B - action=>buy", #ffffff, left, 180): 10, 18
         interactive(200, 50, "buttonB", action => "buy"): 0, 0
     }
 
-    // Interactive region 3: with typed metadata
+    // Typed metadata
     point {
-        pos: 0, 220
+        pos: 440, 100
         bitmap(generated(color(200, 50, #336644))): 0, 0
         text(m6x11, "Button C - typed meta", #ffffff, left, 180): 10, 18
         interactive(200, 50, "buttonC", price:int => 100, label => "Buy Sword"): 0, 0
     }
 
-    // Interactive region 4: debug visible
+    // Debug visible
     point {
-        pos: 0, 290
+        pos: 0, 160
         bitmap(generated(color(200, 50, #664433))): 0, 0
         text(m6x11, "Button D - debug mode", #ffffff, left, 180): 10, 18
         interactive(200, 50, "buttonD", debug): 0, 0
     }
 
-    // Interactive region 5: with multiple metadata
+    // Multiple metadata
     point {
-        pos: 250, 80
+        pos: 220, 160
         bitmap(generated(color(250, 50, #445533))): 0, 0
         text(m6x11, "Region E - multi-meta", #ffffff, left, 230): 10, 18
         interactive(250, 50, "regionE", action => "craft", weight:float => 2.5, tier => "rare"): 0, 0
     }
 
-    // Interactive region 6
+    // Category metadata
     point {
-        pos: 250, 150
-        bitmap(generated(color(250, 50, #553344))): 0, 0
-        text(m6x11, "Region F - category=>armor", #ffffff, left, 230): 10, 18
-        interactive(250, 50, "regionF", category => "armor", slot => "chest"): 0, 0
+        pos: 490, 160
+        bitmap(generated(color(200, 50, #553344))): 0, 0
+        text(m6x11, "Region F - armor/chest", #ffffff, left, 180): 10, 18
+        interactive(200, 50, "regionF", category => "armor", slot => "chest"): 0, 0
     }
 
-    // Info display area
-    bitmap(generated(color(500, 80, #1a1a2e))): 0, 370
-    text(m6x11, "Click result will appear below:", #888888, left, 400): 10, 360
+    // ── Section 2: Cursor Demos ──────────────────────────────
+    text(exo2_16, "Cursors", #ffeb3b): 0, 230
+    bitmap(generated(color(700, 1, #ffeb3b33))): 0, 252
+    text(exo2_light_14, "Each region sets a different cursor via cursor=> metadata (pointer, move, text, hide).", #aaaaaa, left, 700): 0, 260
+
+    // Pointer cursor
+    point {
+        pos: 0, 290
+        bitmap(generated(color(160, 45, #3a4a3a))): 0, 0
+        text(m6x11, "cursor: pointer", #88cc88, left, 140): 10, 16
+        interactive(160, 45, "curPointer", cursor => "pointer"): 0, 0
+    }
+
+    // Move cursor
+    point {
+        pos: 180, 290
+        bitmap(generated(color(160, 45, #4a3a3a))): 0, 0
+        text(m6x11, "cursor: move", #cc8888, left, 140): 10, 16
+        interactive(160, 45, "curMove", cursor => "move"): 0, 0
+    }
+
+    // Text cursor
+    point {
+        pos: 360, 290
+        bitmap(generated(color(160, 45, #3a3a4a))): 0, 0
+        text(m6x11, "cursor: text", #8888cc, left, 140): 10, 16
+        interactive(160, 45, "curText", cursor => "text"): 0, 0
+    }
+
+    // Hide cursor
+    point {
+        pos: 540, 290
+        bitmap(generated(color(160, 45, #4a4a3a))): 0, 0
+        text(m6x11, "cursor: hide", #cccc88, left, 140): 10, 16
+        interactive(160, 45, "curHide", cursor => "hide"): 0, 0
+    }
+
+    // ── Section 3: Rich Highlights (bind) ────────────────────
+    text(exo2_16, "Rich Highlights", #ff88ff): 0, 355
+    bitmap(generated(color(700, 1, #ff88ff33))): 0, 377
+    text(exo2_light_14, "Interactives with bind=> drive visual state (normal/hover/pressed). Click toggle to disable.", #aaaaaa, left, 700): 0, 385
+
+    // Rich card 1 — color changes on state
+    point {
+        pos: 0, 410
+        @(card1S => normal)  bitmap(generated(color(160, 50, #334466))): 0, 0
+        @(card1S => hover)   bitmap(generated(color(160, 50, #445588))): 0, 0
+        @(card1S => pressed) bitmap(generated(color(160, 50, #283a54))): 0, 0
+        @(card1S => disabled) bitmap(generated(color(160, 50, #222222))): 0, 0
+        @(card1S => disabled) text(m6x11, "DISABLED", #555555, center, 160): 0, 18
+        @(card1S => !disabled) text(m6x11, "Card 1 - highlight", #ffffff, left, 140): 10, 18
+        interactive(160, 50, "card1", bind => "card1S"): 0, 0
+    }
+
+    // Rich card 2 — border highlight on hover
+    point {
+        pos: 180, 410
+        ninepatch("ui", "Window_3x3_idle", 160, 50): 0, 0
+        @(card2S => hover) graphics(line(#7fdbda, 1, 0, 0, 159, 0); line(#7fdbda, 1, 159, 0, 159, 49); line(#7fdbda, 1, 159, 49, 0, 49); line(#7fdbda, 1, 0, 49, 0, 0);): 0, 0
+        @(card2S => pressed) graphics(line(#ff88ff, 1, 0, 0, 159, 0); line(#ff88ff, 1, 159, 0, 159, 49); line(#ff88ff, 1, 159, 49, 0, 49); line(#ff88ff, 1, 0, 49, 0, 0);): 0, 0
+        @(card2S => disabled) bitmap(generated(color(160, 50, #22222288))): 0, 0
+        @(card2S => !disabled) text(m6x11, "Card 2 - border", #7fdbda, left, 140): 10, 18
+        @(card2S => disabled) text(m6x11, "DISABLED", #555555, center, 160): 0, 18
+        interactive(160, 50, "card2", bind => "card2S"): 0, 0
+    }
+
+    // Rich card 3 — color + text change
+    point {
+        pos: 360, 410
+        @(card3S => normal)  bitmap(generated(color(160, 50, #443355))): 0, 0
+        @(card3S => hover)   bitmap(generated(color(160, 50, #665577))): 0, 0
+        @(card3S => pressed) bitmap(generated(color(160, 50, #332244))): 0, 0
+        @(card3S => disabled) bitmap(generated(color(160, 50, #222222))): 0, 0
+        @(card3S => normal)  text(m6x11, "Card 3 - normal", #ccaaff, left, 140): 10, 18
+        @(card3S => hover)   text(m6x11, "Card 3 - HOVER", #eeccff, left, 140): 10, 18
+        @(card3S => pressed) text(m6x11, "Card 3 - PRESSED", #aa88dd, left, 140): 10, 18
+        @(card3S => disabled) text(m6x11, "DISABLED", #555555, center, 160): 0, 18
+        interactive(160, 50, "card3", bind => "card3S"): 0, 0
+    }
+
+    // Disable toggle
+    point {
+        pos: 540, 410
+        @(toggleS => normal)  bitmap(generated(color(140, 50, #553333))): 0, 0
+        @(toggleS => hover)   bitmap(generated(color(140, 50, #774444))): 0, 0
+        @(toggleS => pressed) bitmap(generated(color(140, 50, #442222))): 0, 0
+        text(m6x11, "Toggle Disable", #ff8888, center, 140): 0, 18
+        interactive(140, 50, "toggleDisable", bind => "toggleS"): 0, 0
+    }
+
+    // ── Section 4: Event Filters ─────────────────────────────
+    text(exo2_16, "Event Filters", #88ccff): 0, 480
+    bitmap(generated(color(700, 1, #88ccff33))): 0, 502
+    text(exo2_light_14, "Filter which events fire: events:[hover] (hover only), events:[click] (click only).", #aaaaaa, left, 700): 0, 510
+
+    // Hover only (EVENT_HOVER = 1)
+    point {
+        pos: 0, 540
+        @(hoverOnlyS => normal) bitmap(generated(color(200, 45, #2a3a4a))): 0, 0
+        @(hoverOnlyS => hover)  bitmap(generated(color(200, 45, #3a5a6a))): 0, 0
+        text(m6x11, "Hover only (no click)", #88ccff, left, 180): 10, 16
+        interactive(200, 45, "hoverOnly", events: [hover], bind => "hoverOnlyS"): 0, 0
+    }
+
+    // Click only (EVENT_CLICK = 2)
+    point {
+        pos: 220, 540
+        bitmap(generated(color(200, 45, #3a2a4a))): 0, 0
+        text(m6x11, "Click only (no hover)", #cc88ff, left, 180): 10, 16
+        interactive(200, 45, "clickOnly", events: [click]): 0, 0
+    }
+
+    // All events (default)
+    point {
+        pos: 440, 540
+        @(allEventsS => normal)  bitmap(generated(color(200, 45, #2a4a3a))): 0, 0
+        @(allEventsS => hover)   bitmap(generated(color(200, 45, #3a6a5a))): 0, 0
+        @(allEventsS => pressed) bitmap(generated(color(200, 45, #1a3a2a))): 0, 0
+        text(m6x11, "All events (default)", #88ffcc, left, 180): 10, 16
+        interactive(200, 45, "allEvents", bind => "allEventsS"): 0, 0
+    }
+
+    // ── Status display ───────────────────────────────────────
+    bitmap(generated(color(700, 45, #1a1a2e))): 0, 600
+    #statusText(updatable) text(m6x11, "Hover or click any interactive region", #888888): 10, 608
+    #clickText(updatable) text(m6x11, "No region clicked yet", #7fdbda): 10, 628
 }

@@ -27,6 +27,8 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.contentTarget = null;
 	this.initialSyncDone = false;
 	this._autoSyncInitialState = false;
+	this.tabAutoWired = false;
+	this.tabGroup = null;
 	this.interactiveMap = new haxe_ds_StringMap();
 	this.interactiveWrappers = [];
 	this.postCustomAddToLayer = new haxe_ds_ObjectMap();
@@ -105,6 +107,14 @@ bh_ui_screens_UIScreenBase.prototype = {
 		return true;
 	}
 	,onKey: function(keyCode,release) {
+		if(this.tabAutoWired && !release && this.tabGroup != null) {
+			if(keyCode == 9) {
+				var shift = hxd_Key.isDown(16) || hxd_Key.isDown(272) || hxd_Key.isDown(528);
+				if(this.tabGroup.handleTab(shift)) {
+					return false;
+				}
+			}
+		}
 		return true;
 	}
 	,update: function(dt) {
@@ -412,6 +422,53 @@ bh_ui_screens_UIScreenBase.prototype = {
 		var checkBoxInitialValue = this.getBoolSettings(settings,"initialValue",tmp != null && tmp);
 		var split = this.splitSettings(settings,["buildName"],["initialValue"],[],[],"checkbox");
 		return bh_ui_UIStandardMultiCheckbox.create(providedBuilder,checkboxBuildName,checkBoxInitialValue,split.main);
+	}
+	,addTextInput: function(providedBuilder,settings,initialText) {
+		var buildName = this.getSettings(settings,"buildName","textInput");
+		var tmp = initialText;
+		var text = this.getSettings(settings,"text",tmp != null ? tmp : "");
+		var placeholderText = this.getSettings(settings,"placeholder","");
+		var fontName = this.getSettings(settings,"font","");
+		var fontColor = this.getIntSettings(settings,"fontColor",16777215);
+		var cursorColor = this.getIntSettings(settings,"cursorColor",16777215);
+		var selectionColor = this.getIntSettings(settings,"selectionColor",3381759);
+		var split = this.splitSettings(settings,["buildName","text","placeholder","font","fontColor","cursorColor","selectionColor"],["maxLength","multiline","readOnly","disabled","filter","tabIndex","inputWidth"],[],[],"textInput");
+		var extraParams = split.main;
+		if(placeholderText != "") {
+			if(extraParams == null) {
+				extraParams = new haxe_ds_StringMap();
+			}
+			extraParams.h["placeholderText"] = placeholderText;
+		}
+		var config = { font : fontName, fontColor : fontColor, cursorColor : cursorColor, selectionColor : selectionColor, text : text, placeholder : placeholderText, maxLength : this.getIntSettings(settings,"maxLength",0), multiline : this.getBoolSettings(settings,"multiline",false), readOnly : this.getBoolSettings(settings,"readOnly",false), inputWidth : this.getIntSettings(settings,"inputWidth",0), extraParams : extraParams};
+		var input = bh_ui_UIMultiAnimTextInput.create(providedBuilder,buildName,config);
+		if(this.getBoolSettings(settings,"disabled",false)) {
+			input.set_disabled(true);
+		}
+		var filterStr = this.getSettings(settings,"filter","none");
+		switch(filterStr) {
+		case "alphanumeric":
+			input.filter = bh_ui_TextInputFilter.FAlphanumeric;
+			break;
+		case "numeric":
+			input.filter = bh_ui_TextInputFilter.FNumericOnly;
+			break;
+		default:
+		}
+		if(this.tabGroup != null) {
+			var tabIndex = this.getIntSettings(settings,"tabIndex",-1);
+			this.tabGroup.add(input,tabIndex);
+			input.tabGroup = this.tabGroup;
+		}
+		return input;
+	}
+	,enableTabNavigation: function(mode) {
+		if(mode == null) {
+			mode = bh_ui_TabWireMode.Autowire;
+		}
+		this.tabGroup = new bh_ui_UITabGroup();
+		this.tabAutoWired = mode == bh_ui_TabWireMode.Autowire;
+		return this.tabGroup;
 	}
 	,addRadio: function(providedBuilder,settings,items,vertical,selectedIndex) {
 		if(selectedIndex == null) {
@@ -1063,6 +1120,18 @@ Lambda.count = function(it,pred) {
 	}
 	return n;
 };
+Lambda.indexOf = function(it,v) {
+	var i = 0;
+	var v2 = $getIterator(it);
+	while(v2.hasNext()) {
+		var v21 = v2.next();
+		if(v == v21) {
+			return i;
+		}
+		++i;
+	}
+	return -1;
+};
 var h3d_IDrawable = function() { };
 $hxClasses["h3d.IDrawable"] = h3d_IDrawable;
 h3d_IDrawable.__name__ = "h3d.IDrawable";
@@ -1129,6 +1198,7 @@ hxd_App.prototype = {
 			hxd_Timer.skip();
 			_gthis.mainLoop();
 			hxd_System.setLoop($bind(_gthis,_gthis.mainLoop));
+			_gthis.engine.driver.present();
 			hxd_Key.initialize();
 		});
 	}
@@ -1431,6 +1501,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("draggable",new screens_ui_DraggableDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogs",new screens_ui_DialogsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("tabs",new screens_ui_TabsDemoScreen(this.screenManager));
+		this.screenManager.addScreen("textInput",new screens_ui_TextInputDemoScreen(this.screenManager));
 		this.screenManager.addScreen("tooltipsPanels",new screens_ui_TooltipsPanelsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("staticRefs",new screens_layout_StaticRefsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dynamicRefs",new screens_layout_DynamicRefsDemoScreen(this.screenManager));
@@ -1489,7 +1560,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 368, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 369, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -1520,7 +1591,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload5931Builder = function() {
+		var generatedByMacroBuildWithParametersload5975Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1583,7 +1654,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload5931Builder();
+		var ui = generatedByMacroBuildWithParametersload5975Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -2345,6 +2416,16 @@ Xml.prototype = {
 		}
 		return false;
 	}
+	,insertChild: function(x,pos) {
+		if(this.nodeType != Xml.Document && this.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (this.nodeType == null ? "null" : XmlType.toString(this.nodeType)));
+		}
+		if(x.parent != null) {
+			HxOverrides.remove(x.parent.children,x);
+		}
+		this.children.splice(pos,0,x);
+		x.parent = this;
+	}
 	,toString: function() {
 		return haxe_xml_Printer.print(this);
 	}
@@ -3105,6 +3186,51 @@ bh_base_Autotile.calculateBlob47Tile = function(mask) {
 		return 21;
 	}
 };
+var hxd_Cursor = $hxEnums["hxd.Cursor"] = { __ename__:true,__constructs__:null
+	,Default: {_hx_name:"Default",_hx_index:0,__enum__:"hxd.Cursor",toString:$estr}
+	,Button: {_hx_name:"Button",_hx_index:1,__enum__:"hxd.Cursor",toString:$estr}
+	,Move: {_hx_name:"Move",_hx_index:2,__enum__:"hxd.Cursor",toString:$estr}
+	,TextInput: {_hx_name:"TextInput",_hx_index:3,__enum__:"hxd.Cursor",toString:$estr}
+	,Hide: {_hx_name:"Hide",_hx_index:4,__enum__:"hxd.Cursor",toString:$estr}
+	,ResizeNS: {_hx_name:"ResizeNS",_hx_index:5,__enum__:"hxd.Cursor",toString:$estr}
+	,ResizeWE: {_hx_name:"ResizeWE",_hx_index:6,__enum__:"hxd.Cursor",toString:$estr}
+	,ResizeNWSE: {_hx_name:"ResizeNWSE",_hx_index:7,__enum__:"hxd.Cursor",toString:$estr}
+	,ResizeNESW: {_hx_name:"ResizeNESW",_hx_index:8,__enum__:"hxd.Cursor",toString:$estr}
+	,Custom: ($_=function(custom) { return {_hx_index:9,custom:custom,__enum__:"hxd.Cursor",toString:$estr}; },$_._hx_name="Custom",$_.__params__ = ["custom"],$_)
+	,Callback: ($_=function(f) { return {_hx_index:10,f:f,__enum__:"hxd.Cursor",toString:$estr}; },$_._hx_name="Callback",$_.__params__ = ["f"],$_)
+};
+hxd_Cursor.__constructs__ = [hxd_Cursor.Default,hxd_Cursor.Button,hxd_Cursor.Move,hxd_Cursor.TextInput,hxd_Cursor.Hide,hxd_Cursor.ResizeNS,hxd_Cursor.ResizeWE,hxd_Cursor.ResizeNWSE,hxd_Cursor.ResizeNESW,hxd_Cursor.Custom,hxd_Cursor.Callback];
+hxd_Cursor.__empty_constructs__ = [hxd_Cursor.Default,hxd_Cursor.Button,hxd_Cursor.Move,hxd_Cursor.TextInput,hxd_Cursor.Hide,hxd_Cursor.ResizeNS,hxd_Cursor.ResizeWE,hxd_Cursor.ResizeNWSE,hxd_Cursor.ResizeNESW];
+var bh_base_CursorManager = function() { };
+$hxClasses["bh.base.CursorManager"] = bh_base_CursorManager;
+bh_base_CursorManager.__name__ = "bh.base.CursorManager";
+bh_base_CursorManager.ensureInit = function() {
+	if(bh_base_CursorManager.initialized) {
+		return;
+	}
+	bh_base_CursorManager.initialized = true;
+	bh_base_CursorManager.cursorRegistry.h["default"] = hxd_Cursor.Default;
+	bh_base_CursorManager.cursorRegistry.h["pointer"] = hxd_Cursor.Button;
+	bh_base_CursorManager.cursorRegistry.h["button"] = hxd_Cursor.Button;
+	bh_base_CursorManager.cursorRegistry.h["move"] = hxd_Cursor.Move;
+	bh_base_CursorManager.cursorRegistry.h["text"] = hxd_Cursor.TextInput;
+	bh_base_CursorManager.cursorRegistry.h["hide"] = hxd_Cursor.Hide;
+	bh_base_CursorManager.cursorRegistry.h["none"] = hxd_Cursor.Hide;
+	bh_base_CursorManager.cursorRegistry.h["resize-ns"] = hxd_Cursor.ResizeNS;
+	bh_base_CursorManager.cursorRegistry.h["resize-we"] = hxd_Cursor.ResizeWE;
+	bh_base_CursorManager.cursorRegistry.h["resize-nwse"] = hxd_Cursor.ResizeNWSE;
+	bh_base_CursorManager.cursorRegistry.h["resize-nesw"] = hxd_Cursor.ResizeNESW;
+};
+bh_base_CursorManager.getCursor = function(name) {
+	bh_base_CursorManager.ensureInit();
+	return bh_base_CursorManager.cursorRegistry.h[name.toLowerCase()];
+};
+bh_base_CursorManager.getDefaultInteractiveCursor = function() {
+	return bh_base_CursorManager.defaultInteractiveCursor;
+};
+bh_base_CursorManager.getDefaultCursor = function() {
+	return bh_base_CursorManager.defaultCursor;
+};
 var bh_base_FPoint = function(x,y) {
 	this.x = x;
 	this.y = y;
@@ -3859,6 +3985,9 @@ h2d_Object.prototype = {
 			++_g;
 			s.setParentContainer(c);
 		}
+	}
+	,scrollToPos: function(pt) {
+		return false;
 	}
 	,removeChildren: function() {
 		while(this.children.length > 0) this.removeChild(this.getChildAt(0));
@@ -4891,6 +5020,11 @@ bh_base_ParticleGroup.prototype = {
 			var i = _g++;
 			var p = new bh_base__$Particles_Particle(this);
 			p.delay = this.randomFunc() * this.life * (1 - this.emitSync) + this.emitDelay;
+			if(p.delay <= 0) {
+				this.init(p);
+				p.visible = true;
+				this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnBirth);
+			}
 			this.batch.add(p);
 		}
 	}
@@ -6146,15 +6280,11 @@ h3d_pass_ScreenFx.prototype = {
 		ctx.fillGlobals(buffers,rts);
 		ctx.fillParams(buffers,rts,shaders);
 		this.get_engine().uploadShaderBuffers(buffers,0);
-		this.get_engine().uploadShaderBuffers(buffers,1);
-		this.get_engine().uploadShaderBuffers(buffers,2);
-		this.get_engine().uploadShaderBuffers(buffers,3);
+		this.get_engine().uploadInstanceShaderBuffers(buffers);
 		this.primitive.render(this.get_engine());
 		if(isNewCtx) {
 			ctx.clearCurrent();
 		}
-	}
-	,dispose: function() {
 	}
 	,__class__: h3d_pass_ScreenFx
 };
@@ -11511,68 +11641,21 @@ bh_multianim_MacroManimParser.prototype = {
 																																					switch(this.tokens[this.tpos].type._hx_index) {
 																																					case 11:
 																																						this.advance();
-																																						var typeName = this.expectIdentifierOrString();
-																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
-																																						switch(typeName.toLowerCase()) {
-																																						case "bool":
-																																							var value = this.parseBoolOrReference();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTBool, value : value};
-																																							break;
-																																						case "color":
-																																							var value1 = this.parseColorOrReference();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTColor, value : value1};
-																																							break;
-																																						case "float":
-																																							var value2 = this.parseFloatOrReference();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTFloat, value : value2};
-																																							break;
-																																						case "int":
-																																							var value3 = this.parseIntegerOrReference();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTInt, value : value3};
-																																							break;
-																																						case "string":
-																																							var value4 = this.parseStringOrReference();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : bh_multianim_SettingValueType.SVTString, value : value4};
-																																							break;
-																																						default:
-																																							this.error("expected int, float, string, color, or bool after : in settings");
-																																						}
-																																						break;
-																																					case 15:
-																																						this.advance();
-																																						var value5 = this.parseAnything();
+																																						var tv = this.parseTypedSettingValue();
 																																						if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
 																																							this.error("setting " + key + " already defined");
 																																						}
-																																						var svType;
-																																						switch(value5._hx_index) {
-																																						case 2:
-																																							var _g = value5.i;
-																																							svType = bh_multianim_SettingValueType.SVTInt;
-																																							break;
-																																						case 5:
-																																							var _g1 = value5.f;
-																																							svType = bh_multianim_SettingValueType.SVTFloat;
-																																							break;
-																																						default:
-																																							svType = bh_multianim_SettingValueType.SVTString;
+																																						parent.settings.h[key] = { type : tv.type, value : tv.value};
+																																						break;
+																																					case 15:
+																																						this.advance();
+																																						var value = this.parseAnything();
+																																						if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																							this.error("setting " + key + " already defined");
 																																						}
-																																						parent.settings.h[key] = { type : svType, value : value5};
+																																						var this1 = parent.settings;
+																																						var value1 = { type : this.inferSettingType(value), value : value};
+																																						this1.h[key] = value1;
 																																						break;
 																																					default:
 																																						this.error("expected :type=> or => after setting key");
@@ -12477,30 +12560,54 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		return { key : bh_multianim_ReferenceableValue.RVString("events"), type : bh_multianim_SettingValueType.SVTInt, value : bh_multianim_ReferenceableValue.RVInteger(flags)};
 	}
+	,parseTypedSettingValue: function() {
+		var typeName = this.expectIdentifierOrString();
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
+		switch(typeName.toLowerCase()) {
+		case "bool":
+			return { type : bh_multianim_SettingValueType.SVTBool, value : this.parseBoolOrReference()};
+		case "color":
+			return { type : bh_multianim_SettingValueType.SVTColor, value : this.parseColorOrReference()};
+		case "float":
+			return { type : bh_multianim_SettingValueType.SVTFloat, value : this.parseFloatOrReference()};
+		case "int":
+			return { type : bh_multianim_SettingValueType.SVTInt, value : this.parseIntegerOrReference()};
+		case "string":
+			return { type : bh_multianim_SettingValueType.SVTString, value : this.parseStringOrReference()};
+		default:
+			return this.error("expected int, float, string, color, or bool after : in typed value");
+		}
+	}
+	,inferSettingType: function(value) {
+		switch(value._hx_index) {
+		case 1:
+			var s = value.s;
+			if(s.toLowerCase() == "true" || s.toLowerCase() == "false") {
+				return bh_multianim_SettingValueType.SVTBool;
+			} else {
+				return bh_multianim_SettingValueType.SVTString;
+			}
+			break;
+		case 2:
+			var _g = value.i;
+			return bh_multianim_SettingValueType.SVTInt;
+		case 5:
+			var _g = value.f;
+			return bh_multianim_SettingValueType.SVTFloat;
+		default:
+			return bh_multianim_SettingValueType.SVTString;
+		}
+	}
 	,parseMetadataValue: function(key) {
 		switch(this.tokens[this.tpos].type._hx_index) {
 		case 11:
 			this.advance();
-			var typeName = this.expectIdentifierOrString();
-			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
-			switch(typeName.toLowerCase()) {
-			case "bool":
-				return { key : key, type : bh_multianim_SettingValueType.SVTBool, value : this.parseBoolOrReference()};
-			case "color":
-				return { key : key, type : bh_multianim_SettingValueType.SVTColor, value : this.parseColorOrReference()};
-			case "float":
-				return { key : key, type : bh_multianim_SettingValueType.SVTFloat, value : this.parseFloatOrReference()};
-			case "int":
-				return { key : key, type : bh_multianim_SettingValueType.SVTInt, value : this.parseIntegerOrReference()};
-			case "string":
-				return { key : key, type : bh_multianim_SettingValueType.SVTString, value : this.parseStringOrReference()};
-			default:
-				return this.error("expected int, float, string, color, or bool after : in metadata");
-			}
-			break;
+			var tv = this.parseTypedSettingValue();
+			return { key : key, type : tv.type, value : tv.value};
 		case 15:
 			this.advance();
-			return { key : key, type : bh_multianim_SettingValueType.SVTString, value : this.parseAnything()};
+			var value = this.parseAnything();
+			return { key : key, type : this.inferSettingType(value), value : value};
 		default:
 			return this.error("expected :type=> or => after metadata key");
 		}
@@ -14855,7 +14962,10 @@ var bh_multianim_BuilderResolvedSettings = function(settings) {
 $hxClasses["bh.multianim.BuilderResolvedSettings"] = bh_multianim_BuilderResolvedSettings;
 bh_multianim_BuilderResolvedSettings.__name__ = "bh.multianim.BuilderResolvedSettings";
 bh_multianim_BuilderResolvedSettings.prototype = {
-	getStringOrDefault: function(settingName,defaultString) {
+	hasSettings: function() {
+		return this.settings != null;
+	}
+	,getStringOrDefault: function(settingName,defaultString) {
 		if(this.settings == null) {
 			return defaultString;
 		}
@@ -14978,6 +15088,12 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 			var c = r.c;
 			return c;
 		}
+	}
+	,keys: function() {
+		if(this.settings == null) {
+			return new haxe_iterators_ArrayIterator([]);
+		}
+		return new haxe_ds__$StringMap_StringMapKeyIterator(this.settings.h);
 	}
 	,__class__: bh_multianim_BuilderResolvedSettings
 };
@@ -20094,7 +20210,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3104, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3117, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -22195,7 +22311,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = tmp != null ? tmp.nodes.h[name] : null;
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5059, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5072, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -22302,7 +22418,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5263, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5276, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -22336,7 +22452,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5279, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5292, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -27191,7 +27307,21 @@ bh_ui_controllers_UIControllerBase.prototype = {
 			var wrapper = { event : event, eventPos : eventPos, control : this.controllable};
 			var captureEvents = this.controllable.captureEvents;
 			(js_Boot.__cast(element , bh_ui_StandardUIElementEvents)).onEvent(wrapper);
-			this.controllable.outsideClick.handle(element);
+			switch(event._hx_index) {
+			case 0:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			case 1:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			case 3:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			default:
+			}
 			if(captureEvents.start == false && captureEvents.stop == false) {
 				return;
 			}
@@ -27252,6 +27382,16 @@ bh_ui_controllers_UIControllerBase.prototype = {
 			}
 			this.handleEvent(element,bh_ui_UIElementEvents.OnEnter,mousePoint);
 			this.currentOver = element;
+		}
+		this.updateCursor();
+	}
+	,updateCursor: function() {
+		if(this.currentOver != null && js_Boot.__implements(this.currentOver,bh_ui_UIElementCursor)) {
+			var tmp = (js_Boot.__cast(this.currentOver , bh_ui_UIElementCursor)).getCursor();
+			hxd_System.setCursor(tmp);
+		} else {
+			var tmp = bh_base_CursorManager.getDefaultCursor();
+			hxd_System.setCursor(tmp);
 		}
 	}
 	,redrawAndUpdate: function(element,dt) {
@@ -27348,6 +27488,10 @@ bh_ui_UIElement.__isInterface__ = true;
 bh_ui_UIElement.prototype = {
 	__class__: bh_ui_UIElement
 };
+var bh_ui_UIElementText = function() { };
+$hxClasses["bh.ui.UIElementText"] = bh_ui_UIElementText;
+bh_ui_UIElementText.__name__ = "bh.ui.UIElementText";
+bh_ui_UIElementText.__isInterface__ = true;
 var bh_ui_UIElementNumberValue = function() { };
 $hxClasses["bh.ui.UIElementNumberValue"] = bh_ui_UIElementNumberValue;
 bh_ui_UIElementNumberValue.__name__ = "bh.ui.UIElementNumberValue";
@@ -27433,8 +27577,11 @@ var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__c
 	,UILeaving: {_hx_name:"UILeaving",_hx_index:12,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UIClickOutside: {_hx_name:"UIClickOutside",_hx_index:13,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UIInteractiveEvent: ($_=function(event,id,metadata) { return {_hx_index:14,event:event,id:id,metadata:metadata,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIInteractiveEvent",$_.__params__ = ["event","id","metadata"],$_)
+	,UITextChange: ($_=function(text) { return {_hx_index:15,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextChange",$_.__params__ = ["text"],$_)
+	,UITextSubmit: ($_=function(text) { return {_hx_index:16,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextSubmit",$_.__params__ = ["text"],$_)
+	,UIFocusChange: ($_=function(focused) { return {_hx_index:17,focused:focused,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIFocusChange",$_.__params__ = ["focused"],$_)
 };
-bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent];
+bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent,bh_ui_UIScreenEvent.UITextChange,bh_ui_UIScreenEvent.UITextSubmit,bh_ui_UIScreenEvent.UIFocusChange];
 bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
@@ -27444,6 +27591,13 @@ var bh_ui_UIElementDisablable = function() { };
 $hxClasses["bh.ui.UIElementDisablable"] = bh_ui_UIElementDisablable;
 bh_ui_UIElementDisablable.__name__ = "bh.ui.UIElementDisablable";
 bh_ui_UIElementDisablable.__isInterface__ = true;
+var bh_ui_UIElementCursor = function() { };
+$hxClasses["bh.ui.UIElementCursor"] = bh_ui_UIElementCursor;
+bh_ui_UIElementCursor.__name__ = "bh.ui.UIElementCursor";
+bh_ui_UIElementCursor.__isInterface__ = true;
+bh_ui_UIElementCursor.prototype = {
+	__class__: bh_ui_UIElementCursor
+};
 var bh_ui_UIElementSelectable = function() { };
 $hxClasses["bh.ui.UIElementSelectable"] = bh_ui_UIElementSelectable;
 bh_ui_UIElementSelectable.__name__ = "bh.ui.UIElementSelectable";
@@ -27599,10 +27753,40 @@ var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
 	this.id = extracted.id;
 	this.metadata = extracted.metadata;
 	this.eventFlags = extracted.eventFlags;
+	var baseCursor = bh_ui_UIInteractiveWrapper.resolveCursorName(this.metadata.getStringOrDefault("cursor",""),bh_base_CursorManager.getDefaultInteractiveCursor());
+	this.cursorDefault = baseCursor;
+	this.cursorHover = bh_ui_UIInteractiveWrapper.resolveCursorName(this.metadata.getStringOrDefault("cursor.hover",""),baseCursor);
+	this.cursorDisabled = bh_ui_UIInteractiveWrapper.resolveCursorName(this.metadata.getStringOrDefault("cursor.disabled",""),bh_base_CursorManager.getDefaultCursor());
+	bh_ui_UIInteractiveWrapper.validateCursorKeys(this.metadata);
 };
 $hxClasses["bh.ui.UIInteractiveWrapper"] = bh_ui_UIInteractiveWrapper;
 bh_ui_UIInteractiveWrapper.__name__ = "bh.ui.UIInteractiveWrapper";
-bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementDisablable,bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
+bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementDisablable,bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
+bh_ui_UIInteractiveWrapper.resolveCursorName = function(name,fallback) {
+	if(name == "") {
+		return fallback;
+	}
+	var resolved = bh_base_CursorManager.getCursor(name);
+	if(resolved == null) {
+		throw haxe_Exception.thrown("unknown cursor: \"" + name + "\" — register it via CursorManager.registerCursor()");
+	}
+	return resolved;
+};
+bh_ui_UIInteractiveWrapper.validateCursorKeys = function(metadata) {
+	if(!metadata.hasSettings()) {
+		return;
+	}
+	var key = metadata.keys();
+	while(key.hasNext()) {
+		var key1 = key.next();
+		if(StringTools.startsWith(key1,"cursor.")) {
+			var suffix = HxOverrides.substr(key1,7,null);
+			if(bh_ui_UIInteractiveWrapper.VALID_CURSOR_SUFFIXES.indexOf(suffix) == -1) {
+				throw haxe_Exception.thrown("unknown cursor state: \"" + key1 + "\" — valid states: cursor.hover, cursor.disabled");
+			}
+		}
+	}
+};
 bh_ui_UIInteractiveWrapper.extractInteractiveData = function(obj,prefix) {
 	var _g = obj.multiAnimType;
 	if(_g._hx_index == 0) {
@@ -27618,7 +27802,11 @@ bh_ui_UIInteractiveWrapper.extractInteractiveData = function(obj,prefix) {
 	}
 };
 bh_ui_UIInteractiveWrapper.prototype = {
-	getObject: function() {
+	set_disabled: function(v) {
+		this.disabled = v;
+		return v;
+	}
+	,getObject: function() {
 		return this.interactive;
 	}
 	,containsPoint: function(pos) {
@@ -27630,6 +27818,15 @@ bh_ui_UIInteractiveWrapper.prototype = {
 		}
 	}
 	,clear: function() {
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return this.cursorDisabled;
+		}
+		if(this.hovered) {
+			return this.cursorHover;
+		}
+		return this.cursorDefault;
 	}
 	,onEvent: function(wrapper) {
 		if(this.disabled) {
@@ -27699,7 +27896,7 @@ var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraPara
 };
 $hxClasses["bh.ui.UIStandardMultiAnimButton"] = bh_ui_UIStandardMultiAnimButton;
 bh_ui_UIStandardMultiAnimButton.__name__ = "bh.ui.UIStandardMultiAnimButton";
-bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimButton.create = function(builder,name,buttonText,extraParams) {
 	return new bh_ui_UIStandardMultiAnimButton(builder,name,buttonText,extraParams);
 };
@@ -27726,6 +27923,12 @@ bh_ui_UIStandardMultiAnimButton.prototype = {
 		}
 	}
 	,clear: function() {
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,onEvent: function(wrapper) {
 		if(this.disabled) {
@@ -27803,12 +28006,18 @@ var bh_ui_UIStandardMultiCheckbox = function(builder,name,startsChecked,extraPar
 };
 $hxClasses["bh.ui.UIStandardMultiCheckbox"] = bh_ui_UIStandardMultiCheckbox;
 bh_ui_UIStandardMultiCheckbox.__name__ = "bh.ui.UIStandardMultiCheckbox";
-bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiCheckbox.create = function(builder,name,checked,extraParams) {
 	return new bh_ui_UIStandardMultiCheckbox(builder,name,checked,extraParams);
 };
 bh_ui_UIStandardMultiCheckbox.prototype = {
 	clear: function() {
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,set_disabled: function(value) {
 		if(this.disabled != value) {
@@ -28491,7 +28700,7 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 };
 $hxClasses["bh.ui.UIStandardMultiAnimDropdown"] = bh_ui_UIStandardMultiAnimDropdown;
 bh_ui_UIStandardMultiAnimDropdown.__name__ = "bh.ui.UIStandardMultiAnimDropdown";
-bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimDropdown.createWithPrebuiltPanel = function(builder,panel,items,initialIndex) {
 	if(initialIndex == null) {
 		initialIndex = 0;
@@ -28502,6 +28711,12 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	clear: function() {
 		this.items = [];
 		this.currentMainPart = null;
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,set_currentItemIndex: function(value) {
 		if(value < 0 || value >= this.items.length) {
@@ -29068,7 +29283,7 @@ var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollba
 };
 $hxClasses["bh.ui.UIMultiAnimScrollableList"] = bh_ui_UIMultiAnimScrollableList;
 bh_ui_UIMultiAnimScrollableList.__name__ = "bh.ui.UIMultiAnimScrollableList";
-bh_ui_UIMultiAnimScrollableList.__interfaces__ = [bh_ui_UIElementListValue,bh_ui_UIElementUpdatable,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIMultiAnimScrollableList.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementListValue,bh_ui_UIElementUpdatable,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIMultiAnimScrollableList.create = function(builder,itemBuilder,scrollbarBuilder,scrollbarInPanelName,width,height,items,topClearance,initialIndex,panelSizeMode) {
 	return new bh_ui_UIMultiAnimScrollableList(builder,itemBuilder,scrollbarBuilder,scrollbarInPanelName,width,height,items,topClearance,initialIndex,panelSizeMode);
 };
@@ -29095,6 +29310,12 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		this.scrollbar = null;
 		this.scrollbarResult = null;
 		this.interactives = [];
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,setItems: function(newItems,selectedIndex) {
 		if(selectedIndex == null) {
@@ -29474,7 +29695,7 @@ var bh_ui_UIStandardMultiAnimSlider = function(builder,name,size,initialValue,ex
 };
 $hxClasses["bh.ui.UIStandardMultiAnimSlider"] = bh_ui_UIStandardMultiAnimSlider;
 bh_ui_UIStandardMultiAnimSlider.__name__ = "bh.ui.UIStandardMultiAnimSlider";
-bh_ui_UIStandardMultiAnimSlider.__interfaces__ = [bh_ui_UIElementSyncRedraw,bh_ui_UIElementFloatValue,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimSlider.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementSyncRedraw,bh_ui_UIElementFloatValue,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimSlider.create = function(builder,name,size,initialValue,extraParams) {
 	if(initialValue == null) {
 		initialValue = 0;
@@ -29507,6 +29728,12 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 	clear: function() {
 		this.currentResult = null;
 		this.builder = null;
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,set_status: function(value) {
 		if(this.status != value) {
@@ -29749,7 +29976,7 @@ var bh_ui_UIMultiAnimTabButton = function(builder,name,extraParams) {
 };
 $hxClasses["bh.ui.UIMultiAnimTabButton"] = bh_ui_UIMultiAnimTabButton;
 bh_ui_UIMultiAnimTabButton.__name__ = "bh.ui.UIMultiAnimTabButton";
-bh_ui_UIMultiAnimTabButton.__interfaces__ = [bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIMultiAnimTabButton.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIMultiAnimTabButton.prototype = {
 	set_disabled: function(value) {
 		if(this.disabled != value) {
@@ -29761,11 +29988,26 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 	,set_selected: function(value) {
 		if(this.selected != value) {
 			this.selected = value;
+			if(value) {
+				this.result.beginUpdate();
+			}
 			this.result.setParameter("checked","" + (value == null ? "null" : "" + value));
+			if(value) {
+				this.result.setParameter("status","normal");
+			}
+			if(value) {
+				this.result.endUpdate();
+			}
 		}
 		return value;
 	}
 	,clear: function() {
+	}
+	,getCursor: function() {
+		if(this.disabled || this.selected) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
 	,getObject: function() {
 		return this.result.object;
@@ -29793,7 +30035,9 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 			break;
 		case 1:
 			var button = _g.button;
-			this.result.setParameter("status","normal");
+			if(!this.selected) {
+				this.result.setParameter("status","normal");
+			}
 			break;
 		case 2:
 			var _g1 = _g.button;
@@ -29802,10 +30046,14 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 			var _g1 = _g.button;
 			break;
 		case 4:
-			this.result.setParameter("status","hover");
+			if(!this.selected) {
+				this.result.setParameter("status","hover");
+			}
 			break;
 		case 5:
-			this.result.setParameter("status","normal");
+			if(!this.selected) {
+				this.result.setParameter("status","normal");
+			}
 			break;
 		case 6:
 			var up = _g.keyCode;
@@ -30137,6 +30385,269 @@ bh_ui_UIMultiAnimTabs.prototype = {
 	}
 	,__class__: bh_ui_UIMultiAnimTabs
 };
+var bh_ui_TextInputFilter = $hxEnums["bh.ui.TextInputFilter"] = { __ename__:true,__constructs__:null
+	,FNumericOnly: {_hx_name:"FNumericOnly",_hx_index:0,__enum__:"bh.ui.TextInputFilter",toString:$estr}
+	,FAlphanumeric: {_hx_name:"FAlphanumeric",_hx_index:1,__enum__:"bh.ui.TextInputFilter",toString:$estr}
+	,FCustom: ($_=function(fn) { return {_hx_index:2,fn:fn,__enum__:"bh.ui.TextInputFilter",toString:$estr}; },$_._hx_name="FCustom",$_.__params__ = ["fn"],$_)
+};
+bh_ui_TextInputFilter.__constructs__ = [bh_ui_TextInputFilter.FNumericOnly,bh_ui_TextInputFilter.FAlphanumeric,bh_ui_TextInputFilter.FCustom];
+bh_ui_TextInputFilter.__empty_constructs__ = [bh_ui_TextInputFilter.FNumericOnly,bh_ui_TextInputFilter.FAlphanumeric];
+var bh_ui_UIMultiAnimTextInput = function(builder,name,config) {
+	this.tabGroup = null;
+	this.filter = null;
+	this.disabled = false;
+	this.enterPending = false;
+	this.controllable = null;
+	this.lastPlaceholderState = true;
+	this.focused = false;
+	var _g = new haxe_ds_StringMap();
+	_g.h["status"] = "normal";
+	_g.h["placeholder"] = "true";
+	var params = _g;
+	if(config.placeholder != null && config.placeholder != "") {
+		params.h["placeholderText"] = config.placeholder;
+	}
+	if(config.extraParams != null) {
+		var h = config.extraParams.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var key1 = _g_key;
+			var value = _g_value;
+			params.h[key1] = value;
+		}
+	}
+	this.result = builder.buildWithParameters(name,params,null,null,true);
+	var font = bh_base_FontManager.getFontByName(config.font);
+	this.textInput = new h2d_TextInput(font);
+	var tmp = config.fontColor;
+	this.textInput.set_textColor(tmp != null ? tmp : 16777215);
+	var tmp = config.inputWidth;
+	var inputWidth = tmp != null ? tmp : 0;
+	if(inputWidth > 0) {
+		this.textInput.inputWidth = inputWidth;
+	}
+	var tmp = config.cursorColor;
+	this.textInput.cursorTile = h2d_Tile.fromColor(tmp != null ? tmp : 16777215,1,font.lineHeight | 0);
+	var tmp = config.selectionColor;
+	this.textInput.selectionTile = h2d_Tile.fromColor(tmp != null ? tmp : 3381759,0,font.lineHeight | 0);
+	if(config.text != null && config.text != "") {
+		this.textInput.set_text(config.text);
+	}
+	var tmp = config.placeholder;
+	this.placeholder = tmp != null ? tmp : "";
+	var tmp = config.maxLength;
+	this.maxLength = tmp != null ? tmp : 0;
+	var tmp = config.multiline;
+	this.textInput.multiline = tmp != null && tmp;
+	var tmp = config.readOnly;
+	this.textInput.canEdit = !(tmp != null && tmp);
+	this.textInput.insertTabs = null;
+	var textAreaItem = this.result.getSingleItemByName("textArea");
+	var pointObj = bh_multianim_MultiAnimParser_toh2dObject(bh_multianim_MultiAnimParser_getBuiltHeapsObject(textAreaItem));
+	pointObj.addChild(this.textInput);
+	this.wireCallbacks();
+	this.syncPlaceholder();
+};
+$hxClasses["bh.ui.UIMultiAnimTextInput"] = bh_ui_UIMultiAnimTextInput;
+bh_ui_UIMultiAnimTextInput.__name__ = "bh.ui.UIMultiAnimTextInput";
+bh_ui_UIMultiAnimTextInput.__interfaces__ = [bh_ui_UIElementUpdatable,bh_ui_UIElementCursor,bh_ui_UIElementText,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIMultiAnimTextInput.create = function(builder,name,config) {
+	return new bh_ui_UIMultiAnimTextInput(builder,name,config);
+};
+bh_ui_UIMultiAnimTextInput.prototype = {
+	onChange: function() {
+	}
+	,onSubmit: function() {
+	}
+	,onFocusChange: function(focused) {
+	}
+	,wireCallbacks: function() {
+		var _gthis = this;
+		this.textInput.onChange = function() {
+			if(_gthis.maxLength > 0 && _gthis.textInput.text.length > _gthis.maxLength) {
+				var curPos = _gthis.textInput.cursorIndex;
+				_gthis.textInput.set_text(HxOverrides.substr(_gthis.textInput.text,0,_gthis.maxLength));
+				if(curPos > _gthis.maxLength) {
+					_gthis.textInput.cursorIndex = _gthis.maxLength;
+				}
+			}
+			if(_gthis.filter != null) {
+				_gthis.applyFilter();
+			}
+			_gthis.syncPlaceholder();
+			_gthis.onChange();
+			_gthis.pushScreenEvent(bh_ui_UIScreenEvent.UITextChange(_gthis.textInput.text));
+		};
+		this.textInput.onFocus = function(e) {
+			_gthis.focused = true;
+			_gthis.result.setParameter("status","focused");
+			_gthis.syncPlaceholder();
+			_gthis.onFocusChange(true);
+			_gthis.pushScreenEvent(bh_ui_UIScreenEvent.UIFocusChange(true));
+		};
+		this.textInput.onFocusLost = function(e) {
+			_gthis.focused = false;
+			_gthis.result.setParameter("status","normal");
+			_gthis.syncPlaceholder();
+			_gthis.onFocusChange(false);
+			_gthis.pushScreenEvent(bh_ui_UIScreenEvent.UIFocusChange(false));
+		};
+		this.textInput.onKeyDown = function(e) {
+			if(!_gthis.textInput.multiline && (e.keyCode == 13 || e.keyCode == 108)) {
+				_gthis.onSubmit();
+				_gthis.pushScreenEvent(bh_ui_UIScreenEvent.UITextSubmit(_gthis.textInput.text));
+				if(_gthis.tabGroup != null && _gthis.tabGroup.enterAdvances) {
+					_gthis.enterPending = true;
+				}
+			}
+		};
+	}
+	,applyFilter: function() {
+		if(this.filter == null) {
+			return;
+		}
+		var original = this.textInput.text;
+		var filtered;
+		var _g = this.filter;
+		switch(_g._hx_index) {
+		case 0:
+			var _this_r = new RegExp("[^0-9]","g".split("u").join(""));
+			filtered = original.replace(_this_r,"");
+			break;
+		case 1:
+			var _this_r = new RegExp("[^a-zA-Z0-9]","g".split("u").join(""));
+			filtered = original.replace(_this_r,"");
+			break;
+		case 2:
+			var fn = _g.fn;
+			filtered = fn(original);
+			break;
+		}
+		if(filtered != original) {
+			var curPos = this.textInput.cursorIndex;
+			var diff = original.length - filtered.length;
+			this.textInput.set_text(filtered);
+			this.textInput.cursorIndex = Math.max(0,curPos - diff) | 0;
+		}
+	}
+	,syncPlaceholder: function() {
+		var shouldShow = this.textInput.text.length == 0 && !this.focused;
+		if(shouldShow != this.lastPlaceholderState) {
+			this.lastPlaceholderState = shouldShow;
+			this.result.setParameter("placeholder",shouldShow ? "true" : "false");
+		}
+	}
+	,pushScreenEvent: function(event) {
+		if(this.controllable != null) {
+			this.controllable.pushEvent(event,this);
+		}
+	}
+	,getObject: function() {
+		return this.result.object;
+	}
+	,containsPoint: function(pos) {
+		var _this = this.getObject().getBounds();
+		if(pos.x >= _this.xMin && pos.x < _this.xMax && pos.y >= _this.yMin) {
+			return pos.y < _this.yMax;
+		} else {
+			return false;
+		}
+	}
+	,clear: function() {
+	}
+	,onEvent: function(wrapper) {
+		if(this.controllable == null) {
+			this.controllable = wrapper.control;
+		}
+		if(this.disabled) {
+			return;
+		}
+		var _g = wrapper.event;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.button;
+			if(!this.focused) {
+				this.textInput.focus();
+			}
+			break;
+		case 1:
+			var _g1 = _g.button;
+			break;
+		case 2:
+			var _g1 = _g.button;
+			break;
+		case 3:
+			var _g1 = _g.button;
+			break;
+		case 4:
+			if(!this.focused) {
+				this.result.setParameter("status","hover");
+			}
+			break;
+		case 5:
+			if(!this.focused) {
+				this.result.setParameter("status","normal");
+			}
+			break;
+		case 6:
+			var _g1 = _g.keyCode;
+			var _g1 = _g.release;
+			break;
+		case 7:
+			var _g1 = _g.wheelDelta;
+			break;
+		case 8:
+			break;
+		}
+	}
+	,set_disabled: function(value) {
+		if(this.disabled != value) {
+			this.disabled = value;
+			this.result.beginUpdate();
+			this.result.setParameter("status",value ? "disabled" : "normal");
+			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			this.result.endUpdate();
+			this.textInput.canEdit = !value;
+			if(value && this.focused) {
+				this.textInput.blur();
+			}
+		}
+		return value;
+	}
+	,getCursor: function() {
+		if(this.disabled) {
+			return bh_base_CursorManager.getDefaultCursor();
+		}
+		return hxd_Cursor.TextInput;
+	}
+	,update: function(dt) {
+		if(this.enterPending) {
+			this.enterPending = false;
+			if(this.tabGroup != null) {
+				this.tabGroup.advanceFrom(this);
+			}
+		}
+		this.syncPlaceholder();
+	}
+	,focus: function() {
+		if(!this.disabled) {
+			this.textInput.focus();
+		}
+	}
+	,blur: function() {
+		this.textInput.blur();
+	}
+	,hasFocus: function() {
+		return this.textInput.hasFocus();
+	}
+	,__class__: bh_ui_UIMultiAnimTextInput
+};
 var bh_ui_PanelCloseMode = $hxEnums["bh.ui.PanelCloseMode"] = { __ename__:true,__constructs__:null
 	,OutsideClick: {_hx_name:"OutsideClick",_hx_index:0,__enum__:"bh.ui.PanelCloseMode",toString:$estr}
 	,Manual: {_hx_name:"Manual",_hx_index:1,__enum__:"bh.ui.PanelCloseMode",toString:$estr}
@@ -30145,9 +30656,12 @@ bh_ui_PanelCloseMode.__constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_P
 bh_ui_PanelCloseMode.__empty_constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_PanelCloseMode.Manual];
 var bh_ui_UIPanelHelper = function(screen,builder,defaults) {
 	this._pendingClose = false;
+	this.namedPanels = new haxe_ds_StringMap();
 	this.activePanelPrefix = null;
 	this.activeResult = null;
 	this.activeInteractiveId = null;
+	this.offsetOverrides = new haxe_ds_StringMap();
+	this.positionOverrides = new haxe_ds_StringMap();
 	this.screen = screen;
 	this.builder = builder;
 	var tmp = defaults != null ? defaults.position : null;
@@ -30171,8 +30685,10 @@ bh_ui_UIPanelHelper.prototype = {
 		}
 		var tmp = params;
 		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap(),null,null,true);
-		var position = this.defaultPosition;
-		var offset = this.defaultOffset;
+		var tmp = this.positionOverrides.h[interactiveId];
+		var position = tmp != null ? tmp : this.defaultPosition;
+		var tmp = this.offsetOverrides.h[interactiveId];
+		var offset = tmp != null ? tmp : this.defaultOffset;
 		this.positionPanel(result.object,wrapper.interactive,position,offset);
 		this.screen.addObjectToLayer(result.object,this.layer);
 		var prefix = "" + interactiveId + "." + buildName;
@@ -30187,6 +30703,7 @@ bh_ui_UIPanelHelper.prototype = {
 	}
 	,close: function() {
 		if(this.activeResult != null) {
+			var closedId = this.activeInteractiveId;
 			if(this.activePanelPrefix != null) {
 				this.screen.removeInteractives(this.activePanelPrefix);
 			}
@@ -30195,6 +30712,12 @@ bh_ui_UIPanelHelper.prototype = {
 				_this.parent.removeChild(_this);
 			}
 			this.activeResult = null;
+			this.activeInteractiveId = null;
+			this.activePanelPrefix = null;
+			if(closedId != null) {
+				this.screen.onScreenEvent(bh_ui_UIScreenEvent.UICustomEvent("panelClose",closedId),null);
+			}
+			return;
 		}
 		this.activeInteractiveId = null;
 		this.activePanelPrefix = null;
@@ -30212,46 +30735,160 @@ bh_ui_UIPanelHelper.prototype = {
 		return this.activePanelPrefix;
 	}
 	,isOwnInteractive: function(id) {
-		if(this.activePanelPrefix == null) {
-			return false;
+		if(this.activePanelPrefix != null && StringTools.startsWith(id,this.activePanelPrefix)) {
+			return true;
 		}
-		return StringTools.startsWith(id,this.activePanelPrefix);
+		var h = this.namedPanels.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var panel = _g_value;
+			if(StringTools.startsWith(id,panel.prefix)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	,closeNamed: function(slot) {
+		var panel = this.namedPanels.h[slot];
+		if(panel == null) {
+			return;
+		}
+		this.screen.removeInteractives(panel.prefix);
+		var _this = panel.result.object;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		var _this = this.namedPanels;
+		if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
+			delete(_this.h[slot]);
+		}
+		this.screen.onScreenEvent(bh_ui_UIScreenEvent.UICustomEvent("panelClose",panel.interactiveId),null);
 	}
 	,handleOutsideClick: function(event) {
-		if(!this.isOpen() || this.activeCloseMode != bh_ui_PanelCloseMode.OutsideClick) {
-			return false;
-		}
-		if(event._hx_index == 14) {
-			var _g = event.id;
-			var _g1 = event.metadata;
-			switch(event.event._hx_index) {
-			case 0:
-				var id = _g;
-				if(id == this.activeInteractiveId || this.isOwnInteractive(id)) {
-					this._pendingClose = false;
-					return false;
+		var closed = false;
+		if(this.isOpen() && this.activeCloseMode == bh_ui_PanelCloseMode.OutsideClick) {
+			if(event._hx_index == 14) {
+				var _g = event.id;
+				var _g1 = event.metadata;
+				switch(event.event._hx_index) {
+				case 0:
+					var id = _g;
+					if(id == this.activeInteractiveId || this.activePanelPrefix != null && StringTools.startsWith(id,this.activePanelPrefix)) {
+						this._pendingClose = false;
+					} else if(!this.isNamedPanelInteractive(id)) {
+						this._pendingClose = false;
+						this.close();
+						closed = true;
+					}
+					break;
+				case 13:
+					var id = _g;
+					if(id == this.activeInteractiveId) {
+						this._pendingClose = true;
+					}
+					break;
+				default:
 				}
-				this._pendingClose = false;
-				this.close();
-				return true;
-			case 13:
-				var id = _g;
-				if(id == this.activeInteractiveId) {
-					this._pendingClose = true;
-				}
-				return false;
-			default:
-				return false;
 			}
-		} else {
-			return false;
 		}
+		var h = this.namedPanels.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var panel = _g_value;
+			if(panel.closeMode != bh_ui_PanelCloseMode.OutsideClick) {
+				continue;
+			}
+			if(event._hx_index == 14) {
+				var _g = event.id;
+				var _g1 = event.metadata;
+				switch(event.event._hx_index) {
+				case 0:
+					var id = _g;
+					if(id == panel.interactiveId || StringTools.startsWith(id,panel.prefix)) {
+						panel.pendingClose = false;
+					} else if(!this.isOwnInteractive(id)) {
+						panel.pendingClose = false;
+						panel.pendingClose = true;
+					}
+					break;
+				case 13:
+					var id1 = _g;
+					if(id1 == panel.interactiveId) {
+						panel.pendingClose = true;
+					}
+					break;
+				default:
+				}
+			}
+		}
+		return closed;
 	}
 	,checkPendingClose: function() {
+		var closed = false;
 		if(this._pendingClose) {
 			this._pendingClose = false;
 			this.close();
-			return true;
+			closed = true;
+		}
+		var toClose = null;
+		var h = this.namedPanels.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var slot = _g_key;
+			var panel = _g_value;
+			if(panel.pendingClose) {
+				if(toClose == null) {
+					toClose = [];
+				}
+				toClose.push(slot);
+			}
+		}
+		if(toClose != null) {
+			var _g = 0;
+			while(_g < toClose.length) {
+				var slot = toClose[_g];
+				++_g;
+				this.closeNamed(slot);
+				closed = true;
+			}
+		}
+		return closed;
+	}
+	,isNamedPanelInteractive: function(id) {
+		var h = this.namedPanels.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var panel = _g_value;
+			if(StringTools.startsWith(id,panel.prefix)) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -30358,6 +30995,23 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 		}
 		this.bindings.h[interactiveId] = { result : result, stateParam : stateParam, currentState : bh_ui_InteractiveState.Normal};
 	}
+	,setDisabled: function(interactiveId,disabled) {
+		var binding = this.bindings.h[interactiveId];
+		if(binding == null) {
+			return;
+		}
+		var wrapper = this.screen.getInteractive(interactiveId);
+		if(wrapper != null) {
+			wrapper.set_disabled(disabled);
+		}
+		if(disabled) {
+			binding.currentState = bh_ui_InteractiveState.Disabled;
+			binding.result.setParameter(binding.stateParam,"disabled");
+		} else {
+			binding.currentState = bh_ui_InteractiveState.Normal;
+			binding.result.setParameter(binding.stateParam,"normal");
+		}
+	}
 	,handleEvent: function(event) {
 		if(event._hx_index == 14) {
 			var _g = event.metadata;
@@ -30404,6 +31058,125 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 	}
 	,__class__: bh_ui_UIRichInteractiveHelper
 };
+var bh_ui_TabWireMode = $hxEnums["bh.ui.TabWireMode"] = { __ename__:true,__constructs__:null
+	,Autowire: {_hx_name:"Autowire",_hx_index:0,__enum__:"bh.ui.TabWireMode",toString:$estr}
+	,Manual: {_hx_name:"Manual",_hx_index:1,__enum__:"bh.ui.TabWireMode",toString:$estr}
+};
+bh_ui_TabWireMode.__constructs__ = [bh_ui_TabWireMode.Autowire,bh_ui_TabWireMode.Manual];
+bh_ui_TabWireMode.__empty_constructs__ = [bh_ui_TabWireMode.Autowire,bh_ui_TabWireMode.Manual];
+var bh_ui_UITabGroup = function() {
+	this.enterAdvances = false;
+	this.nextAutoIndex = 0;
+	this.inputs = [];
+};
+$hxClasses["bh.ui.UITabGroup"] = bh_ui_UITabGroup;
+bh_ui_UITabGroup.__name__ = "bh.ui.UITabGroup";
+bh_ui_UITabGroup.prototype = {
+	add: function(input,tabIndex) {
+		if(tabIndex == null) {
+			tabIndex = -1;
+		}
+		var idx = tabIndex < 0 ? this.nextAutoIndex++ : tabIndex;
+		var _g = 0;
+		var _g1 = this.inputs;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.tabIndex == idx) {
+				throw haxe_Exception.thrown("UITabGroup: duplicate tabIndex " + idx);
+			}
+		}
+		this.inputs.push({ input : input, tabIndex : idx});
+		this.inputs.sort(function(a,b) {
+			return a.tabIndex - b.tabIndex;
+		});
+	}
+	,handleTab: function(shift) {
+		if(this.inputs.length == 0) {
+			return false;
+		}
+		var currentIdx = -1;
+		var _g = 0;
+		var _g1 = this.inputs.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.inputs[i].input.hasFocus()) {
+				currentIdx = i;
+				break;
+			}
+		}
+		if(currentIdx < 0) {
+			this.focusAt(0);
+			return true;
+		}
+		var nextIdx = currentIdx;
+		var attempts = 0;
+		while(attempts < this.inputs.length) {
+			if(shift) {
+				--nextIdx;
+				if(nextIdx < 0) {
+					nextIdx = this.inputs.length - 1;
+				}
+			} else {
+				++nextIdx;
+				if(nextIdx >= this.inputs.length) {
+					nextIdx = 0;
+				}
+			}
+			++attempts;
+			if(!this.inputs[nextIdx].input.disabled) {
+				this.focusAt(nextIdx);
+				return true;
+			}
+		}
+		return false;
+	}
+	,advanceFrom: function(source) {
+		if(!this.enterAdvances || this.inputs.length == 0) {
+			return false;
+		}
+		var currentIdx = -1;
+		var _g = 0;
+		var _g1 = this.inputs.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.inputs[i].input == source) {
+				currentIdx = i;
+				break;
+			}
+		}
+		if(currentIdx < 0) {
+			return false;
+		}
+		var nextIdx = currentIdx;
+		var attempts = 0;
+		while(attempts < this.inputs.length) {
+			++nextIdx;
+			if(nextIdx >= this.inputs.length) {
+				nextIdx = 0;
+			}
+			++attempts;
+			if(!this.inputs[nextIdx].input.disabled) {
+				this.focusAt(nextIdx);
+				return true;
+			}
+		}
+		return false;
+	}
+	,focusAt: function(idx) {
+		var _g = 0;
+		var _g1 = this.inputs;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.input.hasFocus()) {
+				entry.input.blur();
+			}
+		}
+		this.inputs[idx].input.focus();
+	}
+	,__class__: bh_ui_UITabGroup
+};
 var bh_ui_TooltipPosition = $hxEnums["bh.ui.TooltipPosition"] = { __ename__:true,__constructs__:null
 	,Above: {_hx_name:"Above",_hx_index:0,__enum__:"bh.ui.TooltipPosition",toString:$estr}
 	,Below: {_hx_name:"Below",_hx_index:1,__enum__:"bh.ui.TooltipPosition",toString:$estr}
@@ -30413,12 +31186,15 @@ var bh_ui_TooltipPosition = $hxEnums["bh.ui.TooltipPosition"] = { __ename__:true
 bh_ui_TooltipPosition.__constructs__ = [bh_ui_TooltipPosition.Above,bh_ui_TooltipPosition.Below,bh_ui_TooltipPosition.Left,bh_ui_TooltipPosition.Right];
 bh_ui_TooltipPosition.__empty_constructs__ = [bh_ui_TooltipPosition.Above,bh_ui_TooltipPosition.Below,bh_ui_TooltipPosition.Left,bh_ui_TooltipPosition.Right];
 var bh_ui_UITooltipHelper = function(screen,builder,defaults) {
+	this.activeParams = null;
+	this.activeBuildName = null;
 	this.activeResult = null;
 	this.activeTooltipId = null;
 	this.hoverTimer = 0;
 	this.hoverParams = null;
 	this.hoverBuildName = null;
 	this.hoverInteractiveId = null;
+	this.offsetOverrides = new haxe_ds_StringMap();
 	this.positionOverrides = new haxe_ds_StringMap();
 	this.delayOverrides = new haxe_ds_StringMap();
 	this.screen = screen;
@@ -30465,6 +31241,8 @@ bh_ui_UITooltipHelper.prototype = {
 			this.activeResult = null;
 		}
 		this.activeTooltipId = null;
+		this.activeBuildName = null;
+		this.activeParams = null;
 	}
 	,setDelay: function(interactiveId,delay) {
 		this.delayOverrides.h[interactiveId] = delay;
@@ -30501,11 +31279,14 @@ bh_ui_UITooltipHelper.prototype = {
 		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap());
 		var tmp = this.positionOverrides.h[interactiveId];
 		var position = tmp != null ? tmp : this.defaultPosition;
-		var offset = this.defaultOffset;
+		var tmp = this.offsetOverrides.h[interactiveId];
+		var offset = tmp != null ? tmp : this.defaultOffset;
 		this.positionTooltip(result.object,wrapper.interactive,position,offset);
 		this.screen.addObjectToLayer(result.object,this.layer);
 		this.activeTooltipId = interactiveId;
 		this.activeResult = result;
+		this.activeBuildName = buildName;
+		this.activeParams = params;
 	}
 	,positionTooltip: function(tooltip,anchor,position,offset) {
 		var anchorBounds = anchor.getBounds();
@@ -33668,6 +34449,18 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 		this.set_needReflow(true);
 		s.setParentContainer(this);
 	}
+	,scrollToPos: function(pt) {
+		if(this.overflow == h2d_FlowOverflow.Scroll || this.overflow == h2d_FlowOverflow.Hidden) {
+			var pt1 = this.globalToLocal(pt);
+			if(pt1.y < 0) {
+				this.set_scrollPosY(this.scrollPosY + pt1.y);
+			} else if(pt1.y > this.calculatedHeight) {
+				this.set_scrollPosY(this.scrollPosY + (pt1.y - this.calculatedHeight));
+			}
+			return true;
+		}
+		return false;
+	}
 	,removeChild: function(s) {
 		var index = this.getChildIndex(s);
 		h2d_Object.prototype.removeChild.call(this,s);
@@ -33868,20 +34661,26 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 			e.propagate = false;
 		}
 	}
+	,makeBackground: function(tile) {
+		return new h2d_ScaleGrid(tile,this.borderLeft,this.borderTop,this.borderRight,this.borderBottom);
+	}
+	,buildBackground: function(tile) {
+		var background = this.makeBackground(tile);
+		this.addChildAt(background,0);
+		this.getProperties(background).set_isAbsolute(true);
+		this.background = background;
+		if(!this.needReflow) {
+			background.set_width(Math.ceil(this.calculatedWidth - 1e-10));
+			background.set_height(Math.ceil(this.calculatedHeight - 1e-10));
+		}
+	}
 	,set_backgroundTile: function(t) {
 		if(this.backgroundTile == t) {
 			return t;
 		}
 		if(t != null) {
 			if(this.background == null) {
-				var background = new h2d_ScaleGrid(t,this.borderLeft,this.borderTop,this.borderRight,this.borderBottom);
-				this.addChildAt(background,0);
-				this.getProperties(background).set_isAbsolute(true);
-				this.background = background;
-				if(!this.needReflow) {
-					background.set_width(Math.ceil(this.calculatedWidth - 1e-10));
-					background.set_height(Math.ceil(this.calculatedHeight - 1e-10));
-				}
+				this.buildBackground(t);
 			}
 			this.background.tile = t;
 		} else if(this.background != null) {
@@ -34103,6 +34902,9 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 		var paddingTop = v == h2d_Flow.PADDING_IGNORE_PARENT ? 0 : v;
 		var v = this.paddingBottom;
 		var paddingBottom = v == h2d_Flow.PADDING_IGNORE_PARENT ? 0 : v;
+		if(this.scrollBar != null) {
+			this.scrollBar.set_visible(true);
+		}
 		switch(this.layout._hx_index) {
 		case 0:
 			var halign = this.horizontalAlign == null ? h2d_FlowAlign.Left : this.horizontalAlign;
@@ -34220,7 +35022,7 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 				if(!c.visible) {
 					continue;
 				}
-				if(p.autoSizeWidth != null) {
+				if(p.autoSizeWidth != null || p.autoSizeHeight != null) {
 					var v = p.paddingTop;
 					var v1 = p.paddingBottom;
 					var ph = (v == h2d_Flow.PADDING_IGNORE_PARENT ? -paddingTop : v) + (v1 == h2d_Flow.PADDING_IGNORE_PARENT ? -paddingBottom : v1);
@@ -34760,7 +35562,7 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 				if(!c.visible) {
 					continue;
 				}
-				if(p.autoSizeHeight != null) {
+				if(p.autoSizeWidth != null || p.autoSizeHeight != null) {
 					var v = p.paddingLeft;
 					var v1 = p.paddingRight;
 					var pw = (v == h2d_Flow.PADDING_IGNORE_PARENT ? -paddingLeft : v) + (v1 == h2d_Flow.PADDING_IGNORE_PARENT ? -paddingRight : v1);
@@ -35388,7 +36190,6 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 			if(this.contentHeight <= this.calculatedHeight) {
 				this.scrollBar.set_visible(false);
 			} else {
-				this.scrollBar.set_visible(true);
 				this.scrollBar.set_minHeight(this.get_scrollInnerHeight());
 				var tmp = this.scrollBarCursor;
 				var b = this.get_scrollInnerHeight() * (1 - (this.contentHeight - this.get_scrollInnerHeight()) / this.contentHeight) | 0;
@@ -35528,6 +36329,9 @@ h2d_Font.prototype = {
 		this.lineHeight = Math.ceil(this.lineHeight * ratio);
 		this.baseLine = Math.ceil(this.baseLine * ratio);
 		this.size = size;
+	}
+	,hasChar: function(code) {
+		return this.glyphs.h[code] != null;
 	}
 	,calcBaseLine: function() {
 		var padding = 0;
@@ -37247,6 +38051,7 @@ var h2d_ImageVerticalAlign = $hxEnums["h2d.ImageVerticalAlign"] = { __ename__:tr
 h2d_ImageVerticalAlign.__constructs__ = [h2d_ImageVerticalAlign.Top,h2d_ImageVerticalAlign.Bottom,h2d_ImageVerticalAlign.Middle];
 h2d_ImageVerticalAlign.__empty_constructs__ = [h2d_ImageVerticalAlign.Top,h2d_ImageVerticalAlign.Bottom,h2d_ImageVerticalAlign.Middle];
 var h2d_Text = function(font,parent) {
+	this.colorSegments = null;
 	this.realMaxWidth = -1;
 	this.constraintWidth = -1;
 	this.lineBreak = true;
@@ -37441,6 +38246,30 @@ h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
 			this.parentContainer.contentChanged(this);
 		}
 	}
+	,calcTextWidth: function(text) {
+		if(this.calcDone) {
+			var ow = this.calcWidth;
+			var oh = this.calcHeight;
+			var osh = this.calcSizeHeight;
+			var ox = this.calcXMin;
+			var oy = this.calcYMin;
+			this.initGlyphs(text,false);
+			var w = this.calcWidth;
+			this.calcWidth = ow;
+			this.calcHeight = oh;
+			this.calcSizeHeight = osh;
+			this.calcXMin = ox;
+			this.calcYMin = oy;
+			return w;
+		} else {
+			this.initGlyphs(text,false);
+			this.calcDone = false;
+			return this.calcWidth;
+		}
+	}
+	,splitText: function(text) {
+		return this.splitRawText(text,0,0);
+	}
 	,splitRawText: function(text,leftMargin,afterData,font,sizes,prevChar) {
 		if(prevChar == null) {
 			prevChar = -1;
@@ -37535,10 +38364,10 @@ h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
 				} else {
 					wLastSep = size;
 				}
-			} else if(x + esize + this.letterSpacing - wLastSep > maxWidth) {
+			} else if(x + esize + this.letterSpacing - wLastSep > maxWidth && this.lineBreak) {
 				newline = true;
 				lines.push(HxOverrides.substr(text,restPos,i - restPos));
-				restPos = i + 1;
+				restPos = font.charset.isSpace(cc) ? i + 1 : i;
 			}
 			if(e != null && cc != 10) {
 				x += esize + this.letterSpacing;
@@ -37614,6 +38443,14 @@ h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
 			xMin = x;
 			break;
 		}
+		var colors = this.colorSegments;
+		var colorsPos = 0;
+		if(colors != null && colors.length == 0) {
+			colors = null;
+		}
+		if(rebuild) {
+			this.glyphs.setDefaultColor(16777215);
+		}
 		var _g = 0;
 		var _g1 = t.length;
 		while(_g < _g1) {
@@ -37630,6 +38467,14 @@ h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
 			var e = c;
 			var offs = e.getKerningOffset(prevChar);
 			var esize = e.width + offs;
+			if(rebuild && colors != null && colors[colorsPos] == i) {
+				var c1 = colors[colorsPos + 1];
+				this.glyphs.setDefaultColor(c1,(c1 >>> 24) / 255);
+				colorsPos += 2;
+				if(colorsPos >= colors.length) {
+					colors = null;
+				}
+			}
 			if(cc == 10) {
 				if(x > xMax) {
 					xMax = x;
@@ -37693,6 +38538,18 @@ h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
 		} else {
 			return this.calcSizeHeight - this.font.baseLine + this.font.lineHeight;
 		}
+	}
+	,get_textWidth: function() {
+		if(this.textChanged && this.text != this.currentText) {
+			this.textChanged = false;
+			this.currentText = this.text;
+			this.calcDone = false;
+			this.needsRebuild = true;
+		}
+		if(!this.calcDone) {
+			this.initGlyphs(this.text,this.needsRebuild);
+		}
+		return this.calcWidth;
 	}
 	,set_maxWidth: function(w) {
 		if(this.maxWidth == w) {
@@ -37950,10 +38807,10 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 		this.xMin = Infinity;
 		this.sizePos = 0;
 		this.calcYMin = 0;
-		var metrics = [{ width : 0, height : this.font.lineHeight, baseLine : this.font.baseLine}];
+		var metrics = [{ width : 0, height : this.font.lineHeight, baseLine : this.font.baseLine, baseLineOffset : 0.}];
 		this.prevChar = -1;
 		this.newLine = true;
-		var splitNode = { node : null, pos : 0, font : this.font, prevChar : -1, width : 0, height : 0, baseLine : 0};
+		var splitNode = { node : null, pos : 0, font : this.font, prevChar : -1, width : 0, height : 0, baseLine : 0, baseLineOffset : 0};
 		if(doc.nodeType != Xml.Document && doc.nodeType != Xml.Element) {
 			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (doc.nodeType == null ? "null" : XmlType.toString(doc.nodeType)));
 		}
@@ -38031,6 +38888,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 			info.width = splitNode.width;
 			info.height = splitNode.height;
 			info.baseLine = splitNode.baseLine;
+			info.baseLineOffset = splitNode.baseLineOffset;
 			var c = fnt.glyphs.h[cc];
 			if(c == null) {
 				c = fnt.charset.resolveChar(cc,fnt.glyphs);
@@ -38076,7 +38934,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 				break;
 			case "br":
 				var fontInfo = _gthis.lineHeightMode == h2d_LineHeightMode.Constant ? _gthis.font : font;
-				metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine});
+				metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine, baseLineOffset : 0.});
 				splitNode.node = null;
 				_gthis.newLine = true;
 				_gthis.prevChar = -1;
@@ -38105,38 +38963,41 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 							var grow = i.height - i.dy - info.baseLine;
 							var h = info.height;
 							var bl = info.baseLine;
+							var offset = info.baseLineOffset;
 							if(grow > 0) {
 								h += grow;
 								bl += grow;
 							}
-							metrics.push({ width : size, height : Math.max(h,bl + i.dy), baseLine : bl});
+							var offset1 = offset;
+							if(offset1 == null) {
+								offset1 = 0.;
+							}
+							metrics.push({ width : size, height : Math.max(h,bl + i.dy), baseLine : bl, baseLineOffset : offset1});
 						} else {
-							metrics.push({ width : size, height : info.height, baseLine : info.baseLine});
+							var offset = info.baseLineOffset;
+							if(offset == null) {
+								offset = 0.;
+							}
+							metrics.push({ width : size, height : info.height, baseLine : info.baseLine, baseLineOffset : offset});
 						}
 					}
 				} else {
 					var info = metrics[metrics.length - 1];
 					info.width = size;
 					if(this.lineHeightMode == h2d_LineHeightMode.Accurate) {
-						var grow = i.height - i.dy - info.baseLine;
+						var grow = i.height - i.dy - info.height;
 						if(grow > 0) {
-							switch(this.imageVerticalAlign._hx_index) {
-							case 0:
-								info.height += grow;
-								break;
-							case 1:
-								info.baseLine += grow;
-								info.height += grow;
-								break;
-							case 2:
-								info.height += grow;
-								info.baseLine += grow / 2 | 0;
-								break;
+							info.height += grow;
+							if(this.imageVerticalAlign == h2d_ImageVerticalAlign.Middle) {
+								info.baseLine += grow * 0.5;
+								info.baseLineOffset += grow * 0.5;
 							}
 						}
-						grow = info.baseLine + i.dy;
-						if(info.height < grow) {
-							info.height = grow;
+						if(this.imageVerticalAlign == h2d_ImageVerticalAlign.Bottom) {
+							var grow = i.height - i.dy - info.baseLine;
+							if(grow > 0) {
+								info.baseLine += grow;
+							}
 						}
 					}
 				}
@@ -38151,7 +39012,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 			case "p":
 				if(!this.newLine) {
 					var fontInfo = _gthis.lineHeightMode == h2d_LineHeightMode.Constant ? _gthis.font : font;
-					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine});
+					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine, baseLineOffset : 0.});
 					splitNode.node = null;
 					_gthis.newLine = true;
 					_gthis.prevChar = -1;
@@ -38171,7 +39032,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 			if(nodeName == "p") {
 				if(!this.newLine) {
 					var fontInfo = _gthis.lineHeightMode == h2d_LineHeightMode.Constant ? _gthis.font : font;
-					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine});
+					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine, baseLineOffset : 0.});
 					splitNode.node = null;
 					_gthis.newLine = true;
 					_gthis.prevChar = -1;
@@ -38213,7 +39074,11 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 					var isComplement = i < text.length - 1 && font.charset.isComplementChar(text.charCodeAt(i + 1));
 					if(font.charset.isBreakChar(cc) && !isComplement) {
 						if(x > maxWidth && textSplit.length == 0 && splitNode.node != null) {
-							metrics.push({ width : x, height : info.height, baseLine : info.baseLine});
+							var offset = info.baseLineOffset;
+							if(offset == null) {
+								offset = 0.;
+							}
+							metrics.push({ width : x, height : info.height, baseLine : info.baseLine, baseLineOffset : offset});
 							x = wordSplit();
 						}
 						var size = x + esize + this.letterSpacing;
@@ -38263,6 +39128,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 							splitNode.width = x;
 							splitNode.height = info.height;
 							splitNode.baseLine = info.baseLine;
+							splitNode.baseLineOffset = info.baseLineOffset;
 							splitNode.font = font;
 						}
 					}
@@ -38270,7 +39136,11 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 						x += esize + this.letterSpacing;
 					}
 					if(newline) {
-						metrics.push({ width : x, height : info.height, baseLine : info.baseLine});
+						var offset1 = info.baseLineOffset;
+						if(offset1 == null) {
+							offset1 = 0.;
+						}
+						metrics.push({ width : x, height : info.height, baseLine : info.baseLine, baseLineOffset : offset1});
 						info.height = fontInfo.lineHeight;
 						info.baseLine = fontInfo.baseLine;
 						x = 0;
@@ -38284,15 +39154,23 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 				if(restPos < text.length) {
 					if(x > maxWidth) {
 						if(splitNode.node != null && splitNode.node != e) {
-							metrics.push({ width : x, height : info.height, baseLine : info.baseLine});
+							var offset = info.baseLineOffset;
+							if(offset == null) {
+								offset = 0.;
+							}
+							metrics.push({ width : x, height : info.height, baseLine : info.baseLine, baseLineOffset : offset});
 							x = wordSplit();
 						}
 					}
 					textSplit.push(HxOverrides.substr(text,restPos,null));
-					metrics.push({ width : x, height : info.height, baseLine : info.baseLine});
+					var offset = info.baseLineOffset;
+					if(offset == null) {
+						offset = 0.;
+					}
+					metrics.push({ width : x, height : info.height, baseLine : info.baseLine, baseLineOffset : offset});
 				}
 				if(this.newLine || metrics.length == 0) {
-					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine});
+					metrics.push({ width : 0, height : fontInfo.lineHeight, baseLine : fontInfo.baseLine, baseLineOffset : 0.});
 					textSplit.push("");
 				}
 				var v = textSplit.join("\n");
@@ -38308,6 +39186,83 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 			t = t.replace(h2d_HtmlText.REG_SPACES.r," ");
 		}
 		return t;
+	}
+	,splitText: function(text) {
+		if(this.realMaxWidth < 0) {
+			return text;
+		}
+		this.yPos = 0;
+		this.xMax = 0;
+		this.sizePos = 0;
+		this.calcYMin = 0;
+		var doc = this.parseText(text);
+		var splitNode = { node : null, font : this.font, width : 0, height : 0, baseLine : 0, baseLineOffset : 0, pos : 0, prevChar : -1};
+		var metrics = [{ width : 0, height : this.font.lineHeight, baseLine : this.font.baseLine, baseLineOffset : 0.}];
+		this.prevChar = -1;
+		this.newLine = true;
+		if(doc.nodeType != Xml.Document && doc.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (doc.nodeType == null ? "null" : XmlType.toString(doc.nodeType)));
+		}
+		var _g_current = 0;
+		var _g_array = doc.children;
+		while(_g_current < _g_array.length) {
+			var e = _g_array[_g_current++];
+			this.buildSizes(e,this.font,metrics,splitNode);
+		}
+		this.xMax = 0;
+		var addBreaks = null;
+		addBreaks = function(e) {
+			if(e.nodeType == Xml.Element) {
+				if(e.nodeType != Xml.Document && e.nodeType != Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (e.nodeType == null ? "null" : XmlType.toString(e.nodeType)));
+				}
+				var _g_current = 0;
+				var _g_array = e.children;
+				while(_g_current < _g_array.length) {
+					var x = _g_array[_g_current++];
+					addBreaks(x);
+				}
+			} else {
+				if(e.nodeType == Xml.Document || e.nodeType == Xml.Element) {
+					throw haxe_Exception.thrown("Bad node type, unexpected " + (e.nodeType == null ? "null" : XmlType.toString(e.nodeType)));
+				}
+				var text = e.nodeValue;
+				var startI = 0;
+				var index = Lambda.indexOf(e.parent,e);
+				var _g = 0;
+				var _g1 = text.length;
+				while(_g < _g1) {
+					var i = _g++;
+					if(text.charCodeAt(i) == 10) {
+						var pre = text.substring(startI,i);
+						if(pre != "") {
+							e.parent.insertChild(Xml.createPCData(pre),index++);
+						}
+						e.parent.insertChild(Xml.createElement("br"),index++);
+						startI = i + 1;
+					}
+				}
+				if(startI < text.length) {
+					var v = HxOverrides.substr(text,startI,null);
+					if(e.nodeType == Xml.Document || e.nodeType == Xml.Element) {
+						throw haxe_Exception.thrown("Bad node type, unexpected " + (e.nodeType == null ? "null" : XmlType.toString(e.nodeType)));
+					}
+					e.nodeValue = v;
+				} else {
+					e.parent.removeChild(e);
+				}
+			}
+		};
+		if(doc.nodeType != Xml.Document && doc.nodeType != Xml.Element) {
+			throw haxe_Exception.thrown("Bad node type, expected Element or Document but found " + (doc.nodeType == null ? "null" : XmlType.toString(doc.nodeType)));
+		}
+		var _g_current = 0;
+		var _g_array = doc.children;
+		while(_g_current < _g_array.length) {
+			var d = _g_array[_g_current++];
+			addBreaks(d);
+		}
+		return haxe_xml_Printer.print(doc);
 	}
 	,addNode: function(e,font,align,rebuild,metrics) {
 		var _gthis = this;
@@ -38585,7 +39540,7 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 					py += metrics[this.sizePos].baseLine - i.height;
 					break;
 				case 2:
-					py += metrics[this.sizePos].baseLine - i.height / 2;
+					py += (metrics[this.sizePos].baseLine + metrics[this.sizePos].baseLineOffset - i.height) / 2;
 					break;
 				}
 				if(py + i.dy < this.calcYMin) {
@@ -38968,6 +39923,8 @@ h2d_Interactive.prototype = $extend(h2d_Object.prototype,{
 	}
 	,checkBounds: function(e) {
 		switch(e.kind._hx_index) {
+		case 5:case 8:case 9:case 11:
+			return !this.hasFocus();
 		case 4:case 6:case 7:case 10:
 			return false;
 		default:
@@ -39101,6 +40058,24 @@ h2d_Interactive.prototype = $extend(h2d_Object.prototype,{
 			event.relX = x;
 			event.relY = y;
 		},onCancel,touchId);
+	}
+	,focus: function() {
+		if(this.scene == null || this.scene.events == null) {
+			return;
+		}
+		this.scene.events.focus(this);
+	}
+	,blur: function() {
+		if(this.hasFocus()) {
+			this.scene.events.blur();
+		}
+	}
+	,hasFocus: function() {
+		if(this.scene != null && this.scene.events != null) {
+			return this.scene.events.currentFocus == this;
+		} else {
+			return false;
+		}
 	}
 	,onOver: function(e) {
 	}
@@ -39373,7 +40348,8 @@ h3d_impl_RenderContext.prototype = {
 	,fillRec: function(v,type,out,pos) {
 		switch(type._hx_index) {
 		case 1:
-			out[pos] = v;
+			var view = new Uint32Array(out.buffer);
+			view[pos] = v | 0;
 			return 1;
 		case 3:
 			out[pos] = v;
@@ -39596,9 +40572,17 @@ h3d_impl_RenderContext.prototype = {
 				}
 			}
 			break;
+		case 18:
+			var v1 = v;
+			var view = new Uint32Array(out.buffer);
+			view[pos] = v1.handle.low;
+			var view = new Uint32Array(out.buffer);
+			view[pos + 1] = v1.handle.high;
+			break;
 		default:
 			throw haxe_Exception.thrown("assert " + Std.string(type));
 		}
+		return 0;
 	}
 	,shaderInfo: function(shaders,path) {
 		var name = path.split(".").pop();
@@ -39619,23 +40603,35 @@ h3d_impl_RenderContext.prototype = {
 	}
 	,fillGlobals: function(buf,s) {
 		var _gthis = this;
-		var g = s.vertex.globals;
-		var ptr = buf.vertex.globals;
+		var buf1 = buf.vertex;
+		var s1 = s.vertex;
+		var g = s1.globals;
+		var ptr = buf1.globals;
+		var hid = s1.paramsHandleCount;
 		while(g != null) {
 			var v = _gthis.globals.map.h[g.gid];
 			if(v == null) {
 				throw haxe_Exception.thrown("Missing global value " + g.path);
 			}
+			if(g.type._hx_index == 18) {
+				buf1.handles[hid++] = v;
+			}
 			_gthis.fillRec(v,g.type,ptr,g.pos);
 			g = g.next;
 		}
 		if(s.fragment != null) {
-			var g = s.fragment.globals;
-			var ptr = buf.fragment.globals;
+			var buf1 = buf.fragment;
+			var s1 = s.fragment;
+			var g = s1.globals;
+			var ptr = buf1.globals;
+			var hid = s1.paramsHandleCount;
 			while(g != null) {
 				var v = _gthis.globals.map.h[g.gid];
 				if(v == null) {
 					throw haxe_Exception.thrown("Missing global value " + g.path);
+				}
+				if(g.type._hx_index == 18) {
+					buf1.handles[hid++] = v;
 				}
 				_gthis.fillRec(v,g.type,ptr,g.pos);
 				g = g.next;
@@ -39653,45 +40649,42 @@ h3d_impl_RenderContext.prototype = {
 		var s1 = s.vertex;
 		var p = s1.params;
 		var ptr = buf1.params;
+		var hid = 0;
 		while(p != null) {
 			var v;
 			if(p.perObjectGlobal == null) {
-				switch(p.type._hx_index) {
-				case 1:case 3:
-					var index = p.instance;
-					var i;
-					if(curInstance == index) {
-						i = curInstanceValue;
-					} else {
-						var si = shaders;
-						curInstance = index;
-						if(compute) {
-							++index;
-						}
-						while(--index > 0) si = si.next;
-						curInstanceValue = si.s;
-						i = curInstanceValue;
+				var index = p.instance;
+				var i;
+				if(curInstance == index) {
+					i = curInstanceValue;
+				} else {
+					var si = shaders;
+					curInstance = index;
+					if(compute) {
+						++index;
 					}
+					while(--index > 0) si = si.next;
+					curInstanceValue = si.s;
+					i = curInstanceValue;
+				}
+				switch(p.type._hx_index) {
+				case 1:
+					var v1 = i.getParamFloatValue(p.index) | 0;
+					var view = new Uint32Array(ptr.buffer);
+					view[p.pos] = v1;
+					p = p.next;
+					continue;
+				case 3:
 					ptr[p.pos] = i.getParamFloatValue(p.index);
 					p = p.next;
 					continue;
+				case 18:
+					v = i.getParamValue(p.index);
+					buf1.handles[hid++] = v;
+					break;
 				default:
+					v = i.getParamValue(p.index);
 				}
-				var index1 = p.instance;
-				var v1;
-				if(curInstance == index1) {
-					v1 = curInstanceValue;
-				} else {
-					var si1 = shaders;
-					curInstance = index1;
-					if(compute) {
-						++index1;
-					}
-					while(--index1 > 0) si1 = si1.next;
-					curInstanceValue = si1.s;
-					v1 = curInstanceValue;
-				}
-				v = v1.getParamValue(p.index);
 				if(v == null) {
 					throw haxe_Exception.thrown("Missing param value " + Std.string(curInstanceValue) + "." + p.name);
 				}
@@ -39710,18 +40703,18 @@ h3d_impl_RenderContext.prototype = {
 				}
 				v = v3 ? v2.texture : v2;
 			} else {
-				var index2 = p.instance;
+				var index1 = p.instance;
 				var v4;
-				if(curInstance == index2) {
+				if(curInstance == index1) {
 					v4 = curInstanceValue;
 				} else {
-					var si2 = shaders;
-					curInstance = index2;
+					var si1 = shaders;
+					curInstance = index1;
 					if(compute) {
-						++index2;
+						++index1;
 					}
-					while(--index2 > 0) si2 = si2.next;
-					curInstanceValue = si2.s;
+					while(--index1 > 0) si1 = si1.next;
+					curInstanceValue = si1.s;
 					v4 = curInstanceValue;
 				}
 				var v5 = v4.getParamValue(p.index);
@@ -39840,45 +40833,42 @@ h3d_impl_RenderContext.prototype = {
 			var s1 = s.fragment;
 			var p = s1.params;
 			var ptr = buf1.params;
+			var hid = 0;
 			while(p != null) {
 				var v;
 				if(p.perObjectGlobal == null) {
-					switch(p.type._hx_index) {
-					case 1:case 3:
-						var index = p.instance;
-						var i;
-						if(curInstance == index) {
-							i = curInstanceValue;
-						} else {
-							var si = shaders;
-							curInstance = index;
-							if(compute) {
-								++index;
-							}
-							while(--index > 0) si = si.next;
-							curInstanceValue = si.s;
-							i = curInstanceValue;
+					var index = p.instance;
+					var i;
+					if(curInstance == index) {
+						i = curInstanceValue;
+					} else {
+						var si = shaders;
+						curInstance = index;
+						if(compute) {
+							++index;
 						}
+						while(--index > 0) si = si.next;
+						curInstanceValue = si.s;
+						i = curInstanceValue;
+					}
+					switch(p.type._hx_index) {
+					case 1:
+						var v1 = i.getParamFloatValue(p.index) | 0;
+						var view = new Uint32Array(ptr.buffer);
+						view[p.pos] = v1;
+						p = p.next;
+						continue;
+					case 3:
 						ptr[p.pos] = i.getParamFloatValue(p.index);
 						p = p.next;
 						continue;
+					case 18:
+						v = i.getParamValue(p.index);
+						buf1.handles[hid++] = v;
+						break;
 					default:
+						v = i.getParamValue(p.index);
 					}
-					var index1 = p.instance;
-					var v1;
-					if(curInstance == index1) {
-						v1 = curInstanceValue;
-					} else {
-						var si1 = shaders;
-						curInstance = index1;
-						if(compute) {
-							++index1;
-						}
-						while(--index1 > 0) si1 = si1.next;
-						curInstanceValue = si1.s;
-						v1 = curInstanceValue;
-					}
-					v = v1.getParamValue(p.index);
 					if(v == null) {
 						throw haxe_Exception.thrown("Missing param value " + Std.string(curInstanceValue) + "." + p.name);
 					}
@@ -39897,18 +40887,18 @@ h3d_impl_RenderContext.prototype = {
 					}
 					v = v3 ? v2.texture : v2;
 				} else {
-					var index2 = p.instance;
+					var index1 = p.instance;
 					var v4;
-					if(curInstance == index2) {
+					if(curInstance == index1) {
 						v4 = curInstanceValue;
 					} else {
-						var si2 = shaders;
-						curInstance = index2;
+						var si1 = shaders;
+						curInstance = index1;
 						if(compute) {
-							++index2;
+							++index1;
 						}
-						while(--index2 > 0) si2 = si2.next;
-						curInstanceValue = si2.s;
+						while(--index1 > 0) si1 = si1.next;
+						curInstanceValue = si1.s;
 						v4 = curInstanceValue;
 					}
 					var v5 = v4.getParamValue(p.index);
@@ -40078,6 +41068,7 @@ h2d_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		this.inFilter = null;
 		this.globals.set("time",this.time);
 		this.globals.set("global.time",this.time);
+		this.globals.set("depthMap",{ texture : this.engine.driver.getDefaultDepthBuffer(), channel : hxsl_Channel.R});
 		var _this = this.baseShader;
 		_this.constModified = true;
 		_this.pixelAlign__ = false;
@@ -40606,9 +41597,7 @@ h2d_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		var buffers = this.shaderBuffers;
 		this.fillParams(buffers,this.compiledShader,this.currentShaders);
 		this.engine.selectMaterial(this.pass);
-		this.engine.uploadShaderBuffers(buffers,1);
-		this.engine.uploadShaderBuffers(buffers,2);
-		this.engine.uploadShaderBuffers(buffers,3);
+		this.engine.uploadInstanceShaderBuffers(buffers);
 	}
 	,beginDrawBatchState: function(obj) {
 		if(!this.beginDraw(obj,null,true)) {
@@ -41562,26 +42551,21 @@ h2d_ScaleGrid.prototype = $extend(h2d_TileGroup.prototype,{
 			_this_d = this.matD;
 			_this_x = this.absX;
 			_this_y = this.absY;
-			var x = 0.;
-			var y = 0.;
-			if(y == null) {
-				y = 0.;
+			var p = null;
+			if(p == null) {
+				p = new h2d_col_PointImpl(0.,0.);
 			}
-			if(x == null) {
-				x = 0.;
-			}
-			var s_x = x;
-			var s_y = y;
-			s_x = Math.sqrt(_this_a * _this_a + _this_b * _this_b);
-			s_y = Math.sqrt(_this_c * _this_c + _this_d * _this_d);
+			p.x = Math.sqrt(_this_a * _this_a + _this_b * _this_b);
+			p.y = Math.sqrt(_this_c * _this_c + _this_d * _this_d);
 			if(_this_a * _this_d - _this_b * _this_c < 0) {
-				s_x *= -1;
-				s_y *= -1;
+				p.x *= -1;
+				p.y *= -1;
 			}
-			if(this.currentScaleX != s_x || this.currentScaleY != s_y) {
+			var s = p;
+			if(this.currentScaleX != s.x || this.currentScaleY != s.y) {
 				needUpdate = true;
-				this.currentScaleX = s_x;
-				this.currentScaleY = s_y;
+				this.currentScaleX = s.x;
+				this.currentScaleY = s.y;
 			}
 		}
 		if(this.content.isEmpty() || this.tile != this.contentTile) {
@@ -41621,27 +42605,22 @@ h2d_ScaleGrid.prototype = $extend(h2d_TileGroup.prototype,{
 			_this_d = this.matD;
 			_this_x = this.absX;
 			_this_y = this.absY;
-			var x = 0.;
-			var y = 0.;
-			if(y == null) {
-				y = 0.;
+			var p = null;
+			if(p == null) {
+				p = new h2d_col_PointImpl(0.,0.);
 			}
-			if(x == null) {
-				x = 0.;
-			}
-			var s_x = x;
-			var s_y = y;
-			s_x = Math.sqrt(_this_a * _this_a + _this_b * _this_b);
-			s_y = Math.sqrt(_this_c * _this_c + _this_d * _this_d);
+			p.x = Math.sqrt(_this_a * _this_a + _this_b * _this_b);
+			p.y = Math.sqrt(_this_c * _this_c + _this_d * _this_d);
 			if(_this_a * _this_d - _this_b * _this_c < 0) {
-				s_x *= -1;
-				s_y *= -1;
+				p.x *= -1;
+				p.y *= -1;
 			}
-			if(s_x == 0. || s_y == 0.) {
+			var s = p;
+			if(s.x == 0. || s.y == 0.) {
 				return;
 			}
-			invScaleX /= s_x;
-			invScaleY /= s_y;
+			invScaleX /= s.x;
+			invScaleY /= s.y;
 			unscaledBl *= invScaleX;
 			unscaledBr *= invScaleX;
 			unscaledBt *= invScaleY;
@@ -42766,6 +43745,1060 @@ var h2d_Align = $hxEnums["h2d.Align"] = { __ename__:true,__constructs__:null
 };
 h2d_Align.__constructs__ = [h2d_Align.Left,h2d_Align.Right,h2d_Align.Center,h2d_Align.MultilineRight,h2d_Align.MultilineCenter];
 h2d_Align.__empty_constructs__ = [h2d_Align.Left,h2d_Align.Right,h2d_Align.Center,h2d_Align.MultilineRight,h2d_Align.MultilineCenter];
+var h2d_TextInput = function(font,parent) {
+	this.maxHistorySize = 100;
+	this.lastClick = 0.;
+	this.lastChange = 0.;
+	this.redo = [];
+	this.undo = [];
+	this.scrollX = 0.;
+	this.constraintHeight = -1.;
+	this.cursorBlink = 0.;
+	this.useSoftwareKeyboard = true;
+	this.canEdit = true;
+	this.multiline = false;
+	this.cursorBlinkTime = 0.5;
+	this.cursorIndex = -1;
+	var _gthis = this;
+	h2d_Text.call(this,font,parent);
+	this.interactive = new h2d_Interactive(0,0);
+	this.interactive.set_cursor(hxd_Cursor.TextInput);
+	this.interactive.onPush = function(e) {
+		_gthis.onPush(e);
+		if(!e.cancel && e.button == 0) {
+			if(!_gthis.interactive.hasFocus()) {
+				e.kind = hxd_EventKind.EFocus;
+				_gthis.onFocus(e);
+				e.kind = hxd_EventKind.EPush;
+				if(e.cancel) {
+					return;
+				}
+				_gthis.interactive.focus();
+			}
+			_gthis.cursorBlink = 0;
+			var startIndex = _gthis.textPos(e.relX,e.relY);
+			if(_gthis.cursorIndex != startIndex || _gthis.selectionRange != null) {
+				_gthis.cursorIndex = startIndex;
+				_gthis.selectionRange = null;
+				_gthis.onCursorChange();
+			}
+			var pt = new h2d_col_PointImpl(0.,0.);
+			var scene = _gthis.getScene();
+			if(scene == null) {
+				return;
+			}
+			scene.startCapture(function(e) {
+				pt.x = e.relX;
+				pt.y = e.relY;
+				_gthis.globalToLocal(pt);
+				var index = _gthis.textPos(pt.x,pt.y);
+				if(index == startIndex) {
+					_gthis.selectionRange = null;
+				} else if(index < startIndex) {
+					_gthis.selectionRange = { start : index, length : startIndex - index};
+				} else {
+					_gthis.selectionRange = { start : startIndex, length : index - startIndex};
+				}
+				_gthis.selectionSize = 0;
+				_gthis.cursorIndex = index;
+				_gthis.onCursorChange();
+				if(e.kind == hxd_EventKind.ERelease || _gthis.getScene() != scene) {
+					scene.stopCapture();
+				}
+			});
+		}
+	};
+	this.interactive.onKeyDown = function(e) {
+		_gthis.onKeyDown(e);
+		_gthis.handleKey(e);
+	};
+	this.interactive.onTextInput = function(e) {
+		_gthis.onTextInput(e);
+		_gthis.handleKey(e);
+	};
+	this.interactive.onFocus = function(e) {
+		_gthis.onFocus(e);
+		if(_gthis.useSoftwareKeyboard && _gthis.canEdit) {
+			h2d_TextInput.showSoftwareKeyboard(_gthis);
+		}
+	};
+	this.interactive.onFocusLost = function(e) {
+		_gthis.onFocusLost(e);
+		if(!e.cancel) {
+			_gthis.onBlur();
+		}
+	};
+	this.interactive.onClick = function(e) {
+		_gthis.onClick(e);
+		if(e.cancel) {
+			return;
+		}
+		var t = HxOverrides.now() / 1000;
+		if(t - _gthis.lastClick < 0.3 && _gthis.getTextLength() != 0) {
+			var start = _gthis.getWordStart();
+			var tmp = _gthis.getWordStart();
+			var tmp1 = _gthis.getWordEnd() - start;
+			_gthis.selectionRange = { start : tmp, length : tmp1};
+			_gthis.selectionSize = 0;
+			_gthis.cursorIndex = _gthis.selectionRange.start + _gthis.selectionRange.length;
+		}
+		_gthis.lastClick = t;
+	};
+	this.interactive.onKeyUp = function(e) {
+		_gthis.onKeyUp(e);
+	};
+	this.interactive.onRelease = function(e) {
+		_gthis.onRelease(e);
+	};
+	this.interactive.onKeyUp = function(e) {
+		_gthis.onKeyUp(e);
+	};
+	this.interactive.onMove = function(e) {
+		_gthis.onMove(e);
+	};
+	this.interactive.onOver = function(e) {
+		_gthis.onOver(e);
+	};
+	this.interactive.onOut = function(e) {
+		_gthis.onOut(e);
+	};
+	this.interactive.onWheel = function(e) {
+		e.propagate = true;
+	};
+	this.interactive.set_cursor(hxd_Cursor.TextInput);
+	this.addChildAt(this.interactive,0);
+};
+$hxClasses["h2d.TextInput"] = h2d_TextInput;
+h2d_TextInput.__name__ = "h2d.TextInput";
+h2d_TextInput.showSoftwareKeyboard = function(target) {
+};
+h2d_TextInput.hideSoftwareKeyboard = function(target) {
+};
+h2d_TextInput.__super__ = h2d_Text;
+h2d_TextInput.prototype = $extend(h2d_Text.prototype,{
+	constraintSize: function(width,height) {
+		h2d_Text.prototype.constraintSize.call(this,width,height);
+		this.constraintHeight = height;
+	}
+	,getVisibleLines: function() {
+		var v = Math.ceil(this.constraintHeight / this.font.lineHeight);
+		if(v <= 0) {
+			v = 10;
+		}
+		return v;
+	}
+	,handleKey: function(e) {
+		if(e.cancel || this.cursorIndex < 0) {
+			return;
+		}
+		var oldIndex = this.cursorIndex;
+		var oldText = this.text;
+		switch(e.keyCode) {
+		case 8:
+			if(this.selectionRange != null) {
+				if(!this.canEdit) {
+					return;
+				}
+				this.beforeChange();
+				this.cutSelection();
+				this.onChange();
+			} else if(this.cursorIndex > 0 && this.canEdit) {
+				this.beforeChange();
+				if(this.selectionRange == null) {
+					var newIndex = hxd_Key.isDown(17) ? this.getWordStart() : this.cursorIndex - 1;
+					this.selectionRange = { start : newIndex, length : this.cursorIndex - newIndex};
+				}
+				this.cutSelection();
+				this.onChange();
+			}
+			break;
+		case 9:
+			if(this.insertTabs != null && this.canEdit) {
+				this.inputText(this.insertTabs);
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 27:
+			this.cursorIndex = -1;
+			this.interactive.blur();
+			return;
+		case 33:
+			if(this.multiline) {
+				this.moveCursorVertically(-this.getVisibleLines());
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 34:
+			if(this.multiline) {
+				this.moveCursorVertically(this.getVisibleLines());
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 35:
+			if(this.multiline && !hxd_Key.isDown(17)) {
+				var currentLine = this.getCurrentLine();
+				this.cursorIndex = currentLine.startIndex + currentLine.value.length - 1;
+			} else {
+				this.cursorIndex = this.getTextLength();
+			}
+			this.onCursorChange();
+			break;
+		case 36:
+			if(this.multiline && !hxd_Key.isDown(17)) {
+				var currentLine = this.getCurrentLine();
+				this.cursorIndex = currentLine.startIndex;
+			} else {
+				this.cursorIndex = 0;
+			}
+			this.onCursorChange();
+			break;
+		case 37:
+			if(hxd_Key.isDown(17)) {
+				this.cursorIndex = this.getWordStart();
+				this.onCursorChange();
+			} else if(this.cursorIndex > 0) {
+				this.cursorIndex--;
+				this.onCursorChange();
+			}
+			break;
+		case 38:
+			if(this.multiline) {
+				this.moveCursorVertically(-1);
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 39:
+			if(hxd_Key.isDown(17)) {
+				this.cursorIndex = this.getWordEnd();
+				this.onCursorChange();
+			} else if(this.cursorIndex < this.getTextLength()) {
+				this.cursorIndex++;
+				this.onCursorChange();
+			}
+			break;
+		case 40:
+			if(this.multiline) {
+				this.moveCursorVertically(1);
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 46:
+			if(this.selectionRange != null) {
+				if(!this.canEdit) {
+					return;
+				}
+				this.beforeChange();
+				this.cutSelection();
+				this.onChange();
+			} else if(this.cursorIndex < this.getTextLength() && this.canEdit) {
+				this.beforeChange();
+				if(this.selectionRange == null) {
+					this.selectionRange = { start : this.cursorIndex, length : hxd_Key.isDown(17) ? this.getWordEnd() - this.cursorIndex : 1};
+				}
+				this.cutSelection();
+				this.onChange();
+			}
+			break;
+		case 65:
+			if(hxd_Key.isDown(17)) {
+				if(this.text != "") {
+					this.cursorIndex = this.getTextLength();
+					this.selectionRange = { start : 0, length : this.cursorIndex};
+					this.selectionSize = 0;
+					this.onCursorChange();
+				}
+				return;
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 67:
+			if(hxd_Key.isDown(17)) {
+				if(this.text != "" && this.selectionRange != null) {
+					hxd_System.setClipboardText(HxOverrides.substr(this.text,this.selectionRange.start,this.selectionRange.length));
+				}
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 86:
+			if(hxd_Key.isDown(17)) {
+				if(!this.canEdit) {
+					return;
+				}
+				var t = hxd_System.getClipboardText();
+				if(t != null && t.length > 0) {
+					this.inputText(t.split("\r\n").join("\n").split("\r").join("\n"));
+				}
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 88:
+			if(hxd_Key.isDown(17)) {
+				if(this.text != "" && this.selectionRange != null) {
+					if(hxd_System.setClipboardText(HxOverrides.substr(this.text,this.selectionRange.start,this.selectionRange.length))) {
+						if(!this.canEdit) {
+							return;
+						}
+						this.beforeChange();
+						this.cutSelection();
+						this.onChange();
+					}
+				}
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 89:
+			if(hxd_Key.isDown(17)) {
+				if(this.redo.length > 0 && this.canEdit) {
+					this.undo.push(this.curHistoryState());
+					this.setState(this.redo.pop());
+					this.onChange();
+				}
+				return;
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 90:
+			if(hxd_Key.isDown(17)) {
+				if(this.undo.length > 0 && this.canEdit) {
+					this.redo.push(this.curHistoryState());
+					this.setState(this.undo.pop());
+					this.onChange();
+				}
+				return;
+			} else {
+				if(e.kind == hxd_EventKind.EKeyDown) {
+					return;
+				}
+				if(e.charCode != 0 && this.canEdit) {
+					if(!this.font.hasChar(e.charCode)) {
+						return;
+					}
+					var code = e.charCode;
+					this.inputText(String.fromCodePoint(code));
+				}
+			}
+			break;
+		case 13:case 108:
+			if(!this.multiline) {
+				this.cursorIndex = -1;
+				this.interactive.blur();
+				return;
+			} else if(this.canEdit) {
+				this.inputText("\n");
+			}
+			break;
+		default:
+			if(e.kind == hxd_EventKind.EKeyDown) {
+				return;
+			}
+			if(e.charCode != 0 && this.canEdit) {
+				if(!this.font.hasChar(e.charCode)) {
+					return;
+				}
+				var code = e.charCode;
+				this.inputText(String.fromCodePoint(code));
+			}
+		}
+		this.cursorBlink = 0.;
+		if(hxd_Key.isDown(16) && this.text == oldText) {
+			if(this.cursorIndex == oldIndex) {
+				return;
+			}
+			if(this.selectionRange == null) {
+				this.selectionRange = oldIndex < this.cursorIndex ? { start : oldIndex, length : this.cursorIndex - oldIndex} : { start : this.cursorIndex, length : oldIndex - this.cursorIndex};
+			} else if(oldIndex == this.selectionRange.start) {
+				this.selectionRange.length += oldIndex - this.cursorIndex;
+				this.selectionRange.start = this.cursorIndex;
+			} else {
+				this.selectionRange.length += this.cursorIndex - oldIndex;
+			}
+			if(this.selectionRange.length == 0) {
+				this.selectionRange = null;
+			} else if(this.selectionRange.length < 0) {
+				this.selectionRange.start += this.selectionRange.length;
+				this.selectionRange.length = -this.selectionRange.length;
+			}
+			this.selectionSize = 0;
+			this.onCursorChange();
+		} else if(oldText != this.text || this.cursorIndex != oldIndex) {
+			this.selectionRange = null;
+		}
+	}
+	,getTextPos: function(cursor) {
+		var lines = this.text.split("\n");
+		var pos = 0;
+		var _g = 0;
+		while(_g < lines.length) {
+			var line = lines[_g];
+			++_g;
+			var _g1 = 0;
+			var _g2 = this.splitRawText(line).split("\n");
+			while(_g1 < _g2.length) {
+				var p = _g2[_g1];
+				++_g1;
+				if(cursor < p.length) {
+					return pos + cursor;
+				}
+				pos += p.length;
+				if(this.font.charset.isSpace(this.text.charCodeAt(pos))) {
+					++pos;
+				}
+				cursor -= p.length + 1;
+			}
+			++pos;
+		}
+		var max = this.text.length;
+		if(pos < 0) {
+			return 0;
+		} else if(pos > max) {
+			return max;
+		} else {
+			return pos;
+		}
+	}
+	,getCursorPos: function(pos) {
+		var lines = this.text.split("\n");
+		var cursor = 0;
+		var spos = 0;
+		var _g = 0;
+		while(_g < lines.length) {
+			var line = lines[_g];
+			++_g;
+			var _g1 = 0;
+			var _g2 = this.splitRawText(line).split("\n");
+			while(_g1 < _g2.length) {
+				var p = _g2[_g1];
+				++_g1;
+				if(pos - spos < p.length) {
+					return pos - spos + cursor;
+				}
+				spos += p.length;
+				if(this.font.charset.isSpace(this.text.charCodeAt(spos))) {
+					++spos;
+				}
+				cursor += p.length + 1;
+			}
+			++spos;
+		}
+		return cursor;
+	}
+	,inputText: function(t) {
+		this.beforeChange();
+		if(this.selectionRange != null) {
+			this.cutSelection();
+		}
+		var pos = this.getTextPos(this.cursorIndex);
+		this.set_text(HxOverrides.substr(this.text,0,pos) + t + HxOverrides.substr(this.text,pos,null));
+		this.cursorIndex += t.length;
+		this.onChange();
+	}
+	,cutSelection: function() {
+		if(this.selectionRange == null) {
+			return false;
+		}
+		this.cursorIndex = this.selectionRange.start;
+		var end = this.cursorIndex + this.selectionRange.length;
+		this.set_text(HxOverrides.substr(this.text,0,this.getTextPos(this.cursorIndex)) + HxOverrides.substr(this.text,this.getTextPos(end),null));
+		this.selectionRange = null;
+		return true;
+	}
+	,isWordLimit: function(pos) {
+		return this.font.charset.isSpace(this.text.charCodeAt(pos));
+	}
+	,getWordEnd: function() {
+		var len = this.getTextLength();
+		if(this.cursorIndex >= len) {
+			return len;
+		}
+		var ret = this.getTextPos(this.cursorIndex);
+		while(ret < len && this.isWordLimit(ret)) ++ret;
+		while(ret < len && !this.isWordLimit(ret)) ++ret;
+		return this.getCursorPos(ret);
+	}
+	,getWordStart: function() {
+		if(this.cursorIndex <= 0) {
+			return 0;
+		}
+		var ret = this.getTextPos(this.cursorIndex);
+		while(ret > 0 && this.isWordLimit(ret - 1)) --ret;
+		while(ret > 0 && !this.isWordLimit(ret - 1)) --ret;
+		return this.getCursorPos(ret);
+	}
+	,moveCursorVertically: function(yDiff) {
+		if(!this.multiline || yDiff == 0) {
+			return;
+		}
+		var lines = [];
+		var cursorLineIndex = -1;
+		var currLineIndex = 0;
+		var currIndex = 0;
+		var _g = 0;
+		var _g1 = this.getSplitLines();
+		while(_g < _g1.length) {
+			var line = _g1[_g];
+			++_g;
+			lines.push({ line : line, startIndex : currIndex});
+			var prevIndex = currIndex;
+			currIndex += line.length;
+			if(this.cursorIndex >= prevIndex && this.cursorIndex < currIndex) {
+				cursorLineIndex = currLineIndex;
+			}
+			++currLineIndex;
+		}
+		if(cursorLineIndex == -1) {
+			return;
+		}
+		var inSelect = hxd_Key.isDown(16);
+		var v = cursorLineIndex + yDiff;
+		var min = inSelect ? -1 : 0;
+		var max = inSelect ? lines.length : lines.length - 1;
+		var destinationIndex = v < min ? min : v > max ? max : v;
+		if(destinationIndex == cursorLineIndex) {
+			return;
+		}
+		if(destinationIndex == lines.length) {
+			this.cursorIndex = this.getTextLength();
+			this.onCursorChange();
+			return;
+		}
+		if(destinationIndex == -1) {
+			this.cursorIndex = 0;
+			this.onCursorChange();
+			return;
+		}
+		var current = lines[cursorLineIndex];
+		var xOffset = 0.;
+		var prevCC = null;
+		var cI = 0;
+		while(current.startIndex + cI < this.cursorIndex) {
+			var cc = HxOverrides.cca(current.line,cI);
+			var _this = this.font;
+			var c = _this.glyphs.h[cc];
+			if(c == null) {
+				c = _this.charset.resolveChar(cc,_this.glyphs);
+				if(c == null) {
+					c = cc == 13 || cc == 10 ? _this.nullChar : _this.defaultChar;
+				}
+			}
+			var c1 = c;
+			xOffset += c1.width + c1.getKerningOffset(prevCC) + this.letterSpacing;
+			prevCC = cc;
+			++cI;
+		}
+		var destination = lines[destinationIndex];
+		var currOffset = 0.;
+		prevCC = null;
+		var _g = 0;
+		var _g1 = destination.line.length;
+		while(_g < _g1) {
+			var cI = _g++;
+			var cc = destination.line.charCodeAt(cI);
+			var _this = this.font;
+			var c = _this.glyphs.h[cc];
+			if(c == null) {
+				c = _this.charset.resolveChar(cc,_this.glyphs);
+				if(c == null) {
+					c = cc == 13 || cc == 10 ? _this.nullChar : _this.defaultChar;
+				}
+			}
+			var c1 = c;
+			var newCurrOffset = currOffset + c1.width + c1.getKerningOffset(prevCC) + this.letterSpacing;
+			if(newCurrOffset > xOffset) {
+				this.cursorIndex = destination.startIndex + cI + 1;
+				if(xOffset - currOffset < newCurrOffset - xOffset) {
+					this.cursorIndex--;
+				}
+				this.onCursorChange();
+				return;
+			}
+			currOffset = newCurrOffset;
+			prevCC = cc;
+		}
+		this.cursorIndex = destination.startIndex + destination.line.length;
+		if(destination.line.charAt(destination.line.length - 1) == "\n") {
+			this.cursorIndex--;
+		}
+		this.onCursorChange();
+	}
+	,setState: function(h) {
+		this.set_text(h.t);
+		this.cursorIndex = h.c;
+		this.selectionRange = h.sel;
+		if(this.selectionRange != null) {
+			this.cursorIndex = this.selectionRange.start + this.selectionRange.length;
+		}
+	}
+	,curHistoryState: function() {
+		return { t : this.text, c : this.cursorIndex, sel : this.selectionRange == null ? null : { start : this.selectionRange.start, length : this.selectionRange.length}};
+	}
+	,beforeChange: function() {
+		var t = HxOverrides.now() / 1000;
+		if(t - this.lastChange < 1) {
+			this.lastChange = t;
+			return;
+		}
+		this.lastChange = t;
+		this.undo.push(this.curHistoryState());
+		this.redo = [];
+		while(this.undo.length > this.maxHistorySize) this.undo.shift();
+	}
+	,getTextLength: function() {
+		this.getSplitLines();
+		return this.splitTextSize;
+	}
+	,getSplitLines: function() {
+		if(this.splitLines != null && !(this.needsRebuild || this.textChanged)) {
+			return this.splitLines;
+		}
+		var lines = this.text.split("\n");
+		this.splitLines = [];
+		this.splitTextSize = 0;
+		var _g = 0;
+		while(_g < lines.length) {
+			var l = lines[_g];
+			++_g;
+			var _g1 = 0;
+			var _g2 = this.splitText(l).split("\n");
+			while(_g1 < _g2.length) {
+				var l1 = _g2[_g1];
+				++_g1;
+				this.splitLines.push(l1 + "\n");
+				this.splitTextSize += l1.length + 1;
+			}
+		}
+		if(this.splitTextSize > 0) {
+			this.splitTextSize--;
+		}
+		return this.splitLines;
+	}
+	,getCurrentLine: function() {
+		var lines = this.getSplitLines();
+		var currIndex = 0;
+		var _g = 0;
+		var _g1 = lines.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var newCurrIndex = currIndex + lines[i].length;
+			if(this.cursorIndex < newCurrIndex) {
+				return { value : lines[i], startIndex : currIndex};
+			}
+			currIndex = newCurrIndex;
+		}
+		return { value : "", startIndex : -1};
+	}
+	,getCursorXOffset: function() {
+		var lines = this.getSplitLines();
+		var offset = this.cursorIndex;
+		var currLine = this.getCurrentLine().value;
+		var currIndex = 0;
+		var _g = 0;
+		var _g1 = lines.length;
+		while(_g < _g1) {
+			var i = _g++;
+			currIndex += lines[i].length;
+			if(this.cursorIndex < currIndex) {
+				break;
+			} else {
+				offset -= lines[i].length;
+			}
+		}
+		return this.calcTextWidth(HxOverrides.substr(currLine,0,offset));
+	}
+	,getCursorYOffset: function() {
+		var lines = this.getSplitLines();
+		var currIndex = 0;
+		var lineNum = 0;
+		var _g = 0;
+		var _g1 = lines.length;
+		while(_g < _g1) {
+			var i = _g++;
+			currIndex += lines[i].length;
+			if(this.cursorIndex < currIndex) {
+				lineNum = i;
+				break;
+			}
+		}
+		return lineNum * this.font.lineHeight;
+	}
+	,set_text: function(t) {
+		h2d_Text.prototype.set_text.call(this,t);
+		if(this.cursorIndex > this.getTextLength()) {
+			this.cursorIndex = this.getTextLength();
+		}
+		return t;
+	}
+	,set_font: function(f) {
+		h2d_Text.prototype.set_font.call(this,f);
+		this.cursorTile = h2d_Tile.fromColor(16777215,1,this.font.size);
+		this.cursorTile.dy = 2;
+		this.selectionTile = h2d_Tile.fromColor(3381759,0,Math.ceil(this.font.lineHeight));
+		return f;
+	}
+	,splitRawText: function(text,leftMargin,afterData,font,sizes,prevChar) {
+		if(prevChar == null) {
+			prevChar = -1;
+		}
+		if(afterData == null) {
+			afterData = 0.;
+		}
+		if(leftMargin == null) {
+			leftMargin = 0.;
+		}
+		if(!this.multiline) {
+			return text;
+		}
+		return h2d_Text.prototype.splitRawText.call(this,text,leftMargin,afterData,font,sizes,prevChar);
+	}
+	,getInputWidth: function() {
+		if(this.inputWidth != null) {
+			return this.inputWidth;
+		}
+		if(this.realMaxWidth >= 0) {
+			return Math.ceil(this.realMaxWidth);
+		}
+		return -1;
+	}
+	,initGlyphs: function(text,rebuild) {
+		if(rebuild == null) {
+			rebuild = true;
+		}
+		h2d_Text.prototype.initGlyphs.call(this,text,rebuild);
+		if(rebuild) {
+			this.splitLines = null;
+			this.calcWidth += this.cursorTile.width;
+			var iw = this.getInputWidth();
+			if(iw >= 0 && this.calcWidth > iw) {
+				this.calcWidth = iw;
+			}
+		}
+	}
+	,textPos: function(x,y) {
+		x += this.scrollX;
+		var lineIndex = Math.floor(y / this.font.lineHeight);
+		var lines = this.getSplitLines();
+		var max = lines.length - 1;
+		if(lineIndex < 0) {
+			lineIndex = 0;
+		} else if(lineIndex > max) {
+			lineIndex = max;
+		}
+		var selectedLine = lines[lineIndex];
+		var pos = 0;
+		var _g = 0;
+		var _g1 = lineIndex;
+		while(_g < _g1) {
+			var i = _g++;
+			pos += lines[i].length;
+		}
+		var linePos = 0;
+		while(linePos < selectedLine.length) {
+			if(this.calcTextWidth(HxOverrides.substr(selectedLine,0,linePos + 1)) > x) {
+				++pos;
+				break;
+			}
+			++pos;
+			++linePos;
+		}
+		return pos - 1;
+	}
+	,syncInteract: function() {
+		var lines = this.getSplitLines();
+		var iw = this.getInputWidth();
+		var tmp = iw >= 0 ? iw : this.get_textWidth();
+		this.interactive.width = tmp;
+		var ih = this.font.lineHeight * (lines.length == 0 ? 1 : lines.length);
+		if(this.multiline && this.constraintHeight >= 0 && ih < this.constraintHeight) {
+			ih = this.constraintHeight;
+		}
+		this.interactive.height = ih;
+	}
+	,getBoundsRec: function(relativeTo,out,forSize) {
+		this.syncInteract();
+		h2d_Text.prototype.getBoundsRec.call(this,relativeTo,out,forSize);
+	}
+	,sync: function(ctx) {
+		this.syncInteract();
+		h2d_Text.prototype.sync.call(this,ctx);
+	}
+	,draw: function(ctx) {
+		var iw = this.getInputWidth();
+		if(this.multiline) {
+			iw = -1;
+			this.scrollX = 0;
+		}
+		if(iw >= 0) {
+			var x = iw;
+			var y = this.font.lineHeight * this.getSplitLines().length;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var h = this.localToGlobal(new h2d_col_PointImpl(x,y));
+			ctx.clipRenderZone(this.absX,this.absY,h.x - this.absX,h.y - this.absY);
+		}
+		var lastCursorY = this.cursorY;
+		if(this.cursorIndex >= 0 && (this.text != this.cursorText || this.cursorIndex != this.cursorXIndex)) {
+			if(this.cursorIndex > this.getTextLength()) {
+				this.cursorIndex = this.getTextLength();
+			}
+			this.cursorText = this.text;
+			this.cursorXIndex = this.cursorIndex;
+			this.cursorX = this.getCursorXOffset();
+			this.cursorY = this.getCursorYOffset();
+			if(iw >= 0 && this.cursorX - this.scrollX >= iw) {
+				this.scrollX = this.cursorX - iw + 1;
+			} else if(this.cursorX < this.scrollX && this.cursorIndex > 0) {
+				var b = this.cursorX | 0;
+				this.scrollX = this.cursorX - (iw > b ? b : iw);
+			} else if(this.cursorX < this.scrollX) {
+				this.scrollX = this.cursorX;
+			}
+		}
+		if(this.multiline && this.cursorY != lastCursorY) {
+			var p = this.parentContainer;
+			var x = this.cursorX;
+			var y = this.cursorY;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var pt = this.localToGlobal(new h2d_col_PointImpl(x,y));
+			while(p != null) {
+				if(p.scrollToPos(pt)) {
+					break;
+				}
+				p = p.parentContainer;
+			}
+			var x = this.cursorX;
+			var y = this.cursorY + this.font.lineHeight;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var pt = this.localToGlobal(new h2d_col_PointImpl(x,y));
+			while(p != null) {
+				if(p.scrollToPos(pt)) {
+					break;
+				}
+				p = p.parentContainer;
+			}
+		}
+		this.absX -= this.scrollX * this.matA;
+		this.absY -= this.scrollX * this.matC;
+		if(this.selectionRange != null) {
+			var lines = this.getSplitLines();
+			var lineOffset = 0;
+			var _g = 0;
+			var _g1 = lines.length;
+			while(_g < _g1) {
+				var i = _g++;
+				var line = lines[i];
+				var selEnd = line.length;
+				if(this.selectionRange.start > lineOffset + line.length || this.selectionRange.start + this.selectionRange.length < lineOffset) {
+					lineOffset += line.length;
+					continue;
+				}
+				var selStart = Math.floor(Math.max(0,this.selectionRange.start - lineOffset));
+				var selEnd1 = Math.floor(Math.min(line.length - selStart,this.selectionRange.length + this.selectionRange.start - lineOffset - selStart));
+				this.selectionPos = this.calcTextWidth(HxOverrides.substr(line,0,selStart));
+				this.selectionSize = this.calcTextWidth(HxOverrides.substr(line,selStart,selEnd1));
+				if(this.selectionRange.start + this.selectionRange.length == this.cursorIndex) {
+					this.selectionSize += this.cursorTile.width;
+				}
+				this.selectionTile.dx += this.selectionPos;
+				this.selectionTile.dy += i * this.font.lineHeight;
+				this.selectionTile.width += this.selectionSize;
+				this.emitTile(ctx,this.selectionTile);
+				this.selectionTile.dx -= this.selectionPos;
+				this.selectionTile.dy -= i * this.font.lineHeight;
+				this.selectionTile.width -= this.selectionSize;
+				lineOffset += line.length;
+			}
+		}
+		h2d_Text.prototype.draw.call(this,ctx);
+		this.absX += this.scrollX * this.matA;
+		this.absY += this.scrollX * this.matC;
+		if(this.cursorIndex >= 0) {
+			this.cursorBlink += ctx.elapsedTime;
+			if(this.cursorBlink % (this.cursorBlinkTime * 2) < this.cursorBlinkTime) {
+				this.cursorTile.dx += this.cursorX - this.scrollX;
+				this.cursorTile.dy += this.cursorY;
+				this.emitTile(ctx,this.cursorTile);
+				this.cursorTile.dx -= this.cursorX - this.scrollX;
+				this.cursorTile.dy -= this.cursorY;
+			}
+		}
+		if(iw >= 0) {
+			ctx.popRenderZone();
+		}
+	}
+	,focus: function() {
+		this.interactive.focus();
+		if(this.cursorIndex < 0) {
+			this.cursorIndex = 0;
+			if(this.text != "" && !this.multiline) {
+				this.selectionRange = { start : 0, length : this.getTextLength()};
+			}
+		}
+	}
+	,onBlur: function() {
+		this.cursorIndex = -1;
+		this.selectionRange = null;
+		h2d_TextInput.hideSoftwareKeyboard(this);
+	}
+	,onCursorChange: function() {
+	}
+	,blur: function() {
+		this.onBlur();
+		this.interactive.blur();
+	}
+	,hasFocus: function() {
+		return this.interactive.hasFocus();
+	}
+	,onOut: function(e) {
+	}
+	,onOver: function(e) {
+	}
+	,onMove: function(e) {
+	}
+	,onClick: function(e) {
+	}
+	,onPush: function(e) {
+	}
+	,onRelease: function(e) {
+	}
+	,onKeyDown: function(e) {
+	}
+	,onKeyUp: function(e) {
+	}
+	,onTextInput: function(e) {
+	}
+	,onFocus: function(e) {
+	}
+	,onFocusLost: function(e) {
+	}
+	,onChange: function() {
+	}
+	,drawRec: function(ctx) {
+		var old = this.interactive.visible;
+		var oldC = this.interactive.parentContainer;
+		this.interactive.parentContainer = null;
+		this.interactive.set_visible(false);
+		this.interactive.parentContainer = oldC;
+		this.interactive.draw(ctx);
+		h2d_Text.prototype.drawRec.call(this,ctx);
+		this.interactive.parentContainer = null;
+		this.interactive.set_visible(old);
+		this.interactive.parentContainer = oldC;
+	}
+	,__class__: h2d_TextInput
+});
 var h2d_Tile = function(tex,x,y,w,h,dx,dy) {
 	if(dy == null) {
 		dy = 0;
@@ -42860,7 +44893,16 @@ h2d_TileLayerContent.__name__ = "h2d.TileLayerContent";
 h2d_TileLayerContent.__super__ = h3d_prim_Primitive;
 h2d_TileLayerContent.prototype = $extend(h3d_prim_Primitive.prototype,{
 	clear: function() {
-		this.tmp = hxd__$FloatBuffer_Float32Expand._new(0);
+		if(this.tmp == null) {
+			this.tmp = hxd__$FloatBuffer_Float32Expand._new(0);
+		}
+		var this1 = this.tmp;
+		if(0 > this1.array.length) {
+			var newArray = new Float32Array(0);
+			newArray.set(this1.array);
+			this1.array = newArray;
+		}
+		this1.pos = 0;
 		if(this.buffer != null) {
 			if(this.buffer.vertices * 8 < this.useAllocatorLimit) {
 				hxd_impl_Allocator.get().disposeBuffer(this.buffer);
@@ -44149,6 +46191,9 @@ var h2d_filter_Shader = function(shader,textureParam) {
 		var v = _g1[_g];
 		++_g;
 		if(v.name == textureParam) {
+			if(v.kind != hxsl_VarKind.Param) {
+				throw haxe_Exception.thrown(Std.string(shader) + "." + textureParam + " should a shader parameter (@param)");
+			}
 			found = true;
 			break;
 		}
@@ -44452,19 +46497,22 @@ h3d_Buffer.prototype = {
 					}
 				}
 			}
-			this.uploadBytes(bytes,0,vertices);
+			this.uploadBytes(bytes,0,vertices,startVertice);
 			return;
 		}
 		this.engine.driver.uploadBufferData(this,startVertice,vertices,buf,bufPos);
 	}
-	,uploadBytes: function(data,dataPos,vertices) {
-		if(vertices < 0 || vertices > this.vertices) {
+	,uploadBytes: function(data,dataPos,vertices,startVertice) {
+		if(startVertice == null) {
+			startVertice = 0;
+		}
+		if(startVertice < 0 || vertices < 0 || startVertice + vertices > this.vertices) {
 			throw haxe_Exception.thrown("Invalid vertices count");
 		}
 		if(vertices == 0) {
 			return;
 		}
-		this.engine.driver.uploadBufferBytes(this,0,vertices,data,dataPos);
+		this.engine.driver.uploadBufferBytes(this,startVertice,vertices,data,dataPos);
 	}
 	,__class__: h3d_Buffer
 };
@@ -44487,6 +46535,8 @@ var h3d_Camera = function(fovY,zoom,screenRatio,zNear,zFar,rightHanded) {
 	if(fovY == null) {
 		fovY = 25.;
 	}
+	this.initFlag = 0;
+	this.reverseDepth = false;
 	this.jitterOffsetY = 0.;
 	this.jitterOffsetX = 0.;
 	this.viewY = 0.;
@@ -44549,183 +46599,31 @@ h3d_Camera.prototype = {
 		if(this.minv == null) {
 			this.minv = new h3d_MatrixImpl();
 		}
-		if(this.needInv) {
+		if((this.initFlag & 1) == 0) {
 			this.minv.initInverse(this.m);
-			this.needInv = false;
+			this.initFlag |= 1;
 		}
 		return this.minv;
+	}
+	,getInverseProj: function() {
+		if(this.mprojInv == null) {
+			this.mprojInv = new h3d_MatrixImpl();
+		}
+		if((this.initFlag & 4) == 0) {
+			this.mprojInv.initInverse(this.mproj);
+			this.initFlag |= 4;
+		}
+		return this.mprojInv;
 	}
 	,getInverseView: function() {
 		if(this.mcamInv == null) {
 			this.mcamInv = new h3d_MatrixImpl();
-			this.mcamInv._44 = 0;
 		}
-		if(this.mcamInv._44 == 0) {
+		if((this.initFlag & 2) == 0) {
 			this.mcamInv.initInverse(this.mcam);
+			this.initFlag |= 2;
 		}
 		return this.mcamInv;
-	}
-	,calcDirections: function() {
-		var this1 = this.target;
-		var v = this.pos;
-		var x = this1.x - v.x;
-		var y = this1.y - v.y;
-		var z = this1.z - v.z;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var _this_x = x1;
-		var _this_y = y1;
-		var _this_z = z1;
-		var k = _this_x * _this_x + _this_y * _this_y + _this_z * _this_z;
-		if(k < 1e-20) {
-			k = 0;
-		} else {
-			k = 1. / Math.sqrt(k);
-		}
-		var x = _this_x * k;
-		var y = _this_y * k;
-		var z = _this_z * k;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var _this_x = x1;
-		var _this_y = y1;
-		var _this_z = z1;
-		var _this = this.up;
-		var x = _this.y * _this_z - _this.z * _this_y;
-		var y = _this.z * _this_x - _this.x * _this_z;
-		var z = _this.x * _this_y - _this.y * _this_x;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var _this_x1 = x1;
-		var _this_y1 = y1;
-		var _this_z1 = z1;
-		var k = _this_x1 * _this_x1 + _this_y1 * _this_y1 + _this_z1 * _this_z1;
-		if(k < 1e-20) {
-			k = 0;
-		} else {
-			k = 1. / Math.sqrt(k);
-		}
-		var x = _this_x1 * k;
-		var y = _this_y1 * k;
-		var z = _this_z1 * k;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var cameraRight_x = x1;
-		var cameraRight_y = y1;
-		var cameraRight_z = z1;
-		var x = _this_y * cameraRight_z - _this_z * cameraRight_y;
-		var y = _this_z * cameraRight_x - _this_x * cameraRight_z;
-		var z = _this_x * cameraRight_y - _this_y * cameraRight_x;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var cameraUp_x = x1;
-		var cameraUp_y = y1;
-		var cameraUp_z = z1;
-		this.directions._11 = _this_x;
-		this.directions._12 = _this_y;
-		this.directions._13 = _this_z;
-		this.directions._21 = cameraRight_x;
-		this.directions._22 = cameraRight_y;
-		this.directions._23 = cameraRight_z;
-		this.directions._31 = cameraUp_x;
-		this.directions._32 = cameraUp_y;
-		this.directions._33 = cameraUp_z;
-		this.directions._44 = 1;
 	}
 	,unproject: function(screenX,screenY,camZ) {
 		var x = screenX;
@@ -44805,16 +46703,7 @@ h3d_Camera.prototype = {
 		this.makeCameraMatrix(this.mcam);
 		this.makeFrustumMatrix(this.mproj);
 		this.m.multiply(this.mcam,this.mproj);
-		this.needInv = true;
-		if(this.mcamInv != null) {
-			this.mcamInv._44 = 0;
-		}
-		if(this.mprojInv != null) {
-			this.mprojInv._44 = 0;
-		}
-		if(this.directions != null) {
-			this.directions._44 = 0;
-		}
+		this.initFlag = 0;
 		this.frustum.loadMatrix(this.m);
 	}
 	,makeCameraMatrix: function(m) {
@@ -44970,9 +46859,9 @@ h3d_Camera.prototype = {
 			var scale = this.zoom / Math.tan(halfFovX);
 			m._11 = scale;
 			m._22 = scale * this.screenRatio;
-			m._33 = this.zFar / (this.zFar - this.zNear);
+			m._33 = this.reverseDepth ? -this.zNear / (this.zFar - this.zNear) : this.zFar / (this.zFar - this.zNear);
 			m._34 = 1;
-			m._43 = -(this.zNear * this.zFar) / (this.zFar - this.zNear);
+			m._43 = this.reverseDepth ? this.zNear * this.zFar / (this.zFar - this.zNear) : -(this.zNear * this.zFar) / (this.zFar - this.zNear);
 			m._31 = this.jitterOffsetX;
 			m._32 = this.jitterOffsetY;
 		}
@@ -44998,7 +46887,49 @@ h3d_Camera.prototype = {
 		if(min == null) {
 			min = 0.;
 		}
-		return ((this.zFar + this.zNear - 2.0 * this.zNear * this.zFar / (dist < min ? min : dist > max ? max : dist)) / (this.zFar - this.zNear) + 1.0) / 2.0;
+		var invDist = 1.0 / (dist < min ? min : dist > max ? max : dist);
+		var fDivN = this.zFar / this.zNear;
+		var a = this.reverseDepth ? fDivN - 1 : 1 - fDivN;
+		var b = this.reverseDepth ? 1.0 / this.zFar : 1.0 / this.zNear;
+		return this.zFar / a * (invDist - b);
+	}
+	,load: function(cam) {
+		var _this = this.pos;
+		var v = cam.pos;
+		_this.x = v.x;
+		_this.y = v.y;
+		_this.z = v.z;
+		var _this = this.target;
+		var v = cam.target;
+		_this.x = v.x;
+		_this.y = v.y;
+		_this.z = v.z;
+		var _this = this.up;
+		var v = cam.up;
+		_this.x = v.x;
+		_this.y = v.y;
+		_this.z = v.z;
+		if(cam.orthoBounds != null) {
+			this.orthoBounds = new h3d_col_Bounds();
+			this.orthoBounds.load(cam.orthoBounds);
+		} else {
+			this.orthoBounds = null;
+		}
+		this.fovY = cam.fovY;
+		this.screenRatio = cam.screenRatio;
+		this.zoom = cam.zoom;
+		this.zNear = cam.zNear;
+		this.zFar = cam.zFar;
+		if(cam.follow != null) {
+			this.follow = { pos : cam.follow.pos, target : cam.follow.target};
+		} else {
+			this.follow = null;
+		}
+		this.viewX = cam.viewX;
+		this.viewY = cam.viewY;
+		this.rightHanded = cam.rightHanded;
+		this.reverseDepth = cam.reverseDepth;
+		this.update();
 	}
 	,__class__: h3d_Camera
 };
@@ -45057,6 +46988,12 @@ h3d_Engine.prototype = {
 	}
 	,selectMaterial: function(pass) {
 		this.driver.selectMaterial(pass);
+	}
+	,uploadInstanceShaderBuffers: function(buffers) {
+		this.driver.flushShaderBuffers();
+		this.driver.uploadShaderBuffers(buffers,1);
+		this.driver.uploadShaderBuffers(buffers,2);
+		this.driver.uploadShaderBuffers(buffers,3);
 	}
 	,uploadShaderBuffers: function(buffers,which) {
 		this.driver.uploadShaderBuffers(buffers,which);
@@ -45975,6 +47912,9 @@ h3d_anim_Animation.prototype = {
 	}
 	,__class__: h3d_anim_Animation
 };
+var h3d_anim_Skin = function() { };
+$hxClasses["h3d.anim.Skin"] = h3d_anim_Skin;
+h3d_anim_Skin.__name__ = "h3d.anim.Skin";
 var h3d_col_Collider = function() { };
 $hxClasses["h3d.col.Collider"] = h3d_col_Collider;
 h3d_col_Collider.__name__ = "h3d.col.Collider";
@@ -46415,6 +48355,145 @@ h3d_col_Bounds.prototype = $extend(h3d_col_Collider.prototype,{
 	}
 	,__class__: h3d_col_Bounds
 });
+var h3d_col_Sphere = function(x,y,z,r) {
+	if(r == null) {
+		r = 1.;
+	}
+	if(z == null) {
+		z = 0.;
+	}
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	var sx = x;
+	var sy = y;
+	var sz = z;
+	var sr = r;
+	if(sr == null) {
+		sr = 0.;
+	}
+	if(sz == null) {
+		sz = 0.;
+	}
+	if(sy == null) {
+		sy = 0.;
+	}
+	if(sx == null) {
+		sx = 0.;
+	}
+	this.x = sx;
+	this.y = sy;
+	this.z = sz;
+	this.r = sr;
+};
+$hxClasses["h3d.col.Sphere"] = h3d_col_Sphere;
+h3d_col_Sphere.__name__ = "h3d.col.Sphere";
+h3d_col_Sphere.__super__ = h3d_col_Collider;
+h3d_col_Sphere.prototype = $extend(h3d_col_Collider.prototype,{
+	rayIntersection: function(r,bestMatch) {
+		var mx = r.px - this.x;
+		var my = r.py - this.y;
+		var mz = r.pz - this.z;
+		var b = mx * r.lx + my * r.ly + mz * r.lz;
+		var c = mx * mx + my * my + mz * mz - this.r * this.r;
+		if(c > 0.0 && b > 0.0) {
+			return -1;
+		}
+		var d = b * b - c;
+		if(d < 0.0) {
+			return -1;
+		}
+		var t = -b - Math.sqrt(d);
+		if(t < 0.0) {
+			return 0.0;
+		} else {
+			return t;
+		}
+	}
+	,inFrustum: function(f,m) {
+		if(m != null) {
+			return this.inFrustumMatrix(f,m);
+		}
+		return f.hasSphere(this);
+	}
+	,inFrustumMatrix: function(f,m) {
+		var oldX = this.x;
+		var oldY = this.y;
+		var oldZ = this.z;
+		var oldR = this.r;
+		var x = this.x;
+		var y = this.y;
+		var z = this.z;
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var x1 = x;
+		var y1 = y;
+		var z1 = z;
+		if(z1 == null) {
+			z1 = 0.;
+		}
+		if(y1 == null) {
+			y1 = 0.;
+		}
+		if(x1 == null) {
+			x1 = 0.;
+		}
+		var v_x = x1;
+		var v_y = y1;
+		var v_z = z1;
+		var px = v_x * m._11 + v_y * m._21 + v_z * m._31 + m._41;
+		var py = v_x * m._12 + v_y * m._22 + v_z * m._32 + m._42;
+		var pz = v_x * m._13 + v_y * m._23 + v_z * m._33 + m._43;
+		v_x = px;
+		v_y = py;
+		v_z = pz;
+		this.x = v_x;
+		this.y = v_y;
+		this.z = v_z;
+		var _this = m;
+		var x = 0.;
+		var y = 0.;
+		var z = 0.;
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var scale_x = x;
+		var scale_y = y;
+		var scale_z = z;
+		scale_x = Math.sqrt(_this._11 * _this._11 + _this._12 * _this._12 + _this._13 * _this._13);
+		scale_y = Math.sqrt(_this._21 * _this._21 + _this._22 * _this._22 + _this._23 * _this._23);
+		scale_z = Math.sqrt(_this._31 * _this._31 + _this._32 * _this._32 + _this._33 * _this._33);
+		if(_this._11 * (_this._22 * _this._33 - _this._23 * _this._32) + _this._12 * (_this._23 * _this._31 - _this._21 * _this._33) + _this._13 * (_this._21 * _this._32 - _this._22 * _this._31) < 0) {
+			scale_x *= -1;
+			scale_y *= -1;
+			scale_z *= -1;
+		}
+		this.r *= Math.abs(Math.max(Math.max(scale_x,scale_y),scale_z));
+		var res = f.hasSphere(this);
+		this.x = oldX;
+		this.y = oldY;
+		this.z = oldZ;
+		this.r = oldR;
+		return res;
+	}
+	,__class__: h3d_col_Sphere
+});
 var h3d_col_Frustum = function(mvp) {
 	this.checkNearFar = true;
 	this.pleft = new h3d_col_Plane(1,0,0,0.0);
@@ -46730,84 +48809,96 @@ var h3d_scene_Object = function(parent) {
 	this.flags = 32768;
 	this.absPos = new h3d_MatrixImpl();
 	this.absPos.identity();
-	this.x = 0;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
+	if(this.x != 0) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
+	this.x = 0;
+	if(this.y != 0) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
 	this.y = 0;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
-	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
+	if(this.z != 0) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
 	this.z = 0;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
-	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
+	if(this.scaleX != 1) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
 	this.scaleX = 1;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
-	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
+	if(this.scaleY != 1) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
 	this.scaleY = 1;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
-	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
+	if(this.scaleZ != 1) {
+		var f = 1;
+		var b = true;
+		if(b) {
+			this.flags |= f;
+		} else {
+			this.flags &= ~f;
+		}
+		var c = b;
+		if(c && (this.flags & 131072) != 0) {
+			var f = 262144;
+			this.flags |= f;
+		}
 	}
 	this.scaleZ = 1;
-	var f = 1;
-	var b = true;
-	if(b) {
-		this.flags |= f;
-	} else {
-		this.flags &= ~f;
-	}
-	var c = b;
-	if(c && (this.flags & 131072) != 0) {
-		var f = 262144;
-		this.flags |= f;
-	}
 	this.qRot = new h3d_Quat();
 	var f = 1;
 	var b = this.follow != null;
@@ -47377,145 +49468,6 @@ h3d_scene_Object.prototype = {
 	}
 	,__class__: h3d_scene_Object
 };
-var h3d_col_Sphere = function(x,y,z,r) {
-	if(r == null) {
-		r = 1.;
-	}
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var sx = x;
-	var sy = y;
-	var sz = z;
-	var sr = r;
-	if(sr == null) {
-		sr = 0.;
-	}
-	if(sz == null) {
-		sz = 0.;
-	}
-	if(sy == null) {
-		sy = 0.;
-	}
-	if(sx == null) {
-		sx = 0.;
-	}
-	this.x = sx;
-	this.y = sy;
-	this.z = sz;
-	this.r = sr;
-};
-$hxClasses["h3d.col.Sphere"] = h3d_col_Sphere;
-h3d_col_Sphere.__name__ = "h3d.col.Sphere";
-h3d_col_Sphere.__super__ = h3d_col_Collider;
-h3d_col_Sphere.prototype = $extend(h3d_col_Collider.prototype,{
-	rayIntersection: function(r,bestMatch) {
-		var mx = r.px - this.x;
-		var my = r.py - this.y;
-		var mz = r.pz - this.z;
-		var b = mx * r.lx + my * r.ly + mz * r.lz;
-		var c = mx * mx + my * my + mz * mz - this.r * this.r;
-		if(c > 0.0 && b > 0.0) {
-			return -1;
-		}
-		var d = b * b - c;
-		if(d < 0.0) {
-			return -1;
-		}
-		var t = -b - Math.sqrt(d);
-		if(t < 0.0) {
-			return 0.0;
-		} else {
-			return t;
-		}
-	}
-	,inFrustum: function(f,m) {
-		if(m != null) {
-			return this.inFrustumMatrix(f,m);
-		}
-		return f.hasSphere(this);
-	}
-	,inFrustumMatrix: function(f,m) {
-		var oldX = this.x;
-		var oldY = this.y;
-		var oldZ = this.z;
-		var oldR = this.r;
-		var x = this.x;
-		var y = this.y;
-		var z = this.z;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		var z1 = z;
-		if(z1 == null) {
-			z1 = 0.;
-		}
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var v_x = x1;
-		var v_y = y1;
-		var v_z = z1;
-		var px = v_x * m._11 + v_y * m._21 + v_z * m._31 + m._41;
-		var py = v_x * m._12 + v_y * m._22 + v_z * m._32 + m._42;
-		var pz = v_x * m._13 + v_y * m._23 + v_z * m._33 + m._43;
-		v_x = px;
-		v_y = py;
-		v_z = pz;
-		this.x = v_x;
-		this.y = v_y;
-		this.z = v_z;
-		var _this = m;
-		var x = 0.;
-		var y = 0.;
-		var z = 0.;
-		if(z == null) {
-			z = 0.;
-		}
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var scale_x = x;
-		var scale_y = y;
-		var scale_z = z;
-		scale_x = Math.sqrt(_this._11 * _this._11 + _this._12 * _this._12 + _this._13 * _this._13);
-		scale_y = Math.sqrt(_this._21 * _this._21 + _this._22 * _this._22 + _this._23 * _this._23);
-		scale_z = Math.sqrt(_this._31 * _this._31 + _this._32 * _this._32 + _this._33 * _this._33);
-		if(_this._11 * (_this._22 * _this._33 - _this._23 * _this._32) + _this._12 * (_this._23 * _this._31 - _this._21 * _this._33) + _this._13 * (_this._21 * _this._32 - _this._22 * _this._31) < 0) {
-			scale_x *= -1;
-			scale_y *= -1;
-			scale_z *= -1;
-		}
-		this.r *= Math.abs(Math.max(Math.max(scale_x,scale_y),scale_z));
-		var res = f.hasSphere(this);
-		this.x = oldX;
-		this.y = oldY;
-		this.z = oldZ;
-		this.r = oldR;
-		return res;
-	}
-	,__class__: h3d_col_Sphere
-});
 var h3d_impl_Feature = $hxEnums["h3d.impl.Feature"] = { __ename__:true,__constructs__:null
 	,StandardDerivatives: {_hx_name:"StandardDerivatives",_hx_index:0,__enum__:"h3d.impl.Feature",toString:$estr}
 	,FloatTextures: {_hx_name:"FloatTextures",_hx_index:1,__enum__:"h3d.impl.Feature",toString:$estr}
@@ -47528,9 +49480,10 @@ var h3d_impl_Feature = $hxEnums["h3d.impl.Feature"] = { __ename__:true,__constru
 	,BottomLeftCoords: {_hx_name:"BottomLeftCoords",_hx_index:8,__enum__:"h3d.impl.Feature",toString:$estr}
 	,Wireframe: {_hx_name:"Wireframe",_hx_index:9,__enum__:"h3d.impl.Feature",toString:$estr}
 	,InstancedRendering: {_hx_name:"InstancedRendering",_hx_index:10,__enum__:"h3d.impl.Feature",toString:$estr}
+	,Bindless: {_hx_name:"Bindless",_hx_index:11,__enum__:"h3d.impl.Feature",toString:$estr}
 };
-h3d_impl_Feature.__constructs__ = [h3d_impl_Feature.StandardDerivatives,h3d_impl_Feature.FloatTextures,h3d_impl_Feature.AllocDepthBuffer,h3d_impl_Feature.HardwareAccelerated,h3d_impl_Feature.MultipleRenderTargets,h3d_impl_Feature.Queries,h3d_impl_Feature.SRGBTextures,h3d_impl_Feature.ShaderModel3,h3d_impl_Feature.BottomLeftCoords,h3d_impl_Feature.Wireframe,h3d_impl_Feature.InstancedRendering];
-h3d_impl_Feature.__empty_constructs__ = [h3d_impl_Feature.StandardDerivatives,h3d_impl_Feature.FloatTextures,h3d_impl_Feature.AllocDepthBuffer,h3d_impl_Feature.HardwareAccelerated,h3d_impl_Feature.MultipleRenderTargets,h3d_impl_Feature.Queries,h3d_impl_Feature.SRGBTextures,h3d_impl_Feature.ShaderModel3,h3d_impl_Feature.BottomLeftCoords,h3d_impl_Feature.Wireframe,h3d_impl_Feature.InstancedRendering];
+h3d_impl_Feature.__constructs__ = [h3d_impl_Feature.StandardDerivatives,h3d_impl_Feature.FloatTextures,h3d_impl_Feature.AllocDepthBuffer,h3d_impl_Feature.HardwareAccelerated,h3d_impl_Feature.MultipleRenderTargets,h3d_impl_Feature.Queries,h3d_impl_Feature.SRGBTextures,h3d_impl_Feature.ShaderModel3,h3d_impl_Feature.BottomLeftCoords,h3d_impl_Feature.Wireframe,h3d_impl_Feature.InstancedRendering,h3d_impl_Feature.Bindless];
+h3d_impl_Feature.__empty_constructs__ = [h3d_impl_Feature.StandardDerivatives,h3d_impl_Feature.FloatTextures,h3d_impl_Feature.AllocDepthBuffer,h3d_impl_Feature.HardwareAccelerated,h3d_impl_Feature.MultipleRenderTargets,h3d_impl_Feature.Queries,h3d_impl_Feature.SRGBTextures,h3d_impl_Feature.ShaderModel3,h3d_impl_Feature.BottomLeftCoords,h3d_impl_Feature.Wireframe,h3d_impl_Feature.InstancedRendering,h3d_impl_Feature.Bindless];
 var h3d_impl_RenderFlag = $hxEnums["h3d.impl.RenderFlag"] = { __ename__:true,__constructs__:null
 	,CameraHandness: {_hx_name:"CameraHandness",_hx_index:0,__enum__:"h3d.impl.RenderFlag",toString:$estr}
 };
@@ -47576,6 +49529,8 @@ h3d_impl_Driver.prototype = {
 	}
 	,uploadShaderBuffers: function(buffers,which) {
 	}
+	,flushShaderBuffers: function() {
+	}
 	,selectBuffer: function(buffer) {
 	}
 	,selectMultiBuffers: function(format,buffers) {
@@ -47609,6 +49564,8 @@ h3d_impl_Driver.prototype = {
 	}
 	,getDefaultDepthBuffer: function() {
 		return null;
+	}
+	,present: function() {
 	}
 	,end: function() {
 	}
@@ -48129,7 +50086,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			}
 			break;
 		case 2:
-			var tcount = s.textures.length;
+			var imageBindingIdx = 0;
 			var _g = 0;
 			var _g1 = s.textures.length;
 			while(_g < _g1) {
@@ -48140,17 +50097,28 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 					var _g2 = pt.t;
 					if(_g2._hx_index == 10) {
 						var _g3 = _g2.isArray;
-						if(_g2.dim._hx_index == 3) {
+						switch(_g2.dim._hx_index) {
+						case 2:
+							if(_g3 == false) {
+								t = h3d_mat_Texture3D.default3DTexture();
+							} else {
+								throw haxe_Exception.thrown("Missing texture");
+							}
+							break;
+						case 3:
 							if(_g3 == false) {
 								t = h3d_mat_Texture.defaultCubeTexture();
 							} else {
 								throw haxe_Exception.thrown("Missing texture");
 							}
-						} else if(_g3 == false) {
-							var color = h3d_mat_Defaults.loadingTextureColor;
-							t = h3d_mat_Texture.fromColor(color,(color >>> 24) / 255);
-						} else {
-							throw haxe_Exception.thrown("Missing texture");
+							break;
+						default:
+							if(_g3 == false) {
+								var color = h3d_mat_Defaults.loadingTextureColor;
+								t = h3d_mat_Texture.fromColor(color,(color >>> 24) / 255);
+							} else {
+								throw haxe_Exception.thrown("Missing texture");
+							}
 						}
 					} else {
 						throw haxe_Exception.thrown("Missing texture");
@@ -48177,7 +50145,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 					this.boundTextures[idx] = t.t;
 					var mode = this.getBindType(t);
 					if(mode != pt.mode) {
-						throw haxe_Exception.thrown("Texture format mismatch: " + Std.string(t) + " should be " + Std.string(pt.t));
+						throw haxe_Exception.thrown("Texture format mismatch: " + Std.string(t) + " is " + this.getBindName(mode) + " but should be " + this.getBindName(pt.mode) + " ( " + Std.string(pt.t) + " )");
 					}
 					this.gl.activeTexture(33984 + idx);
 					this.gl.uniform1i(pt.u,idx);
@@ -48187,7 +50155,8 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 				var mip = t.mipMap._hx_index;
 				var filter = t.filter._hx_index;
 				var wrap = t.wrap._hx_index;
-				var bits = mip | filter << 3 | wrap << 6;
+				var startingMip = t.__startingMip;
+				var bits = t.bits;
 				if(bits != t.t.bits) {
 					t.t.bits = bits;
 					var flags = h3d_impl_GlDriver.TFILTERS[mip][filter];
@@ -48198,10 +50167,20 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 					var w = h3d_impl_GlDriver.TWRAP[wrap];
 					this.gl.texParameteri(mode1,10242,w);
 					this.gl.texParameteri(mode1,10243,w);
-				}
-				if(t.t.startMip != t.startingMip) {
-					this.gl.texParameteri(pt.mode,33084,t.startingMip);
-					t.t.startMip = t.startingMip;
+					this.gl.texParameteri(mode1,32882,w);
+					this.gl.texParameteri(mode1,33084,startingMip);
+					if(this.hasAnisotropicFiltering) {
+						var anisotropicLevel;
+						switch(t.filter._hx_index) {
+						case 2:case 3:
+							anisotropicLevel = true;
+							break;
+						default:
+							anisotropicLevel = false;
+						}
+						var anisotropicLevel1 = anisotropicLevel ? t.get_anisotropicMaxLevel() : 1;
+						this.gl.texParameterf(mode1,34046,anisotropicLevel1);
+					}
 				}
 			}
 			break;
@@ -48282,7 +50261,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		if(diff == 0) {
 			return;
 		}
-		var wireframe = (bits & 268435456) != 0;
+		var wireframe = (bits & 536870912) != 0;
 		var fallback = true;
 		if(fallback) {
 			this.drawMode = wireframe ? 3 : 4;
@@ -48298,30 +50277,30 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 				this.gl.cullFace(h3d_impl_GlDriver.FACES[cull]);
 			}
 		}
-		if((diff & 4194240) != 0) {
-			var csrc = bits >> 6 & 15;
-			var cdst = bits >> 10 & 15;
-			var asrc = bits >> 14 & 15;
-			var adst = bits >> 18 & 15;
+		if((diff & 8388480) != 0) {
+			var csrc = bits >> 7 & 15;
+			var cdst = bits >> 11 & 15;
+			var asrc = bits >> 15 & 15;
+			var adst = bits >> 19 & 15;
 			if(csrc == asrc && cdst == adst) {
 				if(csrc == 0 && cdst == 1) {
 					this.gl.disable(3042);
 				} else {
-					if(this.curMatBits < 0 || (this.curMatBits >> 6 & 15) == 0 && (this.curMatBits >> 10 & 15) == 1) {
+					if(this.curMatBits < 0 || (this.curMatBits >> 7 & 15) == 0 && (this.curMatBits >> 11 & 15) == 1) {
 						this.gl.enable(3042);
 					}
 					this.gl.blendFunc(h3d_impl_GlDriver.BLEND[csrc],h3d_impl_GlDriver.BLEND[cdst]);
 				}
 			} else {
-				if(this.curMatBits < 0 || (this.curMatBits >> 6 & 15) == 0 && (this.curMatBits >> 10 & 15) == 1) {
+				if(this.curMatBits < 0 || (this.curMatBits >> 7 & 15) == 0 && (this.curMatBits >> 11 & 15) == 1) {
 					this.gl.enable(3042);
 				}
 				this.gl.blendFuncSeparate(h3d_impl_GlDriver.BLEND[csrc],h3d_impl_GlDriver.BLEND[cdst],h3d_impl_GlDriver.BLEND[asrc],h3d_impl_GlDriver.BLEND[adst]);
 			}
 		}
-		if((diff & 264241152) != 0) {
-			var cop = bits >> 22 & 7;
-			var aop = bits >> 25 & 7;
+		if((diff & 528482304) != 0) {
+			var cop = bits >> 23 & 7;
+			var aop = bits >> 26 & 7;
 			if(cop == aop) {
 				this.gl.blendEquation(h3d_impl_GlDriver.OP[cop]);
 			} else {
@@ -48331,12 +50310,12 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		if((diff & 4) != 0) {
 			this.gl.depthMask((bits >> 2 & 1) != 0);
 		}
-		if((diff & 56) != 0) {
-			var cmp = bits >> 3 & 7;
+		if((diff & 112) != 0) {
+			var cmp = bits >> 4 & 7;
 			if(cmp == 0) {
 				this.gl.disable(2929);
 			} else {
-				if(this.curMatBits < 0 || (this.curMatBits >> 3 & 7) == 0) {
+				if(this.curMatBits < 0 || (this.curMatBits >> 4 & 7) == 0) {
 					this.gl.enable(2929);
 				}
 				this.gl.depthFunc(h3d_impl_GlDriver.COMPARE[cmp]);
@@ -48460,6 +50439,20 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			return false;
 		}
 	}
+	,getBindName: function(i) {
+		switch(i) {
+		case 3553:
+			return "TEXTURE_2D";
+		case 32879:
+			return "TEXTURE_3D";
+		case 34067:
+			return "TEXTURE_CUBE_MAP";
+		case 35866:
+			return "TEXTURE_2D_ARRAY";
+		default:
+			return "UNKNOWN_TEXTURE_TYPE";
+		}
+	}
 	,getBindType: function(t) {
 		if((t.flags & 1 << h3d_mat_TextureFlags.Is3D._hx_index) != 0) {
 			return 32879;
@@ -48481,7 +50474,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		}
 		var tt = this.gl.createTexture();
 		var bind = this.getBindType(t);
-		var tt1 = { t : tt, width : t.width, height : t.height, internalFmt : 6408, pixelFmt : 5121, bits : -1, bind : bind, bias : 0, startMip : t.startingMip};
+		var tt1 = { t : tt, width : t.width, height : t.height, internalFmt : 6408, pixelFmt : 5121, bits : -1, bind : bind};
 		var _g = t.format;
 		switch(_g._hx_index) {
 		case 1:
@@ -48604,7 +50597,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		t.flags &= -1 - (1 << h3d_mat_TextureFlags.WasCleared._hx_index);
 		this.gl.bindTexture(bind,tt1.t);
 		var outOfMem = false;
-		this.gl.texParameteri(bind,33084,t.startingMip);
+		this.gl.texParameteri(bind,33084,t.__startingMip);
 		this.gl.texParameteri(bind,33085,t.get_mipLevels() - 1);
 		var sizedFormat = tt1.internalFmt == 6408 ? 32856 : tt1.internalFmt;
 		if(((t.flags & 1 << h3d_mat_TextureFlags.IsArray._hx_index) != 0 || (t.flags & 1 << h3d_mat_TextureFlags.Is3D._hx_index) != 0) && (t.flags & 1 << h3d_mat_TextureFlags.Cube._hx_index) == 0) {
@@ -48645,7 +50638,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 	}
 	,allocDepthBuffer: function(t) {
 		var tt = this.gl.createTexture();
-		var tt1 = { t : tt, width : t.width, height : t.height, internalFmt : 6408, pixelFmt : 5121, bits : -1, bind : 3553, bias : 0, startMip : 0};
+		var tt1 = { t : tt, width : t.width, height : t.height, internalFmt : 6408, pixelFmt : 5121, bits : -1, bind : 3553};
 		var fmt = 6402;
 		switch(t.format._hx_index) {
 		case 23:
@@ -48665,6 +50658,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			break;
 		case 26:
 			tt1.internalFmt = 36012;
+			tt1.pixelFmt = 5126;
 			break;
 		default:
 			throw haxe_Exception.thrown("Unsupported depth format " + Std.string(t.format));
@@ -48707,7 +50701,9 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		if(b.vertices * b.format.stride == 0) {
 			throw haxe_Exception.thrown("assert");
 		}
-		this.gl.bufferData(type,b.vertices * b.format.strideBytes,(b.flags & 1 << h3d_BufferFlag.Dynamic._hx_index) != 0 ? 35048 : 35044);
+		var size = b.vertices * b.format.strideBytes;
+		var tmp = (b.flags & 1 << h3d_BufferFlag.UniformBuffer._hx_index) != 0;
+		this.gl.bufferData(type,size,(b.flags & 1 << h3d_BufferFlag.Dynamic._hx_index) != 0 ? 35048 : 35044);
 		var outOfMem = h3d_impl_GlDriver.outOfMemoryCheck && this.gl.getError() == 1285;
 		this.gl.bindBuffer(type,null);
 		if((b.flags & 1 << h3d_BufferFlag.IndexBuffer._hx_index) != 0) {
@@ -48957,7 +50953,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			kind = 5123;
 			size = 2;
 		}
-		var args = commands.data;
+		var args = commands.cpuData;
 		if(args != null) {
 			var p = 0;
 			var _g = 0;
@@ -48971,6 +50967,8 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		}
 	}
 	,end: function() {
+	}
+	,present: function() {
 	}
 	,isDisposed: function() {
 		return this.gl.isContextLost();
@@ -49107,13 +51105,11 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		this.curTargetLayer = layer;
 		this.curTargetMip = mipLevel;
 		this.gl.bindFramebuffer(36160,this.commonFB);
-		if((tex.flags & 1 << h3d_mat_TextureFlags.IsArray._hx_index) != 0) {
+		if((tex.flags & 1 << h3d_mat_TextureFlags.IsArray._hx_index) != 0 || (tex.flags & 1 << h3d_mat_TextureFlags.Is3D._hx_index) != 0) {
 			this.gl.framebufferTextureLayer(36160,36064,tex.t.t,mipLevel,layer);
 		} else {
 			this.gl.framebufferTexture2D(36160,36064,(tex.flags & 1 << h3d_mat_TextureFlags.Cube._hx_index) != 0 ? h3d_impl_GlDriver.CUBE_FACES[layer] : 3553,tex.t.t,mipLevel);
 		}
-		this.setPolygonOffset(tex.depthBuffer);
-		this.setDepthClamp(tex.depthBuffer);
 		if(tex.depthBuffer != null && depthBinding != h3d_DepthBinding.NotBound) {
 			if(tex.depthBuffer.hasStencil() && tex.depthBuffer.format == hxd_PixelFormat.Depth24Stencil8) {
 				this.gl.framebufferTexture2D(36160,33306,3553,tex.depthBuffer.t.t,0);
@@ -49193,8 +51189,6 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		this.curTargetMip = 0;
 		this.gl.bindFramebuffer(36160,this.commonFB);
 		this.gl.framebufferTexture2D(36160,36064,3553,null,0);
-		this.setPolygonOffset(depthBuffer);
-		this.setDepthClamp(depthBuffer);
 		if(depthBuffer.hasStencil() && depthBuffer.format == hxd_PixelFormat.Depth24Stencil8) {
 			this.gl.framebufferTexture2D(36160,33306,3553,depthBuffer.t.t,0);
 		} else {
@@ -49224,16 +51218,6 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			}
 		}
 	}
-	,setPolygonOffset: function(depthBuffer) {
-		if(depthBuffer != null && (depthBuffer.depthBias != 0 || depthBuffer.slopeScaledBias != 0)) {
-			this.gl.enable(32823);
-			this.gl.polygonOffset(depthBuffer.slopeScaledBias,depthBuffer.depthBias);
-		} else {
-			this.gl.disable(32823);
-		}
-	}
-	,setDepthClamp: function(dephTexture) {
-	}
 	,init: function(onCreate,forceSoftware) {
 		if(forceSoftware == null) {
 			forceSoftware = false;
@@ -49254,7 +51238,11 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 		}
 	}
 	,hasFeature: function(f) {
-		return this.features.get(f);
+		if(f._hx_index == 11) {
+			return false;
+		} else {
+			return this.features.get(f);
+		}
 	}
 	,makeFeatures: function() {
 		var _g = 0;
@@ -49274,6 +51262,7 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 			this.gl.getExtension("WEBGL_depth_texture");
 		}
 		this.has16Bits = this.gl.getExtension("EXT_texture_norm16") != null;
+		this.hasAnisotropicFiltering = this.gl.getExtension("EXT_texture_filter_anisotropic") != null;
 	}
 	,checkFeature: function(f) {
 		switch(f._hx_index) {
@@ -49469,7 +51458,7 @@ h3d_impl_MemoryManager.prototype = {
 		if(mem == 0) {
 			return;
 		}
-		while(this.usedMemory + mem > 4294967296. || (b.vbuf = this.driver.allocBuffer(b)) == null) {
+		while(this.usedMemory + mem > 6442450944. || (b.vbuf = this.driver.allocBuffer(b)) == null) {
 			if(this.driver.isDisposed()) {
 				return;
 			}
@@ -49662,7 +51651,7 @@ var h3d_impl_TextureCache = function() {
 	this.defaultDepthBuffer = h3d_mat_Texture.getDefaultDepth();
 	if(h3d_impl_TextureCache.checkFlags < 0) {
 		var flags = 0;
-		var flagsArray = [h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.IsArray];
+		var flagsArray = [h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.IsArray,h3d_mat_TextureFlags.Writable];
 		var _g = 0;
 		while(_g < flagsArray.length) {
 			var f = flagsArray[_g];
@@ -49909,15 +51898,18 @@ h3d_mat_MipMap.__empty_constructs__ = [h3d_mat_MipMap.None,h3d_mat_MipMap.Neares
 var h3d_mat_Filter = $hxEnums["h3d.mat.Filter"] = { __ename__:true,__constructs__:null
 	,Nearest: {_hx_name:"Nearest",_hx_index:0,__enum__:"h3d.mat.Filter",toString:$estr}
 	,Linear: {_hx_name:"Linear",_hx_index:1,__enum__:"h3d.mat.Filter",toString:$estr}
+	,AnisotropicNearest: {_hx_name:"AnisotropicNearest",_hx_index:2,__enum__:"h3d.mat.Filter",toString:$estr}
+	,AnisotropicLinear: {_hx_name:"AnisotropicLinear",_hx_index:3,__enum__:"h3d.mat.Filter",toString:$estr}
 };
-h3d_mat_Filter.__constructs__ = [h3d_mat_Filter.Nearest,h3d_mat_Filter.Linear];
-h3d_mat_Filter.__empty_constructs__ = [h3d_mat_Filter.Nearest,h3d_mat_Filter.Linear];
+h3d_mat_Filter.__constructs__ = [h3d_mat_Filter.Nearest,h3d_mat_Filter.Linear,h3d_mat_Filter.AnisotropicNearest,h3d_mat_Filter.AnisotropicLinear];
+h3d_mat_Filter.__empty_constructs__ = [h3d_mat_Filter.Nearest,h3d_mat_Filter.Linear,h3d_mat_Filter.AnisotropicNearest,h3d_mat_Filter.AnisotropicLinear];
 var h3d_mat_Wrap = $hxEnums["h3d.mat.Wrap"] = { __ename__:true,__constructs__:null
 	,Clamp: {_hx_name:"Clamp",_hx_index:0,__enum__:"h3d.mat.Wrap",toString:$estr}
 	,Repeat: {_hx_name:"Repeat",_hx_index:1,__enum__:"h3d.mat.Wrap",toString:$estr}
+	,Mirror: {_hx_name:"Mirror",_hx_index:2,__enum__:"h3d.mat.Wrap",toString:$estr}
 };
-h3d_mat_Wrap.__constructs__ = [h3d_mat_Wrap.Clamp,h3d_mat_Wrap.Repeat];
-h3d_mat_Wrap.__empty_constructs__ = [h3d_mat_Wrap.Clamp,h3d_mat_Wrap.Repeat];
+h3d_mat_Wrap.__constructs__ = [h3d_mat_Wrap.Clamp,h3d_mat_Wrap.Repeat,h3d_mat_Wrap.Mirror];
+h3d_mat_Wrap.__empty_constructs__ = [h3d_mat_Wrap.Clamp,h3d_mat_Wrap.Repeat,h3d_mat_Wrap.Mirror];
 var h3d_mat_Operation = $hxEnums["h3d.mat.Operation"] = { __ename__:true,__constructs__:null
 	,Add: {_hx_name:"Add",_hx_index:0,__enum__:"h3d.mat.Operation",toString:$estr}
 	,Sub: {_hx_name:"Sub",_hx_index:1,__enum__:"h3d.mat.Operation",toString:$estr}
@@ -49944,9 +51936,10 @@ var h3d_mat_TextureFlags = $hxEnums["h3d.mat.TextureFlags"] = { __ename__:true,_
 	,LazyLoading: {_hx_name:"LazyLoading",_hx_index:13,__enum__:"h3d.mat.TextureFlags",toString:$estr}
 	,Writable: {_hx_name:"Writable",_hx_index:14,__enum__:"h3d.mat.TextureFlags",toString:$estr}
 	,Is3D: {_hx_name:"Is3D",_hx_index:15,__enum__:"h3d.mat.TextureFlags",toString:$estr}
+	,AsyncKeepStartingMip: {_hx_name:"AsyncKeepStartingMip",_hx_index:16,__enum__:"h3d.mat.TextureFlags",toString:$estr}
 };
-h3d_mat_TextureFlags.__constructs__ = [h3d_mat_TextureFlags.Target,h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.IsNPOT,h3d_mat_TextureFlags.NoAlloc,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.AlphaPremultiplied,h3d_mat_TextureFlags.WasCleared,h3d_mat_TextureFlags.Loading,h3d_mat_TextureFlags.Serialize,h3d_mat_TextureFlags.IsArray,h3d_mat_TextureFlags.AsyncLoading,h3d_mat_TextureFlags.LazyLoading,h3d_mat_TextureFlags.Writable,h3d_mat_TextureFlags.Is3D];
-h3d_mat_TextureFlags.__empty_constructs__ = [h3d_mat_TextureFlags.Target,h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.IsNPOT,h3d_mat_TextureFlags.NoAlloc,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.AlphaPremultiplied,h3d_mat_TextureFlags.WasCleared,h3d_mat_TextureFlags.Loading,h3d_mat_TextureFlags.Serialize,h3d_mat_TextureFlags.IsArray,h3d_mat_TextureFlags.AsyncLoading,h3d_mat_TextureFlags.LazyLoading,h3d_mat_TextureFlags.Writable,h3d_mat_TextureFlags.Is3D];
+h3d_mat_TextureFlags.__constructs__ = [h3d_mat_TextureFlags.Target,h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.IsNPOT,h3d_mat_TextureFlags.NoAlloc,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.AlphaPremultiplied,h3d_mat_TextureFlags.WasCleared,h3d_mat_TextureFlags.Loading,h3d_mat_TextureFlags.Serialize,h3d_mat_TextureFlags.IsArray,h3d_mat_TextureFlags.AsyncLoading,h3d_mat_TextureFlags.LazyLoading,h3d_mat_TextureFlags.Writable,h3d_mat_TextureFlags.Is3D,h3d_mat_TextureFlags.AsyncKeepStartingMip];
+h3d_mat_TextureFlags.__empty_constructs__ = [h3d_mat_TextureFlags.Target,h3d_mat_TextureFlags.Cube,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.ManualMipMapGen,h3d_mat_TextureFlags.IsNPOT,h3d_mat_TextureFlags.NoAlloc,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.AlphaPremultiplied,h3d_mat_TextureFlags.WasCleared,h3d_mat_TextureFlags.Loading,h3d_mat_TextureFlags.Serialize,h3d_mat_TextureFlags.IsArray,h3d_mat_TextureFlags.AsyncLoading,h3d_mat_TextureFlags.LazyLoading,h3d_mat_TextureFlags.Writable,h3d_mat_TextureFlags.Is3D,h3d_mat_TextureFlags.AsyncKeepStartingMip];
 var h3d_mat_Defaults = function() { };
 $hxClasses["h3d.mat.Defaults"] = h3d_mat_Defaults;
 h3d_mat_Defaults.__name__ = "h3d.mat.Defaults";
@@ -50117,7 +52110,6 @@ h3d_mat_MaterialSetup.prototype = {
 };
 var h3d_mat_Pass = function(name,shaders,parent) {
 	this.layer = 0;
-	this.rendererFlags = 0;
 	this.bits = 0;
 	this.parentPass = parent;
 	this.shaders = shaders;
@@ -50252,19 +52244,19 @@ h3d_mat_Pass.prototype = {
 			break;
 		}
 	}
-	,depth: function(write,test) {
+	,depth: function(write,test,clamp) {
+		if(clamp == null) {
+			clamp = false;
+		}
 		this.set_depthWrite(write);
 		this.set_depthTest(test);
-	}
-	,resetRendererFlags: function() {
-		this.rendererFlags = 0;
+		this.set_depthClamp(clamp);
 	}
 	,addShader: function(s) {
 		if(s == null) {
 			return null;
 		}
 		this.shaders = hxsl_ShaderList.addSort(s,this.shaders);
-		this.resetRendererFlags();
 		return s;
 	}
 	,removeShader: function(s) {
@@ -50273,7 +52265,6 @@ h3d_mat_Pass.prototype = {
 		var shaderFound = false;
 		while(sl != null) {
 			if(sl.s == s) {
-				this.resetRendererFlags();
 				if(this.selfShadersCache == sl) {
 					this.selfShadersCache = this.selfShadersCache.next;
 				}
@@ -50292,7 +52283,6 @@ h3d_mat_Pass.prototype = {
 		prev = null;
 		while(sl != null) {
 			if(sl.s == s) {
-				this.resetRendererFlags();
 				if(this.selfShadersCache == sl) {
 					this.selfShadersCache = this.selfShadersCache.next;
 				}
@@ -50369,6 +52359,26 @@ h3d_mat_Pass.prototype = {
 		}
 		return this.selfShadersRec(true);
 	}
+	,reverseDepthTest: function() {
+		var tmp;
+		switch(this.depthTest._hx_index) {
+		case 4:
+			tmp = h3d_mat_Compare.Less;
+			break;
+		case 5:
+			tmp = h3d_mat_Compare.LessEqual;
+			break;
+		case 6:
+			tmp = h3d_mat_Compare.Greater;
+			break;
+		case 7:
+			tmp = h3d_mat_Compare.GreaterEqual;
+			break;
+		default:
+			tmp = this.depthTest;
+		}
+		this.set_depthTest(tmp);
+	}
 	,set_enableLights: function(v) {
 		this.flags = this.flags & -2 | (v ? 1 : 0);
 		return this.enableLights = v;
@@ -50385,32 +52395,36 @@ h3d_mat_Pass.prototype = {
 		this.bits = this.bits & -5 | (v ? 1 : 0) << 2;
 		return this.depthWrite = v;
 	}
+	,set_depthClamp: function(v) {
+		this.bits = this.bits & -9 | (v ? 1 : 0) << 3;
+		return this.depthClamp = v;
+	}
 	,set_depthTest: function(v) {
-		this.bits = this.bits & -57 | v._hx_index << 3;
+		this.bits = this.bits & -113 | v._hx_index << 4;
 		return this.depthTest = v;
 	}
 	,set_blendSrc: function(v) {
-		this.bits = this.bits & -961 | v._hx_index << 6;
+		this.bits = this.bits & -1921 | v._hx_index << 7;
 		return this.blendSrc = v;
 	}
 	,set_blendDst: function(v) {
-		this.bits = this.bits & -15361 | v._hx_index << 10;
+		this.bits = this.bits & -30721 | v._hx_index << 11;
 		return this.blendDst = v;
 	}
 	,set_blendAlphaSrc: function(v) {
-		this.bits = this.bits & -245761 | v._hx_index << 14;
+		this.bits = this.bits & -491521 | v._hx_index << 15;
 		return this.blendAlphaSrc = v;
 	}
 	,set_blendAlphaDst: function(v) {
-		this.bits = this.bits & -3932161 | v._hx_index << 18;
+		this.bits = this.bits & -7864321 | v._hx_index << 19;
 		return this.blendAlphaDst = v;
 	}
 	,set_blendOp: function(v) {
-		this.bits = this.bits & -29360129 | v._hx_index << 22;
+		this.bits = this.bits & -58720257 | v._hx_index << 23;
 		return this.blendOp = v;
 	}
 	,set_blendAlphaOp: function(v) {
-		this.bits = this.bits & -234881025 | v._hx_index << 25;
+		this.bits = this.bits & -469762049 | v._hx_index << 26;
 		return this.blendAlphaOp = v;
 	}
 	,__class__: h3d_mat_Pass
@@ -50527,13 +52541,12 @@ var hxd_PixelFormat = $hxEnums["hxd.PixelFormat"] = { __ename__:true,__construct
 	,Depth24: {_hx_name:"Depth24",_hx_index:24,__enum__:"hxd.PixelFormat",toString:$estr}
 	,Depth24Stencil8: {_hx_name:"Depth24Stencil8",_hx_index:25,__enum__:"hxd.PixelFormat",toString:$estr}
 	,Depth32: {_hx_name:"Depth32",_hx_index:26,__enum__:"hxd.PixelFormat",toString:$estr}
+	,Depth32Stencil8: {_hx_name:"Depth32Stencil8",_hx_index:27,__enum__:"hxd.PixelFormat",toString:$estr}
 };
-hxd_PixelFormat.__constructs__ = [hxd_PixelFormat.ARGB,hxd_PixelFormat.BGRA,hxd_PixelFormat.RGBA,hxd_PixelFormat.RGBA16F,hxd_PixelFormat.RGBA32F,hxd_PixelFormat.R8,hxd_PixelFormat.R16F,hxd_PixelFormat.R32F,hxd_PixelFormat.RG8,hxd_PixelFormat.RG16F,hxd_PixelFormat.RG32F,hxd_PixelFormat.RGB8,hxd_PixelFormat.RGB16F,hxd_PixelFormat.RGB32F,hxd_PixelFormat.SRGB,hxd_PixelFormat.SRGB_ALPHA,hxd_PixelFormat.RGB10A2,hxd_PixelFormat.RG11B10UF,hxd_PixelFormat.R16U,hxd_PixelFormat.RG16U,hxd_PixelFormat.RGB16U,hxd_PixelFormat.RGBA16U,hxd_PixelFormat.S3TC,hxd_PixelFormat.Depth16,hxd_PixelFormat.Depth24,hxd_PixelFormat.Depth24Stencil8,hxd_PixelFormat.Depth32];
-hxd_PixelFormat.__empty_constructs__ = [hxd_PixelFormat.ARGB,hxd_PixelFormat.BGRA,hxd_PixelFormat.RGBA,hxd_PixelFormat.RGBA16F,hxd_PixelFormat.RGBA32F,hxd_PixelFormat.R8,hxd_PixelFormat.R16F,hxd_PixelFormat.R32F,hxd_PixelFormat.RG8,hxd_PixelFormat.RG16F,hxd_PixelFormat.RG32F,hxd_PixelFormat.RGB8,hxd_PixelFormat.RGB16F,hxd_PixelFormat.RGB32F,hxd_PixelFormat.SRGB,hxd_PixelFormat.SRGB_ALPHA,hxd_PixelFormat.RGB10A2,hxd_PixelFormat.RG11B10UF,hxd_PixelFormat.R16U,hxd_PixelFormat.RG16U,hxd_PixelFormat.RGB16U,hxd_PixelFormat.RGBA16U,hxd_PixelFormat.Depth16,hxd_PixelFormat.Depth24,hxd_PixelFormat.Depth24Stencil8,hxd_PixelFormat.Depth32];
+hxd_PixelFormat.__constructs__ = [hxd_PixelFormat.ARGB,hxd_PixelFormat.BGRA,hxd_PixelFormat.RGBA,hxd_PixelFormat.RGBA16F,hxd_PixelFormat.RGBA32F,hxd_PixelFormat.R8,hxd_PixelFormat.R16F,hxd_PixelFormat.R32F,hxd_PixelFormat.RG8,hxd_PixelFormat.RG16F,hxd_PixelFormat.RG32F,hxd_PixelFormat.RGB8,hxd_PixelFormat.RGB16F,hxd_PixelFormat.RGB32F,hxd_PixelFormat.SRGB,hxd_PixelFormat.SRGB_ALPHA,hxd_PixelFormat.RGB10A2,hxd_PixelFormat.RG11B10UF,hxd_PixelFormat.R16U,hxd_PixelFormat.RG16U,hxd_PixelFormat.RGB16U,hxd_PixelFormat.RGBA16U,hxd_PixelFormat.S3TC,hxd_PixelFormat.Depth16,hxd_PixelFormat.Depth24,hxd_PixelFormat.Depth24Stencil8,hxd_PixelFormat.Depth32,hxd_PixelFormat.Depth32Stencil8];
+hxd_PixelFormat.__empty_constructs__ = [hxd_PixelFormat.ARGB,hxd_PixelFormat.BGRA,hxd_PixelFormat.RGBA,hxd_PixelFormat.RGBA16F,hxd_PixelFormat.RGBA32F,hxd_PixelFormat.R8,hxd_PixelFormat.R16F,hxd_PixelFormat.R32F,hxd_PixelFormat.RG8,hxd_PixelFormat.RG16F,hxd_PixelFormat.RG32F,hxd_PixelFormat.RGB8,hxd_PixelFormat.RGB16F,hxd_PixelFormat.RGB32F,hxd_PixelFormat.SRGB,hxd_PixelFormat.SRGB_ALPHA,hxd_PixelFormat.RGB10A2,hxd_PixelFormat.RG11B10UF,hxd_PixelFormat.R16U,hxd_PixelFormat.RG16U,hxd_PixelFormat.RGB16U,hxd_PixelFormat.RGBA16U,hxd_PixelFormat.Depth16,hxd_PixelFormat.Depth24,hxd_PixelFormat.Depth24Stencil8,hxd_PixelFormat.Depth32,hxd_PixelFormat.Depth32Stencil8];
 var h3d_mat_Texture = function(w,h,flags,format) {
-	this.slopeScaledBias = 0.;
-	this.depthBias = 0.;
-	this.startingMip = 0;
+	this.packedAnisotropicMaxLevel = 15;
 	if(format == null) {
 		format = h3d_mat_Texture.nativeFormat;
 	}
@@ -50566,7 +52579,7 @@ var h3d_mat_Texture = function(w,h,flags,format) {
 	}
 	this.set_filter(h3d_mat_Filter.Linear);
 	this.set_wrap(h3d_mat_Texture.DEFAULT_WRAP);
-	this.bits &= 32767;
+	this.set_lodBias(0.0);
 	this.allocPos = hxd_impl_AllocPos.make();
 	if((this.flags & 1 << h3d_mat_TextureFlags.NoAlloc._hx_index) == 0 && this.width > 0) {
 		this.alloc();
@@ -50640,6 +52653,24 @@ h3d_mat_Texture.prototype = {
 		while(w >> lv >= 1 || h >> lv >= 1) ++lv;
 		return lv;
 	}
+	,set_lodBias: function(v) {
+		var min = -15.0;
+		var max = 16.0;
+		if(max == null) {
+			max = 1.;
+		}
+		if(min == null) {
+			min = 0.;
+		}
+		v = (v < min ? min : v > max ? max : v) + 15.0;
+		var iPart = Math.floor(v);
+		var fPart = v % 1.0;
+		this.set_packedLodBias(iPart << 12 | Math.floor(fPart * 4096));
+		return v;
+	}
+	,get_anisotropicMaxLevel: function() {
+		return this.packedAnisotropicMaxLevel + 1;
+	}
 	,get_layerCount: function() {
 		if((this.flags & 1 << h3d_mat_TextureFlags.Cube._hx_index) != 0) {
 			return 6;
@@ -50672,18 +52703,6 @@ h3d_mat_Texture.prototype = {
 	}
 	,setName: function(n) {
 		this.name = n;
-	}
-	,set_mipMap: function(m) {
-		this.bits = this.bits & -4 | m._hx_index;
-		return this.mipMap = m;
-	}
-	,set_filter: function(f) {
-		this.bits = this.bits & -25 | f._hx_index << 3;
-		return this.filter = f;
-	}
-	,set_wrap: function(w) {
-		this.bits = this.bits & -193 | w._hx_index << 6;
-		return this.wrap = w;
 	}
 	,resize: function(width,height) {
 		this.dispose();
@@ -50721,14 +52740,24 @@ h3d_mat_Texture.prototype = {
 				var _g1 = this.get_layerCount();
 				while(_g < _g1) {
 					var i = _g++;
-					engine.pushTarget(this,i);
+					var _g2 = 0;
+					var _g3 = this.get_mipLevels();
+					while(_g2 < _g3) {
+						var j = _g2++;
+						engine.pushTarget(this,i,j);
+						engine.clear(color);
+						engine.popTarget();
+					}
+				}
+			} else {
+				var _g = 0;
+				var _g1 = this.get_mipLevels();
+				while(_g < _g1) {
+					var i = _g++;
+					engine.pushTarget(this,layer,i);
 					engine.clear(color);
 					engine.popTarget();
 				}
-			} else {
-				engine.pushTarget(this,layer);
-				engine.clear(color);
-				engine.popTarget();
 			}
 		} else {
 			var p = hxd_Pixels.alloc(this.width,this.height,h3d_mat_Texture.nativeFormat);
@@ -50825,15 +52854,16 @@ h3d_mat_Texture.prototype = {
 		}
 	}
 	,hasStencil: function() {
-		if(this.format._hx_index == 25) {
+		switch(this.format._hx_index) {
+		case 25:case 27:
 			return true;
-		} else {
+		default:
 			return false;
 		}
 	}
 	,isDepth: function() {
 		switch(this.format._hx_index) {
-		case 23:case 24:case 25:case 26:
+		case 23:case 24:case 25:case 26:case 27:
 			return true;
 		default:
 			return false;
@@ -50852,8 +52882,59 @@ h3d_mat_Texture.prototype = {
 		this.set_lastFrame(old);
 		return pix;
 	}
+	,set_mipMap: function(v) {
+		this.bits = this.bits & -4 | v._hx_index;
+		return this.mipMap = v;
+	}
+	,set_filter: function(v) {
+		this.bits = this.bits & -13 | v._hx_index << 2;
+		return this.filter = v;
+	}
+	,set_wrap: function(v) {
+		this.bits = this.bits & -49 | v._hx_index << 4;
+		return this.wrap = v;
+	}
+	,set___startingMip: function(v) {
+		this.bits = this.bits & -961 | (v & 15) << 6;
+		return this.__startingMip = v;
+	}
+	,set_packedLodBias: function(v) {
+		this.bits = this.bits & -67107841 | (v & 65535) << 10;
+		return this.packedLodBias = v;
+	}
 	,__class__: h3d_mat_Texture
 };
+var h3d_mat_Texture3D = function(w,h,d,flags,format) {
+	this.depth = d;
+	if(flags == null) {
+		flags = [];
+	}
+	flags.push(h3d_mat_TextureFlags.Is3D);
+	h3d_mat_Texture.call(this,w,h,flags,format);
+};
+$hxClasses["h3d.mat.Texture3D"] = h3d_mat_Texture3D;
+h3d_mat_Texture3D.__name__ = "h3d.mat.Texture3D";
+h3d_mat_Texture3D.default3DTexture = function() {
+	var engine = h3d_Engine.CURRENT;
+	var t = engine.resCache.h[h3d_mat_Texture3D.__id__];
+	if(t != null) {
+		return t;
+	}
+	t = new h3d_mat_Texture3D(1,1,1,null,hxd_PixelFormat.R8);
+	t.setName("default3DTexture");
+	engine.resCache.set(h3d_mat_Texture3D,t);
+	return t;
+};
+h3d_mat_Texture3D.__super__ = h3d_mat_Texture;
+h3d_mat_Texture3D.prototype = $extend(h3d_mat_Texture.prototype,{
+	get_layerCount: function() {
+		return this.depth;
+	}
+	,toString: function() {
+		return h3d_mat_Texture.prototype.toString.call(this) + "x(" + this.depth + ")";
+	}
+	,__class__: h3d_mat_Texture3D
+});
 var h3d_mat_TextureArray = function(w,h,layers,flags,format) {
 	this.layers = layers;
 	if(flags == null) {
@@ -50874,6 +52955,15 @@ h3d_mat_TextureArray.prototype = $extend(h3d_mat_Texture.prototype,{
 	}
 	,__class__: h3d_mat_TextureArray
 });
+var h3d_mat_TextureHandle = function(t,handle) {
+	this.texture = t;
+	this.handle = handle;
+};
+$hxClasses["h3d.mat.TextureHandle"] = h3d_mat_TextureHandle;
+h3d_mat_TextureHandle.__name__ = "h3d.mat.TextureHandle";
+h3d_mat_TextureHandle.prototype = {
+	__class__: h3d_mat_TextureHandle
+};
 var h3d_pass_Blur = function(radius,gain,linear,quality) {
 	if(quality == null) {
 		quality = 1.;
@@ -51085,457 +53175,6 @@ h3d_pass_Blur.prototype = $extend(h3d_pass_ScreenFx.prototype,{
 		output.depthBuffer = outDepth;
 	}
 	,__class__: h3d_pass_Blur
-});
-var h3d_pass__$Border_BorderShader = function() {
-	this.color__ = new h3d_Vector4Impl(0.,0.,0.,1.);
-	h3d_shader_ScreenShader.call(this);
-};
-$hxClasses["h3d.pass._Border.BorderShader"] = h3d_pass__$Border_BorderShader;
-h3d_pass__$Border_BorderShader.__name__ = "h3d.pass._Border.BorderShader";
-h3d_pass__$Border_BorderShader.__super__ = h3d_shader_ScreenShader;
-h3d_pass__$Border_BorderShader.prototype = $extend(h3d_shader_ScreenShader.prototype,{
-	get_color: function() {
-		return this.color__;
-	}
-	,set_color: function(_v) {
-		return this.color__ = _v;
-	}
-	,updateConstants: function(globals) {
-		this.constBits = 0;
-		this.updateConstantsFinal(globals);
-	}
-	,getParamValue: function(index) {
-		switch(index) {
-		case 0:
-			return this.flipY__;
-		case 1:
-			return this.color__;
-		default:
-		}
-		return null;
-	}
-	,getParamFloatValue: function(index) {
-		if(index == 0) {
-			return this.flipY__;
-		}
-		return 0.;
-	}
-	,__class__: h3d_pass__$Border_BorderShader
-});
-var h3d_pass_Border = function(width,height,size) {
-	if(size == null) {
-		size = 1;
-	}
-	h3d_pass_ScreenFx.call(this,new h3d_pass__$Border_BorderShader());
-	this.width = width;
-	this.height = height;
-	this.size = size;
-	var _this = this.shader.color__;
-	var x = 1;
-	var y = 1;
-	var z = 1;
-	var w = 1;
-	if(w == null) {
-		w = 1.;
-	}
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	_this.x = x;
-	_this.y = y;
-	_this.z = z;
-	_this.w = w;
-};
-$hxClasses["h3d.pass.Border"] = h3d_pass_Border;
-h3d_pass_Border.__name__ = "h3d.pass.Border";
-h3d_pass_Border.__super__ = h3d_pass_ScreenFx;
-h3d_pass_Border.prototype = $extend(h3d_pass_ScreenFx.prototype,{
-	createPrimitive: function() {
-		var _gthis = this;
-		var bbuf = hxd__$FloatBuffer_Float32Expand._new(0);
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.size;
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.size;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = this.size / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = this.size / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height - this.size;
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height - this.size;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = 0 / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = (this.width - this.size) / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - 0 / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = (this.width - this.size) / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var y = this.height;
-		var v = this.width / _gthis.width * 2 - 1;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		var v = 1 - y / _gthis.height * 2;
-		if(bbuf.pos == bbuf.array.length) {
-			var newSize = bbuf.array.length << 1;
-			if(newSize < 128) {
-				newSize = 128;
-			}
-			var newArray = new Float32Array(newSize);
-			newArray.set(bbuf.array);
-			bbuf.array = newArray;
-		}
-		bbuf.array[bbuf.pos++] = v;
-		this.primitive = new h3d_prim_RawPrimitive({ vbuf : bbuf, format : hxd_BufferFormat.make([new hxd_BufferInput("position",2,0)])},true);
-	}
-	,render: function() {
-		if(this.primitive == null) {
-			this.createPrimitive();
-		}
-		h3d_pass_ScreenFx.prototype.render.call(this);
-	}
-	,dispose: function() {
-		if(this.primitive != null) {
-			this.primitive.dispose();
-		}
-		h3d_pass_ScreenFx.prototype.dispose.call(this);
-	}
-	,__class__: h3d_pass_Border
 });
 var h3d_pass_ColorMatrixShader = function() {
 	this.maskChannel__ = new h3d_Vector4Impl(0.,0.,0.,1.);
@@ -51889,9 +53528,9 @@ var h3d_pass_Copy = function() {
 };
 $hxClasses["h3d.pass.Copy"] = h3d_pass_Copy;
 h3d_pass_Copy.__name__ = "h3d.pass.Copy";
-h3d_pass_Copy.run = function(from,to,blend,pass,layer) {
+h3d_pass_Copy.run = function(from,to,blend,pass,layer,mip) {
 	var engine = h3d_Engine.CURRENT;
-	if(to != null && from != null && (blend == null || blend == h2d_BlendMode.None) && pass == null && layer == null && engine.driver.copyTexture(from,to)) {
+	if(to != null && from != null && (blend == null || blend == h2d_BlendMode.None) && pass == null && layer == null && mip == null && engine.driver.copyTexture(from,to)) {
 		return;
 	}
 	var inst = engine.resCache.h[h3d_pass_Copy.__id__];
@@ -51899,13 +53538,15 @@ h3d_pass_Copy.run = function(from,to,blend,pass,layer) {
 		inst = new h3d_pass_Copy();
 		engine.resCache.set(h3d_pass_Copy,inst);
 	}
-	inst.apply(from,to,blend,pass,layer);
+	inst.apply(from,to,blend,pass,layer,mip);
 };
 h3d_pass_Copy.__super__ = h3d_pass_ScreenFx;
 h3d_pass_Copy.prototype = $extend(h3d_pass_ScreenFx.prototype,{
-	apply: function(from,to,blend,customPass,layer) {
+	apply: function(from,to,blend,customPass,layer,mip) {
 		if(to != null) {
-			this.get_engine().pushTarget(to,layer != null ? layer : 0,null,h3d_DepthBinding.NotBound);
+			var tmp = layer;
+			var tmp1 = mip;
+			this.get_engine().pushTarget(to,tmp != null ? tmp : 0,tmp1 != null ? tmp1 : 0,h3d_DepthBinding.NotBound);
 		}
 		this.shader.texture__ = from;
 		if(customPass != null) {
@@ -51921,7 +53562,8 @@ h3d_pass_Copy.prototype = $extend(h3d_pass_ScreenFx.prototype,{
 			this.pass = old;
 			h.next = null;
 		} else {
-			this.pass.setBlendMode(blend == null ? h2d_BlendMode.None : blend);
+			var tmp = blend;
+			this.pass.setBlendMode(tmp != null ? tmp : h2d_BlendMode.None);
 			this.render();
 		}
 		this.shader.texture__ = null;
@@ -52065,7 +53707,13 @@ h3d_pass_Output.prototype = {
 	}
 	,drawObject: function(p) {
 		this.ctx.drawPass = p;
-		this.ctx.engine.selectMaterial(p.pass);
+		if(this.ctx.useReverseDepth) {
+			p.pass.reverseDepthTest();
+			this.ctx.engine.selectMaterial(p.pass);
+			p.pass.reverseDepthTest();
+		} else {
+			this.ctx.engine.selectMaterial(p.pass);
+		}
 		var _this = p.obj;
 		var f = 65536;
 		_this.flags |= f;
@@ -52124,9 +53772,7 @@ h3d_pass_Output.prototype = {
 			}
 			if(!p.pass.dynamicParameters) {
 				this.ctx.fillParams(buf,p.shader,p.shaders);
-				this.ctx.engine.uploadShaderBuffers(buf,1);
-				this.ctx.engine.uploadShaderBuffers(buf,2);
-				this.ctx.engine.uploadShaderBuffers(buf,3);
+				this.ctx.engine.uploadInstanceShaderBuffers(buf);
 			}
 			this.drawObject(p);
 		}
@@ -52330,7 +53976,6 @@ var h3d_pass_DirShadowMap = function(light) {
 	this.lightCamera = new h3d_Camera();
 	this.lightCamera.orthoBounds = new h3d_col_Bounds();
 	this.shader = this.dshader = new h3d_shader_DirShadow();
-	this.border = new h3d_pass_Border(this.size,this.size);
 };
 $hxClasses["h3d.pass.DirShadowMap"] = h3d_pass_DirShadowMap;
 h3d_pass_DirShadowMap.__name__ = "h3d.pass.DirShadowMap";
@@ -52341,13 +53986,6 @@ h3d_pass_DirShadowMap.prototype = $extend(h3d_pass_Shadows.prototype,{
 		_this.constModified = true;
 		_this.enable__ = m != h3d_pass_RenderMode.None;
 		return this.mode = m;
-	}
-	,set_size: function(s) {
-		if(this.border != null && this.size != s) {
-			this.border.dispose();
-			this.border = new h3d_pass_Border(s,s);
-		}
-		return h3d_pass_Shadows.prototype.set_size.call(this,s);
 	}
 	,calcShadowBounds: function(camera) {
 		var _gthis = this;
@@ -54375,9 +56013,6 @@ h3d_pass_DirShadowMap.prototype = $extend(h3d_pass_Shadows.prototype,{
 		h3d_pass_Shadows.prototype.draw.call(this,passes,sort);
 		var computingStatic = this.ctx.computingStatic || this.updateStatic;
 		var doBlur = this.blur.radius > 0 && (this.mode != h3d_pass_RenderMode.Mixed || !computingStatic);
-		if(this.border != null && !doBlur) {
-			this.border.render();
-		}
 		this.ctx.engine.popTarget();
 		var tmp;
 		if(this.mode == h3d_pass_RenderMode.Mixed && !computingStatic && this.staticTexture != null) {
@@ -54405,11 +56040,6 @@ h3d_pass_DirShadowMap.prototype = $extend(h3d_pass_Shadows.prototype,{
 				tex = tmp;
 			}
 			this.blur.apply(this.ctx,tex);
-			if(this.border != null) {
-				this.ctx.engine.pushTarget(tex);
-				this.border.render();
-				this.ctx.engine.popTarget();
-			}
 		}
 		var _this = this.ctx;
 		_this.globals.map.h[_this.cameraViewProj_id] = prevViewProj;
@@ -54541,22 +56171,9 @@ h3d_pass_DirShadowMap.prototype = $extend(h3d_pass_Shadows.prototype,{
 		passes.current = head;
 		passes.discarded = disc;
 		passes.lastDisc = discQueue;
-		var texture = this.ctx.textures.allocTarget("dirShadowMap",this.size,this.size,false,this.format);
-		var tmp;
-		if(!(this.depth == null || this.depth.width != this.size || this.depth.height != this.size)) {
-			var _this = this.depth;
-			tmp = _this.t == null && (_this.isDepth() || _this.realloc == null);
-		} else {
-			tmp = true;
-		}
-		if(tmp) {
-			if(this.depth != null) {
-				this.depth.dispose();
-			}
-			this.depth = new h3d_mat_Texture(this.size,this.size,null,hxd_PixelFormat.Depth24Stencil8);
-			this.depth.name = "dirShadowMapDepth";
-		}
-		texture.depthBuffer = this.depth;
+		this.depth = this.ctx.textures.allocTarget("dirShadowMap",this.size,this.size,false,hxd_PixelFormat.Depth32);
+		var texture = this.depth;
+		texture.set_filter(h3d_mat_Filter.Nearest);
 		texture = this.processShadowMap(passes,texture,sort);
 		this.syncShader(texture);
 		this.updateStatic = false;
@@ -54674,11 +56291,11 @@ var h3d_pass_OutputShader = function(output) {
 $hxClasses["h3d.pass.OutputShader"] = h3d_pass_OutputShader;
 h3d_pass_OutputShader.__name__ = "h3d.pass.OutputShader";
 h3d_pass_OutputShader.prototype = {
-	setOutput: function(output) {
+	setOutput: function(output,vertexOutputName) {
 		if(output == null) {
 			output = [hxsl_Output.Value("output.color")];
 		}
-		this.currentOutput.s = this.shaderCache.getLinkShader(output);
+		this.currentOutput.s = this.shaderCache.getLinkShader(output,vertexOutputName);
 	}
 	,compileShaders: function(globals,shaders,mode) {
 		if(mode == null) {
@@ -54840,6 +56457,184 @@ h3d_pass_SortByMaterial.prototype = {
 	}
 	,__class__: h3d_pass_SortByMaterial
 };
+var h3d_prim_BlendshapeInstance = function(blendshape,mesh) {
+	this.blendshape = blendshape;
+	this.mesh = mesh;
+	blendshape.incref();
+	this.weightsBuffer = hxd_impl_Allocator.get().allocFloats(blendshape.shapes.length);
+};
+$hxClasses["h3d.prim.BlendshapeInstance"] = h3d_prim_BlendshapeInstance;
+h3d_prim_BlendshapeInstance.__name__ = "h3d.prim.BlendshapeInstance";
+h3d_prim_BlendshapeInstance.prototype = {
+	dispose: function() {
+		this.blendshape.decref();
+		hxd_impl_Allocator.get().disposeBuffer(this.shader.weights__);
+	}
+	,__class__: h3d_prim_BlendshapeInstance
+};
+var h3d_prim_Blendshape = function(hmdModel) {
+	this.shapesBytes = [];
+	this.inputMapping = [];
+	this.refCount = 0;
+	this.hmdModel = hmdModel;
+	if(hmdModel.get_data().vertexFormat.hasLowPrecision) {
+		throw haxe_Exception.thrown("Blend shape doesn't support low precision");
+	}
+	var vertexFormat = hmdModel.get_data().vertexFormat;
+	var geoId = 0;
+	var _g_current = 0;
+	var _g_array = hmdModel.lib.header.geometries;
+	while(_g_current < _g_array.length) {
+		var _g_value = _g_array[_g_current];
+		var _g_key = _g_current++;
+		var gIdx = _g_key;
+		var g = _g_value;
+		if(g == hmdModel.get_data()) {
+			geoId = gIdx;
+		}
+	}
+	var _g = [];
+	var _g1 = 0;
+	var _g2 = hmdModel.lib.header.shapes;
+	while(_g1 < _g2.length) {
+		var s = _g2[_g1];
+		++_g1;
+		if(s.geom == geoId) {
+			_g.push(s);
+		}
+	}
+	this.shapes = _g;
+	var _g = 0;
+	var _g1 = this.shapes.length;
+	while(_g < _g1) {
+		var s = _g++;
+		var s1 = this.shapes[s];
+		var size = s1.vertexCount * s1.vertexFormat.strideBytes;
+		var vertexBytes = new haxe_io_Bytes(new ArrayBuffer(size));
+		hmdModel.lib.resource.entry.readBytes(vertexBytes,0,hmdModel.dataPosition + s1.vertexPosition,size);
+		size = hmdModel.get_data().vertexCount << 2;
+		var remapBytes = new haxe_io_Bytes(new ArrayBuffer(size));
+		hmdModel.lib.resource.entry.readBytes(remapBytes,0,hmdModel.dataPosition + s1.remapPosition,size);
+		this.shapesBytes.push({ vertexBytes : vertexBytes, remapBytes : remapBytes});
+		this.inputMapping.push(new haxe_ds_StringMap());
+	}
+	var _g_current = 0;
+	var _g_array = vertexFormat.inputs;
+	while(_g_current < _g_array.length) {
+		var input = _g_array[_g_current++];
+		var _g = 0;
+		var _g1 = this.shapes.length;
+		while(_g < _g1) {
+			var s = _g++;
+			var offset = 0;
+			var _g_current1 = 0;
+			var _g_array1 = this.shapes[s].vertexFormat.inputs;
+			while(_g_current1 < _g_array1.length) {
+				var i = _g_array1[_g_current1++];
+				if(i.name == input.name) {
+					this.inputMapping[s].h[i.name] = offset;
+				}
+				var this1 = i.type;
+				offset += this1 == js_Boot.__cast(9 , Int) ? 1 : this1;
+			}
+		}
+	}
+};
+$hxClasses["h3d.prim.Blendshape"] = h3d_prim_Blendshape;
+h3d_prim_Blendshape.__name__ = "h3d.prim.Blendshape";
+h3d_prim_Blendshape.prototype = {
+	incref: function() {
+		this.refCount++;
+		if(this.refCount == 1) {
+			this.alloc();
+		}
+	}
+	,decref: function() {
+		this.refCount--;
+		if(this.refCount <= 0) {
+			this.refCount = 0;
+			this.dispose();
+		}
+	}
+	,dispose: function() {
+		hxd_impl_Allocator.get().disposeFloats(this.offsetsBuffer);
+		hxd_impl_Allocator.get().disposeBuffer(this.gpuOffsets);
+	}
+	,alloc: function() {
+		this.offsetsBuffer = hxd_impl_Allocator.get().allocFloats(3 * this.hmdModel.get_data().vertexCount * this.shapes.length);
+		var flagOffset = 31;
+		var pos = 0;
+		var _g = 0;
+		var _g1 = this.shapes.length;
+		while(_g < _g1) {
+			var sIdx = _g++;
+			var sp = this.shapesBytes[sIdx];
+			var offsetIdx = 0;
+			var idx = 0;
+			while(offsetIdx < this.shapes[sIdx].indexCount) {
+				var affectedVId = sp.remapBytes.getInt32(idx << 2);
+				var reachEnd = false;
+				while(!reachEnd) {
+					reachEnd = affectedVId >> flagOffset != 0;
+					if(reachEnd) {
+						affectedVId ^= 1 << flagOffset;
+					}
+					var inputIdx = 0;
+					var offsetInput = 0;
+					var _g_current = 0;
+					var _g_array = this.shapes[sIdx].vertexFormat.inputs;
+					while(_g_current < _g_array.length) {
+						var input = _g_array[_g_current++];
+						var _g2 = 0;
+						var this1 = input.type;
+						var _g3 = this1 == js_Boot.__cast(9 , Int) ? 1 : this1;
+						while(_g2 < _g3) {
+							var sizeIdx = _g2++;
+							if(input.name != "position") {
+								continue;
+							}
+							var offset = sp.vertexBytes.getFloat(offsetIdx * this.shapes[sIdx].vertexFormat.stride + offsetInput + sizeIdx << 2);
+							var pos = sIdx * this.hmdModel.get_data().vertexCount * 3 + affectedVId * 3 + sizeIdx;
+							this.offsetsBuffer.array[pos] = offset;
+						}
+						var this2 = input.type;
+						offsetInput += this2 == js_Boot.__cast(9 , Int) ? 1 : this2;
+						++inputIdx;
+					}
+					++idx;
+					if(idx < this.hmdModel.get_data().vertexCount) {
+						affectedVId = sp.remapBytes.getInt32(idx << 2);
+					}
+				}
+				++offsetIdx;
+			}
+		}
+		this.gpuOffsets = hxd_impl_Allocator.get().ofFloats(this.offsetsBuffer,hxd_BufferFormat.get_POS3D(),3);
+	}
+	,__class__: h3d_prim_Blendshape
+};
+var h3d_prim_ColliderData = function(hmdModel,data) {
+	this.hmdModel = hmdModel;
+	this.data = data;
+};
+$hxClasses["h3d.prim.ColliderData"] = h3d_prim_ColliderData;
+h3d_prim_ColliderData.__name__ = "h3d.prim.ColliderData";
+h3d_prim_ColliderData.fromHmd = function(hmdModel) {
+	var header = hmdModel.lib.header;
+	var _g = 0;
+	var _g1 = header.models;
+	while(_g < _g1.length) {
+		var h = _g1[_g];
+		++_g;
+		if(h.collider != null && header.geometries[h.geometry] == hmdModel.get_data()) {
+			return new h3d_prim_ColliderData(hmdModel,header.colliders[h.collider]);
+		}
+	}
+	return null;
+};
+h3d_prim_ColliderData.prototype = {
+	__class__: h3d_prim_ColliderData
+};
 var h3d_prim_MeshPrimitive = function() {
 	h3d_prim_Primitive.call(this);
 };
@@ -54847,7 +56642,31 @@ $hxClasses["h3d.prim.MeshPrimitive"] = h3d_prim_MeshPrimitive;
 h3d_prim_MeshPrimitive.__name__ = "h3d.prim.MeshPrimitive";
 h3d_prim_MeshPrimitive.__super__ = h3d_prim_Primitive;
 h3d_prim_MeshPrimitive.prototype = $extend(h3d_prim_Primitive.prototype,{
-	dispose: function() {
+	addBuffer: function(buf) {
+		if(this.buffer == null) {
+			this.buffer = buf;
+		} else {
+			if(this.buffers == null) {
+				if(buf == this.buffer) {
+					throw haxe_Exception.thrown("Duplicate addBuffer()");
+				}
+				this.buffers = [this.buffer];
+			} else if(this.buffers.indexOf(buf) >= 0) {
+				throw haxe_Exception.thrown("Duplicate addBuffer()");
+			}
+			this.buffers.unshift(buf);
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this.buffers;
+			while(_g1 < _g2.length) {
+				var b = _g2[_g1];
+				++_g1;
+				_g.push(b.format);
+			}
+			this.formats = hxd_MultiFormat.make(_g);
+		}
+	}
+	,dispose: function() {
 		h3d_prim_Primitive.prototype.dispose.call(this);
 		if(this.buffers != null) {
 			var _g = 0;
@@ -54872,6 +56691,690 @@ h3d_prim_MeshPrimitive.prototype = $extend(h3d_prim_Primitive.prototype,{
 		}
 	}
 	,__class__: h3d_prim_MeshPrimitive
+});
+var h3d_prim_Polygon = function(points,idx) {
+	h3d_prim_MeshPrimitive.call(this);
+	this.points = points;
+	this.idx = idx;
+};
+$hxClasses["h3d.prim.Polygon"] = h3d_prim_Polygon;
+h3d_prim_Polygon.__name__ = "h3d.prim.Polygon";
+h3d_prim_Polygon.__super__ = h3d_prim_MeshPrimitive;
+h3d_prim_Polygon.prototype = $extend(h3d_prim_MeshPrimitive.prototype,{
+	getBounds: function() {
+		var b = new h3d_col_Bounds();
+		var _g = 0;
+		var _g1 = this.points;
+		while(_g < _g1.length) {
+			var p = _g1[_g];
+			++_g;
+			if(p.x < b.xMin) {
+				b.xMin = p.x;
+			}
+			if(p.x > b.xMax) {
+				b.xMax = p.x;
+			}
+			if(p.y < b.yMin) {
+				b.yMin = p.y;
+			}
+			if(p.y > b.yMax) {
+				b.yMax = p.y;
+			}
+			if(p.z < b.zMin) {
+				b.zMin = p.z;
+			}
+			if(p.z > b.zMax) {
+				b.zMax = p.z;
+			}
+		}
+		return b;
+	}
+	,alloc: function(engine) {
+		this.dispose();
+		var format = hxd_BufferFormat.get_POS3D();
+		if(this.normals != null) {
+			format = format.append("normal",3);
+		}
+		if(this.tangents != null) {
+			format = format.append("tangent",3);
+		}
+		if(this.uvs != null) {
+			format = format.append("uv",2);
+		}
+		if(this.colors != null) {
+			format = format.append("color",3);
+		}
+		var buf = hxd__$FloatBuffer_Float32Expand._new(0);
+		var _g = 0;
+		var _g1 = this.points.length;
+		while(_g < _g1) {
+			var k = _g++;
+			var p = this.points[k];
+			var v = p.x;
+			if(buf.pos == buf.array.length) {
+				var newSize = buf.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(buf.array);
+				buf.array = newArray;
+			}
+			buf.array[buf.pos++] = v;
+			var v1 = p.y;
+			if(buf.pos == buf.array.length) {
+				var newSize1 = buf.array.length << 1;
+				if(newSize1 < 128) {
+					newSize1 = 128;
+				}
+				var newArray1 = new Float32Array(newSize1);
+				newArray1.set(buf.array);
+				buf.array = newArray1;
+			}
+			buf.array[buf.pos++] = v1;
+			var v2 = p.z;
+			if(buf.pos == buf.array.length) {
+				var newSize2 = buf.array.length << 1;
+				if(newSize2 < 128) {
+					newSize2 = 128;
+				}
+				var newArray2 = new Float32Array(newSize2);
+				newArray2.set(buf.array);
+				buf.array = newArray2;
+			}
+			buf.array[buf.pos++] = v2;
+			if(this.normals != null) {
+				var n = this.normals[k];
+				var v3 = n.x;
+				if(buf.pos == buf.array.length) {
+					var newSize3 = buf.array.length << 1;
+					if(newSize3 < 128) {
+						newSize3 = 128;
+					}
+					var newArray3 = new Float32Array(newSize3);
+					newArray3.set(buf.array);
+					buf.array = newArray3;
+				}
+				buf.array[buf.pos++] = v3;
+				var v4 = n.y;
+				if(buf.pos == buf.array.length) {
+					var newSize4 = buf.array.length << 1;
+					if(newSize4 < 128) {
+						newSize4 = 128;
+					}
+					var newArray4 = new Float32Array(newSize4);
+					newArray4.set(buf.array);
+					buf.array = newArray4;
+				}
+				buf.array[buf.pos++] = v4;
+				var v5 = n.z;
+				if(buf.pos == buf.array.length) {
+					var newSize5 = buf.array.length << 1;
+					if(newSize5 < 128) {
+						newSize5 = 128;
+					}
+					var newArray5 = new Float32Array(newSize5);
+					newArray5.set(buf.array);
+					buf.array = newArray5;
+				}
+				buf.array[buf.pos++] = v5;
+			}
+			if(this.tangents != null) {
+				var t = this.tangents[k];
+				var v6 = t.x;
+				if(buf.pos == buf.array.length) {
+					var newSize6 = buf.array.length << 1;
+					if(newSize6 < 128) {
+						newSize6 = 128;
+					}
+					var newArray6 = new Float32Array(newSize6);
+					newArray6.set(buf.array);
+					buf.array = newArray6;
+				}
+				buf.array[buf.pos++] = v6;
+				var v7 = t.y;
+				if(buf.pos == buf.array.length) {
+					var newSize7 = buf.array.length << 1;
+					if(newSize7 < 128) {
+						newSize7 = 128;
+					}
+					var newArray7 = new Float32Array(newSize7);
+					newArray7.set(buf.array);
+					buf.array = newArray7;
+				}
+				buf.array[buf.pos++] = v7;
+				var v8 = t.z;
+				if(buf.pos == buf.array.length) {
+					var newSize8 = buf.array.length << 1;
+					if(newSize8 < 128) {
+						newSize8 = 128;
+					}
+					var newArray8 = new Float32Array(newSize8);
+					newArray8.set(buf.array);
+					buf.array = newArray8;
+				}
+				buf.array[buf.pos++] = v8;
+			}
+			if(this.uvs != null) {
+				var t1 = this.uvs[k];
+				var v9 = t1.u;
+				if(buf.pos == buf.array.length) {
+					var newSize9 = buf.array.length << 1;
+					if(newSize9 < 128) {
+						newSize9 = 128;
+					}
+					var newArray9 = new Float32Array(newSize9);
+					newArray9.set(buf.array);
+					buf.array = newArray9;
+				}
+				buf.array[buf.pos++] = v9;
+				var v10 = t1.v;
+				if(buf.pos == buf.array.length) {
+					var newSize10 = buf.array.length << 1;
+					if(newSize10 < 128) {
+						newSize10 = 128;
+					}
+					var newArray10 = new Float32Array(newSize10);
+					newArray10.set(buf.array);
+					buf.array = newArray10;
+				}
+				buf.array[buf.pos++] = v10;
+			}
+			if(this.colors != null) {
+				var c = this.colors[k];
+				var v11 = c.x;
+				if(buf.pos == buf.array.length) {
+					var newSize11 = buf.array.length << 1;
+					if(newSize11 < 128) {
+						newSize11 = 128;
+					}
+					var newArray11 = new Float32Array(newSize11);
+					newArray11.set(buf.array);
+					buf.array = newArray11;
+				}
+				buf.array[buf.pos++] = v11;
+				var v12 = c.y;
+				if(buf.pos == buf.array.length) {
+					var newSize12 = buf.array.length << 1;
+					if(newSize12 < 128) {
+						newSize12 = 128;
+					}
+					var newArray12 = new Float32Array(newSize12);
+					newArray12.set(buf.array);
+					buf.array = newArray12;
+				}
+				buf.array[buf.pos++] = v12;
+				var v13 = c.z;
+				if(buf.pos == buf.array.length) {
+					var newSize13 = buf.array.length << 1;
+					if(newSize13 < 128) {
+						newSize13 = 128;
+					}
+					var newArray13 = new Float32Array(newSize13);
+					newArray13.set(buf.array);
+					buf.array = newArray13;
+				}
+				buf.array[buf.pos++] = v13;
+			}
+		}
+		this.buffer = h3d_Buffer.ofFloats(buf,format);
+		if(this.idx != null) {
+			this.indexes = h3d_Indexes.alloc(this.idx);
+		}
+	}
+	,addNormals: function() {
+		this.normals = [];
+		var _g = 0;
+		var _g1 = this.points.length;
+		while(_g < _g1) {
+			var i = _g++;
+			this.normals[i] = new h3d_VectorImpl(0.,0.,0.);
+		}
+		var pos = 0;
+		var _g = 0;
+		var _g1 = this.triCount();
+		while(_g < _g1) {
+			var i = _g++;
+			var i0;
+			var i1;
+			var i2;
+			if(this.idx == null) {
+				++pos;
+				i0 = pos - 1;
+				++pos;
+				i1 = pos - 1;
+				++pos;
+				i2 = pos - 1;
+			} else {
+				i0 = this.idx[pos++];
+				i1 = this.idx[pos++];
+				i2 = this.idx[pos++];
+			}
+			var p0 = this.points[i0];
+			var p1 = this.points[i1];
+			var p2 = this.points[i2];
+			var x = p1.x - p0.x;
+			var y = p1.y - p0.y;
+			var z = p1.z - p0.z;
+			if(z == null) {
+				z = 0.;
+			}
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var x1 = x;
+			var y1 = y;
+			var z1 = z;
+			if(z1 == null) {
+				z1 = 0.;
+			}
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			var _this_x = x1;
+			var _this_y = y1;
+			var _this_z = z1;
+			var x2 = p2.x - p0.x;
+			var y2 = p2.y - p0.y;
+			var z2 = p2.z - p0.z;
+			if(z2 == null) {
+				z2 = 0.;
+			}
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			var x3 = x2;
+			var y3 = y2;
+			var z3 = z2;
+			if(z3 == null) {
+				z3 = 0.;
+			}
+			if(y3 == null) {
+				y3 = 0.;
+			}
+			if(x3 == null) {
+				x3 = 0.;
+			}
+			var v_x = x3;
+			var v_y = y3;
+			var v_z = z3;
+			var x4 = _this_y * v_z - _this_z * v_y;
+			var y4 = _this_z * v_x - _this_x * v_z;
+			var z4 = _this_x * v_y - _this_y * v_x;
+			if(z4 == null) {
+				z4 = 0.;
+			}
+			if(y4 == null) {
+				y4 = 0.;
+			}
+			if(x4 == null) {
+				x4 = 0.;
+			}
+			var x5 = x4;
+			var y5 = y4;
+			var z5 = z4;
+			if(z5 == null) {
+				z5 = 0.;
+			}
+			if(y5 == null) {
+				y5 = 0.;
+			}
+			if(x5 == null) {
+				x5 = 0.;
+			}
+			var n_x = x5;
+			var n_y = y5;
+			var n_z = z5;
+			this.normals[i0].x += n_x;
+			this.normals[i0].y += n_y;
+			this.normals[i0].z += n_z;
+			this.normals[i1].x += n_x;
+			this.normals[i1].y += n_y;
+			this.normals[i1].z += n_z;
+			this.normals[i2].x += n_x;
+			this.normals[i2].y += n_y;
+			this.normals[i2].z += n_z;
+		}
+		var _g = 0;
+		var _g1 = this.normals;
+		while(_g < _g1.length) {
+			var n = _g1[_g];
+			++_g;
+			var _this = n;
+			var k = _this.x * _this.x + _this.y * _this.y + _this.z * _this.z;
+			if(k < 1e-20) {
+				k = 0;
+			} else {
+				k = 1. / Math.sqrt(k);
+			}
+			_this.x *= k;
+			_this.y *= k;
+			_this.z *= k;
+		}
+	}
+	,triCount: function() {
+		var n = h3d_prim_MeshPrimitive.prototype.triCount.call(this);
+		if(n != 0) {
+			return n;
+		}
+		return (this.idx == null ? this.points.length : this.idx.length) / 3 | 0;
+	}
+	,render: function(engine) {
+		if(this.buffer == null || this.buffer.vbuf == null) {
+			this.alloc(engine);
+		}
+		var indexes = this.indexes;
+		var count = this.triCount();
+		if(indexes == null) {
+			indexes = engine.mem.getTriIndexes(count * 3);
+		}
+		if(this.buffers != null) {
+			engine.renderMultiBuffers(this.formats,this.buffers,indexes,0,count);
+		} else {
+			engine.renderIndexed(this.buffer,indexes,0,count);
+		}
+	}
+	,__class__: h3d_prim_Polygon
+});
+var h3d_prim_HMDModel = function(model,dataPos,lib,lods) {
+	this.lodConfig = null;
+	h3d_prim_MeshPrimitive.call(this);
+	this.model = model;
+	this.lods = [lib.header.geometries[model.geometry]];
+	if(lods != null) {
+		var _g = 0;
+		while(_g < lods.length) {
+			var lod = lods[_g];
+			++_g;
+			this.lods.push(lib.header.geometries[lod.geometry]);
+		}
+	}
+	this.dataPosition = dataPos;
+	this.lib = lib;
+	if(lib.header.shapes != null && lib.header.shapes.length > 0) {
+		this.blendshape = new h3d_prim_Blendshape(this);
+	}
+	if(lib.header.colliders != null && lib.header.colliders.length > 0) {
+		this.colliderData = h3d_prim_ColliderData.fromHmd(this);
+	}
+};
+$hxClasses["h3d.prim.HMDModel"] = h3d_prim_HMDModel;
+h3d_prim_HMDModel.__name__ = "h3d.prim.HMDModel";
+h3d_prim_HMDModel.__super__ = h3d_prim_MeshPrimitive;
+h3d_prim_HMDModel.prototype = $extend(h3d_prim_MeshPrimitive.prototype,{
+	get_data: function() {
+		return this.lods[0];
+	}
+	,triCount: function() {
+		return this.get_data().get_indexCount() / 3 | 0;
+	}
+	,getBounds: function() {
+		return this.get_data().bounds;
+	}
+	,selectMaterial: function(material,lod) {
+		this.curMaterial = material + lod * this.get_data().indexCounts.length;
+	}
+	,alloc: function(engine) {
+		this.dispose();
+		var vertexCount = 0;
+		var vertexFormat = this.get_data().vertexFormat;
+		this.indexCount = 0;
+		this.indexesTriPos = [];
+		var _g = 0;
+		var _g1 = this.lods;
+		while(_g < _g1.length) {
+			var lod = _g1[_g];
+			++_g;
+			vertexCount += lod.vertexCount;
+			var _g2 = 0;
+			var _g3 = lod.indexCounts;
+			while(_g2 < _g3.length) {
+				var n = _g3[_g2];
+				++_g2;
+				this.indexesTriPos.push(this.indexCount / 3 | 0);
+				this.indexCount += n;
+			}
+		}
+		this.buffer = new h3d_Buffer(vertexCount,vertexFormat);
+		var is32 = vertexCount > 65536;
+		this.indexes = h3d_Indexes._new(this.indexCount,is32);
+		var indexStride = is32 ? 4 : 2;
+		var entry = this.lib.resource.entry;
+		var curVertexCount = 0;
+		var curIndexCount = 0;
+		var _g_current = 0;
+		var _g_array = this.lods;
+		while(_g_current < _g_array.length) {
+			var _g_value = _g_array[_g_current];
+			var _g_key = _g_current++;
+			var i = _g_key;
+			var lod = _g_value;
+			if(lod.vertexFormat != vertexFormat) {
+				var error = "LOD" + i + " has a different vertex format, has ";
+				var _g_current1 = 0;
+				var _g_array1 = lod.vertexFormat.inputs;
+				while(_g_current1 < _g_array1.length) {
+					var input = _g_array1[_g_current1++];
+					error += input.name + " ";
+				}
+				error += ", wants ";
+				var _g_current2 = 0;
+				var _g_array2 = vertexFormat.inputs;
+				while(_g_current2 < _g_array2.length) {
+					var input1 = _g_array2[_g_current2++];
+					error += input1.name + " ";
+				}
+				throw haxe_Exception.thrown(error);
+			}
+			var size = lod.vertexCount * vertexFormat.strideBytes;
+			var bytes = entry.fetchBytes(this.dataPosition + lod.vertexPosition,size);
+			engine.driver.uploadBufferBytes(this.buffer,curVertexCount,lod.vertexCount,bytes,0);
+			var indexCount = lod.get_indexCount();
+			var lodIs32 = lod.vertexCount > 65536;
+			size = (lodIs32 ? 4 : 2) * indexCount;
+			var inBytes = entry.fetchBytes(this.dataPosition + lod.indexPosition,size);
+			var outBytes = is32 != lodIs32 ? new haxe_io_Bytes(new ArrayBuffer(indexCount * indexStride)) : inBytes;
+			if(is32) {
+				var _g = 0;
+				var _g1 = indexCount;
+				while(_g < _g1) {
+					var i1 = _g++;
+					if(lodIs32) {
+						outBytes.setInt32(i1 << 2,inBytes.getInt32(i1 << 2) + curVertexCount);
+					} else {
+						outBytes.setInt32(i1 << 2,inBytes.getUInt16(i1 << 1) + curVertexCount);
+					}
+				}
+			} else {
+				var _g2 = 0;
+				var _g3 = indexCount;
+				while(_g2 < _g3) {
+					var i2 = _g2++;
+					if(lodIs32) {
+						outBytes.setUInt16(i2 << 1,inBytes.getInt32(i2 << 2) + curVertexCount);
+					} else {
+						outBytes.setUInt16(i2 << 1,inBytes.getUInt16(i2 << 1) + curVertexCount);
+					}
+				}
+			}
+			engine.driver.uploadBufferBytes(this.indexes,curIndexCount,indexCount,outBytes,0);
+			curVertexCount += lod.vertexCount;
+			curIndexCount += indexCount;
+		}
+		if(this.normalsRecomputed != null) {
+			var name = this.normalsRecomputed;
+			this.normalsRecomputed = null;
+			this.recomputeNormals(name);
+		}
+	}
+	,recomputeNormals: function(name) {
+		if(this.normalsRecomputed != null) {
+			return;
+		}
+		if(name != null && this.get_data().vertexFormat.hasInput(name)) {
+			return;
+		}
+		if(name == null) {
+			name = "normal";
+		}
+		var v = hxd__$FloatBuffer_Float32Expand._new(0);
+		var _g = 0;
+		var _g1 = this.lods;
+		while(_g < _g1.length) {
+			var lod = _g1[_g];
+			++_g;
+			var pos = this.lib.getBuffers(lod,hxd_BufferFormat.get_POS3D());
+			var ids = [];
+			var pts = [];
+			var mpts_h = { };
+			var _g2 = 0;
+			var _g3 = lod.vertexCount;
+			while(_g2 < _g3) {
+				var i = _g2++;
+				var added = false;
+				var px = pos.vertexes[i * 3];
+				var py = pos.vertexes[i * 3 + 1];
+				var pz = pos.vertexes[i * 3 + 2];
+				var pid = (px + py + pz) * 10.01 | 0;
+				var arr = mpts_h[pid];
+				if(arr == null) {
+					arr = [];
+					mpts_h[pid] = arr;
+				} else {
+					var _g4 = 0;
+					while(_g4 < arr.length) {
+						var idx = arr[_g4];
+						++_g4;
+						var p = pts[idx];
+						if(p.x == px && p.y == py && p.z == pz) {
+							ids.push(idx);
+							added = true;
+							break;
+						}
+					}
+				}
+				if(!added) {
+					ids.push(pts.length);
+					arr.push(pts.length);
+					var x = px;
+					var y = py;
+					var z = pz;
+					if(z == null) {
+						z = 0.;
+					}
+					if(y == null) {
+						y = 0.;
+					}
+					if(x == null) {
+						x = 0.;
+					}
+					pts.push(new h3d_VectorImpl(x,y,z));
+				}
+			}
+			var idx1 = new Array(0);
+			var _g5 = 0;
+			var _g6 = pos.indexes;
+			while(_g5 < _g6.length) {
+				var i1 = _g6[_g5];
+				++_g5;
+				idx1.push(ids[i1]);
+			}
+			var pol = new h3d_prim_Polygon(pts,idx1);
+			pol.addNormals();
+			var startOffset = v.pos;
+			var _g7 = v.pos;
+			var _g8 = lod.vertexCount * 3;
+			while(_g7 < _g8) {
+				var i2 = _g7++;
+				if(v.pos == v.array.length) {
+					var newSize = v.array.length << 1;
+					if(newSize < 128) {
+						newSize = 128;
+					}
+					var newArray = new Float32Array(newSize);
+					newArray.set(v.array);
+					v.array = newArray;
+				}
+				v.array[v.pos++] = 0.;
+			}
+			var k = 0;
+			var _g9 = 0;
+			var _g10 = lod.vertexCount;
+			while(_g9 < _g10) {
+				var i3 = _g9++;
+				var n = pol.normals[ids[i3]];
+				v.array[startOffset + k++] = n.x;
+				v.array[startOffset + k++] = n.y;
+				v.array[startOffset + k++] = n.z;
+			}
+		}
+		var buf = h3d_Buffer.ofFloats(v,hxd_BufferFormat.make([new hxd_BufferInput(name,3,0)]));
+		this.addBuffer(buf);
+		this.normalsRecomputed = name;
+	}
+	,render: function(engine) {
+		if(this.curMaterial < 0) {
+			h3d_prim_MeshPrimitive.prototype.render.call(this,engine);
+			return;
+		}
+		var materialCount = this.get_data().indexCounts.length;
+		var lodLevel = this.curMaterial / this.get_data().indexCounts.length | 0;
+		if(this.indexes == null || this.indexes.vbuf == null) {
+			this.alloc(engine);
+		}
+		if(this.buffers == null) {
+			engine.renderIndexed(this.buffer,this.indexes,this.indexesTriPos[this.curMaterial],this.lods[lodLevel].indexCounts[this.curMaterial % materialCount] / 3 | 0);
+		} else {
+			engine.renderMultiBuffers(this.formats,this.buffers,this.indexes,this.indexesTriPos[this.curMaterial],this.lods[lodLevel].indexCounts[this.curMaterial % materialCount] / 3 | 0);
+		}
+		this.curMaterial = -1;
+	}
+	,lodCount: function() {
+		return this.lods.length;
+	}
+	,screenRatioToLod: function(screenRatio) {
+		var lodCount = this.lodCount();
+		if(lodCount == 1) {
+			return 0;
+		}
+		var lodConfig = this.getLodConfig();
+		if(lodConfig != null) {
+			var lodConfigHasCulling = lodConfig.length > lodCount - 1;
+			if(lodConfigHasCulling && screenRatio < lodConfig[lodConfig.length - 1]) {
+				return lodCount;
+			}
+			var lodLevel = 0;
+			var maxIter = lodConfigHasCulling ? lodCount - 1 : lodConfig.length;
+			var _g = 0;
+			var _g1 = maxIter;
+			while(_g < _g1) {
+				var i = _g++;
+				if(lodConfig[i] == 0.0) {
+					return lodLevel;
+				}
+				if(lodConfig[i] > screenRatio) {
+					++lodLevel;
+				} else {
+					break;
+				}
+			}
+			return lodLevel;
+		}
+		return 0;
+	}
+	,getLodConfig: function() {
+		return this.lodConfig;
+	}
+	,__class__: h3d_prim_HMDModel
 });
 var h3d_prim_Instanced = function() {
 	h3d_prim_Primitive.call(this);
@@ -55133,52 +57636,18 @@ h3d_prim_Plane2D.prototype = $extend(h3d_prim_Primitive.prototype,{
 	}
 	,__class__: h3d_prim_Plane2D
 });
-var h3d_prim_RawPrimitive = function(inf,persist) {
-	if(persist == null) {
-		persist = false;
-	}
-	h3d_prim_Primitive.call(this);
-	this.onContextLost = function() {
-		return inf;
-	};
-	this.bounds = inf.bounds;
-	this.alloc(null);
-	if(!persist) {
-		this.onContextLost = null;
-	}
+var h3d_prim_UV = function(u,v) {
+	this.u = u;
+	this.v = v;
 };
-$hxClasses["h3d.prim.RawPrimitive"] = h3d_prim_RawPrimitive;
-h3d_prim_RawPrimitive.__name__ = "h3d.prim.RawPrimitive";
-h3d_prim_RawPrimitive.__super__ = h3d_prim_Primitive;
-h3d_prim_RawPrimitive.prototype = $extend(h3d_prim_Primitive.prototype,{
-	alloc: function(engine) {
-		if(this.onContextLost == null) {
-			throw haxe_Exception.thrown("Cannot realloc " + Std.string(this));
-		}
-		var inf = this.onContextLost();
-		this.buffer = h3d_Buffer.ofFloats(inf.vbuf,inf.format);
-		this.vcount = this.buffer.vertices;
-		this.tcount = inf.ibuf != null ? inf.ibuf.length / 3 | 0 : this.vcount / 3 | 0;
-		if(inf.ibuf != null) {
-			this.indexes = h3d_Indexes.alloc(inf.ibuf);
-		} else if(this.indexes != null) {
-			this.indexes.dispose();
-			this.indexes = null;
-		}
-	}
-	,getBounds: function() {
-		if(this.bounds == null) {
-			throw haxe_Exception.thrown("Bounds not defined for " + Std.string(this));
-		}
-		return this.bounds;
-	}
-	,triCount: function() {
-		return this.tcount;
-	}
-	,__class__: h3d_prim_RawPrimitive
-});
+$hxClasses["h3d.prim.UV"] = h3d_prim_UV;
+h3d_prim_UV.__name__ = "h3d.prim.UV";
+h3d_prim_UV.prototype = {
+	__class__: h3d_prim_UV
+};
 var h3d_scene_Mesh = function(primitive,material,parent) {
 	this.curScreenRatio = 1.0;
+	this.forcedLod = -1;
 	this.inheritLod = false;
 	h3d_scene_Object.call(this,parent);
 	this.set_primitive(primitive);
@@ -55246,68 +57715,56 @@ h3d_scene_Mesh.screenRatio = function(absPos,bounds,camera) {
 		worldScale_y *= -1;
 		worldScale_z *= -1;
 	}
-	var a = bounds.xMax - bounds.xMin;
-	var a1 = bounds.yMax - bounds.yMin;
-	var b = bounds.zMax - bounds.zMin;
-	var b1 = a1 < b ? b : a1;
-	var a1 = worldScale_x;
-	var a2 = worldScale_y;
+	var x = (bounds.xMin + bounds.xMax) * 0.5;
+	var y = (bounds.yMin + bounds.yMax) * 0.5;
+	var z = (bounds.zMin + bounds.zMax) * 0.5;
+	var dx = bounds.xMax - bounds.xMin;
+	var dy = bounds.yMax - bounds.yMin;
+	var dz = bounds.zMax - bounds.zMin;
+	var r = Math.sqrt(dx * dx + dy * dy + dz * dz) * 0.5;
+	if(r == null) {
+		r = 1.;
+	}
+	if(z == null) {
+		z = 0.;
+	}
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	var sx = x;
+	var sy = y;
+	var sz = z;
+	var sr = r;
+	if(sr == null) {
+		sr = 0.;
+	}
+	if(sz == null) {
+		sz = 0.;
+	}
+	if(sy == null) {
+		sy = 0.;
+	}
+	if(sx == null) {
+		sx = 0.;
+	}
+	var s_x = sx;
+	var s_y = sy;
+	var s_z = sz;
+	var s_r = sr;
+	var offsetMagnitude = Math.sqrt(s_x * s_x + s_y * s_y + s_z * s_z);
+	var a = worldScale_x;
+	var a1 = worldScale_y;
 	var b = worldScale_z;
-	var b2 = a2 < b ? b : a2;
-	var worldRadius = (a < b1 ? b1 : a) * (a1 < b2 ? b2 : a1) / 2.0;
-	var x = 0.;
-	var y = 0.;
-	var z = 0.;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var cameraRight_x = x;
-	var cameraRight_y = y;
-	var cameraRight_z = z;
-	if(camera.directions == null) {
-		camera.directions = new h3d_MatrixImpl();
-		camera.directions._44 = 0;
-	}
-	if(camera.directions._44 == 0) {
-		camera.calcDirections();
-	}
-	cameraRight_x = camera.directions._21;
-	cameraRight_y = camera.directions._22;
-	cameraRight_z = camera.directions._23;
-	var x = 0.;
-	var y = 0.;
-	var z = 0.;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var cameraUp_x = x;
-	var cameraUp_y = y;
-	var cameraUp_z = z;
-	if(camera.directions == null) {
-		camera.directions = new h3d_MatrixImpl();
-		camera.directions._44 = 0;
-	}
-	if(camera.directions._44 == 0) {
-		camera.calcDirections();
-	}
-	cameraUp_x = camera.directions._31;
-	cameraUp_y = camera.directions._32;
-	cameraUp_z = camera.directions._33;
-	var x = cameraUp_x - cameraRight_x;
-	var y = cameraUp_y - cameraRight_y;
-	var z = cameraUp_z - cameraRight_z;
+	var b1 = a1 < b ? b : a1;
+	var f = (s_r + offsetMagnitude) * (a < b1 ? b1 : a);
+	var worldRadius = f < 0 ? -f : f;
+	var v = camera.pos;
+	var x = worldCenter_x - v.x;
+	var y = worldCenter_y - v.y;
+	var z = worldCenter_z - v.z;
 	if(z == null) {
 		z = 0.;
 	}
@@ -55332,252 +57789,17 @@ h3d_scene_Mesh.screenRatio = function(absPos,bounds,camera) {
 	var _this_x = x1;
 	var _this_y = y1;
 	var _this_z = z1;
-	var k = _this_x * _this_x + _this_y * _this_y + _this_z * _this_z;
-	if(k < 1e-20) {
-		k = 0;
-	} else {
-		k = 1. / Math.sqrt(k);
-	}
-	var x = _this_x * k;
-	var y = _this_y * k;
-	var z = _this_z * k;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var x1 = x;
-	var y1 = y;
-	var z1 = z;
-	if(z1 == null) {
-		z1 = 0.;
-	}
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var cameraTopLeft_x = x1;
-	var cameraTopLeft_y = y1;
-	var cameraTopLeft_z = z1;
-	var x = cameraTopLeft_x * worldRadius;
-	var y = cameraTopLeft_y * worldRadius;
-	var z = cameraTopLeft_z * worldRadius;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var x1 = x;
-	var y1 = y;
-	var z1 = z;
-	if(z1 == null) {
-		z1 = 0.;
-	}
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var v_x = x1;
-	var v_y = y1;
-	var v_z = z1;
-	var x = worldCenter_x + v_x;
-	var y = worldCenter_y + v_y;
-	var z = worldCenter_z + v_z;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var x1 = x;
-	var y1 = y;
-	var z1 = z;
-	if(z1 == null) {
-		z1 = 0.;
-	}
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var worldTopLeft_x = x1;
-	var worldTopLeft_y = y1;
-	var worldTopLeft_z = z1;
-	var x = cameraTopLeft_x * worldRadius;
-	var y = cameraTopLeft_y * worldRadius;
-	var z = cameraTopLeft_z * worldRadius;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var x1 = x;
-	var y1 = y;
-	var z1 = z;
-	if(z1 == null) {
-		z1 = 0.;
-	}
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var v_x = x1;
-	var v_y = y1;
-	var v_z = z1;
-	var x = worldCenter_x - v_x;
-	var y = worldCenter_y - v_y;
-	var z = worldCenter_z - v_z;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var x1 = x;
-	var y1 = y;
-	var z1 = z;
-	if(z1 == null) {
-		z1 = 0.;
-	}
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var worldBottomRight_x = x1;
-	var worldBottomRight_y = y1;
-	var worldBottomRight_z = z1;
-	var snapToPixel = false;
-	if(snapToPixel == null) {
-		snapToPixel = true;
-	}
-	var x = 0.;
-	var y = 0.;
-	var z = 0.;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var screenTopLeft_x = x;
-	var screenTopLeft_y = y;
-	var screenTopLeft_z = z;
-	var x = worldTopLeft_x;
-	var y = worldTopLeft_y;
-	var z = worldTopLeft_z;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	screenTopLeft_x = x;
-	screenTopLeft_y = y;
-	screenTopLeft_z = z;
-	var m = camera.m;
-	var px = screenTopLeft_x * m._11 + screenTopLeft_y * m._21 + screenTopLeft_z * m._31 + m._41;
-	var py = screenTopLeft_x * m._12 + screenTopLeft_y * m._22 + screenTopLeft_z * m._32 + m._42;
-	var pz = screenTopLeft_x * m._13 + screenTopLeft_y * m._23 + screenTopLeft_z * m._33 + m._43;
-	var iw = 1 / (screenTopLeft_x * m._14 + screenTopLeft_y * m._24 + screenTopLeft_z * m._34 + m._44);
-	screenTopLeft_x = px * iw;
-	screenTopLeft_y = py * iw;
-	screenTopLeft_z = pz * iw;
-	screenTopLeft_x = (screenTopLeft_x + 1) * 0.5;
-	screenTopLeft_y = (-screenTopLeft_y + 1) * 0.5;
-	if(snapToPixel) {
-		screenTopLeft_x = Math.round(screenTopLeft_x);
-		screenTopLeft_y = Math.round(screenTopLeft_y);
-	}
-	var snapToPixel = false;
-	if(snapToPixel == null) {
-		snapToPixel = true;
-	}
-	var x = 0.;
-	var y = 0.;
-	var z = 0.;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var screenBottomRight_x = x;
-	var screenBottomRight_y = y;
-	var screenBottomRight_z = z;
-	var x = worldBottomRight_x;
-	var y = worldBottomRight_y;
-	var z = worldBottomRight_z;
-	if(z == null) {
-		z = 0.;
-	}
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	screenBottomRight_x = x;
-	screenBottomRight_y = y;
-	screenBottomRight_z = z;
-	var m = camera.m;
-	var px = screenBottomRight_x * m._11 + screenBottomRight_y * m._21 + screenBottomRight_z * m._31 + m._41;
-	var py = screenBottomRight_x * m._12 + screenBottomRight_y * m._22 + screenBottomRight_z * m._32 + m._42;
-	var pz = screenBottomRight_x * m._13 + screenBottomRight_y * m._23 + screenBottomRight_z * m._33 + m._43;
-	var iw = 1 / (screenBottomRight_x * m._14 + screenBottomRight_y * m._24 + screenBottomRight_z * m._34 + m._44);
-	screenBottomRight_x = px * iw;
-	screenBottomRight_y = py * iw;
-	screenBottomRight_z = pz * iw;
-	screenBottomRight_x = (screenBottomRight_x + 1) * 0.5;
-	screenBottomRight_y = (-screenBottomRight_y + 1) * 0.5;
-	if(snapToPixel) {
-		screenBottomRight_x = Math.round(screenBottomRight_x);
-		screenBottomRight_y = Math.round(screenBottomRight_y);
-	}
-	var a = screenBottomRight_x - screenTopLeft_x;
-	var b = screenBottomRight_y - screenTopLeft_y;
-	var screenArea = a < b ? b : a;
-	return screenArea * screenArea;
+	var distanceFromCamera = Math.sqrt(_this_x * _this_x + _this_y * _this_y + _this_z * _this_z);
+	var a = 0.5 * camera.mproj._11;
+	var b = 0.5 * camera.mproj._22;
+	var screenMultiple = a < b ? b : a;
+	var screenRadius = screenMultiple * worldRadius / (1.0 < distanceFromCamera ? distanceFromCamera : 1.0);
+	return screenRadius * 2.0;
 };
 h3d_scene_Mesh.__super__ = h3d_scene_Object;
 h3d_scene_Mesh.prototype = $extend(h3d_scene_Object.prototype,{
 	draw: function(ctx) {
-		this.primitive.selectMaterial(0,this.primitive.screenRatioToLod(this.curScreenRatio));
+		this.primitive.selectMaterial(0,this.getLodIndex());
 		this.primitive.render(ctx.engine);
 	}
 	,calcScreenRatio: function(ctx) {
@@ -55600,7 +57822,7 @@ h3d_scene_Mesh.prototype = $extend(h3d_scene_Object.prototype,{
 	}
 	,emit: function(ctx) {
 		this.calcScreenRatio(ctx);
-		if(this.primitive.screenRatioToLod(this.curScreenRatio) >= this.primitive.lodCount()) {
+		if(this.getLodIndex() >= this.primitive.lodCount()) {
 			return;
 		}
 		var p = this.material.passes;
@@ -55621,6 +57843,11 @@ h3d_scene_Mesh.prototype = $extend(h3d_scene_Object.prototype,{
 		if(this.primitive != null) {
 			this.primitive.decref();
 		}
+		var tmp = this.blendshapeInstance;
+		if(tmp != null) {
+			tmp.dispose();
+		}
+		this.blendshapeInstance = null;
 		h3d_scene_Object.prototype.onRemove.call(this);
 	}
 	,set_primitive: function(prim) {
@@ -55633,6 +57860,12 @@ h3d_scene_Mesh.prototype = $extend(h3d_scene_Object.prototype,{
 			}
 		}
 		return this.primitive = prim;
+	}
+	,getLodIndex: function() {
+		if(this.forcedLod > -1) {
+			return this.forcedLod;
+		}
+		return this.primitive.screenRatioToLod(this.curScreenRatio);
 	}
 	,__class__: h3d_scene_Mesh
 });
@@ -55834,6 +58067,7 @@ var h3d_scene_RenderContext = function(scene) {
 	this.forcedScreenRatio = -1;
 	h3d_impl_RenderContext.call(this);
 	this.scene = scene;
+	this.camera = new h3d_Camera();
 	this.cachedShaderList = [];
 	this.cachedPassObjects = [];
 	this.initGlobals();
@@ -55843,21 +58077,43 @@ h3d_scene_RenderContext.__name__ = "h3d.scene.RenderContext";
 h3d_scene_RenderContext.__super__ = h3d_impl_RenderContext;
 h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 	setCamera: function(cam) {
-		this.camera = cam;
-		var v = cam.mcam;
+		this.camera.load(cam);
+		var v = this.camera.reverseDepth = this.useReverseDepth;
+		this.globals.map.h[this.cameraReverseDepth_id] = v;
+		this.camera.update();
+		var v = this.camera.mcam;
 		this.globals.map.h[this.cameraView_id] = v;
-		var v = cam.zNear;
+		var v = this.camera.zNear;
 		this.globals.map.h[this.cameraNear_id] = v;
-		var v = cam.zFar;
+		var v = this.camera.zFar;
 		this.globals.map.h[this.cameraFar_id] = v;
-		var v = cam.mproj;
+		var v = this.camera.mproj;
 		this.globals.map.h[this.cameraProj_id] = v;
-		var v = cam.pos;
+		var v = this.camera.getInverseProj();
+		this.globals.map.h[this.cameraInvProj_id] = v;
+		var v = this.camera.pos;
 		this.globals.map.h[this.cameraPos_id] = v;
-		var x = cam.mproj._11;
-		var y = cam.mproj._22;
-		var z = cam.mproj._33;
-		var w = cam.mproj._44;
+		if(this.globals.map.h[this.cameraPrevPos_id] == null) {
+			var _this = this.camera.pos;
+			var x = _this.x;
+			var y = _this.y;
+			var z = _this.z;
+			if(z == null) {
+				z = 0.;
+			}
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var v = new h3d_VectorImpl(x,y,z);
+			this.globals.map.h[this.cameraPrevPos_id] = v;
+		}
+		var x = this.camera.mproj._11;
+		var y = this.camera.mproj._22;
+		var z = this.camera.mproj._33;
+		var w = this.camera.mproj._44;
 		if(w == null) {
 			w = 1.;
 		}
@@ -55873,7 +58129,7 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		var v = new h3d_Vector4Impl(x,y,z,w);
 		this.globals.map.h[this.cameraProjDiag_id] = v;
 		if(this.globals.map.h[this.cameraPreviousViewProj_id] == null) {
-			var v = cam.m.clone();
+			var v = this.camera.m.clone();
 			this.globals.map.h[this.cameraPreviousViewProj_id] = v;
 		}
 		if(this.globals.map.h[this.cameraJitterOffsets_id] == null) {
@@ -55896,14 +58152,16 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 			var v = new h3d_Vector4Impl(x,y,z,w);
 			this.globals.map.h[this.cameraJitterOffsets_id] = v;
 		}
-		var v = cam.m;
+		var v = this.camera.m;
 		this.globals.map.h[this.cameraViewProj_id] = v;
 		var v = this.camera.getInverseViewProj();
 		this.globals.map.h[this.cameraInverseViewProj_id] = v;
 	}
 	,setupTarget: function() {
 		var v = this.engine.driver.hasFeature(h3d_impl_Feature.BottomLeftCoords) && this.engine.getCurrentTarget() != null ? -1 : 1;
-		this.globals.map.h[this.cameraProjFlip_id] = v;
+		if(this.globals.map.h[this.cameraProjFlip_id] != v) {
+			this.globals.map.h[this.cameraProjFlip_id] = v;
+		}
 	}
 	,getCurrentPixelSize: function() {
 		var t = this.engine.getCurrentTarget();
@@ -55918,27 +58176,27 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		return new h3d_VectorImpl(x,y,0.);
 	}
 	,start: function() {
-		this.lights = null;
 		this.drawPass = null;
 		this.passes = [];
 		this.lights = null;
 		this.cachedPos = 0;
 		this.visibleFlag = true;
 		this.forcedScreenRatio = -1;
+		var v = this.time;
+		this.globals.map.h[this.globalPrevTime_id] = v;
 		this.time += this.elapsedTime;
 		this.frame++;
 		this.setCurrent();
 		this.engine = h3d_Engine.CURRENT;
 		var v = this.time;
 		this.globals.map.h[this.globalTime_id] = v;
+		var v = this.frame;
+		this.globals.map.h[this.globalFrame_id] = v;
 		var v = this.getCurrentPixelSize();
 		this.globals.map.h[this.pixelSize_id] = v;
 		this.setCamera(this.scene.camera);
 	}
 	,emitPass: function(pass,obj) {
-		if((pass.rendererFlags & 1) == 0) {
-			this.scene.renderer.setPassFlags(pass);
-		}
 		var o = this.allocPool;
 		if(o == null) {
 			o = new h3d_pass_PassObject();
@@ -55998,6 +58256,11 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		this.passes = [];
 		this.lights = null;
 		this.cameraFrustumUploaded = false;
+		var _this = this.globals.map.h[this.cameraPrevPos_id];
+		var v = this.globals.map.h[this.cameraPos_id];
+		_this.x = v.x;
+		_this.y = v.y;
+		_this.z = v.z;
 		this.globals.map.h[this.cameraPreviousViewProj_id].load(this.globals.map.h[this.cameraViewProj_id]);
 		this.computeVelocity = false;
 		this.clearCurrent();
@@ -56006,6 +58269,7 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		h3d_impl_RenderContext.prototype.dispose.call(this);
 		if(this.cameraFrustumBuffer != null) {
 			hxd_impl_Allocator.get().disposeBuffer(this.cameraFrustumBuffer);
+			this.cameraFrustumBuffer = null;
 		}
 	}
 	,initGlobals: function() {
@@ -56013,18 +58277,23 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		this.cameraNear_id = hxsl_Globals.allocID("camera.zNear");
 		this.cameraFar_id = hxsl_Globals.allocID("camera.zFar");
 		this.cameraProj_id = hxsl_Globals.allocID("camera.proj");
+		this.cameraInvProj_id = hxsl_Globals.allocID("camera.invProj");
+		this.cameraPrevPos_id = hxsl_Globals.allocID("camera.prevPosition");
 		this.cameraPos_id = hxsl_Globals.allocID("camera.position");
 		this.cameraProjDiag_id = hxsl_Globals.allocID("camera.projDiag");
 		this.cameraProjFlip_id = hxsl_Globals.allocID("camera.projFlip");
+		this.cameraReverseDepth_id = hxsl_Globals.allocID("camera.reverseDepth");
 		this.cameraViewProj_id = hxsl_Globals.allocID("camera.viewProj");
 		this.cameraInverseViewProj_id = hxsl_Globals.allocID("camera.inverseViewProj");
 		this.cameraPreviousViewProj_id = hxsl_Globals.allocID("camera.previousViewProj");
 		this.cameraJitterOffsets_id = hxsl_Globals.allocID("camera.jitterOffsets");
+		this.globalPrevTime_id = hxsl_Globals.allocID("global.prevTime");
 		this.globalTime_id = hxsl_Globals.allocID("global.time");
 		this.pixelSize_id = hxsl_Globals.allocID("global.pixelSize");
 		this.globalModelView_id = hxsl_Globals.allocID("global.modelView");
 		this.globalModelViewInverse_id = hxsl_Globals.allocID("global.modelViewInverse");
 		this.globalPreviousModelView_id = hxsl_Globals.allocID("global.previousModelView");
+		this.globalFrame_id = hxsl_Globals.allocID("global.frame");
 	}
 	,__class__: h3d_scene_RenderContext
 });
@@ -56071,7 +58340,7 @@ h3d_scene_Renderer.prototype = $extend(hxd_impl_AnyProps.prototype,{
 			var w = p.obj.absPos._41 * cam._14 + p.obj.absPos._42 * cam._24 + p.obj.absPos._43 * cam._34 + cam._44;
 			p.depth = w > 0.0 ? z / w : -z / w;
 		}
-		if(frontToBack) {
+		if(frontToBack && !this.ctx.camera.reverseDepth || !frontToBack && this.ctx.camera.reverseDepth) {
 			var list = passes.current;
 			var tmp;
 			if(list == null) {
@@ -56214,9 +58483,6 @@ h3d_scene_Renderer.prototype = $extend(hxd_impl_AnyProps.prototype,{
 	,has: function(name) {
 		return this.passObjects.h[name] != null;
 	}
-	,setPassFlags: function(pass) {
-		pass.rendererFlags |= 1;
-	}
 	,get: function(name) {
 		var p = this.passObjects.h[name];
 		if(p == null) {
@@ -56284,10 +58550,6 @@ var h3d_scene_Scene = function(createRenderer,createLightSystem) {
 	}
 	this.checkPasses = true;
 	this.interactiveOffset = 0;
-	this.ratioY = 1;
-	this.ratioX = 1;
-	this.offsetY = 0;
-	this.offsetX = 0;
 	h3d_scene_Object.call(this,null);
 	this.window = hxd_Window.getInstance();
 	this.eventListeners = [];
@@ -56360,10 +58622,19 @@ h3d_scene_Scene.prototype = $extend(h3d_scene_Object.prototype,{
 			return null;
 		}
 		if(this.hitInteractives.length == 0) {
-			var x = event.relX - this.offsetX;
-			var y = event.relY - this.offsetY;
-			var width = this.ratioX * this.window.get_width();
-			var height = this.ratioY * this.window.get_height();
+			var tmp = this.scenePosition;
+			var x = event.relX - (tmp != null ? tmp.offsetX : null);
+			var tmp = this.scenePosition;
+			var y = event.relY - (tmp != null ? tmp.offsetY : null);
+			var tmp = this.scenePosition;
+			var tmp1 = tmp != null ? tmp.width : null;
+			var width = tmp1 != null ? tmp1 : this.window.get_width();
+			var tmp = this.scenePosition;
+			var tmp1 = tmp != null ? tmp.height : null;
+			var height = tmp1 != null ? tmp1 : this.window.get_height();
+			if(x < 0 || y < 0 || x > width || y > height) {
+				return null;
+			}
 			var screenX = (x / width - 0.5) * 2;
 			var screenY = -(y / height - 0.5) * 2;
 			var p0 = this.camera.unproject(screenX,screenY,0);
@@ -56879,7 +59150,7 @@ h3d_scene_Scene.prototype = $extend(h3d_scene_Object.prototype,{
 				var p = passes[_g];
 				++_g;
 				if(!p.rendered) {
-					haxe_Log.trace("Pass " + p.name + " has not been rendered : don't know how to handle.",{ fileName : "h3d/scene/Scene.hx", lineNumber : 397, className : "h3d.scene.Scene", methodName : "render"});
+					haxe_Log.trace("Pass " + p.name + " has not been rendered : don't know how to handle.",{ fileName : "h3d/scene/Scene.hx", lineNumber : 407, className : "h3d.scene.Scene", methodName : "render"});
 				}
 			}
 		}
@@ -57538,6 +59809,69 @@ h3d_shader_BaseMesh.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_BaseMesh
 });
+var h3d_shader_Blendshape = function() {
+	this.vcount__ = 0;
+	this.shapeCount__ = 0;
+	hxsl_Shader.call(this);
+};
+$hxClasses["h3d.shader.Blendshape"] = h3d_shader_Blendshape;
+h3d_shader_Blendshape.__name__ = "h3d.shader.Blendshape";
+h3d_shader_Blendshape.__super__ = hxsl_Shader;
+h3d_shader_Blendshape.prototype = $extend(hxsl_Shader.prototype,{
+	get_shapeCount: function() {
+		return this.shapeCount__;
+	}
+	,set_shapeCount: function(_v) {
+		return this.shapeCount__ = _v;
+	}
+	,get_vcount: function() {
+		return this.vcount__;
+	}
+	,set_vcount: function(_v) {
+		return this.vcount__ = _v;
+	}
+	,get_offsets: function() {
+		return this.offsets__;
+	}
+	,set_offsets: function(_v) {
+		return this.offsets__ = _v;
+	}
+	,get_weights: function() {
+		return this.weights__;
+	}
+	,set_weights: function(_v) {
+		return this.weights__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.shapeCount__;
+		case 1:
+			return this.vcount__;
+		case 2:
+			return this.offsets__;
+		case 3:
+			return this.weights__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.shapeCount__;
+		case 1:
+			return this.vcount__;
+		default:
+		}
+		return 0.;
+	}
+	,__class__: h3d_shader_Blendshape
+});
 var h3d_shader_Blur = function() {
 	this.cubeDir__ = new h3d_MatrixImpl();
 	this.depthThresholdMaxDist__ = 0;
@@ -57757,6 +60091,7 @@ h3d_shader_ShaderBuffers.prototype = {
 		var np = s.paramsSize << 2;
 		var nt = s.texturesCount;
 		var nb = s.bufferCount;
+		var nh = s.globalsHandleCount + s.paramsHandleCount;
 		if(this.globals.length < ng) {
 			this.globals = new Float32Array(ng);
 		}
@@ -57768,6 +60103,9 @@ h3d_shader_ShaderBuffers.prototype = {
 		}
 		if(nb > 0 && (this.buffers == null || this.buffers.length < nb)) {
 			this.buffers = new Array(nb);
+		}
+		if(nh > 0 && (this.handles == null || this.handles.length < nh)) {
+			this.handles = new Array(nh);
 		}
 	}
 	,__class__: h3d_shader_ShaderBuffers
@@ -57912,6 +60250,7 @@ var h3d_shader_DirShadow = function() {
 	this.pcfScale__ = 0;
 	this.PCF_SAMPLES__ = 0;
 	this.shadowPower__ = 0;
+	this.CHECK_OUT_OF_BOUNDS__ = true;
 	hxsl_Shader.call(this);
 	this.set_pcfQuality(1);
 };
@@ -58660,6 +60999,13 @@ h3d_shader_DirShadow.prototype = $extend(hxsl_Shader.prototype,{
 		this.constModified = true;
 		return this.enable__ = _v;
 	}
+	,get_CHECK_OUT_OF_BOUNDS: function() {
+		return this.CHECK_OUT_OF_BOUNDS__;
+	}
+	,set_CHECK_OUT_OF_BOUNDS: function(_v) {
+		this.constModified = true;
+		return this.CHECK_OUT_OF_BOUNDS__ = _v;
+	}
 	,get_USE_ESM: function() {
 		return this.USE_ESM__;
 	}
@@ -58729,17 +61075,20 @@ h3d_shader_DirShadow.prototype = $extend(hxsl_Shader.prototype,{
 		if(this.enable__) {
 			this.constBits |= 1;
 		}
-		if(this.USE_ESM__) {
+		if(this.CHECK_OUT_OF_BOUNDS__) {
 			this.constBits |= 2;
 		}
-		if(this.USE_PCF__) {
+		if(this.USE_ESM__) {
 			this.constBits |= 4;
+		}
+		if(this.USE_PCF__) {
+			this.constBits |= 8;
 		}
 		var v = this.PCF_SAMPLES__;
 		if(v >>> 8 != 0) {
 			throw haxe_Exception.thrown("PCF_SAMPLES" + " is out of range " + v + ">" + 255 + ", consider using @const(MAX_VALUE)");
 		}
-		this.constBits |= v << 3;
+		this.constBits |= v << 4;
 		if(this.shadowMap__ == null) {
 			this.shadowMapChannel__ = hxsl_Channel.Unknown;
 		} else if(this.shadowMapChannel__ == hxsl_Channel.Unknown) {
@@ -58749,7 +61098,7 @@ h3d_shader_DirShadow.prototype = $extend(hxsl_Shader.prototype,{
 				throw haxe_Exception.thrown("shadowMap" + "Channel is not set");
 			}
 		}
-		this.constBits |= (globals.allocChannelID(this.shadowMap__) << 3 | this.shadowMapChannel__._hx_index) << 11;
+		this.constBits |= (globals.allocChannelID(this.shadowMap__) << 3 | this.shadowMapChannel__._hx_index) << 12;
 		this.updateConstantsFinal(globals);
 	}
 	,getParamValue: function(index) {
@@ -58757,24 +61106,26 @@ h3d_shader_DirShadow.prototype = $extend(hxsl_Shader.prototype,{
 		case 0:
 			return this.enable__;
 		case 1:
-			return this.USE_ESM__;
+			return this.CHECK_OUT_OF_BOUNDS__;
 		case 2:
-			return this.shadowPower__;
+			return this.USE_ESM__;
 		case 3:
-			return this.USE_PCF__;
+			return this.shadowPower__;
 		case 4:
-			return this.PCF_SAMPLES__;
+			return this.USE_PCF__;
 		case 5:
-			return this.pcfScale__;
+			return this.PCF_SAMPLES__;
 		case 6:
-			return this.shadowRes__;
+			return this.pcfScale__;
 		case 7:
-			return this.shadowMap__;
+			return this.shadowRes__;
 		case 8:
-			return this.shadowProj__;
+			return this.shadowMap__;
 		case 9:
-			return this.shadowBias__;
+			return this.shadowProj__;
 		case 10:
+			return this.shadowBias__;
+		case 11:
 			return this.poissonDisk__;
 		default:
 		}
@@ -58782,13 +61133,13 @@ h3d_shader_DirShadow.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,getParamFloatValue: function(index) {
 		switch(index) {
-		case 2:
+		case 3:
 			return this.shadowPower__;
-		case 4:
-			return this.PCF_SAMPLES__;
 		case 5:
+			return this.PCF_SAMPLES__;
+		case 6:
 			return this.pcfScale__;
-		case 9:
+		case 10:
 			return this.shadowBias__;
 		default:
 		}
@@ -59265,8 +61616,6 @@ var h3d_shader_SkinBase = function() {
 	this.fourBonesByVertex__ = false;
 	this.MaxBones__ = 0;
 	hxsl_Shader.call(this);
-	this.constModified = true;
-	this.MaxBones__ = 34;
 };
 $hxClasses["h3d.shader.SkinBase"] = h3d_shader_SkinBase;
 h3d_shader_SkinBase.__name__ = "h3d.shader.SkinBase";
@@ -59853,6 +62202,15 @@ haxe_Exception.prototype = $extend(Error.prototype,{
 	}
 	,__class__: haxe_Exception
 });
+var haxe__$Int64__$_$_$Int64 = function(high,low) {
+	this.high = high;
+	this.low = low;
+};
+$hxClasses["haxe._Int64.___Int64"] = haxe__$Int64__$_$_$Int64;
+haxe__$Int64__$_$_$Int64.__name__ = "haxe._Int64.___Int64";
+haxe__$Int64__$_$_$Int64.prototype = {
+	__class__: haxe__$Int64__$_$_$Int64
+};
 var haxe_Log = function() { };
 $hxClasses["haxe.Log"] = haxe_Log;
 haxe_Log.__name__ = "haxe.Log";
@@ -61972,6 +64330,10 @@ haxe_io_Error.__empty_constructs__ = [haxe_io_Error.Blocked,haxe_io_Error.Overfl
 var haxe_io_FPHelper = function() { };
 $hxClasses["haxe.io.FPHelper"] = haxe_io_FPHelper;
 haxe_io_FPHelper.__name__ = "haxe.io.FPHelper";
+haxe_io_FPHelper.i32ToFloat = function(i) {
+	haxe_io_FPHelper.helper.setInt32(0,i,true);
+	return haxe_io_FPHelper.helper.getFloat32(0,true);
+};
 haxe_io_FPHelper.floatToI32 = function(f) {
 	haxe_io_FPHelper.helper.setFloat32(0,f,true);
 	return haxe_io_FPHelper.helper.getInt32(0,true);
@@ -63398,7 +65760,7 @@ hxd_BitmapData.prototype = {
 				clip_y0 = 0;
 				clip_y1 = this.ctx.canvas.height - 1;
 			} else {
-				if(y1 >= this.ctx.canvas.width || y0 < 0) {
+				if(y1 >= this.ctx.canvas.height || y0 < 0) {
 					return;
 				}
 				sy = -1;
@@ -63600,6 +65962,18 @@ hxd_BitmapData.prototype = {
 	,__class__: hxd_BitmapData
 };
 var hxd_Precision = {};
+hxd_Precision.toString = function(this1) {
+	switch(this1) {
+	case 0:
+		return "F32";
+	case 1:
+		return "F16";
+	case 2:
+		return "U8";
+	case 3:
+		return "S8";
+	}
+};
 var hxd_InputFormat = {};
 hxd_InputFormat.toString = function(this1) {
 	switch(this1) {
@@ -63619,7 +65993,7 @@ hxd_InputFormat.toString = function(this1) {
 };
 hxd_InputFormat.fromHXSL = function(t) {
 	switch(t._hx_index) {
-	case 3:
+	case 1:case 3:
 		return 1;
 	case 5:
 		var _g = t.t;
@@ -63714,6 +66088,12 @@ hxd_BufferFormat.get_XY_UV = function() {
 	}
 	return hxd_BufferFormat.XY_UV;
 };
+hxd_BufferFormat.get_POS3D = function() {
+	if(hxd_BufferFormat.POS3D == null) {
+		hxd_BufferFormat.POS3D = hxd_BufferFormat.make([new hxd_BufferInput("position",3,0)]);
+	}
+	return hxd_BufferFormat.POS3D;
+};
 hxd_BufferFormat.get_INDEX16 = function() {
 	if(hxd_BufferFormat.INDEX16 == null) {
 		hxd_BufferFormat.INDEX16 = hxd_BufferFormat.make([new hxd_BufferInput("index",1,1)]);
@@ -63803,6 +66183,19 @@ hxd_BufferFormat.float32to16 = function(v,denormalsAreZero) {
 	}
 	return 0;
 };
+hxd_BufferFormat.float16to32 = function(v) {
+	var sign = (v & 32768) << 16;
+	var bits = (v & 1023) << 13;
+	var exp = (v & 31744) >> 10;
+	if(exp != 0) {
+		return haxe_io_FPHelper.i32ToFloat(sign | exp + 112 << 23 | bits);
+	}
+	if(bits == 0) {
+		return 0;
+	}
+	var bitcount = haxe_io_FPHelper.floatToI32(bits) >> 23;
+	return haxe_io_FPHelper.i32ToFloat(sign | bitcount - 37 << 23 | bits << 150 - bitcount & 8380416);
+};
 hxd_BufferFormat.float32toS8 = function(v) {
 	var i = Math.floor(v * 128);
 	if(i >= 127) {
@@ -63815,6 +66208,13 @@ hxd_BufferFormat.float32toS8 = function(v) {
 		return i;
 	} else {
 		return 127 + i | 128;
+	}
+};
+hxd_BufferFormat.floatS8to32 = function(v) {
+	if((v & 128) != 0) {
+		return -1 * (127 - (v & 127)) / 128;
+	} else {
+		return (v & 127) / 128;
 	}
 };
 hxd_BufferFormat.float32toU8 = function(v) {
@@ -63857,6 +66257,27 @@ hxd_BufferFormat.prototype = {
 		}
 		throw haxe_Exception.thrown("Input not found : " + name);
 	}
+	,hasInput: function(name,type) {
+		var _g = 0;
+		var _g1 = this.inputs;
+		while(_g < _g1.length) {
+			var i = _g1[_g];
+			++_g;
+			if(i.name == name) {
+				if(type != null) {
+					return type == i.type;
+				} else {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	,append: function(name,type) {
+		var inputs = this.inputs.slice();
+		inputs.push(new hxd_BufferInput(name,type,0));
+		return hxd_BufferFormat.make(inputs);
+	}
 	,resolveMapping: function(target) {
 		var m = this.mappings == null ? null : this.mappings[target.uid];
 		if(m != null) {
@@ -63890,6 +66311,17 @@ hxd_BufferFormat.prototype = {
 		this.mappings[target.uid] = m;
 		return m;
 	}
+	,toString: function() {
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.inputs;
+		while(_g1 < _g2.length) {
+			var i = _g2[_g1];
+			++_g1;
+			_g.push(i.name + ":" + hxd_InputFormat.toString(i.type) + (i.precision == 0 ? "" : "." + hxd_Precision.toString(i.precision).toLowerCase()));
+		}
+		return _g.toString();
+	}
 	,__class__: hxd_BufferFormat
 };
 var hxd_MultiFormat = function(formats) {
@@ -63899,6 +66331,34 @@ var hxd_MultiFormat = function(formats) {
 };
 $hxClasses["hxd.MultiFormat"] = hxd_MultiFormat;
 hxd_MultiFormat.__name__ = "hxd.MultiFormat";
+hxd_MultiFormat.make = function(formats) {
+	if(formats.length > hxd_MultiFormat.MAX_FORMATS) {
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < formats.length) {
+			var f = formats[_g1];
+			++_g1;
+			_g.push(f.toString());
+		}
+		throw haxe_Exception.thrown("Too many formats (addBuffer leak?) " + Std.string(_g));
+	}
+	var c = { found : null, nexts : hxd_MultiFormat.CACHE};
+	var _g = 0;
+	while(_g < formats.length) {
+		var f = formats[_g];
+		++_g;
+		var c2 = c.nexts.h[f.uid];
+		if(c2 == null) {
+			c2 = { found : null, nexts : new haxe_ds_IntMap()};
+			c.nexts.h[f.uid] = c2;
+		}
+		c = c2;
+	}
+	if(c.found == null) {
+		c.found = new hxd_MultiFormat(formats);
+	}
+	return c.found;
+};
 hxd_MultiFormat.prototype = {
 	makeMapping: function(format) {
 		var m = [];
@@ -64082,17 +66542,6 @@ hxd_Charset.prototype = {
 	}
 	,__class__: hxd_Charset
 };
-var hxd_Cursor = $hxEnums["hxd.Cursor"] = { __ename__:true,__constructs__:null
-	,Default: {_hx_name:"Default",_hx_index:0,__enum__:"hxd.Cursor",toString:$estr}
-	,Button: {_hx_name:"Button",_hx_index:1,__enum__:"hxd.Cursor",toString:$estr}
-	,Move: {_hx_name:"Move",_hx_index:2,__enum__:"hxd.Cursor",toString:$estr}
-	,TextInput: {_hx_name:"TextInput",_hx_index:3,__enum__:"hxd.Cursor",toString:$estr}
-	,Hide: {_hx_name:"Hide",_hx_index:4,__enum__:"hxd.Cursor",toString:$estr}
-	,Custom: ($_=function(custom) { return {_hx_index:5,custom:custom,__enum__:"hxd.Cursor",toString:$estr}; },$_._hx_name="Custom",$_.__params__ = ["custom"],$_)
-	,Callback: ($_=function(f) { return {_hx_index:6,f:f,__enum__:"hxd.Cursor",toString:$estr}; },$_._hx_name="Callback",$_.__params__ = ["f"],$_)
-};
-hxd_Cursor.__constructs__ = [hxd_Cursor.Default,hxd_Cursor.Button,hxd_Cursor.Move,hxd_Cursor.TextInput,hxd_Cursor.Hide,hxd_Cursor.Custom,hxd_Cursor.Callback];
-hxd_Cursor.__empty_constructs__ = [hxd_Cursor.Default,hxd_Cursor.Button,hxd_Cursor.Move,hxd_Cursor.TextInput,hxd_Cursor.Hide];
 var hxd_CustomCursor = function(frames,speed,offsetX,offsetY) {
 	this.frames = frames;
 	this.speed = speed;
@@ -64173,6 +66622,9 @@ hxd__$FloatBuffer_Float32Expand._new = function(length) {
 var hxd_Key = function() { };
 $hxClasses["hxd.Key"] = hxd_Key;
 hxd_Key.__name__ = "hxd.Key";
+hxd_Key.isDown = function(code) {
+	return hxd_Key.keyPressed[code] > 0;
+};
 hxd_Key.initialize = function() {
 	if(hxd_Key.initDone) {
 		hxd_Key.dispose();
@@ -64246,6 +66698,12 @@ var hxd_Pixels = function(width,height,bytes,format,offset) {
 };
 $hxClasses["hxd.Pixels"] = hxd_Pixels;
 hxd_Pixels.__name__ = "hxd.Pixels";
+hxd_Pixels.toRGB565 = function(color) {
+	var r = color >> 16 & 255;
+	var g = color >> 8 & 255;
+	var b = color & 255;
+	return r >> 3 << 11 | g >> 2 << 5 | b >> 3;
+};
 hxd_Pixels.calcDataSize = function(width,height,format) {
 	if(format._hx_index == 22) {
 		var _g = format.v;
@@ -64314,6 +66772,9 @@ hxd_Pixels.calcStride = function(width,format) {
 		break;
 	case 25:case 26:
 		tmp = 4;
+		break;
+	case 27:
+		tmp = 8;
 		break;
 	}
 	return width * tmp;
@@ -64511,6 +66972,22 @@ hxd_Pixels.prototype = {
 					bytes[p + 3] = a;
 				}
 				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+				break;
 			default:
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
@@ -64543,6 +67020,22 @@ hxd_Pixels.prototype = {
 					var r = bytes[p + 2];
 					bytes[p] = r;
 					bytes[p + 2] = b;
+				}
+				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 				}
 				break;
 			default:
@@ -64591,12 +67084,29 @@ hxd_Pixels.prototype = {
 				}
 				this.bytes = nbytes;
 				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+				break;
 			default:
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
 			break;
 		case 4:
-			if(target._hx_index == 7) {
+			switch(target._hx_index) {
+			case 7:
 				var nbytes = new haxe_io_Bytes(new ArrayBuffer(this.height * this.width * 4));
 				var out = nbytes.b;
 				var _g1 = 0;
@@ -64606,7 +67116,24 @@ hxd_Pixels.prototype = {
 					nbytes.setFloat(i << 2,this.bytes.getFloat(i << 4));
 				}
 				this.bytes = nbytes;
-			} else {
+				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+				break;
+			default:
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
 			break;
@@ -64631,12 +67158,29 @@ hxd_Pixels.prototype = {
 					bytes[p++] = 255;
 				}
 				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+				break;
 			default:
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
 			break;
 		case 18:
-			if(target._hx_index == 7) {
+			switch(target._hx_index) {
+			case 7:
 				var nbytes = new haxe_io_Bytes(new ArrayBuffer(this.width * this.height * 4));
 				var fbytes = this.bytes;
 				var _g1 = 0;
@@ -64647,25 +67191,94 @@ hxd_Pixels.prototype = {
 					nbytes.setFloat(i << 2,nv / 65535.0);
 				}
 				this.bytes = nbytes;
-			} else {
+				break;
+			case 22:
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+				break;
+			default:
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
 			break;
 		case 22:
 			if(target._hx_index == 22) {
-				var b = target.v;
+				var _g1 = target.v;
+				var b = _g1;
 				var a = _g.v;
 				if(a != b) {
-					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					if(_g1 == 1) {
+						if(this.width == 1 && this.height == 1) {
+							var out = new haxe_io_Bytes(new ArrayBuffer(8));
+							var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+							out.setUInt16(0,col0);
+							out.setUInt16(2,col0);
+							this.offset = 0;
+							this.bytes = out;
+						} else {
+							throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+						}
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
 				}
 			} else {
 				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+			if(target._hx_index == 22) {
+				if(target.v == 1) {
+					if(this.width == 1 && this.height == 1) {
+						var out = new haxe_io_Bytes(new ArrayBuffer(8));
+						var col0 = hxd_Pixels.toRGB565(this.getPixel(0,0));
+						out.setUInt16(0,col0);
+						out.setUInt16(2,col0);
+						this.offset = 0;
+						this.bytes = out;
+					} else {
+						throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+					}
+				} else {
+					throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+				}
+			} else {
+				throw haxe_Exception.thrown("Cannot convert from " + Std.string(this.innerFormat) + " to " + Std.string(target));
+			}
 		}
 		this.set_innerFormat(target);
+	}
+	,getPixel: function(x,y) {
+		var p = (x + y * this.width) * this.bytesPerPixel + this.offset;
+		switch(this.innerFormat._hx_index) {
+		case 0:
+			var v = this.bytes.getInt32(p);
+			return v >>> 24 | v >> 8 & 65280 | v << 8 & 16711680 | v << 24;
+		case 1:
+			return this.bytes.getInt32(p);
+		case 2:
+			var v = this.bytes.getInt32(p);
+			return v & -16711936 | v << 16 & 16711680 | v >> 16 & 255;
+		case 5:
+			return this.bytes.b[p];
+		case 8:
+			var b = this.bytes.getUInt16(p);
+			return (b & 255) << 8 | b >> 8;
+		default:
+			this.invalidFormat();
+			return 0;
+		}
 	}
 	,dispose: function() {
 		this.bytes = null;
@@ -64744,6 +67357,26 @@ hxd_SceneEvents.prototype = {
 			this.scenes.splice(index,0,s);
 		}
 	}
+	,focus: function(i) {
+		if(this.currentFocus == i) {
+			return;
+		}
+		if(i == null) {
+			this.blur();
+			return;
+		}
+		if(this.currentFocus != null) {
+			this.blur();
+			if(this.currentFocus != null) {
+				return;
+			}
+		}
+		var e = new hxd_Event(hxd_EventKind.EFocus);
+		i.handleEvent(e);
+		if(!e.cancel) {
+			this.currentFocus = i;
+		}
+	}
 	,blur: function() {
 		if(this.currentFocus == null) {
 			return;
@@ -64792,9 +67425,11 @@ hxd_SceneEvents.prototype = {
 				this.currentFocus.handleEvent(event);
 				event.relX = oldX;
 				event.relY = oldY;
-				if(!event.propagate) {
+				if(!event.propagate && !event.cancel) {
 					return;
 				}
+				event.propagate = false;
+				event.cancel = false;
 			}
 			break;
 		case 2:case 12:
@@ -65048,7 +67683,7 @@ hxd_SceneEvents.prototype = {
 				break;
 			}
 		}
-		if(cur._hx_index == 6) {
+		if(cur._hx_index == 10) {
 			var f = cur.f;
 			f();
 		} else {
@@ -65121,6 +67756,7 @@ var hxd_Window = function(canvas,globalEvents) {
 	this.canLockMouse = true;
 	this.discardMouseUp = -1;
 	this.discardMouseCaptureEvent = true;
+	this.maxPixelRatio = window.devicePixelRatio;
 	this.useScreenPixels = js_Browser.get_supported();
 	this.curMouseY = 0.;
 	this.curMouseX = 0.;
@@ -65291,7 +67927,13 @@ hxd_Window.prototype = {
 	}
 	,getPixelRatio: function() {
 		if(this.useScreenPixels) {
-			return window.devicePixelRatio;
+			var a = window.devicePixelRatio;
+			var b = this.maxPixelRatio;
+			if(a > b) {
+				return b;
+			} else {
+				return a;
+			}
 		} else {
 			return 1;
 		}
@@ -65626,6 +68268,18 @@ hxd_System.setNativeCursor = function(c) {
 			tmp = "none";
 			break;
 		case 5:
+			tmp = "ns-resize";
+			break;
+		case 6:
+			tmp = "ew-resize";
+			break;
+		case 7:
+			tmp = "nwse-resize";
+			break;
+		case 8:
+			tmp = "nesw-resize";
+			break;
+		case 9:
 			var cur = c.custom;
 			if(cur.alloc == null) {
 				cur.alloc = [];
@@ -65643,7 +68297,7 @@ hxd_System.setNativeCursor = function(c) {
 			}
 			tmp = cur.alloc[cur.frameIndex];
 			break;
-		case 6:
+		case 10:
 			var _g = c.f;
 			throw haxe_Exception.thrown("assert");
 		}
@@ -65683,6 +68337,14 @@ hxd_System.updateCursor = function() {
 			}
 		}
 	}
+};
+hxd_System.getClipboardText = function() {
+	return hxd_System.CLIPBOARD_TEXT;
+};
+hxd_System.setClipboardText = function(text) {
+	$global.navigator.clipboard.writeText(text);
+	hxd_System.CLIPBOARD_TEXT = text;
+	return true;
 };
 hxd_System.get_platform = function() {
 	var ua = $global.navigator.userAgent.toLowerCase();
@@ -67153,6 +69815,414 @@ hxd_fmt_hdr_Reader.decode = function(bytes,sRGB) {
 	}
 	return { width : width, height : height, bytes : data, gamma : gamma};
 };
+var hxd_fmt_hmd_Geometry = function() {
+};
+$hxClasses["hxd.fmt.hmd.Geometry"] = hxd_fmt_hmd_Geometry;
+hxd_fmt_hmd_Geometry.__name__ = "hxd.fmt.hmd.Geometry";
+hxd_fmt_hmd_Geometry.prototype = {
+	get_indexCount: function() {
+		var k = 0;
+		var _g = 0;
+		var _g1 = this.indexCounts;
+		while(_g < _g1.length) {
+			var i = _g1[_g];
+			++_g;
+			k += i;
+		}
+		return k;
+	}
+	,__class__: hxd_fmt_hmd_Geometry
+};
+var hxd_fmt_hmd_BlendShape = function() {
+};
+$hxClasses["hxd.fmt.hmd.BlendShape"] = hxd_fmt_hmd_BlendShape;
+hxd_fmt_hmd_BlendShape.__name__ = "hxd.fmt.hmd.BlendShape";
+hxd_fmt_hmd_BlendShape.prototype = {
+	__class__: hxd_fmt_hmd_BlendShape
+};
+var hxd_fmt_hmd_Collider = function() { };
+$hxClasses["hxd.fmt.hmd.Collider"] = hxd_fmt_hmd_Collider;
+hxd_fmt_hmd_Collider.__name__ = "hxd.fmt.hmd.Collider";
+var hxd_fmt_hmd_Model = function() {
+};
+$hxClasses["hxd.fmt.hmd.Model"] = hxd_fmt_hmd_Model;
+hxd_fmt_hmd_Model.__name__ = "hxd.fmt.hmd.Model";
+hxd_fmt_hmd_Model.prototype = {
+	__class__: hxd_fmt_hmd_Model
+};
+var hxd_fmt_hmd_Data = function() {
+};
+$hxClasses["hxd.fmt.hmd.Data"] = hxd_fmt_hmd_Data;
+hxd_fmt_hmd_Data.__name__ = "hxd.fmt.hmd.Data";
+hxd_fmt_hmd_Data.prototype = {
+	__class__: hxd_fmt_hmd_Data
+};
+var hxd_fmt_hmd__$Library_FormatMap = function(size,offset,def,prec) {
+	this.size = size;
+	this.offset = offset;
+	this.precision = prec;
+	this.def = def;
+};
+$hxClasses["hxd.fmt.hmd._Library.FormatMap"] = hxd_fmt_hmd__$Library_FormatMap;
+hxd_fmt_hmd__$Library_FormatMap.__name__ = "hxd.fmt.hmd._Library.FormatMap";
+hxd_fmt_hmd__$Library_FormatMap.prototype = {
+	__class__: hxd_fmt_hmd__$Library_FormatMap
+};
+var hxd_fmt_hmd_GeometryBuffer = function() {
+};
+$hxClasses["hxd.fmt.hmd.GeometryBuffer"] = hxd_fmt_hmd_GeometryBuffer;
+hxd_fmt_hmd_GeometryBuffer.__name__ = "hxd.fmt.hmd.GeometryBuffer";
+hxd_fmt_hmd_GeometryBuffer.prototype = {
+	__class__: hxd_fmt_hmd_GeometryBuffer
+};
+var hxd_fmt_hmd_Library = function(res,header) {
+	this.resource = res;
+	this.header = header;
+	this.cachedPrimitives = [];
+	this.cachedAnimations = new haxe_ds_StringMap();
+	this.cachedSkin = new haxe_ds_StringMap();
+};
+$hxClasses["hxd.fmt.hmd.Library"] = hxd_fmt_hmd_Library;
+hxd_fmt_hmd_Library.__name__ = "hxd.fmt.hmd.Library";
+hxd_fmt_hmd_Library.prototype = {
+	getBuffers: function(geom,format,defaults,material) {
+		if(material == 0 && geom.indexCounts.length == 1) {
+			material = null;
+		}
+		var maps = [];
+		var index = 0;
+		var stride = 0;
+		var lowPrec = false;
+		var _g_current = 0;
+		var _g_array = format.inputs;
+		while(_g_current < _g_array.length) {
+			var i = _g_array[_g_current++];
+			var i2 = geom.vertexFormat.getInput(i.name);
+			var map;
+			if(i2 == null) {
+				var def = defaults == null ? null : defaults[index];
+				if(def == null) {
+					throw haxe_Exception.thrown("Missing required " + i.name);
+				}
+				var this1 = i.type;
+				map = new hxd_fmt_hmd__$Library_FormatMap(this1 == js_Boot.__cast(9 , Int) ? 1 : this1,0,def,0);
+			} else {
+				if(i2.type != i.type) {
+					throw haxe_Exception.thrown("Requested " + i.name + " " + (i.type == null ? "null" : hxd_InputFormat.toString(i.type)) + " but found " + (i2.type == null ? "null" : hxd_InputFormat.toString(i2.type)));
+				}
+				var this2 = i.type;
+				map = new hxd_fmt_hmd__$Library_FormatMap(this2 == js_Boot.__cast(9 , Int) ? 1 : this2,geom.vertexFormat.calculateInputOffset(i2.name),null,i2.precision);
+				if(i2.precision != 0) {
+					lowPrec = true;
+				}
+			}
+			maps.push(map);
+			var this3 = i.type;
+			stride += this3 == js_Boot.__cast(9 , Int) ? 1 : this3;
+			++index;
+		}
+		var geomStride = geom.vertexFormat.strideBytes;
+		var vsize = geom.vertexCount * geomStride;
+		var vbuf = new haxe_io_Bytes(new ArrayBuffer(vsize));
+		var entry = this.resource.entry;
+		entry.readFull(vbuf,this.header.dataPosition + geom.vertexPosition,vsize);
+		var dataPos = this.header.dataPosition + geom.indexPosition;
+		var isSmall = geom.vertexCount <= 65536;
+		var imult = isSmall ? 2 : 4;
+		var isize;
+		if(material == null) {
+			isize = geom.get_indexCount() * imult;
+		} else {
+			var ipos = 0;
+			var _g = 0;
+			var _g1 = material;
+			while(_g < _g1) {
+				var i = _g++;
+				ipos += geom.indexCounts[i];
+			}
+			dataPos += ipos * imult;
+			isize = geom.indexCounts[material] * imult;
+		}
+		var ibuf = new haxe_io_Bytes(new ArrayBuffer(isize));
+		if(isize > 0) {
+			entry.readFull(ibuf,dataPos,isize);
+		}
+		var buf = new hxd_fmt_hmd_GeometryBuffer();
+		if(material == null) {
+			buf.vertexes = new Array(stride * geom.vertexCount);
+			buf.indexes = new Array(geom.get_indexCount());
+			var w = 0;
+			var _g = 0;
+			var _g1 = geom.vertexCount;
+			while(_g < _g1) {
+				var vid = _g++;
+				var _g2 = 0;
+				while(_g2 < maps.length) {
+					var m = maps[_g2];
+					++_g2;
+					if(m.def == null) {
+						var _g3 = 0;
+						var _g4 = m.size;
+						while(_g3 < _g4) {
+							var i = _g3++;
+							var this1 = buf.vertexes;
+							var index = w++;
+							var val;
+							if(lowPrec) {
+								switch(m.precision) {
+								case 0:
+									val = vbuf.getFloat(vid * geomStride + (i << 2) + m.offset);
+									break;
+								case 1:
+									val = hxd_BufferFormat.float16to32(vbuf.getUInt16(vid * geomStride + (i << 1) + m.offset));
+									break;
+								case 2:
+									val = (vbuf.b[vid * geomStride + i + m.offset] & 255) / 255;
+									break;
+								case 3:
+									val = hxd_BufferFormat.floatS8to32(vbuf.b[vid * geomStride + i + m.offset]);
+									break;
+								}
+							} else {
+								val = vbuf.getFloat(vid * geomStride + (i << 2) + m.offset);
+							}
+							this1[index] = val;
+						}
+					} else {
+						switch(m.size) {
+						case 1:
+							buf.vertexes[w++] = m.def.x;
+							break;
+						case 2:
+							buf.vertexes[w++] = m.def.x;
+							buf.vertexes[w++] = m.def.y;
+							break;
+						case 3:
+							buf.vertexes[w++] = m.def.x;
+							buf.vertexes[w++] = m.def.y;
+							buf.vertexes[w++] = m.def.z;
+							break;
+						default:
+							buf.vertexes[w++] = m.def.x;
+							buf.vertexes[w++] = m.def.y;
+							buf.vertexes[w++] = m.def.z;
+							buf.vertexes[w++] = m.def.w;
+						}
+					}
+				}
+			}
+			if(isSmall) {
+				var r = 0;
+				var _g = 0;
+				var _g1 = buf.indexes.length;
+				while(_g < _g1) {
+					var i = _g++;
+					buf.indexes[i] = ibuf.b[r++] | ibuf.b[r++] << 8;
+				}
+			} else {
+				var _g = 0;
+				var _g1 = buf.indexes.length;
+				while(_g < _g1) {
+					var i = _g++;
+					buf.indexes[i] = ibuf.getInt32(i << 2);
+				}
+			}
+		} else {
+			var icount = geom.indexCounts[material];
+			var vmap = new Array(geom.vertexCount);
+			var vertexes = hxd__$FloatBuffer_Float32Expand._new(0);
+			buf.indexes = new Array(icount);
+			var r = 0;
+			var vcount = 0;
+			var _g = 0;
+			var _g1 = buf.indexes.length;
+			while(_g < _g1) {
+				var i = _g++;
+				var vid = isSmall ? ibuf.b[r++] | ibuf.b[r++] << 8 : ibuf.getInt32(i << 2);
+				var tmp = vmap[vid];
+				var rid = tmp != null ? tmp : 0;
+				if(rid == 0) {
+					++vcount;
+					rid = vcount;
+					vmap[vid] = rid;
+					var _g2 = 0;
+					while(_g2 < maps.length) {
+						var m = maps[_g2];
+						++_g2;
+						if(m.def == null) {
+							var _g3 = 0;
+							var _g4 = m.size;
+							while(_g3 < _g4) {
+								var i1 = _g3++;
+								var v;
+								if(lowPrec) {
+									switch(m.precision) {
+									case 0:
+										v = vbuf.getFloat(vid * geomStride + (i1 << 2) + m.offset);
+										break;
+									case 1:
+										v = hxd_BufferFormat.float16to32(vbuf.getUInt16(vid * geomStride + (i1 << 1) + m.offset));
+										break;
+									case 2:
+										v = (vbuf.b[vid * geomStride + i1 + m.offset] & 255) / 255;
+										break;
+									case 3:
+										v = hxd_BufferFormat.floatS8to32(vbuf.b[vid * geomStride + i1 + m.offset]);
+										break;
+									}
+								} else {
+									v = vbuf.getFloat(vid * geomStride + (i1 << 2) + m.offset);
+								}
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize = vertexes.array.length << 1;
+									if(newSize < 128) {
+										newSize = 128;
+									}
+									var newArray = new Float32Array(newSize);
+									newArray.set(vertexes.array);
+									vertexes.array = newArray;
+								}
+								vertexes.array[vertexes.pos++] = v;
+							}
+						} else {
+							switch(m.size) {
+							case 1:
+								var v1 = m.def.x;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize1 = vertexes.array.length << 1;
+									if(newSize1 < 128) {
+										newSize1 = 128;
+									}
+									var newArray1 = new Float32Array(newSize1);
+									newArray1.set(vertexes.array);
+									vertexes.array = newArray1;
+								}
+								vertexes.array[vertexes.pos++] = v1;
+								break;
+							case 2:
+								var v2 = m.def.x;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize2 = vertexes.array.length << 1;
+									if(newSize2 < 128) {
+										newSize2 = 128;
+									}
+									var newArray2 = new Float32Array(newSize2);
+									newArray2.set(vertexes.array);
+									vertexes.array = newArray2;
+								}
+								vertexes.array[vertexes.pos++] = v2;
+								var v3 = m.def.y;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize3 = vertexes.array.length << 1;
+									if(newSize3 < 128) {
+										newSize3 = 128;
+									}
+									var newArray3 = new Float32Array(newSize3);
+									newArray3.set(vertexes.array);
+									vertexes.array = newArray3;
+								}
+								vertexes.array[vertexes.pos++] = v3;
+								break;
+							case 3:
+								var v4 = m.def.x;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize4 = vertexes.array.length << 1;
+									if(newSize4 < 128) {
+										newSize4 = 128;
+									}
+									var newArray4 = new Float32Array(newSize4);
+									newArray4.set(vertexes.array);
+									vertexes.array = newArray4;
+								}
+								vertexes.array[vertexes.pos++] = v4;
+								var v5 = m.def.y;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize5 = vertexes.array.length << 1;
+									if(newSize5 < 128) {
+										newSize5 = 128;
+									}
+									var newArray5 = new Float32Array(newSize5);
+									newArray5.set(vertexes.array);
+									vertexes.array = newArray5;
+								}
+								vertexes.array[vertexes.pos++] = v5;
+								var v6 = m.def.z;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize6 = vertexes.array.length << 1;
+									if(newSize6 < 128) {
+										newSize6 = 128;
+									}
+									var newArray6 = new Float32Array(newSize6);
+									newArray6.set(vertexes.array);
+									vertexes.array = newArray6;
+								}
+								vertexes.array[vertexes.pos++] = v6;
+								break;
+							default:
+								var v7 = m.def.x;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize7 = vertexes.array.length << 1;
+									if(newSize7 < 128) {
+										newSize7 = 128;
+									}
+									var newArray7 = new Float32Array(newSize7);
+									newArray7.set(vertexes.array);
+									vertexes.array = newArray7;
+								}
+								vertexes.array[vertexes.pos++] = v7;
+								var v8 = m.def.y;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize8 = vertexes.array.length << 1;
+									if(newSize8 < 128) {
+										newSize8 = 128;
+									}
+									var newArray8 = new Float32Array(newSize8);
+									newArray8.set(vertexes.array);
+									vertexes.array = newArray8;
+								}
+								vertexes.array[vertexes.pos++] = v8;
+								var v9 = m.def.z;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize9 = vertexes.array.length << 1;
+									if(newSize9 < 128) {
+										newSize9 = 128;
+									}
+									var newArray9 = new Float32Array(newSize9);
+									newArray9.set(vertexes.array);
+									vertexes.array = newArray9;
+								}
+								vertexes.array[vertexes.pos++] = v9;
+								var v10 = m.def.w;
+								if(vertexes.pos == vertexes.array.length) {
+									var newSize10 = vertexes.array.length << 1;
+									if(newSize10 < 128) {
+										newSize10 = 128;
+									}
+									var newArray10 = new Float32Array(newSize10);
+									newArray10.set(vertexes.array);
+									vertexes.array = newArray10;
+								}
+								vertexes.array[vertexes.pos++] = v10;
+							}
+						}
+					}
+				}
+				buf.indexes[i] = rid - 1;
+			}
+			var this1 = vertexes;
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this1.pos;
+			while(_g1 < _g2) {
+				var i = _g1++;
+				_g.push(this1.array[i]);
+			}
+			buf.vertexes = _g;
+		}
+		return buf;
+	}
+	,__class__: hxd_fmt_hmd_Library
+};
 var hxd_fs_FileEntry = function() { };
 $hxClasses["hxd.fs.FileEntry"] = hxd_fs_FileEntry;
 hxd_fs_FileEntry.__name__ = "hxd.fs.FileEntry";
@@ -67656,8 +70726,11 @@ hxd_impl_Allocator.prototype = {
 	,disposeBuffer: function(b) {
 		b.dispose();
 	}
-	,allocIndexBuffer: function(count) {
-		return h3d_Indexes._new(count);
+	,allocIndexBuffer: function(count,is32) {
+		if(is32 == null) {
+			is32 = false;
+		}
+		return h3d_Indexes._new(count,is32);
 	}
 	,ofIndexes: function(ib,length) {
 		if(length == null) {
@@ -67674,6 +70747,15 @@ hxd_impl_Allocator.prototype = {
 		i.dispose();
 	}
 	,onContextLost: function() {
+	}
+	,allocFloats: function(count) {
+		var length = count;
+		if(length == null) {
+			length = 0;
+		}
+		return hxd__$FloatBuffer_Float32Expand._new(length);
+	}
+	,disposeFloats: function(f) {
 	}
 	,__class__: hxd_impl_Allocator
 };
@@ -67812,8 +70894,8 @@ hxd_res_DefaultFont.get = function() {
 	var engine = h3d_Engine.CURRENT;
 	var fnt = engine.resCache.h[hxd_res_DefaultFont.__id__];
 	if(fnt == null) {
-		var BYTES = hxd_res_Any.fromBytes("hxd/res/defaultFont.png",haxe_Unserializer.run("s3176:iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAACPBJREFUeJztnelypDoMRp2p%:6v3PNjhrlCLX1aLIPBPlWppI03bCG0QOfn8:m0zbr8KupnS9FDqRKAzUOhAvBRfqO:tfrSZ86H:ET79o6Rhc%JzzNSD7Xn:XyEH9RPtP4X:6GDDj6ttR:Hb62d9pmX8b487StA4:DFlup5z5MSWS%tL:f6eG4BXDppGQdtApJEtPm0zkf427Oo1fAxtfO2hDIruGXCLgnAD:jNyzSsKxa18yBphyqQ1jqwBN1zHmgcU3V3jHui9xaArkS0%XzTohOX%jvGauzvjMrlUJXuqSeV07G0ekgTovWS1t61vr0CQAez7nkj7uFIELJqmdN7RWvzil7hnnXV5qLOzSMAmlcQub9ZRuEsaNoq0w5RZbN0rye1ASzplWyAiGEXQVK3kZOdRcgy9:FLoRogI02WNc7rRQw3jzsZAfWB7skR44%3jdo6Wv2qfr4rFuUCZlftrT1jjpezSih4b75ClQDMvrizz%82uA1wMCqsKvUv3YO045rxma2vjY3mpPUvuV1WKDzbLtqfNu9:AjA6tl69QM3Zn1Wfl1M8G:CUW4s6b%sWIEXWtM:omNeXrnaDRm:OyIsE1UOfQ1gCwMOLdFCqWnj8Grl5nsjVakRjHMj1DgnEcQvw%OV0AE0wGisfqTKrbBYrZ4BiB:T4ldE8dPsMxU2oEWgZZtoAyMCq2GxtLlWCFbEB%PGIYWv1kxECq0%TbDKITjpirVr9SW2zC:skqqKdUp%QwwbILKwlgZk2mkBlmUVgPPOI3IbL0GwASY2PiMdbPrfVF6:vVctIq5SoVqNdxtrvWXt1:EguYHVL:ZV4Q8F781%KVwD25r8UagTyYE4TjkllmfrU4udtI%XZdrRcm5c1T%3cPXjq9RqEYTewIrau1a%ODVSBomgeL4cLudedG%H2pah4KBQx8gSnWMC:8AvDKwS0fXU5n59Uf7gAXA1dfG1TtM1Bm2ZtKi%PCGaVlpXKrf67ngeI%uFXoW1WdvNH0ztuV3vNBvAOrC30wR0LG7kX0:p3MjoCqPYfiQNI3BK%BEhq31vfYtS5UkN5lCD%NGWMSBxAWyyeyKkAJYc2Z6JrfqpvGYF0IzxqNWoDoPrSeNJ8POMgtJg76rtSEyDNErGzUF5F3ZOq9wI2D%VtbuBsaFfkNGwBGMtUmy3BjUAtxs3x3LOk8mi7zWB6Xw7leCNlb%LRXkrk%wEOpESIlezxlvM%uSWuzQXNx1Ofjqd5Aah:qW5PGDfbjpZzRCGlbwZ5T0TqMHMVoLgCP56Nj0fqo7mhLOeMGoDPx4wE0sW64mRmXLSDaCZvxPjSeNnAGKx:hxcw8%a3Zkc7tTqjyWgbs:4d3w8wW:7AC42l3zF:dH9H9SGedwO9rmEEz4nMpCXuznFoSS5tf9x9e24ByFjqodKAQio6EjfP9C8duzLHoZ0r8oD%LzRyAZY1XN2umux8n0L3OkeygcdnDzMYTSvQvc47G7g4q3xL2EqE8jhbAN6H9YDJ6TaxBeCduJNy3AjkrghySay8QXOU84lZSQ8plj:ioYuIG%axvLUrcoRxHHGHXelgKzkTWSxtLK:7whM8UaGLzs3qJ7P5IxNI0axh%hbAgxhWMGJ01M%KVKIASXQcipVR7MEz524XboQNoKVwPZPNhkpRjD5yRdM53B0c0qKDvE4X9PVw78JYWPc7usEo9cm1TAa0%R:hh44n1UXz1sjaB0dbJATdGoB:R1Dv:c4DGktSez33TNqW96MZtVo:R53sPLQxvGseCWu7y2d7Kji70MgQRUIwM5nNb%1bc8HyK%MAHiMtq2q5ypaOS39rdTz9jMaac4kg87eDpSsp4%bx:iS3UZLOqMQPM44Y3jGuSoCVabERyaCsj:90qs7TG1soWePZbICViWharvnSgrfTwYsz0gjckvUApHcDOdwa9waDvIGjCFZ:2vwzfVeGj7W%qs4ns0ettbMASJvG:WfJ%JAGHOVvI6GSxtMEUfNENK%FH%NtNaz1qzif7B79mcC2AdbG8zVxyNqMtrGkTQqZWmHUqvJjDJg%BZ9Rf552I8qtY%a:jUMnEG3j9V1RvWgUryfqFyXql1etX2aP:vGER8JWCCLdxhME4OlMbWTdLQCRhA%qX1WegVrZEbtjCjQjsDnKM200Y8nLjDaAx%WdVgg8:zfQY%1620Q8grcxpRDcfQvwMN2ivYm7s4GSRkGZLuRvV5T3AP1tAe08q8qtY38KJo4Ejgglbxh3awCJQyL35l:AjAKwN:5CKozAqpRm7zibBBUCMDJFi:p5GlMKcJUbGAm4aIkdlPCpttK9xz1RxMhzAdVCkDmnE5H:GURPXLta7ypHcz248%GLWR6Q%cL7ZdHRVOddWHPt1VRWX6O1mERXuNt6HmBmooGXnlB178MX3vIr5nhCejkUbf7VhgyalyWwngcjqsorxxg5xy%oDeDZ:Du0Qub%2aP6M%XVfSFK90D6ihjranoC2pUgUVVe0VdUw2bmeEKyASx1OwvWfQ7dPqi1XlFe1Vd0nbu1C:%HEeEObuSH:LyRKzSW6QZKvjDXDNKxqvIsR19a:624vKKvW9Zy5nTw5swQO2zGbODmDNdmpWwBmJ%hNo7n7WAJ5L703FN4DD:Sr3RcK6uar0XVnHvHUbHeDqadawaLFA3jbTwW6tH2aC%5oqgfLXYRGcOab5SKOVvz8sY75AneZATyQd:qyt1ByFjkGoCrR6u8gXLtc2tn:51qD22s7Pwi5Z5jEryNtS6jy6U5qfS8HZwFTWp0ogWdj3Wu0nmPWJ8K3HO62gvoul:dhKbBPPWmp:fdwBXwXNGa8TY92ruBzVG%GpoqnUXtp9CeCdza4JvZLhDqyqb3hT8RRDtH5VmyavKKREn0XCW1f3WiDKWmpTpf7GTQc:F6OpCdC3guJdp5C8CzkTY9JAg8Ekh:bxaAPxVMf28WgP7XMMrWAovwhO8I2gxkC8DibAFYnC0Ai6OFgjeL4Pmm0M2L0dzAzSJY2cDNy:E8ELJ5MdsLWJwtAIuzBWBxtgAszhaAxdkCsDi:AYnqZwd25SoPAAAAAElFTkSuQmCC"));
-		var DESC = hxd_res_Any.fromBytes("hxd/res/defaultFont.fnt",haxe_Unserializer.run("s14030:PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPEZvbnQgc2l6ZT0iMTIiIGZhbWlseT0iUGl4ZWwgT3BlcmF0b3IiIGhlaWdodD0iMTYiIHN0eWxlPSJSZWd1bGFyIj4KIDxDaGFyIHdpZHRoPSI0IiBvZmZzZXQ9IjAgMTMiIHJlY3Q9IjEgMTIgMCAwIiBjb2RlPSIgIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIgMyAxIDkiIGNvZGU9IiEiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNCAzIDMgMyIgY29kZT0iJnF1b3Q7Ii8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjggMyA2IDkiIGNvZGU9IiMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMiIgcmVjdD0iMTUgMSA1IDEzIiBjb2RlPSIkIi8%CiA8Q2hhciB3aWR0aD0iOSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIxIDMgNyA5IiBjb2RlPSIlIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjI5IDMgNSA5IiBjb2RlPSImYW1wOyIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA0IiByZWN0PSIzNSAzIDEgMyIgY29kZT0iJyIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSIzNyAzIDMgOSIgY29kZT0iKCIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSI0MSAzIDMgOSIgY29kZT0iKSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI0NSAzIDUgNSIgY29kZT0iKiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI1MSA1IDUgNSIgY29kZT0iKyIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMCAxMiIgcmVjdD0iNTcgMTEgMiAzIiBjb2RlPSIsIi8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDgiIHJlY3Q9IjYwIDcgNCAxIiBjb2RlPSItIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDEyIiByZWN0PSI2NSAxMSAxIDEiIGNvZGU9Ii4iLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjcgMyAzIDkiIGNvZGU9Ii8iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzEgMyA1IDkiIGNvZGU9IjAiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzcgMyAzIDkiIGNvZGU9IjEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODEgMyA1IDkiIGNvZGU9IjIiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODcgMyA1IDkiIGNvZGU9IjMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iOTMgMyA1IDkiIGNvZGU9IjQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iOTkgMyA1IDkiIGNvZGU9IjUiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTA1IDMgNSA5IiBjb2RlPSI2Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjExMSAzIDUgOSIgY29kZT0iNyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMTcgMyA1IDkiIGNvZGU9IjgiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMSAxNSA1IDkiIGNvZGU9IjkiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgNiIgcmVjdD0iNyAxNyAxIDciIGNvZGU9IjoiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgNiIgcmVjdD0iOSAxNyAyIDkiIGNvZGU9IjsiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTIgMTcgMyA1IiBjb2RlPSImbHQ7Ii8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDciIHJlY3Q9IjE2IDE4IDQgMyIgY29kZT0iPSIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA2IiByZWN0PSIyMSAxNyAzIDUiIGNvZGU9Ij4iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjUgMTUgNSA5IiBjb2RlPSI:Ii8%CiA8Q2hhciB3aWR0aD0iOSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjMxIDE1IDcgOSIgY29kZT0iQCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIzOSAxNSA1IDkiIGNvZGU9IkEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNDUgMTUgNSA5IiBjb2RlPSJCIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjUxIDE1IDUgOSIgY29kZT0iQyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI1NyAxNSA1IDkiIGNvZGU9IkQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjMgMTUgNSA5IiBjb2RlPSJFIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjY5IDE1IDUgOSIgY29kZT0iRiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI3NSAxNSA1IDkiIGNvZGU9IkciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODEgMTUgNSA5IiBjb2RlPSJIIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9Ijg3IDE1IDEgOSIgY29kZT0iSSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI4OSAxNSA1IDkiIGNvZGU9IkoiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iOTUgMTUgNSA5IiBjb2RlPSJLIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEwMSAxNSA1IDkiIGNvZGU9IkwiLz4KIDxDaGFyIHdpZHRoPSI5IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTA3IDE1IDcgOSIgY29kZT0iTSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMTUgMTUgNSA5IiBjb2RlPSJOIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEyMSAxNSA1IDkiIGNvZGU9Ik8iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMSAyNyA1IDkiIGNvZGU9IlAiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNyAyNyA1IDkiIGNvZGU9IlEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTMgMjcgNSA5IiBjb2RlPSJSIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjE5IDI3IDUgOSIgY29kZT0iUyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIyNSAyNyA1IDkiIGNvZGU9IlQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMzEgMjcgNSA5IiBjb2RlPSJVIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjM3IDI3IDUgOSIgY29kZT0iViIvPgogPENoYXIgd2lkdGg9IjkiIG9mZnNldD0iMSA0IiByZWN0PSI0MyAyNyA3IDkiIGNvZGU9IlciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNTEgMjcgNSA5IiBjb2RlPSJYIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjU3IDI3IDUgOSIgY29kZT0iWSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI2MyAyNyA1IDkiIGNvZGU9IloiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjkgMjcgMyA5IiBjb2RlPSJbIi8%CiA8Q2hhciB3aWR0aD0iNSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjczIDI3IDMgOSIgY29kZT0iXCIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSI3NyAyNyAzIDkiIGNvZGU9Il0iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODEgMjcgNSAzIiBjb2RlPSJeIi8%CiA8Q2hhciB3aWR0aD0iNSIgb2Zmc2V0PSIwIDE0IiByZWN0PSI4NyAzNyA1IDEiIGNvZGU9Il8iLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgNCIgcmVjdD0iOTMgMjcgMiAyIiBjb2RlPSJgIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9Ijk2IDI5IDUgNyIgY29kZT0iYSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMDIgMjcgNSA5IiBjb2RlPSJiIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjEwOCAyOSA1IDciIGNvZGU9ImMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTE0IDI3IDUgOSIgY29kZT0iZCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMjAgMjkgNSA3IiBjb2RlPSJlIi8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEgMzkgNSA5IiBjb2RlPSJmIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjcgNDEgNSA5IiBjb2RlPSJnIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEzIDM5IDUgOSIgY29kZT0iaCIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA0IiByZWN0PSIxOSAzOSAxIDkiIGNvZGU9ImkiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjEgMzkgNSAxMSIgY29kZT0iaiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIyNyAzOSA1IDkiIGNvZGU9ImsiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgNCIgcmVjdD0iMzMgMzkgMSA5IiBjb2RlPSJsIi8%CiA8Q2hhciB3aWR0aD0iOSIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjM1IDQxIDcgNyIgY29kZT0ibSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI0MyA0MSA1IDciIGNvZGU9Im4iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iNDkgNDEgNSA3IiBjb2RlPSJvIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjU1IDQxIDUgOSIgY29kZT0icCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI2MSA0MSA1IDkiIGNvZGU9InEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iNjcgNDEgNSA3IiBjb2RlPSJyIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjczIDQxIDUgNyIgY29kZT0icyIvPgogPENoYXIgd2lkdGg9IjYiIG9mZnNldD0iMSA1IiByZWN0PSI3OSA0MCA1IDgiIGNvZGU9InQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iODUgNDEgNSA3IiBjb2RlPSJ1Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjkxIDQxIDUgNyIgY29kZT0idiIvPgogPENoYXIgd2lkdGg9IjkiIG9mZnNldD0iMSA2IiByZWN0PSI5NyA0MSA3IDciIGNvZGU9InciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTA1IDQxIDUgNyIgY29kZT0ieCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMTEgNDEgNSA5IiBjb2RlPSJ5Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjExNyA0MSA1IDciIGNvZGU9InoiLz4KIDxDaGFyIHdpZHRoPSI2IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMSA1NCA0IDkiIGNvZGU9InsiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgNCIgcmVjdD0iNiA1NCAxIDkiIGNvZGU9InwiLz4KIDxDaGFyIHdpZHRoPSI2IiBvZmZzZXQ9IjEgNCIgcmVjdD0iOCA1NCA0IDkiIGNvZGU9In0iLz4KIDxDaGFyIHdpZHRoPSI4IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTMgNTQgNiAyIiBjb2RlPSJ%Ii8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjIwIDU2IDEgOSIgY29kZT0iwqEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjIgNTQgNSAxMSIgY29kZT0iwqIiLz4KIDxDaGFyIHdpZHRoPSI4IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjggNTQgNiA5IiBjb2RlPSLCoyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIzNSA1NCA1IDkiIGNvZGU9IsKlIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjQxIDU0IDEgOSIgY29kZT0iwqYiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNDMgNTQgMyAxIiBjb2RlPSLCqCIvPgogPENoYXIgd2lkdGg9IjkiIG9mZnNldD0iMSA0IiByZWN0PSI0NyA1NCA3IDkiIGNvZGU9IsKpIi8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjU1IDU2IDYgNSIgY29kZT0iwqsiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgOCIgcmVjdD0iNjIgNTggNSAzIiBjb2RlPSLCrCIvPgogPENoYXIgd2lkdGg9IjYiIG9mZnNldD0iMSA0IiByZWN0PSI2OCA1NCA0IDQiIGNvZGU9IsKwIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjczIDU2IDUgNyIgY29kZT0iwrEiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzkgNTQgMiAyIiBjb2RlPSLCtCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI4MiA1NiA1IDkiIGNvZGU9IsK1Ii8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDQiIHJlY3Q9Ijg4IDU0IDcgOSIgY29kZT0iwrYiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgOCIgcmVjdD0iOTYgNTggMSAxIiBjb2RlPSLCtyIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMCAxMyIgcmVjdD0iOTggNjMgMyAyIiBjb2RlPSLCuCIvPgogPENoYXIgd2lkdGg9IjgiIG9mZnNldD0iMSA2IiByZWN0PSIxMDIgNTYgNiA1IiBjb2RlPSLCuyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMDkgNTYgNSA5IiBjb2RlPSLCvyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIxMTUgNTEgNSAxMiIgY29kZT0iw4AiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iMTIxIDUxIDUgMTIiIGNvZGU9IsOBIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjEgNjcgNSAxMiIgY29kZT0iw4IiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iNyA2NyA2IDEyIiBjb2RlPSLDgyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAyIiByZWN0PSIxNCA2OCA1IDExIiBjb2RlPSLDhCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAwIiByZWN0PSIyMCA2NiA1IDEzIiBjb2RlPSLDhSIvPgogPENoYXIgd2lkdGg9IjExIiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjYgNzAgOSA5IiBjb2RlPSLDhiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIzNiA3MCA1IDExIiBjb2RlPSLDhyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSI0MiA2NyA1IDEyIiBjb2RlPSLDiCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSI0OCA2NyA1IDEyIiBjb2RlPSLDiSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSI1NCA2NyA1IDEyIiBjb2RlPSLDiiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAyIiByZWN0PSI2MCA2OCA1IDExIiBjb2RlPSLDiyIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMCAxIiByZWN0PSI2NiA2NyAyIDEyIiBjb2RlPSLDjCIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSAxIiByZWN0PSI2OSA2NyAyIDEyIiBjb2RlPSLDjSIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMCAxIiByZWN0PSI3MiA2NyAzIDEyIiBjb2RlPSLDjiIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMCAyIiByZWN0PSI3NiA2OCAzIDExIiBjb2RlPSLDjyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMCA0IiByZWN0PSI4MCA3MCA2IDkiIGNvZGU9IsOQIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9Ijg3IDY3IDYgMTIiIGNvZGU9IsORIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9Ijk0IDY3IDUgMTIiIGNvZGU9IsOSIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjEwMCA2NyA1IDEyIiBjb2RlPSLDkyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIxMDYgNjcgNSAxMiIgY29kZT0iw5QiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iMTEyIDY3IDYgMTIiIGNvZGU9IsOVIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDIiIHJlY3Q9IjExOSA2OCA1IDExIiBjb2RlPSLDliIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxIDg3IDUgNSIgY29kZT0iw5ciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjAgNCIgcmVjdD0iNyA4NSA3IDkiIGNvZGU9IsOYIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjE1IDgyIDUgMTIiIGNvZGU9IsOZIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjIxIDgyIDUgMTIiIGNvZGU9IsOaIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjI3IDgyIDUgMTIiIGNvZGU9IsObIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDIiIHJlY3Q9IjMzIDgzIDUgMTEiIGNvZGU9IsOcIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjM5IDgyIDUgMTIiIGNvZGU9IsOdIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjQ1IDg1IDUgOSIgY29kZT0iw54iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNTEgODUgNSA5IiBjb2RlPSLDnyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI1NyA4NCA1IDEwIiBjb2RlPSLDoCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI2MyA4NCA1IDEwIiBjb2RlPSLDoSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI2OSA4NCA1IDEwIiBjb2RlPSLDoiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI3NSA4NCA2IDEwIiBjb2RlPSLDoyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI4MiA4NSA1IDkiIGNvZGU9IsOkIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDIiIHJlY3Q9Ijg4IDgzIDUgMTEiIGNvZGU9IsOlIi8%CiA8Q2hhciB3aWR0aD0iMTEiIG9mZnNldD0iMSA2IiByZWN0PSI5NCA4NyA5IDciIGNvZGU9IsOmIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjEwNCA4NyA1IDkiIGNvZGU9IsOnIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjExMCA4NCA1IDEwIiBjb2RlPSLDqCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSIxMTYgODQgNSAxMCIgY29kZT0iw6kiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iMSA5NyA1IDEwIiBjb2RlPSLDqiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI3IDk4IDUgOSIgY29kZT0iw6siLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgMyIgcmVjdD0iMTMgOTcgMiAxMCIgY29kZT0iw6wiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgMyIgcmVjdD0iMTYgOTcgMiAxMCIgY29kZT0iw60iLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgMyIgcmVjdD0iMTkgOTcgMyAxMCIgY29kZT0iw64iLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgNCIgcmVjdD0iMjMgOTggMyA5IiBjb2RlPSLDryIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIyNyA5OCA2IDkiIGNvZGU9IsOwIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjM0IDk3IDYgMTAiIGNvZGU9IsOxIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjQxIDk3IDUgMTAiIGNvZGU9IsOyIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjQ3IDk3IDUgMTAiIGNvZGU9IsOzIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjUzIDk3IDUgMTAiIGNvZGU9IsO0Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjU5IDk3IDYgMTAiIGNvZGU9IsO1Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjY2IDk4IDUgOSIgY29kZT0iw7YiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iNzIgMTAwIDUgNSIgY29kZT0iw7ciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjAgNiIgcmVjdD0iNzggMTAwIDcgNyIgY29kZT0iw7giLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iODYgOTcgNSAxMCIgY29kZT0iw7kiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iOTIgOTcgNSAxMCIgY29kZT0iw7oiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iOTggOTcgNSAxMCIgY29kZT0iw7siLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTA0IDk4IDUgOSIgY29kZT0iw7wiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iMTEwIDk3IDUgMTIiIGNvZGU9IsO9Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjExNiA5OCA1IDExIiBjb2RlPSLDviIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxIDExMCA1IDExIiBjb2RlPSLDvyIvPgo8L0ZvbnQ%Cg"));
+		var BYTES = hxd_res_Any.fromBytes("hxd/res/defaultFont.png",haxe_Unserializer.run("s3196:iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAACRdJREFUeJztnWuT5CoIhs2p:f9:OfvhTHpthssLYmISnqqtnbG9oCIiJj2tFa9ma621fd9H69mPuop7sG3:T9d:VwtSXMuf7udjFdP:m:Lz8buUrlmF3uxodVNZaB0zLA:tL5Xzk287ltI:Syrl1%qh7XImWZPHm::DH5rgRFIa78Rx%fo0TSGl8hlo7XCDjiqw1N8ez7hJdZntIltAX9lO0ijoirfKcQPUr4xN6aTVVgaSwkn9t5QzqsDDSs8pwKb8T9M0wbQVq5VD4KxDFprVOkDkRPustbcH%uZSptEtQFuJ2uTTSfNqMldfI3XuQl7E1FK0vVnLz6VTeRFLAvskzBxM9QEaWe3Wnpm9h2uKEDXHFK9sSNuWL6GBjK8ky688iAJw%z4yKJxwq8cLJGs1Ul4jy3cJj2vvA1hay:kAHsfOA2duPZ1cTcki%:gpcHEAD5Y3TvN5HDfkOOlBq0Pbi9Vz9:5z%O:iAZyP4fV5pPxZ9XwnvCQUfAcZT%NtoeCafIEsBVh9cFeX7zKoD3AwY8CQGLn1ubbPRvJLbUdi8dxxywqFR8t565Pk:ijA7Nh69gA1sD4rP03vQSbgLluLKLe1BXCRNel37TM02pZ9:Jk9OTMXiZZP%92FpQA0rNg32psWGrfWjnlIxOpteGMc2tHbpRDHFoCcy:sGJMXgBJ1lMrN8FuvOQIsdNLIQou1H4y9a7AKqs3cCLcdMakBzsDImW5IlS7E8PgD93OPYWvVElACVTSR6GdQL7fFWrfq4stGBvRNZ0U6uTpXDB4gMrKWBkTKSQkVZRWEQOTzbcBqSD8CZ8RnxeOvMbdVF86NmWbMqKabVKBfx9kfGXmzfcxfwdk:9UXjvAmryHwqqADX5D6V3AmkwpzGfcWmR:L3HT8t60qPl%nRJLktOqe8ISL5Rh9B9DMyIrUv5s2MDWWhRNOSUQ5UcPc7NOPaFyHgoVGNmB5cYwB:owkCVoC%fnU7l4:JPV4Cz2YSVKKX3aJNmTSpN9yhmlpXl0q36h54H8J7Dz0KarOjkz2a03aHykg%ANiwN9MEVA%vZi9vFk9:LcEn9njgAxyXhSwXO7KP5LWb1tXeUZyniJrXhiQNIg0UvcjLQLoeKb7xj:pXfcgL7iUDMqtcH0PJz7XHyIO1oSDF3re5MS6BZFo%fpd2riHPiuQsoHsRxF:C0Y%BqSCtyGUoB5rLUZHNQJ1CKcVOQPYtL95YrJjP6cigFjZQ9iVufUjzfD3DAXYRYlz1oOq2TeuKSLJo8SP7GnDq0tmkal3ckjBstt5Nxk:r%oX8zCO0IV2FkFWhxBfp5ND7uya:Jpt1yrmgBqDxmJLAfrDM6s%KgHXhv8ma0z7UXDYyp%a84Baw8%Q2Idkp5ZhOxNmb%K74fYLX7A5SNmP2z0fZ3Lb8K8m4gejT0gHRkJStx9R2HdMklzQ9cN7IFaM7SCJkOlGaiPXHzSP3cZ2fecUh91U5A34nKXYDlDWeXyyYq710IjzN6FxB1flZwmt7A8Dh7twAPK0y6R2HvypDsb:mWsDfhuscpBXgemoP7y0coBXgm8KUc9QHoUUQ7klj3Bg1Ip4JZlx5cLH:GQxeeYxjieUsrcobv4TkOQ9fB1uWMZ7CkttDjC73g8SqdVzarnsjkz7xA8t4ahrcAGsSwghGzo35WpFILkHjb6bFuFEdAZB4OzM3wAbjVg0beoqFSLUbvWdG9DFcHh6ToIM0zRP96ODowFtZ%10%wdvVJrUwEbfJ35l:fHpdXk1si6h80QAmGLQD9jqDR:Q5Ba4szeyN7Zl%W1iM5tVI9bVAOqQ10zD1hbTh9taeCowOtOaKaEqxMZPIb4vn36WfGARAnLWpqqcnmPud%lvIg9czGkjlFkenbwdxKihzzaH3csZHTTq:GT3OOCGgbZ12ApVmxrbX0V8OiZ:y7k9VPNLYwNMb1ath6eCwttXxhxZuhAFSYN6z%ltDPyBY7zEwnMHVfKebAvRtIod44GgxCA0cerPok%SN1Z4aPpbqy%hOZo9aIAnCTRs:PnPPBNTjrvK0pFdeepIjSSUQ6tdDPaFkJa:wy%hOdo48A9QURL4Q7BZhRIyN86opASXIp5bV7g4z0RlaYdsySVplUH1JuRrr1mfln47QOeMugZ1ctnzeKNxL18%I9l2eNX2SOPtzhkbC3HCMv4Q4KcHeWdrCuVgDPhY%WPys9Qu9le:yOJZCcwAakR8pIzhLKij4AcuRdVgmQvxuIeLtoGc%J4GksqQRXbwEIyw3ak7j6NpCzKNpNl3bezkgfQT1vM0j9zEq3PvuXsGgkcEYoufhh5ecBDm2syT%BFRWgJv5EMpzArCvN0XaKABkKMPOKVqvnbiypwFnHQE:ARbrY0S58sr109HMkiuh5LiBbCSJ9%sLzN4N2ZpWiq3h2uibrwZUPX6zygMwv0C%L9l51XoUl66ilsuqabcU4hsLd1vMAK%MNvIyEqkcfvkDTz5DxC%7lUG3yz3ZkNLkshUUejMhKz2xjpoy:6H0AZPKvsAqR:XPE9EfSs%vSSJ0D7itirNV0B6SVwJGVnlGX18JGZPyC8wEsc7sK1j6nbR%9t56RnlWXd5yHrQv9gxHuCi5k6:49kTMslnkM5M7C1DJwn2WlRznqkuqX5I%mZ9R1yVhurS17HVx8k%qHrXwdXHxDrVkqpQDrM9XHQd4O5tCOLyP7CY3he%rlPpfSsuS1yJJ5tB0R6%3gvnLJYeGiYbQM4qEeZbdukjSHk9YjxS48bVjyesmQ2ZILjXeIAl7hBNIGn3qUuwLIWTycQGoBqHm00puSLv3eyPm9tx5SW1H5POnIZxy0jDUus9Otfnwx8nZwFE2o2RctWn%svnL9njE%GcAynX0KGNqvLkKyYEi%5Rl9N:ANICtact6WR3o3sAHpb0MypauY:RDSM4FlDX6z2gLpj7LheaFPBPWVa%lRombyjIsSb185s3:2RZl2NQ31oy6D7gt60mGpy6D7k2KdSwHuDTfpLkWgkcD2ckfvddCnglvUlBT3pP%rYT1lBV7CHb4jqJhIKcDLKQV4OaUAL0cKBRcvAfmm0OLBSMfA4iVYt4FFURRFURRFURRFUTyHv88VVVfca9UIAAAAAElFTkSuQmCC"));
+		var DESC = hxd_res_Any.fromBytes("hxd/res/defaultFont.fnt",haxe_Unserializer.run("s14031:PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPEZvbnQgc2l6ZT0iMTIiIGZhbWlseT0iUGl4ZWwgT3BlcmF0b3IiIGhlaWdodD0iMTYiIHN0eWxlPSJSZWd1bGFyIj4KIDxDaGFyIHdpZHRoPSI0IiBvZmZzZXQ9IjAgMTMiIHJlY3Q9IjEgMTIgMCAwIiBjb2RlPSIgIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIgMyAxIDkiIGNvZGU9IiEiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNCAzIDMgMyIgY29kZT0iJnF1b3Q7Ii8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjggMyA2IDkiIGNvZGU9IiMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMiIgcmVjdD0iMTUgMSA1IDEzIiBjb2RlPSIkIi8%CiA8Q2hhciB3aWR0aD0iOSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIxIDMgNyA5IiBjb2RlPSIlIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjI5IDMgNSA5IiBjb2RlPSImYW1wOyIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA0IiByZWN0PSIzNSAzIDEgMyIgY29kZT0iJyIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSIzNyAzIDMgOSIgY29kZT0iKCIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSI0MSAzIDMgOSIgY29kZT0iKSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI0NSAzIDUgNSIgY29kZT0iKiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI1MSA1IDUgNSIgY29kZT0iKyIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMCAxMiIgcmVjdD0iNTcgMTEgMiAzIiBjb2RlPSIsIi8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDgiIHJlY3Q9IjYwIDcgNCAxIiBjb2RlPSItIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDEyIiByZWN0PSI2NSAxMSAxIDEiIGNvZGU9Ii4iLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjcgMyAzIDkiIGNvZGU9Ii8iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzEgMyA1IDkiIGNvZGU9IjAiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzcgMyA1IDkiIGNvZGU9IjEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODMgMyA1IDkiIGNvZGU9IjIiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODkgMyA1IDkiIGNvZGU9IjMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iOTUgMyA1IDkiIGNvZGU9IjQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTAxIDMgNSA5IiBjb2RlPSI1Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEwNyAzIDUgOSIgY29kZT0iNiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMTMgMyA1IDkiIGNvZGU9IjciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTE5IDMgNSA5IiBjb2RlPSI4Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEgMTUgNSA5IiBjb2RlPSI5Ii8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjcgMTcgMSA3IiBjb2RlPSI6Ii8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIwIDYiIHJlY3Q9IjkgMTcgMiA5IiBjb2RlPSI7Ii8%CiA8Q2hhciB3aWR0aD0iNSIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjEyIDE3IDMgNSIgY29kZT0iJmx0OyIvPgogPENoYXIgd2lkdGg9IjYiIG9mZnNldD0iMSA3IiByZWN0PSIxNiAxOCA0IDMiIGNvZGU9Ij0iLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMjEgMTcgMyA1IiBjb2RlPSI%Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjI1IDE1IDUgOSIgY29kZT0iPyIvPgogPENoYXIgd2lkdGg9IjkiIG9mZnNldD0iMSA0IiByZWN0PSIzMSAxNSA3IDkiIGNvZGU9IkAiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMzkgMTUgNSA5IiBjb2RlPSJBIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjQ1IDE1IDUgOSIgY29kZT0iQiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI1MSAxNSA1IDkiIGNvZGU9IkMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNTcgMTUgNSA5IiBjb2RlPSJEIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjYzIDE1IDUgOSIgY29kZT0iRSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI2OSAxNSA1IDkiIGNvZGU9IkYiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzUgMTUgNSA5IiBjb2RlPSJHIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjgxIDE1IDUgOSIgY29kZT0iSCIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA0IiByZWN0PSI4NyAxNSAxIDkiIGNvZGU9IkkiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODkgMTUgNSA5IiBjb2RlPSJKIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9Ijk1IDE1IDUgOSIgY29kZT0iSyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMDEgMTUgNSA5IiBjb2RlPSJMIi8%CiA8Q2hhciB3aWR0aD0iOSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEwNyAxNSA3IDkiIGNvZGU9Ik0iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTE1IDE1IDUgOSIgY29kZT0iTiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMjEgMTUgNSA5IiBjb2RlPSJPIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEgMjcgNSA5IiBjb2RlPSJQIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjcgMjcgNSA5IiBjb2RlPSJRIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEzIDI3IDUgOSIgY29kZT0iUiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxOSAyNyA1IDkiIGNvZGU9IlMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjUgMjcgNSA5IiBjb2RlPSJUIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjMxIDI3IDUgOSIgY29kZT0iVSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIzNyAyNyA1IDkiIGNvZGU9IlYiLz4KIDxDaGFyIHdpZHRoPSI5IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNDMgMjcgNyA5IiBjb2RlPSJXIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjUxIDI3IDUgOSIgY29kZT0iWCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI1NyAyNyA1IDkiIGNvZGU9IlkiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjMgMjcgNSA5IiBjb2RlPSJaIi8%CiA8Q2hhciB3aWR0aD0iNSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjY5IDI3IDMgOSIgY29kZT0iWyIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMSA0IiByZWN0PSI3MyAyNyAzIDkiIGNvZGU9IlwiLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNzcgMjcgMyA5IiBjb2RlPSJdIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjgxIDI3IDUgMyIgY29kZT0iXiIvPgogPENoYXIgd2lkdGg9IjUiIG9mZnNldD0iMCAxNCIgcmVjdD0iODcgMzcgNSAxIiBjb2RlPSJfIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIwIDQiIHJlY3Q9IjkzIDI3IDIgMiIgY29kZT0iYCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI5NiAyOSA1IDciIGNvZGU9ImEiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTAyIDI3IDUgOSIgY29kZT0iYiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMDggMjkgNSA3IiBjb2RlPSJjIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjExNCAyNyA1IDkiIGNvZGU9ImQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTIwIDI5IDUgNyIgY29kZT0iZSIvPgogPENoYXIgd2lkdGg9IjYiIG9mZnNldD0iMSA0IiByZWN0PSIxIDM5IDUgOSIgY29kZT0iZiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI3IDQxIDUgOSIgY29kZT0iZyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMyAzOSA1IDkiIGNvZGU9ImgiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgNCIgcmVjdD0iMTkgMzkgMSA5IiBjb2RlPSJpIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIxIDM5IDUgMTEiIGNvZGU9ImoiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjcgMzkgNSA5IiBjb2RlPSJrIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjMzIDM5IDEgOSIgY29kZT0ibCIvPgogPENoYXIgd2lkdGg9IjkiIG9mZnNldD0iMSA2IiByZWN0PSIzNSA0MSA3IDciIGNvZGU9Im0iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iNDMgNDEgNSA3IiBjb2RlPSJuIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjQ5IDQxIDUgNyIgY29kZT0ibyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI1NSA0MSA1IDkiIGNvZGU9InAiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iNjEgNDEgNSA5IiBjb2RlPSJxIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjY3IDQxIDUgNyIgY29kZT0iciIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI3MyA0MSA1IDciIGNvZGU9InMiLz4KIDxDaGFyIHdpZHRoPSI2IiBvZmZzZXQ9IjEgNSIgcmVjdD0iNzkgNDAgNSA4IiBjb2RlPSJ0Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9Ijg1IDQxIDUgNyIgY29kZT0idSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI5MSA0MSA1IDciIGNvZGU9InYiLz4KIDxDaGFyIHdpZHRoPSI5IiBvZmZzZXQ9IjEgNiIgcmVjdD0iOTcgNDEgNyA3IiBjb2RlPSJ3Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjEwNSA0MSA1IDciIGNvZGU9IngiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTExIDQxIDUgOSIgY29kZT0ieSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMTcgNDEgNSA3IiBjb2RlPSJ6Ii8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEgNTQgNCA5IiBjb2RlPSJ7Ii8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjYgNTQgMSA5IiBjb2RlPSJ8Ii8%CiA8Q2hhciB3aWR0aD0iNiIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjggNTQgNCA5IiBjb2RlPSJ9Ii8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEzIDU0IDYgMiIgY29kZT0ifiIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA2IiByZWN0PSIyMCA1NiAxIDkiIGNvZGU9IsKhIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjIyIDU0IDUgMTEiIGNvZGU9IsKiIi8%CiA8Q2hhciB3aWR0aD0iOCIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjI4IDU0IDYgOSIgY29kZT0iwqMiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMzUgNTQgNSA5IiBjb2RlPSLCpSIvPgogPENoYXIgd2lkdGg9IjMiIG9mZnNldD0iMSA0IiByZWN0PSI0MSA1NCAxIDkiIGNvZGU9IsKmIi8%CiA8Q2hhciB3aWR0aD0iNSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjQzIDU0IDMgMSIgY29kZT0iwqgiLz4KIDxDaGFyIHdpZHRoPSI5IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNDcgNTQgNyA5IiBjb2RlPSLCqSIvPgogPENoYXIgd2lkdGg9IjgiIG9mZnNldD0iMSA2IiByZWN0PSI1NSA1NiA2IDUiIGNvZGU9IsKrIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDgiIHJlY3Q9IjYyIDU4IDUgMyIgY29kZT0iwqwiLz4KIDxDaGFyIHdpZHRoPSI2IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNjggNTQgNCA0IiBjb2RlPSLCsCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSI3MyA1NiA1IDciIGNvZGU9IsKxIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDQiIHJlY3Q9Ijc5IDU0IDIgMiIgY29kZT0iwrQiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iODIgNTYgNSA5IiBjb2RlPSLCtSIvPgogPENoYXIgd2lkdGg9IjgiIG9mZnNldD0iMSA0IiByZWN0PSI4OCA1NCA3IDkiIGNvZGU9IsK2Ii8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDgiIHJlY3Q9Ijk2IDU4IDEgMSIgY29kZT0iwrciLz4KIDxDaGFyIHdpZHRoPSI1IiBvZmZzZXQ9IjAgMTMiIHJlY3Q9Ijk4IDYzIDMgMiIgY29kZT0iwrgiLz4KIDxDaGFyIHdpZHRoPSI4IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTAyIDU2IDYgNSIgY29kZT0iwrsiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMTA5IDU2IDUgOSIgY29kZT0iwr8iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iMTE1IDUxIDUgMTIiIGNvZGU9IsOAIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjEyMSA1MSA1IDEyIiBjb2RlPSLDgSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIxIDY3IDUgMTIiIGNvZGU9IsOCIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjcgNjcgNiAxMiIgY29kZT0iw4MiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMiIgcmVjdD0iMTQgNjggNSAxMSIgY29kZT0iw4QiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMCIgcmVjdD0iMjAgNjYgNSAxMyIgY29kZT0iw4UiLz4KIDxDaGFyIHdpZHRoPSIxMSIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjI2IDcwIDkgOSIgY29kZT0iw4YiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMzYgNzAgNSAxMSIgY29kZT0iw4ciLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iNDIgNjcgNSAxMiIgY29kZT0iw4giLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iNDggNjcgNSAxMiIgY29kZT0iw4kiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iNTQgNjcgNSAxMiIgY29kZT0iw4oiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMiIgcmVjdD0iNjAgNjggNSAxMSIgY29kZT0iw4siLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgMSIgcmVjdD0iNjYgNjcgMiAxMiIgY29kZT0iw4wiLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjEgMSIgcmVjdD0iNjkgNjcgMiAxMiIgY29kZT0iw40iLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgMSIgcmVjdD0iNzIgNjcgMyAxMiIgY29kZT0iw44iLz4KIDxDaGFyIHdpZHRoPSIzIiBvZmZzZXQ9IjAgMiIgcmVjdD0iNzYgNjggMyAxMSIgY29kZT0iw48iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjAgNCIgcmVjdD0iODAgNzAgNiA5IiBjb2RlPSLDkCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSI4NyA2NyA2IDEyIiBjb2RlPSLDkSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSI5NCA2NyA1IDEyIiBjb2RlPSLDkiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIxMDAgNjcgNSAxMiIgY29kZT0iw5MiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMSIgcmVjdD0iMTA2IDY3IDUgMTIiIGNvZGU9IsOUIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDEiIHJlY3Q9IjExMiA2NyA2IDEyIiBjb2RlPSLDlSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAyIiByZWN0PSIxMTkgNjggNSAxMSIgY29kZT0iw5YiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNiIgcmVjdD0iMSA4NyA1IDUiIGNvZGU9IsOXIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIwIDQiIHJlY3Q9IjcgODUgNyA5IiBjb2RlPSLDmCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIxNSA4MiA1IDEyIiBjb2RlPSLDmSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIyMSA4MiA1IDEyIiBjb2RlPSLDmiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIyNyA4MiA1IDEyIiBjb2RlPSLDmyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAyIiByZWN0PSIzMyA4MyA1IDExIiBjb2RlPSLDnCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAxIiByZWN0PSIzOSA4MiA1IDEyIiBjb2RlPSLDnSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI0NSA4NSA1IDkiIGNvZGU9IsOeIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjUxIDg1IDUgOSIgY29kZT0iw58iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iNTcgODQgNSAxMCIgY29kZT0iw6AiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iNjMgODQgNSAxMCIgY29kZT0iw6EiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iNjkgODQgNSAxMCIgY29kZT0iw6IiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iNzUgODQgNiAxMCIgY29kZT0iw6MiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iODIgODUgNSA5IiBjb2RlPSLDpCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAyIiByZWN0PSI4OCA4MyA1IDExIiBjb2RlPSLDpSIvPgogPENoYXIgd2lkdGg9IjExIiBvZmZzZXQ9IjEgNiIgcmVjdD0iOTQgODcgOSA3IiBjb2RlPSLDpiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA2IiByZWN0PSIxMDQgODcgNSA5IiBjb2RlPSLDpyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSIxMTAgODQgNSAxMCIgY29kZT0iw6giLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgMyIgcmVjdD0iMTE2IDg0IDUgMTAiIGNvZGU9IsOpIi8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjEgOTcgNSAxMCIgY29kZT0iw6oiLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iNyA5OCA1IDkiIGNvZGU9IsOrIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIwIDMiIHJlY3Q9IjEzIDk3IDIgMTAiIGNvZGU9IsOsIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjE2IDk3IDIgMTAiIGNvZGU9IsOtIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIwIDMiIHJlY3Q9IjE5IDk3IDMgMTAiIGNvZGU9IsOuIi8%CiA8Q2hhciB3aWR0aD0iMyIgb2Zmc2V0PSIwIDQiIHJlY3Q9IjIzIDk4IDMgOSIgY29kZT0iw68iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMjcgOTggNiA5IiBjb2RlPSLDsCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSIzNCA5NyA2IDEwIiBjb2RlPSLDsSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI0MSA5NyA1IDEwIiBjb2RlPSLDsiIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI0NyA5NyA1IDEwIiBjb2RlPSLDsyIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI1MyA5NyA1IDEwIiBjb2RlPSLDtCIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSAzIiByZWN0PSI1OSA5NyA2IDEwIiBjb2RlPSLDtSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSI2NiA5OCA1IDkiIGNvZGU9IsO2Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDYiIHJlY3Q9IjcyIDEwMCA1IDUiIGNvZGU9IsO3Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIwIDYiIHJlY3Q9Ijc4IDEwMCA3IDciIGNvZGU9IsO4Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9Ijg2IDk3IDUgMTAiIGNvZGU9IsO5Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjkyIDk3IDUgMTAiIGNvZGU9IsO6Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9Ijk4IDk3IDUgMTAiIGNvZGU9IsO7Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDQiIHJlY3Q9IjEwNCA5OCA1IDkiIGNvZGU9IsO8Ii8%CiA8Q2hhciB3aWR0aD0iNyIgb2Zmc2V0PSIxIDMiIHJlY3Q9IjExMCA5NyA1IDEyIiBjb2RlPSLDvSIvPgogPENoYXIgd2lkdGg9IjciIG9mZnNldD0iMSA0IiByZWN0PSIxMTYgOTggNSAxMSIgY29kZT0iw74iLz4KIDxDaGFyIHdpZHRoPSI3IiBvZmZzZXQ9IjEgNCIgcmVjdD0iMSAxMTAgNSAxMSIgY29kZT0iw78iLz4KPC9Gb250Pgo"));
 		var bmp = new hxd_res_BitmapFont(DESC.entry);
 		bmp.loader = BYTES.loader;
 		fnt = bmp.toFont();
@@ -67863,6 +70945,7 @@ hxd_res_ImageInfo.prototype = {
 	__class__: hxd_res_ImageInfo
 };
 var hxd_res_Image = function(entry) {
+	this.watchRegistered = false;
 	hxd_res_Resource.call(this,entry);
 };
 $hxClasses["hxd.res.Image"] = hxd_res_Image;
@@ -67877,7 +70960,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 		if(this.inf != null) {
 			return this.inf;
 		}
-		this.inf = new hxd_res_ImageInfo();
+		var inf = new hxd_res_ImageInfo();
 		var f = this.entry.open();
 		f.fetch(256);
 		var head;
@@ -67892,21 +70975,21 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 		}
 		switch(head) {
 		case 16163:
-			this.inf.dataFormat = 6;
+			inf.dataFormat = 6;
 			while(f.readLine() != "") {
 			}
 			var parts = f.readLine().split(" ");
-			this.inf.pixelFormat = hxd_PixelFormat.RGBA32F;
-			this.inf.height = Std.parseInt(parts[1]);
-			this.inf.width = Std.parseInt(parts[3]);
+			inf.pixelFormat = hxd_PixelFormat.RGBA32F;
+			inf.height = Std.parseInt(parts[1]);
+			inf.width = Std.parseInt(parts[3]);
 			break;
 		case 17476:
-			this.inf.dataFormat = 4;
+			inf.dataFormat = 4;
 			f.skip(10);
-			this.inf.height = f.readInt32();
-			this.inf.width = f.readInt32();
+			inf.height = f.readInt32();
+			inf.width = f.readInt32();
 			f.skip(8);
-			this.inf.mipLevels = f.readInt32();
+			inf.mipLevels = f.readInt32();
 			f.skip(48);
 			var caps = f.readInt32();
 			var fourCC = f.readInt32();
@@ -67918,13 +71001,13 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 			var caps2 = f.readInt32();
 			var cubes = f.readInt32();
 			if((cubes & 65024) == 65024) {
-				this.inf.flags |= 1 << hxd_res_ImageInfoFlag.IsCube._hx_index;
+				inf.flags |= 1 << hxd_res_ImageInfoFlag.IsCube._hx_index;
 			}
 			switch(fourCC & 16777215) {
 			case 0:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -67949,10 +71032,10 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
 					switch(bpp) {
 					case 16:
@@ -67960,7 +71043,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 							if(gMask == 0) {
 								if(bMask == 0) {
 									if(aMask == 0) {
-										this.inf.pixelFormat = hxd_PixelFormat.R16U;
+										inf.pixelFormat = hxd_PixelFormat.R16U;
 									} else {
 										throw haxe_Exception.thrown("Unsupported RGB DDS " + bpp + "bits " + StringTools.hex(rMask) + "/" + StringTools.hex(gMask) + "/" + StringTools.hex(bMask) + "/" + StringTools.hex(aMask));
 									}
@@ -67980,7 +71063,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 							if(gMask == 65280) {
 								if(bMask == 16711680) {
 									if(aMask == -16777216) {
-										this.inf.pixelFormat = hxd_PixelFormat.RGBA;
+										inf.pixelFormat = hxd_PixelFormat.RGBA;
 									} else {
 										throw haxe_Exception.thrown("Unsupported RGB DDS " + bpp + "bits " + StringTools.hex(rMask) + "/" + StringTools.hex(gMask) + "/" + StringTools.hex(bMask) + "/" + StringTools.hex(aMask));
 									}
@@ -67995,7 +71078,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 							if(gMask == -65536) {
 								if(bMask == 0) {
 									if(aMask == 0) {
-										this.inf.pixelFormat = hxd_PixelFormat.RG16U;
+										inf.pixelFormat = hxd_PixelFormat.RG16U;
 									} else {
 										throw haxe_Exception.thrown("Unsupported RGB DDS " + bpp + "bits " + StringTools.hex(rMask) + "/" + StringTools.hex(gMask) + "/" + StringTools.hex(bMask) + "/" + StringTools.hex(aMask));
 									}
@@ -68010,7 +71093,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 							if(gMask == 65280) {
 								if(bMask == 255) {
 									if(aMask == -16777216) {
-										this.inf.pixelFormat = hxd_PixelFormat.BGRA;
+										inf.pixelFormat = hxd_PixelFormat.BGRA;
 									} else {
 										throw haxe_Exception.thrown("Unsupported RGB DDS " + bpp + "bits " + StringTools.hex(rMask) + "/" + StringTools.hex(gMask) + "/" + StringTools.hex(bMask) + "/" + StringTools.hex(aMask));
 									}
@@ -68033,7 +71116,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 			case 36:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68058,18 +71141,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.RGBA16U;
+					inf.pixelFormat = hxd_PixelFormat.RGBA16U;
 				}
 				break;
 			case 111:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68094,18 +71177,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.R16F;
+					inf.pixelFormat = hxd_PixelFormat.R16F;
 				}
 				break;
 			case 112:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68130,18 +71213,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.RG16F;
+					inf.pixelFormat = hxd_PixelFormat.RG16F;
 				}
 				break;
 			case 113:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68166,18 +71249,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.RGBA16F;
+					inf.pixelFormat = hxd_PixelFormat.RGBA16F;
 				}
 				break;
 			case 114:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68202,18 +71285,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.R32F;
+					inf.pixelFormat = hxd_PixelFormat.R32F;
 				}
 				break;
 			case 115:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68238,18 +71321,18 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.RG32F;
+					inf.pixelFormat = hxd_PixelFormat.RG32F;
 				}
 				break;
 			case 116:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68274,12 +71357,12 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				} else {
-					this.inf.pixelFormat = hxd_PixelFormat.RGBA32F;
+					inf.pixelFormat = hxd_PixelFormat.RGBA32F;
 				}
 				break;
 			case 4805697:
@@ -68295,7 +71378,7 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 				default:
 					tmp = null;
 				}
-				this.inf.pixelFormat = tmp;
+				inf.pixelFormat = tmp;
 				break;
 			case 5527620:
 				var dxt = (fourCC >>> 24) - 48;
@@ -68313,12 +71396,12 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 				default:
 					tmp = null;
 				}
-				this.inf.pixelFormat = tmp;
+				inf.pixelFormat = tmp;
 				break;
 			default:
 				if(fourCC == 808540228) {
 					f.skip(12);
-					this.inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
+					inf.flags |= 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index;
 					var dxgi = f.readInt32();
 					var tmp;
 					switch(dxgi) {
@@ -68343,13 +71426,13 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown(this.entry.get_path() + " has unsupported DXGI format " + dxgi);
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					var imgType = f.readInt32();
 					f.skip(4);
-					this.inf.layerCount = f.readInt32();
+					inf.layerCount = f.readInt32();
 				}
 			}
-			if(this.inf.pixelFormat == null) {
+			if(inf.pixelFormat == null) {
 				var fid = String.fromCodePoint((fourCC & 255)) + String.fromCodePoint((fourCC >> 8 & 255)) + String.fromCodePoint((fourCC >> 16 & 255)) + String.fromCodePoint((fourCC >>> 24));
 				if((fourCC & 255) == fourCC) {
 					fid = "" + fourCC;
@@ -68358,21 +71441,21 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 			}
 			break;
 		case 18759:
-			this.inf.dataFormat = 2;
-			this.inf.pixelFormat = hxd_PixelFormat.BGRA;
+			inf.dataFormat = 2;
+			inf.pixelFormat = hxd_PixelFormat.BGRA;
 			f.readInt32();
-			this.inf.width = f.readUInt16();
-			this.inf.height = f.readUInt16();
+			inf.width = f.readUInt16();
+			inf.height = f.readUInt16();
 			break;
 		case 20617:
-			this.inf.dataFormat = 1;
+			inf.dataFormat = 1;
 			f.set_bigEndian(true);
 			f.skip(6);
 			while(true) {
 				var dataLen = f.readInt32();
 				if(f.readInt32() == 1229472850) {
-					this.inf.width = f.readInt32();
-					this.inf.height = f.readInt32();
+					inf.width = f.readInt32();
+					inf.height = f.readInt32();
 					var colbits = f.readByte();
 					var colType = f.readByte();
 					var tmp;
@@ -68401,22 +71484,22 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					default:
 						throw haxe_Exception.thrown("Unsupported png format " + colbits + "/" + colType + "(" + this.entry.get_path() + ")");
 					}
-					this.inf.pixelFormat = tmp;
+					inf.pixelFormat = tmp;
 					break;
 				}
 				f.skip(dataLen + 4);
 			}
 			break;
 		case 55551:
-			this.inf.dataFormat = 0;
-			this.inf.pixelFormat = hxd_PixelFormat.BGRA;
+			inf.dataFormat = 0;
+			inf.pixelFormat = hxd_PixelFormat.BGRA;
 			f.set_bigEndian(true);
 			_hx_loop3: while(true) switch(f.readUInt16()) {
 			case 65472:case 65473:case 65474:
 				var len = f.readUInt16();
 				var prec = f.readByte();
-				this.inf.height = f.readUInt16();
-				this.inf.width = f.readUInt16();
+				inf.height = f.readUInt16();
+				inf.width = f.readUInt16();
 				break _hx_loop3;
 			default:
 				f.skip(f.readUInt16() - 2);
@@ -68424,43 +71507,44 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 			break;
 		default:
 			if(this.entry.get_extension() == "tga") {
-				this.inf.dataFormat = 3;
-				this.inf.pixelFormat = hxd_PixelFormat.ARGB;
+				inf.dataFormat = 3;
+				inf.pixelFormat = hxd_PixelFormat.ARGB;
 				f.skip(10);
-				this.inf.width = f.readUInt16();
-				this.inf.height = f.readUInt16();
+				inf.width = f.readUInt16();
+				inf.height = f.readUInt16();
 			} else if(this.entry.get_extension() == "raw") {
-				this.inf.dataFormat = 5;
-				this.inf.pixelFormat = hxd_PixelFormat.R32F;
+				inf.dataFormat = 5;
+				inf.pixelFormat = hxd_PixelFormat.R32F;
 				var size = Math.sqrt(this.entry.get_size() >> 2) | 0;
 				if(this.entry.get_size() != size * size * 4) {
 					var size2 = Math.sqrt(this.entry.get_size() >> 1) | 0;
 					if(this.entry.get_size() == size2 * size2 * 2) {
-						this.inf.pixelFormat = hxd_PixelFormat.R16F;
+						inf.pixelFormat = hxd_PixelFormat.R16F;
 						size = size2;
 					} else {
 						throw haxe_Exception.thrown("RAW format does not match 32 bit per components on " + size + "x" + size);
 					}
 				}
-				this.inf.width = this.inf.height = size;
+				inf.width = inf.height = size;
 			} else {
 				throw haxe_Exception.thrown("Unsupported texture format " + this.entry.get_path());
 			}
 		}
 		f.close();
-		if(this.inf.pixelFormat == null) {
+		if(inf.pixelFormat == null) {
 			throw haxe_Exception.thrown("Unsupported internal format (" + this.entry.get_path() + ")");
 		}
-		if(hxd_res_Image.MIPMAP_MAX_SIZE != 0 && this.inf.mipLevels > 1) {
-			while(((this.inf.width | this.inf.height) & 7) == 0 && this.inf.width >> 1 >= hxd_res_Image.MIPMAP_MAX_SIZE && this.inf.height >> 1 >= hxd_res_Image.MIPMAP_MAX_SIZE) {
-				this.inf.width >>= 1;
-				this.inf.height >>= 1;
-				this.inf.mipLevels--;
-				this.inf.mipOffset++;
+		if(hxd_res_Image.MIPMAP_MAX_SIZE != 0 && inf.mipLevels > 1) {
+			while(((inf.width | inf.height) & 7) == 0 && inf.width >> 1 >= hxd_res_Image.MIPMAP_MAX_SIZE && inf.height >> 1 >= hxd_res_Image.MIPMAP_MAX_SIZE) {
+				inf.width >>= 1;
+				inf.height >>= 1;
+				inf.mipLevels--;
+				inf.mipOffset++;
 			}
 		}
+		this.inf = inf;
 		hxd_res_Image.customCheckInfo(this);
-		return this.inf;
+		return inf;
 	}
 	,getPixels: function(fmt,index) {
 		var pixels;
@@ -68670,7 +71754,8 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 						f();
 					}
 				}
-				if(hxd_res_Image.ENABLE_AUTO_WATCH) {
+				if(hxd_res_Image.ENABLE_AUTO_WATCH && !_gthis.watchRegistered) {
+					_gthis.watchRegistered = true;
 					_gthis.watch($bind(_gthis,_gthis.watchCallb));
 				}
 			});
@@ -68678,16 +71763,92 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 		}
 		var load = function() {
 			if((_gthis.enableAsyncLoading || (_gthis.tex.flags & 1 << h3d_mat_TextureFlags.AsyncLoading._hx_index) != 0) && asyncData == null && hxd_res_Image.ASYNC_LOADER != null && hxd_res_Image.ASYNC_LOADER.isSupported(_gthis)) {
-				_gthis.tex.dispose();
-				_gthis.tex.format = hxd_PixelFormat.RGBA;
-				_gthis.tex.width = 1;
-				_gthis.tex.height = 1;
-				_gthis.tex.customMipLevels = 1;
-				_gthis.tex.flags |= 1 << h3d_mat_TextureFlags.Loading._hx_index;
-				_gthis.tex.alloc();
-				_gthis.tex.uploadPixels(hxd_res_Image.BLACK_1x1);
-				_gthis.tex.width = _gthis.inf.width;
-				_gthis.tex.height = _gthis.inf.height;
+				var a = _gthis.tex.width;
+				var b = _gthis.tex.height;
+				var mipSize = (a < b ? b : a) >> _gthis.tex.get_mipLevels() - 1;
+				if(hxd_res_Image.ASYNC_LOADER_MIPS > 0 && _gthis.tex.get_mipLevels() > 1 && _gthis.inf.layerCount == 1 && _gthis.inf.dataFormat == 4) {
+					var pos = 128;
+					if((_gthis.inf.flags & 1 << hxd_res_ImageInfoFlag.Dxt10Header._hx_index) != 0) {
+						pos += 20;
+					}
+					var _g = 0;
+					var _g1 = _gthis.inf.mipOffset;
+					while(_g < _g1) {
+						var mip = _g++;
+						var w = _gthis.inf.width << _gthis.inf.mipOffset >> mip;
+						var h = _gthis.inf.height << _gthis.inf.mipOffset >> mip;
+						var size = hxd_Pixels.calcDataSize(w,h,_gthis.inf.pixelFormat);
+						pos += size;
+					}
+					var mipDataSize = 0;
+					var startMip = _gthis.tex.get_mipLevels() - hxd_res_Image.ASYNC_LOADER_MIPS;
+					if(startMip < 0) {
+						startMip = 0;
+					}
+					var _g = 0;
+					var _g1 = _gthis.tex.get_mipLevels();
+					while(_g < _g1) {
+						var mip = _g++;
+						var w = _gthis.inf.width >> mip;
+						var h = _gthis.inf.height >> mip;
+						if(w == 0) {
+							w = 1;
+						}
+						if(h == 0) {
+							h = 1;
+						}
+						var size = hxd_Pixels.calcDataSize(w,h,_gthis.inf.pixelFormat);
+						if(mip >= startMip) {
+							mipDataSize += size;
+						}
+						pos += size;
+					}
+					var bytes = _gthis.entry.fetchBytes(pos - mipDataSize,mipDataSize);
+					var pix = new hxd_Pixels(0,0,bytes,_gthis.inf.pixelFormat);
+					var _g = 0;
+					var _g1 = _gthis.tex.get_mipLevels() - startMip;
+					while(_g < _g1) {
+						var k = _g++;
+						var mip = startMip + k;
+						var w = _gthis.inf.width >> mip;
+						var h = _gthis.inf.height >> mip;
+						if(w == 0) {
+							w = 1;
+						}
+						if(h == 0) {
+							h = 1;
+						}
+						var size = hxd_Pixels.calcDataSize(w,h,_gthis.inf.pixelFormat);
+						pix.width = w;
+						pix.height = h;
+						pix.dataSize = size;
+						_gthis.tex.uploadPixels(pix,mip,0);
+						pix.offset += size;
+					}
+					if(startMip == 0) {
+						_gthis.tex.realloc = function() {
+							_gthis.loadTexture();
+						};
+						return;
+					}
+					var _this = _gthis.tex;
+					if((_this.flags & 1 << h3d_mat_TextureFlags.Loading._hx_index) != 0) {
+						_this.flags |= 1 << h3d_mat_TextureFlags.AsyncKeepStartingMip._hx_index;
+					}
+					_this.set___startingMip(startMip);
+					_gthis.tex.flags |= 1 << h3d_mat_TextureFlags.Loading._hx_index;
+				} else {
+					_gthis.tex.dispose();
+					_gthis.tex.format = hxd_PixelFormat.RGBA;
+					_gthis.tex.width = 1;
+					_gthis.tex.height = 1;
+					_gthis.tex.customMipLevels = 1;
+					_gthis.tex.flags |= 1 << h3d_mat_TextureFlags.Loading._hx_index;
+					_gthis.tex.alloc();
+					_gthis.tex.uploadPixels(hxd_res_Image.BLACK_1x1);
+					_gthis.tex.width = _gthis.inf.width;
+					_gthis.tex.height = _gthis.inf.height;
+				}
 				hxd_res_Image.ASYNC_LOADER.load(_gthis);
 				_gthis.tex.realloc = function() {
 					_gthis.loadTexture();
@@ -68759,12 +71920,13 @@ hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
 					fmtStr = false;
 				}
 				var fmtStr1 = fmtStr ? "DXT" : hxd_res_ImageFormat.getName(_gthis.inf.dataFormat);
-				haxe_Log.trace(fmtStr1 + " " + (time | 0) + "." + (time * 10 | 0) % 10 + "ms " + _gthis.inf.width + "x" + _gthis.inf.height + " " + _gthis.entry.get_path(),{ fileName : "hxd/res/Image.hx", lineNumber : 625, className : "hxd.res.Image", methodName : "loadTexture"});
+				haxe_Log.trace(fmtStr1 + " " + (time | 0) + "." + (time * 10 | 0) % 10 + "ms " + _gthis.inf.width + "x" + _gthis.inf.height + " " + _gthis.entry.get_path(),{ fileName : "hxd/res/Image.hx", lineNumber : 680, className : "hxd.res.Image", methodName : "loadTexture"});
 			}
 			_gthis.tex.realloc = function() {
 				_gthis.loadTexture();
 			};
-			if(hxd_res_Image.ENABLE_AUTO_WATCH) {
+			if(hxd_res_Image.ENABLE_AUTO_WATCH && !_gthis.watchRegistered) {
+				_gthis.watchRegistered = true;
 				_gthis.watch($bind(_gthis,_gthis.watchCallb));
 			}
 		};
@@ -68831,14 +71993,15 @@ hxd_res_Loader.prototype = {
 		return new hxd_res_Any(this,this.fs.get(path));
 	}
 	,loadCache: function(path,c) {
-		var res = this.cache.h[path];
+		var _gthis = this;
+		var res = _gthis.cache.h[path];
 		if(res == null) {
-			var entry = this.fs.get(path);
+			var entry = _gthis.fs.get(path);
 			var old = hxd_res_Loader.currentInstance;
-			hxd_res_Loader.currentInstance = this;
+			hxd_res_Loader.currentInstance = _gthis;
 			res = Type.createInstance(c,[entry]);
 			hxd_res_Loader.currentInstance = old;
-			this.cache.h[path] = res;
+			_gthis.cache.h[path] = res;
 		} else if((js_Boot.__downcastCheck(res,c) ? res : null) == null) {
 			throw haxe_Exception.thrown(path + " has been reintrepreted from " + Std.string(js_Boot.getClass(res)) + " to " + Std.string(c));
 		}
@@ -70800,9 +73963,10 @@ var hxsl_Type = $hxEnums["hxsl.Type"] = { __ename__:true,__constructs__:null
 	,TArray: ($_=function(t,size) { return {_hx_index:15,t:t,size:size,__enum__:"hxsl.Type",toString:$estr}; },$_._hx_name="TArray",$_.__params__ = ["t","size"],$_)
 	,TBuffer: ($_=function(t,size,kind) { return {_hx_index:16,t:t,size:size,kind:kind,__enum__:"hxsl.Type",toString:$estr}; },$_._hx_name="TBuffer",$_.__params__ = ["t","size","kind"],$_)
 	,TChannel: ($_=function(size) { return {_hx_index:17,size:size,__enum__:"hxsl.Type",toString:$estr}; },$_._hx_name="TChannel",$_.__params__ = ["size"],$_)
+	,TTextureHandle: {_hx_name:"TTextureHandle",_hx_index:18,__enum__:"hxsl.Type",toString:$estr}
 };
-hxsl_Type.__constructs__ = [hxsl_Type.TVoid,hxsl_Type.TInt,hxsl_Type.TBool,hxsl_Type.TFloat,hxsl_Type.TString,hxsl_Type.TVec,hxsl_Type.TMat3,hxsl_Type.TMat4,hxsl_Type.TMat3x4,hxsl_Type.TBytes,hxsl_Type.TSampler,hxsl_Type.TRWTexture,hxsl_Type.TMat2,hxsl_Type.TStruct,hxsl_Type.TFun,hxsl_Type.TArray,hxsl_Type.TBuffer,hxsl_Type.TChannel];
-hxsl_Type.__empty_constructs__ = [hxsl_Type.TVoid,hxsl_Type.TInt,hxsl_Type.TBool,hxsl_Type.TFloat,hxsl_Type.TString,hxsl_Type.TMat3,hxsl_Type.TMat4,hxsl_Type.TMat3x4,hxsl_Type.TMat2];
+hxsl_Type.__constructs__ = [hxsl_Type.TVoid,hxsl_Type.TInt,hxsl_Type.TBool,hxsl_Type.TFloat,hxsl_Type.TString,hxsl_Type.TVec,hxsl_Type.TMat3,hxsl_Type.TMat4,hxsl_Type.TMat3x4,hxsl_Type.TBytes,hxsl_Type.TSampler,hxsl_Type.TRWTexture,hxsl_Type.TMat2,hxsl_Type.TStruct,hxsl_Type.TFun,hxsl_Type.TArray,hxsl_Type.TBuffer,hxsl_Type.TChannel,hxsl_Type.TTextureHandle];
+hxsl_Type.__empty_constructs__ = [hxsl_Type.TVoid,hxsl_Type.TInt,hxsl_Type.TBool,hxsl_Type.TFloat,hxsl_Type.TString,hxsl_Type.TMat3,hxsl_Type.TMat4,hxsl_Type.TMat3x4,hxsl_Type.TMat2,hxsl_Type.TTextureHandle];
 var hxsl_VecType = $hxEnums["hxsl.VecType"] = { __ename__:true,__constructs__:null
 	,VInt: {_hx_name:"VInt",_hx_index:0,__enum__:"hxsl.VecType",toString:$estr}
 	,VFloat: {_hx_name:"VFloat",_hx_index:1,__enum__:"hxsl.VecType",toString:$estr}
@@ -70858,9 +74022,10 @@ var hxsl_VarQualifier = $hxEnums["hxsl.VarQualifier"] = { __ename__:true,__const
 	,Sampler: ($_=function(name) { return {_hx_index:12,name:name,__enum__:"hxsl.VarQualifier",toString:$estr}; },$_._hx_name="Sampler",$_.__params__ = ["name"],$_)
 	,Final: {_hx_name:"Final",_hx_index:13,__enum__:"hxsl.VarQualifier",toString:$estr}
 	,Flat: {_hx_name:"Flat",_hx_index:14,__enum__:"hxsl.VarQualifier",toString:$estr}
+	,NoVar: {_hx_name:"NoVar",_hx_index:15,__enum__:"hxsl.VarQualifier",toString:$estr}
 };
-hxsl_VarQualifier.__constructs__ = [hxsl_VarQualifier.Const,hxsl_VarQualifier.Private,hxsl_VarQualifier.Nullable,hxsl_VarQualifier.PerObject,hxsl_VarQualifier.Name,hxsl_VarQualifier.Shared,hxsl_VarQualifier.Precision,hxsl_VarQualifier.Range,hxsl_VarQualifier.Ignore,hxsl_VarQualifier.PerInstance,hxsl_VarQualifier.Doc,hxsl_VarQualifier.Borrow,hxsl_VarQualifier.Sampler,hxsl_VarQualifier.Final,hxsl_VarQualifier.Flat];
-hxsl_VarQualifier.__empty_constructs__ = [hxsl_VarQualifier.Private,hxsl_VarQualifier.Nullable,hxsl_VarQualifier.PerObject,hxsl_VarQualifier.Shared,hxsl_VarQualifier.Ignore,hxsl_VarQualifier.Final,hxsl_VarQualifier.Flat];
+hxsl_VarQualifier.__constructs__ = [hxsl_VarQualifier.Const,hxsl_VarQualifier.Private,hxsl_VarQualifier.Nullable,hxsl_VarQualifier.PerObject,hxsl_VarQualifier.Name,hxsl_VarQualifier.Shared,hxsl_VarQualifier.Precision,hxsl_VarQualifier.Range,hxsl_VarQualifier.Ignore,hxsl_VarQualifier.PerInstance,hxsl_VarQualifier.Doc,hxsl_VarQualifier.Borrow,hxsl_VarQualifier.Sampler,hxsl_VarQualifier.Final,hxsl_VarQualifier.Flat,hxsl_VarQualifier.NoVar];
+hxsl_VarQualifier.__empty_constructs__ = [hxsl_VarQualifier.Private,hxsl_VarQualifier.Nullable,hxsl_VarQualifier.PerObject,hxsl_VarQualifier.Shared,hxsl_VarQualifier.Ignore,hxsl_VarQualifier.Final,hxsl_VarQualifier.Flat,hxsl_VarQualifier.NoVar];
 var hxsl_Prec = $hxEnums["hxsl.Prec"] = { __ename__:true,__constructs__:null
 	,Low: {_hx_name:"Low",_hx_index:0,__enum__:"hxsl.Prec",toString:$estr}
 	,Medium: {_hx_name:"Medium",_hx_index:1,__enum__:"hxsl.Prec",toString:$estr}
@@ -70929,6 +74094,19 @@ var hxsl_TExprDef = $hxEnums["hxsl.TExprDef"] = { __ename__:true,__constructs__:
 };
 hxsl_TExprDef.__constructs__ = [hxsl_TExprDef.TConst,hxsl_TExprDef.TVar,hxsl_TExprDef.TGlobal,hxsl_TExprDef.TParenthesis,hxsl_TExprDef.TBlock,hxsl_TExprDef.TBinop,hxsl_TExprDef.TUnop,hxsl_TExprDef.TVarDecl,hxsl_TExprDef.TCall,hxsl_TExprDef.TSwiz,hxsl_TExprDef.TIf,hxsl_TExprDef.TDiscard,hxsl_TExprDef.TReturn,hxsl_TExprDef.TFor,hxsl_TExprDef.TContinue,hxsl_TExprDef.TBreak,hxsl_TExprDef.TArray,hxsl_TExprDef.TArrayDecl,hxsl_TExprDef.TSwitch,hxsl_TExprDef.TWhile,hxsl_TExprDef.TMeta,hxsl_TExprDef.TField,hxsl_TExprDef.TSyntax];
 hxsl_TExprDef.__empty_constructs__ = [hxsl_TExprDef.TDiscard,hxsl_TExprDef.TContinue,hxsl_TExprDef.TBreak];
+var hxsl_TVar = function(id,name,type,kind,parent,qualifiers) {
+	this.id = id;
+	this.name = name;
+	this.type = type;
+	this.kind = kind;
+	this.parent = parent;
+	this.qualifiers = qualifiers;
+};
+$hxClasses["hxsl.TVar"] = hxsl_TVar;
+hxsl_TVar.__name__ = "hxsl.TVar";
+hxsl_TVar.prototype = {
+	__class__: hxsl_TVar
+};
 var hxsl_FunctionKind = $hxEnums["hxsl.FunctionKind"] = { __ename__:true,__constructs__:null
 	,Vertex: {_hx_name:"Vertex",_hx_index:0,__enum__:"hxsl.FunctionKind",toString:$estr}
 	,Fragment: {_hx_name:"Fragment",_hx_index:1,__enum__:"hxsl.FunctionKind",toString:$estr}
@@ -71027,9 +74205,12 @@ var hxsl_TGlobal = $hxEnums["hxsl.TGlobal"] = { __ename__:true,__constructs__:nu
 	,GroupMemoryBarrier: {_hx_name:"GroupMemoryBarrier",_hx_index:85,__enum__:"hxsl.TGlobal",toString:$estr}
 	,UnpackSnorm4x8: {_hx_name:"UnpackSnorm4x8",_hx_index:86,__enum__:"hxsl.TGlobal",toString:$estr}
 	,UnpackUnorm4x8: {_hx_name:"UnpackUnorm4x8",_hx_index:87,__enum__:"hxsl.TGlobal",toString:$estr}
+	,Transpose: {_hx_name:"Transpose",_hx_index:88,__enum__:"hxsl.TGlobal",toString:$estr}
+	,TexelLod: {_hx_name:"TexelLod",_hx_index:89,__enum__:"hxsl.TGlobal",toString:$estr}
+	,ResolveSampler: {_hx_name:"ResolveSampler",_hx_index:90,__enum__:"hxsl.TGlobal",toString:$estr}
 };
-hxsl_TGlobal.__constructs__ = [hxsl_TGlobal.Radians,hxsl_TGlobal.Degrees,hxsl_TGlobal.Sin,hxsl_TGlobal.Cos,hxsl_TGlobal.Tan,hxsl_TGlobal.Asin,hxsl_TGlobal.Acos,hxsl_TGlobal.Atan,hxsl_TGlobal.Pow,hxsl_TGlobal.Exp,hxsl_TGlobal.Log,hxsl_TGlobal.Exp2,hxsl_TGlobal.Log2,hxsl_TGlobal.Sqrt,hxsl_TGlobal.Inversesqrt,hxsl_TGlobal.Abs,hxsl_TGlobal.Sign,hxsl_TGlobal.Floor,hxsl_TGlobal.Ceil,hxsl_TGlobal.Fract,hxsl_TGlobal.Mod,hxsl_TGlobal.Min,hxsl_TGlobal.Max,hxsl_TGlobal.Clamp,hxsl_TGlobal.Mix,hxsl_TGlobal.InvLerp,hxsl_TGlobal.Step,hxsl_TGlobal.Smoothstep,hxsl_TGlobal.Length,hxsl_TGlobal.Distance,hxsl_TGlobal.Dot,hxsl_TGlobal.Cross,hxsl_TGlobal.Normalize,hxsl_TGlobal.LReflect,hxsl_TGlobal.Texture,hxsl_TGlobal.TextureLod,hxsl_TGlobal.Texel,hxsl_TGlobal.TextureSize,hxsl_TGlobal.ToInt,hxsl_TGlobal.ToFloat,hxsl_TGlobal.ToBool,hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4,hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4,hxsl_TGlobal.BVec2,hxsl_TGlobal.BVec3,hxsl_TGlobal.BVec4,hxsl_TGlobal.Mat2,hxsl_TGlobal.Mat3,hxsl_TGlobal.Mat4,hxsl_TGlobal.Mat3x4,hxsl_TGlobal.Saturate,hxsl_TGlobal.Pack,hxsl_TGlobal.Unpack,hxsl_TGlobal.PackNormal,hxsl_TGlobal.UnpackNormal,hxsl_TGlobal.ScreenToUv,hxsl_TGlobal.UvToScreen,hxsl_TGlobal.DFdx,hxsl_TGlobal.DFdy,hxsl_TGlobal.Fwidth,hxsl_TGlobal.ChannelRead,hxsl_TGlobal.ChannelReadLod,hxsl_TGlobal.ChannelFetch,hxsl_TGlobal.ChannelTextureSize,hxsl_TGlobal.Trace,hxsl_TGlobal.VertexID,hxsl_TGlobal.InstanceID,hxsl_TGlobal.FragCoord,hxsl_TGlobal.FrontFacing,hxsl_TGlobal.FloatBitsToInt,hxsl_TGlobal.FloatBitsToUint,hxsl_TGlobal.IntBitsToFloat,hxsl_TGlobal.UintBitsToFloat,hxsl_TGlobal.RoundEven,hxsl_TGlobal.SetLayout,hxsl_TGlobal.ImageStore,hxsl_TGlobal.ComputeVar_GlobalInvocation,hxsl_TGlobal.ComputeVar_LocalInvocation,hxsl_TGlobal.ComputeVar_WorkGroup,hxsl_TGlobal.ComputeVar_LocalInvocationIndex,hxsl_TGlobal.AtomicAdd,hxsl_TGlobal.GroupMemoryBarrier,hxsl_TGlobal.UnpackSnorm4x8,hxsl_TGlobal.UnpackUnorm4x8];
-hxsl_TGlobal.__empty_constructs__ = [hxsl_TGlobal.Radians,hxsl_TGlobal.Degrees,hxsl_TGlobal.Sin,hxsl_TGlobal.Cos,hxsl_TGlobal.Tan,hxsl_TGlobal.Asin,hxsl_TGlobal.Acos,hxsl_TGlobal.Atan,hxsl_TGlobal.Pow,hxsl_TGlobal.Exp,hxsl_TGlobal.Log,hxsl_TGlobal.Exp2,hxsl_TGlobal.Log2,hxsl_TGlobal.Sqrt,hxsl_TGlobal.Inversesqrt,hxsl_TGlobal.Abs,hxsl_TGlobal.Sign,hxsl_TGlobal.Floor,hxsl_TGlobal.Ceil,hxsl_TGlobal.Fract,hxsl_TGlobal.Mod,hxsl_TGlobal.Min,hxsl_TGlobal.Max,hxsl_TGlobal.Clamp,hxsl_TGlobal.Mix,hxsl_TGlobal.InvLerp,hxsl_TGlobal.Step,hxsl_TGlobal.Smoothstep,hxsl_TGlobal.Length,hxsl_TGlobal.Distance,hxsl_TGlobal.Dot,hxsl_TGlobal.Cross,hxsl_TGlobal.Normalize,hxsl_TGlobal.LReflect,hxsl_TGlobal.Texture,hxsl_TGlobal.TextureLod,hxsl_TGlobal.Texel,hxsl_TGlobal.TextureSize,hxsl_TGlobal.ToInt,hxsl_TGlobal.ToFloat,hxsl_TGlobal.ToBool,hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4,hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4,hxsl_TGlobal.BVec2,hxsl_TGlobal.BVec3,hxsl_TGlobal.BVec4,hxsl_TGlobal.Mat2,hxsl_TGlobal.Mat3,hxsl_TGlobal.Mat4,hxsl_TGlobal.Mat3x4,hxsl_TGlobal.Saturate,hxsl_TGlobal.Pack,hxsl_TGlobal.Unpack,hxsl_TGlobal.PackNormal,hxsl_TGlobal.UnpackNormal,hxsl_TGlobal.ScreenToUv,hxsl_TGlobal.UvToScreen,hxsl_TGlobal.DFdx,hxsl_TGlobal.DFdy,hxsl_TGlobal.Fwidth,hxsl_TGlobal.ChannelRead,hxsl_TGlobal.ChannelReadLod,hxsl_TGlobal.ChannelFetch,hxsl_TGlobal.ChannelTextureSize,hxsl_TGlobal.Trace,hxsl_TGlobal.VertexID,hxsl_TGlobal.InstanceID,hxsl_TGlobal.FragCoord,hxsl_TGlobal.FrontFacing,hxsl_TGlobal.FloatBitsToInt,hxsl_TGlobal.FloatBitsToUint,hxsl_TGlobal.IntBitsToFloat,hxsl_TGlobal.UintBitsToFloat,hxsl_TGlobal.RoundEven,hxsl_TGlobal.SetLayout,hxsl_TGlobal.ImageStore,hxsl_TGlobal.ComputeVar_GlobalInvocation,hxsl_TGlobal.ComputeVar_LocalInvocation,hxsl_TGlobal.ComputeVar_WorkGroup,hxsl_TGlobal.ComputeVar_LocalInvocationIndex,hxsl_TGlobal.AtomicAdd,hxsl_TGlobal.GroupMemoryBarrier,hxsl_TGlobal.UnpackSnorm4x8,hxsl_TGlobal.UnpackUnorm4x8];
+hxsl_TGlobal.__constructs__ = [hxsl_TGlobal.Radians,hxsl_TGlobal.Degrees,hxsl_TGlobal.Sin,hxsl_TGlobal.Cos,hxsl_TGlobal.Tan,hxsl_TGlobal.Asin,hxsl_TGlobal.Acos,hxsl_TGlobal.Atan,hxsl_TGlobal.Pow,hxsl_TGlobal.Exp,hxsl_TGlobal.Log,hxsl_TGlobal.Exp2,hxsl_TGlobal.Log2,hxsl_TGlobal.Sqrt,hxsl_TGlobal.Inversesqrt,hxsl_TGlobal.Abs,hxsl_TGlobal.Sign,hxsl_TGlobal.Floor,hxsl_TGlobal.Ceil,hxsl_TGlobal.Fract,hxsl_TGlobal.Mod,hxsl_TGlobal.Min,hxsl_TGlobal.Max,hxsl_TGlobal.Clamp,hxsl_TGlobal.Mix,hxsl_TGlobal.InvLerp,hxsl_TGlobal.Step,hxsl_TGlobal.Smoothstep,hxsl_TGlobal.Length,hxsl_TGlobal.Distance,hxsl_TGlobal.Dot,hxsl_TGlobal.Cross,hxsl_TGlobal.Normalize,hxsl_TGlobal.LReflect,hxsl_TGlobal.Texture,hxsl_TGlobal.TextureLod,hxsl_TGlobal.Texel,hxsl_TGlobal.TextureSize,hxsl_TGlobal.ToInt,hxsl_TGlobal.ToFloat,hxsl_TGlobal.ToBool,hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4,hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4,hxsl_TGlobal.BVec2,hxsl_TGlobal.BVec3,hxsl_TGlobal.BVec4,hxsl_TGlobal.Mat2,hxsl_TGlobal.Mat3,hxsl_TGlobal.Mat4,hxsl_TGlobal.Mat3x4,hxsl_TGlobal.Saturate,hxsl_TGlobal.Pack,hxsl_TGlobal.Unpack,hxsl_TGlobal.PackNormal,hxsl_TGlobal.UnpackNormal,hxsl_TGlobal.ScreenToUv,hxsl_TGlobal.UvToScreen,hxsl_TGlobal.DFdx,hxsl_TGlobal.DFdy,hxsl_TGlobal.Fwidth,hxsl_TGlobal.ChannelRead,hxsl_TGlobal.ChannelReadLod,hxsl_TGlobal.ChannelFetch,hxsl_TGlobal.ChannelTextureSize,hxsl_TGlobal.Trace,hxsl_TGlobal.VertexID,hxsl_TGlobal.InstanceID,hxsl_TGlobal.FragCoord,hxsl_TGlobal.FrontFacing,hxsl_TGlobal.FloatBitsToInt,hxsl_TGlobal.FloatBitsToUint,hxsl_TGlobal.IntBitsToFloat,hxsl_TGlobal.UintBitsToFloat,hxsl_TGlobal.RoundEven,hxsl_TGlobal.SetLayout,hxsl_TGlobal.ImageStore,hxsl_TGlobal.ComputeVar_GlobalInvocation,hxsl_TGlobal.ComputeVar_LocalInvocation,hxsl_TGlobal.ComputeVar_WorkGroup,hxsl_TGlobal.ComputeVar_LocalInvocationIndex,hxsl_TGlobal.AtomicAdd,hxsl_TGlobal.GroupMemoryBarrier,hxsl_TGlobal.UnpackSnorm4x8,hxsl_TGlobal.UnpackUnorm4x8,hxsl_TGlobal.Transpose,hxsl_TGlobal.TexelLod,hxsl_TGlobal.ResolveSampler];
+hxsl_TGlobal.__empty_constructs__ = [hxsl_TGlobal.Radians,hxsl_TGlobal.Degrees,hxsl_TGlobal.Sin,hxsl_TGlobal.Cos,hxsl_TGlobal.Tan,hxsl_TGlobal.Asin,hxsl_TGlobal.Acos,hxsl_TGlobal.Atan,hxsl_TGlobal.Pow,hxsl_TGlobal.Exp,hxsl_TGlobal.Log,hxsl_TGlobal.Exp2,hxsl_TGlobal.Log2,hxsl_TGlobal.Sqrt,hxsl_TGlobal.Inversesqrt,hxsl_TGlobal.Abs,hxsl_TGlobal.Sign,hxsl_TGlobal.Floor,hxsl_TGlobal.Ceil,hxsl_TGlobal.Fract,hxsl_TGlobal.Mod,hxsl_TGlobal.Min,hxsl_TGlobal.Max,hxsl_TGlobal.Clamp,hxsl_TGlobal.Mix,hxsl_TGlobal.InvLerp,hxsl_TGlobal.Step,hxsl_TGlobal.Smoothstep,hxsl_TGlobal.Length,hxsl_TGlobal.Distance,hxsl_TGlobal.Dot,hxsl_TGlobal.Cross,hxsl_TGlobal.Normalize,hxsl_TGlobal.LReflect,hxsl_TGlobal.Texture,hxsl_TGlobal.TextureLod,hxsl_TGlobal.Texel,hxsl_TGlobal.TextureSize,hxsl_TGlobal.ToInt,hxsl_TGlobal.ToFloat,hxsl_TGlobal.ToBool,hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4,hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4,hxsl_TGlobal.BVec2,hxsl_TGlobal.BVec3,hxsl_TGlobal.BVec4,hxsl_TGlobal.Mat2,hxsl_TGlobal.Mat3,hxsl_TGlobal.Mat4,hxsl_TGlobal.Mat3x4,hxsl_TGlobal.Saturate,hxsl_TGlobal.Pack,hxsl_TGlobal.Unpack,hxsl_TGlobal.PackNormal,hxsl_TGlobal.UnpackNormal,hxsl_TGlobal.ScreenToUv,hxsl_TGlobal.UvToScreen,hxsl_TGlobal.DFdx,hxsl_TGlobal.DFdy,hxsl_TGlobal.Fwidth,hxsl_TGlobal.ChannelRead,hxsl_TGlobal.ChannelReadLod,hxsl_TGlobal.ChannelFetch,hxsl_TGlobal.ChannelTextureSize,hxsl_TGlobal.Trace,hxsl_TGlobal.VertexID,hxsl_TGlobal.InstanceID,hxsl_TGlobal.FragCoord,hxsl_TGlobal.FrontFacing,hxsl_TGlobal.FloatBitsToInt,hxsl_TGlobal.FloatBitsToUint,hxsl_TGlobal.IntBitsToFloat,hxsl_TGlobal.UintBitsToFloat,hxsl_TGlobal.RoundEven,hxsl_TGlobal.SetLayout,hxsl_TGlobal.ImageStore,hxsl_TGlobal.ComputeVar_GlobalInvocation,hxsl_TGlobal.ComputeVar_LocalInvocation,hxsl_TGlobal.ComputeVar_WorkGroup,hxsl_TGlobal.ComputeVar_LocalInvocationIndex,hxsl_TGlobal.AtomicAdd,hxsl_TGlobal.GroupMemoryBarrier,hxsl_TGlobal.UnpackSnorm4x8,hxsl_TGlobal.UnpackUnorm4x8,hxsl_TGlobal.Transpose,hxsl_TGlobal.TexelLod,hxsl_TGlobal.ResolveSampler];
 var hxsl_SyntaxArgAccess = $hxEnums["hxsl.SyntaxArgAccess"] = { __ename__:true,__constructs__:null
 	,Read: {_hx_name:"Read",_hx_index:0,__enum__:"hxsl.SyntaxArgAccess",toString:$estr}
 	,Write: {_hx_name:"Write",_hx_index:1,__enum__:"hxsl.SyntaxArgAccess",toString:$estr}
@@ -71045,11 +74226,22 @@ var hxsl_Component = $hxEnums["hxsl.Component"] = { __ename__:true,__constructs_
 };
 hxsl_Component.__constructs__ = [hxsl_Component.X,hxsl_Component.Y,hxsl_Component.Z,hxsl_Component.W];
 hxsl_Component.__empty_constructs__ = [hxsl_Component.X,hxsl_Component.Y,hxsl_Component.Z,hxsl_Component.W];
+var hxsl_TExpr = function(e,t,p) {
+	this.e = e;
+	this.t = t;
+	this.p = p;
+};
+$hxClasses["hxsl.TExpr"] = hxsl_TExpr;
+hxsl_TExpr.__name__ = "hxsl.TExpr";
+hxsl_TExpr.prototype = {
+	__class__: hxsl_TExpr
+};
 var hxsl_Tools = function() { };
 $hxClasses["hxsl.Tools"] = hxsl_Tools;
 hxsl_Tools.__name__ = "hxsl.Tools";
 hxsl_Tools.allocVarId = function() {
-	return ++hxsl_Tools.UID;
+	var id = ++hxsl_Tools.UID;
+	return id;
 };
 hxsl_Tools.getDimSize = function(dim,arr) {
 	if(arr == null) {
@@ -71387,8 +74579,8 @@ hxsl_Tools.hasSideEffect = function(e) {
 		var _g1 = _g.e;
 		var _g2 = _g.args;
 		var _g3 = _g1.e;
-		var _g4 = _g1.p;
 		var _g4 = _g1.t;
+		var _g4 = _g1.p;
 		if(_g3._hx_index == 2) {
 			if(_g3.g._hx_index == 78) {
 				return true;
@@ -71399,7 +74591,7 @@ hxsl_Tools.hasSideEffect = function(e) {
 				if(_g3._hx_index == 2) {
 					var _g4 = _g3.g;
 					switch(_g4._hx_index) {
-					case 79:case 84:case 85:
+					case 79:case 84:case 85:case 90:
 						return true;
 					default:
 						var g = _g4;
@@ -71424,7 +74616,7 @@ hxsl_Tools.hasSideEffect = function(e) {
 			if(_g1._hx_index == 2) {
 				var _g2 = _g1.g;
 				switch(_g2._hx_index) {
-				case 79:case 84:case 85:
+				case 79:case 84:case 85:case 90:
 					return true;
 				default:
 					var g = _g2;
@@ -71706,161 +74898,6 @@ hxsl_Tools.iter = function(e,f) {
 		break;
 	}
 };
-hxsl_Tools.map = function(e,f) {
-	var ed;
-	var _g = e.e;
-	switch(_g._hx_index) {
-	case 0:
-		var _g1 = _g.c;
-		ed = e.e;
-		break;
-	case 1:
-		var _g1 = _g.v;
-		ed = e.e;
-		break;
-	case 2:
-		var _g1 = _g.g;
-		ed = e.e;
-		break;
-	case 3:
-		var e1 = _g.e;
-		ed = hxsl_TExprDef.TParenthesis(f(e1));
-		break;
-	case 4:
-		var el = _g.el;
-		var _g1 = [];
-		var _g2 = 0;
-		while(_g2 < el.length) {
-			var e1 = el[_g2];
-			++_g2;
-			_g1.push(f(e1));
-		}
-		ed = hxsl_TExprDef.TBlock(_g1);
-		break;
-	case 5:
-		var op = _g.op;
-		var e1 = _g.e1;
-		var e2 = _g.e2;
-		ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
-		break;
-	case 6:
-		var op = _g.op;
-		var e1 = _g.e1;
-		ed = hxsl_TExprDef.TUnop(op,f(e1));
-		break;
-	case 7:
-		var v = _g.v;
-		var init = _g.init;
-		ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
-		break;
-	case 8:
-		var e1 = _g.e;
-		var args = _g.args;
-		var ed1 = f(e1);
-		var _g1 = [];
-		var _g2 = 0;
-		while(_g2 < args.length) {
-			var a = args[_g2];
-			++_g2;
-			_g1.push(f(a));
-		}
-		ed = hxsl_TExprDef.TCall(ed1,_g1);
-		break;
-	case 9:
-		var e1 = _g.e;
-		var c = _g.regs;
-		ed = hxsl_TExprDef.TSwiz(f(e1),c);
-		break;
-	case 10:
-		var econd = _g.econd;
-		var eif = _g.eif;
-		var eelse = _g.eelse;
-		ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
-		break;
-	case 12:
-		var e1 = _g.e;
-		ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
-		break;
-	case 13:
-		var v = _g.v;
-		var it = _g.it;
-		var loop = _g.loop;
-		ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
-		break;
-	case 11:case 14:case 15:
-		ed = e.e;
-		break;
-	case 16:
-		var e1 = _g.e;
-		var index = _g.index;
-		ed = hxsl_TExprDef.TArray(f(e1),f(index));
-		break;
-	case 17:
-		var el = _g.el;
-		var _g1 = [];
-		var _g2 = 0;
-		while(_g2 < el.length) {
-			var e1 = el[_g2];
-			++_g2;
-			_g1.push(f(e1));
-		}
-		ed = hxsl_TExprDef.TArrayDecl(_g1);
-		break;
-	case 18:
-		var e1 = _g.e;
-		var cases = _g.cases;
-		var def = _g.def;
-		var ed1 = f(e1);
-		var _g1 = [];
-		var _g2 = 0;
-		while(_g2 < cases.length) {
-			var c = cases[_g2];
-			++_g2;
-			var _g3 = [];
-			var _g4 = 0;
-			var _g5 = c.values;
-			while(_g4 < _g5.length) {
-				var v = _g5[_g4];
-				++_g4;
-				_g3.push(f(v));
-			}
-			_g1.push({ values : _g3, expr : f(c.expr)});
-		}
-		ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
-		break;
-	case 19:
-		var e1 = _g.e;
-		var loop = _g.loop;
-		var normalWhile = _g.normalWhile;
-		ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
-		break;
-	case 20:
-		var m = _g.m;
-		var args = _g.args;
-		var e1 = _g.e;
-		ed = hxsl_TExprDef.TMeta(m,args,f(e1));
-		break;
-	case 21:
-		var e1 = _g.e;
-		var name = _g.name;
-		ed = hxsl_TExprDef.TField(f(e1),name);
-		break;
-	case 22:
-		var target = _g.target;
-		var code = _g.code;
-		var args = _g.args;
-		var _g = [];
-		var _g1 = 0;
-		while(_g1 < args.length) {
-			var arg = args[_g1];
-			++_g1;
-			_g.push({ e : f(arg.e), access : arg.access});
-		}
-		ed = hxsl_TExprDef.TSyntax(target,code,_g);
-		break;
-	}
-	return { e : ed, t : e.t, p : e.p};
-};
 hxsl_Tools.size = function(t) {
 	switch(t._hx_index) {
 	case 0:
@@ -71933,6 +74970,8 @@ hxsl_Tools.size = function(t) {
 	case 17:
 		var n = t.size;
 		return n;
+	case 18:
+		return 2;
 	}
 };
 var hxsl_Tools2 = function() { };
@@ -72022,6 +75061,15 @@ hxsl_BatchShader.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: hxsl_BatchShader
 });
+var hxsl__$Cache_ParamVar = function(instance,index) {
+	this.instance = instance;
+	this.index = index;
+};
+$hxClasses["hxsl._Cache.ParamVar"] = hxsl__$Cache_ParamVar;
+hxsl__$Cache_ParamVar.__name__ = "hxsl._Cache.ParamVar";
+hxsl__$Cache_ParamVar.prototype = {
+	__class__: hxsl__$Cache_ParamVar
+};
 var hxsl_SearchMap = function() {
 	this.minId = 0;
 	this.nexts = [];
@@ -72070,7 +75118,10 @@ hxsl_Cache.get = function() {
 	return c;
 };
 hxsl_Cache.prototype = {
-	getLinkShader: function(vars) {
+	getLinkShader: function(vars,vertexOutputName) {
+		if(vertexOutputName == null) {
+			vertexOutputName = "output.position";
+		}
 		var _g = [];
 		var _g1 = 0;
 		while(_g1 < vars.length) {
@@ -72083,6 +75134,14 @@ hxsl_Cache.prototype = {
 		if(shader != null) {
 			return shader;
 		}
+		var s = this.createLinkShader(key,vars,vertexOutputName);
+		shader = Object.create(hxsl_Shader.prototype);
+		shader.shader = s;
+		this.linkShaders.h[key] = shader;
+		shader.updateConstantsFinal(null);
+		return shader;
+	}
+	,createLinkShader: function(key,vars,vertexOutputName) {
 		var s = new hxsl_SharedShader("");
 		var id = HxOverrides.substr(haxe_crypto_Md5.encode(key),0,8);
 		s.data = { name : "shaderLinker_" + id, vars : [], funs : []};
@@ -72101,7 +75160,7 @@ hxsl_Cache.prototype = {
 				rem -= hxsl_Tools.size(e.t);
 				out.unshift(e);
 			}
-			return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(g), t : hxsl_Type.TVoid, p : pos},out), t : hxsl_Type.TVec(size,hxsl_VecType.VFloat), p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(g),hxsl_Type.TVoid,pos),out),hxsl_Type.TVec(size,hxsl_VecType.VFloat),pos);
 		};
 		var makeVar = function(name,t,parent) {
 			var path = parent == null ? name : hxsl_Tools.getName(parent) + "." + name;
@@ -72109,7 +75168,7 @@ hxsl_Cache.prototype = {
 			if(v != null) {
 				return v;
 			}
-			v = { id : hxsl_Tools.allocVarId(), name : name, type : t, kind : hxsl_VarKind.Var, parent : parent};
+			v = new hxsl_TVar(hxsl_Tools.allocVarId(),name,t,hxsl_VarKind.Var,parent,null);
 			if(parent == null) {
 				s.data.vars.push(v);
 			} else {
@@ -72129,13 +75188,13 @@ hxsl_Cache.prototype = {
 			switch(v._hx_index) {
 			case 0:
 				var v1 = v.v;
-				return { e : hxsl_TExprDef.TConst(hxsl_Const.CFloat(v1)), t : hxsl_Type.TFloat, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CFloat(v1)),hxsl_Type.TFloat,pos);
 			case 1:
 				var vname = v.v;
 				var size = v.size;
 				var v1 = outVars_h[vname];
 				if(v1 != null) {
-					return { e : hxsl_TExprDef.TVar(v1), t : v1.type, p : pos};
+					return new hxsl_TExpr(hxsl_TExprDef.TVar(v1),v1.type,pos);
 				}
 				var path = vname.split(".");
 				var parent = null;
@@ -72144,13 +75203,13 @@ hxsl_Cache.prototype = {
 					rem = size;
 				}
 				v1 = makeVar(path.shift(),rem == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(rem,hxsl_VecType.VFloat),parent);
-				return { e : hxsl_TExprDef.TVar(v1), t : v1.type, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TVar(v1),v1.type,pos);
 			case 2:
 				var v1 = v.v;
-				return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.PackNormal), t : hxsl_Type.TVoid, p : pos},[makeOutExpr(v1,3)]), t : tvec4, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.PackNormal),hxsl_Type.TVoid,pos),[makeOutExpr(v1,3)]),tvec4,pos);
 			case 3:
 				var v1 = v.v;
-				return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Pack), t : hxsl_Type.TVoid, p : pos},[makeOutExpr(v1,1)]), t : tvec4, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Pack),hxsl_Type.TVoid,pos),[makeOutExpr(v1,1)]),tvec4,pos);
 			case 4:
 				var args = v.a;
 				return makeVec(hxsl_TGlobal.Vec2,2,args,makeOutExpr);
@@ -72163,17 +75222,17 @@ hxsl_Cache.prototype = {
 			case 7:
 				var v1 = v.a;
 				var comps = v.swiz;
-				return { e : hxsl_TExprDef.TSwiz(makeOutExpr(v1,4),comps), t : hxsl_Type.TVec(comps.length,hxsl_VecType.VFloat), p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TSwiz(makeOutExpr(v1,4),comps),hxsl_Type.TVec(comps.length,hxsl_VecType.VFloat),pos);
 			}
 		};
 		var makeOutput = function(v) {
 			outputCount += 1;
-			var ov = { id : hxsl_Tools.allocVarId(), type : tvec4, name : "OUTPUT" + (outputCount - 1), kind : hxsl_VarKind.Output};
+			var ov = new hxsl_TVar(hxsl_Tools.allocVarId(),"OUTPUT" + (outputCount - 1),tvec4,hxsl_VarKind.Output,null,null);
 			s.data.vars.push(ov);
-			return { e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,{ e : hxsl_TExprDef.TVar(ov), t : tvec4, p : pos},makeOutExpr(v,4)), t : hxsl_Type.TVoid, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,new hxsl_TExpr(hxsl_TExprDef.TVar(ov),tvec4,pos),makeOutExpr(v,4)),hxsl_Type.TVoid,pos);
 		};
 		var defineFun = function(kind,vars) {
-			var fv = { id : hxsl_Tools.allocVarId(), type : hxsl_Type.TFun([]), name : ("" + Std.string(kind)).toLowerCase(), kind : hxsl_VarKind.Function};
+			var fv = new hxsl_TVar(hxsl_Tools.allocVarId(),("" + Std.string(kind)).toLowerCase(),hxsl_Type.TFun([]),hxsl_VarKind.Function,null,null);
 			var _g = [];
 			var _g1 = 0;
 			while(_g1 < vars.length) {
@@ -72181,16 +75240,12 @@ hxsl_Cache.prototype = {
 				++_g1;
 				_g.push(makeOutput(v));
 			}
-			var f = { kind : kind, ref : fv, args : [], ret : hxsl_Type.TVoid, expr : { e : hxsl_TExprDef.TBlock(_g), p : pos, t : hxsl_Type.TVoid}};
+			var f = { kind : kind, ref : fv, args : [], ret : hxsl_Type.TVoid, expr : new hxsl_TExpr(hxsl_TExprDef.TBlock(_g),hxsl_Type.TVoid,pos)};
 			s.data.funs.push(f);
 		};
-		defineFun(hxsl_FunctionKind.Vertex,[hxsl_Output.Value("output.position")]);
+		defineFun(hxsl_FunctionKind.Vertex,[hxsl_Output.Value(vertexOutputName)]);
 		defineFun(hxsl_FunctionKind.Fragment,vars);
-		shader = Object.create(hxsl_Shader.prototype);
-		shader.shader = s;
-		this.linkShaders.h[key] = shader;
-		shader.updateConstantsFinal(null);
-		return shader;
+		return s;
 	}
 	,link: function(shaders,mode) {
 		var c = this.linkCache;
@@ -72334,7 +75389,12 @@ hxsl_Cache.prototype = {
 				}
 				var inf = shaderDatas[v.instanceIndex];
 				var nv = splitter.varMap.h[v.v.__id__];
-				paramVars.h[nv == null ? v.id : nv.id] = { instance : inf.index, index : inf.inst.params.h[v.merged[0].id]};
+				var key = nv == null ? v.id : nv.id;
+				if(v.merged == null) {
+					v.merged = [v.mergedV];
+				}
+				var value = new hxsl__$Cache_ParamVar(inf.index,inf.inst.params.h[v.merged[0].id]);
+				paramVars.h[key] = value;
 			}
 		}
 		var _g = 0;
@@ -72481,6 +75541,9 @@ hxsl_Cache.prototype = {
 					var a = alloc[_g1];
 					++_g1;
 					if(a.v != null) {
+						if(a.v.type._hx_index == 18) {
+							c.globalsHandleCount++;
+						}
 						_g.push(new hxsl_AllocGlobal(a.pos,this.getPath(a.v),a.v.type));
 					}
 				}
@@ -72527,6 +75590,9 @@ hxsl_Cache.prototype = {
 					++_g7;
 					if(a1.v == null) {
 						continue;
+					}
+					if(a1.v.type._hx_index == 18) {
+						c.paramsHandleCount++;
 					}
 					var p = params.h[a1.v.id];
 					if(p == null) {
@@ -72635,11 +75701,11 @@ hxsl_Cache.prototype = {
 					}
 					break;
 				case 11:
-					var _g2 = _g.channels;
 					if(_g1._hx_index == 11) {
-						var _g2 = _g1.channels;
 						var t21 = _g1.dim;
 						var a2 = _g1.isArray;
+						var c2 = _g1.channels;
+						var c1 = _g.channels;
 						var a1 = _g.isArray;
 						var t11 = _g.dim;
 						if(a1 != a2) {
@@ -72648,6 +75714,8 @@ hxsl_Cache.prototype = {
 							} else {
 								return -1;
 							}
+						} else if(c1 != c2) {
+							return c1 - c2;
 						} else {
 							return t11._hx_index - t21._hx_index;
 						}
@@ -72711,6 +75779,19 @@ hxsl_Cache.prototype = {
 			c.paramsSize = 0;
 		}
 		c.data = data;
+		c.hasBindless = c.globalsHandleCount > 0 || c.paramsHandleCount > 0;
+		if(!c.hasBindless) {
+			var _g = 0;
+			var _g1 = c.data.vars;
+			while(_g < _g1.length) {
+				var v = _g1[_g];
+				++_g;
+				if(v.type._hx_index == 18) {
+					c.hasBindless = true;
+					break;
+				}
+			}
+		}
 		return c;
 	}
 	,__class__: hxsl_Cache
@@ -72754,6 +75835,7 @@ hxsl_Checker.initGlobals = function() {
 	var genType = [hxsl_Type.TFloat,hxsl_Checker.vec2,hxsl_Checker.vec3,hxsl_Checker.vec4];
 	var genIType = [hxsl_Type.TInt,hxsl_Checker.ivec2,hxsl_Checker.ivec3,hxsl_Checker.ivec4];
 	var baseType = [hxsl_Type.TFloat,hxsl_Type.TBool,hxsl_Type.TInt];
+	var genSqMatType = [hxsl_Type.TMat2,hxsl_Type.TMat3,hxsl_Type.TMat4];
 	var _g = [];
 	var _g1 = 0;
 	while(_g1 < genType.length) {
@@ -72778,6 +75860,30 @@ hxsl_Checker.initGlobals = function() {
 		_g.push({ args : [{ name : "a", type : t},{ name : "b", type : hxsl_Type.TFloat}], ret : t});
 	}
 	var genWithFloat = _g;
+	var _g = [];
+	var _g1 = 0;
+	while(_g1 < genIType.length) {
+		var t = genIType[_g1];
+		++_g1;
+		_g.push({ args : [{ name : "a", type : t},{ name : "b", type : t}], ret : t});
+	}
+	var genInt2 = _g;
+	var _g = [];
+	var _g1 = 0;
+	while(_g1 < genIType.length) {
+		var t = genIType[_g1];
+		++_g1;
+		_g.push({ args : [{ name : "a", type : t},{ name : "b", type : hxsl_Type.TInt}], ret : t});
+	}
+	var genWithInt = _g;
+	var _g = [];
+	var _g1 = 0;
+	while(_g1 < genSqMatType.length) {
+		var t = genSqMatType[_g1];
+		++_g1;
+		_g.push({ args : [{ name : "value", type : t}], ret : t});
+	}
+	var genSqMat = _g;
 	var texDefs = [{ dim : hxsl_TexDimension.T1D, arr : false, uv : hxsl_Type.TFloat, iuv : hxsl_Type.TInt},{ dim : hxsl_TexDimension.T2D, arr : false, uv : hxsl_Checker.vec2, iuv : hxsl_Checker.ivec2},{ dim : hxsl_TexDimension.T3D, arr : false, uv : hxsl_Checker.vec3, iuv : hxsl_Checker.ivec3},{ dim : hxsl_TexDimension.TCube, arr : false, uv : hxsl_Checker.vec3, iuv : hxsl_Checker.ivec3},{ dim : hxsl_TexDimension.T1D, arr : true, uv : hxsl_Checker.vec2, iuv : hxsl_Checker.ivec2},{ dim : hxsl_TexDimension.T2D, arr : true, uv : hxsl_Checker.vec3, iuv : hxsl_Checker.ivec3},{ dim : hxsl_TexDimension.TCube, arr : true, uv : hxsl_Checker.vec4, iuv : hxsl_Checker.ivec4}];
 	var gvars_h = Object.create(null);
 	var _g = 0;
@@ -72793,8 +75899,11 @@ hxsl_Checker.initGlobals = function() {
 		case 8:
 			def = genFloat2;
 			break;
-		case 20:case 21:case 22:
+		case 20:
 			def = genFloat2.concat(genWithFloat);
+			break;
+		case 21:case 22:
+			def = genFloat2.concat(genWithFloat).concat(genInt2).concat(genWithInt);
 			break;
 		case 23:
 			var r = [{ args : [{ name : "value", type : hxsl_Type.TInt},{ name : "min", type : hxsl_Type.TInt},{ name : "max", type : hxsl_Type.TInt}], ret : hxsl_Type.TInt}];
@@ -73083,7 +76192,20 @@ hxsl_Checker.initGlobals = function() {
 				def = [{ args : [{ name : "value", type : hxsl_Type.TInt}], ret : hxsl_Checker.vec4}];
 			}
 			break;
-		default:
+		case 88:
+			def = genSqMat;
+			break;
+		case 89:
+			var _g24 = [];
+			var _g25 = 0;
+			while(_g25 < texDefs.length) {
+				var t14 = texDefs[_g25];
+				++_g25;
+				_g24.push({ args : [{ name : "tex", type : hxsl_Type.TSampler(t14.dim,t14.arr)},{ name : "pos", type : t14.iuv},{ name : "lod", type : hxsl_Type.TInt}], ret : hxsl_Checker.vec4});
+			}
+			def = _g24;
+			break;
+		case 90:
 			if($hxEnums[g.__enum__].__constructs__[g._hx_index]._hx_name.indexOf("_") > 0) {
 				var name2 = $hxEnums[g.__enum__].__constructs__[g._hx_index]._hx_name;
 				var idx2 = name2.indexOf("_");
@@ -73108,6 +76230,43 @@ hxsl_Checker.initGlobals = function() {
 				var fname2 = HxOverrides.substr(name2,idx2 + 1,null);
 				fname2 = fname2.charAt(0).toLowerCase() + HxOverrides.substr(fname2,1,null);
 				vl2.push({ name : fname2, type : vt2});
+				def = null;
+			} else {
+				var _g26 = [];
+				var _g27 = 0;
+				while(_g27 < texDefs.length) {
+					var t15 = texDefs[_g27];
+					++_g27;
+					_g26.push({ args : [{ name : "handle", type : hxsl_Type.TTextureHandle},{ name : "tex", type : hxsl_Type.TSampler(t15.dim,t15.arr)}], ret : hxsl_Type.TVoid});
+				}
+				def = _g26;
+			}
+			break;
+		default:
+			if($hxEnums[g.__enum__].__constructs__[g._hx_index]._hx_name.indexOf("_") > 0) {
+				var name3 = $hxEnums[g.__enum__].__constructs__[g._hx_index]._hx_name;
+				var idx3 = name3.indexOf("_");
+				var vname3 = HxOverrides.substr(name3,0,idx3);
+				vname3 = vname3.charAt(0).toLowerCase() + HxOverrides.substr(vname3,1,null);
+				var vl3 = gvars_h[vname3];
+				if(vl3 == null) {
+					vl3 = [];
+					gvars_h[vname3] = vl3;
+				}
+				var vt3;
+				switch(g._hx_index) {
+				case 80:case 81:case 82:
+					vt3 = hxsl_Checker.ivec3;
+					break;
+				case 83:
+					vt3 = hxsl_Type.TInt;
+					break;
+				default:
+					throw haxe_Exception.thrown("Unknown type for global var " + Std.string(g));
+				}
+				var fname3 = HxOverrides.substr(name3,idx3 + 1,null);
+				fname3 = fname3.charAt(0).toLowerCase() + HxOverrides.substr(fname3,1,null);
+				vl3.push({ name : fname3, type : vt3});
 				def = null;
 			} else {
 				throw haxe_Exception.thrown("Unsupported global " + Std.string(g));
@@ -73138,7 +76297,7 @@ hxsl_Checker.initGlobals = function() {
 		while(_g1 < vl.length) {
 			var v = vl[_g1];
 			++_g1;
-			_g.push({ name : v.name, kind : hxsl_VarKind.Global, type : v.type, id : 0});
+			_g.push(new hxsl_TVar(0,v.name,v.type,hxsl_VarKind.Global,null,null));
 		}
 		globals.h[gname] = { t : hxsl_Type.TStruct(_g), g : null};
 	}
@@ -73216,7 +76375,7 @@ hxsl_Checker.prototype = {
 				if(a.qualifiers.length != 0) {
 					this.error("No qualifier allowed for argument",pos);
 				}
-				_g1.push({ id : hxsl_Tools.allocVarId(), name : a.name, kind : hxsl_VarKind.Local, type : a.type});
+				_g1.push(new hxsl_TVar(hxsl_Tools.allocVarId(),a.name,a.type,hxsl_VarKind.Local,null,null));
 			}
 			var args = _g1;
 			var kind;
@@ -73236,22 +76395,23 @@ hxsl_Checker.prototype = {
 			if(args.length != 0 && kind != hxsl_FunctionKind.Helper) {
 				this.error(Std.string(kind) + " function should have no argument",pos);
 			}
-			var fv = hxsl_Tools.allocVarId();
-			var f2 = f1.name;
-			var _g4 = [];
-			var _g5 = 0;
-			while(_g5 < args.length) {
-				var a1 = args[_g5];
-				++_g5;
-				_g4.push({ type : a1.type, name : a1.name});
+			var _g4 = hxsl_Tools.allocVarId();
+			var _g5 = f1.name;
+			var _g6 = hxsl_VarKind.Function;
+			var _g7 = [];
+			var _g8 = 0;
+			while(_g8 < args.length) {
+				var a1 = args[_g8];
+				++_g8;
+				_g7.push({ type : a1.type, name : a1.name});
 			}
-			var fv1 = { id : fv, name : f2, kind : hxsl_VarKind.Function, type : hxsl_Type.TFun([{ args : _g4, ret : f1.ret == null ? hxsl_Type.TVoid : f1.ret}])};
-			var f3 = { kind : kind, ref : fv1, args : args, ret : f1.ret == null ? hxsl_Type.TVoid : f1.ret, expr : null};
-			if(Object.prototype.hasOwnProperty.call(this.vars.h,fv1.name)) {
+			var fv = new hxsl_TVar(_g4,_g5,hxsl_Type.TFun([{ args : _g7, ret : f1.ret == null ? hxsl_Type.TVoid : f1.ret}]),_g6,null,null);
+			var f2 = { kind : kind, ref : fv, args : args, ret : f1.ret == null ? hxsl_Type.TVoid : f1.ret, expr : null};
+			if(Object.prototype.hasOwnProperty.call(this.vars.h,fv.name)) {
 				this.error("Duplicate function name",pos);
 			}
-			this.vars.h[fv1.name] = fv1;
-			tfuns.push(f3);
+			this.vars.h[fv.name] = fv;
+			tfuns.push(f2);
 		}
 		var _g = 0;
 		var _g1 = tfuns.length;
@@ -73266,17 +76426,17 @@ hxsl_Checker.prototype = {
 			var i = _g1[_g];
 			++_g;
 			if(i.v.kind == hxsl_VarKind.Local) {
-				localInits.push({ e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,{ e : hxsl_TExprDef.TVar(i.v), p : i.e.p, t : i.v.type},i.e), p : i.e.p, t : i.v.type});
+				localInits.push(new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,new hxsl_TExpr(hxsl_TExprDef.TVar(i.v),i.v.type,i.e.p),i.e),i.v.type,i.e.p));
 				HxOverrides.remove(this.inits,i);
 			}
 		}
 		if(localInits.length > 0) {
-			var fv = { id : hxsl_Tools.allocVarId(), name : "__init__consts__", kind : hxsl_VarKind.Function, type : hxsl_Type.TFun([{ args : [], ret : hxsl_Type.TVoid}])};
+			var fv = new hxsl_TVar(hxsl_Tools.allocVarId(),"__init__consts__",hxsl_Type.TFun([{ args : [], ret : hxsl_Type.TVoid}]),hxsl_VarKind.Function,null,null);
 			if(Object.prototype.hasOwnProperty.call(this.vars.h,fv.name)) {
 				this.error("assert",localInits[0].p);
 			}
 			this.vars.h[fv.name] = fv;
-			tfuns.push({ kind : hxsl_FunctionKind.Init, ref : fv, args : [], ret : hxsl_Type.TVoid, expr : { e : hxsl_TExprDef.TBlock(localInits), p : localInits[0].p, t : hxsl_Type.TVoid}});
+			tfuns.push({ kind : hxsl_FunctionKind.Init, ref : fv, args : [], ret : hxsl_Type.TVoid, expr : new hxsl_TExpr(hxsl_TExprDef.TBlock(localInits),hxsl_Type.TVoid,localInits[0].p)});
 		}
 		var vars = Lambda.array(this.vars);
 		vars.sort(function(v1,v2) {
@@ -73608,7 +76768,7 @@ hxsl_Checker.prototype = {
 							++_g3;
 							if(v.name == f) {
 								var g = name.charAt(0).toUpperCase() + HxOverrides.substr(name,1,null) + "_" + f.charAt(0).toUpperCase() + HxOverrides.substr(f,1,null);
-								return { e : hxsl_TExprDef.TGlobal(Type.createEnum(hxsl_TGlobal,g,null)), t : v.type, p : e.pos};
+								return new hxsl_TExpr(hxsl_TExprDef.TGlobal(Type.createEnum(hxsl_TGlobal,g,null)),v.type,e.pos);
 							}
 						}
 						var ed1 = name + " field should be ";
@@ -73704,7 +76864,7 @@ hxsl_Checker.prototype = {
 					this.error("Cannot increment " + hxsl_Tools.toString(e11.t),e.pos);
 				}
 				type = hxsl_Type.TVoid;
-				ed = hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssignOp(op == haxe_macro_Unop.OpIncrement ? haxe_macro_Binop.OpAdd : haxe_macro_Binop.OpSub),e11,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(1)), t : hxsl_Type.TInt, p : e11.p});
+				ed = hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssignOp(op == haxe_macro_Unop.OpIncrement ? haxe_macro_Binop.OpAdd : haxe_macro_Binop.OpSub),e11,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(1)),hxsl_Type.TInt,e11.p));
 				break;
 			case 2:
 				this.unifyExpr(e11,hxsl_Type.TBool);
@@ -73803,7 +76963,7 @@ hxsl_Checker.prototype = {
 								this.error("Syntax." + target + " arguments should have an access meta of @r, @w or @rw",arg.pos);
 							}
 						}
-						return { e : hxsl_TExprDef.TSyntax(target,code,sargs), t : hxsl_Type.TVoid, p : e.pos};
+						return new hxsl_TExpr(hxsl_TExprDef.TSyntax(target,code,sargs),hxsl_Type.TVoid,e.pos);
 					} else {
 						var e1 = _g1;
 						var args = _g2;
@@ -73836,7 +76996,7 @@ hxsl_Checker.prototype = {
 								var g = ef.g;
 								var arg = ef.arg;
 								var variants = ef.variants;
-								var eg = { e : hxsl_TExprDef.TGlobal(g), t : hxsl_Type.TFun(variants), p : e12.p};
+								var eg = new hxsl_TExpr(hxsl_TExprDef.TGlobal(g),hxsl_Type.TFun(variants),e12.p);
 								if(variants.length == 0) {
 									var _g3 = [];
 									var _g4 = 0;
@@ -73913,7 +77073,7 @@ hxsl_Checker.prototype = {
 							var g = ef.g;
 							var arg = ef.arg;
 							var variants = ef.variants;
-							var eg = { e : hxsl_TExprDef.TGlobal(g), t : hxsl_Type.TFun(variants), p : e12.p};
+							var eg = new hxsl_TExpr(hxsl_TExprDef.TGlobal(g),hxsl_Type.TFun(variants),e12.p);
 							if(variants.length == 0) {
 								var _g3 = [];
 								var _g4 = 0;
@@ -73990,7 +77150,7 @@ hxsl_Checker.prototype = {
 						var g = ef.g;
 						var arg = ef.arg;
 						var variants = ef.variants;
-						var eg = { e : hxsl_TExprDef.TGlobal(g), t : hxsl_Type.TFun(variants), p : e12.p};
+						var eg = new hxsl_TExpr(hxsl_TExprDef.TGlobal(g),hxsl_Type.TFun(variants),e12.p);
 						if(variants.length == 0) {
 							var _g1 = [];
 							var _g2 = 0;
@@ -74109,7 +77269,8 @@ hxsl_Checker.prototype = {
 			break;
 		case 9:
 			var _g1 = _g.f;
-			throw haxe_Exception.thrown("assert");
+			ed = this.error("Local functions not supported",e.pos);
+			break;
 		case 10:
 			var cond = _g.econd;
 			var e1 = _g.eif;
@@ -74148,7 +77309,7 @@ hxsl_Checker.prototype = {
 			if(_g1._hx_index == 15) {
 				var _g2 = _g1.size;
 				var t = _g1.t;
-				var v1 = { id : hxsl_Tools.allocVarId(), name : v, type : t, kind : hxsl_VarKind.Local};
+				var v1 = new hxsl_TVar(hxsl_Tools.allocVarId(),v,t,hxsl_VarKind.Local,null,null);
 				var old = this.vars.h[v1.name];
 				this.vars.h[v1.name] = v1;
 				var oldL = this.inLoop;
@@ -74202,16 +77363,8 @@ hxsl_Checker.prototype = {
 			switch(_g1._hx_index) {
 			case 5:
 				var _g2 = _g1.size;
-				switch(_g1.t._hx_index) {
-				case 0:
-					type = hxsl_Type.TInt;
-					break;
-				case 1:
-					type = hxsl_Type.TFloat;
-					break;
-				default:
-					this.error("Cannot index " + hxsl_Tools.toString(e11.t) + " : should be an array",e.pos);
-				}
+				var t = _g1.t;
+				type = hxsl_Tools.toType(t);
 				break;
 			case 6:
 				type = hxsl_Checker.vec3;
@@ -74397,7 +77550,7 @@ hxsl_Checker.prototype = {
 		if(type == null) {
 			throw haxe_Exception.thrown("assert");
 		}
-		return { e : ed, t : type, p : e.pos};
+		return new hxsl_TExpr(ed,type,e.pos);
 	}
 	,propagate: function($with) {
 		if($with._hx_index == 2) {
@@ -74636,8 +77789,8 @@ hxsl_Checker.prototype = {
 			var _g1 = _g.e;
 			var _g2 = _g.args;
 			var _g3 = _g1.e;
-			var _g4 = _g1.p;
 			var _g4 = _g1.t;
+			var _g4 = _g1.p;
 			if(_g3._hx_index == 2) {
 				switch(_g3.g._hx_index) {
 				case 41:case 42:case 43:case 44:case 45:case 46:
@@ -74670,7 +77823,7 @@ hxsl_Checker.prototype = {
 		}
 	}
 	,makeVar: function(v,pos,parent) {
-		var tv = { id : hxsl_Tools.allocVarId(), name : v.name, kind : v.kind, type : v.type, qualifiers : v.qualifiers};
+		var tv = new hxsl_TVar(hxsl_Tools.allocVarId(),v.name,v.type,v.kind,null,v.qualifiers);
 		if(parent != null) {
 			tv.parent = parent;
 		}
@@ -74831,6 +77984,11 @@ hxsl_Checker.prototype = {
 				case 14:
 					if(tv.kind != hxsl_VarKind.Local) {
 						this.error("flat only allowed on local",pos);
+					}
+					break;
+				case 15:
+					if(tv.kind != hxsl_VarKind.Local) {
+						this.error("noVar only allowed on local",pos);
 					}
 					break;
 				}
@@ -75053,7 +78211,7 @@ hxsl_Checker.prototype = {
 					break;
 				}
 			}
-			ef = found == null ? null : this.isParentArray(found) ? { e : hxsl_TExprDef.TField(e,f), t : found.type, p : pos} : { e : hxsl_TExprDef.TVar(found), t : found.type, p : pos};
+			ef = found == null ? null : this.isParentArray(found) ? new hxsl_TExpr(hxsl_TExprDef.TField(e,f),found.type,pos) : new hxsl_TExpr(hxsl_TExprDef.TVar(found),found.type,pos);
 		} else {
 			ef = null;
 		}
@@ -75085,7 +78243,7 @@ hxsl_Checker.prototype = {
 				case 10:
 					var _g1 = _g.dim;
 					var _g1 = _g.isArray;
-					gl = hxsl_TGlobal.Texel;
+					gl = hxsl_TGlobal.TexelLod;
 					break;
 				case 17:
 					var _g1 = _g.size;
@@ -75193,7 +78351,7 @@ hxsl_Checker.prototype = {
 				if(_g._hx_index == 15) {
 					var _g1 = _g.t;
 					var _g1 = _g.size;
-					return hxsl__$Checker_FieldAccess.FField({ e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Length), t : hxsl_Type.TVoid, p : pos},[e]), t : hxsl_Type.TInt, p : pos});
+					return hxsl__$Checker_FieldAccess.FField(new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Length),hxsl_Type.TVoid,pos),[e]),hxsl_Type.TInt,pos));
 				}
 			}
 		}
@@ -75253,7 +78411,7 @@ hxsl_Checker.prototype = {
 				}
 				out.push(comps[cid]);
 			}
-			return hxsl__$Checker_FieldAccess.FField({ e : hxsl_TExprDef.TSwiz(e,out), t : out.length == 1 ? hxsl_Tools.toType(stype) : hxsl_Type.TVec(out.length,stype), p : pos});
+			return hxsl__$Checker_FieldAccess.FField(new hxsl_TExpr(hxsl_TExprDef.TSwiz(e,out),out.length == 1 ? hxsl_Tools.toType(stype) : hxsl_Type.TVec(out.length,stype),pos));
 		}
 		return null;
 	}
@@ -75988,7 +79146,7 @@ hxsl_Checker.prototype = {
 		if(type == null) {
 			throw haxe_Exception.thrown("Custom Global not supported " + Std.string(g));
 		}
-		return { e : hxsl_TExprDef.TCall(e,args), t : type, p : pos};
+		return new hxsl_TExpr(hxsl_TExprDef.TCall(e,args),type,pos);
 	}
 	,unifyCallParams: function(efun,args,variants,pos) {
 		var minArgs = 1000;
@@ -76056,7 +79214,7 @@ hxsl_Checker.prototype = {
 			if(variants.length > 1) {
 				efun.t = hxsl_Type.TFun([f]);
 			}
-			return { e : hxsl_TExprDef.TCall(efun,targs), t : f.ret, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TCall(efun,targs),f.ret,pos);
 		default:
 			var bestMatch = null;
 			var mcount = -1;
@@ -76080,7 +79238,7 @@ hxsl_Checker.prototype = {
 					mcount = outArgs.length;
 					if(mcount == args.length) {
 						efun.t = hxsl_Type.TFun([f]);
-						return { e : hxsl_TExprDef.TCall(efun,outArgs), t : f.ret, p : pos};
+						return new hxsl_TExpr(hxsl_TExprDef.TCall(efun,outArgs),f.ret,pos);
 					}
 				}
 			}
@@ -76117,11 +79275,11 @@ hxsl_Checker.prototype = {
 				e.e = hxsl_TExprDef.TConst(hxsl_Const.CFloat(v));
 				e.t = hxsl_Type.TFloat;
 			} else {
-				e.e = hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat), t : hxsl_Type.TFun([]), p : e.p},[{ e : e.e, t : e.t, p : e.p}]);
+				e.e = hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat),hxsl_Type.TFun([]),e.p),[new hxsl_TExpr(e.e,e.t,e.p)]);
 				e.t = hxsl_Type.TFloat;
 			}
 		} else {
-			e.e = hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat), t : hxsl_Type.TFun([]), p : e.p},[{ e : e.e, t : e.t, p : e.p}]);
+			e.e = hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat),hxsl_Type.TFun([]),e.p),[new hxsl_TExpr(e.e,e.t,e.p)]);
 			e.t = hxsl_Type.TFloat;
 		}
 	}
@@ -76324,10 +79482,13 @@ hxsl_Checker.prototype = {
 						return hxsl_Type.TFloat;
 					case 5:
 						var _g2 = _g1.size;
-						if(_g1.t._hx_index == 1) {
+						switch(_g1.t._hx_index) {
+						case 0:
+							return e2.t;
+						case 1:
 							this.toFloat(e1);
 							return e2.t;
-						} else {
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76343,7 +79504,7 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
@@ -76364,7 +79525,7 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
@@ -76396,7 +79557,7 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
@@ -76417,7 +79578,7 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
@@ -76427,7 +79588,80 @@ hxsl_Checker.prototype = {
 					var _g3 = _g.t;
 					switch(_g2) {
 					case 2:
-						if(_g3._hx_index == 1) {
+						switch(_g3._hx_index) {
+						case 0:
+							switch(_g1._hx_index) {
+							case 1:
+								return e1.t;
+							case 5:
+								if(_g1.t._hx_index == 0) {
+									var a = _g2;
+									var b = _g1.size;
+									if(a == b) {
+										return hxsl_Type.TVec(a,hxsl_VecType.VInt);
+									} else {
+										var opName;
+										switch(op._hx_index) {
+										case 0:
+											opName = "add";
+											break;
+										case 1:
+											opName = "multiply";
+											break;
+										case 2:
+											opName = "divide";
+											break;
+										case 3:
+											opName = "subtract";
+											break;
+										default:
+											opName = "" + Std.string(op);
+										}
+										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+									}
+								} else {
+									var opName;
+									switch(op._hx_index) {
+									case 0:
+										opName = "add";
+										break;
+									case 1:
+										opName = "multiply";
+										break;
+									case 2:
+										opName = "divide";
+										break;
+									case 3:
+										opName = "subtract";
+										break;
+									default:
+										opName = "" + Std.string(op);
+									}
+									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+								}
+								break;
+							default:
+								var opName;
+								switch(op._hx_index) {
+								case 0:
+									opName = "add";
+									break;
+								case 1:
+									opName = "multiply";
+									break;
+								case 2:
+									opName = "divide";
+									break;
+								case 3:
+									opName = "subtract";
+									break;
+								default:
+									opName = "" + Std.string(op);
+								}
+								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+							}
+							break;
+						case 1:
 							switch(_g1._hx_index) {
 							case 1:
 								this.toFloat(e2);
@@ -76456,7 +79690,7 @@ hxsl_Checker.prototype = {
 											opName = "subtract";
 											break;
 										default:
-											throw haxe_Exception.thrown("assert");
+											opName = "" + Std.string(op);
 										}
 										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 									}
@@ -76476,7 +79710,7 @@ hxsl_Checker.prototype = {
 										opName = "subtract";
 										break;
 									default:
-										throw haxe_Exception.thrown("assert");
+										opName = "" + Std.string(op);
 									}
 									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 								}
@@ -76499,11 +79733,12 @@ hxsl_Checker.prototype = {
 									opName = "subtract";
 									break;
 								default:
-									throw haxe_Exception.thrown("assert");
+									opName = "" + Std.string(op);
 								}
 								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 							}
-						} else {
+							break;
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76519,13 +79754,86 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
 						break;
 					case 3:
-						if(_g3._hx_index == 1) {
+						switch(_g3._hx_index) {
+						case 0:
+							switch(_g1._hx_index) {
+							case 1:
+								return e1.t;
+							case 5:
+								if(_g1.t._hx_index == 0) {
+									var a = _g2;
+									var b = _g1.size;
+									if(a == b) {
+										return hxsl_Type.TVec(a,hxsl_VecType.VInt);
+									} else {
+										var opName;
+										switch(op._hx_index) {
+										case 0:
+											opName = "add";
+											break;
+										case 1:
+											opName = "multiply";
+											break;
+										case 2:
+											opName = "divide";
+											break;
+										case 3:
+											opName = "subtract";
+											break;
+										default:
+											opName = "" + Std.string(op);
+										}
+										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+									}
+								} else {
+									var opName;
+									switch(op._hx_index) {
+									case 0:
+										opName = "add";
+										break;
+									case 1:
+										opName = "multiply";
+										break;
+									case 2:
+										opName = "divide";
+										break;
+									case 3:
+										opName = "subtract";
+										break;
+									default:
+										opName = "" + Std.string(op);
+									}
+									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+								}
+								break;
+							default:
+								var opName;
+								switch(op._hx_index) {
+								case 0:
+									opName = "add";
+									break;
+								case 1:
+									opName = "multiply";
+									break;
+								case 2:
+									opName = "divide";
+									break;
+								case 3:
+									opName = "subtract";
+									break;
+								default:
+									opName = "" + Std.string(op);
+								}
+								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+							}
+							break;
+						case 1:
 							switch(_g1._hx_index) {
 							case 1:
 								this.toFloat(e2);
@@ -76554,7 +79862,7 @@ hxsl_Checker.prototype = {
 											opName = "subtract";
 											break;
 										default:
-											throw haxe_Exception.thrown("assert");
+											opName = "" + Std.string(op);
 										}
 										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 									}
@@ -76574,7 +79882,7 @@ hxsl_Checker.prototype = {
 										opName = "subtract";
 										break;
 									default:
-										throw haxe_Exception.thrown("assert");
+										opName = "" + Std.string(op);
 									}
 									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 								}
@@ -76599,11 +79907,12 @@ hxsl_Checker.prototype = {
 									opName = "subtract";
 									break;
 								default:
-									throw haxe_Exception.thrown("assert");
+									opName = "" + Std.string(op);
 								}
 								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 							}
-						} else {
+							break;
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76619,13 +79928,86 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
 						break;
 					case 4:
-						if(_g3._hx_index == 1) {
+						switch(_g3._hx_index) {
+						case 0:
+							switch(_g1._hx_index) {
+							case 1:
+								return e1.t;
+							case 5:
+								if(_g1.t._hx_index == 0) {
+									var a = _g2;
+									var b = _g1.size;
+									if(a == b) {
+										return hxsl_Type.TVec(a,hxsl_VecType.VInt);
+									} else {
+										var opName;
+										switch(op._hx_index) {
+										case 0:
+											opName = "add";
+											break;
+										case 1:
+											opName = "multiply";
+											break;
+										case 2:
+											opName = "divide";
+											break;
+										case 3:
+											opName = "subtract";
+											break;
+										default:
+											opName = "" + Std.string(op);
+										}
+										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+									}
+								} else {
+									var opName;
+									switch(op._hx_index) {
+									case 0:
+										opName = "add";
+										break;
+									case 1:
+										opName = "multiply";
+										break;
+									case 2:
+										opName = "divide";
+										break;
+									case 3:
+										opName = "subtract";
+										break;
+									default:
+										opName = "" + Std.string(op);
+									}
+									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+								}
+								break;
+							default:
+								var opName;
+								switch(op._hx_index) {
+								case 0:
+									opName = "add";
+									break;
+								case 1:
+									opName = "multiply";
+									break;
+								case 2:
+									opName = "divide";
+									break;
+								case 3:
+									opName = "subtract";
+									break;
+								default:
+									opName = "" + Std.string(op);
+								}
+								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+							}
+							break;
+						case 1:
 							switch(_g1._hx_index) {
 							case 1:
 								this.toFloat(e2);
@@ -76654,7 +80036,7 @@ hxsl_Checker.prototype = {
 											opName = "subtract";
 											break;
 										default:
-											throw haxe_Exception.thrown("assert");
+											opName = "" + Std.string(op);
 										}
 										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 									}
@@ -76674,7 +80056,7 @@ hxsl_Checker.prototype = {
 										opName = "subtract";
 										break;
 									default:
-										throw haxe_Exception.thrown("assert");
+										opName = "" + Std.string(op);
 									}
 									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 								}
@@ -76697,11 +80079,12 @@ hxsl_Checker.prototype = {
 									opName = "subtract";
 									break;
 								default:
-									throw haxe_Exception.thrown("assert");
+									opName = "" + Std.string(op);
 								}
 								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 							}
-						} else {
+							break;
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76717,13 +80100,86 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
 						break;
 					default:
-						if(_g3._hx_index == 1) {
+						switch(_g3._hx_index) {
+						case 0:
+							switch(_g1._hx_index) {
+							case 1:
+								return e1.t;
+							case 5:
+								if(_g1.t._hx_index == 0) {
+									var a = _g2;
+									var b = _g1.size;
+									if(a == b) {
+										return hxsl_Type.TVec(a,hxsl_VecType.VInt);
+									} else {
+										var opName;
+										switch(op._hx_index) {
+										case 0:
+											opName = "add";
+											break;
+										case 1:
+											opName = "multiply";
+											break;
+										case 2:
+											opName = "divide";
+											break;
+										case 3:
+											opName = "subtract";
+											break;
+										default:
+											opName = "" + Std.string(op);
+										}
+										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+									}
+								} else {
+									var opName;
+									switch(op._hx_index) {
+									case 0:
+										opName = "add";
+										break;
+									case 1:
+										opName = "multiply";
+										break;
+									case 2:
+										opName = "divide";
+										break;
+									case 3:
+										opName = "subtract";
+										break;
+									default:
+										opName = "" + Std.string(op);
+									}
+									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+								}
+								break;
+							default:
+								var opName;
+								switch(op._hx_index) {
+								case 0:
+									opName = "add";
+									break;
+								case 1:
+									opName = "multiply";
+									break;
+								case 2:
+									opName = "divide";
+									break;
+								case 3:
+									opName = "subtract";
+									break;
+								default:
+									opName = "" + Std.string(op);
+								}
+								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+							}
+							break;
+						case 1:
 							switch(_g1._hx_index) {
 							case 1:
 								this.toFloat(e2);
@@ -76752,7 +80208,7 @@ hxsl_Checker.prototype = {
 											opName = "subtract";
 											break;
 										default:
-											throw haxe_Exception.thrown("assert");
+											opName = "" + Std.string(op);
 										}
 										return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 									}
@@ -76772,7 +80228,7 @@ hxsl_Checker.prototype = {
 										opName = "subtract";
 										break;
 									default:
-										throw haxe_Exception.thrown("assert");
+										opName = "" + Std.string(op);
 									}
 									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 								}
@@ -76793,11 +80249,12 @@ hxsl_Checker.prototype = {
 									opName = "subtract";
 									break;
 								default:
-									throw haxe_Exception.thrown("assert");
+									opName = "" + Std.string(op);
 								}
 								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 							}
-						} else {
+							break;
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76813,7 +80270,7 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
@@ -76838,7 +80295,7 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
@@ -76859,7 +80316,7 @@ hxsl_Checker.prototype = {
 						opName = "subtract";
 						break;
 					default:
-						throw haxe_Exception.thrown("assert");
+						opName = "" + Std.string(op);
 					}
 					return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 				}
@@ -76874,10 +80331,13 @@ hxsl_Checker.prototype = {
 						return hxsl_Type.TFloat;
 					case 5:
 						var _g2 = _g1.size;
-						if(_g1.t._hx_index == 1) {
+						switch(_g1.t._hx_index) {
+						case 0:
+							return e2.t;
+						case 1:
 							this.toFloat(e1);
 							return e2.t;
-						} else {
+						default:
 							var opName;
 							switch(op._hx_index) {
 							case 0:
@@ -76893,7 +80353,7 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
@@ -76914,7 +80374,7 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
@@ -76946,7 +80406,7 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
@@ -76967,14 +80427,87 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
 					break;
 				case 5:
 					var _g2 = _g.size;
-					if(_g.t._hx_index == 1) {
+					switch(_g.t._hx_index) {
+					case 0:
+						switch(_g1._hx_index) {
+						case 1:
+							return e1.t;
+						case 5:
+							if(_g1.t._hx_index == 0) {
+								var b = _g1.size;
+								var a = _g2;
+								if(a == b) {
+									return hxsl_Type.TVec(a,hxsl_VecType.VInt);
+								} else {
+									var opName;
+									switch(op._hx_index) {
+									case 0:
+										opName = "add";
+										break;
+									case 1:
+										opName = "multiply";
+										break;
+									case 2:
+										opName = "divide";
+										break;
+									case 3:
+										opName = "subtract";
+										break;
+									default:
+										opName = "" + Std.string(op);
+									}
+									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+								}
+							} else {
+								var opName;
+								switch(op._hx_index) {
+								case 0:
+									opName = "add";
+									break;
+								case 1:
+									opName = "multiply";
+									break;
+								case 2:
+									opName = "divide";
+									break;
+								case 3:
+									opName = "subtract";
+									break;
+								default:
+									opName = "" + Std.string(op);
+								}
+								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+							}
+							break;
+						default:
+							var opName;
+							switch(op._hx_index) {
+							case 0:
+								opName = "add";
+								break;
+							case 1:
+								opName = "multiply";
+								break;
+							case 2:
+								opName = "divide";
+								break;
+							case 3:
+								opName = "subtract";
+								break;
+							default:
+								opName = "" + Std.string(op);
+							}
+							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
+						}
+						break;
+					case 1:
 						switch(_g1._hx_index) {
 						case 1:
 							this.toFloat(e2);
@@ -77003,7 +80536,7 @@ hxsl_Checker.prototype = {
 										opName = "subtract";
 										break;
 									default:
-										throw haxe_Exception.thrown("assert");
+										opName = "" + Std.string(op);
 									}
 									return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 								}
@@ -77023,7 +80556,7 @@ hxsl_Checker.prototype = {
 									opName = "subtract";
 									break;
 								default:
-									throw haxe_Exception.thrown("assert");
+									opName = "" + Std.string(op);
 								}
 								return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 							}
@@ -77044,11 +80577,12 @@ hxsl_Checker.prototype = {
 								opName = "subtract";
 								break;
 							default:
-								throw haxe_Exception.thrown("assert");
+								opName = "" + Std.string(op);
 							}
 							return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 						}
-					} else {
+						break;
+					default:
 						var opName;
 						switch(op._hx_index) {
 						case 0:
@@ -77064,7 +80598,7 @@ hxsl_Checker.prototype = {
 							opName = "subtract";
 							break;
 						default:
-							throw haxe_Exception.thrown("assert");
+							opName = "" + Std.string(op);
 						}
 						return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 					}
@@ -77085,7 +80619,7 @@ hxsl_Checker.prototype = {
 						opName = "subtract";
 						break;
 					default:
-						throw haxe_Exception.thrown("assert");
+						opName = "" + Std.string(op);
 					}
 					return this.error("Cannot " + opName + " " + hxsl_Tools.toString(e1.t) + " and " + hxsl_Tools.toString(e2.t),pos);
 				}
@@ -77118,7 +80652,7 @@ hxsl_Clone.prototype = {
 		if(v2 != null) {
 			return v2;
 		}
-		v2 = { id : hxsl_Tools.allocVarId(), type : v.type, name : v.name, kind : v.kind};
+		v2 = new hxsl_TVar(hxsl_Tools.allocVarId(),v.name,v.type,v.kind,null,null);
 		this.varMap.h[v.id] = v2;
 		if(v.parent != null) {
 			v2.parent = this.tvar(v.parent);
@@ -77179,7 +80713,160 @@ hxsl_Clone.prototype = {
 		}
 	}
 	,texpr: function(e) {
-		var e2 = hxsl_Tools.map(e,$bind(this,this.texpr));
+		var f = $bind(this,this.texpr);
+		var ed;
+		var _g = e.e;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.c;
+			ed = e.e;
+			break;
+		case 1:
+			var _g1 = _g.v;
+			ed = e.e;
+			break;
+		case 2:
+			var _g1 = _g.g;
+			ed = e.e;
+			break;
+		case 3:
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TParenthesis(f(e1));
+			break;
+		case 4:
+			var el = _g.el;
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < el.length) {
+				var e1 = el[_g2];
+				++_g2;
+				_g1.push(f(e1));
+			}
+			ed = hxsl_TExprDef.TBlock(_g1);
+			break;
+		case 5:
+			var op = _g.op;
+			var e1 = _g.e1;
+			var e2 = _g.e2;
+			ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+			break;
+		case 6:
+			var op = _g.op;
+			var e1 = _g.e1;
+			ed = hxsl_TExprDef.TUnop(op,f(e1));
+			break;
+		case 7:
+			var v = _g.v;
+			var init = _g.init;
+			ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+			break;
+		case 8:
+			var e1 = _g.e;
+			var args = _g.args;
+			var ed1 = f(e1);
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < args.length) {
+				var a = args[_g2];
+				++_g2;
+				_g1.push(f(a));
+			}
+			ed = hxsl_TExprDef.TCall(ed1,_g1);
+			break;
+		case 9:
+			var e1 = _g.e;
+			var c = _g.regs;
+			ed = hxsl_TExprDef.TSwiz(f(e1),c);
+			break;
+		case 10:
+			var econd = _g.econd;
+			var eif = _g.eif;
+			var eelse = _g.eelse;
+			ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+			break;
+		case 12:
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+			break;
+		case 13:
+			var v = _g.v;
+			var it = _g.it;
+			var loop = _g.loop;
+			ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+			break;
+		case 11:case 14:case 15:
+			ed = e.e;
+			break;
+		case 16:
+			var e1 = _g.e;
+			var index = _g.index;
+			ed = hxsl_TExprDef.TArray(f(e1),f(index));
+			break;
+		case 17:
+			var el = _g.el;
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < el.length) {
+				var e1 = el[_g2];
+				++_g2;
+				_g1.push(f(e1));
+			}
+			ed = hxsl_TExprDef.TArrayDecl(_g1);
+			break;
+		case 18:
+			var e1 = _g.e;
+			var cases = _g.cases;
+			var def = _g.def;
+			var ed1 = f(e1);
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < cases.length) {
+				var c = cases[_g2];
+				++_g2;
+				var _g3 = [];
+				var _g4 = 0;
+				var _g5 = c.values;
+				while(_g4 < _g5.length) {
+					var v = _g5[_g4];
+					++_g4;
+					_g3.push(f(v));
+				}
+				_g1.push({ values : _g3, expr : f(c.expr)});
+			}
+			ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+			break;
+		case 19:
+			var e1 = _g.e;
+			var loop = _g.loop;
+			var normalWhile = _g.normalWhile;
+			ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+			break;
+		case 20:
+			var m = _g.m;
+			var args = _g.args;
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+			break;
+		case 21:
+			var e1 = _g.e;
+			var name = _g.name;
+			ed = hxsl_TExprDef.TField(f(e1),name);
+			break;
+		case 22:
+			var target = _g.target;
+			var code = _g.code;
+			var args = _g.args;
+			var _g = [];
+			var _g1 = 0;
+			while(_g1 < args.length) {
+				var arg = args[_g1];
+				++_g1;
+				_g.push({ e : f(arg.e), access : arg.access});
+			}
+			ed = hxsl_TExprDef.TSyntax(target,code,_g);
+			break;
+		}
+		var e2 = new hxsl_TExpr(ed,e.t,e.p);
 		e2.t = this.ttype(e.t);
 		var _g = e2.e;
 		var tmp;
@@ -77293,6 +80980,7 @@ hxsl__$Dce_WriteTo.prototype = {
 	,__class__: hxsl__$Dce_WriteTo
 };
 var hxsl_Dce = function() {
+	this.checkBranchesFun = $bind(this,this.checkBranches);
 };
 $hxClasses["hxsl.Dce"] = hxsl_Dce;
 hxsl_Dce.__name__ = "hxsl.Dce";
@@ -77534,8 +81222,8 @@ hxsl_Dce.prototype = {
 			switch(_g1._hx_index) {
 			case 4:
 				var _g4 = _g2.e;
-				var _g5 = _g2.p;
 				var _g5 = _g2.t;
+				var _g5 = _g2.p;
 				switch(_g4._hx_index) {
 				case 1:
 					var v = _g4.v;
@@ -77550,8 +81238,8 @@ hxsl_Dce.prototype = {
 					var _g5 = _g4.e;
 					var _g6 = _g4.regs;
 					var _g7 = _g5.e;
-					var _g8 = _g5.p;
 					var _g8 = _g5.t;
+					var _g8 = _g5.p;
 					switch(_g7._hx_index) {
 					case 1:
 						var v = _g7.v;
@@ -77567,8 +81255,8 @@ hxsl_Dce.prototype = {
 					case 16:
 						var _g5 = _g7.e;
 						var _g6 = _g5.e;
-						var _g8 = _g5.p;
 						var _g8 = _g5.t;
+						var _g8 = _g5.p;
 						if(_g6._hx_index == 1) {
 							var v = _g6.v;
 							var i = _g7.index;
@@ -77600,8 +81288,8 @@ hxsl_Dce.prototype = {
 				case 16:
 					var _g7 = _g4.e;
 					var _g8 = _g7.e;
-					var _g9 = _g7.p;
 					var _g9 = _g7.t;
+					var _g9 = _g7.p;
 					if(_g8._hx_index == 1) {
 						var v = _g8.v;
 						var i = _g4.index;
@@ -77625,13 +81313,13 @@ hxsl_Dce.prototype = {
 					var _g8 = _g4.e;
 					var _g9 = _g4.name;
 					var _g4 = _g8.e;
-					var _g9 = _g8.p;
 					var _g9 = _g8.t;
+					var _g9 = _g8.p;
 					if(_g4._hx_index == 16) {
 						var _g8 = _g4.e;
 						var _g9 = _g8.e;
-						var _g10 = _g8.p;
 						var _g10 = _g8.t;
+						var _g10 = _g8.p;
 						if(_g9._hx_index == 1) {
 							var v = _g9.v;
 							var i = _g4.index;
@@ -77671,8 +81359,8 @@ hxsl_Dce.prototype = {
 			case 20:
 				var _g10 = _g1.op;
 				var _g1 = _g2.e;
-				var _g10 = _g2.p;
 				var _g10 = _g2.t;
+				var _g10 = _g2.p;
 				switch(_g1._hx_index) {
 				case 1:
 					var v = _g1.v;
@@ -77687,8 +81375,8 @@ hxsl_Dce.prototype = {
 					var _g2 = _g1.e;
 					var _g10 = _g1.regs;
 					var _g11 = _g2.e;
-					var _g12 = _g2.p;
 					var _g12 = _g2.t;
+					var _g12 = _g2.p;
 					switch(_g11._hx_index) {
 					case 1:
 						var v = _g11.v;
@@ -77704,8 +81392,8 @@ hxsl_Dce.prototype = {
 					case 16:
 						var _g2 = _g11.e;
 						var _g10 = _g2.e;
-						var _g12 = _g2.p;
 						var _g12 = _g2.t;
+						var _g12 = _g2.p;
 						if(_g10._hx_index == 1) {
 							var v = _g10.v;
 							var i = _g11.index;
@@ -77737,8 +81425,8 @@ hxsl_Dce.prototype = {
 				case 16:
 					var _g11 = _g1.e;
 					var _g12 = _g11.e;
-					var _g13 = _g11.p;
 					var _g13 = _g11.t;
+					var _g13 = _g11.p;
 					if(_g12._hx_index == 1) {
 						var v = _g12.v;
 						var i = _g1.index;
@@ -77762,13 +81450,13 @@ hxsl_Dce.prototype = {
 					var _g12 = _g1.e;
 					var _g13 = _g1.name;
 					var _g1 = _g12.e;
-					var _g13 = _g12.p;
 					var _g13 = _g12.t;
+					var _g13 = _g12.p;
 					if(_g1._hx_index == 16) {
 						var _g12 = _g1.e;
 						var _g13 = _g12.e;
-						var _g14 = _g12.p;
 						var _g14 = _g12.t;
+						var _g14 = _g12.p;
 						if(_g13._hx_index == 1) {
 							var v = _g13.v;
 							var i = _g1.index;
@@ -77834,8 +81522,8 @@ hxsl_Dce.prototype = {
 			var _g15 = _g.e;
 			var _g16 = _g.args;
 			var _g17 = _g15.e;
-			var _g18 = _g15.p;
 			var _g18 = _g15.t;
+			var _g18 = _g15.p;
 			if(_g17._hx_index == 2) {
 				switch(_g17.g._hx_index) {
 				case 64:
@@ -77843,12 +81531,12 @@ hxsl_Dce.prototype = {
 						var _g15 = _g16[0];
 						var _g17 = _g16[2];
 						var _g18 = _g15.e;
-						var _g19 = _g15.p;
 						var _g19 = _g15.t;
+						var _g19 = _g15.p;
 						if(_g18._hx_index == 1) {
 							var _g15 = _g17.e;
-							var _g19 = _g17.p;
 							var _g19 = _g17.t;
+							var _g19 = _g17.p;
 							if(_g15._hx_index == 0) {
 								var _g17 = _g15.c;
 								if(_g17._hx_index == 2) {
@@ -77900,12 +81588,12 @@ hxsl_Dce.prototype = {
 						var _g20 = _g16[0];
 						var _g21 = _g16[3];
 						var _g22 = _g20.e;
-						var _g23 = _g20.p;
 						var _g23 = _g20.t;
+						var _g23 = _g20.p;
 						if(_g22._hx_index == 1) {
 							var _g20 = _g21.e;
-							var _g23 = _g21.p;
 							var _g23 = _g21.t;
+							var _g23 = _g21.p;
 							if(_g20._hx_index == 0) {
 								var _g21 = _g20.c;
 								if(_g21._hx_index == 2) {
@@ -77958,8 +81646,8 @@ hxsl_Dce.prototype = {
 					if(_g16.length == 3) {
 						var _g24 = _g16[0];
 						var _g25 = _g24.e;
-						var _g26 = _g24.p;
 						var _g26 = _g24.t;
+						var _g26 = _g24.p;
 						if(_g25._hx_index == 1) {
 							var v = _g25.v;
 							var uv = _g16[1];
@@ -77971,54 +81659,118 @@ hxsl_Dce.prototype = {
 							writeTo.pop();
 							isAffected.append(v1,15);
 						} else {
-							var _g16 = this;
+							var _g24 = this;
 							var writeTo23 = writeTo;
 							var isAffected23 = isAffected;
 							hxsl_Tools.iter(e,function(e) {
-								_g16.check(e,writeTo23,isAffected23);
+								_g24.check(e,writeTo23,isAffected23);
 							});
 						}
 					} else {
-						var _g24 = this;
+						var _g25 = this;
 						var writeTo24 = writeTo;
 						var isAffected24 = isAffected;
 						hxsl_Tools.iter(e,function(e) {
-							_g24.check(e,writeTo24,isAffected24);
+							_g25.check(e,writeTo24,isAffected24);
+						});
+					}
+					break;
+				case 84:
+					if(_g16.length == 3) {
+						var _g26 = _g16[0];
+						var _g27 = _g26.e;
+						var _g28 = _g26.t;
+						var _g28 = _g26.p;
+						if(_g27._hx_index == 1) {
+							var v = _g27.v;
+							var idx = _g16[1];
+							var data = _g16[2];
+							var v1 = this.get(v);
+							writeTo.push(v1,15);
+							this.check(idx,writeTo,isAffected);
+							this.check(data,writeTo,isAffected);
+							writeTo.pop();
+							isAffected.append(v1,15);
+						} else {
+							var _g26 = this;
+							var writeTo25 = writeTo;
+							var isAffected25 = isAffected;
+							hxsl_Tools.iter(e,function(e) {
+								_g26.check(e,writeTo25,isAffected25);
+							});
+						}
+					} else {
+						var _g27 = this;
+						var writeTo26 = writeTo;
+						var isAffected26 = isAffected;
+						hxsl_Tools.iter(e,function(e) {
+							_g27.check(e,writeTo26,isAffected26);
+						});
+					}
+					break;
+				case 90:
+					if(_g16.length == 2) {
+						var _g28 = _g16[1];
+						var _g29 = _g28.e;
+						var _g30 = _g28.t;
+						var _g30 = _g28.p;
+						if(_g29._hx_index == 1) {
+							var v = _g29.v;
+							var handle = _g16[0];
+							var v1 = this.get(v);
+							writeTo.push(v1,15);
+							this.check(handle,writeTo,isAffected);
+							writeTo.pop();
+							isAffected.append(v1,15);
+						} else {
+							var _g16 = this;
+							var writeTo27 = writeTo;
+							var isAffected27 = isAffected;
+							hxsl_Tools.iter(e,function(e) {
+								_g16.check(e,writeTo27,isAffected27);
+							});
+						}
+					} else {
+						var _g28 = this;
+						var writeTo28 = writeTo;
+						var isAffected28 = isAffected;
+						hxsl_Tools.iter(e,function(e) {
+							_g28.check(e,writeTo28,isAffected28);
 						});
 					}
 					break;
 				default:
-					var _g25 = this;
-					var writeTo25 = writeTo;
-					var isAffected25 = isAffected;
+					var _g29 = this;
+					var writeTo29 = writeTo;
+					var isAffected29 = isAffected;
 					hxsl_Tools.iter(e,function(e) {
-						_g25.check(e,writeTo25,isAffected25);
+						_g29.check(e,writeTo29,isAffected29);
 					});
 				}
 			} else {
-				var _g26 = this;
-				var writeTo26 = writeTo;
-				var isAffected26 = isAffected;
+				var _g30 = this;
+				var writeTo30 = writeTo;
+				var isAffected30 = isAffected;
 				hxsl_Tools.iter(e,function(e) {
-					_g26.check(e,writeTo26,isAffected26);
+					_g30.check(e,writeTo30,isAffected30);
 				});
 			}
 			break;
 		case 9:
-			var _g27 = _g.e;
-			var _g28 = _g27.e;
-			var _g29 = _g27.p;
-			var _g29 = _g27.t;
-			if(_g28._hx_index == 1) {
-				var v = _g28.v;
+			var _g31 = _g.e;
+			var _g32 = _g31.e;
+			var _g33 = _g31.t;
+			var _g33 = _g31.p;
+			if(_g32._hx_index == 1) {
+				var v = _g32.v;
 				var swiz = _g.regs;
 				this.link(v,writeTo,this.swizBits(swiz));
 			} else {
-				var _g27 = this;
-				var writeTo27 = writeTo;
-				var isAffected27 = isAffected;
+				var _g31 = this;
+				var writeTo31 = writeTo;
+				var isAffected31 = isAffected;
 				hxsl_Tools.iter(e,function(e) {
-					_g27.check(e,writeTo27,isAffected27);
+					_g31.check(e,writeTo31,isAffected31);
 				});
 			}
 			break;
@@ -78044,9 +81796,19 @@ hxsl_Dce.prototype = {
 			affect.appendTo(isAffected);
 			this.check(it,affect,isAffected);
 			break;
+		case 19:
+			var _g32 = _g.normalWhile;
+			var e1 = _g.e;
+			var loop = _g.loop;
+			var affect = new hxsl__$Dce_WriteTo();
+			this.check(loop,writeTo,affect);
+			affect.appendTo(isAffected);
+			writeTo.appendTo(affect);
+			this.check(e1,affect,isAffected);
+			break;
 		case 22:
-			var _g28 = _g.target;
-			var _g28 = _g.code;
+			var _g32 = _g.target;
+			var _g32 = _g.code;
 			var args = _g.args;
 			var _g = 0;
 			while(_g < args.length) {
@@ -78067,15 +81829,15 @@ hxsl_Dce.prototype = {
 						};
 					})(findTVars,tvars);
 					findTVars[0](arg.e);
-					var _g28 = 0;
-					while(_g28 < tvars[0].length) {
-						var v = tvars[0][_g28];
-						++_g28;
+					var _g32 = 0;
+					while(_g32 < tvars[0].length) {
+						var v = tvars[0][_g32];
+						++_g32;
 						writeTo.push(v,15);
-						var _g29 = 0;
-						while(_g29 < args.length) {
-							var arg2 = args[_g29];
-							++_g29;
+						var _g33 = 0;
+						while(_g33 < args.length) {
+							var arg2 = args[_g33];
+							++_g33;
 							if(arg2.access != hxsl_SyntaxArgAccess.Write) {
 								this.check(arg2.e,writeTo,isAffected);
 							}
@@ -78090,24 +81852,35 @@ hxsl_Dce.prototype = {
 			break;
 		default:
 			var _g = this;
-			var writeTo28 = writeTo;
-			var isAffected28 = isAffected;
+			var writeTo32 = writeTo;
+			var isAffected32 = isAffected;
 			hxsl_Tools.iter(e,function(e) {
-				_g.check(e,writeTo28,isAffected28);
+				_g.check(e,writeTo32,isAffected32);
 			});
 		}
 	}
 	,checkBranches: function(e) {
 		var _g = e.e;
-		if(_g._hx_index == 10) {
+		switch(_g._hx_index) {
+		case 10:
 			var _g1 = _g.eif;
 			var _g1 = _g.eelse;
 			var cond = _g.econd;
 			var writeTo = new hxsl__$Dce_WriteTo();
 			writeTo.append(null,0);
 			this.check(cond,writeTo,new hxsl__$Dce_WriteTo());
+			break;
+		case 19:
+			var _g1 = _g.normalWhile;
+			var cond = _g.e;
+			var loop = _g.loop;
+			var writeTo = new hxsl__$Dce_WriteTo();
+			writeTo.append(null,0);
+			this.check(cond,writeTo,new hxsl__$Dce_WriteTo());
+			break;
+		default:
 		}
-		hxsl_Tools.iter(e,$bind(this,this.checkBranches));
+		hxsl_Tools.iter(e,this.checkBranchesFun);
 	}
 	,mapExpr: function(e,isVar) {
 		var _gthis = this;
@@ -78128,7 +81901,7 @@ hxsl_Dce.prototype = {
 				}
 				++count;
 			}
-			return { e : hxsl_TExprDef.TBlock(out), p : e.p, t : e.t};
+			return new hxsl_TExpr(hxsl_TExprDef.TBlock(out),e.t,e.p);
 		case 5:
 			var _g1 = _g.op;
 			var _g2 = _g.e1;
@@ -78136,8 +81909,8 @@ hxsl_Dce.prototype = {
 			switch(_g1._hx_index) {
 			case 4:
 				var _g4 = _g2.e;
-				var _g5 = _g2.p;
 				var _g5 = _g2.t;
+				var _g5 = _g2.p;
 				switch(_g4._hx_index) {
 				case 1:
 					var v = _g4.v;
@@ -78146,19 +81919,169 @@ hxsl_Dce.prototype = {
 						if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 							return this.mapExpr(e2,false);
 						} else {
-							return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+							return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g5 = e.e;
+						switch(_g5._hx_index) {
+						case 0:
+							var _g6 = _g5.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g6 = _g5.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g6 = _g5.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g5.el;
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < el.length) {
+								var e1 = el[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g6);
+							break;
+						case 5:
+							var op = _g5.op;
+							var e1 = _g5.e1;
+							var e2 = _g5.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g5.op;
+							var e1 = _g5.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g5.v;
+							var init = _g5.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g5.e;
+							var args = _g5.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < args.length) {
+								var a = args[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g6);
+							break;
+						case 9:
+							var e1 = _g5.e;
+							var c = _g5.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g5.econd;
+							var eif = _g5.eif;
+							var eelse = _g5.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g5.v;
+							var it = _g5.it;
+							var loop = _g5.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g5.e;
+							var index = _g5.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g5.el;
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < el.length) {
+								var e1 = el[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g6);
+							break;
+						case 18:
+							var e1 = _g5.e;
+							var cases = _g5.cases;
+							var def = _g5.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < cases.length) {
+								var c = cases[_g7];
+								++_g7;
+								var _g8 = [];
+								var _g9 = 0;
+								var _g10 = c.values;
+								while(_g9 < _g10.length) {
+									var v = _g10[_g9];
+									++_g9;
+									_g8.push(_gthis.mapExpr(v,true));
+								}
+								_g6.push({ values : _g8, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g6,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g5.e;
+							var loop = _g5.loop;
+							var normalWhile = _g5.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g5.m;
+							var args = _g5.args;
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g5.e;
+							var name = _g5.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g5.target;
+							var code = _g5.code;
+							var args = _g5.args;
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < args.length) {
+								var arg = args[_g6];
+								++_g6;
+								_g5.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g5);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 9:
 					var _g5 = _g4.e;
 					var _g6 = _g5.e;
-					var _g7 = _g5.p;
 					var _g7 = _g5.t;
+					var _g7 = _g5.p;
 					if(_g6._hx_index == 1) {
 						var _g5 = _g6.v;
 						var v = _g5;
@@ -78167,7 +82090,7 @@ hxsl_Dce.prototype = {
 							if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 								return this.mapExpr(e2,false);
 							} else {
-								return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 							}
 						} else {
 							var v = _g5;
@@ -78177,26 +82100,326 @@ hxsl_Dce.prototype = {
 								if(hxsl_Tools.hasSideEffect(e2)) {
 									return this.mapExpr(e2,false);
 								} else {
-									return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+									return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 								}
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g5 = e.e;
+								switch(_g5._hx_index) {
+								case 0:
+									var _g6 = _g5.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g6 = _g5.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g6 = _g5.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g5.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g5.el;
+									var _g6 = [];
+									var _g7 = 0;
+									while(_g7 < el.length) {
+										var e1 = el[_g7];
+										++_g7;
+										_g6.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g6);
+									break;
+								case 5:
+									var op = _g5.op;
+									var e1 = _g5.e1;
+									var e2 = _g5.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g5.op;
+									var e1 = _g5.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g5.v;
+									var init = _g5.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g5.e;
+									var args = _g5.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g6 = [];
+									var _g7 = 0;
+									while(_g7 < args.length) {
+										var a = args[_g7];
+										++_g7;
+										_g6.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g6);
+									break;
+								case 9:
+									var e1 = _g5.e;
+									var c = _g5.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g5.econd;
+									var eif = _g5.eif;
+									var eelse = _g5.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g5.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g5.v;
+									var it = _g5.it;
+									var loop = _g5.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g5.e;
+									var index = _g5.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g5.el;
+									var _g6 = [];
+									var _g7 = 0;
+									while(_g7 < el.length) {
+										var e1 = el[_g7];
+										++_g7;
+										_g6.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g6);
+									break;
+								case 18:
+									var e1 = _g5.e;
+									var cases = _g5.cases;
+									var def = _g5.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g6 = [];
+									var _g7 = 0;
+									while(_g7 < cases.length) {
+										var c = cases[_g7];
+										++_g7;
+										var _g8 = [];
+										var _g9 = 0;
+										var _g10 = c.values;
+										while(_g9 < _g10.length) {
+											var v = _g10[_g9];
+											++_g9;
+											_g8.push(_gthis.mapExpr(v,true));
+										}
+										_g6.push({ values : _g8, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g6,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g5.e;
+									var loop = _g5.loop;
+									var normalWhile = _g5.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g5.m;
+									var args = _g5.args;
+									var e1 = _g5.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g5.e;
+									var name = _g5.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g5.target;
+									var code = _g5.code;
+									var args = _g5.args;
+									var _g5 = [];
+									var _g6 = 0;
+									while(_g6 < args.length) {
+										var arg = args[_g6];
+										++_g6;
+										_g5.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g5);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g5 = e.e;
+						switch(_g5._hx_index) {
+						case 0:
+							var _g6 = _g5.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g6 = _g5.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g6 = _g5.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g5.el;
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < el.length) {
+								var e1 = el[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g6);
+							break;
+						case 5:
+							var op = _g5.op;
+							var e1 = _g5.e1;
+							var e2 = _g5.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g5.op;
+							var e1 = _g5.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g5.v;
+							var init = _g5.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g5.e;
+							var args = _g5.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < args.length) {
+								var a = args[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g6);
+							break;
+						case 9:
+							var e1 = _g5.e;
+							var c = _g5.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g5.econd;
+							var eif = _g5.eif;
+							var eelse = _g5.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g5.v;
+							var it = _g5.it;
+							var loop = _g5.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g5.e;
+							var index = _g5.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g5.el;
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < el.length) {
+								var e1 = el[_g7];
+								++_g7;
+								_g6.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g6);
+							break;
+						case 18:
+							var e1 = _g5.e;
+							var cases = _g5.cases;
+							var def = _g5.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g6 = [];
+							var _g7 = 0;
+							while(_g7 < cases.length) {
+								var c = cases[_g7];
+								++_g7;
+								var _g8 = [];
+								var _g9 = 0;
+								var _g10 = c.values;
+								while(_g9 < _g10.length) {
+									var v = _g10[_g9];
+									++_g9;
+									_g8.push(_gthis.mapExpr(v,true));
+								}
+								_g6.push({ values : _g8, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g6,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g5.e;
+							var loop = _g5.loop;
+							var normalWhile = _g5.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g5.m;
+							var args = _g5.args;
+							var e1 = _g5.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g5.e;
+							var name = _g5.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g5.target;
+							var code = _g5.code;
+							var args = _g5.args;
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < args.length) {
+								var arg = args[_g6];
+								++_g6;
+								_g5.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g5);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 16:
 					var _g5 = _g4.e;
 					var _g6 = _g4.index;
 					var _g4 = _g5.e;
-					var _g6 = _g5.p;
 					var _g6 = _g5.t;
+					var _g6 = _g5.p;
 					if(_g4._hx_index == 1) {
 						var v = _g4.v;
 						var e2 = _g3;
@@ -78204,30 +82427,480 @@ hxsl_Dce.prototype = {
 							if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 								return this.mapExpr(e2,false);
 							} else {
-								return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g4 = e.e;
+							switch(_g4._hx_index) {
+							case 0:
+								var _g5 = _g4.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g5 = _g4.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g5 = _g4.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g4.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g4.el;
+								var _g5 = [];
+								var _g6 = 0;
+								while(_g6 < el.length) {
+									var e1 = el[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g5);
+								break;
+							case 5:
+								var op = _g4.op;
+								var e1 = _g4.e1;
+								var e2 = _g4.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g4.op;
+								var e1 = _g4.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g4.v;
+								var init = _g4.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g4.e;
+								var args = _g4.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g5 = [];
+								var _g6 = 0;
+								while(_g6 < args.length) {
+									var a = args[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g5);
+								break;
+							case 9:
+								var e1 = _g4.e;
+								var c = _g4.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g4.econd;
+								var eif = _g4.eif;
+								var eelse = _g4.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g4.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g4.v;
+								var it = _g4.it;
+								var loop = _g4.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g4.e;
+								var index = _g4.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g4.el;
+								var _g5 = [];
+								var _g6 = 0;
+								while(_g6 < el.length) {
+									var e1 = el[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g5);
+								break;
+							case 18:
+								var e1 = _g4.e;
+								var cases = _g4.cases;
+								var def = _g4.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g5 = [];
+								var _g6 = 0;
+								while(_g6 < cases.length) {
+									var c = cases[_g6];
+									++_g6;
+									var _g7 = [];
+									var _g8 = 0;
+									var _g9 = c.values;
+									while(_g8 < _g9.length) {
+										var v = _g9[_g8];
+										++_g8;
+										_g7.push(_gthis.mapExpr(v,true));
+									}
+									_g5.push({ values : _g7, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g5,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g4.e;
+								var loop = _g4.loop;
+								var normalWhile = _g4.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g4.m;
+								var args = _g4.args;
+								var e1 = _g4.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g4.e;
+								var name = _g4.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g4.target;
+								var code = _g4.code;
+								var args = _g4.args;
+								var _g4 = [];
+								var _g5 = 0;
+								while(_g5 < args.length) {
+									var arg = args[_g5];
+									++_g5;
+									_g4.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g4);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g4 = e.e;
+						switch(_g4._hx_index) {
+						case 0:
+							var _g5 = _g4.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g5 = _g4.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g5 = _g4.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g4.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g4.el;
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < el.length) {
+								var e1 = el[_g6];
+								++_g6;
+								_g5.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g5);
+							break;
+						case 5:
+							var op = _g4.op;
+							var e1 = _g4.e1;
+							var e2 = _g4.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g4.op;
+							var e1 = _g4.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g4.v;
+							var init = _g4.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g4.e;
+							var args = _g4.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < args.length) {
+								var a = args[_g6];
+								++_g6;
+								_g5.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g5);
+							break;
+						case 9:
+							var e1 = _g4.e;
+							var c = _g4.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g4.econd;
+							var eif = _g4.eif;
+							var eelse = _g4.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g4.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g4.v;
+							var it = _g4.it;
+							var loop = _g4.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g4.e;
+							var index = _g4.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g4.el;
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < el.length) {
+								var e1 = el[_g6];
+								++_g6;
+								_g5.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g5);
+							break;
+						case 18:
+							var e1 = _g4.e;
+							var cases = _g4.cases;
+							var def = _g4.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g5 = [];
+							var _g6 = 0;
+							while(_g6 < cases.length) {
+								var c = cases[_g6];
+								++_g6;
+								var _g7 = [];
+								var _g8 = 0;
+								var _g9 = c.values;
+								while(_g8 < _g9.length) {
+									var v = _g9[_g8];
+									++_g8;
+									_g7.push(_gthis.mapExpr(v,true));
+								}
+								_g5.push({ values : _g7, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g5,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g4.e;
+							var loop = _g4.loop;
+							var normalWhile = _g4.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g4.m;
+							var args = _g4.args;
+							var e1 = _g4.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g4.e;
+							var name = _g4.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g4.target;
+							var code = _g4.code;
+							var args = _g4.args;
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < args.length) {
+								var arg = args[_g5];
+								++_g5;
+								_g4.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g4);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				default:
-					return hxsl_Tools.map(e,function(e) {
-						return _gthis.mapExpr(e,true);
-					});
+					var ed;
+					var _g4 = e.e;
+					switch(_g4._hx_index) {
+					case 0:
+						var _g5 = _g4.c;
+						ed = e.e;
+						break;
+					case 1:
+						var _g5 = _g4.v;
+						ed = e.e;
+						break;
+					case 2:
+						var _g5 = _g4.g;
+						ed = e.e;
+						break;
+					case 3:
+						var e1 = _g4.e;
+						ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+						break;
+					case 4:
+						var el = _g4.el;
+						var _g5 = [];
+						var _g6 = 0;
+						while(_g6 < el.length) {
+							var e1 = el[_g6];
+							++_g6;
+							_g5.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TBlock(_g5);
+						break;
+					case 5:
+						var op = _g4.op;
+						var e1 = _g4.e1;
+						var e2 = _g4.e2;
+						ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+						break;
+					case 6:
+						var op = _g4.op;
+						var e1 = _g4.e1;
+						ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+						break;
+					case 7:
+						var v = _g4.v;
+						var init = _g4.init;
+						ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+						break;
+					case 8:
+						var e1 = _g4.e;
+						var args = _g4.args;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g5 = [];
+						var _g6 = 0;
+						while(_g6 < args.length) {
+							var a = args[_g6];
+							++_g6;
+							_g5.push(_gthis.mapExpr(a,true));
+						}
+						ed = hxsl_TExprDef.TCall(ed1,_g5);
+						break;
+					case 9:
+						var e1 = _g4.e;
+						var c = _g4.regs;
+						ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+						break;
+					case 10:
+						var econd = _g4.econd;
+						var eif = _g4.eif;
+						var eelse = _g4.eelse;
+						ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+						break;
+					case 12:
+						var e1 = _g4.e;
+						ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+						break;
+					case 13:
+						var v = _g4.v;
+						var it = _g4.it;
+						var loop = _g4.loop;
+						ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+						break;
+					case 11:case 14:case 15:
+						ed = e.e;
+						break;
+					case 16:
+						var e1 = _g4.e;
+						var index = _g4.index;
+						ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+						break;
+					case 17:
+						var el = _g4.el;
+						var _g5 = [];
+						var _g6 = 0;
+						while(_g6 < el.length) {
+							var e1 = el[_g6];
+							++_g6;
+							_g5.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TArrayDecl(_g5);
+						break;
+					case 18:
+						var e1 = _g4.e;
+						var cases = _g4.cases;
+						var def = _g4.def;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g5 = [];
+						var _g6 = 0;
+						while(_g6 < cases.length) {
+							var c = cases[_g6];
+							++_g6;
+							var _g7 = [];
+							var _g8 = 0;
+							var _g9 = c.values;
+							while(_g8 < _g9.length) {
+								var v = _g9[_g8];
+								++_g8;
+								_g7.push(_gthis.mapExpr(v,true));
+							}
+							_g5.push({ values : _g7, expr : _gthis.mapExpr(c.expr,true)});
+						}
+						ed = hxsl_TExprDef.TSwitch(ed1,_g5,def == null ? null : _gthis.mapExpr(def,true));
+						break;
+					case 19:
+						var e1 = _g4.e;
+						var loop = _g4.loop;
+						var normalWhile = _g4.normalWhile;
+						ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+						break;
+					case 20:
+						var m = _g4.m;
+						var args = _g4.args;
+						var e1 = _g4.e;
+						ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+						break;
+					case 21:
+						var e1 = _g4.e;
+						var name = _g4.name;
+						ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+						break;
+					case 22:
+						var target = _g4.target;
+						var code = _g4.code;
+						var args = _g4.args;
+						var _g4 = [];
+						var _g5 = 0;
+						while(_g5 < args.length) {
+							var arg = args[_g5];
+							++_g5;
+							_g4.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+						}
+						ed = hxsl_TExprDef.TSyntax(target,code,_g4);
+						break;
+					}
+					return new hxsl_TExpr(ed,e.t,e.p);
 				}
 				break;
 			case 20:
 				var _g4 = _g1.op;
 				var _g1 = _g2.e;
-				var _g4 = _g2.p;
 				var _g4 = _g2.t;
+				var _g4 = _g2.p;
 				switch(_g1._hx_index) {
 				case 1:
 					var v = _g1.v;
@@ -78236,19 +82909,169 @@ hxsl_Dce.prototype = {
 						if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 							return this.mapExpr(e2,false);
 						} else {
-							return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+							return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g2 = e.e;
+						switch(_g2._hx_index) {
+						case 0:
+							var _g4 = _g2.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g4 = _g2.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g4 = _g2.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g2.el;
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < el.length) {
+								var e1 = el[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g4);
+							break;
+						case 5:
+							var op = _g2.op;
+							var e1 = _g2.e1;
+							var e2 = _g2.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g2.op;
+							var e1 = _g2.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g2.v;
+							var init = _g2.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g2.e;
+							var args = _g2.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < args.length) {
+								var a = args[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g4);
+							break;
+						case 9:
+							var e1 = _g2.e;
+							var c = _g2.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g2.econd;
+							var eif = _g2.eif;
+							var eelse = _g2.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g2.v;
+							var it = _g2.it;
+							var loop = _g2.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g2.e;
+							var index = _g2.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g2.el;
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < el.length) {
+								var e1 = el[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g4);
+							break;
+						case 18:
+							var e1 = _g2.e;
+							var cases = _g2.cases;
+							var def = _g2.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < cases.length) {
+								var c = cases[_g5];
+								++_g5;
+								var _g6 = [];
+								var _g7 = 0;
+								var _g8 = c.values;
+								while(_g7 < _g8.length) {
+									var v = _g8[_g7];
+									++_g7;
+									_g6.push(_gthis.mapExpr(v,true));
+								}
+								_g4.push({ values : _g6, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g4,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g2.e;
+							var loop = _g2.loop;
+							var normalWhile = _g2.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g2.m;
+							var args = _g2.args;
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g2.e;
+							var name = _g2.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g2.target;
+							var code = _g2.code;
+							var args = _g2.args;
+							var _g2 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var arg = args[_g4];
+								++_g4;
+								_g2.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g2);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 9:
 					var _g2 = _g1.e;
 					var _g4 = _g2.e;
-					var _g5 = _g2.p;
 					var _g5 = _g2.t;
+					var _g5 = _g2.p;
 					if(_g4._hx_index == 1) {
 						var _g2 = _g4.v;
 						var v = _g2;
@@ -78257,7 +83080,7 @@ hxsl_Dce.prototype = {
 							if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 								return this.mapExpr(e2,false);
 							} else {
-								return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 							}
 						} else {
 							var v = _g2;
@@ -78267,26 +83090,326 @@ hxsl_Dce.prototype = {
 								if(hxsl_Tools.hasSideEffect(e2)) {
 									return this.mapExpr(e2,false);
 								} else {
-									return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+									return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 								}
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g2 = e.e;
+								switch(_g2._hx_index) {
+								case 0:
+									var _g4 = _g2.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g4 = _g2.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g4 = _g2.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g2.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g2.el;
+									var _g4 = [];
+									var _g5 = 0;
+									while(_g5 < el.length) {
+										var e1 = el[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g4);
+									break;
+								case 5:
+									var op = _g2.op;
+									var e1 = _g2.e1;
+									var e2 = _g2.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g2.op;
+									var e1 = _g2.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g2.v;
+									var init = _g2.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g2.e;
+									var args = _g2.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g4 = [];
+									var _g5 = 0;
+									while(_g5 < args.length) {
+										var a = args[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g4);
+									break;
+								case 9:
+									var e1 = _g2.e;
+									var c = _g2.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g2.econd;
+									var eif = _g2.eif;
+									var eelse = _g2.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g2.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g2.v;
+									var it = _g2.it;
+									var loop = _g2.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g2.e;
+									var index = _g2.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g2.el;
+									var _g4 = [];
+									var _g5 = 0;
+									while(_g5 < el.length) {
+										var e1 = el[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g4);
+									break;
+								case 18:
+									var e1 = _g2.e;
+									var cases = _g2.cases;
+									var def = _g2.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g4 = [];
+									var _g5 = 0;
+									while(_g5 < cases.length) {
+										var c = cases[_g5];
+										++_g5;
+										var _g6 = [];
+										var _g7 = 0;
+										var _g8 = c.values;
+										while(_g7 < _g8.length) {
+											var v = _g8[_g7];
+											++_g7;
+											_g6.push(_gthis.mapExpr(v,true));
+										}
+										_g4.push({ values : _g6, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g4,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g2.e;
+									var loop = _g2.loop;
+									var normalWhile = _g2.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g2.m;
+									var args = _g2.args;
+									var e1 = _g2.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g2.e;
+									var name = _g2.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g2.target;
+									var code = _g2.code;
+									var args = _g2.args;
+									var _g2 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var arg = args[_g4];
+										++_g4;
+										_g2.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g2);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g2 = e.e;
+						switch(_g2._hx_index) {
+						case 0:
+							var _g4 = _g2.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g4 = _g2.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g4 = _g2.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g2.el;
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < el.length) {
+								var e1 = el[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g4);
+							break;
+						case 5:
+							var op = _g2.op;
+							var e1 = _g2.e1;
+							var e2 = _g2.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g2.op;
+							var e1 = _g2.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g2.v;
+							var init = _g2.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g2.e;
+							var args = _g2.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < args.length) {
+								var a = args[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g4);
+							break;
+						case 9:
+							var e1 = _g2.e;
+							var c = _g2.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g2.econd;
+							var eif = _g2.eif;
+							var eelse = _g2.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g2.v;
+							var it = _g2.it;
+							var loop = _g2.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g2.e;
+							var index = _g2.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g2.el;
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < el.length) {
+								var e1 = el[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g4);
+							break;
+						case 18:
+							var e1 = _g2.e;
+							var cases = _g2.cases;
+							var def = _g2.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g4 = [];
+							var _g5 = 0;
+							while(_g5 < cases.length) {
+								var c = cases[_g5];
+								++_g5;
+								var _g6 = [];
+								var _g7 = 0;
+								var _g8 = c.values;
+								while(_g7 < _g8.length) {
+									var v = _g8[_g7];
+									++_g7;
+									_g6.push(_gthis.mapExpr(v,true));
+								}
+								_g4.push({ values : _g6, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g4,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g2.e;
+							var loop = _g2.loop;
+							var normalWhile = _g2.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g2.m;
+							var args = _g2.args;
+							var e1 = _g2.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g2.e;
+							var name = _g2.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g2.target;
+							var code = _g2.code;
+							var args = _g2.args;
+							var _g2 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var arg = args[_g4];
+								++_g4;
+								_g2.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g2);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 16:
 					var _g2 = _g1.e;
 					var _g4 = _g1.index;
 					var _g1 = _g2.e;
-					var _g4 = _g2.p;
 					var _g4 = _g2.t;
+					var _g4 = _g2.p;
 					if(_g1._hx_index == 1) {
 						var v = _g1.v;
 						var e2 = _g3;
@@ -78294,29 +83417,629 @@ hxsl_Dce.prototype = {
 							if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 								return this.mapExpr(e2,false);
 							} else {
-								return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g2 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g2 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g2 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g2);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var a = args[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g2);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g2);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < cases.length) {
+									var c = cases[_g3];
+									++_g3;
+									var _g4 = [];
+									var _g5 = 0;
+									var _g6 = c.values;
+									while(_g5 < _g6.length) {
+										var v = _g6[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(v,true));
+									}
+									_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g2 = 0;
+								while(_g2 < args.length) {
+									var arg = args[_g2];
+									++_g2;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g2 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g2 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g2 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < el.length) {
+								var e1 = el[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g2);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var a = args[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g2);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < el.length) {
+								var e1 = el[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g2);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < cases.length) {
+								var c = cases[_g3];
+								++_g3;
+								var _g4 = [];
+								var _g5 = 0;
+								var _g6 = c.values;
+								while(_g5 < _g6.length) {
+									var v = _g6[_g5];
+									++_g5;
+									_g4.push(_gthis.mapExpr(v,true));
+								}
+								_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g2 = 0;
+							while(_g2 < args.length) {
+								var arg = args[_g2];
+								++_g2;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				default:
-					return hxsl_Tools.map(e,function(e) {
-						return _gthis.mapExpr(e,true);
-					});
+					var ed;
+					var _g1 = e.e;
+					switch(_g1._hx_index) {
+					case 0:
+						var _g2 = _g1.c;
+						ed = e.e;
+						break;
+					case 1:
+						var _g2 = _g1.v;
+						ed = e.e;
+						break;
+					case 2:
+						var _g2 = _g1.g;
+						ed = e.e;
+						break;
+					case 3:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+						break;
+					case 4:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TBlock(_g2);
+						break;
+					case 5:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						var e2 = _g1.e2;
+						ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+						break;
+					case 6:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+						break;
+					case 7:
+						var v = _g1.v;
+						var init = _g1.init;
+						ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+						break;
+					case 8:
+						var e1 = _g1.e;
+						var args = _g1.args;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < args.length) {
+							var a = args[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(a,true));
+						}
+						ed = hxsl_TExprDef.TCall(ed1,_g2);
+						break;
+					case 9:
+						var e1 = _g1.e;
+						var c = _g1.regs;
+						ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+						break;
+					case 10:
+						var econd = _g1.econd;
+						var eif = _g1.eif;
+						var eelse = _g1.eelse;
+						ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+						break;
+					case 12:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+						break;
+					case 13:
+						var v = _g1.v;
+						var it = _g1.it;
+						var loop = _g1.loop;
+						ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+						break;
+					case 11:case 14:case 15:
+						ed = e.e;
+						break;
+					case 16:
+						var e1 = _g1.e;
+						var index = _g1.index;
+						ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+						break;
+					case 17:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TArrayDecl(_g2);
+						break;
+					case 18:
+						var e1 = _g1.e;
+						var cases = _g1.cases;
+						var def = _g1.def;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < cases.length) {
+							var c = cases[_g3];
+							++_g3;
+							var _g4 = [];
+							var _g5 = 0;
+							var _g6 = c.values;
+							while(_g5 < _g6.length) {
+								var v = _g6[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(v,true));
+							}
+							_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+						}
+						ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+						break;
+					case 19:
+						var e1 = _g1.e;
+						var loop = _g1.loop;
+						var normalWhile = _g1.normalWhile;
+						ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+						break;
+					case 20:
+						var m = _g1.m;
+						var args = _g1.args;
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+						break;
+					case 21:
+						var e1 = _g1.e;
+						var name = _g1.name;
+						ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+						break;
+					case 22:
+						var target = _g1.target;
+						var code = _g1.code;
+						var args = _g1.args;
+						var _g1 = [];
+						var _g2 = 0;
+						while(_g2 < args.length) {
+							var arg = args[_g2];
+							++_g2;
+							_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+						}
+						ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+						break;
+					}
+					return new hxsl_TExpr(ed,e.t,e.p);
 				}
 				break;
 			default:
-				return hxsl_Tools.map(e,function(e) {
-					return _gthis.mapExpr(e,true);
-				});
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(a,true));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(_gthis.mapExpr(v,true));
+						}
+						_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 7:
@@ -78326,20 +84049,170 @@ hxsl_Dce.prototype = {
 				if(e2 != null && hxsl_Tools.hasSideEffect(e2)) {
 					return this.mapExpr(e2,false);
 				} else {
-					return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+					return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 				}
 			} else {
-				return hxsl_Tools.map(e,function(e) {
-					return _gthis.mapExpr(e,true);
-				});
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(a,true));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(_gthis.mapExpr(v,true));
+						}
+						_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 8:
 			var _g1 = _g.e;
 			var _g2 = _g.args;
 			var _g3 = _g1.e;
-			var _g4 = _g1.p;
 			var _g4 = _g1.t;
+			var _g4 = _g1.p;
 			if(_g3._hx_index == 2) {
 				switch(_g3.g._hx_index) {
 				case 64:
@@ -78347,29 +84220,479 @@ hxsl_Dce.prototype = {
 						var _g1 = _g2[0];
 						var _g1 = _g2[2];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
 								var cid = _g1.v;
 								var uv = _g2[1];
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texture), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p},this.mapExpr(uv,true)]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texture),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p),this.mapExpr(uv,true)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g3 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g3 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g3 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g3);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var a = args[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g3);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g3);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < cases.length) {
+								var c = cases[_g4];
+								++_g4;
+								var _g5 = [];
+								var _g6 = 0;
+								var _g7 = c.values;
+								while(_g6 < _g7.length) {
+									var v = _g7[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(v,true));
+								}
+								_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var arg = args[_g3];
+								++_g3;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 65:
@@ -78377,8 +84700,8 @@ hxsl_Dce.prototype = {
 						var _g1 = _g2[0];
 						var _g1 = _g2[3];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
@@ -78386,21 +84709,471 @@ hxsl_Dce.prototype = {
 								var lod = _g2[2];
 								var uv = _g2[1];
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureLod), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p},this.mapExpr(uv,true),this.mapExpr(lod,true)]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureLod),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p),this.mapExpr(uv,true),this.mapExpr(lod,true)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 					} else {
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g3 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g3 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g3 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g3);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var a = args[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g3);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g3);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < cases.length) {
+								var c = cases[_g4];
+								++_g4;
+								var _g5 = [];
+								var _g6 = 0;
+								var _g7 = c.values;
+								while(_g6 < _g7.length) {
+									var v = _g7[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(v,true));
+								}
+								_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var arg = args[_g3];
+								++_g3;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 66:
@@ -78409,32 +85182,332 @@ hxsl_Dce.prototype = {
 						var _g1 = _g2[0];
 						var _g1 = _g2[2];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
 								var cid = _g1.v;
 								var pos = _g2[1];
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texel), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p},this.mapExpr(pos,true)]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texel),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p),this.mapExpr(pos,true)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 						break;
 					case 4:
 						var _g1 = _g2[0];
 						var _g1 = _g2[3];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
@@ -78442,22 +85515,472 @@ hxsl_Dce.prototype = {
 								var lod = _g2[2];
 								var pos = _g2[1];
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texel), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p},this.mapExpr(pos,true),this.mapExpr(lod,true)]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Texel),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p),this.mapExpr(pos,true),this.mapExpr(lod,true)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 						break;
 					default:
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g3 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g3 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g3 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g3);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var a = args[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g3);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g3);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < cases.length) {
+								var c = cases[_g4];
+								++_g4;
+								var _g5 = [];
+								var _g6 = 0;
+								var _g7 = c.values;
+								while(_g6 < _g7.length) {
+									var v = _g7[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(v,true));
+								}
+								_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var arg = args[_g3];
+								++_g3;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				case 67:
@@ -78466,64 +85989,1590 @@ hxsl_Dce.prototype = {
 						var _g1 = _g2[0];
 						var _g1 = _g2[1];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
 								var cid = _g1.v;
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureSize), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p}]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureSize),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 						break;
 					case 3:
 						var _g1 = _g2[0];
 						var _g1 = _g2[2];
 						var _g3 = _g1.e;
-						var _g4 = _g1.p;
 						var _g4 = _g1.t;
+						var _g4 = _g1.p;
 						if(_g3._hx_index == 0) {
 							var _g1 = _g3.c;
 							if(_g1._hx_index == 2) {
 								var cid = _g1.v;
 								var lod = _g2[1];
 								var c = this.channelVars[cid];
-								return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureSize), p : e.p, t : hxsl_Type.TVoid},[{ e : hxsl_TExprDef.TVar(c), t : c.type, p : e.p},this.mapExpr(lod,true)]), t : hxsl_Type.TVoid, p : e.p};
+								return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.TextureSize),hxsl_Type.TVoid,e.p),[new hxsl_TExpr(hxsl_TExprDef.TVar(c),c.type,e.p),this.mapExpr(lod,true)]),hxsl_Type.TVoid,e.p);
 							} else {
-								return hxsl_Tools.map(e,function(e) {
-									return _gthis.mapExpr(e,true);
-								});
+								var ed;
+								var _g1 = e.e;
+								switch(_g1._hx_index) {
+								case 0:
+									var _g3 = _g1.c;
+									ed = e.e;
+									break;
+								case 1:
+									var _g3 = _g1.v;
+									ed = e.e;
+									break;
+								case 2:
+									var _g3 = _g1.g;
+									ed = e.e;
+									break;
+								case 3:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+									break;
+								case 4:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TBlock(_g3);
+									break;
+								case 5:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									var e2 = _g1.e2;
+									ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+									break;
+								case 6:
+									var op = _g1.op;
+									var e1 = _g1.e1;
+									ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+									break;
+								case 7:
+									var v = _g1.v;
+									var init = _g1.init;
+									ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+									break;
+								case 8:
+									var e1 = _g1.e;
+									var args = _g1.args;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < args.length) {
+										var a = args[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(a,true));
+									}
+									ed = hxsl_TExprDef.TCall(ed1,_g3);
+									break;
+								case 9:
+									var e1 = _g1.e;
+									var c = _g1.regs;
+									ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+									break;
+								case 10:
+									var econd = _g1.econd;
+									var eif = _g1.eif;
+									var eelse = _g1.eelse;
+									ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+									break;
+								case 12:
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+									break;
+								case 13:
+									var v = _g1.v;
+									var it = _g1.it;
+									var loop = _g1.loop;
+									ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+									break;
+								case 11:case 14:case 15:
+									ed = e.e;
+									break;
+								case 16:
+									var e1 = _g1.e;
+									var index = _g1.index;
+									ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+									break;
+								case 17:
+									var el = _g1.el;
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < el.length) {
+										var e1 = el[_g4];
+										++_g4;
+										_g3.push(_gthis.mapExpr(e1,true));
+									}
+									ed = hxsl_TExprDef.TArrayDecl(_g3);
+									break;
+								case 18:
+									var e1 = _g1.e;
+									var cases = _g1.cases;
+									var def = _g1.def;
+									var ed1 = _gthis.mapExpr(e1,true);
+									var _g3 = [];
+									var _g4 = 0;
+									while(_g4 < cases.length) {
+										var c = cases[_g4];
+										++_g4;
+										var _g5 = [];
+										var _g6 = 0;
+										var _g7 = c.values;
+										while(_g6 < _g7.length) {
+											var v = _g7[_g6];
+											++_g6;
+											_g5.push(_gthis.mapExpr(v,true));
+										}
+										_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+									}
+									ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+									break;
+								case 19:
+									var e1 = _g1.e;
+									var loop = _g1.loop;
+									var normalWhile = _g1.normalWhile;
+									ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+									break;
+								case 20:
+									var m = _g1.m;
+									var args = _g1.args;
+									var e1 = _g1.e;
+									ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+									break;
+								case 21:
+									var e1 = _g1.e;
+									var name = _g1.name;
+									ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+									break;
+								case 22:
+									var target = _g1.target;
+									var code = _g1.code;
+									var args = _g1.args;
+									var _g1 = [];
+									var _g3 = 0;
+									while(_g3 < args.length) {
+										var arg = args[_g3];
+										++_g3;
+										_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+									}
+									ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+									break;
+								}
+								return new hxsl_TExpr(ed,e.t,e.p);
 							}
 						} else {
-							return hxsl_Tools.map(e,function(e) {
-								return _gthis.mapExpr(e,true);
-							});
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a = args[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v = _g7[_g6];
+										++_g6;
+										_g5.push(_gthis.mapExpr(v,true));
+									}
+									_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
 						}
 						break;
 					default:
-						return hxsl_Tools.map(e,function(e) {
-							return _gthis.mapExpr(e,true);
-						});
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g3 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g3 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g3 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g3);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < args.length) {
+								var a = args[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g3);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < el.length) {
+								var e1 = el[_g4];
+								++_g4;
+								_g3.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g3);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g3 = [];
+							var _g4 = 0;
+							while(_g4 < cases.length) {
+								var c = cases[_g4];
+								++_g4;
+								var _g5 = [];
+								var _g6 = 0;
+								var _g7 = c.values;
+								while(_g6 < _g7.length) {
+									var v = _g7[_g6];
+									++_g6;
+									_g5.push(_gthis.mapExpr(v,true));
+								}
+								_g3.push({ values : _g5, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var arg = args[_g3];
+								++_g3;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
+					}
+					break;
+				case 90:
+					if(_g2.length == 2) {
+						var _g1 = _g2[1];
+						var _g3 = _g1.e;
+						var _g4 = _g1.t;
+						var _g4 = _g1.p;
+						if(_g3._hx_index == 1) {
+							var v = _g3.v;
+							var handle = _g2[0];
+							if(this.get(v).used == 0) {
+								return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
+							}
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g2 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g2 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g2 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g2);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var a = args[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g2);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g2);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < cases.length) {
+									var c = cases[_g3];
+									++_g3;
+									var _g4 = [];
+									var _g5 = 0;
+									var _g6 = c.values;
+									while(_g5 < _g6.length) {
+										var v = _g6[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(v,true));
+									}
+									_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g2 = 0;
+								while(_g2 < args.length) {
+									var arg = args[_g2];
+									++_g2;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
+						} else {
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g2 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g2 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g2 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TBlock(_g2);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+								break;
+							case 7:
+								var v = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var a = args[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(a,true));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g2);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+								break;
+							case 13:
+								var v = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < el.length) {
+									var e1 = el[_g3];
+									++_g3;
+									_g2.push(_gthis.mapExpr(e1,true));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g2);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = _gthis.mapExpr(e1,true);
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < cases.length) {
+									var c = cases[_g3];
+									++_g3;
+									var _g4 = [];
+									var _g5 = 0;
+									var _g6 = c.values;
+									while(_g5 < _g6.length) {
+										var v = _g6[_g5];
+										++_g5;
+										_g4.push(_gthis.mapExpr(v,true));
+									}
+									_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g2 = 0;
+								while(_g2 < args.length) {
+									var arg = args[_g2];
+									++_g2;
+									_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							return new hxsl_TExpr(ed,e.t,e.p);
+						}
+					} else {
+						var ed;
+						var _g1 = e.e;
+						switch(_g1._hx_index) {
+						case 0:
+							var _g2 = _g1.c;
+							ed = e.e;
+							break;
+						case 1:
+							var _g2 = _g1.v;
+							ed = e.e;
+							break;
+						case 2:
+							var _g2 = _g1.g;
+							ed = e.e;
+							break;
+						case 3:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+							break;
+						case 4:
+							var el = _g1.el;
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < el.length) {
+								var e1 = el[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TBlock(_g2);
+							break;
+						case 5:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							var e2 = _g1.e2;
+							ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+							break;
+						case 6:
+							var op = _g1.op;
+							var e1 = _g1.e1;
+							ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+							break;
+						case 7:
+							var v = _g1.v;
+							var init = _g1.init;
+							ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+							break;
+						case 8:
+							var e1 = _g1.e;
+							var args = _g1.args;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < args.length) {
+								var a = args[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(a,true));
+							}
+							ed = hxsl_TExprDef.TCall(ed1,_g2);
+							break;
+						case 9:
+							var e1 = _g1.e;
+							var c = _g1.regs;
+							ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+							break;
+						case 10:
+							var econd = _g1.econd;
+							var eif = _g1.eif;
+							var eelse = _g1.eelse;
+							ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+							break;
+						case 12:
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+							break;
+						case 13:
+							var v = _g1.v;
+							var it = _g1.it;
+							var loop = _g1.loop;
+							ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+							break;
+						case 11:case 14:case 15:
+							ed = e.e;
+							break;
+						case 16:
+							var e1 = _g1.e;
+							var index = _g1.index;
+							ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+							break;
+						case 17:
+							var el = _g1.el;
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < el.length) {
+								var e1 = el[_g3];
+								++_g3;
+								_g2.push(_gthis.mapExpr(e1,true));
+							}
+							ed = hxsl_TExprDef.TArrayDecl(_g2);
+							break;
+						case 18:
+							var e1 = _g1.e;
+							var cases = _g1.cases;
+							var def = _g1.def;
+							var ed1 = _gthis.mapExpr(e1,true);
+							var _g2 = [];
+							var _g3 = 0;
+							while(_g3 < cases.length) {
+								var c = cases[_g3];
+								++_g3;
+								var _g4 = [];
+								var _g5 = 0;
+								var _g6 = c.values;
+								while(_g5 < _g6.length) {
+									var v = _g6[_g5];
+									++_g5;
+									_g4.push(_gthis.mapExpr(v,true));
+								}
+								_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+							}
+							ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+							break;
+						case 19:
+							var e1 = _g1.e;
+							var loop = _g1.loop;
+							var normalWhile = _g1.normalWhile;
+							ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+							break;
+						case 20:
+							var m = _g1.m;
+							var args = _g1.args;
+							var e1 = _g1.e;
+							ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+							break;
+						case 21:
+							var e1 = _g1.e;
+							var name = _g1.name;
+							ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+							break;
+						case 22:
+							var target = _g1.target;
+							var code = _g1.code;
+							var args = _g1.args;
+							var _g1 = [];
+							var _g2 = 0;
+							while(_g2 < args.length) {
+								var arg = args[_g2];
+								++_g2;
+								_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+							}
+							ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+							break;
+						}
+						return new hxsl_TExpr(ed,e.t,e.p);
 					}
 					break;
 				default:
-					return hxsl_Tools.map(e,function(e) {
-						return _gthis.mapExpr(e,true);
-					});
+					var ed;
+					var _g1 = e.e;
+					switch(_g1._hx_index) {
+					case 0:
+						var _g2 = _g1.c;
+						ed = e.e;
+						break;
+					case 1:
+						var _g2 = _g1.v;
+						ed = e.e;
+						break;
+					case 2:
+						var _g2 = _g1.g;
+						ed = e.e;
+						break;
+					case 3:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+						break;
+					case 4:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TBlock(_g2);
+						break;
+					case 5:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						var e2 = _g1.e2;
+						ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+						break;
+					case 6:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+						break;
+					case 7:
+						var v = _g1.v;
+						var init = _g1.init;
+						ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+						break;
+					case 8:
+						var e1 = _g1.e;
+						var args = _g1.args;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < args.length) {
+							var a = args[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(a,true));
+						}
+						ed = hxsl_TExprDef.TCall(ed1,_g2);
+						break;
+					case 9:
+						var e1 = _g1.e;
+						var c = _g1.regs;
+						ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+						break;
+					case 10:
+						var econd = _g1.econd;
+						var eif = _g1.eif;
+						var eelse = _g1.eelse;
+						ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+						break;
+					case 12:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+						break;
+					case 13:
+						var v = _g1.v;
+						var it = _g1.it;
+						var loop = _g1.loop;
+						ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+						break;
+					case 11:case 14:case 15:
+						ed = e.e;
+						break;
+					case 16:
+						var e1 = _g1.e;
+						var index = _g1.index;
+						ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+						break;
+					case 17:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(_gthis.mapExpr(e1,true));
+						}
+						ed = hxsl_TExprDef.TArrayDecl(_g2);
+						break;
+					case 18:
+						var e1 = _g1.e;
+						var cases = _g1.cases;
+						var def = _g1.def;
+						var ed1 = _gthis.mapExpr(e1,true);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < cases.length) {
+							var c = cases[_g3];
+							++_g3;
+							var _g4 = [];
+							var _g5 = 0;
+							var _g6 = c.values;
+							while(_g5 < _g6.length) {
+								var v = _g6[_g5];
+								++_g5;
+								_g4.push(_gthis.mapExpr(v,true));
+							}
+							_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+						}
+						ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+						break;
+					case 19:
+						var e1 = _g1.e;
+						var loop = _g1.loop;
+						var normalWhile = _g1.normalWhile;
+						ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+						break;
+					case 20:
+						var m = _g1.m;
+						var args = _g1.args;
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+						break;
+					case 21:
+						var e1 = _g1.e;
+						var name = _g1.name;
+						ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+						break;
+					case 22:
+						var target = _g1.target;
+						var code = _g1.code;
+						var args = _g1.args;
+						var _g1 = [];
+						var _g2 = 0;
+						while(_g2 < args.length) {
+							var arg = args[_g2];
+							++_g2;
+							_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+						}
+						ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+						break;
+					}
+					return new hxsl_TExpr(ed,e.t,e.p);
 				}
 			} else {
-				return hxsl_Tools.map(e,function(e) {
-					return _gthis.mapExpr(e,true);
-				});
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(a,true));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(_gthis.mapExpr(e1,true));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = _gthis.mapExpr(e1,true);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(_gthis.mapExpr(v,true));
+						}
+						_g2.push({ values : _g4, expr : _gthis.mapExpr(c.expr,true)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : _gthis.mapExpr(def,true));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 10:
@@ -78534,9 +87583,9 @@ hxsl_Dce.prototype = {
 			var econd1 = this.mapExpr(econd,isVar);
 			var eelse1 = eelse == null ? null : this.mapExpr(eelse,isVar);
 			if(!isVar && !hxsl_Tools.hasSideEffect(econd1) && (eelse1 == null || !hxsl_Tools.hasSideEffect(eelse1))) {
-				return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e2.t, p : e2.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e2.t,e2.p);
 			}
-			return { e : hxsl_TExprDef.TIf(e2,econd1,eelse1), p : e2.p, t : e2.t};
+			return new hxsl_TExpr(hxsl_TExprDef.TIf(e2,econd1,eelse1),e2.t,e2.p);
 		case 13:
 			var v = _g.v;
 			var it = _g.it;
@@ -78544,22 +87593,182 @@ hxsl_Dce.prototype = {
 			var it1 = this.mapExpr(it,true);
 			var loop1 = this.mapExpr(loop,false);
 			if(!hxsl_Tools.hasSideEffect(loop1)) {
-				return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 			}
-			return { e : hxsl_TExprDef.TFor(v,it1,loop1), p : e.p, t : e.t};
+			return new hxsl_TExpr(hxsl_TExprDef.TFor(v,it1,loop1),e.t,e.p);
+		case 19:
+			var e1 = _g.e;
+			var loop = _g.loop;
+			var normalWhile = _g.normalWhile;
+			var e2 = this.mapExpr(e1,true);
+			var loop1 = this.mapExpr(loop,isVar);
+			if(!hxsl_Tools.hasSideEffect(loop1)) {
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e2.t,e2.p);
+			}
+			return new hxsl_TExpr(hxsl_TExprDef.TWhile(e2,loop1,normalWhile),e2.t,e2.p);
 		case 20:
 			var m = _g.m;
 			var args = _g.args;
 			var em = _g.e;
 			var em1 = this.mapExpr(em,isVar);
 			if(!isVar && !hxsl_Tools.hasSideEffect(em1)) {
-				return { e : hxsl_TExprDef.TConst(hxsl_Const.CNull), t : e.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CNull),e.t,e.p);
 			}
-			return { e : hxsl_TExprDef.TMeta(m,args,em1), t : e.t, p : e.p};
+			return new hxsl_TExpr(hxsl_TExprDef.TMeta(m,args,em1),e.t,e.p);
 		default:
-			return hxsl_Tools.map(e,function(e) {
-				return _gthis.mapExpr(e,true);
-			});
+			var ed;
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.c;
+				ed = e.e;
+				break;
+			case 1:
+				var _g1 = _g.v;
+				ed = e.e;
+				break;
+			case 2:
+				var _g1 = _g.g;
+				ed = e.e;
+				break;
+			case 3:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TParenthesis(_gthis.mapExpr(e1,true));
+				break;
+			case 4:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(_gthis.mapExpr(e1,true));
+				}
+				ed = hxsl_TExprDef.TBlock(_g1);
+				break;
+			case 5:
+				var op = _g.op;
+				var e1 = _g.e1;
+				var e2 = _g.e2;
+				ed = hxsl_TExprDef.TBinop(op,_gthis.mapExpr(e1,true),_gthis.mapExpr(e2,true));
+				break;
+			case 6:
+				var op = _g.op;
+				var e1 = _g.e1;
+				ed = hxsl_TExprDef.TUnop(op,_gthis.mapExpr(e1,true));
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				ed = hxsl_TExprDef.TVarDecl(v,init != null ? _gthis.mapExpr(init,true) : null);
+				break;
+			case 8:
+				var e1 = _g.e;
+				var args = _g.args;
+				var ed1 = _gthis.mapExpr(e1,true);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < args.length) {
+					var a = args[_g2];
+					++_g2;
+					_g1.push(_gthis.mapExpr(a,true));
+				}
+				ed = hxsl_TExprDef.TCall(ed1,_g1);
+				break;
+			case 9:
+				var e1 = _g.e;
+				var c = _g.regs;
+				ed = hxsl_TExprDef.TSwiz(_gthis.mapExpr(e1,true),c);
+				break;
+			case 10:
+				var econd = _g.econd;
+				var eif = _g.eif;
+				var eelse = _g.eelse;
+				ed = hxsl_TExprDef.TIf(_gthis.mapExpr(econd,true),_gthis.mapExpr(eif,true),eelse != null ? _gthis.mapExpr(eelse,true) : null);
+				break;
+			case 12:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TReturn(e1 != null ? _gthis.mapExpr(e1,true) : null);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				ed = hxsl_TExprDef.TFor(v,_gthis.mapExpr(it,true),_gthis.mapExpr(loop,true));
+				break;
+			case 11:case 14:case 15:
+				ed = e.e;
+				break;
+			case 16:
+				var e1 = _g.e;
+				var index = _g.index;
+				ed = hxsl_TExprDef.TArray(_gthis.mapExpr(e1,true),_gthis.mapExpr(index,true));
+				break;
+			case 17:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(_gthis.mapExpr(e1,true));
+				}
+				ed = hxsl_TExprDef.TArrayDecl(_g1);
+				break;
+			case 18:
+				var e1 = _g.e;
+				var cases = _g.cases;
+				var def = _g.def;
+				var ed1 = _gthis.mapExpr(e1,true);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < cases.length) {
+					var c = cases[_g2];
+					++_g2;
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = c.values;
+					while(_g4 < _g5.length) {
+						var v = _g5[_g4];
+						++_g4;
+						_g3.push(_gthis.mapExpr(v,true));
+					}
+					_g1.push({ values : _g3, expr : _gthis.mapExpr(c.expr,true)});
+				}
+				ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : _gthis.mapExpr(def,true));
+				break;
+			case 19:
+				var e1 = _g.e;
+				var loop = _g.loop;
+				var normalWhile = _g.normalWhile;
+				ed = hxsl_TExprDef.TWhile(_gthis.mapExpr(e1,true),_gthis.mapExpr(loop,true),normalWhile);
+				break;
+			case 20:
+				var m = _g.m;
+				var args = _g.args;
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TMeta(m,args,_gthis.mapExpr(e1,true));
+				break;
+			case 21:
+				var e1 = _g.e;
+				var name = _g.name;
+				ed = hxsl_TExprDef.TField(_gthis.mapExpr(e1,true),name);
+				break;
+			case 22:
+				var target = _g.target;
+				var code = _g.code;
+				var args = _g.args;
+				var _g = [];
+				var _g1 = 0;
+				while(_g1 < args.length) {
+					var arg = args[_g1];
+					++_g1;
+					_g.push({ e : _gthis.mapExpr(arg.e,true), access : arg.access});
+				}
+				ed = hxsl_TExprDef.TSyntax(target,code,_g);
+				break;
+			}
+			return new hxsl_TExpr(ed,e.t,e.p);
 		}
 	}
 	,__class__: hxsl_Dce
@@ -78633,7 +87842,7 @@ hxsl_Eval.prototype = {
 		} else {
 			v21 = false;
 		}
-		v2 = { id : v21 ? v.id : hxsl_Tools.allocVarId(), name : v.name, type : v.type, kind : v.kind};
+		v2 = new hxsl_TVar(v21 ? v.id : hxsl_Tools.allocVarId(),v.name,v.type,v.kind,null,null);
 		if(v.parent != null) {
 			v2.parent = this.mapVar(v.parent,isLocal);
 		}
@@ -78889,7 +88098,7 @@ hxsl_Eval.prototype = {
 		case 3:
 			var v = _g.e;
 			var v1 = this.handleReturn(v,isFinal);
-			return { e : hxsl_TExprDef.TParenthesis(v1), t : v1.t, p : e.p};
+			return new hxsl_TExpr(hxsl_TExprDef.TParenthesis(v1),v1.t,e.p);
 		case 4:
 			var el = _g.el;
 			var i = 0;
@@ -78907,7 +88116,7 @@ hxsl_Eval.prototype = {
 							var eif = _g1.eif;
 							var econd = _g1.econd;
 							if(isFinal && this.hasReturn(eif)) {
-								out.push(this.handleReturn({ e : hxsl_TExprDef.TIf(econd,eif,{ e : hxsl_TExprDef.TBlock(el.slice(i)), t : e1.t, p : e1.p}), t : e1.t, p : e1.p}));
+								out.push(this.handleReturn(new hxsl_TExpr(hxsl_TExprDef.TIf(econd,eif,new hxsl_TExpr(hxsl_TExprDef.TBlock(el.slice(i)),e1.t,e1.p)),e1.t,e1.p)));
 								break _hx_loop1;
 							} else {
 								out.push(this.handleReturn(e1));
@@ -78926,7 +88135,7 @@ hxsl_Eval.prototype = {
 				}
 			}
 			var t = isFinal ? out.length == 0 ? hxsl_Type.TVoid : out[out.length - 1].t : e.t;
-			return { e : hxsl_TExprDef.TBlock(out), t : t, p : e.p};
+			return new hxsl_TExpr(hxsl_TExprDef.TBlock(out),t,e.p);
 		case 10:
 			var cond = _g.econd;
 			var eif = _g.eif;
@@ -78934,9 +88143,162 @@ hxsl_Eval.prototype = {
 			if(eelse != null && isFinal) {
 				var cond1 = this.handleReturn(cond);
 				var eif1 = this.handleReturn(eif,isFinal);
-				return { e : hxsl_TExprDef.TIf(cond1,eif1,this.handleReturn(eelse,isFinal)), t : eif1.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TIf(cond1,eif1,this.handleReturn(eelse,isFinal)),eif1.t,e.p);
 			} else {
-				return hxsl_Tools.map(e,$bind(this,this.handleReturnDef));
+				var f = $bind(this,this.handleReturnDef);
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(f(v));
+						}
+						_g2.push({ values : _g4, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 12:
@@ -78945,11 +88307,164 @@ hxsl_Eval.prototype = {
 				hxsl_Error.t("Cannot inline not final return",e.p);
 			}
 			if(v == null) {
-				return { e : hxsl_TExprDef.TBlock([]), t : hxsl_Type.TVoid, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TBlock([]),hxsl_Type.TVoid,e.p);
 			}
 			return this.handleReturn(v,true);
 		default:
-			return hxsl_Tools.map(e,$bind(this,this.handleReturnDef));
+			var f = $bind(this,this.handleReturnDef);
+			var ed;
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.c;
+				ed = e.e;
+				break;
+			case 1:
+				var _g1 = _g.v;
+				ed = e.e;
+				break;
+			case 2:
+				var _g1 = _g.g;
+				ed = e.e;
+				break;
+			case 3:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TParenthesis(f(e1));
+				break;
+			case 4:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TBlock(_g1);
+				break;
+			case 5:
+				var op = _g.op;
+				var e1 = _g.e1;
+				var e2 = _g.e2;
+				ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+				break;
+			case 6:
+				var op = _g.op;
+				var e1 = _g.e1;
+				ed = hxsl_TExprDef.TUnop(op,f(e1));
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+				break;
+			case 8:
+				var e1 = _g.e;
+				var args = _g.args;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < args.length) {
+					var a = args[_g2];
+					++_g2;
+					_g1.push(f(a));
+				}
+				ed = hxsl_TExprDef.TCall(ed1,_g1);
+				break;
+			case 9:
+				var e1 = _g.e;
+				var c = _g.regs;
+				ed = hxsl_TExprDef.TSwiz(f(e1),c);
+				break;
+			case 10:
+				var econd = _g.econd;
+				var eif = _g.eif;
+				var eelse = _g.eelse;
+				ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+				break;
+			case 12:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+				break;
+			case 11:case 14:case 15:
+				ed = e.e;
+				break;
+			case 16:
+				var e1 = _g.e;
+				var index = _g.index;
+				ed = hxsl_TExprDef.TArray(f(e1),f(index));
+				break;
+			case 17:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TArrayDecl(_g1);
+				break;
+			case 18:
+				var e1 = _g.e;
+				var cases = _g.cases;
+				var def = _g.def;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < cases.length) {
+					var c = cases[_g2];
+					++_g2;
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = c.values;
+					while(_g4 < _g5.length) {
+						var v = _g5[_g4];
+						++_g4;
+						_g3.push(f(v));
+					}
+					_g1.push({ values : _g3, expr : f(c.expr)});
+				}
+				ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+				break;
+			case 19:
+				var e1 = _g.e;
+				var loop = _g.loop;
+				var normalWhile = _g.normalWhile;
+				ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+				break;
+			case 20:
+				var m = _g.m;
+				var args = _g.args;
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+				break;
+			case 21:
+				var e1 = _g.e;
+				var name = _g.name;
+				ed = hxsl_TExprDef.TField(f(e1),name);
+				break;
+			case 22:
+				var target = _g.target;
+				var code = _g.code;
+				var args = _g.args;
+				var _g = [];
+				var _g1 = 0;
+				while(_g1 < args.length) {
+					var arg = args[_g1];
+					++_g1;
+					_g.push({ e : f(arg.e), access : arg.access});
+				}
+				ed = hxsl_TExprDef.TSyntax(target,code,_g);
+				break;
+			}
+			return new hxsl_TExpr(ed,e.t,e.p);
 		}
 	}
 	,handleReturnDef: function(e) {
@@ -78961,8 +88476,8 @@ hxsl_Eval.prototype = {
 			if(args.length == 1) {
 				var _g = args[0];
 				var _g1 = _g.e;
-				var _g2 = _g.p;
 				var _g2 = _g.t;
+				var _g2 = _g.p;
 				if(_g1._hx_index == 1) {
 					var v = _g1.v;
 					var _g = v.type;
@@ -78989,8 +88504,8 @@ hxsl_Eval.prototype = {
 			if(args.length == 1) {
 				var _g = args[0];
 				var _g1 = _g.e;
-				var _g2 = _g.p;
 				var _g2 = _g.t;
+				var _g2 = _g.p;
 				if(_g1._hx_index == 0) {
 					var _g = _g1.c;
 					if(_g._hx_index == 2) {
@@ -79031,7 +88546,7 @@ hxsl_Eval.prototype = {
 			} else {
 				throw haxe_Exception.thrown("assert");
 			}
-			channel = { e : channel1, t : channel.t, p : channel.p};
+			channel = new hxsl_TExpr(channel1,channel.t,channel.p);
 			var count;
 			var _g = channel.t;
 			if(_g._hx_index == 17) {
@@ -79048,15 +88563,15 @@ hxsl_Eval.prototype = {
 				var i1 = _g++;
 				targs.push(args[i1]);
 			}
-			targs.push({ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(i >> 3)), t : hxsl_Type.TInt, p : pos});
-			var tget = { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(g), t : hxsl_Type.TVoid, p : pos},targs), t : hxsl_Type.TVoid, p : pos};
+			targs.push(new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(i >> 3)),hxsl_Type.TInt,pos));
+			var tget = new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(g),hxsl_Type.TVoid,pos),targs),hxsl_Type.TVoid,pos);
 			switch(channelMode._hx_index) {
 			case 0:
-				var zero = { e : hxsl_TExprDef.TConst(hxsl_Const.CFloat(0.)), t : hxsl_Type.TFloat, p : pos};
+				var zero = new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CFloat(0.)),hxsl_Type.TFloat,pos);
 				if(count == 1) {
 					return zero.e;
 				}
-				return hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal([hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4][count - 2]), t : hxsl_Type.TVoid, p : pos},[zero]);
+				return hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal([hxsl_TGlobal.Vec2,hxsl_TGlobal.Vec3,hxsl_TGlobal.Vec4][count - 2]),hxsl_Type.TVoid,pos),[zero]);
 			case 1:case 2:case 3:case 4:
 				var tmp;
 				switch(count) {
@@ -79110,9 +88625,9 @@ hxsl_Eval.prototype = {
 				}
 				return hxsl_TExprDef.TSwiz(tget,tmp);
 			case 5:
-				return hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Unpack), t : hxsl_Type.TVoid, p : pos},[tget]);
+				return hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Unpack),hxsl_Type.TVoid,pos),[tget]);
 			case 6:
-				return hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.UnpackNormal), t : hxsl_Type.TVoid, p : pos},[tget]);
+				return hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.UnpackNormal),hxsl_Type.TVoid,pos),[tget]);
 			}
 			break;
 		case 68:
@@ -79133,7 +88648,7 @@ hxsl_Eval.prototype = {
 		var c = this.constants.keys();
 		while(c.hasNext()) {
 			var c1 = c.next();
-			_g.push(c1 + " => " + hxsl_Printer.toString({ e : this.constants.h[c1], t : hxsl_Type.TVoid, p : null},true));
+			_g.push(c1 + " => " + hxsl_Printer.toString(new hxsl_TExpr(this.constants.h[c1],hxsl_Type.TVoid,null),true));
 		}
 		return _g.toString();
 	}
@@ -79157,7 +88672,7 @@ hxsl_Eval.prototype = {
 		if(tmp) {
 			return e;
 		}
-		return { e : hxsl_TExprDef.TBlock([e]), t : e.t, p : e.p};
+		return new hxsl_TExpr(hxsl_TExprDef.TBlock([e]),e.t,e.p);
 	}
 	,evalExpr: function(e,isVal) {
 		if(isVal == null) {
@@ -80350,9 +89865,9 @@ hxsl_Eval.prototype = {
 							var _g6 = _g4.v;
 							var _g7 = _g6.id;
 							var _g8 = _g6.name;
-							var _g9 = _g6.parent;
-							var _g10 = _g6.qualifiers;
-							var _g11 = _g6.type;
+							var _g9 = _g6.type;
+							var _g10 = _g6.parent;
+							var _g11 = _g6.qualifiers;
 							switch(_g6.kind._hx_index) {
 							case 0:case 1:case 2:
 								var old1 = [this.constants.h[v[0].id]];
@@ -80384,7 +89899,7 @@ hxsl_Eval.prototype = {
 									})(old2,v));
 								}
 								var v2 = this.mapVar(v[0],false);
-								outExprs.push({ e : hxsl_TExprDef.TVarDecl(v2,e1), t : hxsl_Type.TVoid, p : e1.p});
+								outExprs.push(new hxsl_TExpr(hxsl_TExprDef.TVarDecl(v2,e1),hxsl_Type.TVoid,e1.p));
 							}
 							break;
 						default:
@@ -80404,7 +89919,7 @@ hxsl_Eval.prototype = {
 								})(old3,v));
 							}
 							var v21 = this.mapVar(v[0],false);
-							outExprs.push({ e : hxsl_TExprDef.TVarDecl(v21,e1), t : hxsl_Type.TVoid, p : e1.p});
+							outExprs.push(new hxsl_TExpr(hxsl_TExprDef.TVarDecl(v21,e1),hxsl_Type.TVoid,e1.p));
 						}
 					}
 					var e1 = this.handleReturn(this.evalExpr(f.expr,false),true);
@@ -80457,7 +89972,7 @@ hxsl_Eval.prototype = {
 					var b = _g2.b;
 					d = b ? this.evalExpr(eif,isVal).e : eelse == null ? hxsl_TExprDef.TConst(hxsl_Const.CNull) : this.evalExpr(eelse,isVal).e;
 				} else if(isVal && eelse != null && this.eliminateConditionals) {
-					d = hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mix), t : e.t, p : e.p},[this.evalExpr(eelse,true),this.evalExpr(eif,true),{ e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat), t : hxsl_Type.TFun([]), p : econd1.p},[econd1]), t : hxsl_Type.TFloat, p : e.p}]);
+					d = hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mix),e.t,e.p),[this.evalExpr(eelse,true),this.evalExpr(eif,true),new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat),hxsl_Type.TFun([]),econd1.p),[econd1]),hxsl_Type.TFloat,e.p)]);
 				} else {
 					eif = this.evalExpr(eif,isVal);
 					if(eelse != null) {
@@ -80472,7 +89987,7 @@ hxsl_Eval.prototype = {
 					d = hxsl_TExprDef.TIf(econd1,eif,eelse);
 				}
 			} else if(isVal && eelse != null && this.eliminateConditionals) {
-				d = hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mix), t : e.t, p : e.p},[this.evalExpr(eelse,true),this.evalExpr(eif,true),{ e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat), t : hxsl_Type.TFun([]), p : econd1.p},[econd1]), t : hxsl_Type.TFloat, p : e.p}]);
+				d = hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mix),e.t,e.p),[this.evalExpr(eelse,true),this.evalExpr(eif,true),new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToFloat),hxsl_Type.TFun([]),econd1.p),[econd1]),hxsl_Type.TFloat,e.p)]);
 			} else {
 				eif = this.evalExpr(eif,isVal);
 				if(eelse != null) {
@@ -80507,14 +90022,14 @@ hxsl_Eval.prototype = {
 				var _g3 = _g1.e2;
 				if(_g1.op._hx_index == 21) {
 					var _g1 = _g2.e;
-					var _g4 = _g2.p;
 					var _g4 = _g2.t;
+					var _g4 = _g2.p;
 					if(_g1._hx_index == 0) {
 						var _g2 = _g1.c;
 						if(_g2._hx_index == 2) {
 							var _g1 = _g3.e;
-							var _g4 = _g3.p;
 							var _g4 = _g3.t;
+							var _g4 = _g3.p;
 							if(_g1._hx_index == 0) {
 								var _g3 = _g1.c;
 								if(_g3._hx_index == 2) {
@@ -80770,7 +90285,7 @@ hxsl_Eval.prototype = {
 			d = hxsl_TExprDef.TSyntax(target,code,_g);
 			break;
 		}
-		return { e : d, t : t, p : e.p};
+		return new hxsl_TExpr(d,t,e.p);
 	}
 	,__class__: hxsl_Eval
 };
@@ -80792,6 +90307,7 @@ var hxsl_ARead = $hxEnums["hxsl.ARead"] = { __ename__:true,__constructs__:null
 hxsl_ARead.__constructs__ = [hxsl_ARead.AIndex,hxsl_ARead.AOffset];
 hxsl_ARead.__empty_constructs__ = [];
 var hxsl_Flatten = function() {
+	this.mapExprFun = $bind(this,this.mapExpr);
 };
 $hxClasses["hxsl.Flatten"] = hxsl_Flatten;
 hxsl_Flatten.__name__ = "hxsl.Flatten";
@@ -80869,7 +90385,7 @@ hxsl_Flatten.prototype = {
 		while(_g1 < _g2.length) {
 			var f = _g2[_g1];
 			++_g1;
-			_g.push(this.mapFun(f,$bind(this,this.mapExpr)));
+			_g.push(this.mapFun(f,this.mapExprFun));
 		}
 		var funs = _g;
 		return { name : s.name, vars : this.outVars, funs : funs};
@@ -80883,10 +90399,10 @@ hxsl_Flatten.prototype = {
 			var _g1 = _g.c;
 			if(_g1._hx_index == 2) {
 				var i = _g1.v;
-				return { e : hxsl_TExprDef.TConst(hxsl_Const.CInt(f(i,by))), t : hxsl_Type.TInt, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(f(i,by))),hxsl_Type.TInt,pos);
 			}
 		}
-		return { e : hxsl_TExprDef.TBinop(binop,e,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(by)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TInt, p : pos};
+		return new hxsl_TExpr(hxsl_TExprDef.TBinop(binop,e,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(by)),hxsl_Type.TInt,pos)),hxsl_Type.TInt,pos);
 	}
 	,mkAdd: function(e,offset,pos) {
 		if(offset == 0) {
@@ -80961,48 +90477,48 @@ hxsl_Flatten.prototype = {
 							var pos1 = pos;
 							var expr1 = this.mapExpr(expr);
 							var idx = pos1 >> 2;
-							var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+							var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 							var e1;
 							if((pos1 & 3) == 0) {
 								e1 = arr;
 							} else {
 								var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + 4);
-								e1 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+								e1 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 							}
-							var e3 = { e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,{ e : hxsl_TExprDef.TArray(e2,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(0)), t : hxsl_Type.TInt, p : null}), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : null}), t : e.t, p : e.p};
+							var e3 = new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,new hxsl_TExpr(hxsl_TExprDef.TArray(e2,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(0)),hxsl_Type.TInt,null)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),null)),e.t,e.p);
 							var pos = pos1 + 4;
 							var idx = pos >> 2;
-							var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+							var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 							var e1;
 							if((pos & 3) == 0) {
 								e1 = arr;
 							} else {
 								var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-								e1 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+								e1 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 							}
-							var e4 = { e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,{ e : hxsl_TExprDef.TArray(e2,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(1)), t : hxsl_Type.TInt, p : null}), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : null}), t : e.t, p : e.p};
+							var e4 = new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,new hxsl_TExpr(hxsl_TExprDef.TArray(e2,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(1)),hxsl_Type.TInt,null)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),null)),e.t,e.p);
 							var pos = pos1 + 8;
 							var idx = pos >> 2;
-							var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+							var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 							var e1;
 							if((pos & 3) == 0) {
 								e1 = arr;
 							} else {
 								var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-								e1 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+								e1 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 							}
-							var e5 = { e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,{ e : hxsl_TExprDef.TArray(e2,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(2)), t : hxsl_Type.TInt, p : null}), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : null}), t : e.t, p : e.p};
+							var e5 = new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,new hxsl_TExpr(hxsl_TExprDef.TArray(e2,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(2)),hxsl_Type.TInt,null)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),null)),e.t,e.p);
 							var pos = pos1 + 12;
 							var idx = pos >> 2;
-							var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+							var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 							var e1;
 							if((pos & 3) == 0) {
 								e1 = arr;
 							} else {
 								var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-								e1 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+								e1 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 							}
-							e = { e : hxsl_TExprDef.TBlock([e3,e4,e5,{ e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,{ e : hxsl_TExprDef.TArray(e2,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(3)), t : hxsl_Type.TInt, p : null}), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : null}), t : e.t, p : e.p}]), t : e.t, p : e.p};
+							e = new hxsl_TExpr(hxsl_TExprDef.TBlock([e3,e4,e5,new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,e1,new hxsl_TExpr(hxsl_TExprDef.TArray(e2,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(3)),hxsl_Type.TInt,null)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),null)),e.t,e.p)]),e.t,e.p);
 						} else {
 							throw haxe_Exception.thrown("assert");
 						}
@@ -81010,10 +90526,316 @@ hxsl_Flatten.prototype = {
 						throw haxe_Exception.thrown("assert");
 					}
 				} else {
-					e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+					var f = this.mapExprFun;
+					var ed;
+					var _g1 = e.e;
+					switch(_g1._hx_index) {
+					case 0:
+						var _g2 = _g1.c;
+						ed = e.e;
+						break;
+					case 1:
+						var _g2 = _g1.v;
+						ed = e.e;
+						break;
+					case 2:
+						var _g2 = _g1.g;
+						ed = e.e;
+						break;
+					case 3:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TParenthesis(f(e1));
+						break;
+					case 4:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(f(e1));
+						}
+						ed = hxsl_TExprDef.TBlock(_g2);
+						break;
+					case 5:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						var e2 = _g1.e2;
+						ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+						break;
+					case 6:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						ed = hxsl_TExprDef.TUnop(op,f(e1));
+						break;
+					case 7:
+						var v = _g1.v;
+						var init = _g1.init;
+						ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+						break;
+					case 8:
+						var e1 = _g1.e;
+						var args = _g1.args;
+						var ed1 = f(e1);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < args.length) {
+							var a = args[_g3];
+							++_g3;
+							_g2.push(f(a));
+						}
+						ed = hxsl_TExprDef.TCall(ed1,_g2);
+						break;
+					case 9:
+						var e1 = _g1.e;
+						var c = _g1.regs;
+						ed = hxsl_TExprDef.TSwiz(f(e1),c);
+						break;
+					case 10:
+						var econd = _g1.econd;
+						var eif = _g1.eif;
+						var eelse = _g1.eelse;
+						ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+						break;
+					case 12:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+						break;
+					case 13:
+						var v = _g1.v;
+						var it = _g1.it;
+						var loop = _g1.loop;
+						ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+						break;
+					case 11:case 14:case 15:
+						ed = e.e;
+						break;
+					case 16:
+						var e1 = _g1.e;
+						var index = _g1.index;
+						ed = hxsl_TExprDef.TArray(f(e1),f(index));
+						break;
+					case 17:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(f(e1));
+						}
+						ed = hxsl_TExprDef.TArrayDecl(_g2);
+						break;
+					case 18:
+						var e1 = _g1.e;
+						var cases = _g1.cases;
+						var def = _g1.def;
+						var ed1 = f(e1);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < cases.length) {
+							var c = cases[_g3];
+							++_g3;
+							var _g4 = [];
+							var _g5 = 0;
+							var _g6 = c.values;
+							while(_g5 < _g6.length) {
+								var v = _g6[_g5];
+								++_g5;
+								_g4.push(f(v));
+							}
+							_g2.push({ values : _g4, expr : f(c.expr)});
+						}
+						ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+						break;
+					case 19:
+						var e1 = _g1.e;
+						var loop = _g1.loop;
+						var normalWhile = _g1.normalWhile;
+						ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+						break;
+					case 20:
+						var m = _g1.m;
+						var args = _g1.args;
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+						break;
+					case 21:
+						var e1 = _g1.e;
+						var name = _g1.name;
+						ed = hxsl_TExprDef.TField(f(e1),name);
+						break;
+					case 22:
+						var target = _g1.target;
+						var code = _g1.code;
+						var args = _g1.args;
+						var _g1 = [];
+						var _g2 = 0;
+						while(_g2 < args.length) {
+							var arg = args[_g2];
+							++_g2;
+							_g1.push({ e : f(arg.e), access : arg.access});
+						}
+						ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+						break;
+					}
+					e = new hxsl_TExpr(ed,e.t,e.p);
 				}
 			} else {
-				e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+				var f = this.mapExprFun;
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(f(v));
+						}
+						_g2.push({ values : _g4, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				e = new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 7:
@@ -81029,13 +90851,166 @@ hxsl_Flatten.prototype = {
 			}
 			if(e1) {
 				var size = Math.ceil(hxsl_Tools.size(v.type) / 4);
-				var v2 = { id : hxsl_Tools.allocVarId(), name : v.name, type : hxsl_Type.TArray(hxsl_Type.TVec(4,hxsl_VecType.VFloat),hxsl_SizeDecl.SConst(size)), kind : v.kind, qualifiers : v.qualifiers};
+				var v2 = new hxsl_TVar(hxsl_Tools.allocVarId(),v.name,hxsl_Type.TArray(hxsl_Type.TVec(4,hxsl_VecType.VFloat),hxsl_SizeDecl.SConst(size)),v.kind,null,v.qualifiers);
 				var a = new hxsl__$Flatten_Alloc(v2,hxsl_VecType.VFloat,0,0);
 				a.v = v;
 				this.varMap.set(v,a);
-				e = { e : hxsl_TExprDef.TVarDecl(v2,init == null ? null : this.mapExpr(init)), t : hxsl_Type.TVoid, p : e.p};
+				e = new hxsl_TExpr(hxsl_TExprDef.TVarDecl(v2,init == null ? null : this.mapExpr(init)),hxsl_Type.TVoid,e.p);
 			} else {
-				e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+				var f = this.mapExprFun;
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(f(v));
+						}
+						_g2.push({ values : _g4, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				e = new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 16:
@@ -81079,7 +91054,160 @@ hxsl_Flatten.prototype = {
 					e1 = true;
 				}
 				if(e1) {
-					e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+					var f = this.mapExprFun;
+					var ed;
+					var _g1 = e.e;
+					switch(_g1._hx_index) {
+					case 0:
+						var _g2 = _g1.c;
+						ed = e.e;
+						break;
+					case 1:
+						var _g2 = _g1.v;
+						ed = e.e;
+						break;
+					case 2:
+						var _g2 = _g1.g;
+						ed = e.e;
+						break;
+					case 3:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TParenthesis(f(e1));
+						break;
+					case 4:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(f(e1));
+						}
+						ed = hxsl_TExprDef.TBlock(_g2);
+						break;
+					case 5:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						var e2 = _g1.e2;
+						ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+						break;
+					case 6:
+						var op = _g1.op;
+						var e1 = _g1.e1;
+						ed = hxsl_TExprDef.TUnop(op,f(e1));
+						break;
+					case 7:
+						var v1 = _g1.v;
+						var init = _g1.init;
+						ed = hxsl_TExprDef.TVarDecl(v1,init != null ? f(init) : null);
+						break;
+					case 8:
+						var e1 = _g1.e;
+						var args = _g1.args;
+						var ed1 = f(e1);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < args.length) {
+							var a1 = args[_g3];
+							++_g3;
+							_g2.push(f(a1));
+						}
+						ed = hxsl_TExprDef.TCall(ed1,_g2);
+						break;
+					case 9:
+						var e1 = _g1.e;
+						var c = _g1.regs;
+						ed = hxsl_TExprDef.TSwiz(f(e1),c);
+						break;
+					case 10:
+						var econd = _g1.econd;
+						var eif = _g1.eif;
+						var eelse = _g1.eelse;
+						ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+						break;
+					case 12:
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+						break;
+					case 13:
+						var v1 = _g1.v;
+						var it = _g1.it;
+						var loop = _g1.loop;
+						ed = hxsl_TExprDef.TFor(v1,f(it),f(loop));
+						break;
+					case 11:case 14:case 15:
+						ed = e.e;
+						break;
+					case 16:
+						var e1 = _g1.e;
+						var index = _g1.index;
+						ed = hxsl_TExprDef.TArray(f(e1),f(index));
+						break;
+					case 17:
+						var el = _g1.el;
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < el.length) {
+							var e1 = el[_g3];
+							++_g3;
+							_g2.push(f(e1));
+						}
+						ed = hxsl_TExprDef.TArrayDecl(_g2);
+						break;
+					case 18:
+						var e1 = _g1.e;
+						var cases = _g1.cases;
+						var def = _g1.def;
+						var ed1 = f(e1);
+						var _g2 = [];
+						var _g3 = 0;
+						while(_g3 < cases.length) {
+							var c = cases[_g3];
+							++_g3;
+							var _g4 = [];
+							var _g5 = 0;
+							var _g6 = c.values;
+							while(_g5 < _g6.length) {
+								var v1 = _g6[_g5];
+								++_g5;
+								_g4.push(f(v1));
+							}
+							_g2.push({ values : _g4, expr : f(c.expr)});
+						}
+						ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+						break;
+					case 19:
+						var e1 = _g1.e;
+						var loop = _g1.loop;
+						var normalWhile = _g1.normalWhile;
+						ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+						break;
+					case 20:
+						var m = _g1.m;
+						var args = _g1.args;
+						var e1 = _g1.e;
+						ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+						break;
+					case 21:
+						var e1 = _g1.e;
+						var name = _g1.name;
+						ed = hxsl_TExprDef.TField(f(e1),name);
+						break;
+					case 22:
+						var target = _g1.target;
+						var code = _g1.code;
+						var args = _g1.args;
+						var _g1 = [];
+						var _g2 = 0;
+						while(_g2 < args.length) {
+							var arg = args[_g2];
+							++_g2;
+							_g1.push({ e : f(arg.e), access : arg.access});
+						}
+						ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+						break;
+					}
+					e = new hxsl_TExpr(ed,e.t,e.p);
 				} else {
 					var _g1 = v.type;
 					switch(_g1._hx_index) {
@@ -81087,7 +91215,160 @@ hxsl_Flatten.prototype = {
 						var _g2 = _g1.size;
 						switch(_g1.t._hx_index) {
 						case 0:case 1:
-							e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+							var f = this.mapExprFun;
+							var ed;
+							var _g2 = e.e;
+							switch(_g2._hx_index) {
+							case 0:
+								var _g3 = _g2.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g2.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g2.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g2.e;
+								ed = hxsl_TExprDef.TParenthesis(f(e1));
+								break;
+							case 4:
+								var el = _g2.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(f(e1));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g2.op;
+								var e1 = _g2.e1;
+								var e2 = _g2.e2;
+								ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+								break;
+							case 6:
+								var op = _g2.op;
+								var e1 = _g2.e1;
+								ed = hxsl_TExprDef.TUnop(op,f(e1));
+								break;
+							case 7:
+								var v1 = _g2.v;
+								var init = _g2.init;
+								ed = hxsl_TExprDef.TVarDecl(v1,init != null ? f(init) : null);
+								break;
+							case 8:
+								var e1 = _g2.e;
+								var args = _g2.args;
+								var ed1 = f(e1);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a1 = args[_g4];
+									++_g4;
+									_g3.push(f(a1));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g2.e;
+								var c = _g2.regs;
+								ed = hxsl_TExprDef.TSwiz(f(e1),c);
+								break;
+							case 10:
+								var econd = _g2.econd;
+								var eif = _g2.eif;
+								var eelse = _g2.eelse;
+								ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+								break;
+							case 12:
+								var e1 = _g2.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+								break;
+							case 13:
+								var v1 = _g2.v;
+								var it = _g2.it;
+								var loop = _g2.loop;
+								ed = hxsl_TExprDef.TFor(v1,f(it),f(loop));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g2.e;
+								var index = _g2.index;
+								ed = hxsl_TExprDef.TArray(f(e1),f(index));
+								break;
+							case 17:
+								var el = _g2.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(f(e1));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g2.e;
+								var cases = _g2.cases;
+								var def = _g2.def;
+								var ed1 = f(e1);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v1 = _g7[_g6];
+										++_g6;
+										_g5.push(f(v1));
+									}
+									_g3.push({ values : _g5, expr : f(c.expr)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : f(def));
+								break;
+							case 19:
+								var e1 = _g2.e;
+								var loop = _g2.loop;
+								var normalWhile = _g2.normalWhile;
+								ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+								break;
+							case 20:
+								var m = _g2.m;
+								var args = _g2.args;
+								var e1 = _g2.e;
+								ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+								break;
+							case 21:
+								var e1 = _g2.e;
+								var name = _g2.name;
+								ed = hxsl_TExprDef.TField(f(e1),name);
+								break;
+							case 22:
+								var target = _g2.target;
+								var code = _g2.code;
+								var args = _g2.args;
+								var _g2 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g2.push({ e : f(arg.e), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g2);
+								break;
+							}
+							e = new hxsl_TExpr(ed,e.t,e.p);
 							break;
 						default:
 							throw haxe_Exception.thrown("assert");
@@ -81132,7 +91413,160 @@ hxsl_Flatten.prototype = {
 						var _g3 = _g1.kind;
 						switch(_g2._hx_index) {
 						case 1:case 3:
-							e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+							var f = this.mapExprFun;
+							var ed;
+							var _g1 = e.e;
+							switch(_g1._hx_index) {
+							case 0:
+								var _g3 = _g1.c;
+								ed = e.e;
+								break;
+							case 1:
+								var _g3 = _g1.v;
+								ed = e.e;
+								break;
+							case 2:
+								var _g3 = _g1.g;
+								ed = e.e;
+								break;
+							case 3:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TParenthesis(f(e1));
+								break;
+							case 4:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(f(e1));
+								}
+								ed = hxsl_TExprDef.TBlock(_g3);
+								break;
+							case 5:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								var e2 = _g1.e2;
+								ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+								break;
+							case 6:
+								var op = _g1.op;
+								var e1 = _g1.e1;
+								ed = hxsl_TExprDef.TUnop(op,f(e1));
+								break;
+							case 7:
+								var v1 = _g1.v;
+								var init = _g1.init;
+								ed = hxsl_TExprDef.TVarDecl(v1,init != null ? f(init) : null);
+								break;
+							case 8:
+								var e1 = _g1.e;
+								var args = _g1.args;
+								var ed1 = f(e1);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < args.length) {
+									var a1 = args[_g4];
+									++_g4;
+									_g3.push(f(a1));
+								}
+								ed = hxsl_TExprDef.TCall(ed1,_g3);
+								break;
+							case 9:
+								var e1 = _g1.e;
+								var c = _g1.regs;
+								ed = hxsl_TExprDef.TSwiz(f(e1),c);
+								break;
+							case 10:
+								var econd = _g1.econd;
+								var eif = _g1.eif;
+								var eelse = _g1.eelse;
+								ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+								break;
+							case 12:
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+								break;
+							case 13:
+								var v1 = _g1.v;
+								var it = _g1.it;
+								var loop = _g1.loop;
+								ed = hxsl_TExprDef.TFor(v1,f(it),f(loop));
+								break;
+							case 11:case 14:case 15:
+								ed = e.e;
+								break;
+							case 16:
+								var e1 = _g1.e;
+								var index = _g1.index;
+								ed = hxsl_TExprDef.TArray(f(e1),f(index));
+								break;
+							case 17:
+								var el = _g1.el;
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < el.length) {
+									var e1 = el[_g4];
+									++_g4;
+									_g3.push(f(e1));
+								}
+								ed = hxsl_TExprDef.TArrayDecl(_g3);
+								break;
+							case 18:
+								var e1 = _g1.e;
+								var cases = _g1.cases;
+								var def = _g1.def;
+								var ed1 = f(e1);
+								var _g3 = [];
+								var _g4 = 0;
+								while(_g4 < cases.length) {
+									var c = cases[_g4];
+									++_g4;
+									var _g5 = [];
+									var _g6 = 0;
+									var _g7 = c.values;
+									while(_g6 < _g7.length) {
+										var v1 = _g7[_g6];
+										++_g6;
+										_g5.push(f(v1));
+									}
+									_g3.push({ values : _g5, expr : f(c.expr)});
+								}
+								ed = hxsl_TExprDef.TSwitch(ed1,_g3,def == null ? null : f(def));
+								break;
+							case 19:
+								var e1 = _g1.e;
+								var loop = _g1.loop;
+								var normalWhile = _g1.normalWhile;
+								ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+								break;
+							case 20:
+								var m = _g1.m;
+								var args = _g1.args;
+								var e1 = _g1.e;
+								ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+								break;
+							case 21:
+								var e1 = _g1.e;
+								var name = _g1.name;
+								ed = hxsl_TExprDef.TField(f(e1),name);
+								break;
+							case 22:
+								var target = _g1.target;
+								var code = _g1.code;
+								var args = _g1.args;
+								var _g1 = [];
+								var _g3 = 0;
+								while(_g3 < args.length) {
+									var arg = args[_g3];
+									++_g3;
+									_g1.push({ e : f(arg.e), access : arg.access});
+								}
+								ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+								break;
+							}
+							e = new hxsl_TExpr(ed,e.t,e.p);
 							break;
 						default:
 							var t = _g2;
@@ -81165,7 +91599,160 @@ hxsl_Flatten.prototype = {
 					}
 				}
 			} else {
-				e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+				var f = this.mapExprFun;
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(f(v));
+						}
+						_g2.push({ values : _g4, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				e = new hxsl_TExpr(ed,e.t,e.p);
 			}
 			break;
 		case 21:
@@ -81196,9 +91783,9 @@ hxsl_Flatten.prototype = {
 			switch(_g._hx_index) {
 			case 3:
 				var idx = pos1 >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + 1);
-				e = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TFloat, p : e.p};
+				e = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TFloat,e.p);
 				break;
 			case 5:
 				if(_g.t._hx_index == 1) {
@@ -81207,12 +91794,12 @@ hxsl_Flatten.prototype = {
 					var idx2 = pos1 + size - 1 >> 2;
 					if(idx == idx2) {
 						var idx = pos1 >> 2;
-						var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+						var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 						if(size == 4 && (pos1 & 3) == 0) {
 							e = arr;
 						} else {
 							var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + size);
-							e = { e : hxsl_TExprDef.TSwiz(arr,sw), t : size == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(size,hxsl_VecType.VFloat), p : e.p};
+							e = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),size == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(size,hxsl_VecType.VFloat),e.p);
 						}
 					} else {
 						var k = (idx2 << 2) - pos1;
@@ -81230,123 +91817,276 @@ hxsl_Flatten.prototype = {
 						default:
 							throw haxe_Exception.thrown("assert");
 						}
-						var e1 = { e : hxsl_TExprDef.TGlobal(type), p : e.p, t : hxsl_Type.TVoid};
+						var e1 = new hxsl_TExpr(hxsl_TExprDef.TGlobal(type),hxsl_Type.TVoid,e.p);
 						var idx = pos1 >> 2;
-						var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+						var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 						var e2;
 						if(k == 4 && (pos1 & 3) == 0) {
 							e2 = arr;
 						} else {
 							var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + k);
-							e2 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : k == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(k,hxsl_VecType.VFloat), p : e.p};
+							e2 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),k == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(k,hxsl_VecType.VFloat),e.p);
 						}
 						var pos = pos1 + k;
 						var size1 = size - k;
 						var idx = pos >> 2;
-						var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+						var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 						var e3;
 						if(size1 == 4 && (pos & 3) == 0) {
 							e3 = arr;
 						} else {
 							var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + size1);
-							e3 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : size1 == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(size1,hxsl_VecType.VFloat), p : e.p};
+							e3 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),size1 == 1 ? hxsl_Type.TFloat : hxsl_Type.TVec(size1,hxsl_VecType.VFloat),e.p);
 						}
-						e = { e : hxsl_TExprDef.TCall(e1,[e2,e3]), t : e.t, p : e.p};
+						e = new hxsl_TExpr(hxsl_TExprDef.TCall(e1,[e2,e3]),e.t,e.p);
 					}
 				} else {
 					throw haxe_Exception.thrown("Unsupported type " + hxsl_Tools.toString(e.t));
 				}
 				break;
 			case 7:
-				var e1 = { e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat4), p : e.p, t : hxsl_Type.TVoid};
+				var e1 = new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat4),hxsl_Type.TVoid,e.p);
 				var idx = pos1 >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e2;
 				if((pos1 & 3) == 0) {
 					e2 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + 4);
-					e2 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e2 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
 				var pos = pos1 + 4;
 				var idx = pos >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e3;
 				if((pos & 3) == 0) {
 					e3 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-					e3 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e3 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
 				var pos = pos1 + 8;
 				var idx = pos >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e4;
 				if((pos & 3) == 0) {
 					e4 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-					e4 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e4 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
 				var pos = pos1 + 12;
 				var idx = pos >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e5;
 				if((pos & 3) == 0) {
 					e5 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-					e5 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e5 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
-				e = { e : hxsl_TExprDef.TCall(e1,[e2,e3,e4,e5]), t : e.t, p : e.p};
+				e = new hxsl_TExpr(hxsl_TExprDef.TCall(e1,[e2,e3,e4,e5]),e.t,e.p);
 				break;
 			case 8:
-				var e1 = { e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3x4), p : e.p, t : hxsl_Type.TVoid};
+				var e1 = new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3x4),hxsl_Type.TVoid,e.p);
 				var idx = pos1 >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e2;
 				if((pos1 & 3) == 0) {
 					e2 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + 4);
-					e2 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e2 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
 				var pos = pos1 + 4;
 				var idx = pos >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e3;
 				if((pos & 3) == 0) {
 					e3 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-					e3 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e3 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
 				var pos = pos1 + 8;
 				var idx = pos >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var e4;
 				if((pos & 3) == 0) {
 					e4 = arr;
 				} else {
 					var sw = hxsl_Flatten.SWIZ.slice(pos & 3,(pos & 3) + 4);
-					e4 = { e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : e.p};
+					e4 = new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p);
 				}
-				e = { e : hxsl_TExprDef.TCall(e1,[e2,e3,e4]), t : e.t, p : e.p};
+				e = new hxsl_TExpr(hxsl_TExprDef.TCall(e1,[e2,e3,e4]),e.t,e.p);
 				break;
 			case 9:
 				var size = _g.size;
-				var e1 = { e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.UnpackSnorm4x8), p : e.p, t : hxsl_Type.TVec(size,hxsl_VecType.VFloat)};
+				var e1 = new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.UnpackSnorm4x8),hxsl_Type.TVec(size,hxsl_VecType.VFloat),e.p);
 				var idx = pos1 >> 2;
-				var arr = _gthis.optimize({ e : hxsl_TExprDef.TArray(expr1,{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)), p : e.p, t : hxsl_Type.TInt}), p : e.p, t : hxsl_Type.TVec(4,hxsl_VecType.VFloat)});
+				var arr = _gthis.optimize(new hxsl_TExpr(hxsl_TExprDef.TArray(expr1,new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(idx)),hxsl_Type.TInt,e.p)),hxsl_Type.TVec(4,hxsl_VecType.VFloat),e.p));
 				var sw = hxsl_Flatten.SWIZ.slice(pos1 & 3,(pos1 & 3) + 1);
-				e = { e : hxsl_TExprDef.TCall(e1,[this.floatBitsToUint({ e : hxsl_TExprDef.TSwiz(arr,sw), t : hxsl_Type.TFloat, p : e.p})]), t : e.t, p : e.p};
+				e = new hxsl_TExpr(hxsl_TExprDef.TCall(e1,[this.floatBitsToUint(new hxsl_TExpr(hxsl_TExprDef.TSwiz(arr,sw),hxsl_Type.TFloat,e.p))]),e.t,e.p);
 				break;
 			default:
 				throw haxe_Exception.thrown("Unsupported type " + hxsl_Tools.toString(e.t));
 			}
 			break;
 		default:
-			e = hxsl_Tools.map(e,$bind(this,this.mapExpr));
+			var f = this.mapExprFun;
+			var ed;
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.c;
+				ed = e.e;
+				break;
+			case 1:
+				var _g1 = _g.v;
+				ed = e.e;
+				break;
+			case 2:
+				var _g1 = _g.g;
+				ed = e.e;
+				break;
+			case 3:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TParenthesis(f(e1));
+				break;
+			case 4:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TBlock(_g1);
+				break;
+			case 5:
+				var op = _g.op;
+				var e1 = _g.e1;
+				var e2 = _g.e2;
+				ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+				break;
+			case 6:
+				var op = _g.op;
+				var e1 = _g.e1;
+				ed = hxsl_TExprDef.TUnop(op,f(e1));
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+				break;
+			case 8:
+				var e1 = _g.e;
+				var args = _g.args;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < args.length) {
+					var a = args[_g2];
+					++_g2;
+					_g1.push(f(a));
+				}
+				ed = hxsl_TExprDef.TCall(ed1,_g1);
+				break;
+			case 9:
+				var e1 = _g.e;
+				var c = _g.regs;
+				ed = hxsl_TExprDef.TSwiz(f(e1),c);
+				break;
+			case 10:
+				var econd = _g.econd;
+				var eif = _g.eif;
+				var eelse = _g.eelse;
+				ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+				break;
+			case 12:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+				break;
+			case 11:case 14:case 15:
+				ed = e.e;
+				break;
+			case 16:
+				var e1 = _g.e;
+				var index = _g.index;
+				ed = hxsl_TExprDef.TArray(f(e1),f(index));
+				break;
+			case 17:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TArrayDecl(_g1);
+				break;
+			case 18:
+				var e1 = _g.e;
+				var cases = _g.cases;
+				var def = _g.def;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < cases.length) {
+					var c = cases[_g2];
+					++_g2;
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = c.values;
+					while(_g4 < _g5.length) {
+						var v = _g5[_g4];
+						++_g4;
+						_g3.push(f(v));
+					}
+					_g1.push({ values : _g3, expr : f(c.expr)});
+				}
+				ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+				break;
+			case 19:
+				var e1 = _g.e;
+				var loop = _g.loop;
+				var normalWhile = _g.normalWhile;
+				ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+				break;
+			case 20:
+				var m = _g.m;
+				var args = _g.args;
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+				break;
+			case 21:
+				var e1 = _g.e;
+				var name = _g.name;
+				ed = hxsl_TExprDef.TField(f(e1),name);
+				break;
+			case 22:
+				var target = _g.target;
+				var code = _g.code;
+				var args = _g.args;
+				var _g = [];
+				var _g1 = 0;
+				while(_g1 < args.length) {
+					var arg = args[_g1];
+					++_g1;
+					_g.push({ e : f(arg.e), access : arg.access});
+				}
+				ed = hxsl_TExprDef.TSyntax(target,code,_g);
+				break;
+			}
+			e = new hxsl_TExpr(ed,e.t,e.p);
 		}
 		return this.optimize(e);
 	}
@@ -81354,16 +92094,15 @@ hxsl_Flatten.prototype = {
 		var _gthis = this;
 		switch(t._hx_index) {
 		case 6:
-			var tmp = this.access(a,hxsl_Type.TMat3x4,pos,acc);
-			return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3), t : hxsl_Type.TFun([]), p : pos},[tmp]), t : hxsl_Type.TMat3, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3),hxsl_Type.TFun([]),pos),[this.access(a,hxsl_Type.TMat3x4,pos,acc)]),hxsl_Type.TMat3,pos);
 		case 7:
-			var tmp = { e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat4), t : hxsl_Type.TFun([]), p : pos};
+			var tmp = new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat4),hxsl_Type.TFun([]),pos);
 			var tmp1;
 			switch(acc._hx_index) {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp1 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp1 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81380,7 +92119,7 @@ hxsl_Flatten.prototype = {
 					index = a1.t == null ? a1.pos : a1.pos >> 2;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp1 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp1 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
 			var tmp2;
@@ -81388,7 +92127,7 @@ hxsl_Flatten.prototype = {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp2 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 1)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp2 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 1)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81405,7 +92144,7 @@ hxsl_Flatten.prototype = {
 					index = (a1.t == null ? a1.pos : a1.pos >> 2) + 1;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp2 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp2 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
 			var tmp3;
@@ -81413,7 +92152,7 @@ hxsl_Flatten.prototype = {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp3 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 2)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp3 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 2)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81430,7 +92169,7 @@ hxsl_Flatten.prototype = {
 					index = (a1.t == null ? a1.pos : a1.pos >> 2) + 2;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp3 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp3 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
 			var tmp4;
@@ -81438,7 +92177,7 @@ hxsl_Flatten.prototype = {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp4 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 3)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp4 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 3)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81455,18 +92194,18 @@ hxsl_Flatten.prototype = {
 					index = (a1.t == null ? a1.pos : a1.pos >> 2) + 3;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp4 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp4 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
-			return { e : hxsl_TExprDef.TCall(tmp,[tmp1,tmp2,tmp3,tmp4]), t : hxsl_Type.TMat4, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TCall(tmp,[tmp1,tmp2,tmp3,tmp4]),hxsl_Type.TMat4,pos);
 		case 8:
-			var tmp = { e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3x4), t : hxsl_Type.TFun([]), p : pos};
+			var tmp = new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mat3x4),hxsl_Type.TFun([]),pos);
 			var tmp1;
 			switch(acc._hx_index) {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp1 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp1 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81483,7 +92222,7 @@ hxsl_Flatten.prototype = {
 					index = a1.t == null ? a1.pos : a1.pos >> 2;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp1 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp1 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
 			var tmp2;
@@ -81491,7 +92230,7 @@ hxsl_Flatten.prototype = {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp2 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 1)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp2 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 1)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81508,7 +92247,7 @@ hxsl_Flatten.prototype = {
 					index = (a1.t == null ? a1.pos : a1.pos >> 2) + 1;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp2 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp2 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
 			var tmp3;
@@ -81516,7 +92255,7 @@ hxsl_Flatten.prototype = {
 			case 0:
 				var a1 = acc.a;
 				var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-				tmp3 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 2)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp3 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + 2)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			case 1:
 				var a1 = acc.a;
@@ -81533,10 +92272,10 @@ hxsl_Flatten.prototype = {
 					index = (a1.t == null ? a1.pos : a1.pos >> 2) + 2;
 				}
 				var offset = _gthis.mkAdd(delta,index,pos);
-				tmp3 = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+				tmp3 = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 				break;
 			}
-			return { e : hxsl_TExprDef.TCall(tmp,[tmp1,tmp2,tmp3]), t : hxsl_Type.TMat3x4, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TCall(tmp,[tmp1,tmp2,tmp3]),hxsl_Type.TMat3x4,pos);
 		case 13:
 			var vl = t.vl;
 			var size = 0;
@@ -81557,7 +92296,7 @@ hxsl_Flatten.prototype = {
 				case 0:
 					var a1 = acc.a;
 					var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-					tmp = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + i)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+					tmp = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs + i)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 					break;
 				case 1:
 					var a2 = acc.a;
@@ -81574,13 +92313,13 @@ hxsl_Flatten.prototype = {
 						index = (a2.t == null ? a2.pos : a2.pos >> 2) + i;
 					}
 					var offset = _gthis.mkAdd(delta,index,pos);
-					tmp = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a2.g), t : a2.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a2.t), p : pos};
+					tmp = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a2.g),a2.g.type,pos),offset),hxsl_Type.TVec(4,a2.t),pos);
 					break;
 				}
 				_g.push(tmp);
 			}
 			var earr = _g;
-			return { e : hxsl_TExprDef.TArrayDecl(earr), t : hxsl_Type.TArray(hxsl_Type.TVec(4,hxsl_VecType.VFloat),hxsl_SizeDecl.SConst(stride)), p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TArrayDecl(earr),hxsl_Type.TArray(hxsl_Type.TVec(4,hxsl_VecType.VFloat),hxsl_SizeDecl.SConst(stride)),pos);
 		case 15:
 			var _g = t.size;
 			if(_g._hx_index == 0) {
@@ -81596,7 +92335,7 @@ hxsl_Flatten.prototype = {
 					_g.push(this.access(a1,t1,pos,hxsl_ARead.AIndex(a1)));
 				}
 				var earr = _g;
-				return { e : hxsl_TExprDef.TArrayDecl(earr), t : t1, p : pos};
+				return new hxsl_TExpr(hxsl_TExprDef.TArrayDecl(earr),t1,pos);
 			} else {
 				var t1 = t;
 				if(hxsl_Tools.isTexture(t1)) {
@@ -81605,7 +92344,7 @@ hxsl_Flatten.prototype = {
 					case 0:
 						var a1 = acc.a;
 						var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-						e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 						break;
 					case 1:
 						var a1 = acc.a;
@@ -81622,7 +92361,7 @@ hxsl_Flatten.prototype = {
 							index = a1.t == null ? a1.pos : a1.pos >> 2;
 						}
 						var offset = _gthis.mkAdd(delta,index,pos);
-						e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 						break;
 					}
 					e.t = t1;
@@ -81637,7 +92376,7 @@ hxsl_Flatten.prototype = {
 					case 0:
 						var a1 = acc.a;
 						var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-						e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 						break;
 					case 1:
 						var a1 = acc.a;
@@ -81654,12 +92393,12 @@ hxsl_Flatten.prototype = {
 							index = a1.t == null ? a1.pos : a1.pos >> 2;
 						}
 						var offset = _gthis.mkAdd(delta,index,pos);
-						e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 						break;
 					}
 					if(size == 4) {
 						if(a.pos == -1) {
-							return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Vec4), t : hxsl_Type.TFun([]), p : pos},[{ e : hxsl_TExprDef.TConst(hxsl_Const.CFloat(0)), t : hxsl_Type.TFloat, p : pos}]), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : pos};
+							return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Vec4),hxsl_Type.TFun([]),pos),[new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CFloat(0)),hxsl_Type.TFloat,pos)]),hxsl_Type.TVec(4,hxsl_VecType.VFloat),pos);
 						}
 					} else {
 						var sw = [];
@@ -81669,19 +92408,23 @@ hxsl_Flatten.prototype = {
 							var i = _g++;
 							sw.push(hxsl_Tools.SWIZ[i + (a.pos & 3)]);
 						}
-						e = { e : hxsl_TExprDef.TSwiz(e,sw), t : t, p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TSwiz(e,sw),t,pos);
 					}
 					switch(t._hx_index) {
 					case 1:
 						e.t = hxsl_Type.TFloat;
-						e = this.toInt(e);
+						e = this.floatBitsToInt(e);
 						break;
 					case 5:
 						if(t.t._hx_index == 0) {
 							var size = t.size;
 							e.t = hxsl_Type.TVec(size,hxsl_VecType.VFloat);
-							e = { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal([hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4][size - 2]), t : hxsl_Type.TFun([]), p : pos},[e]), t : t, p : pos};
+							e = new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal([hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4][size - 2]),hxsl_Type.TFun([]),pos),[e]),t,pos);
 						}
+						break;
+					case 18:
+						e.t = hxsl_Type.TVec(2,hxsl_VecType.VFloat);
+						e = this.floatBitsToUint(e);
 						break;
 					default:
 					}
@@ -81693,7 +92436,7 @@ hxsl_Flatten.prototype = {
 			var _g = t.t;
 			var _g = t.size;
 			var _g = t.kind;
-			return { e : hxsl_TExprDef.TVar(a.g), t : t, p : pos};
+			return new hxsl_TExpr(hxsl_TExprDef.TVar(a.g),t,pos);
 		default:
 			var t1 = t;
 			if(hxsl_Tools.isTexture(t1)) {
@@ -81702,7 +92445,7 @@ hxsl_Flatten.prototype = {
 				case 0:
 					var a1 = acc.a;
 					var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-					e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+					e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 					break;
 				case 1:
 					var a1 = acc.a;
@@ -81719,7 +92462,7 @@ hxsl_Flatten.prototype = {
 						index = a1.t == null ? a1.pos : a1.pos >> 2;
 					}
 					var offset = _gthis.mkAdd(delta,index,pos);
-					e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+					e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 					break;
 				}
 				e.t = t1;
@@ -81734,7 +92477,7 @@ hxsl_Flatten.prototype = {
 				case 0:
 					var a1 = acc.a;
 					var offs = a1.t == null ? a1.pos : a1.pos >> 2;
-					e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},{ e : hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)), t : hxsl_Type.TInt, p : pos}), t : hxsl_Type.TVec(4,a1.t), p : pos};
+					e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CInt(offs)),hxsl_Type.TInt,pos)),hxsl_Type.TVec(4,a1.t),pos);
 					break;
 				case 1:
 					var a1 = acc.a;
@@ -81751,12 +92494,12 @@ hxsl_Flatten.prototype = {
 						index = a1.t == null ? a1.pos : a1.pos >> 2;
 					}
 					var offset = _gthis.mkAdd(delta,index,pos);
-					e = { e : hxsl_TExprDef.TArray({ e : hxsl_TExprDef.TVar(a1.g), t : a1.g.type, p : pos},offset), t : hxsl_Type.TVec(4,a1.t), p : pos};
+					e = new hxsl_TExpr(hxsl_TExprDef.TArray(new hxsl_TExpr(hxsl_TExprDef.TVar(a1.g),a1.g.type,pos),offset),hxsl_Type.TVec(4,a1.t),pos);
 					break;
 				}
 				if(size == 4) {
 					if(a.pos == -1) {
-						return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Vec4), t : hxsl_Type.TFun([]), p : pos},[{ e : hxsl_TExprDef.TConst(hxsl_Const.CFloat(0)), t : hxsl_Type.TFloat, p : pos}]), t : hxsl_Type.TVec(4,hxsl_VecType.VFloat), p : pos};
+						return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Vec4),hxsl_Type.TFun([]),pos),[new hxsl_TExpr(hxsl_TExprDef.TConst(hxsl_Const.CFloat(0)),hxsl_Type.TFloat,pos)]),hxsl_Type.TVec(4,hxsl_VecType.VFloat),pos);
 					}
 				} else {
 					var sw = [];
@@ -81766,19 +92509,23 @@ hxsl_Flatten.prototype = {
 						var i = _g++;
 						sw.push(hxsl_Tools.SWIZ[i + (a.pos & 3)]);
 					}
-					e = { e : hxsl_TExprDef.TSwiz(e,sw), t : t, p : pos};
+					e = new hxsl_TExpr(hxsl_TExprDef.TSwiz(e,sw),t,pos);
 				}
 				switch(t._hx_index) {
 				case 1:
 					e.t = hxsl_Type.TFloat;
-					e = this.toInt(e);
+					e = this.floatBitsToInt(e);
 					break;
 				case 5:
 					if(t.t._hx_index == 0) {
 						var size = t.size;
 						e.t = hxsl_Type.TVec(size,hxsl_VecType.VFloat);
-						e = { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal([hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4][size - 2]), t : hxsl_Type.TFun([]), p : pos},[e]), t : t, p : pos};
+						e = new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal([hxsl_TGlobal.IVec2,hxsl_TGlobal.IVec3,hxsl_TGlobal.IVec4][size - 2]),hxsl_Type.TFun([]),pos),[e]),t,pos);
 					}
+					break;
+				case 18:
+					e.t = hxsl_Type.TVec(2,hxsl_VecType.VFloat);
+					e = this.floatBitsToUint(e);
 					break;
 				default:
 				}
@@ -81786,14 +92533,17 @@ hxsl_Flatten.prototype = {
 			}
 		}
 	}
+	,floatBitsToInt: function(e) {
+		return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.FloatBitsToInt),hxsl_Type.TFun([]),e.p),[e]),hxsl_Type.TInt,e.p);
+	}
 	,floatBitsToUint: function(e) {
-		return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.FloatBitsToUint), t : hxsl_Type.TFun([]), p : e.p},[e]), t : hxsl_Type.TInt, p : e.p};
+		return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.FloatBitsToUint),hxsl_Type.TFun([]),e.p),[e]),hxsl_Type.TInt,e.p);
 	}
 	,toInt: function(e) {
 		if(e.t == hxsl_Type.TInt) {
 			return e;
 		}
-		return { e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToInt), t : hxsl_Type.TFun([]), p : e.p},[e]), t : hxsl_Type.TInt, p : e.p};
+		return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ToInt),hxsl_Type.TFun([]),e.p),[e]),hxsl_Type.TInt,e.p);
 	}
 	,optimize: function(e) {
 		var _g = e.e;
@@ -81802,20 +92552,20 @@ hxsl_Flatten.prototype = {
 			var _g1 = _g.e;
 			var _g2 = _g.args;
 			var _g3 = _g1.e;
-			var _g4 = _g1.p;
 			var _g4 = _g1.t;
+			var _g4 = _g1.p;
 			if(_g3._hx_index == 2) {
 				if(_g3.g._hx_index == 53) {
 					if(_g2.length == 1) {
 						var _g1 = _g2[0];
 						var _g2 = _g1.e;
-						var _g3 = _g1.p;
 						var _g3 = _g1.t;
+						var _g3 = _g1.p;
 						if(_g2._hx_index == 8) {
 							var _g1 = _g2.e;
 							var _g3 = _g1.e;
-							var _g4 = _g1.p;
 							var _g4 = _g1.t;
+							var _g4 = _g1.p;
 							if(_g3._hx_index == 2) {
 								if(_g3.g._hx_index == 52) {
 									var args = _g2.args;
@@ -81842,7 +92592,7 @@ hxsl_Flatten.prototype = {
 										} else {
 											throw haxe_Exception.thrown("assert");
 										}
-										return { e : hxsl_TExprDef.TCall(emat,args), t : e.t, p : e.p};
+										return new hxsl_TExpr(hxsl_TExprDef.TCall(emat,args),e.t,e.p);
 									}
 								}
 							}
@@ -81855,12 +92605,12 @@ hxsl_Flatten.prototype = {
 			var _g1 = _g.e;
 			var _g2 = _g.index;
 			var _g = _g1.e;
-			var _g3 = _g1.p;
 			var _g3 = _g1.t;
+			var _g3 = _g1.p;
 			if(_g._hx_index == 17) {
 				var _g1 = _g2.e;
-				var _g3 = _g2.p;
 				var _g3 = _g2.t;
+				var _g3 = _g2.p;
 				if(_g1._hx_index == 0) {
 					var _g2 = _g1.c;
 					if(_g2._hx_index == 2) {
@@ -81880,7 +92630,7 @@ hxsl_Flatten.prototype = {
 	}
 	,packTextures: function(name,vars,t) {
 		var alloc = [];
-		var g = { id : hxsl_Tools.allocVarId(), name : name, type : t, kind : hxsl_VarKind.Param};
+		var g = new hxsl_TVar(hxsl_Tools.allocVarId(),name,t,hxsl_VarKind.Param,null,null);
 		var pos = 0;
 		var samplers = [];
 		var _g = 0;
@@ -81961,7 +92711,7 @@ hxsl_Flatten.prototype = {
 	}
 	,packBuffers: function(name,vars,kind) {
 		var alloc = [];
-		var g = { id : hxsl_Tools.allocVarId(), name : name, type : hxsl_Type.TVoid, kind : hxsl_VarKind.Param};
+		var g = new hxsl_TVar(hxsl_Tools.allocVarId(),name,hxsl_Type.TVoid,hxsl_VarKind.Param,null,null);
 		var _g = 0;
 		while(_g < vars.length) {
 			var v = vars[_g];
@@ -81991,7 +92741,7 @@ hxsl_Flatten.prototype = {
 						default:
 							bt = hxsl_Type.TBuffer(hxsl_Type.TVec(4,hxsl_VecType.VFloat),hxsl_SizeDecl.SConst(size * stride),k);
 						}
-						var vbuf = { id : hxsl_Tools.allocVarId(), name : v.name, type : bt, kind : hxsl_VarKind.Param};
+						var vbuf = new hxsl_TVar(hxsl_Tools.allocVarId(),v.name,bt,hxsl_VarKind.Param,null,null);
 						var a = new hxsl__$Flatten_Alloc(vbuf,null,alloc.length,1);
 						a.t = hxsl_VecType.VFloat;
 						a.v = v;
@@ -82008,7 +92758,7 @@ hxsl_Flatten.prototype = {
 	,pack: function(name,kind,vars,t) {
 		var alloc = [];
 		var apos = 0;
-		var g = { id : hxsl_Tools.allocVarId(), name : name, type : hxsl_Type.TVec(0,t), kind : kind};
+		var g = new hxsl_TVar(hxsl_Tools.allocVarId(),name,hxsl_Type.TVec(0,t),kind,null,null);
 		var _g = 0;
 		while(_g < vars.length) {
 			var v = vars[_g];
@@ -82140,6 +92890,8 @@ hxsl_Flatten.prototype = {
 				throw haxe_Exception.thrown(hxsl_Tools.toString(v) + " size unknown for type " + Std.string(t));
 			}
 			break;
+		case 18:
+			return 2;
 		default:
 			throw haxe_Exception.thrown(hxsl_Tools.toString(v) + " size unknown for type " + Std.string(t));
 		}
@@ -82533,6 +93285,7 @@ js_Boot.__resolveNativeClass = function(name) {
 };
 var hxsl_GlslOut = function() {
 	this.computeLayout = [1,1,1];
+	this.rwTextures = 0;
 	this.outIndex = 0;
 	this.uniformBuffer = 0;
 	this.exprIds = 0;
@@ -82688,6 +93441,8 @@ hxsl_GlslOut.prototype = {
 			var n = t.size;
 			this.buf.b += Std.string("channel" + n);
 			break;
+		case 18:
+			throw haxe_Exception.thrown("assert");
 		}
 	}
 	,addVar: function(v) {
@@ -82770,8 +93525,8 @@ hxsl_GlslOut.prototype = {
 			this.buf.b += Std.string("(void)");
 			var el2 = el.slice();
 			var last = el2[el2.length - 1];
-			el2[el2.length - 1] = { e : hxsl_TExprDef.TReturn(last), t : e.t, p : last.p};
-			var e2 = { t : hxsl_Type.TVoid, e : hxsl_TExprDef.TBlock(el2), p : e.p};
+			el2[el2.length - 1] = new hxsl_TExpr(hxsl_TExprDef.TReturn(last),e.t,last.p);
+			var e2 = new hxsl_TExpr(hxsl_TExprDef.TBlock(el2),hxsl_Type.TVoid,e.p);
 			this.addExpr(e2,"");
 			this.exprValues.push(this.buf.b);
 			this.buf = tmp;
@@ -82872,8 +93627,6 @@ hxsl_GlslOut.prototype = {
 			default:
 			}
 			break;
-		case 36:
-			return "texelFetch";
 		case 37:
 			var sufix = "";
 			var _g = args[0].t;
@@ -82962,6 +93715,8 @@ hxsl_GlslOut.prototype = {
 			this.decl("vec3 _uintBitsToFloat( ivec3 v ) { return uintBitsToFloat(uvec3(v)); }");
 			this.decl("vec4 _uintBitsToFloat( ivec4 v ) { return uintBitsToFloat(uvec4(v)); }");
 			break;
+		case 36:case 89:
+			return "texelFetch";
 		default:
 		}
 		return hxsl_GlslOut.GLOBALS[g._hx_index];
@@ -83435,7 +94190,7 @@ hxsl_GlslOut.prototype = {
 						this.addValue(e1,tabs);
 						this.buf.b += Std.string(" = ");
 					}
-					this.addExpr({ e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mod), t : hxsl_Type.TFun([]), p : e.p},[e1,e2]), t : e.t, p : e.p},tabs);
+					this.addExpr(new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mod),hxsl_Type.TFun([]),e.p),[e1,e2]),e.t,e.p),tabs);
 				} else {
 					this.addValue(e1,tabs);
 					this.buf.b += Std.string(" ");
@@ -83516,7 +94271,7 @@ hxsl_GlslOut.prototype = {
 							this.addValue(e1,tabs);
 							this.buf.b += Std.string(" = ");
 						}
-						this.addExpr({ e : hxsl_TExprDef.TCall({ e : hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mod), t : hxsl_Type.TFun([]), p : e.p},[e1,e2]), t : e.t, p : e.p},tabs);
+						this.addExpr(new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.Mod),hxsl_Type.TFun([]),e.p),[e1,e2]),e.t,e.p),tabs);
 					} else {
 						this.addValue(e1,tabs);
 						this.buf.b += Std.string(" ");
@@ -83587,8 +94342,8 @@ hxsl_GlslOut.prototype = {
 			var _g1 = _g.e;
 			var _g2 = _g.args;
 			var _g3 = _g1.e;
-			var _g4 = _g1.p;
 			var _g4 = _g1.t;
+			var _g4 = _g1.p;
 			if(_g3._hx_index == 2) {
 				var _g4 = _g3.g;
 				switch(_g4._hx_index) {
@@ -83601,13 +94356,7 @@ hxsl_GlslOut.prototype = {
 					this.addValue(args[0],tabs);
 					this.buf.b += Std.string(", ");
 					this.addValue(args[1],tabs);
-					if(args.length != 2) {
-						this.buf.b += Std.string(", ");
-						this.addValue(args[2],tabs);
-						this.buf.b += Std.string(")");
-					} else {
-						this.buf.b += Std.string(", 0)");
-					}
+					this.buf.b += Std.string(", 0)");
 					break;
 				case 37:
 					var g = _g4;
@@ -83624,9 +94373,9 @@ hxsl_GlslOut.prototype = {
 						var _g3 = args[0].t;
 						var tmp;
 						if(_g3._hx_index == 11) {
-							var _g4 = _g3.dim;
-							var _g4 = _g3.isArray;
-							var _g4 = _g3.channels;
+							var _g5 = _g3.dim;
+							var _g5 = _g3.isArray;
+							var _g5 = _g3.channels;
 							tmp = true;
 						} else {
 							tmp = false;
@@ -83681,8 +94430,8 @@ hxsl_GlslOut.prototype = {
 						var chans;
 						var _g3 = tex.t;
 						if(_g3._hx_index == 11) {
-							var _g4 = _g3.dim;
-							var _g4 = _g3.isArray;
+							var _g5 = _g3.dim;
+							var _g5 = _g3.isArray;
 							var chans1 = _g3.channels;
 							chans = chans1;
 						} else {
@@ -83698,7 +94447,7 @@ hxsl_GlslOut.prototype = {
 						}
 						this.addValue(color,tabs);
 						if(chans != 4) {
-							this.buf.b += Std.string(")" + (chans == 1 ? ".xx" : ".xyyy"));
+							this.buf.b += Std.string(")" + (chans == 1 ? ".xxxx" : chans == 2 ? ".xyyy" : ".xyzz"));
 						}
 						this.buf.b += Std.string(")");
 					} else {
@@ -83735,6 +94484,19 @@ hxsl_GlslOut.prototype = {
 					this.buf.b += Std.string("[");
 					this.addValue(args[1],tabs);
 					this.buf.b += Std.string("],");
+					this.addValue(args[2],tabs);
+					this.buf.b += Std.string(")");
+					break;
+				case 89:
+					var g = _g4;
+					var args = _g2;
+					var v = this.getFunName(g,args,e.t);
+					this.buf.b += Std.string(v);
+					this.buf.b += Std.string("(");
+					this.addValue(args[0],tabs);
+					this.buf.b += Std.string(", ");
+					this.addValue(args[1],tabs);
+					this.buf.b += Std.string(", ");
 					this.addValue(args[2],tabs);
 					this.buf.b += Std.string(")");
 					break;
@@ -84087,11 +94849,17 @@ hxsl_GlslOut.prototype = {
 				var _g1 = _g.t;
 				var _g2 = _g.size;
 				if(_g1._hx_index == 11) {
-					var _g2 = _g1.dim;
-					var _g2 = _g1.isArray;
-					var chans = _g1.channels;
-					var format = HxOverrides.substr("rgba",0,chans);
-					this.buf.b += Std.string("layout(" + format + "32f) uniform ");
+					var _g3 = _g1.dim;
+					var _g3 = _g1.isArray;
+					if(_g2._hx_index == 0) {
+						var n = _g2.v;
+						var chans = _g1.channels;
+						var format = HxOverrides.substr("rgba",0,chans);
+						this.buf.b += Std.string("layout(" + format + "32f, binding=" + this.rwTextures + ") uniform ");
+						this.rwTextures += n;
+					} else {
+						this.buf.b += Std.string("uniform ");
+					}
 				} else {
 					this.buf.b += Std.string("uniform ");
 				}
@@ -84183,6 +94951,7 @@ hxsl_GlslOut.prototype = {
 	}
 	,initVars: function(s) {
 		this.outIndex = 0;
+		this.rwTextures = 0;
 		this.uniformBuffer = 0;
 		this.outIndexes = new haxe_ds_IntMap();
 		var _g = 0;
@@ -84210,16 +94979,16 @@ hxsl_GlslOut.prototype = {
 			var _g1 = _g.e;
 			var _g2 = _g.args;
 			var _g = _g1.e;
-			var _g3 = _g1.p;
 			var _g3 = _g1.t;
+			var _g3 = _g1.p;
 			if(_g._hx_index == 2) {
 				if(_g.g._hx_index == 78) {
 					switch(_g2.length) {
 					case 1:
 						var _g = _g2[0];
 						var _g1 = _g.e;
-						var _g3 = _g.p;
 						var _g3 = _g.t;
+						var _g3 = _g.p;
 						if(_g1._hx_index == 0) {
 							var _g = _g1.c;
 							if(_g._hx_index == 2) {
@@ -84244,14 +95013,14 @@ hxsl_GlslOut.prototype = {
 						var _g3 = _g2[0];
 						var _g4 = _g2[1];
 						var _g5 = _g3.e;
-						var _g6 = _g3.p;
 						var _g6 = _g3.t;
+						var _g6 = _g3.p;
 						if(_g5._hx_index == 0) {
 							var _g3 = _g5.c;
 							if(_g3._hx_index == 2) {
 								var _g5 = _g4.e;
-								var _g6 = _g4.p;
 								var _g6 = _g4.t;
+								var _g6 = _g4.p;
 								if(_g5._hx_index == 0) {
 									var _g4 = _g5.c;
 									if(_g4._hx_index == 2) {
@@ -84292,20 +95061,20 @@ hxsl_GlslOut.prototype = {
 						var _g8 = _g2[1];
 						var _g9 = _g2[2];
 						var _g2 = _g7.e;
-						var _g10 = _g7.p;
 						var _g10 = _g7.t;
+						var _g10 = _g7.p;
 						if(_g2._hx_index == 0) {
 							var _g7 = _g2.c;
 							if(_g7._hx_index == 2) {
 								var _g2 = _g8.e;
-								var _g10 = _g8.p;
 								var _g10 = _g8.t;
+								var _g10 = _g8.p;
 								if(_g2._hx_index == 0) {
 									var _g8 = _g2.c;
 									if(_g8._hx_index == 2) {
 										var _g2 = _g9.e;
-										var _g10 = _g9.p;
 										var _g10 = _g9.t;
+										var _g10 = _g9.p;
 										if(_g2._hx_index == 0) {
 											var _g9 = _g2.c;
 											if(_g9._hx_index == 2) {
@@ -84481,16 +95250,25 @@ hxsl__$Linker_AllocatedVar.__name__ = "hxsl._Linker.AllocatedVar";
 hxsl__$Linker_AllocatedVar.prototype = {
 	__class__: hxsl__$Linker_AllocatedVar
 };
-var hxsl__$Linker_ShaderInfos = function(n,v) {
+var hxsl__$Linker_ShaderStage = $hxEnums["hxsl._Linker.ShaderStage"] = { __ename__:true,__constructs__:null
+	,Undefined: {_hx_name:"Undefined",_hx_index:0,__enum__:"hxsl._Linker.ShaderStage",toString:$estr}
+	,Vertex: {_hx_name:"Vertex",_hx_index:1,__enum__:"hxsl._Linker.ShaderStage",toString:$estr}
+	,Fragment: {_hx_name:"Fragment",_hx_index:2,__enum__:"hxsl._Linker.ShaderStage",toString:$estr}
+};
+hxsl__$Linker_ShaderStage.__constructs__ = [hxsl__$Linker_ShaderStage.Undefined,hxsl__$Linker_ShaderStage.Vertex,hxsl__$Linker_ShaderStage.Fragment];
+hxsl__$Linker_ShaderStage.__empty_constructs__ = [hxsl__$Linker_ShaderStage.Undefined,hxsl__$Linker_ShaderStage.Vertex,hxsl__$Linker_ShaderStage.Fragment];
+var hxsl__$Linker_ShaderInfos = function(n,s) {
 	this.name = n;
 	this.uid = hxsl__$Linker_ShaderInfos.UID++;
-	this.vertex = v;
+	this.stage = s;
 	this.processed = new haxe_ds_IntMap();
 	this.usedFunctions = [];
 	this.readMap = new haxe_ds_IntMap();
 	this.readVars = [];
 	this.writeMap = new haxe_ds_IntMap();
 	this.writeVars = [];
+	this.marked = 0;
+	this.added = 0;
 };
 $hxClasses["hxsl._Linker.ShaderInfos"] = hxsl__$Linker_ShaderInfos;
 hxsl__$Linker_ShaderInfos.__name__ = "hxsl._Linker.ShaderInfos";
@@ -84500,6 +95278,8 @@ hxsl__$Linker_ShaderInfos.prototype = {
 var hxsl_Linker = function(mode) {
 	this.debugDepth = 0;
 	this.mode = mode;
+	this.lowercaseMap = new haxe_ds_StringMap();
+	this.mapExprVarFun = $bind(this,this.mapExprVar);
 };
 $hxClasses["hxsl.Linker"] = hxsl_Linker;
 hxsl_Linker.__name__ = "hxsl.Linker";
@@ -84580,11 +95360,18 @@ hxsl_Linker.prototype = {
 				}
 			}
 		}
-		var ukey = key.toLowerCase();
+		var ukey = this.lowercaseMap.h[key];
+		if(ukey == null) {
+			ukey = key.toLowerCase();
+			this.lowercaseMap.h[key] = ukey;
+		}
 		var v2 = this.varMap.h[ukey];
 		var vname = v.name;
 		if(v2 != null) {
 			var _g = 0;
+			if(v2.merged == null) {
+				v2.merged = [v2.mergedV];
+			}
 			var _g1 = v2.merged;
 			while(_g < _g1.length) {
 				var vm = _g1[_g];
@@ -84610,6 +95397,9 @@ hxsl_Linker.prototype = {
 						break;
 					}
 					var _g = 0;
+					if(a.merged == null) {
+						a.merged = [a.mergedV];
+					}
 					var _g1 = a.merged;
 					while(_g < _g1.length) {
 						var vm = _g1[_g];
@@ -84634,16 +95424,19 @@ hxsl_Linker.prototype = {
 					ukey += k;
 				}
 			} else {
+				if(v2.merged == null) {
+					v2.merged = [v2.mergedV];
+				}
 				v2.merged.push(v);
 				this.mergeVar(key,v,v2.v,p,v2.rootShaderName);
 				this.varIdMap.h[v.id] = v2.id;
 				return v2;
 			}
 		}
-		var v2 = { id : hxsl_Tools.allocVarId(), name : vname, type : v.type, kind : v.kind, qualifiers : v.qualifiers, parent : parent == null ? null : parent.v};
+		var v2 = new hxsl_TVar(hxsl_Tools.allocVarId(),vname,v.type,v.kind,parent == null ? null : parent.v,v.qualifiers);
 		var a = new hxsl__$Linker_AllocatedVar();
 		a.v = v2;
-		a.merged = [v];
+		a.mergedV = v;
 		a.path = key;
 		a.id = v2.id;
 		a.parent = parent;
@@ -84687,9 +95480,9 @@ hxsl_Linker.prototype = {
 						this.curShader.readMap.h[v1.id] = v1;
 						this.curShader.readVars.push(v1);
 					}
-					if(this.curShader.vertex == null && v1.v.kind == hxsl_VarKind.Var) {
+					if(this.curShader.stage == hxsl__$Linker_ShaderStage.Undefined && v1.v.kind == hxsl_VarKind.Var) {
 						if(hxsl_Debug.TRACE) {
-							var msg = "Force " + this.curShader.name + " into fragment (use varying)";
+							var msg = "Force " + this.curShader.name + " into fragment (read varying)";
 							var _g1 = 0;
 							var _g2 = this.debugDepth;
 							while(_g1 < _g2) {
@@ -84698,10 +95491,10 @@ hxsl_Linker.prototype = {
 							}
 							haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "mapExprVar"});
 						}
-						this.curShader.vertex = false;
+						this.curShader.stage = hxsl__$Linker_ShaderStage.Fragment;
 					}
 				}
-				return { e : hxsl_TExprDef.TVar(v1.v), t : v1.v.type, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TVar(v1.v),v1.v.type,e.p);
 			}
 			break;
 		case 5:
@@ -84731,8 +95524,21 @@ hxsl_Linker.prototype = {
 							}
 							this.curShader.writeMap.h[v1.id] = v1;
 							this.curShader.writeVars.push(v1);
+							if(this.curShader.stage == hxsl__$Linker_ShaderStage.Undefined && v1.v.kind == hxsl_VarKind.Var) {
+								if(hxsl_Debug.TRACE) {
+									var msg = "Force " + this.curShader.name + " into vertex (write varying)";
+									var _g3 = 0;
+									var _g4 = this.debugDepth;
+									while(_g3 < _g4) {
+										var i = _g3++;
+										msg = "    " + msg;
+									}
+									haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "mapExprVar"});
+								}
+								this.curShader.stage = hxsl__$Linker_ShaderStage.Vertex;
+							}
 						}
-						return { e : hxsl_TExprDef.TBinop(op,{ e : hxsl_TExprDef.TVar(v1.v), t : v1.v.type, p : e.p},e21), t : e.t, p : e.p};
+						return new hxsl_TExpr(hxsl_TExprDef.TBinop(op,new hxsl_TExpr(hxsl_TExprDef.TVar(v1.v),v1.v.type,e.p),e21),e.t,e.p);
 					} else {
 						var v = _g2;
 						if(!this.locals.h.hasOwnProperty(v.id)) {
@@ -84753,7 +95559,7 @@ hxsl_Linker.prototype = {
 								this.curShader.writeMap.h[v1.id] = v1;
 								this.curShader.writeVars.push(v1);
 							}
-							return { e : hxsl_TExprDef.TBinop(op,e11,e21), t : e.t, p : e.p};
+							return new hxsl_TExpr(hxsl_TExprDef.TBinop(op,e11,e21),e.t,e.p);
 						}
 					}
 					break;
@@ -84761,8 +95567,8 @@ hxsl_Linker.prototype = {
 					var _g2 = _g1.e;
 					var _g3 = _g1.regs;
 					var _g3 = _g2.e;
-					var _g4 = _g2.p;
 					var _g4 = _g2.t;
+					var _g4 = _g2.p;
 					if(_g3._hx_index == 1) {
 						var v = _g3.v;
 						if(!this.locals.h.hasOwnProperty(v.id)) {
@@ -84783,7 +95589,7 @@ hxsl_Linker.prototype = {
 								this.curShader.writeMap.h[v1.id] = v1;
 								this.curShader.writeVars.push(v1);
 							}
-							return { e : hxsl_TExprDef.TBinop(op,e11,e21), t : e.t, p : e.p};
+							return new hxsl_TExpr(hxsl_TExprDef.TBinop(op,e11,e21),e.t,e.p);
 						}
 					}
 					break;
@@ -84813,15 +95619,15 @@ hxsl_Linker.prototype = {
 							this.curShader.writeMap.h[v1.id] = v1;
 							this.curShader.writeVars.push(v1);
 						}
-						return { e : hxsl_TExprDef.TBinop(op,e11,e21), t : e.t, p : e.p};
+						return new hxsl_TExpr(hxsl_TExprDef.TBinop(op,e11,e21),e.t,e.p);
 					}
 					break;
 				case 9:
 					var _g2 = _g1.e;
 					var _g3 = _g1.regs;
 					var _g1 = _g2.e;
-					var _g3 = _g2.p;
 					var _g3 = _g2.t;
+					var _g3 = _g2.p;
 					if(_g1._hx_index == 1) {
 						var v = _g1.v;
 						if(!this.locals.h.hasOwnProperty(v.id)) {
@@ -84842,7 +95648,7 @@ hxsl_Linker.prototype = {
 								this.curShader.writeMap.h[v1.id] = v1;
 								this.curShader.writeVars.push(v1);
 							}
-							return { e : hxsl_TExprDef.TBinop(op,e11,e21), t : e.t, p : e.p};
+							return new hxsl_TExpr(hxsl_TExprDef.TBinop(op,e11,e21),e.t,e.p);
 						}
 					}
 					break;
@@ -84857,9 +95663,47 @@ hxsl_Linker.prototype = {
 			var v = _g.v;
 			this.locals.h[v.id] = true;
 			break;
+		case 8:
+			var _g1 = _g.e;
+			var _g2 = _g.args;
+			var _g3 = _g1.e;
+			var _g4 = _g1.t;
+			var _g4 = _g1.p;
+			if(_g3._hx_index == 2) {
+				if(_g3.g._hx_index == 90) {
+					if(_g2.length == 2) {
+						var _g1 = _g2[1];
+						var _g3 = _g1.e;
+						var _g4 = _g1.t;
+						var _g4 = _g1.p;
+						if(_g3._hx_index == 1) {
+							var v = _g3.v;
+							var handle = _g2[0];
+							var handle1 = this.mapExprVar(handle);
+							var v1 = this.allocVar(v,handle1.p);
+							if(this.curShader != null && !this.curShader.writeMap.h.hasOwnProperty(v1.id)) {
+								if(hxsl_Debug.TRACE) {
+									var msg = this.curShader.name + " write " + v1.path;
+									var _g1 = 0;
+									var _g2 = this.debugDepth;
+									while(_g1 < _g2) {
+										var i = _g1++;
+										msg = "    " + msg;
+									}
+									haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "mapExprVar"});
+								}
+								this.curShader.writeMap.h[v1.id] = v1;
+								this.curShader.writeVars.push(v1);
+							}
+							return new hxsl_TExpr(hxsl_TExprDef.TCall(new hxsl_TExpr(hxsl_TExprDef.TGlobal(hxsl_TGlobal.ResolveSampler),hxsl_Type.TFun([]),e.p),[handle1,new hxsl_TExpr(hxsl_TExprDef.TVar(v1.v),v1.v.type,e.p)]),e.t,e.p);
+						}
+					}
+				}
+			}
+			break;
 		case 11:
 			if(this.curShader != null) {
-				this.curShader.vertex = false;
+				this.curShader.stage = hxsl__$Linker_ShaderStage.Fragment;
 				this.curShader.hasDiscard = true;
 			}
 			break;
@@ -84900,10 +95744,163 @@ hxsl_Linker.prototype = {
 			if(this.curShader != null) {
 				this.curShader.hasSyntax = true;
 			}
-			return { e : hxsl_TExprDef.TSyntax(target,code,mappedArgs), t : e.t, p : e.p};
+			return new hxsl_TExpr(hxsl_TExprDef.TSyntax(target,code,mappedArgs),e.t,e.p);
 		default:
 		}
-		return hxsl_Tools.map(e,$bind(this,this.mapExprVar));
+		var f = this.mapExprVarFun;
+		var ed;
+		var _g = e.e;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.c;
+			ed = e.e;
+			break;
+		case 1:
+			var _g1 = _g.v;
+			ed = e.e;
+			break;
+		case 2:
+			var _g1 = _g.g;
+			ed = e.e;
+			break;
+		case 3:
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TParenthesis(f(e1));
+			break;
+		case 4:
+			var el = _g.el;
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < el.length) {
+				var e1 = el[_g2];
+				++_g2;
+				_g1.push(f(e1));
+			}
+			ed = hxsl_TExprDef.TBlock(_g1);
+			break;
+		case 5:
+			var op = _g.op;
+			var e1 = _g.e1;
+			var e2 = _g.e2;
+			ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+			break;
+		case 6:
+			var op = _g.op;
+			var e1 = _g.e1;
+			ed = hxsl_TExprDef.TUnop(op,f(e1));
+			break;
+		case 7:
+			var v = _g.v;
+			var init = _g.init;
+			ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+			break;
+		case 8:
+			var e1 = _g.e;
+			var args = _g.args;
+			var ed1 = f(e1);
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < args.length) {
+				var a = args[_g2];
+				++_g2;
+				_g1.push(f(a));
+			}
+			ed = hxsl_TExprDef.TCall(ed1,_g1);
+			break;
+		case 9:
+			var e1 = _g.e;
+			var c = _g.regs;
+			ed = hxsl_TExprDef.TSwiz(f(e1),c);
+			break;
+		case 10:
+			var econd = _g.econd;
+			var eif = _g.eif;
+			var eelse = _g.eelse;
+			ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+			break;
+		case 12:
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+			break;
+		case 13:
+			var v = _g.v;
+			var it = _g.it;
+			var loop = _g.loop;
+			ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+			break;
+		case 11:case 14:case 15:
+			ed = e.e;
+			break;
+		case 16:
+			var e1 = _g.e;
+			var index = _g.index;
+			ed = hxsl_TExprDef.TArray(f(e1),f(index));
+			break;
+		case 17:
+			var el = _g.el;
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < el.length) {
+				var e1 = el[_g2];
+				++_g2;
+				_g1.push(f(e1));
+			}
+			ed = hxsl_TExprDef.TArrayDecl(_g1);
+			break;
+		case 18:
+			var e1 = _g.e;
+			var cases = _g.cases;
+			var def = _g.def;
+			var ed1 = f(e1);
+			var _g1 = [];
+			var _g2 = 0;
+			while(_g2 < cases.length) {
+				var c = cases[_g2];
+				++_g2;
+				var _g3 = [];
+				var _g4 = 0;
+				var _g5 = c.values;
+				while(_g4 < _g5.length) {
+					var v = _g5[_g4];
+					++_g4;
+					_g3.push(f(v));
+				}
+				_g1.push({ values : _g3, expr : f(c.expr)});
+			}
+			ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+			break;
+		case 19:
+			var e1 = _g.e;
+			var loop = _g.loop;
+			var normalWhile = _g.normalWhile;
+			ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+			break;
+		case 20:
+			var m = _g.m;
+			var args = _g.args;
+			var e1 = _g.e;
+			ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+			break;
+		case 21:
+			var e1 = _g.e;
+			var name = _g.name;
+			ed = hxsl_TExprDef.TField(f(e1),name);
+			break;
+		case 22:
+			var target = _g.target;
+			var code = _g.code;
+			var args = _g.args;
+			var _g = [];
+			var _g1 = 0;
+			while(_g1 < args.length) {
+				var arg = args[_g1];
+				++_g1;
+				_g.push({ e : f(arg.e), access : arg.access});
+			}
+			ed = hxsl_TExprDef.TSyntax(target,code,_g);
+			break;
+		}
+		return new hxsl_TExpr(ed,e.t,e.p);
 	}
 	,mapSyntaxWrite: function(e) {
 		var _g = e.e;
@@ -84924,16 +95921,170 @@ hxsl_Linker.prototype = {
 				this.curShader.writeMap.h[v1.id] = v1;
 				this.curShader.writeVars.push(v1);
 			}
-			return { e : hxsl_TExprDef.TVar(v1.v), t : v1.v.type, p : e.p};
+			return new hxsl_TExpr(hxsl_TExprDef.TVar(v1.v),v1.v.type,e.p);
 		} else {
-			return hxsl_Tools.map(e,$bind(this,this.mapSyntaxWrite));
+			var f = $bind(this,this.mapSyntaxWrite);
+			var ed;
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.c;
+				ed = e.e;
+				break;
+			case 1:
+				var _g1 = _g.v;
+				ed = e.e;
+				break;
+			case 2:
+				var _g1 = _g.g;
+				ed = e.e;
+				break;
+			case 3:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TParenthesis(f(e1));
+				break;
+			case 4:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TBlock(_g1);
+				break;
+			case 5:
+				var op = _g.op;
+				var e1 = _g.e1;
+				var e2 = _g.e2;
+				ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+				break;
+			case 6:
+				var op = _g.op;
+				var e1 = _g.e1;
+				ed = hxsl_TExprDef.TUnop(op,f(e1));
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+				break;
+			case 8:
+				var e1 = _g.e;
+				var args = _g.args;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < args.length) {
+					var a = args[_g2];
+					++_g2;
+					_g1.push(f(a));
+				}
+				ed = hxsl_TExprDef.TCall(ed1,_g1);
+				break;
+			case 9:
+				var e1 = _g.e;
+				var c = _g.regs;
+				ed = hxsl_TExprDef.TSwiz(f(e1),c);
+				break;
+			case 10:
+				var econd = _g.econd;
+				var eif = _g.eif;
+				var eelse = _g.eelse;
+				ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+				break;
+			case 12:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+				break;
+			case 11:case 14:case 15:
+				ed = e.e;
+				break;
+			case 16:
+				var e1 = _g.e;
+				var index = _g.index;
+				ed = hxsl_TExprDef.TArray(f(e1),f(index));
+				break;
+			case 17:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TArrayDecl(_g1);
+				break;
+			case 18:
+				var e1 = _g.e;
+				var cases = _g.cases;
+				var def = _g.def;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < cases.length) {
+					var c = cases[_g2];
+					++_g2;
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = c.values;
+					while(_g4 < _g5.length) {
+						var v = _g5[_g4];
+						++_g4;
+						_g3.push(f(v));
+					}
+					_g1.push({ values : _g3, expr : f(c.expr)});
+				}
+				ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+				break;
+			case 19:
+				var e1 = _g.e;
+				var loop = _g.loop;
+				var normalWhile = _g.normalWhile;
+				ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+				break;
+			case 20:
+				var m = _g.m;
+				var args = _g.args;
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+				break;
+			case 21:
+				var e1 = _g.e;
+				var name = _g.name;
+				ed = hxsl_TExprDef.TField(f(e1),name);
+				break;
+			case 22:
+				var target = _g.target;
+				var code = _g.code;
+				var args = _g.args;
+				var _g = [];
+				var _g1 = 0;
+				while(_g1 < args.length) {
+					var arg = args[_g1];
+					++_g1;
+					_g.push({ e : f(arg.e), access : arg.access});
+				}
+				ed = hxsl_TExprDef.TSyntax(target,code,_g);
+				break;
+			}
+			return new hxsl_TExpr(ed,e.t,e.p);
 		}
 	}
-	,addShader: function(name,vertex,e,p) {
-		var s = new hxsl__$Linker_ShaderInfos(name,vertex);
+	,addShader: function(name,stage,e,p,isBatchInit) {
+		var s = new hxsl__$Linker_ShaderInfos(name,stage);
 		this.curShader = s;
 		s.priority = p;
 		s.body = this.mapExprVar(e);
+		s.isBatchInit = isBatchInit;
 		this.shaders.push(s);
 		this.curShader = null;
 		if(hxsl_Debug.TRACE) {
@@ -84970,12 +96121,12 @@ hxsl_Linker.prototype = {
 			if(!parent.writeMap.h.hasOwnProperty(v.id)) {
 				continue;
 			}
-			if(s.vertex) {
-				if(parent.vertex == false) {
+			if(s.stage == hxsl__$Linker_ShaderStage.Vertex) {
+				if(parent.stage == hxsl__$Linker_ShaderStage.Fragment) {
 					continue;
 				}
-				if(parent.vertex == null) {
-					parent.vertex = true;
+				if(parent.stage == hxsl__$Linker_ShaderStage.Undefined) {
+					parent.stage = hxsl__$Linker_ShaderStage.Vertex;
 				}
 			}
 			if(hxsl_Debug.TRACE) {
@@ -85013,14 +96164,15 @@ hxsl_Linker.prototype = {
 			this.buildDependency(s,r,s.writeMap.h.hasOwnProperty(r.id));
 		}
 	}
-	,collect: function(cur,out,vertex) {
+	,collect: function(cur,vout,fout,stage) {
+		var _gthis = this;
 		if(cur.onStack) {
 			this.error("Loop in shader dependencies (" + cur.name + ")",null);
 		}
-		if(cur.marked == vertex) {
+		if((cur.marked & 1 << stage._hx_index) != 0) {
 			return;
 		}
-		cur.marked = vertex;
+		cur.marked |= 1 << stage._hx_index;
 		cur.onStack = true;
 		var _g = [];
 		var d = cur.deps.keys();
@@ -85034,33 +96186,71 @@ hxsl_Linker.prototype = {
 		while(_g < deps.length) {
 			var d = deps[_g];
 			++_g;
-			this.collect(d,out,vertex);
+			this.collect(d,vout,fout,cur.stage == hxsl__$Linker_ShaderStage.Vertex ? hxsl__$Linker_ShaderStage.Vertex : stage);
 		}
-		if(cur.vertex == null) {
-			if(hxsl_Debug.TRACE) {
-				var msg = "MARK " + cur.name + " " + (vertex ? "vertex" : "fragment");
-				var _g = 0;
-				var _g1 = this.debugDepth;
-				while(_g < _g1) {
-					var i = _g++;
-					msg = "    " + msg;
+		if(cur.isBatchInit) {
+			if((cur.added & 1 << stage._hx_index) == 0) {
+				cur.added |= 1 << stage._hx_index;
+				var isVertex = stage == hxsl__$Linker_ShaderStage.Vertex;
+				var out = isVertex ? vout : fout;
+				out.push(cur);
+				if(hxsl_Debug.TRACE) {
+					var msg = "COLLECT " + cur.name + " " + (isVertex ? "vertex" : "fragment");
+					var _g = 0;
+					var _g1 = _gthis.debugDepth;
+					while(_g < _g1) {
+						var i = _g++;
+						msg = "    " + msg;
+					}
+					haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
 				}
-				haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
 			}
-			cur.vertex = vertex;
-		}
-		if(cur.vertex == vertex) {
-			if(hxsl_Debug.TRACE) {
-				var msg = "COLLECT " + cur.name + " " + (vertex ? "vertex" : "fragment");
-				var _g = 0;
-				var _g1 = this.debugDepth;
-				while(_g < _g1) {
-					var i = _g++;
-					msg = "    " + msg;
-				}
-				haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
-			}
+		} else if(cur.added == 0) {
+			var stage1 = cur.stage == hxsl__$Linker_ShaderStage.Undefined ? stage : cur.stage;
+			cur.added |= 1 << stage1._hx_index;
+			var isVertex = stage1 == hxsl__$Linker_ShaderStage.Vertex;
+			var out = isVertex ? vout : fout;
 			out.push(cur);
+			if(hxsl_Debug.TRACE) {
+				var msg = "COLLECT " + cur.name + " " + (isVertex ? "vertex" : "fragment");
+				var _g = 0;
+				var _g1 = _gthis.debugDepth;
+				while(_g < _g1) {
+					var i = _g++;
+					msg = "    " + msg;
+				}
+				haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
+			}
+		} else if((cur.added & 1 << hxsl__$Linker_ShaderStage.Vertex._hx_index) == 0 && stage == hxsl__$Linker_ShaderStage.Vertex) {
+			if(cur.stage == hxsl__$Linker_ShaderStage.Fragment) {
+				this.error("Shader " + cur.name + " cannot be added to vertex stage because it is marked as fragment",null);
+			}
+			if(hxsl_Debug.TRACE) {
+				var msg = "REMOVE " + cur.name + " from fragment";
+				var _g = 0;
+				var _g1 = this.debugDepth;
+				while(_g < _g1) {
+					var i = _g++;
+					msg = "    " + msg;
+				}
+				haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
+			}
+			cur.added &= -1 - (1 << hxsl__$Linker_ShaderStage.Fragment._hx_index);
+			HxOverrides.remove(fout,cur);
+			cur.added |= 1 << stage._hx_index;
+			var isVertex = stage == hxsl__$Linker_ShaderStage.Vertex;
+			var out = isVertex ? vout : fout;
+			out.push(cur);
+			if(hxsl_Debug.TRACE) {
+				var msg = "COLLECT " + cur.name + " " + (isVertex ? "vertex" : "fragment");
+				var _g = 0;
+				var _g1 = _gthis.debugDepth;
+				while(_g < _g1) {
+					var i = _g++;
+					msg = "    " + msg;
+				}
+				haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "collect"});
+			}
 		}
 		cur.onStack = false;
 	}
@@ -85111,12 +96301,20 @@ hxsl_Linker.prototype = {
 				var v = _g2[_g1];
 				++_g1;
 				var v2 = this.allocVar(v,null,s.name);
-				if(this.isBatchShader && v2.v.kind == hxsl_VarKind.Param && !StringTools.startsWith(v2.path,"Batch_")) {
-					v2.v.kind = hxsl_VarKind.Local;
-					if(v2.v.qualifiers == null) {
-						v2.v.qualifiers = [];
+				if(this.isBatchShader) {
+					var isBatchParam = StringTools.startsWith(v2.path,"Batch_");
+					if(v2.v.kind == hxsl_VarKind.Param && !isBatchParam) {
+						v2.v.kind = hxsl_VarKind.Local;
 					}
-					v2.v.qualifiers.push(hxsl_VarQualifier.Flat);
+					if(v.kind == hxsl_VarKind.Local) {
+						if(v2.v.qualifiers == null) {
+							v2.v.qualifiers = [];
+						}
+						var qualifier = isBatchParam ? hxsl_VarQualifier.Flat : hxsl_VarQualifier.NoVar;
+						if(!hxsl_Tools.hasQualifier(v2.v,qualifier)) {
+							v2.v.qualifiers.push(qualifier);
+						}
+					}
 				}
 				if(v.kind == hxsl_VarKind.Output) {
 					outVars.push(v);
@@ -85143,6 +96341,7 @@ hxsl_Linker.prototype = {
 		while(_g < shadersData.length) {
 			var s = shadersData[_g];
 			++_g;
+			this.isBatchShader = this.mode == hxsl_LinkMode.Batch && StringTools.startsWith(s.name,"batchShader_");
 			var _g1 = 0;
 			var _g2 = s.funs;
 			while(_g1 < _g2.length) {
@@ -85159,27 +96358,29 @@ hxsl_Linker.prototype = {
 						throw haxe_Exception.thrown("Unexpected " + $hxEnums[e.__enum__].__constructs__[e._hx_index]._hx_name.toLowerCase() + "() function in compute shader");
 					}
 					var offset = v.kind == hxsl_FunctionKind.Vertex ? shaderOffset_vert : shaderOffset_frag;
-					this.addShader(s.name + "." + (v.kind == hxsl_FunctionKind.Vertex ? "vertex" : "fragment"),v.kind == hxsl_FunctionKind.Vertex,f.expr,priority + offset);
+					this.addShader(s.name + "." + (v.kind == hxsl_FunctionKind.Vertex ? "vertex" : "fragment"),v.kind == hxsl_FunctionKind.Vertex ? hxsl__$Linker_ShaderStage.Vertex : hxsl__$Linker_ShaderStage.Fragment,f.expr,priority + offset,false);
 					break;
 				case 2:
 					var prio;
+					var isBatchInit = false;
 					var status;
 					switch(f.ref.name) {
 					case "__init__fragment":
 						prio = initPrio_frag;
-						status = false;
+						status = hxsl__$Linker_ShaderStage.Fragment;
 						break;
 					case "__init__main":
 						prio = initPrio_main;
-						status = false;
+						status = hxsl__$Linker_ShaderStage.Fragment;
 						break;
 					case "__init__vertex":
 						prio = initPrio_vert;
-						status = true;
+						status = hxsl__$Linker_ShaderStage.Vertex;
 						break;
 					default:
 						prio = initPrio_init;
-						status = null;
+						isBatchInit = this.isBatchShader;
+						status = hxsl__$Linker_ShaderStage.Undefined;
 					}
 					var _g3 = f.expr.e;
 					if(_g3._hx_index == 4) {
@@ -85189,10 +96390,10 @@ hxsl_Linker.prototype = {
 						while(_g4 < el.length) {
 							var e1 = el[_g4];
 							++_g4;
-							this.addShader(s.name + "." + f.ref.name + index++,status,e1,prio[0]++);
+							this.addShader(s.name + "." + f.ref.name + index++,status,e1,prio[0]++,isBatchInit);
 						}
 					} else {
-						this.addShader(s.name + "." + f.ref.name,status,f.expr,prio[0]++);
+						this.addShader(s.name + "." + f.ref.name,status,f.expr,prio[0]++,isBatchInit);
 					}
 					break;
 				case 3:
@@ -85201,7 +96402,7 @@ hxsl_Linker.prototype = {
 					if(this.mode != hxsl_LinkMode.Compute) {
 						throw haxe_Exception.thrown("Unexpected main() outside compute shader");
 					}
-					this.addShader(s.name,true,f.expr,priority).isCompute = true;
+					this.addShader(s.name,hxsl__$Linker_ShaderStage.Vertex,f.expr,priority,false).isCompute = true;
 					break;
 				}
 			}
@@ -85216,13 +96417,18 @@ hxsl_Linker.prototype = {
 			++_g;
 			s.uid = uid++;
 		}
-		var entry = new hxsl__$Linker_ShaderInfos("<entry>",false);
-		entry.deps = new haxe_ds_ObjectMap();
+		var ventry = new hxsl__$Linker_ShaderInfos("<vertexEntry>",hxsl__$Linker_ShaderStage.Vertex);
+		ventry.deps = new haxe_ds_ObjectMap();
+		if(outVars.length > 0) {
+			this.buildDependency(ventry,this.allocVar(outVars[0],null),false);
+		}
+		var fentry = new hxsl__$Linker_ShaderInfos("<fragmentEntry>",hxsl__$Linker_ShaderStage.Fragment);
+		fentry.deps = new haxe_ds_ObjectMap();
 		var _g = 0;
 		while(_g < outVars.length) {
 			var v = outVars[_g];
 			++_g;
-			this.buildDependency(entry,this.allocVar(v,null),false);
+			this.buildDependency(fentry,this.allocVar(v,null),false);
 		}
 		var _g = 0;
 		var _g1 = this.shaders;
@@ -85231,7 +96437,11 @@ hxsl_Linker.prototype = {
 			++_g;
 			if(s.hasDiscard || s.isCompute || s.hasSyntax) {
 				this.initDependencies(s);
-				entry.deps.set(s,true);
+				if(s.stage == hxsl__$Linker_ShaderStage.Vertex) {
+					ventry.deps.set(s,true);
+				} else {
+					fentry.deps.set(s,true);
+				}
 			}
 		}
 		var _g = 0;
@@ -85239,7 +96449,7 @@ hxsl_Linker.prototype = {
 		while(_g < _g1.length) {
 			var s = _g1[_g];
 			++_g;
-			if(s.vertex != null) {
+			if(s.stage != hxsl__$Linker_ShaderStage.Undefined) {
 				continue;
 			}
 			var onlyParams = true;
@@ -85264,7 +96474,7 @@ hxsl_Linker.prototype = {
 					}
 					haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "link"});
 				}
-				s.vertex = false;
+				s.stage = hxsl__$Linker_ShaderStage.Fragment;
 			}
 		}
 		var _g = 0;
@@ -85275,11 +96485,11 @@ hxsl_Linker.prototype = {
 			if(s.deps == null) {
 				continue;
 			}
-			if(s.vertex == null) {
+			if(s.stage == hxsl__$Linker_ShaderStage.Undefined) {
 				var d = s.deps.keys();
 				while(d.hasNext()) {
 					var d1 = d.next();
-					if(d1.vertex == false) {
+					if(d1.stage == hxsl__$Linker_ShaderStage.Fragment) {
 						if(hxsl_Debug.TRACE) {
 							var msg = s.name + " marked as fragment because of " + d1.name;
 							var _g2 = 0;
@@ -85290,16 +96500,16 @@ hxsl_Linker.prototype = {
 							}
 							haxe_Log.trace(msg,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "link"});
 						}
-						s.vertex = false;
+						s.stage = hxsl__$Linker_ShaderStage.Fragment;
 						break;
 					}
 				}
 			}
-			if(s.vertex) {
+			if(s.stage == hxsl__$Linker_ShaderStage.Vertex) {
 				var d2 = s.deps.keys();
 				while(d2.hasNext()) {
 					var d3 = d2.next();
-					if(d3.vertex == null) {
+					if(d3.stage == hxsl__$Linker_ShaderStage.Undefined) {
 						if(hxsl_Debug.TRACE) {
 							var msg1 = d3.name + " marked as vertex because of " + s.name;
 							var _g4 = 0;
@@ -85310,16 +96520,19 @@ hxsl_Linker.prototype = {
 							}
 							haxe_Log.trace(msg1,{ fileName : "hxsl/Debug.hx", lineNumber : 31, className : "hxsl.Linker", methodName : "link"});
 						}
-						d3.vertex = true;
+						d3.stage = hxsl__$Linker_ShaderStage.Vertex;
 					}
 				}
 			}
 		}
 		var v = [];
 		var f = [];
-		this.collect(entry,v,true);
-		this.collect(entry,f,false);
-		if(f.pop() != entry) {
+		this.collect(ventry,v,f,hxsl__$Linker_ShaderStage.Vertex);
+		if(v.pop() != ventry) {
+			throw haxe_Exception.thrown("assert");
+		}
+		this.collect(fentry,v,f,hxsl__$Linker_ShaderStage.Fragment);
+		if(f.pop() != fentry) {
 			throw haxe_Exception.thrown("assert");
 		}
 		var _g = 0;
@@ -85327,7 +96540,11 @@ hxsl_Linker.prototype = {
 		while(_g < _g1.length) {
 			var s = _g1[_g];
 			++_g;
-			s.marked = null;
+			var i = 0;
+			if(i == null) {
+				i = 0;
+			}
+			s.marked = i;
 		}
 		var _g = 0;
 		var _g1 = v.concat(f);
@@ -85337,11 +96554,11 @@ hxsl_Linker.prototype = {
 			var d = s.deps.keys();
 			while(d.hasNext()) {
 				var d1 = d.next();
-				if(d1.marked == null) {
+				if(d1.marked == 0) {
 					this.error(d1.name + " needed by " + s.name + " is unreachable",null);
 				}
 			}
-			s.marked = true;
+			s.marked |= 1 << hxsl__$Linker_ShaderStage.Vertex._hx_index;
 		}
 		var outVars = [];
 		var varMap_h = { };
@@ -85404,7 +96621,7 @@ hxsl_Linker.prototype = {
 			cleanVar(v1);
 		}
 		var build = function(kind,name,a) {
-			var v = { id : hxsl_Tools.allocVarId(), name : name, type : hxsl_Type.TFun([{ ret : hxsl_Type.TVoid, args : []}]), kind : hxsl_VarKind.Function};
+			var v = new hxsl_TVar(hxsl_Tools.allocVarId(),name,hxsl_Type.TFun([{ ret : hxsl_Type.TVoid, args : []}]),hxsl_VarKind.Function,null,null);
 			outVars.push(v);
 			var exprs = [];
 			var _g = 0;
@@ -85424,7 +96641,7 @@ hxsl_Linker.prototype = {
 					exprs.push(s.body);
 				}
 			}
-			var expr = { e : hxsl_TExprDef.TBlock(exprs), t : hxsl_Type.TVoid, p : exprs.length == 0 ? null : exprs[0].p};
+			var expr = new hxsl_TExpr(hxsl_TExprDef.TBlock(exprs),hxsl_Type.TVoid,exprs.length == 0 ? null : exprs[0].p);
 			return { kind : kind, ref : v, ret : hxsl_Type.TVoid, args : [], expr : expr};
 		};
 		var funs = this.mode == hxsl_LinkMode.Compute ? [build(hxsl_FunctionKind.Main,"main",v)] : [build(hxsl_FunctionKind.Vertex,"vertex",v),build(hxsl_FunctionKind.Fragment,"fragment",f)];
@@ -85436,7 +96653,11 @@ hxsl_Linker.prototype = {
 			var _g2 = d.cloned.vars.length;
 			while(_g1 < _g2) {
 				var i = _g1++;
-				this.allocVar(d.cloned.vars[i],null).merged.unshift(d.origin.vars[i]);
+				var _this = this.allocVar(d.cloned.vars[i],null);
+				if(_this.merged == null) {
+					_this.merged = [_this.mergedV];
+				}
+				_this.merged.unshift(d.origin.vars[i]);
 			}
 		}
 		return { name : "out", vars : outVars, funs : funs};
@@ -85746,6 +96967,9 @@ hxsl_Printer.prototype = {
 					break;
 				case 14:
 					v1 = "flat";
+					break;
+				case 15:
+					v1 = "noVar";
 					break;
 				}
 				this.buffer.b += Std.string("@" + v1 + " ");
@@ -86347,7 +97571,7 @@ hxsl_Serializer.prototype = {
 			if(this.version == 0) {
 				return hxsl_Type.TMat2;
 			} else {
-				throw haxe_Exception.thrown("assert");
+				return hxsl_Type.TTextureHandle;
 			}
 			break;
 		default:
@@ -86529,7 +97753,7 @@ hxsl_Serializer.prototype = {
 		default:
 			throw haxe_Exception.thrown("assert");
 		}
-		return { e : e, t : this.readType(), p : null};
+		return new hxsl_TExpr(e,this.readType(),null);
 	}
 	,readVar: function() {
 		var id = this.readVarInt();
@@ -86540,7 +97764,7 @@ hxsl_Serializer.prototype = {
 		if(v != null) {
 			return v;
 		}
-		v = { id : hxsl_Tools.allocVarId(), name : this.readString(), type : null, kind : null};
+		v = new hxsl_TVar(hxsl_Tools.allocVarId(),this.readString(),null,null,null,null);
 		this.varMap.h[id] = v;
 		v.type = this.readType();
 		v.kind = hxsl_Serializer.VKINDS[this.input.readByte()];
@@ -86874,7 +98098,7 @@ hxsl_SharedShader.prototype = {
 					name = HxOverrides.substr(i.name,0,-4);
 					p += w - 1;
 				}
-				vli.push({ id : hxsl_Tools.allocVarId(), name : name, type : t, kind : v.kind, parent : v});
+				vli.push(new hxsl_TVar(hxsl_Tools.allocVarId(),name,t,v.kind,v,null));
 			}
 			var _g = 0;
 			while(_g < vl.length) {
@@ -86954,7 +98178,7 @@ hxsl_SharedShader.prototype = {
 				var kind = _g.kind;
 				var bits = constBits >>> c.pos & (1 << c.bits) - 1;
 				var fmt = hxd_BufferFormat.fromID(bits);
-				var v = { id : c.v.id, name : c.v.name, kind : c.v.kind, type : null};
+				var v = new hxsl_TVar(c.v.id,c.v.name,null,c.v.kind,null,null);
 				var fullT = this.makeBufferType(v,t,fmt);
 				var tmp;
 				switch(kind._hx_index) {
@@ -87167,6 +98391,8 @@ hxsl__$Splitter_VarProps.prototype = {
 	__class__: hxsl__$Splitter_VarProps
 };
 var hxsl_Splitter = function() {
+	this.mapVarsFun = $bind(this,this.mapVars);
+	this.checkExprFun = $bind(this,this.checkExpr);
 };
 $hxClasses["hxsl.Splitter"] = hxsl_Splitter;
 hxsl_Splitter.__name__ = "hxsl.Splitter";
@@ -87182,6 +98408,7 @@ hxsl_Splitter.prototype = {
 		var afvars = [];
 		var isCompute = false;
 		this.varNames = new haxe_ds_StringMap();
+		this.varNamesKByPrefix = new haxe_ds_StringMap();
 		this.varMap = new haxe_ds_ObjectMap();
 		var _g = 0;
 		var _g1 = s.funs;
@@ -87221,22 +98448,24 @@ hxsl_Splitter.prototype = {
 			}
 			switch(v[0].kind._hx_index) {
 			case 3:case 4:
-				var fv = fvars.h[inf[0].origin.id];
-				v[0].kind = fv != null && fv.read > 0 ? hxsl_VarKind.Var : hxsl_VarKind.Local;
+				if(!hxsl_Tools.hasQualifier(v[0],hxsl_VarQualifier.NoVar)) {
+					var fv = fvars.h[inf[0].origin.id];
+					v[0].kind = fv != null && fv.read > 0 ? hxsl_VarKind.Var : hxsl_VarKind.Local;
+				}
 				break;
 			default:
 			}
 			switch(v[0].kind._hx_index) {
 			case 3:case 5:
 				if(inf[0].read > 0 || inf[0].write > 1) {
-					var nv = { id : hxsl_Tools.allocVarId(), name : v[0].name, kind : hxsl_VarKind.Local, type : v[0].type};
+					var nv = new hxsl_TVar(hxsl_Tools.allocVarId(),v[0].name,v[0].type,hxsl_VarKind.Local,null,null);
 					this.uniqueName(nv);
 					this.varMap.set(inf[0].origin,nv);
 					var ninf = new hxsl__$Splitter_VarProps(nv);
 					ninf.read++;
 					vvars.h[nv.id] = ninf;
 					var p = vfun.expr.p;
-					var e = [{ e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,{ e : hxsl_TExprDef.TVar(v[0]), t : nv.type, p : p},{ e : hxsl_TExprDef.TVar(nv), t : v[0].type, p : p}), t : nv.type, p : p}];
+					var e = [new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,new hxsl_TExpr(hxsl_TExprDef.TVar(v[0]),nv.type,p),new hxsl_TExpr(hxsl_TExprDef.TVar(nv),v[0].type,p)),nv.type,p)];
 					vafterMap.push((function(e) {
 						return function() {
 							_gthis.addExpr(vfun,e[0]);
@@ -87269,7 +98498,7 @@ hxsl_Splitter.prototype = {
 			var v1 = inf1.v;
 			switch(v1.kind._hx_index) {
 			case 1:
-				var nv = { id : hxsl_Tools.allocVarId(), name : v1.name, kind : hxsl_VarKind.Var, type : v1.type};
+				var nv = new hxsl_TVar(hxsl_Tools.allocVarId(),v1.name,v1.type,hxsl_VarKind.Var,null,null);
 				this.uniqueName(nv);
 				var i = vvars.h[inf1.origin.id];
 				if(i == null) {
@@ -87282,13 +98511,13 @@ hxsl_Splitter.prototype = {
 				ninf.origin = inf1.origin;
 				fvars.h[inf1.origin.id] = ninf;
 				vvars.h[nv.id] = ninf;
-				this.addExpr(vfun,{ e : hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,{ e : hxsl_TExprDef.TVar(nv), t : v1.type, p : vfun.expr.p},{ e : hxsl_TExprDef.TVar(v1), t : v1.type, p : vfun.expr.p}), t : v1.type, p : vfun.expr.p});
+				this.addExpr(vfun,new hxsl_TExpr(hxsl_TExprDef.TBinop(haxe_macro_Binop.OpAssign,new hxsl_TExpr(hxsl_TExprDef.TVar(nv),v1.type,vfun.expr.p),new hxsl_TExpr(hxsl_TExprDef.TVar(v1),v1.type,vfun.expr.p)),v1.type,vfun.expr.p));
 				break;
 			case 3:
 				if(inf1.write > 0) {
-					var nv1 = { id : hxsl_Tools.allocVarId(), name : v1.name, kind : hxsl_VarKind.Local, type : v1.type};
+					var nv1 = new hxsl_TVar(hxsl_Tools.allocVarId(),v1.name,v1.type,hxsl_VarKind.Local,null,null);
 					this.uniqueName(nv1);
-					finits.push({ e : hxsl_TExprDef.TVarDecl(nv1,{ e : hxsl_TExprDef.TVar(v1), t : v1.type, p : ffun.expr.p}), t : hxsl_Type.TVoid, p : ffun.expr.p});
+					finits.push(new hxsl_TExpr(hxsl_TExprDef.TVarDecl(nv1,new hxsl_TExpr(hxsl_TExprDef.TVar(v1),v1.type,ffun.expr.p)),hxsl_Type.TVoid,ffun.expr.p));
 					this.varMap.set(inf1.origin,nv1);
 				}
 				break;
@@ -87318,7 +98547,7 @@ hxsl_Splitter.prototype = {
 				}
 			} else {
 				finits.push(ffun.expr);
-				ffun.expr = { e : hxsl_TExprDef.TBlock(finits), t : hxsl_Type.TVoid, p : ffun.expr.p};
+				ffun.expr = new hxsl_TExpr(hxsl_TExprDef.TBlock(finits),hxsl_Type.TVoid,ffun.expr.p);
 			}
 		}
 		var _g = [];
@@ -87389,7 +98618,7 @@ hxsl_Splitter.prototype = {
 			var el = _g.el;
 			el.push(e);
 		} else {
-			f.expr = { e : hxsl_TExprDef.TBlock([f.expr,e]), t : hxsl_Type.TVoid, p : f.expr.p};
+			f.expr = new hxsl_TExpr(hxsl_TExprDef.TBlock([f.expr,e]),hxsl_Type.TVoid,f.expr.p);
 		}
 	}
 	,checkVar: function(v,vertex,vvars,p) {
@@ -87424,7 +98653,7 @@ hxsl_Splitter.prototype = {
 			if(v2 == null) {
 				return e;
 			} else {
-				return { e : hxsl_TExprDef.TVar(v2), t : e.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TVar(v2),e.t,e.p);
 			}
 			break;
 		case 7:
@@ -87432,9 +98661,162 @@ hxsl_Splitter.prototype = {
 			var init = _g.init;
 			var v2 = this.varMap.h[v.__id__];
 			if(v2 == null) {
-				return hxsl_Tools.map(e,$bind(this,this.mapVars));
+				var f = this.mapVarsFun;
+				var ed;
+				var _g1 = e.e;
+				switch(_g1._hx_index) {
+				case 0:
+					var _g2 = _g1.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g2 = _g1.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g2 = _g1.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g2);
+					break;
+				case 5:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					var e2 = _g1.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g1.op;
+					var e1 = _g1.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g1.v;
+					var init1 = _g1.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init1 != null ? f(init1) : null);
+					break;
+				case 8:
+					var e1 = _g1.e;
+					var args = _g1.args;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < args.length) {
+						var a = args[_g3];
+						++_g3;
+						_g2.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g2);
+					break;
+				case 9:
+					var e1 = _g1.e;
+					var c = _g1.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g1.econd;
+					var eif = _g1.eif;
+					var eelse = _g1.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g1.v;
+					var it = _g1.it;
+					var loop = _g1.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g1.e;
+					var index = _g1.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g1.el;
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < el.length) {
+						var e1 = el[_g3];
+						++_g3;
+						_g2.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g2);
+					break;
+				case 18:
+					var e1 = _g1.e;
+					var cases = _g1.cases;
+					var def = _g1.def;
+					var ed1 = f(e1);
+					var _g2 = [];
+					var _g3 = 0;
+					while(_g3 < cases.length) {
+						var c = cases[_g3];
+						++_g3;
+						var _g4 = [];
+						var _g5 = 0;
+						var _g6 = c.values;
+						while(_g5 < _g6.length) {
+							var v = _g6[_g5];
+							++_g5;
+							_g4.push(f(v));
+						}
+						_g2.push({ values : _g4, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g2,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g1.e;
+					var loop = _g1.loop;
+					var normalWhile = _g1.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+					break;
+				case 20:
+					var m = _g1.m;
+					var args = _g1.args;
+					var e1 = _g1.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g1.e;
+					var name = _g1.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g1.target;
+					var code = _g1.code;
+					var args = _g1.args;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var arg = args[_g2];
+						++_g2;
+						_g1.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g1);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			} else {
-				return { e : hxsl_TExprDef.TVarDecl(v2,init == null ? null : this.mapVars(init)), t : e.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TVarDecl(v2,init == null ? null : this.mapVars(init)),e.t,e.p);
 			}
 			break;
 		case 13:
@@ -87443,13 +98825,319 @@ hxsl_Splitter.prototype = {
 			var loop = _g.loop;
 			var v2 = this.varMap.h[v.__id__];
 			if(v2 == null) {
-				return hxsl_Tools.map(e,$bind(this,this.mapVars));
+				var f = this.mapVarsFun;
+				var ed;
+				var _g = e.e;
+				switch(_g._hx_index) {
+				case 0:
+					var _g1 = _g.c;
+					ed = e.e;
+					break;
+				case 1:
+					var _g1 = _g.v;
+					ed = e.e;
+					break;
+				case 2:
+					var _g1 = _g.g;
+					ed = e.e;
+					break;
+				case 3:
+					var e1 = _g.e;
+					ed = hxsl_TExprDef.TParenthesis(f(e1));
+					break;
+				case 4:
+					var el = _g.el;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < el.length) {
+						var e1 = el[_g2];
+						++_g2;
+						_g1.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TBlock(_g1);
+					break;
+				case 5:
+					var op = _g.op;
+					var e1 = _g.e1;
+					var e2 = _g.e2;
+					ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+					break;
+				case 6:
+					var op = _g.op;
+					var e1 = _g.e1;
+					ed = hxsl_TExprDef.TUnop(op,f(e1));
+					break;
+				case 7:
+					var v = _g.v;
+					var init = _g.init;
+					ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+					break;
+				case 8:
+					var e1 = _g.e;
+					var args = _g.args;
+					var ed1 = f(e1);
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < args.length) {
+						var a = args[_g2];
+						++_g2;
+						_g1.push(f(a));
+					}
+					ed = hxsl_TExprDef.TCall(ed1,_g1);
+					break;
+				case 9:
+					var e1 = _g.e;
+					var c = _g.regs;
+					ed = hxsl_TExprDef.TSwiz(f(e1),c);
+					break;
+				case 10:
+					var econd = _g.econd;
+					var eif = _g.eif;
+					var eelse = _g.eelse;
+					ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+					break;
+				case 12:
+					var e1 = _g.e;
+					ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+					break;
+				case 13:
+					var v = _g.v;
+					var it1 = _g.it;
+					var loop1 = _g.loop;
+					ed = hxsl_TExprDef.TFor(v,f(it1),f(loop1));
+					break;
+				case 11:case 14:case 15:
+					ed = e.e;
+					break;
+				case 16:
+					var e1 = _g.e;
+					var index = _g.index;
+					ed = hxsl_TExprDef.TArray(f(e1),f(index));
+					break;
+				case 17:
+					var el = _g.el;
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < el.length) {
+						var e1 = el[_g2];
+						++_g2;
+						_g1.push(f(e1));
+					}
+					ed = hxsl_TExprDef.TArrayDecl(_g1);
+					break;
+				case 18:
+					var e1 = _g.e;
+					var cases = _g.cases;
+					var def = _g.def;
+					var ed1 = f(e1);
+					var _g1 = [];
+					var _g2 = 0;
+					while(_g2 < cases.length) {
+						var c = cases[_g2];
+						++_g2;
+						var _g3 = [];
+						var _g4 = 0;
+						var _g5 = c.values;
+						while(_g4 < _g5.length) {
+							var v = _g5[_g4];
+							++_g4;
+							_g3.push(f(v));
+						}
+						_g1.push({ values : _g3, expr : f(c.expr)});
+					}
+					ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+					break;
+				case 19:
+					var e1 = _g.e;
+					var loop1 = _g.loop;
+					var normalWhile = _g.normalWhile;
+					ed = hxsl_TExprDef.TWhile(f(e1),f(loop1),normalWhile);
+					break;
+				case 20:
+					var m = _g.m;
+					var args = _g.args;
+					var e1 = _g.e;
+					ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+					break;
+				case 21:
+					var e1 = _g.e;
+					var name = _g.name;
+					ed = hxsl_TExprDef.TField(f(e1),name);
+					break;
+				case 22:
+					var target = _g.target;
+					var code = _g.code;
+					var args = _g.args;
+					var _g = [];
+					var _g1 = 0;
+					while(_g1 < args.length) {
+						var arg = args[_g1];
+						++_g1;
+						_g.push({ e : f(arg.e), access : arg.access});
+					}
+					ed = hxsl_TExprDef.TSyntax(target,code,_g);
+					break;
+				}
+				return new hxsl_TExpr(ed,e.t,e.p);
 			} else {
-				return { e : hxsl_TExprDef.TFor(v2,this.mapVars(it),this.mapVars(loop)), t : e.t, p : e.p};
+				return new hxsl_TExpr(hxsl_TExprDef.TFor(v2,this.mapVars(it),this.mapVars(loop)),e.t,e.p);
 			}
 			break;
 		default:
-			return hxsl_Tools.map(e,$bind(this,this.mapVars));
+			var f = this.mapVarsFun;
+			var ed;
+			var _g = e.e;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.c;
+				ed = e.e;
+				break;
+			case 1:
+				var _g1 = _g.v;
+				ed = e.e;
+				break;
+			case 2:
+				var _g1 = _g.g;
+				ed = e.e;
+				break;
+			case 3:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TParenthesis(f(e1));
+				break;
+			case 4:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TBlock(_g1);
+				break;
+			case 5:
+				var op = _g.op;
+				var e1 = _g.e1;
+				var e2 = _g.e2;
+				ed = hxsl_TExprDef.TBinop(op,f(e1),f(e2));
+				break;
+			case 6:
+				var op = _g.op;
+				var e1 = _g.e1;
+				ed = hxsl_TExprDef.TUnop(op,f(e1));
+				break;
+			case 7:
+				var v = _g.v;
+				var init = _g.init;
+				ed = hxsl_TExprDef.TVarDecl(v,init != null ? f(init) : null);
+				break;
+			case 8:
+				var e1 = _g.e;
+				var args = _g.args;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < args.length) {
+					var a = args[_g2];
+					++_g2;
+					_g1.push(f(a));
+				}
+				ed = hxsl_TExprDef.TCall(ed1,_g1);
+				break;
+			case 9:
+				var e1 = _g.e;
+				var c = _g.regs;
+				ed = hxsl_TExprDef.TSwiz(f(e1),c);
+				break;
+			case 10:
+				var econd = _g.econd;
+				var eif = _g.eif;
+				var eelse = _g.eelse;
+				ed = hxsl_TExprDef.TIf(f(econd),f(eif),eelse != null ? f(eelse) : null);
+				break;
+			case 12:
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TReturn(e1 != null ? f(e1) : null);
+				break;
+			case 13:
+				var v = _g.v;
+				var it = _g.it;
+				var loop = _g.loop;
+				ed = hxsl_TExprDef.TFor(v,f(it),f(loop));
+				break;
+			case 11:case 14:case 15:
+				ed = e.e;
+				break;
+			case 16:
+				var e1 = _g.e;
+				var index = _g.index;
+				ed = hxsl_TExprDef.TArray(f(e1),f(index));
+				break;
+			case 17:
+				var el = _g.el;
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < el.length) {
+					var e1 = el[_g2];
+					++_g2;
+					_g1.push(f(e1));
+				}
+				ed = hxsl_TExprDef.TArrayDecl(_g1);
+				break;
+			case 18:
+				var e1 = _g.e;
+				var cases = _g.cases;
+				var def = _g.def;
+				var ed1 = f(e1);
+				var _g1 = [];
+				var _g2 = 0;
+				while(_g2 < cases.length) {
+					var c = cases[_g2];
+					++_g2;
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = c.values;
+					while(_g4 < _g5.length) {
+						var v = _g5[_g4];
+						++_g4;
+						_g3.push(f(v));
+					}
+					_g1.push({ values : _g3, expr : f(c.expr)});
+				}
+				ed = hxsl_TExprDef.TSwitch(ed1,_g1,def == null ? null : f(def));
+				break;
+			case 19:
+				var e1 = _g.e;
+				var loop = _g.loop;
+				var normalWhile = _g.normalWhile;
+				ed = hxsl_TExprDef.TWhile(f(e1),f(loop),normalWhile);
+				break;
+			case 20:
+				var m = _g.m;
+				var args = _g.args;
+				var e1 = _g.e;
+				ed = hxsl_TExprDef.TMeta(m,args,f(e1));
+				break;
+			case 21:
+				var e1 = _g.e;
+				var name = _g.name;
+				ed = hxsl_TExprDef.TField(f(e1),name);
+				break;
+			case 22:
+				var target = _g.target;
+				var code = _g.code;
+				var args = _g.args;
+				var _g = [];
+				var _g1 = 0;
+				while(_g1 < args.length) {
+					var arg = args[_g1];
+					++_g1;
+					_g.push({ e : f(arg.e), access : arg.access});
+				}
+				ed = hxsl_TExprDef.TSyntax(target,code,_g);
+				break;
+			}
+			return new hxsl_TExpr(ed,e.t,e.p);
 		}
 	}
 	,get: function(v) {
@@ -87460,7 +99148,7 @@ hxsl_Splitter.prototype = {
 				if(v.kind == hxsl_VarKind.Global || v.kind == hxsl_VarKind.Output || v.kind == hxsl_VarKind.Input) {
 					nv = v;
 				} else {
-					nv = { id : hxsl_Tools.allocVarId(), name : v.name, kind : v.kind, type : v.type};
+					nv = new hxsl_TVar(hxsl_Tools.allocVarId(),v.name,v.type,v.kind,null,null);
 					if(v.qualifiers != null) {
 						var _g = 0;
 						var _g1 = v.qualifiers;
@@ -87495,7 +99183,7 @@ hxsl_Splitter.prototype = {
 							case 12:
 								var _g10 = q.name;
 								break;
-							case 13:case 14:
+							case 13:case 14:case 15:
 								if(nv.qualifiers == null) {
 									nv.qualifiers = [];
 								}
@@ -87522,10 +99210,21 @@ hxsl_Splitter.prototype = {
 		var n = this.varNames.h[v.name];
 		if(n != null && n != v) {
 			var prefix = v.name;
-			while(HxOverrides.cca(prefix,prefix.length - 1) >= 48 && HxOverrides.cca(prefix,prefix.length - 1) <= 57) prefix = HxOverrides.substr(prefix,0,-1);
+			while(prefix.length > 0) {
+				var c = prefix.charCodeAt(prefix.length - 1);
+				if(c < 48 || c > 57) {
+					break;
+				}
+				prefix = HxOverrides.substr(prefix,0,-1);
+			}
 			var k = prefix == v.name ? 2 : Std.parseInt(HxOverrides.substr(v.name,prefix.length,null));
+			var lastK = this.varNamesKByPrefix.h[prefix];
+			if(k <= lastK) {
+				k = lastK + 1;
+			}
 			while(Object.prototype.hasOwnProperty.call(this.varNames.h,prefix + k)) ++k;
 			v.name = prefix + k;
+			this.varNamesKByPrefix.h[prefix] = k;
 		}
 		this.varNames.h[v.name] = v;
 	}
@@ -87548,8 +99247,8 @@ hxsl_Splitter.prototype = {
 			switch(_g1._hx_index) {
 			case 4:
 				var _g4 = _g2.e;
-				var _g5 = _g2.p;
 				var _g5 = _g2.t;
+				var _g5 = _g2.p;
 				switch(_g4._hx_index) {
 				case 1:
 					var v = _g4.v;
@@ -87562,8 +99261,8 @@ hxsl_Splitter.prototype = {
 					var _g5 = _g4.e;
 					var _g6 = _g4.regs;
 					var _g4 = _g5.e;
-					var _g6 = _g5.p;
 					var _g6 = _g5.t;
+					var _g6 = _g5.p;
 					if(_g4._hx_index == 1) {
 						var v = _g4.v;
 						var e1 = _g3;
@@ -87571,18 +99270,18 @@ hxsl_Splitter.prototype = {
 						inf.write++;
 						this.checkExpr(e1);
 					} else {
-						hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+						hxsl_Tools.iter(e,this.checkExprFun);
 					}
 					break;
 				default:
-					hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+					hxsl_Tools.iter(e,this.checkExprFun);
 				}
 				break;
 			case 20:
 				var _g4 = _g1.op;
 				var _g1 = _g2.e;
-				var _g4 = _g2.p;
 				var _g4 = _g2.t;
+				var _g4 = _g2.p;
 				switch(_g1._hx_index) {
 				case 1:
 					var v = _g1.v;
@@ -87599,8 +99298,8 @@ hxsl_Splitter.prototype = {
 					var _g2 = _g1.e;
 					var _g4 = _g1.regs;
 					var _g1 = _g2.e;
-					var _g4 = _g2.p;
 					var _g4 = _g2.t;
+					var _g4 = _g2.p;
 					if(_g1._hx_index == 1) {
 						var v = _g1.v;
 						var e1 = _g3;
@@ -87612,15 +99311,15 @@ hxsl_Splitter.prototype = {
 						inf.write++;
 						this.checkExpr(e1);
 					} else {
-						hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+						hxsl_Tools.iter(e,this.checkExprFun);
 					}
 					break;
 				default:
-					hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+					hxsl_Tools.iter(e,this.checkExprFun);
 				}
 				break;
 			default:
-				hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+				hxsl_Tools.iter(e,this.checkExprFun);
 			}
 			break;
 		case 7:
@@ -87631,6 +99330,38 @@ hxsl_Splitter.prototype = {
 			if(init != null) {
 				this.checkExpr(init);
 				inf.write++;
+			}
+			break;
+		case 8:
+			var _g1 = _g.e;
+			var _g2 = _g.args;
+			var _g3 = _g1.e;
+			var _g4 = _g1.t;
+			var _g4 = _g1.p;
+			if(_g3._hx_index == 2) {
+				if(_g3.g._hx_index == 90) {
+					if(_g2.length == 2) {
+						var _g1 = _g2[1];
+						var _g3 = _g1.e;
+						var _g4 = _g1.t;
+						var _g4 = _g1.p;
+						if(_g3._hx_index == 1) {
+							var v = _g3.v;
+							var handle = _g2[0];
+							var inf = this.get(v);
+							inf.write++;
+							this.checkExpr(handle);
+						} else {
+							hxsl_Tools.iter(e,this.checkExprFun);
+						}
+					} else {
+						hxsl_Tools.iter(e,this.checkExprFun);
+					}
+				} else {
+					hxsl_Tools.iter(e,this.checkExprFun);
+				}
+			} else {
+				hxsl_Tools.iter(e,this.checkExprFun);
 			}
 			break;
 		case 13:
@@ -87680,7 +99411,7 @@ hxsl_Splitter.prototype = {
 			}
 			break;
 		default:
-			hxsl_Tools.iter(e,$bind(this,this.checkExpr));
+			hxsl_Tools.iter(e,this.checkExprFun);
 		}
 	}
 	,__class__: hxsl_Splitter
@@ -88261,6 +99992,7 @@ screens_advanced_IncrementalDemoScreen.prototype = $extend(DemoScreenBase.protot
 	,__class__: screens_advanced_IncrementalDemoScreen
 });
 var screens_advanced_InteractivesDemoScreen = function(screenManager,layers) {
+	this.cardsDisabled = false;
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.advanced.InteractivesDemoScreen"] = screens_advanced_InteractivesDemoScreen;
@@ -88268,68 +100000,90 @@ screens_advanced_InteractivesDemoScreen.__name__ = "screens.advanced.Interactive
 screens_advanced_InteractivesDemoScreen.__super__ = DemoScreenBase;
 screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Interactives","Hit regions with typed metadata using interactive(w, h, id, key=>val)");
+		this.setupDemo("Interactives","Hit regions with typed metadata, cursors, rich highlights, and event filters");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/advanced/interactives.manim",false);
-		this.demoResult = this.demoBuilder.buildWithParameters("interactivesDemo",new haxe_ds_StringMap());
+		this.demoResult = this.demoBuilder.buildWithParameters("interactivesDemo",new haxe_ds_StringMap(),null,null,true);
 		var _this = this.demoResult.object;
 		_this.posChanged = true;
 		_this.x = 50;
 		_this.posChanged = true;
-		_this.y = 140;
+		_this.y = 100;
 		this.addBuilderResult(this.demoResult);
 		this.addInteractives(this.demoResult);
-		this.statusText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_light_14"));
-		this.statusText.set_text("Click on any interactive region to see its id and metadata");
-		this.statusText.set_textColor(13421772);
-		var _this = this.statusText;
-		_this.posChanged = true;
-		_this.x = 50;
-		_this.posChanged = true;
-		_this.y = 560;
-		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.clickInfoText = new h2d_Text(bh_base_FontManager.getFontByName("exo2_16"));
-		this.clickInfoText.set_text("No region clicked yet");
-		this.clickInfoText.set_textColor(8379354);
-		var _this = this.clickInfoText;
-		_this.posChanged = true;
-		_this.x = 50;
-		_this.posChanged = true;
-		_this.y = 590;
-		this.addObjectToLayer(this.clickInfoText,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.richHelper = new bh_ui_UIRichInteractiveHelper(this);
+		this.richHelper.register(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		switch(event._hx_index) {
-		case 0:
-			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
-				var wrapper = source;
-				var id = wrapper.id;
-				if(this.clickInfoText != null) {
-					this.clickInfoText.set_text("Clicked: id=\"" + id + "\"");
-				}
+		if(this.richHelper != null) {
+			this.richHelper.handleEvent(event);
+		}
+		if(event._hx_index == 14) {
+			var _g = event.id;
+			var _g1 = event.metadata;
+			switch(event.event._hx_index) {
+			case 0:
+				var id = _g;
+				var metadata = _g1;
+				this.handleClick(id,metadata);
+				break;
+			case 11:
+				var id = _g;
+				var metadata = _g1;
+				this.updateStatus("statusText","Hovering: " + id + " " + this.formatMeta(metadata));
+				break;
+			case 12:
+				this.updateStatus("statusText","Hover or click any interactive region");
+				break;
+			default:
 			}
-			break;
-		case 11:
-			if(((source) instanceof bh_ui_UIInteractiveWrapper)) {
-				var wrapper = source;
-				if(this.statusText != null) {
-					this.statusText.set_text("Hovering: " + wrapper.id);
-				}
+		}
+	}
+	,handleClick: function(id,metadata) {
+		if(id == "toggleDisable") {
+			this.cardsDisabled = !this.cardsDisabled;
+			if(this.richHelper != null) {
+				this.richHelper.setDisabled("card1",this.cardsDisabled);
+				this.richHelper.setDisabled("card2",this.cardsDisabled);
+				this.richHelper.setDisabled("card3",this.cardsDisabled);
 			}
-			break;
-		case 12:
-			if(this.statusText != null) {
-				this.statusText.set_text("Click on any interactive region to see its id and metadata");
+			this.updateStatus("clickText","Cards " + (this.cardsDisabled ? "disabled" : "enabled"));
+			return;
+		}
+		this.updateStatus("clickText","Clicked: \"" + id + "\" " + this.formatMeta(metadata));
+	}
+	,formatMeta: function(metadata) {
+		if(!metadata.hasSettings()) {
+			return "";
+		}
+		var parts = [];
+		var key = metadata.keys();
+		while(key.hasNext()) {
+			var key1 = key.next();
+			if(key1 == "bind" || key1 == "events" || StringTools.startsWith(key1,"cursor")) {
+				continue;
 			}
-			break;
-		default:
+			parts.push("" + key1 + "=" + metadata.getStringOrDefault(key1,"?"));
+		}
+		if(parts.length > 0) {
+			return "{ " + parts.join(", ") + " }";
+		} else {
+			return "";
+		}
+	}
+	,updateStatus: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
 		this.demoResult = null;
-		this.statusText = null;
-		this.clickInfoText = null;
+		this.richHelper = null;
 	}
 	,__class__: screens_advanced_InteractivesDemoScreen
 });
@@ -96964,6 +108718,297 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,__class__: screens_ui_TabsDemoScreen
 });
+var screens_ui_TextInputDemoScreen = function(screenManager,layers) {
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.ui.TextInputDemoScreen"] = screens_ui_TextInputDemoScreen;
+screens_ui_TextInputDemoScreen.__name__ = "screens.ui.TextInputDemoScreen";
+screens_ui_TextInputDemoScreen.__super__ = DemoScreenBase;
+screens_ui_TextInputDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Text Input","Text input fields with styles, filters, and tab navigation");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/textinput-demo.manim",false);
+		this.myTabGroup = this.enableTabNavigation();
+		var generatedByMacroBuildWithParametersload1419Builder = function() {
+			var titleGreyInput;
+			var titleColorInput;
+			var readOnlyInput;
+			var numericInput;
+			var maxLenInput;
+			var lastNameInput;
+			var greyInput;
+			var firstNameInput;
+			var enterAdvancesToggle;
+			var emailInput;
+			var disabledInput;
+			var disableAllToggle;
+			var colorInput;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				titleGreyInput = _el;
+				return _el.getObject();
+			});
+			_g.h["titleGreyInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				titleColorInput = _el;
+				return _el.getObject();
+			});
+			_g.h["titleColorInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				readOnlyInput = _el;
+				return _el.getObject();
+			});
+			_g.h["readOnlyInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				numericInput = _el;
+				return _el.getObject();
+			});
+			_g.h["numericInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				maxLenInput = _el;
+				return _el.getObject();
+			});
+			_g.h["maxLenInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				lastNameInput = _el;
+				return _el.getObject();
+			});
+			_g.h["lastNameInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				greyInput = _el;
+				return _el.getObject();
+			});
+			_g.h["greyInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				firstNameInput = _el;
+				return _el.getObject();
+			});
+			_g.h["firstNameInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				enterAdvancesToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["enterAdvancesToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				emailInput = _el;
+				return _el.getObject();
+			});
+			_g.h["emailInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disabledInput = _el;
+				return _el.getObject();
+			});
+			_g.h["disabledInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableAllToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["disableAllToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				colorInput = _el;
+				return _el.getObject();
+			});
+			_g.h["colorInput"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("textInputDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { titleGreyInput : titleGreyInput, titleColorInput : titleColorInput, readOnlyInput : readOnlyInput, numericInput : numericInput, maxLenInput : maxLenInput, lastNameInput : lastNameInput, greyInput : greyInput, firstNameInput : firstNameInput, enterAdvancesToggle : enterAdvancesToggle, emailInput : emailInput, disabledInput : disabledInput, disableAllToggle : disableAllToggle, colorInput : colorInput, builderResults : builderResults1};
+			if(retVal.titleGreyInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "titleGreyInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.titleColorInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "titleColorInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.readOnlyInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "readOnlyInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.numericInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "numericInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.maxLenInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "maxLenInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.lastNameInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "lastNameInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.greyInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "greyInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.firstNameInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "firstNameInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.enterAdvancesToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "enterAdvancesToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.emailInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "emailInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.disabledInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disabledInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.disableAllToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableAllToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.colorInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "colorInput" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload1419Builder();
+		this.demoResult = ui.builderResults;
+		this.colorInput = ui.colorInput;
+		this.greyInput = ui.greyInput;
+		this.titleColorInput = ui.titleColorInput;
+		this.titleGreyInput = ui.titleGreyInput;
+		this.maxLenInput = ui.maxLenInput;
+		this.numericInput = ui.numericInput;
+		this.readOnlyInput = ui.readOnlyInput;
+		this.disabledInput = ui.disabledInput;
+		this.firstNameInput = ui.firstNameInput;
+		this.lastNameInput = ui.lastNameInput;
+		this.emailInput = ui.emailInput;
+		this.enterAdvancesToggle = ui.enterAdvancesToggle;
+		this.disableAllToggle = ui.disableAllToggle;
+		if(this.disabledInput != null) {
+			this.disabledInput.set_disabled(true);
+		}
+		this.addBuilderResult(this.demoResult);
+	}
+	,onScreenEvent: function(event,source) {
+		switch(event._hx_index) {
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.enterAdvancesToggle) {
+				if(this.myTabGroup != null) {
+					this.myTabGroup.enterAdvances = pressed;
+				}
+				this.updateEventLog("Enter advances: " + (pressed == null ? "null" : "" + pressed));
+			} else if(source == this.disableAllToggle) {
+				this.setAllDisabled(pressed);
+				this.updateEventLog("All inputs disabled: " + (pressed == null ? "null" : "" + pressed));
+			}
+			break;
+		case 15:
+			var text = event.text;
+			this.updateEventLog("TextChange: \"" + text + "\"");
+			break;
+		case 16:
+			var text = event.text;
+			this.updateEventLog("TextSubmit (Enter): \"" + text + "\"");
+			break;
+		case 17:
+			var focused = event.focused;
+			var name = this.getInputName(source);
+			this.updateEventLog("FocusChange: " + name + " " + (focused ? "focused" : "blurred"));
+			break;
+		default:
+		}
+		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
+	}
+	,getInputName: function(source) {
+		if(source == this.colorInput) {
+			return "Color";
+		}
+		if(source == this.greyInput) {
+			return "Grey";
+		}
+		if(source == this.titleColorInput) {
+			return "Title Color";
+		}
+		if(source == this.titleGreyInput) {
+			return "Title Grey";
+		}
+		if(source == this.maxLenInput) {
+			return "Max Length";
+		}
+		if(source == this.numericInput) {
+			return "Numeric";
+		}
+		if(source == this.readOnlyInput) {
+			return "Read-only";
+		}
+		if(source == this.disabledInput) {
+			return "Disabled";
+		}
+		if(source == this.firstNameInput) {
+			return "First Name";
+		}
+		if(source == this.lastNameInput) {
+			return "Last Name";
+		}
+		if(source == this.emailInput) {
+			return "Email";
+		}
+		return "Unknown";
+	}
+	,setAllDisabled: function(disabled) {
+		var inputs = [this.colorInput,this.greyInput,this.titleColorInput,this.titleGreyInput,this.maxLenInput,this.numericInput,this.firstNameInput,this.lastNameInput,this.emailInput];
+		var _g = 0;
+		while(_g < inputs.length) {
+			var input = inputs[_g];
+			++_g;
+			if(input != null) {
+				input.set_disabled(disabled);
+			}
+		}
+	}
+	,updateEventLog: function(message) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable("eventLog");
+		if(updatable != null) {
+			updatable.updateText(message);
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		this.demoBuilder = null;
+		this.demoResult = null;
+		this.colorInput = null;
+		this.greyInput = null;
+		this.titleColorInput = null;
+		this.titleGreyInput = null;
+		this.maxLenInput = null;
+		this.numericInput = null;
+		this.readOnlyInput = null;
+		this.disabledInput = null;
+		this.firstNameInput = null;
+		this.lastNameInput = null;
+		this.emailInput = null;
+		this.enterAdvancesToggle = null;
+		this.disableAllToggle = null;
+		this.myTabGroup = null;
+	}
+	,__class__: screens_ui_TextInputDemoScreen
+});
 var screens_ui_TooltipsPanelsDemoScreen = function(screenManager,layers) {
 	DemoScreenBase.call(this,screenManager,layers);
 };
@@ -97290,7 +109335,7 @@ hx__registerFont = function(name,data) {
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -97301,6 +109346,10 @@ Xml.DocType = 4;
 Xml.ProcessingInstruction = 5;
 Xml.Document = 6;
 hxd_res_Resource.LIVE_UPDATE = true;
+bh_base_CursorManager.cursorRegistry = new haxe_ds_StringMap();
+bh_base_CursorManager.defaultCursor = hxd_Cursor.Default;
+bh_base_CursorManager.defaultInteractiveCursor = hxd_Cursor.Button;
+bh_base_CursorManager.initialized = false;
 bh_base_FontManager.fontRegistry = new haxe_ds_StringMap();
 bh_base_OffsetCoord.EVEN = 1;
 bh_base_OffsetCoord.ODD = -1;
@@ -97345,6 +109394,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
+bh_ui_UIInteractiveWrapper.VALID_CURSOR_SUFFIXES = ["hover","disabled"];
 h2d_Flow.PADDING_IGNORE_PARENT = -2147483444;
 h2d_HtmlText.REG_SPACES = new EReg("[\r\n\t ]+","g");
 h3d_impl_RenderContext.STRICT = true;
@@ -97375,8 +109425,8 @@ h3d_impl_GlDriver.BLACK = (function($this) {
 	return $r;
 }(this));
 h3d_impl_GlDriver.outOfMemoryCheck = false;
-h3d_impl_GlDriver.TFILTERS = [[[9728,9728],[9729,9729]],[[9728,9984],[9729,9985]],[[9728,9986],[9729,9987]]];
-h3d_impl_GlDriver.TWRAP = [33071,10497];
+h3d_impl_GlDriver.TFILTERS = [[[9728,9728],[9729,9729],[9728,9728],[9729,9729]],[[9728,9984],[9729,9985],[9728,9984],[9729,9985]],[[9728,9986],[9729,9987],[9728,9986],[9729,9987]]];
+h3d_impl_GlDriver.TWRAP = [33071,10497,33648];
 h3d_impl_GlDriver.FACES = [0,1028,1029,1032];
 h3d_impl_GlDriver.BLEND = [1,0,770,768,772,774,771,769,773,775,32769,32771,32770,32772,776];
 h3d_impl_GlDriver.COMPARE = [519,512,514,517,516,518,513,515];
@@ -97413,8 +109463,6 @@ h3d_mat_Texture.nativeFormat = hxd_PixelFormat.RGBA;
 h3d_mat_Texture.TRILINEAR_FILTERING_ENABLED = true;
 h3d_mat_Texture.DEFAULT_WRAP = h3d_mat_Wrap.Clamp;
 h3d_pass_Blur.__meta__ = { obj : { ignore : ["shader"]}};
-h3d_pass__$Border_BorderShader.SRC = "HXSMHWgzZC5wYXNzLl9Cb3JkZXIuQm9yZGVyU2hhZGVyCQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgVjb2xvcgUMAgAACwhfX2luaXRfXw4GAAAMBnZlcnRleA4GAAANCGZyYWdtZW50DgYAAAMCCwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAAAwAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAQ0AAAUBBgQCCAUMAgoFDAUMAA";
-h3d_pass__$Border_BorderShader._MODULE = "h3d.pass.Border";
 h3d_pass_ColorMatrixShader.SRC = "HXSMGmgzZC5wYXNzLkNvbG9yTWF0cml4U2hhZGVyFQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBm1hdHJpeAcCAAAMCHVzZUFscGhhAgIAAQAAAAAADQd1c2VNYXNrAgIAAQAAAAAADgptYXNrSW52ZXJ0AgIAAQAAAAAADw9oYXNTZWNvbmRNYXRyaXgCAgABAAAAAAAQB21hdHJpeDIHAgAAEQRtYXNrCgICAAASCG1hc2tNYXRBBQsCAAATCG1hc2tNYXRCBQsCAAAUCW1hc2tQb3dlcgMCAAAVC21hc2tDaGFubmVsBQwCAAAWCF9faW5pdF9fDgYAABcGdmVydGV4DgYAABgFYXBwbHkOBgAAGQhmcmFnbWVudA4GAAAEAhYAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAXAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMYAhoFY29sb3IFDAQAABsDbWF0BwQAAAUMBQENCwIMAgYBAhoFDAIbBwUMBgEJAysOAgoCGgUMkgAFCwEDAAAAAAAA8D8DBQwCGwcFDAUMAAABGQAABQELAg0CBQUIHAVjb2xvcgUMBAAACQMiDgICCgoCAgMFCgUMAAgdAnV2BQsEAAAJAyoOAgIDBQoBAwAAAAAAAPA/AwULAAgeAWsDBAAACQMIDgIJAx4OAgkDIg4CAhEKAgkDKQ4CCQMeDgICHQULAhIFCwMJAx4OAgIdBQsCEwULAwUKBQwCFQUMAwIUAwMACB8GY29sb3IyBQwEAAALAg8CCQIYDgICHAUMAhAHBQwCHAUMBQwABgQCBwUMCwIOAgkDGA4DAh8FDAkCGA4CAhwFDAILBwUMAh4DBQwJAxgOAwkCGA4CAhwFDAILBwUMAh8FDAIeAwUMBQwFDAAGBAIHBQwJAhgOAgkDIg4CAgoKAgIDBQoFDAILBwUMBQwAAA";
 h3d_pass_ColorMatrixShader._MODULE = "h3d.pass.ColorMatrix";
 h3d_pass__$Copy_ArrayCopyShader.SRC = "HXSMHmgzZC5wYXNzLl9Db3B5LkFycmF5Q29weVNoYWRlcgoBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoDAgAACwVsYXllcgECAAAMCF9faW5pdF9fDgYAAA0GdmVydGV4DgYAAA4IZnJhZ21lbnQOBgAAAwIMAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAADQAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABDgAABQEGBAIIBQwJAyIOAgIKCgMJAyoOAgIJBQoJAycOAQILAQMFCwUMBQwA";
@@ -97428,9 +109476,11 @@ h3d_shader_AmbientLight.SRC = "HXSMF2gzZC5zaGFkZXIuQW1iaWVudExpZ2h0CgEGZ2xvYmFsD
 h3d_shader_AmbientLight._MODULE = "h3d.shader.AmbientLight";
 h3d_shader_Base2d.SRC = "HXSMEWgzZC5zaGFkZXIuQmFzZTJkGwEFaW5wdXQNAQMCCHBvc2l0aW9uBQoBAQADAnV2BQoBAQAEBWNvbG9yBQwBAQABAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgEdGltZQMAAAAJBnpWYWx1ZQMCAAAKB3RleHR1cmUKAgIAAAsOc3ByaXRlUG9zaXRpb24FDAQAAAwQYWJzb2x1dGVQb3NpdGlvbgUMBAAADQpwaXhlbENvbG9yBQwEAAAODHRleHR1cmVDb2xvcgUMBAAADwxjYWxjdWxhdGVkVVYFCgMAABAKaXNSZWxhdGl2ZQICAAEAAAAAABEFY29sb3IFDAIAABIPYWJzb2x1dGVNYXRyaXhBBQsCAAATD2Fic29sdXRlTWF0cml4QgULAgAAFA1maWx0ZXJNYXRyaXhBBQsCAAAVDWZpbHRlck1hdHJpeEIFCwIAABYIaGFzVVZQb3MCAgABAAAAAAAXBXV2UG9zBQwCAAAYCWtpbGxBbHBoYQICAAEAAAAAABkKcGl4ZWxBbGlnbgICAAEAAAAAABoQaGFsZlBpeGVsSW52ZXJzZQUKAgAAGwl2aWV3cG9ydEEFCwIAABwJdmlld3BvcnRCBQsCAAAdDm91dHB1dFBvc2l0aW9uBQwEAAAeCF9faW5pdF9fDgYAAB8GdmVydGV4DgYAACAIZnJhZ21lbnQOBgAAAwIeAAAFBgYEAgsFDAkDKw4DAgIFCgIJAwEDAAAAAAAA8D8DBQwFDAsCEAIFAwYECgIMBQwAAAMJAx4OAgkDKg4CCgILBQwRAAUKAQMAAAAAAADwPwMFCwISBQsDAwYECgIMBQwEAAMJAx4OAgkDKg4CCgILBQwRAAUKAQMAAAAAAADwPwMFCwITBQsDAwYECgIMBQw5AAUKCgILBQw5AAUKBQoABgQCDAUMAgsFDAUMAAYEAg8FCgsCFgIGAAYBAgMFCgoCFwUMOQAFCgUKCgIXBQwRAAUKBQoCAwUKBQoFCgYEAg0FDAsCEAIGAQIRBQwCBAUMBQwCBAUMBQwFDAYEAg4FDAkDIg4CAgoKAgIPBQoFDAUMBoECDQUMAg4FDAUMAAAfAAAFBQghA3RtcAULBAAACQMqDgIKAgwFDBEABQoBAwAAAAAAAPA/AwULAAYEAiEFCwkDKg4DCQMeDgICIQULAhQFCwMJAx4OAgIhBQsCFQULAwEDAAAAAAAA8D8DBQsFCwYEAh0FDAkDKw4DCQMeDgICIQULAhsFCwMJAx4OAgIhBQsCHAULAwoCDAUMOQAFCgUMBQwLAhkCBoMKAh0FDBEABQoCGgUKBQoAAAYEAgYFDAIdBQwFDAABIAAABQILBg4CGAIGCQoCDQUMDAADAQP8qfHSTWJQPwMCAgwAAAAGBAIHBQwCDQUMBQwA";
 h3d_shader_Base2d._MODULE = "h3d.shader.Base2d";
-h3d_shader_BaseMesh.SRC = "HXSME2gzZC5zaGFkZXIuQmFzZU1lc2gcAQZjYW1lcmENAQwCBHZpZXcHAAEAAwRwcm9qBwABAAQIcG9zaXRpb24FCwABAAUIcHJvakZsaXADAAEABghwcm9qRGlhZwULAAEABwh2aWV3UHJvagcAAQAIEHByZXZpb3VzVmlld1Byb2oHAAEACQ9pbnZlcnNlVmlld1Byb2oHAAEACgV6TmVhcgMAAQALBHpGYXIDAAEADANkaXIFCwMBAA0Naml0dGVyT2Zmc2V0cwUMAAEAAAAADgZnbG9iYWwNAgUPBHRpbWUDAA4AEAlwaXhlbFNpemUFCgAOABEJbW9kZWxWaWV3BwAOAQMSEG1vZGVsVmlld0ludmVyc2UHAA4BAxMRcHJldmlvdXNNb2RlbFZpZXcHAA4BAwAAABQFaW5wdXQNAwIVCHBvc2l0aW9uBQsBFAAWBm5vcm1hbAULARQAAQAAFwZvdXRwdXQNBAYYCHBvc2l0aW9uBQwEFwAZBWNvbG9yBQwEFwAaBWRlcHRoAwQXABsGbm9ybWFsBQsEFwAcCXdvcmxkRGlzdAMEFwAdCHZlbG9jaXR5BQoEFwAEAAAeEHJlbGF0aXZlUG9zaXRpb24FCwQAAB8TdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAIBtwcmV2aW91c1RyYW5zZm9ybWVkUG9zaXRpb24FCwQAACEYcGl4ZWxUcmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAAiEXRyYW5zZm9ybWVkTm9ybWFsBQsEAAAjEXByb2plY3RlZFBvc2l0aW9uBQwEAAAkGXByZXZpb3VzUHJvamVjdGVkUG9zaXRpb24FDAQAACUKcGl4ZWxDb2xvcgUMBAAAJgVkZXB0aAMEAAAnC25kY1Bvc2l0aW9uBQoEAAAoE3ByZXZpb3VzTmRjUG9zaXRpb24FCgQAACkIc2NyZWVuVVYFCgQAACoJc3BlY1Bvd2VyAwQAACsJc3BlY0NvbG9yBQsEAAAsCXdvcmxkRGlzdAMEAAAtDXBpeGVsVmVsb2NpdHkFCgQAAC4FY29sb3IFDAIAAC8Nc3BlY3VsYXJQb3dlcgMCAAEHAAAAAAAAAAAAAAAAAABZQDAOc3BlY3VsYXJBbW91bnQDAgABBwAAAAAAAAAAAAAAAAAAJEAxDXNwZWN1bGFyQ29sb3IFCwIAADIIX19pbml0X18OBgAAMxBfX2luaXRfX2ZyYWdtZW50DgYAADQGdmVydGV4DgYAADUIZnJhZ21lbnQOBgAABAIyAAAFDQYEAh4FCwIVBQsFCwYEAh8FCwYBAh4FCwkDNQ4BAhEHCAULBQsGBAIjBQwGAQkDKw4CAh8FCwEDAAAAAAAA8D8DBQwCBwcFDAUMBgQCIAULBgECHgULCQM1DgECEwcIBQsFCwYEAiQFDAYBCQMrDgICIAULAQMAAAAAAADwPwMFDAIIBwUMBQwGBAIiBQsJAyAOAQQGAQIWBQsJAzMOAQIRBwYFCwULBQsFCwYEAgwFCwkDIA4BBAYDAgQFCwIfBQsFCwULBQsFCwYEAiUFDAIuBQwFDAYEAioDAi8DAwYEAisFCwYBAjEFCwIwAwULBQsGBAIpBQoJAzsOAQYCCgIjBQwRAAUKCgIjBQwMAAMFCgUKBQoGBAImAwYCCgIjBQwIAAMKAiMFDAwAAwMDBgQCLAMGAgkDHA4BBgMCHwULAgQFCwULAwILAwMDAAIzAAAFCgYEAiIFCwkDIA4BAiIFCwULBQsGBAInBQoGAgoCIwUMEQAFCgoCIwUMDAADBQoFCgYEAigFCgYCCgIkBQwRAAUKCgIkBQwMAAMFCgUKBgQCKQUKCQM7DgECJwUKBQoFCgYEAiYDBgIKAiMFDAgAAwoCIwUMDAADAwMGBAIqAwIvAwMGBAIrBQsGAQIxBQsCMAMFCwULBoMCJwUKCgINBQwRAAUKBQoGgwIoBQoKAg0FDDkABQoFCgYEAi0FCgYBBAYDAigFCgInBQoFCgUKCQMpDgIBAwAAAAAAAOA/AwEDAAAAAAAA4L8DBQoFCgUKAAA0AAAFAgYEAhgFDAYBAiMFDAkDKw4EAQMAAAAAAADwPwMCBQMBAwAAAAAAAPA/AwEDAAAAAAAA8D8DBQwFDAUMBgQCIQULAh8FCwULAAE1AAAFBQYEAhkFDAIlBQwFDAYEAhoDAiYDAwYEAhsFCwIiBQsFCwYEAhwDAiwDAwYEAh0FCgItBQoFCgA";
+h3d_shader_BaseMesh.SRC = "HXSME2gzZC5zaGFkZXIuQmFzZU1lc2gdAQZjYW1lcmENAQwCBHZpZXcHAAEAAwRwcm9qBwABAAQIcG9zaXRpb24FCwABAAUIcHJvakZsaXADAAEABghwcm9qRGlhZwULAAEABwh2aWV3UHJvagcAAQAIEHByZXZpb3VzVmlld1Byb2oHAAEACQ9pbnZlcnNlVmlld1Byb2oHAAEACgV6TmVhcgMAAQALBHpGYXIDAAEADANkaXIFCwMBAA0Naml0dGVyT2Zmc2V0cwUMAAEAAAAADgZnbG9iYWwNAgUPBHRpbWUDAA4AEAlwaXhlbFNpemUFCgAOABEJbW9kZWxWaWV3BwAOAQMSEG1vZGVsVmlld0ludmVyc2UHAA4BAxMRcHJldmlvdXNNb2RlbFZpZXcHAA4BAwAAABQFaW5wdXQNAwIVCHBvc2l0aW9uBQsBFAAWBm5vcm1hbAULARQAAQAAFwZvdXRwdXQNBAYYCHBvc2l0aW9uBQwEFwAZBWNvbG9yBQwEFwAaBWRlcHRoAwQXABsGbm9ybWFsBQsEFwAcCXdvcmxkRGlzdAMEFwAdCHZlbG9jaXR5BQoEFwAEAAAeEHJlbGF0aXZlUG9zaXRpb24FCwQAAB8TdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAIBtwcmV2aW91c1RyYW5zZm9ybWVkUG9zaXRpb24FCwQAACEYcGl4ZWxUcmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAAiEXRyYW5zZm9ybWVkTm9ybWFsBQsEAAAjEXByb2plY3RlZFBvc2l0aW9uBQwEAAAkGXByZXZpb3VzUHJvamVjdGVkUG9zaXRpb24FDAQAACUKcGl4ZWxDb2xvcgUMBAAAJgVkZXB0aAMEAAAnC25kY1Bvc2l0aW9uBQoEAAAoE3ByZXZpb3VzTmRjUG9zaXRpb24FCgQAACkIc2NyZWVuVVYFCgQAACoJc3BlY1Bvd2VyAwQAACsJc3BlY0NvbG9yBQsEAAAsCXdvcmxkRGlzdAMEAAAtDXBpeGVsVmVsb2NpdHkFCgQAAC4NcHJldk1vZGVsVmlldwgEAAAvBWNvbG9yBQwCAAAwDXNwZWN1bGFyUG93ZXIDAgABBwAAAAAAAAAAAAAAAAAAWUAxDnNwZWN1bGFyQW1vdW50AwIAAQcAAAAAAAAAAAAAAAAAACRAMg1zcGVjdWxhckNvbG9yBQsCAAAzCF9faW5pdF9fDgYAADQQX19pbml0X19mcmFnbWVudA4GAAA1BnZlcnRleA4GAAA2CGZyYWdtZW50DgYAAAQCMwAABQ4GBAIeBQsCFQULBQsGBAIfBQsGAQIeBQsJAzUOAQIRBwgFCwULBgQCIwUMBgEJAysOAgIfBQsBAwAAAAAAAPA/AwUMAgcHBQwFDAYEAi4ICQM1DgECEwcICAYEAiAFCwYBAh4FCwIuCAULBQsGBAIkBQwGAQkDKw4CAiAFCwEDAAAAAAAA8D8DBQwCCAcFDAUMBgQCIgULCQMgDgEEBgECFgULCQMzDgECEQcGBQsFCwULBQsGBAIMBQsJAyAOAQQGAwIEBQsCHwULBQsFCwULBQsGBAIlBQwCLwUMBQwGBAIqAwIwAwMGBAIrBQsGAQIyBQsCMQMFCwULBgQCKQUKCQM7DgEGAgoCIwUMEQAFCgoCIwUMDAADBQoFCgUKBgQCJgMGAgoCIwUMCAADCgIjBQwMAAMDAwYEAiwDBgIJAxwOAQYDAh8FCwIEBQsFCwMCCwMDAwACNAAABQoGBAIiBQsJAyAOAQIiBQsFCwULBgQCJwUKBgIKAiMFDBEABQoKAiMFDAwAAwUKBQoGBAIoBQoGAgoCJAUMEQAFCgoCJAUMDAADBQoFCgYEAikFCgkDOw4BAicFCgUKBQoGBAImAwYCCgIjBQwIAAMKAiMFDAwAAwMDBgQCKgMCMAMDBgQCKwULBgECMgULAjEDBQsFCwaDAicFCgoCDQUMEQAFCgUKBoMCKAUKCgINBQw5AAUKBQoGBAItBQoGAQQGAwIoBQoCJwUKBQoFCgkDKQ4CAQMAAAAAAADgPwMBAwAAAAAAAOC/AwUKBQoFCgAANQAABQIGBAIYBQwGAQIjBQwJAysOBAEDAAAAAAAA8D8DAgUDAQMAAAAAAADwPwMBAwAAAAAAAPA/AwUMBQwFDAYEAiEFCwIfBQsFCwABNgAABQUGBAIZBQwCJQUMBQwGBAIaAwImAwMGBAIbBQsCIgULBQsGBAIcAwIsAwMGBAIdBQoCLQUKBQoA";
 h3d_shader_BaseMesh._MODULE = "h3d.shader.BaseMesh";
-h3d_shader_Blur.SRC = "HXSMD2gzZC5zaGFkZXIuQmx1chsBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoLaW52ZXJzZVByb2oHAgAACwd0ZXh0dXJlCgICAAAMDGRlcHRoVGV4dHVyZQoCAgAADQdRdWFsaXR5AQIAAQAAAAAADgdpc0RlcHRoAgIAAQAAAAAADwZ2YWx1ZXMPAw0CAAAQB29mZnNldHMPAw0CAAARBXBpeGVsBQoCAAASDWhhc0ZpeGVkQ29sb3ICAgABAAAAAAATEHNtb290aEZpeGVkQ29sb3ICAgABAAAAAAAUCmZpeGVkQ29sb3IFDAIAABUQaXNEZXB0aERlcGVuZGFudAICAAEAAAAAABYOZGVwdGhUaHJlc2hvbGQDAgAAFxVkZXB0aFRocmVzaG9sZE1heERpc3QDAgAAGAZpc0N1YmUCAgABAAAAAAAZC2N1YmVUZXh0dXJlCgYCAAAaB2N1YmVEaXIGAgAAGwhfX2luaXRfXw4GAAAcBnZlcnRleA4GAAAdDnNjYWxlVGhyZXNob2xkDgYAAB4IZnJhZ21lbnQOBgAAHw9nZXRWaWV3UG9zaXRpb24OBgAABQIbAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAHAAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAADHQEgAXoDBAAAAwUDCCEBdAMEAAACFgMACwYHAhcDAQMAAAAAAAAAAAMCBoECIQMGAAEDAAAAAAAA8D8DCQMWDgIGAwIgAwIXAwMBAwAAAAAAAAAAAwMDAwAADQIhAwAAAR4AAAUCCwIVAgUMCCIKZGltZW5zaW9ucwUKBAAACQMlDgECCwoCBQoACCMNaW52RGltZW5zaW9ucwUKBAAABgIBAwAAAAAAAPA/AwIiBQoFCgAIJAVjb29yZAUKBAAACgNHBQwRAAUKAAglBmZyYWdVVgUKBAAABgEKAiQFChEABQoCIwUKBQoACCYBcAULBAAACQIfDgECJQUKBQsACCcEbWluWgMEAAAKAiYFCwgAAwAIKAFjBQwEAAAJAyIOAgILCgICJQUKBQwACCkFY29sb3IFDAQAAAkDKw4EAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAAAAAAMFDAAIKgZpc0VkZ2UCBAAAAQEAAgAVBnVucm9sbAAOKwFpAQQAAAYVBwMCDQEBBgACDQEBAgEAAAABAQ8BAAAFBQgsCGN1ckNvb3JkBQoEAAAGAAkDEQ4BBgACJAUKBgEGAQQGAQIRBQoCIgUKBQoFCgkDKQ4BAQMAAAAAAADwPwMFCgUKCQMnDgECKwEDBQoFCgUKCQMpDgEBAwAAAAAAAOA/AwUKBQoACC0JbmVhcmVzdFVWBQoEAAAGAQIsBQoCIwUKBQoACC4EcGN1cgULBAAACQIfDgECLQUKBQsACC8BZAMEAAAJAw8OAQYDCgIuBQsIAAMKAiYFCwgAAwMDAAYEAioCBg8CKgIEBgcCLwMJAh0OAQkDFQ4CCgIuBQsIAAMKAiYFCwgAAwMDAgICAgAAABUGdW5yb2xsAA4wAWkBBAAABhUGAAcDAg0BAQECAQAAAAEBAg0BDwEAAAUICDEIY3VyQ29vcmQFCgQAAAYACQMRDgEGAAIkBQoGAQYBBAYBAhEFCgIiBQoFCgUKEQIQDwMNCwYJAjABAQIAAAAAAQIHAwIwAQECMAEBAwUKCQMnDgECMAEDBQoFCgUKCQMpDgEBAwAAAAAAAOA/AwUKBQoACDIJbmVhcmVzdFVWBQoEAAAGAQIxBQoCIwUKBQoACDMCdXYFCgQAAAYAAiUFCgYBBgECEQUKEQIQDwMNCwYJAjABAQIAAAAAAQIHAwIwAQECMAEBAwUKCQMnDgECMAEDBQoFCgAINARjY3VyBQwEAAAJAyIOAgILCgILBAIqAgICMgUKAjMFCgUKBQwACDUEcGN1cgULBAAACQIfDgECMgUKBQsACDYBZAMEAAAJAw8OAQYDCgI1BQsIAAMKAiYFCwgAAwMDAAYEAigFDAsEBgcCNgMJAh0OAQkDFQ4CCgI1BQsIAAMKAiYFCwgAAwMDAgICKAUMAjQFDAUMBQwGgAIpBQwGAQIoBQwRAg8PAw0LBgkCMAEBAgAAAAABAgcDAjABAQIwAQEDBQwFDAAAAAYEAggFDAIpBQwFDAALAg4CBQMINwN2YWwDBAAAAQMAAAAAAAAAAAMAFQZ1bnJvbGwADjgBaQEEAAAGFQYABwMCDQEBAQIBAAAAAQECDQEPAQAABQELAhgCBoACNwMGAQkDOA4BCQMiDgICGQoGBgEJAyoOAgYDBgEEBgACAwUKBgEGAQIRBQoRAhAPAw0LBgkCOAEBAgAAAAABAgcDAjgBAQI4AQEDBQoJAycOAQI4AQMFCgUKBQoBAwAAAAAAAABAAwUKAQMAAAAAAADwPwMFCgEDAAAAAAAA8D8DBQsCGgYFCwUMAxECDw8DDQsGCQI4AQECAAAAAAECBwMCOAEBAjgBAQMDAwaAAjcDBgEJAzgOAQkDIg4CAgsKAgYAAgMFCgYBBgECEQUKEQIQDwMNCwYJAjgBAQIAAAAAAQIHAwI4AQECOAEBAwUKCQMnDgECOAEDBQoFCgUMAxECDw8DDQsGCQI4AQECAAAAAAECBwMCOAEBAjgBAQMDAwAAAAAGBAIIBQwJAzcOAQkDFQ4CAjcDAQPLGlDK///vPwMDBQwFDAAFAwg5BWNvbG9yBQwEAAAJAysOBAEDAAAAAAAAAAADAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBQwAFQZ1bnJvbGwADjoBaQEEAAAGFQYABwMCDQEBAQIBAAAAAQECDQEPAQAABQELAhgCBoACOQUMBgEJAyIOAgIZCgYGAQkDKg4CBgMGAQQGAAIDBQoGAQYBAhEFChECEA8DDQsGCQI6AQECAAAAAAECBwMCOgEBAjoBAQMFCgkDJw4BAjoBAwUKBQoFCgEDAAAAAAAAAEADBQoBAwAAAAAAAPA/AwUKAQMAAAAAAADwPwMFCwIaBgULBQwRAg8PAw0LBgkCOgEBAgAAAAABAgcDAjoBAQI6AQEDBQwFDAaAAjkFDAYBCQMiDgICCwoCBgACAwUKBgEGAQIRBQoRAhAPAw0LBgkCOgEBAgAAAAABAgcDAjoBAQI6AQEDBQoJAycOAQI6AQMFCgUKBQwRAg8PAw0LBgkCOgEBAgAAAAABAgcDAjoBAQI6AQEDBQwFDAAAAAAGBAIIBQwCOQUMBQwAAAALAhICBQILAhMCBoEKAggFDAwAAwoCFAUMDAADAwYECgIIBQwMAAMGAQoCFAUMDAADCQMnDgEGBwoCCAUMDAADAQMAAAAAAAAAAAMCAwMDAAYECgIIBQySAAULBgEKAhQFDJIABQsKAggFDAwAAwULBQsAAAAAAx8BOwJ1dgUKBAAABQsFBAg8BWRlcHRoAwQAAAoJAyIOAgIMCgICOwUKBQwAAAMACD0EdGVtcAUMBAAABgEJAysOAwkDPA4BAjsFCgUKAjwDAQMAAAAAAADwPwMFDAIKBwUMAAg+CG9yaWdpbldTBQsEAAAGAgoCPQUMkgAFCwoCPQUMDAADBQsADQI+BQsAAA";
+h3d_shader_Blendshape.SRC = "HXSMFWgzZC5zaGFkZXIuQmxlbmRzaGFwZQcBBWlucHV0DQEEAghwb3NpdGlvbgULAQEAAwZub3JtYWwFCwEBAAQHd2VpZ2h0cwULAQEABQdpbmRleGVzCQQAAAABAQABAAAGEHJlbGF0aXZlUG9zaXRpb24FCwQAAAcKc2hhcGVDb3VudAECAAAIBnZjb3VudAECAAAJB29mZnNldHMQgQMAAAIAAAoHd2VpZ2h0cxCBAwAAAgAACwZ2ZXJ0ZXgOBgAAAQALAAAFAQ4MA2lkeAEEAAAGFQECAAAAAAECBwEPAQAABQIIDQlvZmZzZXRQb3MFCwQAAAkDKg4DEQIJEIEDAAAGAAQGAQYBAgwBAggBAQECAwAAAAEBAQQGAQNFAQECAwAAAAEBAQEDEQIJEIEDAAAGAAYABAYBBgECDAECCAEBAQIDAAAAAQEBBAYBA0UBAQIDAAAAAQEBAQECAQAAAAEBAxECCRCBAwAABgAGAAQGAQYBAgwBAggBAQECAwAAAAEBAQQGAQNFAQECAwAAAAEBAQEBAgIAAAABAQMFCwAGBAIGBQsGAAIGBQsGAQINBQsRAgoQgQMAAAIMAQMFCwULBQsAAAA";
+h3d_shader_Blendshape._MODULE = "h3d.shader.Blendshape";
+h3d_shader_Blur.SRC = "HXSMD2gzZC5zaGFkZXIuQmx1chsBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoLaW52ZXJzZVByb2oHAgAACwd0ZXh0dXJlCgICAAAMDGRlcHRoVGV4dHVyZQoCAgAADQdRdWFsaXR5AQIAAQAAAAAADgdpc0RlcHRoAgIAAQAAAAAADwZ2YWx1ZXMPAw0CAAAQB29mZnNldHMPAw0CAAARBXBpeGVsBQoCAAASDWhhc0ZpeGVkQ29sb3ICAgABAAAAAAATEHNtb290aEZpeGVkQ29sb3ICAgABAAAAAAAUCmZpeGVkQ29sb3IFDAIAABUQaXNEZXB0aERlcGVuZGFudAICAAEAAAAAABYOZGVwdGhUaHJlc2hvbGQDAgAAFxVkZXB0aFRocmVzaG9sZE1heERpc3QDAgAAGAZpc0N1YmUCAgABAAAAAAAZC2N1YmVUZXh0dXJlCgYCAAAaB2N1YmVEaXIGAgAAGwhfX2luaXRfXw4GAAAcBnZlcnRleA4GAAAdDnNjYWxlVGhyZXNob2xkDgYAAB4IZnJhZ21lbnQOBgAAHw9nZXRWaWV3UG9zaXRpb24OBgAABQIbAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAHAAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAADHQEgAXoDBAAAAwUDCCEBdAMEAAACFgMACwYHAhcDAQMAAAAAAAAAAAMCBoECIQMGAAEDAAAAAAAA8D8DCQMWDgIGAwIgAwIXAwMBAwAAAAAAAAAAAwMDAwAADQIhAwAAAR4AAAUCCwIVAgUMCCIKZGltZW5zaW9ucwUKBAAACQMlDgECCwoCBQoACCMNaW52RGltZW5zaW9ucwUKBAAABgIBAwAAAAAAAPA/AwIiBQoFCgAIJAVjb29yZAUKBAAACgNHBQwRAAUKAAglBmZyYWdVVgUKBAAABgEKAiQFChEABQoCIwUKBQoACCYBcAULBAAACQIfDgECJQUKBQsACCcEbWluWgMEAAAKAiYFCwgAAwAIKAFjBQwEAAAJAyIOAgILCgICJQUKBQwACCkFY29sb3IFDAQAAAkDKw4EAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAAAAAAMFDAAIKgZpc0VkZ2UCBAAAAQEAAgAVBnVucm9sbAAOKwFpAQQAAAYVBwMCDQEBBgACDQEBAgEAAAABAQ8BAAAFBQgsCGN1ckNvb3JkBQoEAAAGAAkDEQ4BBgACJAUKBgEEBgECEQUKAiIFCgUKBQoJAycOAQIrAQMFCgUKBQoJAykOAQEDAAAAAAAA4D8DBQoFCgAILQluZWFyZXN0VVYFCgQAAAYBAiwFCgIjBQoFCgAILgRwY3VyBQsEAAAJAh8OAQItBQoFCwAILwFkAwQAAAkDDw4BBgMKAi4FCwgAAwoCJgULCAADAwMABgQCKgIGDwIqAgQGBwIvAwkCHQ4BCQMVDgIKAi4FCwgAAwoCJgULCAADAwMCAgICAAAAFQZ1bnJvbGwADjABaQEEAAAGFQYABwMCDQEBAQIBAAAAAQECDQEPAQAABQgIMQhjdXJDb29yZAUKBAAABgAJAxEOAQYAAiQFCgYBBgEEBgECEQUKAiIFCgUKBQoRAhAPAw0LBgkCMAEBAgAAAAABAgcDAjABAQIwAQEDBQoJAycOAQIwAQMFCgUKBQoJAykOAQEDAAAAAAAA4D8DBQoFCgAIMgluZWFyZXN0VVYFCgQAAAYBAjEFCgIjBQoFCgAIMwJ1dgUKBAAABgACJQUKBgEGAQIRBQoRAhAPAw0LBgkCMAEBAgAAAAABAgcDAjABAQIwAQEDBQoJAycOAQIwAQMFCgUKAAg0BGNjdXIFDAQAAAkDIg4CAgsKAgsEAioCAgIyBQoCMwUKBQoFDAAINQRwY3VyBQsEAAAJAh8OAQIyBQoFCwAINgFkAwQAAAkDDw4BBgMKAjUFCwgAAwoCJgULCAADAwMABgQCKAUMCwQGBwI2AwkCHQ4BCQMVDgIKAjUFCwgAAwoCJgULCAADAwMCAgIoBQwCNAUMBQwFDAaAAikFDAYBAigFDBECDw8DDQsGCQIwAQECAAAAAAECBwMCMAEBAjABAQMFDAUMAAAABgQCCAUMAikFDAUMAAsCDgIFAwg3A3ZhbAMEAAABAwAAAAAAAAAAAwAVBnVucm9sbAAOOAFpAQQAAAYVBgAHAwINAQEBAgEAAAABAQINAQ8BAAAFAQsCGAIGgAI3AwYBCQM4DgEJAyIOAgIZCgYGAQkDKg4CBgMGAQQGAAIDBQoGAQYBAhEFChECEA8DDQsGCQI4AQECAAAAAAECBwMCOAEBAjgBAQMFCgkDJw4BAjgBAwUKBQoFCgEDAAAAAAAAAEADBQoBAwAAAAAAAPA/AwUKAQMAAAAAAADwPwMFCwIaBgULBQwDEQIPDwMNCwYJAjgBAQIAAAAAAQIHAwI4AQECOAEBAwMDBoACNwMGAQkDOA4BCQMiDgICCwoCBgACAwUKBgEGAQIRBQoRAhAPAw0LBgkCOAEBAgAAAAABAgcDAjgBAQI4AQEDBQoJAycOAQI4AQMFCgUKBQwDEQIPDwMNCwYJAjgBAQIAAAAAAQIHAwI4AQECOAEBAwMDAAAAAAYEAggFDAkDNw4BCQMVDgICNwMBA8saUMr//+8/AwMFDAUMAAUDCDkFY29sb3IFDAQAAAkDKw4EAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAAAAAAMFDAAVBnVucm9sbAAOOgFpAQQAAAYVBgAHAwINAQEBAgEAAAABAQINAQ8BAAAFAQsCGAIGgAI5BQwGAQkDIg4CAhkKBgYBCQMqDgIGAwYBBAYAAgMFCgYBBgECEQUKEQIQDwMNCwYJAjoBAQIAAAAAAQIHAwI6AQECOgEBAwUKCQMnDgECOgEDBQoFCgUKAQMAAAAAAAAAQAMFCgEDAAAAAAAA8D8DBQoBAwAAAAAAAPA/AwULAhoGBQsFDBECDw8DDQsGCQI6AQECAAAAAAECBwMCOgEBAjoBAQMFDAUMBoACOQUMBgEJAyIOAgILCgIGAAIDBQoGAQYBAhEFChECEA8DDQsGCQI6AQECAAAAAAECBwMCOgEBAjoBAQMFCgkDJw4BAjoBAwUKBQoFDBECDw8DDQsGCQI6AQECAAAAAAECBwMCOgEBAjoBAQMFDAUMAAAAAAYEAggFDAI5BQwFDAAAAAsCEgIFAgsCEwIGgQoCCAUMDAADCgIUBQwMAAMDBgQKAggFDAwAAwYBCgIUBQwMAAMJAycOAQYHCgIIBQwMAAMBAwAAAAAAAAAAAwIDAwMABgQKAggFDJIABQsGAQoCFAUMkgAFCwoCCAUMDAADBQsFCwAAAAADHwE7AnV2BQoEAAAFCwUECDwFZGVwdGgDBAAACgkDIg4CAgwKAgI7BQoFDAAAAwAIPQR0ZW1wBQwEAAAGAQkDKw4DCQM8DgECOwUKBQoCPAMBAwAAAAAAAPA/AwUMAgoHBQwACD4Ib3JpZ2luV1MFCwQAAAYCCgI9BQySAAULCgI9BQwMAAMFCwANAj4FCwAA";
 h3d_shader_Blur._MODULE = "h3d.shader.Blur";
 h3d_shader_ColorAdd.SRC = "HXSME2gzZC5zaGFkZXIuQ29sb3JBZGQDAQpwaXhlbENvbG9yBQwEAAACBWNvbG9yBQsCAAADCGZyYWdtZW50DgYAAAEBAwAABQEGgAoCAQUMkgAFCwICBQsFCwA";
 h3d_shader_ColorAdd._MODULE = "h3d.shader.ColorAdd";
@@ -97438,17 +109488,17 @@ h3d_shader_ColorKey.SRC = "HXSME2gzZC5zaGFkZXIuQ29sb3JLZXkDAQhjb2xvcktleQUMAgAAA
 h3d_shader_ColorKey._MODULE = "h3d.shader.ColorKey";
 h3d_shader_ColorMatrix.SRC = "HXSMFmgzZC5zaGFkZXIuQ29sb3JNYXRyaXgEAQpwaXhlbENvbG9yBQwEAAACBm1hdHJpeAcCAAADB2VuYWJsZWQCAgABAAAAAAAECGZyYWdtZW50DgYAAAEBBAAABQELAgMCBgQCAQUMCQMrDgIKBAYBCQMrDgIKAgEFDJIABQsBAwAAAAAAAPA/AwUMAgIHBQwFDJIABQsKBAYBAgEFDAICBwUMBQwMAAMFDAUMAAAA";
 h3d_shader_ColorMatrix._MODULE = "h3d.shader.ColorMatrix";
-h3d_shader_DirShadow.SRC = "HXSMFGgzZC5zaGFkZXIuRGlyU2hhZG93EAEGZW5hYmxlAgIAAQAAAAAAAgdVU0VfRVNNAgIAAQAAAAAAAwtzaGFkb3dQb3dlcgMCAAAEB1VTRV9QQ0YCAgABAAAAAAAFC1BDRl9TQU1QTEVTAQIAAQAAAAAABghwY2ZTY2FsZQMCAAAHCXNoYWRvd1JlcwUKAgAACAlzaGFkb3dNYXARAQIAAAkKc2hhZG93UHJvaggCAAAKCnNoYWRvd0JpYXMDAgAACxN0cmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAAMBnNoYWRvdwMEAAANCWRpclNoYWRvdwMEAAAOC3BvaXNzb25EaXNrDwUMBQIAAA8EcmFuZA4GAAAQCGZyYWdtZW50DgYAAAIDDwERAXYDBAAAAwUCCBICZHADBAAACQMeDgIJAysOAQIRAwUMCQMrDgQBA18pyxDH+ilAAwED9P3UeOmOU0ADAQOiRbbz/ZRGQAMBA1CNl24Sq1dAAwUMAwANCQMTDgEGAQkDAg4BAhIDAwEDUPwYc9Fd5UADAwMAAAEQAAAFAgsCAQIFAQsCBAIFCwYEAgwDAQMAAAAAAADwPwMDCBMJdGV4ZWxTaXplBQoEAAAGAgEDAAAAAAAA8D8DAgcFCgUKAAgUCXNoYWRvd1BvcwULBAAABgECCwULAgkIBQsACBUIc2hhZG93VXYFCgQAAAkDOw4BCgIUBQsRAAUKBQoACBYEek1heAMEAAAJAzYOAQoCFAULCAADAwAIFwNyb3QDBAAABgEGAQkCDw4BBgAGAAoCCwULAAADCgILBQsEAAMDCgILBQsIAAMDAwEDH4XrUbgeCUADAwEDAAAAAAAAAEADAwAIGARjb3NSAwQAAAkDAw4BAhcDAwAIGQRzaW5SAwQAAAkDAg4BAhcDAwAIGg5zYW1wbGVTdHJlbmd0aAMEAAAGAgEDAAAAAAAA8D8DCQMnDgECBQEDAwAIGwhvZmZTY2FsZQUKBAAABgECEwUKAgYDBQoADhwBaQEEAAAGFQECAAAAAAECBQEPAQAABQQIHQZvZmZzZXQFCgQAAAYBChECDg8FDAUCHAEFDBEABQoCGwUKBQoABgQCHQUKCQMpDgIGAwYBAhgDCgIdBQoAAAMDBgECGQMKAh0FCgQAAwMDBgAGAQIYAwoCHQUKBAADAwYBAhkDCgIdBQoAAAMDAwUKBQoIHgVkZXB0aAMEAAAJA0EOAwIIEQEGAAIVBQoCHQUKBQoBAwAAAAAAAAAAAwMABoMCDAMLBAYHBgMCFgMCCgMDAh4DAgICGgMBAwAAAAAAAAAAAwMDAAAACwICAgUFCB8Jc2hhZG93UG9zBQsEAAAGAQILBQsCCQgFCwAIIAVkZXB0aAMEAAAJA0AOAgIIEQEJAzsOAQoCHwULEQAFCgUKAwAIIQR6TWF4AwQAAAkDNg4BCgIfBQsIAAMDAAgiBWRlbHRhAwQAAAYDCQMVDgIEBgACIAMCCgMDAwIhAwMCIQMDAAYEAgwDCQM2DgEJAwkOAQYBAgMDAiIDAwMDAwAFBAgjCXNoYWRvd1BvcwULBAAABgECCwULAgkIBQsACCQIc2hhZG93VXYFCgQAAAkDOw4BCgIjBQsRAAUKBQoACCUFZGVwdGgDBAAACQNADgICCBEBCgIkBQoRAAUKAwAGBAIMAwsGBwYDCQM2DgEKAiMFCwgAAwMCCgMDAiUDAgEDAAAAAAAAAAADAQMAAAAAAADwPwMDAwAAAAAAAAYEAg0DAgwDAwA";
+h3d_shader_DirShadow.SRC = "HXSMFGgzZC5zaGFkZXIuRGlyU2hhZG93EgEGZW5hYmxlAgIAAQAAAAAAAhNDSEVDS19PVVRfT0ZfQk9VTkRTAgIAAQAAAAAAAwdVU0VfRVNNAgIAAQAAAAAABAtzaGFkb3dQb3dlcgMCAAAFB1VTRV9QQ0YCAgABAAAAAAAGC1BDRl9TQU1QTEVTAQIAAQAAAAAABwhwY2ZTY2FsZQMCAAAICXNoYWRvd1JlcwUKAgAACQlzaGFkb3dNYXARAQIAAAoKc2hhZG93UHJvaggCAAALCnNoYWRvd0JpYXMDAgAADBN0cmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAANBnNoYWRvdwMEAAAOCWRpclNoYWRvdwMEAAAPC3BvaXNzb25EaXNrDwUMBgIAABAEcmFuZA4GAAARC3NhbXBsZURlcHRoDgYAABIIZnJhZ21lbnQOBgAAAwMQARMBdgMEAAADBQIIFAJkcAMEAAAJAx4OAgkDKw4BAhMDBQwJAysOBAEDXynLEMf6KUADAQP0/dR46Y5TQAMBA6JFtvP9lEZAAwEDUI2XbhKrV0ADBQwDAA0JAxMOAQYBCQMCDgECFAMDAQNQ/Bhz0V3lQAMDAwAAAxEBFQJ1dgUKBAAAAwUDCBYFZGVwdGgDBAAAAAALAgICBQIIFwtvdXRPZkJvdW5kcwIEAAAGDwYPBg8GCQoCFQUKAAADAQMAAAAAAAAAAAMCBgcKAhUFCgAAAwEDAAAAAAAA8D8DAgIGCQoCFQUKBAADAQMAAAAAAAAAAAMCAgYHCgIVBQoEAAMBAwAAAAAAAPA/AwICAAYEAhYDCwIXAgEDAAAAAAAA8D8DCgkDQQ4DAgkRAQIVBQoBAwAAAAAAAAAAAwMAAAMDAwAGBAIWAwoJA0EOAwIJEQECFQUKAQMAAAAAAAAAAAMDAAADAwANAhYDAAABEgAABQILAgECBQELAgUCBQsGBAINAwEDAAAAAAAA8D8DAwgYCXRleGVsU2l6ZQUKBAAABgIBAwAAAAAAAPA/AwIIBQoFCgAIGQlzaGFkb3dQb3MFCwQAAAYBAgwFCwIKCAULAAgaCHNoYWRvd1V2BQoEAAAJAzsOAQoCGQULEQAFCgUKAAgbBHpNYXgDBAAACQM2DgEKAhkFCwgAAwMACBwDcm90AwQAAAYBBgEJAhAOAQYABgAKAgwFCwAAAwoCDAULBAADAwoCDAULCAADAwMBAx+F61G4HglAAwMBAwAAAAAAAABAAwMACB0EY29zUgMEAAAJAwMOAQIcAwMACB4Ec2luUgMEAAAJAwIOAQIcAwMACB8Oc2FtcGxlU3RyZW5ndGgDBAAABgIBAwAAAAAAAPA/AwkDJw4BAgYBAwMACCAIb2ZmU2NhbGUFCgQAAAYBAhgFCgIHAwUKAA4hAWkBBAAABhUBAgAAAAABAgYBDwEAAAUECCIGb2Zmc2V0BQoEAAAGAQoRAg8PBQwGAiEBBQwRAAUKAiAFCgUKAAYEAiIFCgkDKQ4CBgMGAQIdAwoCIgUKAAADAwYBAh4DCgIiBQoEAAMDAwYABgECHQMKAiIFCgQAAwMGAQIeAwoCIgUKAAADAwMFCgUKCCMFZGVwdGgDBAAACQIRDgEGAAIaBQoCIgUKBQoDAAaDAg0DCwQGBwYDAhsDAgsDAwIjAwICAh8DAQMAAAAAAAAAAAMDAwAAAAsCAwIFBQgkCXNoYWRvd1BvcwULBAAABgECDAULAgoIBQsACCUFZGVwdGgDBAAACQIRDgEJAzsOAQoCJAULEQAFCgUKAwAIJgR6TWF4AwQAAAkDNg4BCgIkBQsIAAMDAAgnBWRlbHRhAwQAAAYDCQMVDgIEBgACJQMCCwMDAwImAwMCJgMDAAYEAg0DCQM2DgEJAwkOAQYBAgQDAicDAwMDAwAFBAgoCXNoYWRvd1BvcwULBAAABgECDAULAgoIBQsACCkIc2hhZG93VXYFCgQAAAkDOw4BCgIoBQsRAAUKBQoACCoFZGVwdGgDBAAACQIRDgEKAikFChEABQoDAAYEAg0DCwYHBgMJAzYOAQoCKAULCAADAwILAwMCKgMCAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwMDAAAAAAAABgQCDgMCDQMDAA";
 h3d_shader_DirShadow._MODULE = "h3d.shader.DirShadow";
 h3d_shader_GenTexture.SRC = "HXSMFWgzZC5zaGFkZXIuR2VuVGV4dHVyZQoBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoEbW9kZQECAAEAAAAAAAsFY29sb3IFDAIAAAwIX19pbml0X18OBgAADQZ2ZXJ0ZXgOBgAADghmcmFnbWVudA4GAAADAgwAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAANAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAEOAAAFARMEAgoBAQEBAQIAAAAAAQUBBgQCCAUMCwYHCQMcDgEKAgYFDBEABQoDAQMAAAAAAADwPwMCCQMrDgEBAwAAAAAAAAAAAwUMAgsFDAUMBQwAAAAA";
 h3d_shader_GenTexture._MODULE = "h3d.shader.GenTexture";
-h3d_shader_LineShader.SRC = "HXSMFWgzZC5zaGFkZXIuTGluZVNoYWRlcgwBBmNhbWVyYQ0BAwIEdmlldwcAAQADBHByb2oHAAEABAh2aWV3UHJvagcAAQAAAAAFBmdsb2JhbA0CAgYJcGl4ZWxTaXplBQoABQAHCW1vZGVsVmlldwcABQEDAAAACAVpbnB1dA0DAwkIcG9zaXRpb24FCwEIAAoGbm9ybWFsBQsBCAALAnV2BQoBCAABAAAMBm91dHB1dA0EAQ0IcG9zaXRpb24FDAQMAAQAAA4RdHJhbnNmb3JtZWROb3JtYWwFCwQAAA8TdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAEBFwcm9qZWN0ZWRQb3NpdGlvbgUMBAAAEQtsZW5ndGhTY2FsZQMCAAASBXdpZHRoAwIAABMEcGRpcgUMBAAAFAhfX2luaXRfXw4GAAAVBnZlcnRleA4GAAACAhQAAAUBBQUIFgNkaXIFCwQAAAYBAgoFCwkDMw4BAgcHBgULAAYEAhMFDAYBCQMrDgIGAQIWBQsJAzMOAQICBwYFCwEDAAAAAAAA8D8DBQwCAwcFDAUMBoEKAhMFDBEABQoGAgEDAAAAAAAA8D8DCQMNDgEGAAYBCgITBQwAAAMKAhMFDAAAAwMGAQoCEwUMBAADCgITBQwEAAMDAwMDBQoGgAIPBQsGAQYBAhYFCwoCCwUKAAADBQsCEQMFCwULBgQCDgULCQMgDgECFgULBQsFCwAAABUAAAUBBoAKAhAFDBEABQoGAQYBBgEGAQQGAQoCEwUMBQAFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAPC/AwUKBQoFCgQGAwoCCwUKBAADAQMAAAAAAADgPwMDAwUKCgIQBQwIAAMFCgIGBQoFCgISAwUKBQoA";
+h3d_shader_LineShader.SRC = "HXSMFWgzZC5zaGFkZXIuTGluZVNoYWRlcg0BBmNhbWVyYQ0BBgIEdmlldwcAAQADBHByb2oHAAEABAh2aWV3UHJvagcAAQAFDHJldmVyc2VEZXB0aAIAAQEAAAAAAAYFek5lYXIDAAEABwR6RmFyAwABAAAAAAgGZ2xvYmFsDQICCQlwaXhlbFNpemUFCgAIAAoJbW9kZWxWaWV3BwAIAQMAAAALBWlucHV0DQMDDAhwb3NpdGlvbgULAQsADQZub3JtYWwFCwELAA4CdXYFCgELAAEAAA8Gb3V0cHV0DQQBEAhwb3NpdGlvbgUMBA8ABAAAERF0cmFuc2Zvcm1lZE5vcm1hbAULBAAAEhN0cmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAATEXByb2plY3RlZFBvc2l0aW9uBQwEAAAUC2xlbmd0aFNjYWxlAwIAABUFd2lkdGgDAgAAFgRwZGlyBQwEAAAXCF9faW5pdF9fDgYAABgJbGluZWFyaXplDgYAABkGdmVydGV4DgYAAAMCFwAABQEFBQgaA2RpcgULBAAABgECDQULCQMzDgECCgcGBQsABgQCFgUMBgEJAysOAgYBAhoFCwkDMw4BAgIHBgULAQMAAAAAAADwPwMFDAIDBwUMBQwGgQoCFgUMEQAFCgYCAQMAAAAAAADwPwMJAw0OAQYABgEKAhYFDAAAAwoCFgUMAAADAwYBCgIWBQwEAAMKAhYFDAQAAwMDAwMFCgaAAhIFCwYBBgECGgULCgIOBQoAAAMFCwIUAwULBQsGBAIRBQsJAyAOAQIaBQsFCwULAAADGAEbAWQDBAAAAwUDCBwBbgMEAAACBgMACB0BZgMEAAACBwMADQYCBAYBBgEBAwAAAAAAAABAAwIcAwMCHQMDAwQGAwYAAh0DAhwDAwYBBgEEBgMGAQEDAAAAAAAAAEADAhsDAwEDAAAAAAAA8D8DAwMEBgMCHQMCHAMDAwMECwIFAgEDAAAAAAAA8L8DAQMAAAAAAADwPwMDAwMDAwMAAAAZAAAFAQaACgITBQwRAAUKBgEGAQYBBgEEBgEKAhYFDAUABQoJAykOAgEDAAAAAAAA8D8DAQMAAAAAAADwvwMFCgUKBQoEBgMKAg4FCgQAAwEDAAAAAAAA4D8DAwMFCgkCGA4BBgIKAhMFDAgAAwoCEwUMDAADAwMFCgIJBQoFCgIVAwUKBQoA";
 h3d_shader_LineShader._MODULE = "h3d.shader.LineShader";
 h3d_shader_MinMaxShader.SRC = "HXSMF2gzZC5zaGFkZXIuTWluTWF4U2hhZGVyCwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgR0ZXhBCgICAAALBHRleEIKAgIAAAwFaXNNYXgCAgABAAAAAAANCF9faW5pdF9fDgYAAA4GdmVydGV4DgYAAA8IZnJhZ21lbnQOBgAAAwINAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAADgAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABDwAABQMIEAFhBQwEAAAJAyIOAgIKCgICCQUKBQwACBEBYgUMBAAACQMiDgICCwoCAgkFCgUMAAYEAggFDAsCDAIJAxYOAgIQBQwCEQUMBQwJAxUOAgIQBQwCEQUMBQwFDAUMAA";
 h3d_shader_MinMaxShader._MODULE = "h3d.shader.MinMaxShader";
 h3d_shader_CubeMinMaxShader.SRC = "HXSMG2gzZC5zaGFkZXIuQ3ViZU1pbk1heFNoYWRlcgwBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoEdGV4QQoGAgAACwR0ZXhCCgYCAAAMBWlzTWF4AgIAAQAAAAAADQNtYXQGAgAADghfX2luaXRfXw4GAAAPBnZlcnRleA4GAAAQCGZyYWdtZW50DgYAAAMCDgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAAA8AAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARAAAAUFCBECdXYFCgQAAAYDBgECCQUKAQMAAAAAAAAAQAMFCgEDAAAAAAAA8D8DBQoACBIDZGlyBQsEAAAGAQkDKg4CAhEFCgEDAAAAAAAA8D8DBQsCDQYFCwAIEwFhBQwEAAAJAyIOAgIKCgYCEgULBQwACBQBYgUMBAAACQMiDgICCwoGAhIFCwUMAAYEAggFDAsCDAIJAxYOAgITBQwCFAUMBQwJAxUOAgITBQwCFAUMBQwFDAUMAA";
 h3d_shader_CubeMinMaxShader._MODULE = "h3d.shader.MinMaxShader";
-h3d_shader_NormalMap.SRC = "HXSMFGgzZC5zaGFkZXIuTm9ybWFsTWFwCgEGY2FtZXJhDQECAghwb3NpdGlvbgULAAEAAwNkaXIFCwMBAAAAAAQGZ2xvYmFsDQIBBQltb2RlbFZpZXcHAAQBAwAAAAYFaW5wdXQNAwIHBm5vcm1hbAULAQYACAd0YW5nZW50BQsBBgABAAAJB3RleHR1cmUKAgIAAAoMY2FsY3VsYXRlZFVWBQoEAAALE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAwRdHJhbnNmb3JtZWROb3JtYWwFCwQAAA0SdHJhbnNmb3JtZWRUYW5nZW50BQwDAAAODl9faW5pdF9fdmVydGV4DgYAAA8IZnJhZ21lbnQOBgAAAgIOAAAFAQYEAg0FDAkDKw4CBgECCAULCQMzDgECBQcGBQsLBgcJAx4OAgIIBQsCCAULAwEDAAAAAAAA4D8DAgEDAAAAAAAA8D8DAQMAAAAAAADwvwMDBQwFDAABDwAABQUIEAFuBQsEAAACDAULAAgRAm5mBQsEAAAJAzoOAQkDIg4CAgkKAgIKBQoFDAULAAgSBHRhblgFCwQAAAkDIA4BCgINBQySAAULBQsACBMEdGFuWQULBAAABgEJAx8OAgIQBQsCEgULBQsHAwoCDQUMDAADAwULAAYEAgwFCwkDIA4BBAYABgAGAQoCEQULAAADAhIFCwULBgEKAhEFCwQAAwITBQsFCwULBgEKAhEFCwgAAwIQBQsFCwULBQsFCwULAA";
+h3d_shader_NormalMap.SRC = "HXSMFGgzZC5zaGFkZXIuTm9ybWFsTWFwCgEGY2FtZXJhDQECAghwb3NpdGlvbgULAAEAAwNkaXIFCwMBAAAAAAQGZ2xvYmFsDQIBBQltb2RlbFZpZXcHAAQBAwAAAAYFaW5wdXQNAwMHAnV2BQoBBgAIBm5vcm1hbAULAQYACQd0YW5nZW50BQsBBgABAAAKB3RleHR1cmUKAgIAAAsMY2FsY3VsYXRlZFVWBQoEAAAME3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAA0RdHJhbnNmb3JtZWROb3JtYWwFCwQAAA4SdHJhbnNmb3JtZWRUYW5nZW50BQwDAAAPDl9faW5pdF9fdmVydGV4DgYAABAIZnJhZ21lbnQOBgAAAgIPAAAFAgYEAg4FDAkDKw4CBgECCQULCQMzDgECBQcGBQsLBgcJAx4OAgIJBQsCCQULAwEDAAAAAAAA4D8DAgEDAAAAAAAA8D8DAQMAAAAAAADwvwMDBQwFDAYEAgsFCgIHBQoFCgABEAAABQUIEQFuBQsEAAACDQULAAgSAm5mBQsEAAAJAzoOAQkDIg4CAgoKAgILBQoFDAULAAgTBHRhblgFCwQAAAkDIA4BCgIOBQySAAULBQsACBQEdGFuWQULBAAABgEJAx8OAgIRBQsCEwULBQsHAwoCDgUMDAADAwULAAYEAg0FCwkDIA4BBAYABgAGAQoCEgULAAADAhMFCwULBgEKAhIFCwQAAwIUBQsFCwULBgEKAhIFCwgAAwIRBQsFCwULBQsFCwULAA";
 h3d_shader_NormalMap._MODULE = "h3d.shader.NormalMap";
 h3d_shader_Outline2D.SRC = "HXSMFGgzZC5zaGFkZXIuT3V0bGluZTJEDQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwHc2FtcGxlcwECAAEAAAAAAA0FY29sb3IFDAIAAA4NbXVsdGlwbHlBbHBoYQECAAEAAAAAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAERAAAFDAgSCG93bkNvbG9yBQwEAAAJAyIOAgIKCgICAwUKBQwACBMIbWF4QWxwaGEDBAAAAQMAAAAAAAAAAAMACBQIY3VyQ29sb3IFDAQAAAAACBUJZGlzcGxhY2VkBQoEAAAAAAgWBWFuZ2xlAwQAAAEDAAAAAAAAAAADAAgXCGRvdWJsZVBpAwQAAAEDGC1EVPshGUADAAgYBHN0ZXADBAAABgICFwMJAycOAQIMAQMDABUGdW5yb2xsAA4ZAWkBBAAABhUBAgAAAAABAgwBDwEAAAUFBoACFgMCGAMDBgQKAhUFCgAAAwYACgIDBQoAAAMGAQoCCwUKAAADCQMDDgECFgMDAwMDBgQKAhUFCgQAAwYACgIDBQoEAAMGAQoCCwUKBAADCQMCDgECFgMDAwMDBgQCFAUMCQMiDgICCgoCAhUFCgUMBQwGBAITAwkDFg4CAhMDCgIUBQwMAAMDAwAAAAgaC3Jlc3VsdEFscGhhAwQAAAkDFg4CAhMDCgISBQwMAAMDAAgbC3Jlc3VsdENvbG9yBQsEAAAGAAoCEgUMkgAFCwYBCgINBQySAAULBAYDAQMAAAAAAADwPwMKAhIFDAwAAwMDBQsFCwAIHANvdXQFCwQAAAYBAhsFCwkDFg4CCQMnDgECDgEDAhoDAwULAAYEAgcFDAkDKw4CAhwFCwYBAhoDCQMYDgMKAg0FDAwAAwEDAAAAAAAA8D8DCgISBQwMAAMDAwUMBQwA";
 h3d_shader_Outline2D._MODULE = "h3d.shader.Outline2D";
@@ -97472,7 +109522,7 @@ h3d_shader_UVDelta.SRC = "HXSMEmgzZC5zaGFkZXIuVVZEZWx0YQQBB3V2RGVsdGEFCgIAAAIHdX
 h3d_shader_UVDelta._MODULE = "h3d.shader.UVDelta";
 h3d_shader_VertexColorAlpha.SRC = "HXSMG2gzZC5zaGFkZXIuVmVydGV4Q29sb3JBbHBoYQQBBWlucHV0DQEBAgVjb2xvcgUMAQEAAQAAAwpwaXhlbENvbG9yBQwEAAAECGFkZGl0aXZlAgIAAQAAAAAABQhmcmFnbWVudA4GAAABAQUAAAUBCwIEAgaAAgMFDAICBQwFDAaBAgMFDAICBQwFDAAA";
 h3d_shader_VertexColorAlpha._MODULE = "h3d.shader.VertexColorAlpha";
-h3d_shader_VolumeDecal.SRC = "HXSMFmgzZC5zaGFkZXIuVm9sdW1lRGVjYWwdAQZjYW1lcmENAQwCBHZpZXcHAAEAAwRwcm9qBwABAAQIcG9zaXRpb24FCwABAAUIcHJvakZsaXADAAEABghwcm9qRGlhZwULAAEABwh2aWV3UHJvagcAAQAIEHByZXZpb3VzVmlld1Byb2oHAAEACQ9pbnZlcnNlVmlld1Byb2oHAAEACgV6TmVhcgMAAQALBHpGYXIDAAEADANkaXIFCwMBAA0Naml0dGVyT2Zmc2V0cwUMAAEAAAAADgZnbG9iYWwNAgUPBHRpbWUDAA4AEAlwaXhlbFNpemUFCgAOABEJbW9kZWxWaWV3BwAOAQMSEG1vZGVsVmlld0ludmVyc2UHAA4BAxMRcHJldmlvdXNNb2RlbFZpZXcHAA4BAwAAABQFaW5wdXQNAwIVCHBvc2l0aW9uBQsBFAAWBm5vcm1hbAULARQAAQAAFwZvdXRwdXQNBAYYCHBvc2l0aW9uBQwEFwAZBWNvbG9yBQwEFwAaBWRlcHRoAwQXABsGbm9ybWFsBQsEFwAcCXdvcmxkRGlzdAMEFwAdCHZlbG9jaXR5BQoEFwAEAAAeEHJlbGF0aXZlUG9zaXRpb24FCwQAAB8TdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAIBtwcmV2aW91c1RyYW5zZm9ybWVkUG9zaXRpb24FCwQAACEYcGl4ZWxUcmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAAiEXRyYW5zZm9ybWVkTm9ybWFsBQsEAAAjEXByb2plY3RlZFBvc2l0aW9uBQwEAAAkGXByZXZpb3VzUHJvamVjdGVkUG9zaXRpb24FDAQAACUKcGl4ZWxDb2xvcgUMBAAAJgVkZXB0aAMEAAAnC25kY1Bvc2l0aW9uBQoEAAAoE3ByZXZpb3VzTmRjUG9zaXRpb24FCgQAACkIc2NyZWVuVVYFCgQAACoJc3BlY1Bvd2VyAwQAACsJc3BlY0NvbG9yBQsEAAAsCXdvcmxkRGlzdAMEAAAtDXBpeGVsVmVsb2NpdHkFCgQAAC4IZGVwdGhNYXARAQAAAC8Fc2NhbGUFCgIAADAGbm9ybWFsBQsCAAAxB3RhbmdlbnQFCwIAADIKaXNDZW50ZXJlZAICAAEAAAAAADMMY2FsY3VsYXRlZFVWBQoEAAA0EnRyYW5zZm9ybWVkVGFuZ2VudAUMBAAANQ5fX2luaXRfX3ZlcnRleA4GAAA2CGZyYWdtZW50DgYAAAICNQAABQIGBAIiBQsJAyAOAQQGAQIwBQsJAzMOAQIRBwYFCwULBQsFCwYEAjQFDAkDKw4CCQMgDgEEBgECMQULCQMzDgECEQcGBQsFCwULAQMAAAAAAADwPwMFDAUMAAE2AAAFCQg3Bm1hdHJpeAcEAAAGAQIJBwISBwcACDgJc2NyZWVuUG9zBQoEAAAGAgoCIwUMEQAFCgoCIwUMDAADBQoACDkDcnV2BQwEAAAJAysOAwI4BQoJA0AOAgIuEQEJAzsOAQI4BQoFCgMBAwAAAAAAAPA/AwUMAAg6BHdwb3MFDAQAAAYBAjkFDAI3BwUMAAg7BHBwb3MFDAQAAAYBAjkFDAIJBwUMAAYEAiEFCwYCCgI7BQySAAULCgI7BQwMAAMFCwULBgQCMwUKBgECLwUKBAYCCgI6BQwRAAUKCgI6BQwMAAMFCgUKBQoFCgsCMgIGgAIzBQoBAwAAAAAAAOA/AwUKAAALBgkJAxUOAgkDFQ4CCgIzBQoAAAMKAjMFCgQAAwMJAxUOAgYDAQMAAAAAAADwPwMKAjMFCgAAAwMGAwEDAAAAAAAA8D8DCgIzBQoEAAMDAwMBAwAAAAAAAAAAAwIMAAAAAA";
+h3d_shader_VolumeDecal.SRC = "HXSMFmgzZC5zaGFkZXIuVm9sdW1lRGVjYWweAQZjYW1lcmENAQwCBHZpZXcHAAEAAwRwcm9qBwABAAQIcG9zaXRpb24FCwABAAUIcHJvakZsaXADAAEABghwcm9qRGlhZwULAAEABwh2aWV3UHJvagcAAQAIEHByZXZpb3VzVmlld1Byb2oHAAEACQ9pbnZlcnNlVmlld1Byb2oHAAEACgV6TmVhcgMAAQALBHpGYXIDAAEADANkaXIFCwMBAA0Naml0dGVyT2Zmc2V0cwUMAAEAAAAADgZnbG9iYWwNAgUPBHRpbWUDAA4AEAlwaXhlbFNpemUFCgAOABEJbW9kZWxWaWV3BwAOAQMSEG1vZGVsVmlld0ludmVyc2UHAA4BAxMRcHJldmlvdXNNb2RlbFZpZXcHAA4BAwAAABQFaW5wdXQNAwIVCHBvc2l0aW9uBQsBFAAWBm5vcm1hbAULARQAAQAAFwZvdXRwdXQNBAYYCHBvc2l0aW9uBQwEFwAZBWNvbG9yBQwEFwAaBWRlcHRoAwQXABsGbm9ybWFsBQsEFwAcCXdvcmxkRGlzdAMEFwAdCHZlbG9jaXR5BQoEFwAEAAAeEHJlbGF0aXZlUG9zaXRpb24FCwQAAB8TdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAIBtwcmV2aW91c1RyYW5zZm9ybWVkUG9zaXRpb24FCwQAACEYcGl4ZWxUcmFuc2Zvcm1lZFBvc2l0aW9uBQsEAAAiEXRyYW5zZm9ybWVkTm9ybWFsBQsEAAAjEXByb2plY3RlZFBvc2l0aW9uBQwEAAAkGXByZXZpb3VzUHJvamVjdGVkUG9zaXRpb24FDAQAACUKcGl4ZWxDb2xvcgUMBAAAJgVkZXB0aAMEAAAnC25kY1Bvc2l0aW9uBQoEAAAoE3ByZXZpb3VzTmRjUG9zaXRpb24FCgQAACkIc2NyZWVuVVYFCgQAACoJc3BlY1Bvd2VyAwQAACsJc3BlY0NvbG9yBQsEAAAsCXdvcmxkRGlzdAMEAAAtDXBpeGVsVmVsb2NpdHkFCgQAAC4NcHJldk1vZGVsVmlldwgEAAAvCGRlcHRoTWFwEQEAAAAwBXNjYWxlBQoCAAAxBm5vcm1hbAULAgAAMgd0YW5nZW50BQsCAAAzCmlzQ2VudGVyZWQCAgABAAAAAAA0DGNhbGN1bGF0ZWRVVgUKBAAANRJ0cmFuc2Zvcm1lZFRhbmdlbnQFDAQAADYOX19pbml0X192ZXJ0ZXgOBgAANwhmcmFnbWVudA4GAAACAjYAAAUCBgQCIgULCQMgDgEEBgECMQULCQMzDgECEQcGBQsFCwULBQsGBAI1BQwJAysOAgkDIA4BBAYBAjIFCwkDMw4BAhEHBgULBQsFCwEDAAAAAAAA8D8DBQwFDAABNwAABQkIOAZtYXRyaXgHBAAABgECCQcCEgcHAAg5CXNjcmVlblBvcwUKBAAABgIKAiMFDBEABQoKAiMFDAwAAwUKAAg6A3J1dgUMBAAACQMrDgMCOQUKCQNADgICLxEBCQM7DgECOQUKBQoDAQMAAAAAAADwPwMFDAAIOwR3cG9zBQwEAAAGAQI6BQwCOAcFDAAIPARwcG9zBQwEAAAGAQI6BQwCCQcFDAAGBAIhBQsGAgoCPAUMkgAFCwoCPAUMDAADBQsFCwYEAjQFCgYBAjAFCgQGAgoCOwUMEQAFCgoCOwUMDAADBQoFCgUKBQoLAjMCBoACNAUKAQMAAAAAAADgPwMFCgAACwYJCQMVDgIJAxUOAgoCNAUKAAADCgI0BQoEAAMDCQMVDgIGAwEDAAAAAAAA8D8DCgI0BQoAAAMDBgMBAwAAAAAAAPA/AwoCNAUKBAADAwMDAQMAAAAAAAAAAAMCDAAAAAA";
 h3d_shader_VolumeDecal._MODULE = "h3d.shader.VolumeDecal";
 haxe_EntryPoint.pending = [];
 haxe_EntryPoint.threadCount = 0;
@@ -97500,7 +109550,9 @@ haxe_zip_InflateImpl.CODE_LENGTHS_POS = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,
 hxd_Precision.SIZES = [4,2,1,1];
 hxd_BufferFormat._UID = 0;
 hxd_BufferFormat.ALL_FORMATS = new haxe_ds_StringMap();
+hxd_MultiFormat.CACHE = new haxe_ds_IntMap();
 hxd_MultiFormat._UID = 0;
+hxd_MultiFormat.MAX_FORMATS = 16;
 hxd_Charset.complementChars = (function($this) {
 	var $r;
 	var str = "ヽヾーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ々〻。，";
@@ -97538,6 +109590,7 @@ hxd_res_Image.DEFAULT_FILTER = h3d_mat_Filter.Linear;
 hxd_res_Image.MIPMAP_MAX_SIZE = 0;
 hxd_res_Image.ENABLE_AUTO_WATCH = true;
 hxd_res_Image.BLACK_1x1 = hxd_Pixels.alloc(1,1,hxd_PixelFormat.RGBA);
+hxd_res_Image.ASYNC_LOADER_MIPS = 0;
 hxd_res_Image.LOG_TEXTURE_LOAD = false;
 hxsl_Tools.UID = 0;
 hxsl_Tools.SWIZ = hxsl_Component.__empty_constructs__.slice();

@@ -144,6 +144,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("draggable", new DraggableDemoScreen(screenManager));
 		screenManager.addScreen("dialogs", new DialogsDemoScreen(screenManager));
 		screenManager.addScreen("tabs", new TabsDemoScreen(screenManager));
+		screenManager.addScreen("textInput", new TextInputDemoScreen(screenManager));
 		screenManager.addScreen("tooltipsPanels", new TooltipsPanelsDemoScreen(screenManager));
 
 		// Layout demos

@@ -1,0 +1,104 @@
+version: 0.5
+
+// Text Input Demo
+// Shows text input variants, input filters, and tab navigation between fields.
+
+#textInputDemo programmable() {
+    pos: 50, 80
+
+    // Section: Basic Styles
+    text(exo2_16, "Basic Styles", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Color", #aaaaaa): 0, 30
+    placeholder(generated(cross(250, 24, #FF0000)), builderParameter("colorInput")) {
+        pos: 0, 48
+        settings{buildName=>textInput, font=>dd, placeholder=>"Color style input...", inputWidth=>190}
+    }
+
+    text(exo2_light_14, "Grey", #aaaaaa): 270, 30
+    placeholder(generated(cross(250, 24, #FF0000)), builderParameter("greyInput")) {
+        pos: 270, 48
+        settings{buildName=>textInputGrey, font=>dd, placeholder=>"Grey style input...", inputWidth=>190}
+    }
+
+    text(exo2_light_14, "Title Color", #aaaaaa): 0, 80
+    placeholder(generated(cross(250, 30, #FF0000)), builderParameter("titleColorInput")) {
+        pos: 0, 98
+        settings{buildName=>textInputTitle, font=>dd, placeholder=>"Title color style...", inputWidth=>190}
+    }
+
+    text(exo2_light_14, "Title Grey", #aaaaaa): 270, 80
+    placeholder(generated(cross(250, 30, #FF0000)), builderParameter("titleGreyInput")) {
+        pos: 270, 98
+        settings{buildName=>textInputTitleGrey, font=>dd, placeholder=>"Title grey style...", inputWidth=>190}
+    }
+
+    // Section: Features
+    text(exo2_16, "Features", #7fdbda): 0, 150
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 172
+
+    text(exo2_light_14, "Max 10 characters", #aaaaaa): 0, 180
+    placeholder(generated(cross(300, 24, #FF0000)), builderParameter("maxLenInput")) {
+        pos: 0, 198
+        settings{buildName=>textInput, font=>dd, placeholder=>"Max 10 chars...", maxLength=>10, inputWidth=>240, width=>300}
+    }
+
+    text(exo2_light_14, "Numeric only", #aaaaaa): 320, 180
+    placeholder(generated(cross(200, 24, #FF0000)), builderParameter("numericInput")) {
+        pos: 320, 198
+        settings{buildName=>textInput, font=>dd, placeholder=>"Numbers only...", filter=>numeric, inputWidth=>140}
+    }
+
+    text(exo2_light_14, "Read-only", #aaaaaa): 0, 230
+    placeholder(generated(cross(300, 24, #FF0000)), builderParameter("readOnlyInput")) {
+        pos: 0, 248
+        settings{buildName=>textInputGrey, font=>dd, text=>"This is read-only", inputWidth=>240, width=>300}
+    }
+
+    text(exo2_light_14, "Disabled", #aaaaaa): 320, 230
+    placeholder(generated(cross(200, 24, #FF0000)), builderParameter("disabledInput")) {
+        pos: 320, 248
+        settings{buildName=>textInput, font=>dd, text=>"Disabled input", inputWidth=>140}
+    }
+
+    // Section: Tab Navigation
+    text(exo2_16, "Tab Navigation (Tab / Shift+Tab)", #7fdbda): 0, 300
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 322
+
+    text(exo2_light_14, "First name", #aaaaaa): 0, 330
+    placeholder(generated(cross(180, 24, #FF0000)), builderParameter("firstNameInput")) {
+        pos: 0, 348
+        settings{buildName=>textInput, font=>dd, placeholder=>"First name...", inputWidth=>120, width=>180}
+    }
+
+    text(exo2_light_14, "Last name", #aaaaaa): 200, 330
+    placeholder(generated(cross(180, 24, #FF0000)), builderParameter("lastNameInput")) {
+        pos: 200, 348
+        settings{buildName=>textInput, font=>dd, placeholder=>"Last name...", inputWidth=>120, width=>180}
+    }
+
+    text(exo2_light_14, "Email", #aaaaaa): 400, 330
+    placeholder(generated(cross(180, 24, #FF0000)), builderParameter("emailInput")) {
+        pos: 400, 348
+        settings{buildName=>textInput, font=>dd, placeholder=>"Email...", inputWidth=>120, width=>180}
+    }
+
+    // Controls
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("enterAdvancesToggle")) {
+        pos: 0, 385
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Enter advances to next field", #aaaaaa): 30, 387
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("disableAllToggle")) {
+        pos: 300, 385
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Disable all inputs", #aaaaaa): 330, 387
+
+    // Events
+    text(exo2_16, "Events", #7fdbda): 0, 425
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 447
+    #eventLog(updatable) text(exo2_light_14, "Interact with inputs to see events here...", #ffffff, left, 580): 0, 460
+}

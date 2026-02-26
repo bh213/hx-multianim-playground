@@ -1519,6 +1519,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("bitmapsAtlas",new screens_graphics_BitmapsAtlasDemoScreen(this.screenManager));
 		this.screenManager.addScreen("ninepatch",new screens_graphics_NinepatchDemoScreen(this.screenManager));
 		this.screenManager.addScreen("textFonts",new screens_graphics_TextFontsDemoScreen(this.screenManager));
+		this.screenManager.addScreen("richText",new screens_graphics_RichTextDemoScreen(this.screenManager));
 		this.screenManager.addScreen("pixelsGraphics",new screens_graphics_PixelsGraphicsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("stateAnim",new screens_animation_StateAnimDemoScreen(this.screenManager));
 		this.screenManager.addScreen("particles",new screens_animation_ParticlesDemoScreen(this.screenManager));
@@ -1567,7 +1568,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 369, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 370, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -11073,7 +11074,9 @@ bh_multianim_MacroManimParser.prototype = {
 						var letterSpacing = 0.;
 						var lineSpacing = 0.;
 						var lineBreak = true;
-						var isHtml = false;
+						var styles = null;
+						var images = null;
+						var condenseWhite = null;
 						var dropShadowXY = null;
 						var dropShadowColor = 0;
 						var dropShadowAlpha = 0.5;
@@ -11117,6 +11120,9 @@ bh_multianim_MacroManimParser.prototype = {
 								var pname = this.expectIdentifierOrString();
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 								switch(pname.toLowerCase()) {
+								case "condensewhite":
+									condenseWhite = this.parseBool();
+									break;
 								case "dropshadowalpha":
 									dropShadowAlpha = this.parseFloat_();
 									break;
@@ -11135,7 +11141,10 @@ bh_multianim_MacroManimParser.prototype = {
 									dropShadowXY = new bh_base_FPoint(dx,dy);
 									break;
 								case "html":
-									isHtml = this.parseBool();
+									this.error("\"html: true\" is no longer supported. Use styles: [...] or {c:color}/{f:font} markup instead.");
+									break;
+								case "images":
+									images = this.parseTextImages();
 									break;
 								case "letterspacing":
 									letterSpacing = this.parseFloat_();
@@ -11146,6 +11155,9 @@ bh_multianim_MacroManimParser.prototype = {
 								case "linespacing":
 									lineSpacing = this.parseFloat_();
 									break;
+								case "styles":
+									styles = this.parseTextStyles();
+									break;
 								default:
 									this.error("unknown text param: " + pname);
 								}
@@ -11153,7 +11165,34 @@ bh_multianim_MacroManimParser.prototype = {
 								break;
 							}
 						}
-						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, isHtml : isHtml};
+						var hasMarkup = false;
+						if(text._hx_index == 1) {
+							var s = text.s;
+							hasMarkup = bh_multianim_TextMarkupConverter.hasMarkup(s);
+						}
+						if(styles != null) {
+							if(text._hx_index == 1) {
+								var s = text.s;
+								var _g = [];
+								var _g2 = 0;
+								while(_g2 < styles.length) {
+									var st = styles[_g2];
+									++_g2;
+									_g.push(st.name);
+								}
+								var styleNames = _g;
+								var _g = 0;
+								var _g2 = bh_multianim_TextMarkupConverter.extractStyleReferences(s);
+								while(_g < _g2.length) {
+									var ref = _g2[_g];
+									++_g;
+									if(styleNames.indexOf(ref) < 0) {
+										this.error("unknown style \"%{" + ref + "}\" in text markup; defined styles: [" + styleNames.join(", ") + "]");
+									}
+								}
+							}
+						}
+						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : styles, images : images, condenseWhite : condenseWhite, hasMarkup : hasMarkup};
 						node = this.createNode(bh_multianim_NodeType.TEXT(textDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 					} else {
 						var s = _g1;
@@ -11409,7 +11448,7 @@ bh_multianim_MacroManimParser.prototype = {
 																node = this.createNode(bh_multianim_NodeType.PROGRAMMABLE(isTileGroup,parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 															} else {
 																var s = _g1;
-																if(bh_multianim_MacroManimParser.isKeyword(s,"layouts") || bh_multianim_MacroManimParser.isKeyword(s,"relativelayouts")) {
+																if(bh_multianim_MacroManimParser.isKeyword(s,"layouts")) {
 																	this.advance();
 																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 																	var layoutsDef = this.parseLayouts();
@@ -11448,7 +11487,7 @@ bh_multianim_MacroManimParser.prototype = {
 																		return n;
 																	} else {
 																		var s = _g1;
-																		if(bh_multianim_MacroManimParser.isKeyword(s,"staticRef") || bh_multianim_MacroManimParser.isKeyword(s,"reference")) {
+																		if(bh_multianim_MacroManimParser.isKeyword(s,"staticRef")) {
 																			this.advance();
 																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																			var extRef = null;
@@ -11472,7 +11511,7 @@ bh_multianim_MacroManimParser.prototype = {
 																			node = this.createNode(bh_multianim_NodeType.STATIC_REF(extRef,progRef,params),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																		} else {
 																			var s = _g1;
-																			if(bh_multianim_MacroManimParser.isKeyword(s,"dynamicRef") || bh_multianim_MacroManimParser.isKeyword(s,"component")) {
+																			if(bh_multianim_MacroManimParser.isKeyword(s,"dynamicRef")) {
 																				this.advance();
 																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																				var extRef = null;
@@ -12086,16 +12125,65 @@ bh_multianim_MacroManimParser.prototype = {
 						if(bh_multianim_MacroManimParser.isKeyword(s,"range")) {
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-							var start = this.parseIntegerOrReference();
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-							var end = this.parseIntegerOrReference();
-							if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-								var step = this.parseIntegerOrReference();
+							var _g = this.tokens[this.tpos].type;
+							if(_g._hx_index == 31) {
+								var fromId = _g.s;
+								if(bh_multianim_MacroManimParser.isKeyword(fromId,"from")) {
+									this.advance();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+									var start = this.parseIntegerOrReference();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+									var endKeyword = this.expectIdentifierOrString();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+									var endVal = this.parseIntegerOrReference();
+									var adjustedEnd;
+									switch(endKeyword.toLowerCase()) {
+									case "to":
+										adjustedEnd = bh_multianim_ReferenceableValue.EBinop(bh_multianim_RvOp.OpAdd,endVal,bh_multianim_ReferenceableValue.RVInteger(1));
+										break;
+									case "until":
+										adjustedEnd = endVal;
+										break;
+									default:
+										this.error("expected \"to\" or \"until\", got \"" + endKeyword + "\"");
+										adjustedEnd = endVal;
+									}
+									if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+										var stepKeyword = this.expectIdentifierOrString();
+										if(!bh_multianim_MacroManimParser.isKeyword(stepKeyword,"step")) {
+											this.error("expected \"step\", got \"" + stepKeyword + "\"");
+										}
+										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+										var step = this.parseIntegerOrReference();
+										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+										return bh_multianim_RepeatType.RangeIterator(start,adjustedEnd,step);
+									}
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+									return bh_multianim_RepeatType.RangeIterator(start,adjustedEnd,bh_multianim_ReferenceableValue.RVInteger(1));
+								} else {
+									var start = this.parseIntegerOrReference();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+									var end = this.parseIntegerOrReference();
+									if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+										var step = this.parseIntegerOrReference();
+										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+										return bh_multianim_RepeatType.RangeIterator(start,end,step);
+									}
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+									return bh_multianim_RepeatType.RangeIterator(start,end,bh_multianim_ReferenceableValue.RVInteger(1));
+								}
+							} else {
+								var start = this.parseIntegerOrReference();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+								var end = this.parseIntegerOrReference();
+								if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+									var step = this.parseIntegerOrReference();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+									return bh_multianim_RepeatType.RangeIterator(start,end,step);
+								}
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-								return bh_multianim_RepeatType.RangeIterator(start,end,step);
+								return bh_multianim_RepeatType.RangeIterator(start,end,bh_multianim_ReferenceableValue.RVInteger(1));
 							}
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-							return bh_multianim_RepeatType.RangeIterator(start,end,bh_multianim_ReferenceableValue.RVInteger(1));
 						} else {
 							var s = _g1;
 							if(bh_multianim_MacroManimParser.isKeyword(s,"stateanim")) {
@@ -12404,6 +12492,86 @@ bh_multianim_MacroManimParser.prototype = {
 		default:
 			this.error("unknown particle rate action: " + actionName);
 		}
+	}
+	,parseTextStyles: function() {
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+		var styles = [];
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			if(styles.length > 0) {
+				this.eatComma();
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+					break;
+				}
+			}
+			var name = this.expectIdentifierOrString();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+			var color = null;
+			var fontName = null;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 10:
+				color = this.parseColorOrReference();
+				break;
+			case 33:
+				var _g1 = _g.s;
+				color = this.parseColorOrReference();
+				break;
+			default:
+				var c = this.tryParseColor();
+				if(c != null) {
+					color = bh_multianim_ReferenceableValue.RVInteger(c);
+				}
+			}
+			var _g2 = this.tokens[this.tpos].type;
+			if(_g2._hx_index == 34) {
+				var s = _g2.s;
+				this.advance();
+				fontName = s;
+			}
+			if(color == null && fontName == null) {
+				this.error("style \"" + name + "\" must have at least a color or a font name");
+			}
+			styles.push({ name : name, color : color, fontName : fontName});
+		}
+		return styles;
+	}
+	,parseTextImages: function() {
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+		var images = [];
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+			if(images.length > 0) {
+				this.eatComma();
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+					break;
+				}
+			}
+			var name = this.expectIdentifierOrString();
+			var ts = this.parseTileSource();
+			var valign = null;
+			var spacing = null;
+			var _g = this.tokens[this.tpos].type;
+			if(_g._hx_index == 31) {
+				var s = _g.s;
+				if(s == "top" || s == "middle" || s == "bottom") {
+					this.advance();
+					valign = s;
+				}
+			}
+			var _g1 = this.tokens[this.tpos].type;
+			switch(_g1._hx_index) {
+			case 28:
+				var _g2 = _g1.s;
+				spacing = this.parseFloat_();
+				break;
+			case 29:
+				var _g3 = _g1.s;
+				spacing = this.parseFloat_();
+				break;
+			default:
+			}
+			images.push({ name : name, tileSource : ts, valign : valign, spacing : spacing});
+		}
+		return images;
 	}
 	,parseColorStops: function() {
 		var stops = [];
@@ -18439,6 +18607,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var textRefs = [];
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,textRefs);
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,textRefs);
+			if(textDef.styles != null) {
+				var _g1 = 0;
+				var _g2 = textDef.styles;
+				while(_g1 < _g2.length) {
+					var style = _g2[_g1];
+					++_g1;
+					if(style.color != null) {
+						bh_multianim_MultiAnimBuilder.collectParamRefs(style.color,textRefs);
+					}
+				}
+			}
 			if(textRefs.length > 0) {
 				var t;
 				if(builtObject._hx_index == 4) {
@@ -18449,9 +18628,23 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				if(t != null) {
 					var textDefCapture = textDef;
+					var needsConversion = textDefCapture.styles != null || textDefCapture.images != null || textDefCapture.hasMarkup || textDefCapture.condenseWhite != null;
 					ctx.trackExpression(function() {
-						t.set_text(_gthis.resolveAsString(textDefCapture.text));
+						var rawText = _gthis.resolveAsString(textDefCapture.text);
+						t.set_text(needsConversion ? bh_multianim_TextMarkupConverter.convert(rawText) : rawText);
 						t.set_textColor(_gthis.resolveAsColorInteger(textDefCapture.color));
+						if(textDefCapture.styles != null) {
+							var ht = t;
+							var _g = 0;
+							var _g1 = textDefCapture.styles;
+							while(_g < _g1.length) {
+								var style = _g1[_g];
+								++_g;
+								if(style.color != null) {
+									ht.defineHtmlTag(style.name,_gthis.resolveAsColorInteger(style.color) & 16777215,style.fontName);
+								}
+							}
+						}
 					},textRefs);
 				}
 			}
@@ -19955,7 +20148,47 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 7:
 			var textDef = _g.textDef;
 			var font = this.resourceLoader.loadFont(this.resolveAsString(textDef.fontName));
-			var t = textDef.isHtml ? this.createHtmlText(font) : new h2d_Text(font);
+			var needsHtml = textDef.styles != null || textDef.images != null || textDef.hasMarkup || textDef.condenseWhite != null;
+			var t = needsHtml ? this.createHtmlText(font) : new h2d_Text(font);
+			if(needsHtml) {
+				var ht = t;
+				if(textDef.styles != null) {
+					var _g1 = 0;
+					var _g2 = textDef.styles;
+					while(_g1 < _g2.length) {
+						var style = _g2[_g1];
+						++_g1;
+						var color = style.color != null ? this.resolveAsColorInteger(style.color) & 16777215 : null;
+						ht.defineHtmlTag(style.name,color,style.fontName);
+					}
+				}
+				if(textDef.images != null) {
+					var imageMap_h = Object.create(null);
+					var _g1 = 0;
+					var _g2 = textDef.images;
+					while(_g1 < _g2.length) {
+						var img = _g2[_g1];
+						++_g1;
+						var key = img.name;
+						var value = this.loadTileSource(img.tileSource);
+						imageMap_h[key] = value;
+					}
+					ht.loadImage = function(url) {
+						return imageMap_h[url];
+					};
+				}
+				if(textDef.condenseWhite != null) {
+					ht.set_condenseWhite(textDef.condenseWhite);
+				}
+				ht.onHyperlink = function(url) {
+					if(builderParams != null && builderParams.callback != null) {
+						try {
+							builderParams.callback(bh_multianim_CallbackRequest.Name("link:" + url));
+						} catch( _g ) {
+						}
+					}
+				};
+			}
 			var _g1 = textDef.halign;
 			var builtObject1;
 			if(_g1 == null) {
@@ -19999,7 +20232,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				t.dropShadow = { dx : textDef.dropShadowXY.x, dy : textDef.dropShadowXY.y, color : textDef.dropShadowColor, alpha : textDef.dropShadowAlpha};
 			}
 			t.set_textColor(this.resolveAsColorInteger(textDef.color));
-			t.set_text(this.resolveAsString(textDef.text));
+			var rawText = this.resolveAsString(textDef.text);
+			t.set_text(needsHtml ? bh_multianim_TextMarkupConverter.convert(rawText) : rawText);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsText(t);
 			break;
 		case 8:
@@ -20720,15 +20954,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case 0:
 				var callbackName = source.name;
 				var getH2dObj1 = getH2dObj;
+				var builderParams1 = builderParams;
 				var callbackResultH2dObject1 = bh_multianim_CallbackRequest.Placeholder(this.resolveAsString(callbackName));
-				callbackResultH2dObject = getH2dObj1(builderParams.callback(callbackResultH2dObject1));
+				callbackResultH2dObject = getH2dObj1(builderParams1.callback(callbackResultH2dObject1));
 				break;
 			case 1:
 				var callbackName = source.name;
 				var index = source.index;
 				var getH2dObj1 = getH2dObj;
+				var builderParams1 = builderParams;
 				var callbackResultH2dObject1 = bh_multianim_CallbackRequest.PlaceholderWithIndex(this.resolveAsString(callbackName),this.resolveAsInteger(index));
-				callbackResultH2dObject = getH2dObj1(builderParams.callback(callbackResultH2dObject1));
+				callbackResultH2dObject = getH2dObj1(builderParams1.callback(callbackResultH2dObject1));
 				break;
 			case 2:
 				var callbackName = source.name;
@@ -20745,7 +20981,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3195, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3241, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -22926,7 +23162,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5200, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5246, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -23036,7 +23272,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5424, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5470, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -23070,7 +23306,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5440, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5486, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -24057,6 +24293,171 @@ bh_multianim_ProgrammableBuilder.prototype = {
 		return this.resourceLoader.loadFont(name);
 	}
 	,__class__: bh_multianim_ProgrammableBuilder
+};
+var bh_multianim_TextMarkupConverter = function() { };
+$hxClasses["bh.multianim.TextMarkupConverter"] = bh_multianim_TextMarkupConverter;
+bh_multianim_TextMarkupConverter.__name__ = "bh.multianim.TextMarkupConverter";
+bh_multianim_TextMarkupConverter.convert = function(text) {
+	if(text == null || text.length == 0) {
+		return text;
+	}
+	if(text.indexOf("%{") < 0) {
+		return text;
+	}
+	var buf_b = "";
+	var tagStack = [];
+	var i = 0;
+	var len = text.length;
+	while(i < len) {
+		var ch = HxOverrides.cca(text,i);
+		if(ch == 37 && i + 1 < len && HxOverrides.cca(text,i + 1) == 37 && i + 2 < len && HxOverrides.cca(text,i + 2) == 123) {
+			buf_b += "%{";
+			i += 3;
+		} else if(ch == 37 && i + 1 < len && HxOverrides.cca(text,i + 1) == 123) {
+			var closeIdx = text.indexOf("}",i + 2);
+			if(closeIdx < 0) {
+				buf_b += String.fromCodePoint(ch);
+				++i;
+				continue;
+			}
+			var tag = text.substring(i + 2,closeIdx);
+			if(tag == "/") {
+				if(tagStack.length > 0) {
+					var openTag = tagStack.pop();
+					buf_b += "</";
+					buf_b += openTag == null ? "null" : "" + openTag;
+					buf_b += ">";
+				}
+				i = closeIdx + 1;
+			} else if(StringTools.startsWith(tag,"c:")) {
+				var colorVal = tag.substring(2);
+				var hexColor = bh_multianim_TextMarkupConverter.resolveColorToHex(colorVal);
+				buf_b += "<font color=\"";
+				buf_b += hexColor == null ? "null" : "" + hexColor;
+				buf_b += "\">";
+				tagStack.push("font");
+				i = closeIdx + 1;
+			} else if(StringTools.startsWith(tag,"f:")) {
+				var fontName = tag.substring(2);
+				buf_b += "<font face=\"";
+				buf_b += fontName == null ? "null" : "" + fontName;
+				buf_b += "\">";
+				tagStack.push("font");
+				i = closeIdx + 1;
+			} else if(StringTools.startsWith(tag,"img:")) {
+				var imgName = tag.substring(4);
+				buf_b += "<img src=\"";
+				buf_b += imgName == null ? "null" : "" + imgName;
+				buf_b += "\"/>";
+				i = closeIdx + 1;
+			} else if(StringTools.startsWith(tag,"align:")) {
+				var align = tag.substring(6);
+				buf_b += "<p align=\"";
+				buf_b += align == null ? "null" : "" + align;
+				buf_b += "\">";
+				tagStack.push("p");
+				i = closeIdx + 1;
+			} else if(StringTools.startsWith(tag,"link:")) {
+				var linkId = tag.substring(5);
+				buf_b += "<a href=\"";
+				buf_b += linkId == null ? "null" : "" + linkId;
+				buf_b += "\">";
+				tagStack.push("a");
+				i = closeIdx + 1;
+			} else {
+				buf_b += "<";
+				buf_b += tag == null ? "null" : "" + tag;
+				buf_b += ">";
+				tagStack.push(tag);
+				i = closeIdx + 1;
+			}
+		} else {
+			buf_b += String.fromCodePoint(ch);
+			++i;
+		}
+	}
+	return buf_b;
+};
+bh_multianim_TextMarkupConverter.hasMarkup = function(text) {
+	if(text == null) {
+		return false;
+	}
+	var idx = text.indexOf("%{");
+	while(idx >= 0 && idx + 2 < text.length) {
+		if(idx > 0 && HxOverrides.cca(text,idx - 1) == 37) {
+			idx = text.indexOf("%{",idx + 1);
+			continue;
+		}
+		var closeIdx = text.indexOf("}",idx + 2);
+		if(closeIdx > idx + 2) {
+			var tag = text.substring(idx + 2,closeIdx);
+			if(tag == "/" || StringTools.startsWith(tag,"c:") || StringTools.startsWith(tag,"f:") || StringTools.startsWith(tag,"img:") || StringTools.startsWith(tag,"align:") || StringTools.startsWith(tag,"link:") || bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
+				return true;
+			}
+		}
+		idx = text.indexOf("%{",idx + 1);
+	}
+	return false;
+};
+bh_multianim_TextMarkupConverter.extractStyleReferences = function(text) {
+	var refs = [];
+	if(text == null) {
+		return refs;
+	}
+	var idx = text.indexOf("%{");
+	while(idx >= 0 && idx + 2 < text.length) {
+		if(idx > 0 && HxOverrides.cca(text,idx - 1) == 37) {
+			idx = text.indexOf("%{",idx + 1);
+			continue;
+		}
+		var closeIdx = text.indexOf("}",idx + 2);
+		if(closeIdx > idx + 2) {
+			var tag = text.substring(idx + 2,closeIdx);
+			if(tag != "/" && !StringTools.startsWith(tag,"c:") && !StringTools.startsWith(tag,"f:") && !StringTools.startsWith(tag,"img:") && !StringTools.startsWith(tag,"align:") && !StringTools.startsWith(tag,"link:") && bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
+				refs.push(tag);
+			}
+		}
+		idx = text.indexOf("%{",closeIdx > idx ? closeIdx : idx + 1);
+	}
+	return refs;
+};
+bh_multianim_TextMarkupConverter.resolveColorToHex = function(colorStr) {
+	if(colorStr == null || colorStr.length == 0) {
+		return "#000000";
+	}
+	if(StringTools.startsWith(colorStr,"#")) {
+		var hex = colorStr.substring(1);
+		if(hex.length == 3) {
+			return "#" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+		}
+		if(hex.length == 6) {
+			return colorStr;
+		}
+		if(hex.length == 8) {
+			return "#" + hex.substring(0,6);
+		}
+		return colorStr;
+	}
+	var resolved = bh_multianim_MacroManimParser.tryStringToColor(colorStr);
+	if(resolved != null) {
+		return "#" + StringTools.hex(resolved & 16777215,6);
+	}
+	return colorStr;
+};
+bh_multianim_TextMarkupConverter.isValidStyleName = function(name) {
+	if(name.length == 0) {
+		return false;
+	}
+	var _g = 0;
+	var _g1 = name.length;
+	while(_g < _g1) {
+		var i = _g++;
+		var c = HxOverrides.cca(name,i);
+		if(!(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 95)) {
+			return false;
+		}
+	}
+	return true;
 };
 var bh_multianim_layouts_LayoutContent = $hxEnums["bh.multianim.layouts.LayoutContent"] = { __ename__:true,__constructs__:null
 	,LayoutPoint: ($_=function(pos) { return {_hx_index:0,pos:pos,__enum__:"bh.multianim.layouts.LayoutContent",toString:$estr}; },$_._hx_name="LayoutPoint",$_.__params__ = ["pos"],$_)
@@ -32043,7 +32444,7 @@ bh_ui_UITooltipHelper.prototype = {
 			return;
 		}
 		var tmp = params;
-		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap());
+		var result = this.builder.buildWithParameters(buildName,tmp != null ? tmp : new haxe_ds_StringMap(),null,null,true);
 		var tmp = this.positionOverrides.h[interactiveId];
 		var position = tmp != null ? tmp : this.defaultPosition;
 		var tmp = this.offsetOverrides.h[interactiveId];
@@ -39465,6 +39866,13 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 	,formatText: function(text) {
 		return h2d_HtmlText.defaultFormatText(text);
 	}
+	,defineHtmlTag: function(name,fontColor,fontName) {
+		if(this.htmlTags == null) {
+			this.htmlTags = new haxe_ds_StringMap();
+		}
+		this.htmlTags.h[name] = { color : fontColor, font : fontName};
+		this.rebuild();
+	}
 	,set_text: function(t) {
 		h2d_Text.prototype.set_text.call(this,this.formatText(t));
 		return t;
@@ -40606,6 +41014,13 @@ h2d_HtmlText.prototype = $extend(h2d_Text.prototype,{
 		this.textColor = c;
 		this.rebuild();
 		return c;
+	}
+	,set_condenseWhite: function(value) {
+		if(this.condenseWhite != value) {
+			this.condenseWhite = value;
+			this.rebuild();
+		}
+		return value;
 	}
 	,getBoundsRec: function(relativeTo,out,forSize) {
 		if(forSize) {
@@ -106944,6 +107359,75 @@ screens_graphics_PixelsGraphicsDemoScreen.prototype = $extend(DemoScreenBase.pro
 		this.demoBuilder = null;
 	}
 	,__class__: screens_graphics_PixelsGraphicsDemoScreen
+});
+var screens_graphics_RichTextDemoScreen = function(screenManager,layers) {
+	this.msgIdx = 0;
+	this.messages = ["idle","combat","loot"];
+	this.msgTimer = 0;
+	this.dmgTimer = 0;
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.graphics.RichTextDemoScreen"] = screens_graphics_RichTextDemoScreen;
+screens_graphics_RichTextDemoScreen.__name__ = "screens.graphics.RichTextDemoScreen";
+screens_graphics_RichTextDemoScreen.__super__ = DemoScreenBase;
+screens_graphics_RichTextDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		this.setupDemo("Rich Text","Native markup with named styles, inline colors, font switching, and images");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/graphics/rich-text.manim",false);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["dmg"] = 3;
+		_g.h["dmgColor"] = -48060;
+		_g.h["msg"] = "idle";
+		this.result = tmp.buildWithParameters("richTextShowcase",_g,null,null,true);
+		var _this = this.result.object;
+		_this.posChanged = true;
+		_this.x = 40;
+		_this.posChanged = true;
+		_this.y = 80;
+		this.addBuilderResult(this.result);
+	}
+	,dmgToColor: function(dmg) {
+		switch(dmg) {
+		case 1:
+			return -5592406;
+		case 2:
+			return -1;
+		case 3:
+			return -13244;
+		case 4:
+			return -30652;
+		default:
+			return -48060;
+		}
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.result == null) {
+			return;
+		}
+		this.dmgTimer += dt;
+		if(this.dmgTimer >= 0.8) {
+			this.dmgTimer = 0;
+			var dmg = 1 + Std.random(5);
+			this.result.beginUpdate();
+			this.result.setParameter("dmg",dmg);
+			this.result.setParameter("dmgColor",this.dmgToColor(dmg));
+			this.result.endUpdate();
+		}
+		this.msgTimer += dt;
+		if(this.msgTimer >= 2.0) {
+			this.msgTimer = 0;
+			this.msgIdx = (this.msgIdx + 1) % this.messages.length;
+			this.result.setParameter("msg",this.messages[this.msgIdx]);
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		this.demoBuilder = null;
+		this.result = null;
+	}
+	,__class__: screens_graphics_RichTextDemoScreen
 });
 var screens_graphics_TextFontsDemoScreen = function(screenManager,layers) {
 	DemoScreenBase.call(this,screenManager,layers);

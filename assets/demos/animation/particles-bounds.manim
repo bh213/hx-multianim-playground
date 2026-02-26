@@ -3,7 +3,7 @@ version: 0.5
 // Particles Demo — Bounds & Collision
 // New bounds: combined syntax with box() and line()
 
-relativeLayouts {
+layouts {
     #positions list {
         point: 160, 380
         point: 420, 380

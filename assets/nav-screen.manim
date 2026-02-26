@@ -3,7 +3,7 @@ version: 0.5
 // NavScreen layout — positions, info panel, control buttons
 // Carousel visual and particles are built separately, positioned via layouts
 
-relativeLayouts {
+layouts {
     // Component positions (carousel visual, particle center)
     #positions list {
         point: 40, 42

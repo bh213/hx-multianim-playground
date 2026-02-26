@@ -3,7 +3,7 @@ version: 0.5
 // Particles Demo — Path Emission & PathGuide
 // emit: path(), pathguide force field
 
-relativeLayouts {
+layouts {
     #positions list {
         point: 160, 380
         point: 420, 380

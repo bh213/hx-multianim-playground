@@ -3,7 +3,7 @@ version: 0.5
 // Particles Demo — Sub-Emitters
 // onBirth, onDeath, onCollision triggers with spawning
 
-relativeLayouts {
+layouts {
     #positions list {
         point: 320, 380
         point: 700, 380

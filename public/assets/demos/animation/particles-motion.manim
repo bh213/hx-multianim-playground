@@ -3,7 +3,7 @@ version: 0.5
 // Particles Demo — Motion & Force Fields
 // Direction constants, angle units, force fields
 
-relativeLayouts {
+layouts {
     #positions list {
         point: 160, 380
         point: 420, 380

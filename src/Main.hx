@@ -159,6 +159,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("bitmapsAtlas", new BitmapsAtlasDemoScreen(screenManager));
 		screenManager.addScreen("ninepatch", new NinepatchDemoScreen(screenManager));
 		screenManager.addScreen("textFonts", new TextFontsDemoScreen(screenManager));
+		screenManager.addScreen("richText", new RichTextDemoScreen(screenManager));
 		screenManager.addScreen("pixelsGraphics", new PixelsGraphicsDemoScreen(screenManager));
 
 		// Animation demos

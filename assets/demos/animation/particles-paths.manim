@@ -35,12 +35,12 @@ paths {
     loop: true
     maxLife: 1.5
     speed: 15
-    speedRandom: 0.5
+    speedRand: 0.5
     size: 0.6
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeIn: 0.1
     fadeOut: 0.6
-    0.0: colorCurve: linear, #44FFFF, #4444FF
+    colorStops: 0.0 #44FFFF, 1.0 #4444FF
     blendMode: add
 }
 
@@ -52,31 +52,30 @@ paths {
     loop: true
     maxLife: 0.6
     speed: 180
-    speedRandom: 0.3
+    speedRand: 0.3
     size: 0.5
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.05
     fadeOut: 0.4
-    0.0: colorCurve: linear, #FF88FF, #FF44AA
+    colorStops: 0.0 #FF88FF, 1.0 #FF44AA
     blendMode: add
-    rotateAuto: true
+    autoRotate: true
 }
 
 // PathGuide force field — particles attracted to and flowing along circle
 #pathGuideDemo particles {
     count: 100
-    emit: cone(100, 5, 270, 25)
+    emit: cone(dist: 100, distRand: 5, angle: up, angleSpread: 25deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 3.0
     speed: 1
-    speedRandom: 0.5
+    speedRand: 0.5
     size: 0.35
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.15
     fadeOut: 0.7
-    0.0: colorCurve: linear, #88FF44, #FFFF44
-    0.5: colorCurve: linear, #FFFF44, #FF8844
+    colorStops: 0.0 #88FF44, 0.5 #FFFF44, 1.0 #FF8844
     blendMode: add
     forceFields: [pathguide(orbit, 1000, 200, 650)]
 }
@@ -89,15 +88,14 @@ paths {
     loop: true
     maxLife: 2.0
     speed: 40
-    speedRandom: 0.3
+    speedRand: 0.3
     size: 0.2
-    sizeRandom: 0.15
+    sizeRand: 0.15
     fadeIn: 0.1
     fadeOut: 0.6
-    0.0: colorCurve: linear, #FFFFFF, #88AAFF
-    0.5: colorCurve: linear, #88AAFF, #4466CC
+    colorStops: 0.0 #FFFFFF, 0.5 #88AAFF, 1.0 #4466CC
     blendMode: add
-    rotateAuto: true
+    autoRotate: true
     forceFields: [pathguide(wave, 40, 30, 80)]
 }
 

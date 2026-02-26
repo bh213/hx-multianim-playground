@@ -1,7 +1,7 @@
 version: 0.5
 
 // Particles Demo — Bounds & Collision
-// boundsMode: kill, bounce, wrap + boundsLine
+// New bounds: combined syntax with box() and line()
 
 relativeLayouts {
     #positions list {
@@ -20,18 +20,14 @@ relativeLayouts {
     loop: true
     maxLife: 3.0
     speed: 80
-    speedRandom: 0.4
+    speedRand: 0.4
     size: 0.7
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.1
     fadeOut: 0.95
-    0.0: colorCurve: linear, #FF4444, #FF8888
+    colorStops: 0.0 #FF4444, 1.0 #FF8888
     blendMode: add
-    boundsMode: kill
-    boundsMinX: -80
-    boundsMaxX: 80
-    boundsMinY: -80
-    boundsMaxY: 80
+    bounds: kill, box(x: -80, y: -80, w: 160, h: 160)
 }
 
 // Bounce off walls with damping
@@ -42,43 +38,35 @@ relativeLayouts {
     loop: true
     maxLife: 4.0
     speed: 100
-    speedRandom: 0.3
+    speedRand: 0.3
     gravity: 80
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.5
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.05
     fadeOut: 0.9
-    0.0: colorCurve: linear, #44FF44, #88FF88
+    colorStops: 0.0 #44FF44, 1.0 #88FF88
     blendMode: add
-    boundsMode: bounce(0.7)
-    boundsMinX: -80
-    boundsMaxX: 80
-    boundsMinY: -80
-    boundsMaxY: 80
+    bounds: bounce(0.7), box(x: -80, y: -80, w: 160, h: 160)
 }
 
 // Wrap around — seamless teleportation
 #wrapBounds particles {
     count: 50
-    emit: cone(0, 10, 45, 30)
+    emit: cone(dist: 0, distRand: 10, angle: 45deg, angleSpread: 30deg)
     tiles: file("star.png")
     loop: true
     maxLife: 5.0
     speed: 50
-    speedRandom: 0.3
+    speedRand: 0.3
     size: 0.4
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.1
     fadeOut: 0.95
-    0.0: colorCurve: linear, #FFFF44, #FFAA22
+    colorStops: 0.0 #FFFF44, 1.0 #FFAA22
     blendMode: add
-    boundsMode: wrap
-    boundsMinX: -80
-    boundsMaxX: 80
-    boundsMinY: -80
-    boundsMaxY: 80
-    rotationSpeed: 60
+    bounds: wrap, box(x: -80, y: -80, w: 160, h: 160)
+    rotSpeed: 60deg
 }
 
 // Line bounds — bounce off diagonal walls
@@ -89,33 +77,25 @@ relativeLayouts {
     loop: true
     maxLife: 4.0
     speed: 70
-    speedRandom: 0.3
+    speedRand: 0.3
     gravity: 60
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.4
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.05
     fadeOut: 0.9
-    0.0: colorCurve: linear, #8844FF, #CC88FF
+    colorStops: 0.0 #8844FF, 1.0 #CC88FF
     blendMode: add
-    boundsMode: bounce(0.8)
-    boundsMinX: -1000
-    boundsMaxX: 1000
-    boundsMinY: -1000
-    boundsMaxY: 1000
-    boundsLine: -80, 80, 80, 80
-    boundsLine: -80, -80, -80, 80
-    boundsLine: 80, -80, -80, -80
-    boundsLine: 80, 80, 80, -80
+    bounds: bounce(0.8), line(-80, 80, 80, 80), line(-80, -80, -80, 80), line(80, -80, -80, -80), line(80, 80, 80, -80)
 }
 
 #boundsUI programmable() {
     text(m6x11, "Kill", #FF4444, center, 120): 120, 20
-    text(m3x6, "removed at edges", #888888, center, 120): 120, 36
+    text(m3x6, "bounds: kill, box()", #888888, center, 160): 120, 36
     text(m6x11, "Bounce", #44FF44, center, 120): 380, 20
-    text(m3x6, "reflect + damping", #888888, center, 120): 380, 36
+    text(m3x6, "bounds: bounce(), box()", #888888, center, 180): 380, 36
     text(m6x11, "Wrap", #FFFF44, center, 120): 640, 20
-    text(m3x6, "teleport to opposite", #888888, center, 120): 640, 36
+    text(m3x6, "bounds: wrap, box()", #888888, center, 160): 640, 36
     text(m6x11, "Line Bounds", #8844FF, center, 120): 900, 20
-    text(m3x6, "bounce off lines", #888888, center, 120): 900, 36
+    text(m3x6, "bounds: bounce(), line()", #888888, center, 180): 900, 36
 }

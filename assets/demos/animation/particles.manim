@@ -5,58 +5,55 @@ version: 0.5
 
 #fire particles {
     count: 80
-    emit: cone(10, 5, 270, 25)
+    emit: cone(dist: 10, distRand: 5, angle: up, angleSpread: 25deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 1.8
     speed: 60
-    speedRandom: 0.3
+    speedRand: 0.3
     gravity: 40
-    gravityAngle: 270
+    gravityAngle: up
     size: 0.6
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeOut: 0.7
     fadeIn: 0.1
-    0.0: colorCurve: linear, #FF4400, #FFAA00
-    0.4: colorCurve: linear, #FFAA00, #FF220044
+    colorStops: 0.0 #FF4400, 0.4 #FFAA00, 1.0 #FF220044
     blendMode: add
 }
 
 #sparkles particles {
     count: 40
-    emit: circle(50, 30, 0, 360)
+    emit: circle(r: 50, rRand: 30, angle: 0deg, angleSpread: 0.5turn)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 2.5
     speed: 20
-    speedRandom: 0.5
+    speedRand: 0.5
     gravity: 10
-    gravityAngle: 270
+    gravityAngle: up
     size: 0.3
-    sizeRandom: 0.2
+    sizeRand: 0.2
     fadeIn: 0.2
     fadeOut: 0.6
-    0.0: colorCurve: linear, #FFFFFF, #88DDFF
-    0.5: colorCurve: linear, #88DDFF, #4488FF00
+    colorStops: 0.0 #FFFFFF, 0.5 #88DDFF, 1.0 #4488FF00
     blendMode: add
 }
 
 #smoke particles {
     count: 60
-    emit: cone(5, 3, 270, 15)
+    emit: cone(dist: 5, distRand: 3, angle: up, angleSpread: 15deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 3.0
     speed: 30
-    speedRandom: 0.4
+    speedRand: 0.4
     gravity: 15
-    gravityAngle: 270
+    gravityAngle: up
     size: 0.8
-    sizeRandom: 0.4
+    sizeRand: 0.4
     fadeIn: 0.3
     fadeOut: 0.5
-    0.0: colorCurve: linear, #888888, #666666
-    0.5: colorCurve: linear, #666666, #44444400
+    colorStops: 0.0 #888888, 0.5 #666666, 1.0 #44444400
     blendMode: alpha
 }
 

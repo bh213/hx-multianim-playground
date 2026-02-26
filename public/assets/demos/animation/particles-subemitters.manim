@@ -13,19 +13,19 @@ relativeLayouts {
 // Main firework — launches upward, spawns sparks on death
 #fireworkMain particles {
     count: 8
-    emit: cone(0, 5, 270, 10)
+    emit: cone(dist: 0, distRand: 5, angle: up, angleSpread: 10deg)
     tiles: file("circle_hard.png")
     loop: true
     maxLife: 1.0
-    lifeRandom: 0.2
+    lifeRand: 0.2
     speed: 120
-    speedRandom: 0.2
+    speedRand: 0.2
     gravity: 100
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.4
     fadeIn: 0.0
     fadeOut: 0.8
-    0.0: colorCurve: linear, #FFFFFF, #FFFF88
+    colorStops: 0.0 #FFFFFF, 1.0 #FFFF88
     blendMode: add
     emitSync: 0.1
     subEmitters: [{
@@ -43,17 +43,16 @@ relativeLayouts {
     tiles: file("star.png") file("dot.png")
     loop: false
     maxLife: 1.2
-    lifeRandom: 0.3
+    lifeRand: 0.3
     speed: 80
-    speedRandom: 0.5
+    speedRand: 0.5
     gravity: 60
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.3
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeIn: 0.0
     fadeOut: 0.5
-    0.0: colorCurve: linear, #FFFF44, #FF4400
-    0.5: colorCurve: linear, #FF4400, #880000
+    colorStops: 0.0 #FFFF44, 0.5 #FF4400, 1.0 #880000
     blendMode: add
 }
 
@@ -65,19 +64,15 @@ relativeLayouts {
     loop: true
     maxLife: 5.0
     speed: 80
-    speedRandom: 0.3
+    speedRand: 0.3
     gravity: 120
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.6
     fadeIn: 0.0
     fadeOut: 0.95
-    0.0: colorCurve: linear, #44CCFF, #44CCFF
+    colorStops: 0.0 #44CCFF, 1.0 #44CCFF
     blendMode: add
-    boundsMode: bounce(0.85)
-    boundsMinX: -120
-    boundsMaxX: 120
-    boundsMinY: -100
-    boundsMaxY: 100
+    bounds: bounce(0.85), box(x: -120, y: -100, w: 240, h: 200)
     subEmitters: [{
         groupId: "bounceSparks"
         trigger: oncollision
@@ -94,14 +89,14 @@ relativeLayouts {
     loop: false
     maxLife: 0.5
     speed: 40
-    speedRandom: 0.5
+    speedRand: 0.5
     gravity: 30
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.5
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeIn: 0.0
     fadeOut: 0.3
-    0.0: colorCurve: linear, #FFFFFF, #44CCFF
+    colorStops: 0.0 #FFFFFF, 1.0 #44CCFF
     blendMode: add
 }
 

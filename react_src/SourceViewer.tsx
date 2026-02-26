@@ -6,8 +6,8 @@ if (!(Prism.languages as any).manim) {
   Prism.languages['manim'] = {
     comment: /\/\/.*/,
     string: /"[^"]*"/,
-    keyword: /\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2)\b/,
-    'attr-name': /\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct)\b/,
+    keyword: /\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,
+    'attr-name': /\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|boundsMode|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide)\b/,
     boolean: /\b(true|false)\b/,
     number: /\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,
     operator: /=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,

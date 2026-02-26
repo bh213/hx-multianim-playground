@@ -2,6 +2,7 @@ version: 0.5
 
 // Particles Demo — Basics
 // Emission modes, lifetime, speed, size, fading
+// Uses new angle units, direction constants, aliases, and named emit params
 
 layouts {
     #positions list {
@@ -14,57 +15,55 @@ layouts {
 
 #fire particles {
     count: 80
-    emit: cone(10, 5, 270, 25)
+    emit: cone(dist: 10, distRand: 5, angle: up, angleSpread: 25deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 1.8
     speed: 60
-    speedRandom: 0.3
+    speedRand: 0.3
     gravity: 40
-    gravityAngle: 270
+    gravityAngle: up
     size: 0.6
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeOut: 0.7
     fadeIn: 0.1
-    0.0: colorCurve: linear, #FF4400, #FFAA00
-    0.4: colorCurve: linear, #FFAA00, #FFFF88
+    colorStops: 0.0 #FF4400, 0.4 #FFAA00, 1.0 #FFFF88
     blendMode: add
 }
 
 #rain particles {
     count: 150
-    emit: box(150, 5, 95, 5)
+    emit: box(w: 150, h: 5, angle: down + 5deg, angleSpread: 5deg)
     tiles: file("spark.png")
     loop: true
     maxLife: 1.2
-    lifeRandom: 0.3
+    lifeRand: 0.3
     speed: 300
-    speedRandom: 0.15
+    speedRand: 0.15
     size: 0.3
-    sizeRandom: 0.1
+    sizeRand: 0.1
     fadeIn: 0.05
     fadeOut: 0.9
-    0.0: colorCurve: linear, #AACCFF, #6688CC
-    rotateAuto: true
+    colorStops: 0.0 #AACCFF, 1.0 #6688CC
+    autoRotate: true
 }
 
 #sparkles particles {
     count: 50
-    emit: circle(60, 30, 0, 0)
+    emit: circle(r: 60, rRand: 30, angle: 0deg, angleSpread: 0deg)
     tiles: file("star.png")
     loop: true
     maxLife: 2.0
     speed: 15
-    speedRandom: 0.5
+    speedRand: 0.5
     size: 0.4
-    sizeRandom: 0.3
+    sizeRand: 0.3
     fadeIn: 0.2
     fadeOut: 0.6
-    0.0: colorCurve: linear, #FFFFFF, #88DDFF
-    0.5: colorCurve: linear, #88DDFF, #4488FF
+    colorStops: 0.0 #FFFFFF, 0.5 #88DDFF, 1.0 #4488FF
     blendMode: add
-    rotationSpeed: 45
-    rotationSpeedRandom: 0.5
+    rotSpeed: 45deg
+    rotSpeedRand: 0.5
 }
 
 #explosion particles {
@@ -73,28 +72,27 @@ layouts {
     tiles: file("circle_hard.png") file("flare.png")
     loop: true
     maxLife: 0.8
-    lifeRandom: 0.3
+    lifeRand: 0.3
     speed: 200
-    speedRandom: 0.5
+    speedRand: 0.5
     gravity: 150
-    gravityAngle: 90
+    gravityAngle: down
     size: 0.5
-    sizeRandom: 0.4
+    sizeRand: 0.4
     fadeIn: 0.0
     fadeOut: 0.4
-    0.0: colorCurve: linear, #FFFF88, #FF4400
-    0.5: colorCurve: linear, #FF4400, #882200
+    colorStops: 0.0 #FFFF88, 0.5 #FF4400, 1.0 #882200
     blendMode: add
     emitSync: 0.9
 }
 
 #basicsUI programmable() {
     text(m6x11, "Fire", #FF6622, center, 120): 120, 20
-    text(m3x6, "cone emission", #888888, center, 120): 120, 36
+    text(m3x6, "named emit + colorStops", #888888, center, 180): 120, 36
     text(m6x11, "Rain", #88BBFF, center, 120): 380, 20
-    text(m3x6, "box emission", #888888, center, 120): 380, 36
+    text(m3x6, "box + direction expr", #888888, center, 180): 380, 36
     text(m6x11, "Sparkles", #88DDFF, center, 120): 640, 20
-    text(m3x6, "circle emission", #888888, center, 120): 640, 36
+    text(m3x6, "circle + aliases", #888888, center, 180): 640, 36
     text(m6x11, "Explosion", #FF8844, center, 120): 900, 20
-    text(m3x6, "point emission", #888888, center, 120): 900, 36
+    text(m3x6, "direction constants", #888888, center, 180): 900, 36
 }

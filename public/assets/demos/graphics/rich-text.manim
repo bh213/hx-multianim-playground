@@ -1,6 +1,6 @@
 version: 0.5
 
-#richTextShowcase programmable() {
+#richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, msg:[idle,combat,loot]=idle) {
 
   // Section 1: Named styles
   text(exo2_16, "Named Styles", #7fdbda): 0, 0
@@ -55,4 +55,21 @@ version: 0.5
   text(dd, "%{c:gold}Flame Sword%{/} %{c:#888888}(Rare)%{/}\n%{c:#FF4444}+25%{/} attack  %{img:fire} fire damage\nSells for %{img:coin} %{c:gold}150g%{/}", white, left, 580,
       styles: {},
       images: [fire generated(color(10, 10, #FF4400)), coin generated(color(10, 10, #FFD700))]): 8, 664
+
+  // Section 9: Dynamic damage numbers (incremental)
+  text(exo2_16, "Dynamic (incremental updates)", #7fdbda): 640, 0
+  bitmap(generated(color(540, 30, #282838))): 640, 28
+  text(dd, 'Dealt %{dmg}${dmg}%{/} damage to %{c:#FF8844}Dragon%{/}', white, left, 540,
+      styles: {dmg: $dmgColor}): 648, 34
+  text(m6x11, "dmg randomized, color set by value", #666666): 640, 62
+
+  // Section 10: Battle log messages
+  text(exo2_16, "Battle Log (cycling messages)", #7fdbda): 640, 90
+  bitmap(generated(color(540, 50, #282838))): 640, 118
+  @(msg => idle) text(dd, "%{c:cyan}You%{/} are resting... %{c:#666666}(safe)%{/}", white, left, 520): 648, 124
+  @(msg => combat) text(dd, "%{c:cyan}You%{/} attack %{c:#FF4444}Dragon%{/} with\n%{c:gold}Flame Sword%{/} %{img:fire}", white, left, 520,
+      images: [fire generated(color(10, 10, #FF4400))]): 648, 124
+  @(msg => loot) text(dd, "%{c:cyan}You%{/} found %{c:gold}Ancient Ring%{/} %{img:gem}!", white, left, 520,
+      images: [gem generated(color(10, 10, #44AAFF))]): 648, 124
+  text(m6x11, "msg cycles: idle > combat > loot", #666666): 640, 172
 }

@@ -1,75 +1,130 @@
 version: 0.5
 
-#richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, msg:[idle,combat,loot]=idle) {
+#richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, quest:[accepted,progress,complete]=accepted, equip:[sword,shield,empty]=sword) {
 
   // Section 1: Named styles
   text(exo2_16, "Named Styles", #7fdbda): 0, 0
   bitmap(generated(color(600, 30, #282838))): 0, 28
-  text(dd, "Deal %{damage}50 damage%{/} for %{gold}100g%{/} %{em}now%{/}", white, left, 600,
-      styles: {damage: #FF4444, gold: #FFD700 "dd_thin", em: "dd_thin"}): 8, 34
-  text(m6x11, 'styles: {damage: #FF4444, gold: #FFD700 "dd_thin", em: "dd_thin"}', #666666): 0, 62
+  richText(dd, "Deal [damage]50 damage[/] for [gold]100g[/] [em]now[/]", white, left, 600,
+      styles: {damage: color(#FF4444), gold: color(#FFD700) font("dd_thin"), em: font("dd_thin")}): 8, 34
+  text(m6x11, 'styles: {damage: color(#FF4444), gold: color(#FFD700) font("dd_thin")}', #666666): 0, 62
 
-  // Section 2: Inline colors
-  text(exo2_16, "Inline Colors", #7fdbda): 0, 90
+  // Section 2: Named color styles
+  text(exo2_16, "Named Color Styles", #7fdbda): 0, 90
   bitmap(generated(color(600, 30, #282838))): 0, 118
-  text(dd, "%{c:#FF4444}red%{/} %{c:blue}blue%{/} %{c:gold}gold%{/} %{c:lime}lime%{/} %{c:cyan}cyan%{/} %{c:orange}orange%{/}", white, left, 600): 8, 124
-  text(m6x11, "%{c:#FF4444}text%{/}  %{c:blue}text%{/}  %{c:gold}text%{/}", #666666): 0, 152
+  richText(dd, "[r]red[/] [b]blue[/] [g]gold[/] [l]lime[/] [cy]cyan[/] [o]orange[/]", white, left, 600,
+      styles: {r: color(#FF4444), b: color(blue), g: color(gold), l: color(lime), cy: color(cyan), o: color(orange)}): 8, 124
+  text(m6x11, "styles: {r: color(#FF4444), b: color(blue), g: color(gold)}", #666666): 0, 152
 
-  // Section 3: Inline font switching
-  text(exo2_16, "Inline Font Switching", #7fdbda): 0, 180
+  // Section 3: Font-only styles
+  text(exo2_16, "Font Switching via Styles", #7fdbda): 0, 180
   bitmap(generated(color(600, 30, #282838))): 0, 208
-  text(dd, "regular %{f:dd_thin}thin%{/} regular %{f:pixellari}pixel%{/} regular", white, left, 600): 8, 214
-  text(m6x11, "use %{f:dd_thin}fontName%{/} to switch font inline", #666666): 0, 242
+  richText(dd, "regular [thin]thin[/] regular [px]pixel[/] regular", white, left, 600,
+      styles: {thin: font("dd_thin"), px: font("pixellari")}): 8, 214
+  text(m6x11, 'styles: {thin: font("dd_thin"), px: font("pixellari")}', #666666): 0, 242
 
-  // Section 4: Mixed styles + inline
-  text(exo2_16, "Mixed Styles + Inline", #7fdbda): 0, 270
+  // Section 4: Mixed color + font styles
+  text(exo2_16, "Mixed Color + Font Styles", #7fdbda): 0, 270
   bitmap(generated(color(600, 30, #282838))): 0, 298
-  text(dd, "%{warn}Warning:%{/} costs %{c:gold}100g%{/} and %{c:#FF4444}50 HP%{/}", white, left, 600,
-      styles: {warn: #FF4444 "dd_thin"}): 8, 304
-  text(m6x11, "Named styles and inline color tags can be mixed", #666666): 0, 332
+  richText(dd, "[warn]Warning:[/] costs [price]100g[/] and [hp]50 HP[/]", white, left, 600,
+      styles: {warn: color(#FF4444) font("dd_thin"), price: color(gold), hp: color(#FF4444)}): 8, 304
+  text(m6x11, "Named styles define color() and/or font() per name", #666666): 0, 332
 
   // Section 5: Nesting
   text(exo2_16, "Nested Markup", #7fdbda): 0, 360
   bitmap(generated(color(600, 30, #282838))): 0, 388
-  text(dd, "%{damage}critical %{c:yellow}50%{/} damage%{/} to %{ice}frozen%{/} target", white, left, 600,
-      styles: {damage: #FF4444, ice: #44FFFF}): 8, 394
-  text(m6x11, "Inline color tags nest inside named style blocks", #666666): 0, 422
+  richText(dd, "[damage]critical [highlight]50[/] damage[/] to [ice]frozen[/] target", white, left, 600,
+      styles: {damage: color(#FF4444), highlight: color(yellow), ice: color(#44FFFF)}): 8, 394
+  text(m6x11, "Named style tags nest inside other named style blocks", #666666): 0, 422
 
-  // Section 6: Named colors in styles
-  text(exo2_16, "Named Colors in Styles", #7fdbda): 0, 450
+  // Section 6: Element colors
+  text(exo2_16, "Element Colors", #7fdbda): 0, 450
   bitmap(generated(color(600, 30, #282838))): 0, 478
-  text(dd, "%{fire}fire%{/} %{ice}ice%{/} %{nature}nature%{/} %{arcane}arcane%{/}", white, left, 600,
-      styles: {fire: red, ice: cyan, nature: lime, arcane: #FF44FF}): 8, 484
-  text(m6x11, 'styles: {fire: red, ice: cyan, nature: lime, arcane: #FF44FF}', #666666): 0, 512
+  richText(dd, "[fire]fire[/] [ice]ice[/] [nature]nature[/] [arcane]arcane[/]", white, left, 600,
+      styles: {fire: color(red), ice: color(cyan), nature: color(lime), arcane: color(#FF44FF)}): 8, 484
+  text(m6x11, 'styles: {fire: color(red), ice: color(cyan), nature: color(lime)}', #666666): 0, 512
 
   // Section 7: Inline images
   text(exo2_16, "Inline Images", #7fdbda): 0, 540
   bitmap(generated(color(600, 30, #282838))): 0, 568
-  text(dd, "Cost %{img:coin} 100 gold  %{img:gem} 5 gems  HP %{img:hp} full", white, left, 600,
-      images: [coin generated(color(10, 10, #FFD700)), gem generated(color(10, 10, #44AAFF)), hp generated(color(10, 10, #FF4444))]): 8, 574
-  text(m6x11, 'images: [coin generated(color(10, 10, #FFD700)), ...]', #666666): 0, 602
+  richText(dd, "Cost [img:coin] 100 gold  [img:gem] 5 gems  HP [img:hp] full", white, left, 600,
+      images: {coin: generated(color(10, 10, #FFD700)), gem: generated(color(10, 10, #44AAFF)), hp: generated(color(10, 10, #FF4444))}): 8, 574
+  text(m6x11, 'images: {coin: generated(color(10, 10, #FFD700)), ...}', #666666): 0, 602
 
   // Section 8: Game-like example
   text(exo2_16, "Game-Like Example", #7fdbda): 0, 630
   bitmap(generated(color(600, 60, #282838))): 0, 658
-  text(dd, "%{c:gold}Flame Sword%{/} %{c:#888888}(Rare)%{/}\n%{c:#FF4444}+25%{/} attack  %{img:fire} fire damage\nSells for %{img:coin} %{c:gold}150g%{/}", white, left, 580,
-      styles: {},
-      images: [fire generated(color(10, 10, #FF4400)), coin generated(color(10, 10, #FFD700))]): 8, 664
+  richText(dd, "[title]Flame Sword[/] [rarity](Rare)[/]\n[atk]+25[/] attack  [img:fire] fire damage\nSells for [img:coin] [price]150g[/]", white, left, 580,
+      styles: {title: color(gold), rarity: color(#888888), atk: color(#FF4444), price: color(gold)},
+      images: {fire: generated(color(10, 10, #FF4400)), coin: generated(color(10, 10, #FFD700))}): 8, 664
 
-  // Section 9: Dynamic damage numbers (incremental)
-  text(exo2_16, "Dynamic (incremental updates)", #7fdbda): 640, 0
+  // Section 9: Changing style color + value
+  text(exo2_16, "Dynamic Style Color", #7fdbda): 640, 0
   bitmap(generated(color(540, 30, #282838))): 640, 28
-  text(dd, 'Dealt %{dmg}${dmg}%{/} damage to %{c:#FF8844}Dragon%{/}', white, left, 540,
-      styles: {dmg: $dmgColor}): 648, 34
-  text(m6x11, "dmg randomized, color set by value", #666666): 640, 62
+  richText(dd, 'Dealt [dmg]${dmg}[/] damage to [target]Dragon[/]', white, left, 540,
+      styles: {dmg: color($dmgColor), target: color(#FF8844)}): 648, 34
+  text(m6x11, "style color($dmgColor) changes with dmg value", #666666): 640, 62
 
-  // Section 10: Battle log messages
-  text(exo2_16, "Battle Log (cycling messages)", #7fdbda): 640, 90
-  bitmap(generated(color(540, 50, #282838))): 640, 118
-  @(msg => idle) text(dd, "%{c:cyan}You%{/} are resting... %{c:#666666}(safe)%{/}", white, left, 520): 648, 124
-  @(msg => combat) text(dd, "%{c:cyan}You%{/} attack %{c:#FF4444}Dragon%{/} with\n%{c:gold}Flame Sword%{/} %{img:fire}", white, left, 520,
-      images: [fire generated(color(10, 10, #FF4400))]): 648, 124
-  @(msg => loot) text(dd, "%{c:cyan}You%{/} found %{c:gold}Ancient Ring%{/} %{img:gem}!", white, left, 520,
-      images: [gem generated(color(10, 10, #44AAFF))]): 648, 124
-  text(m6x11, "msg cycles: idle > combat > loot", #666666): 640, 172
+  // Section 10: Changing text, styles always defined
+  text(exo2_16, "Changing Text, Same Styles", #7fdbda): 640, 100
+  bitmap(generated(color(540, 40, #282838))): 640, 128
+  @(quest => accepted) richText(dd, "[npc]Elder[/] gave you [quest]Dragon Slayer[/]", white, left, 520,
+      styles: {npc: color(cyan), quest: color(gold), reward: color(#44FF44)}): 648, 134
+  @(quest => progress) richText(dd, "Kill 3 more dragons to complete quest", white, left, 520,
+      styles: {npc: color(cyan), quest: color(gold), reward: color(#44FF44)}): 648, 134
+  @(quest => complete) richText(dd, "[npc]Elder[/]: Well done! [reward]+500g[/]", white, left, 520,
+      styles: {npc: color(cyan), quest: color(gold), reward: color(#44FF44)}): 648, 134
+  text(m6x11, "all styles defined, text uses them or not", #666666): 640, 172
+
+  // Section 11: Changing text with optional images
+  text(exo2_16, "Optional Image Usage", #7fdbda): 640, 200
+  bitmap(generated(color(540, 40, #282838))): 640, 228
+  @(equip => sword) richText(dd, "[item]Iron Sword[/] [img:sword] equipped", white, left, 520,
+      styles: {item: color(gold), dim: color(#666666)},
+      images: {sword: generated(color(10, 10, #AAAAAA)), shield: generated(color(10, 10, #4488CC))}): 648, 234
+  @(equip => shield) richText(dd, "[item]Oak Shield[/] [img:shield] equipped", white, left, 520,
+      styles: {item: color(gold), dim: color(#666666)},
+      images: {sword: generated(color(10, 10, #AAAAAA)), shield: generated(color(10, 10, #4488CC))}): 648, 234
+  @(equip => empty) richText(dd, "[dim]Empty slot[/] - no item", white, left, 520,
+      styles: {item: color(gold), dim: color(#666666)},
+      images: {sword: generated(color(10, 10, #AAAAAA)), shield: generated(color(10, 10, #4488CC))}): 648, 234
+  text(m6x11, "all images defined, richText uses them or not", #666666): 640, 272
+
+  // Section 12: Alignment markup
+  text(exo2_16, "Alignment Markup", #7fdbda): 640, 310
+  bitmap(generated(color(540, 70, #282838))): 640, 338
+  richText(dd, "left aligned\n[align:center]center aligned[/]\n[align:right]right aligned[/]", white, left, 520): 648, 344
+  text(m6x11, "[align:center]...[/] and [align:right]...[/]", #666666): 640, 412
+
+  // Section 13: Drop shadow
+  text(exo2_16, "Drop Shadow", #7fdbda): 640, 440
+  bitmap(generated(color(540, 30, #282838))): 640, 468
+  richText(dd, "[title]Shadow Text[/] with [glow]glow effect[/]", white, left, 520,
+      styles: {title: color(gold), glow: color(#44FFFF)},
+      dropShadowXY: 2, 2, dropShadowColor: #000000, dropShadowAlpha: 0.8): 648, 474
+  text(m6x11, "dropShadowXY: 2, 2, dropShadowColor, dropShadowAlpha", #666666): 640, 502
+
+  // Section 14: Letter and line spacing
+  text(exo2_16, "Letter & Line Spacing", #7fdbda): 640, 530
+  bitmap(generated(color(540, 50, #282838))): 640, 558
+  richText(dd, "[wide]S P A C E D[/]\ncompact lines\nclose together", white, left, 520,
+      styles: {wide: color(#FFD700)},
+      letterSpacing: 2, lineSpacing: -2): 648, 564
+  text(m6x11, "letterSpacing: 2, lineSpacing: -2", #666666): 640, 612
+
+  // Section 15: Condense white + Escape sequence
+  text(exo2_16, "Condense White & Escapes", #7fdbda): 640, 640
+  bitmap(generated(color(540, 50, #282838))): 640, 668
+  richText(dd, "spaces   condensed   here", white, left, 520,
+      condenseWhite: true): 648, 674
+  richText(dd, "Use [[tag] for literal [em][[/][/] in markup", white, left, 520,
+      styles: {em: color(#44FFFF)}): 648, 694
+  text(m6x11, "condenseWhite: true / [[ escapes literal bracket", #666666): 640, 722
+
+  // Section 16: Hyperlinks (interactive)
+  text(exo2_16, "Hyperlinks (click me!)", #7fdbda): 640, 750
+  bitmap(generated(color(540, 30, #282838))): 640, 778
+  richText(dd, "Visit [link:shop][hl]the Shop[/][/] or open [link:inventory][hl]Inventory[/][/]", white, left, 520,
+      styles: {hl: color(cyan)}): 648, 784
+  text(m6x11, '[link:id]...[/] fires callback on click', #666666): 640, 812
 }

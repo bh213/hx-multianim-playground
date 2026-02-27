@@ -10898,12 +10898,12 @@ bh_multianim_MacroManimParser.prototype = {
 					var _g23 = _g.vAlign;
 					foundFlow = true;
 					break _hx_loop2;
-				case 18:
+				case 19:
 					var _g24 = _g.varName;
 					var _g25 = _g.repeatType;
 					p = p.parent;
 					break;
-				case 19:
+				case 20:
 					var _g26 = _g.varNameX;
 					var _g27 = _g.varNameY;
 					var _g28 = _g.repeatTypeX;
@@ -10975,12 +10975,12 @@ bh_multianim_MacroManimParser.prototype = {
 				while(checkNode != null) {
 					var _g = checkNode.type;
 					switch(_g._hx_index) {
-					case 18:
+					case 19:
 						var _g1 = _g.repeatType;
 						var varName = _g.varName;
 						this.error("#" + name + " requires indexed form #" + name + "[$" + varName + "] inside repeatable");
 						break;
-					case 19:
+					case 20:
 						var _g2 = _g.repeatTypeX;
 						var _g3 = _g.repeatTypeY;
 						var varNameX = _g.varNameX;
@@ -10998,12 +10998,12 @@ bh_multianim_MacroManimParser.prototype = {
 				while(checkNode != null) {
 					var _g = checkNode.type;
 					switch(_g._hx_index) {
-					case 18:
+					case 19:
 						var _g1 = _g.repeatType;
 						var varName = _g.varName;
 						this.error("#" + name + " requires indexed form #" + name + "[$" + varName + "] inside repeatable");
 						break;
-					case 19:
+					case 20:
 						var _g2 = _g.repeatTypeX;
 						var _g3 = _g.repeatTypeY;
 						var varNameX = _g.varNameX;
@@ -11074,9 +11074,6 @@ bh_multianim_MacroManimParser.prototype = {
 						var letterSpacing = 0.;
 						var lineSpacing = 0.;
 						var lineBreak = true;
-						var styles = null;
-						var images = null;
-						var condenseWhite = null;
 						var dropShadowXY = null;
 						var dropShadowColor = 0;
 						var dropShadowAlpha = 0.5;
@@ -11120,8 +11117,8 @@ bh_multianim_MacroManimParser.prototype = {
 								var pname = this.expectIdentifierOrString();
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 								switch(pname.toLowerCase()) {
-								case "condensewhite":
-									condenseWhite = this.parseBool();
+								case "condensewhite":case "images":case "styles":
+									this.error("text() does not support rich text features. Use richText() instead.");
 									break;
 								case "dropshadowalpha":
 									dropShadowAlpha = this.parseFloat_();
@@ -11140,12 +11137,6 @@ bh_multianim_MacroManimParser.prototype = {
 									var dy = this.parseFloat_();
 									dropShadowXY = new bh_base_FPoint(dx,dy);
 									break;
-								case "html":
-									this.error("\"html: true\" is no longer supported. Use styles: [...] or {c:color}/{f:font} markup instead.");
-									break;
-								case "images":
-									images = this.parseTextImages();
-									break;
 								case "letterspacing":
 									letterSpacing = this.parseFloat_();
 									break;
@@ -11155,9 +11146,6 @@ bh_multianim_MacroManimParser.prototype = {
 								case "linespacing":
 									lineSpacing = this.parseFloat_();
 									break;
-								case "styles":
-									styles = this.parseTextStyles();
-									break;
 								default:
 									this.error("unknown text param: " + pname);
 								}
@@ -11165,353 +11153,434 @@ bh_multianim_MacroManimParser.prototype = {
 								break;
 							}
 						}
-						var hasMarkup = false;
-						if(text._hx_index == 1) {
-							var s = text.s;
-							hasMarkup = bh_multianim_TextMarkupConverter.hasMarkup(s);
-						}
-						if(styles != null) {
-							if(text._hx_index == 1) {
-								var s = text.s;
-								var _g = [];
-								var _g2 = 0;
-								while(_g2 < styles.length) {
-									var st = styles[_g2];
-									++_g2;
-									_g.push(st.name);
-								}
-								var styleNames = _g;
-								var _g = 0;
-								var _g2 = bh_multianim_TextMarkupConverter.extractStyleReferences(s);
-								while(_g < _g2.length) {
-									var ref = _g2[_g];
-									++_g;
-									if(styleNames.indexOf(ref) < 0) {
-										this.error("unknown style \"%{" + ref + "}\" in text markup; defined styles: [" + styleNames.join(", ") + "]");
-									}
-								}
-							}
-						}
-						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : styles, images : images, condenseWhite : condenseWhite, hasMarkup : hasMarkup};
+						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : null, images : null, condenseWhite : null, hasMarkup : false};
 						node = this.createNode(bh_multianim_NodeType.TEXT(textDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 					} else {
 						var s = _g1;
-						if(bh_multianim_MacroManimParser.isKeyword(s,"apply")) {
+						if(bh_multianim_MacroManimParser.isKeyword(s,"richtext")) {
 							this.advance();
-							node = this.createNode(bh_multianim_NodeType.APPLY,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+							var fontname = this.parseStringOrReference();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+							var text = this.parseStringOrReference();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+							var color = this.parseColorOrReference();
+							var halign = null;
+							var textAlignWidth = bh_multianim_TextAlignWidth.TAWAuto;
+							var letterSpacing = 0.;
+							var lineSpacing = 0.;
+							var lineBreak = true;
+							var styles = null;
+							var images = null;
+							var condenseWhite = null;
+							var dropShadowXY = null;
+							var dropShadowColor = 0;
+							var dropShadowAlpha = 0.5;
+							if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+								halign = this.parseHAlign();
+								if(halign != null && this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+									var _g = this.tokens[this.tpos].type;
+									switch(_g._hx_index) {
+									case 10:case 20:
+										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+										break;
+									case 28:
+										var _g2 = _g.s;
+										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+										break;
+									case 30:
+										var _g2 = _g.s;
+										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+										break;
+									case 31:
+										var gs = _g.s;
+										if(bh_multianim_MacroManimParser.isKeyword(gs,"grid")) {
+											this.advance();
+											textAlignWidth = bh_multianim_TextAlignWidth.TAWGrid;
+										}
+										break;
+									case 33:
+										var _g2 = _g.s;
+										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+										break;
+									default:
+									}
+								}
+							}
+							while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+								this.eatComma();
+								if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+									break;
+								}
+								if(this.isNamedParamNext()) {
+									var pname = this.expectIdentifierOrString();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+									switch(pname.toLowerCase()) {
+									case "condensewhite":
+										condenseWhite = this.parseBool();
+										break;
+									case "dropshadowalpha":
+										dropShadowAlpha = this.parseFloat_();
+										break;
+									case "dropshadowcolor":
+										var c = this.tryParseColor();
+										if(c != null) {
+											dropShadowColor = c;
+										} else {
+											this.error("expected color value for dropShadowColor");
+										}
+										break;
+									case "dropshadowxy":
+										var dx = this.parseFloat_();
+										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+										var dy = this.parseFloat_();
+										dropShadowXY = new bh_base_FPoint(dx,dy);
+										break;
+									case "images":
+										images = this.parseTextImages();
+										break;
+									case "letterspacing":
+										letterSpacing = this.parseFloat_();
+										break;
+									case "linebreak":
+										lineBreak = this.parseBool();
+										break;
+									case "linespacing":
+										lineSpacing = this.parseFloat_();
+										break;
+									case "styles":
+										styles = this.parseTextStyles();
+										break;
+									default:
+										this.error("unknown richText param: " + pname);
+									}
+								} else {
+									break;
+								}
+							}
+							var hasMarkup = false;
+							if(text._hx_index == 1) {
+								var s = text.s;
+								hasMarkup = bh_multianim_TextMarkupConverter.hasMarkup(s);
+							}
+							if(styles != null) {
+								if(text._hx_index == 1) {
+									var s = text.s;
+									var _g = [];
+									var _g2 = 0;
+									while(_g2 < styles.length) {
+										var st = styles[_g2];
+										++_g2;
+										_g.push(st.name);
+									}
+									var styleNames = _g;
+									var _g = 0;
+									var _g2 = bh_multianim_TextMarkupConverter.extractStyleReferences(s);
+									while(_g < _g2.length) {
+										var ref = _g2[_g];
+										++_g;
+										if(styleNames.indexOf(ref) < 0) {
+											this.error("unknown style \"[" + ref + "]\" in text markup; defined styles: [" + styleNames.join(", ") + "]");
+										}
+									}
+								}
+							}
+							var richTextDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : styles, images : images, condenseWhite : condenseWhite, hasMarkup : hasMarkup};
+							node = this.createNode(bh_multianim_NodeType.RICHTEXT(richTextDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 						} else {
 							var s = _g1;
-							if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
+							if(bh_multianim_MacroManimParser.isKeyword(s,"apply")) {
 								this.advance();
-								if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
-									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-								}
-								node = this.createNode(bh_multianim_NodeType.POINT,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+								node = this.createNode(bh_multianim_NodeType.APPLY,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 							} else {
 								var s = _g1;
-								if(bh_multianim_MacroManimParser.isKeyword(s,"layers")) {
+								if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
 									this.advance();
 									if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
 										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 									}
-									node = this.createNode(bh_multianim_NodeType.LAYERS,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+									node = this.createNode(bh_multianim_NodeType.POINT,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 								} else {
 									var s = _g1;
-									if(bh_multianim_MacroManimParser.isKeyword(s,"mask")) {
+									if(bh_multianim_MacroManimParser.isKeyword(s,"layers")) {
 										this.advance();
-										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-										var w = this.parseIntegerOrReference();
-										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-										var h = this.parseIntegerOrReference();
-										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-										node = this.createNode(bh_multianim_NodeType.MASK(w,h),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+										if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
+											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+										}
+										node = this.createNode(bh_multianim_NodeType.LAYERS,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 									} else {
 										var s = _g1;
-										if(bh_multianim_MacroManimParser.isKeyword(s,"spacer")) {
+										if(bh_multianim_MacroManimParser.isKeyword(s,"mask")) {
 											this.advance();
 											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-											var spacerW = this.parseIntegerOrReference();
+											var w = this.parseIntegerOrReference();
 											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-											var spacerH = this.parseIntegerOrReference();
+											var h = this.parseIntegerOrReference();
 											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-											node = this.createNode(bh_multianim_NodeType.SPACER(spacerW,spacerH),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+											node = this.createNode(bh_multianim_NodeType.MASK(w,h),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 										} else {
 											var s = _g1;
-											if(bh_multianim_MacroManimParser.isKeyword(s,"slot")) {
+											if(bh_multianim_MacroManimParser.isKeyword(s,"spacer")) {
 												this.advance();
-												if(updatableName == null) {
-													this.error("slot requires a #name prefix");
-												}
-												if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
-													var parsed = this.parseDefines();
-													currentDefs = parsed.defs;
-													this.activeDefs = parsed.defs;
-													this.scopeVars = [];
-													node = this.createNode(bh_multianim_NodeType.SLOT(parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-												} else {
-													node = this.createNode(bh_multianim_NodeType.SLOT(null,null),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-												}
+												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+												var spacerW = this.parseIntegerOrReference();
+												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+												var spacerH = this.parseIntegerOrReference();
+												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+												node = this.createNode(bh_multianim_NodeType.SPACER(spacerW,spacerH),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 											} else {
 												var s = _g1;
-												if(bh_multianim_MacroManimParser.isKeyword(s,"slotContent") || bh_multianim_MacroManimParser.isKeyword(s,"slotcontent")) {
+												if(bh_multianim_MacroManimParser.isKeyword(s,"slot")) {
 													this.advance();
-													var insideSlot = false;
-													var checkNode = parent;
-													while(checkNode != null) {
-														var _g = checkNode.type;
-														if(_g._hx_index == 29) {
-															var _g2 = _g.parameters;
-															var _g3 = _g.paramOrder;
-															insideSlot = true;
-															break;
-														}
-														checkNode = checkNode.parent;
+													if(updatableName == null) {
+														this.error("slot requires a #name prefix");
 													}
-													if(!insideSlot) {
-														this.error("slotContent can only be used inside a slot body");
+													if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
+														var parsed = this.parseDefines();
+														currentDefs = parsed.defs;
+														this.activeDefs = parsed.defs;
+														this.scopeVars = [];
+														node = this.createNode(bh_multianim_NodeType.SLOT(parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+													} else {
+														node = this.createNode(bh_multianim_NodeType.SLOT(null,null),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 													}
-													node = this.createNode(bh_multianim_NodeType.SLOT_CONTENT,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 												} else {
 													var s = _g1;
-													if(bh_multianim_MacroManimParser.isKeyword(s,"interactive")) {
+													if(bh_multianim_MacroManimParser.isKeyword(s,"slotContent") || bh_multianim_MacroManimParser.isKeyword(s,"slotcontent")) {
 														this.advance();
-														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-														var w = this.parseIntegerOrReference();
-														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-														var h = this.parseIntegerOrReference();
-														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-														var id = this.parseStringOrReference();
-														var debug = false;
-														var metadata = null;
-														if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-															var _g = this.tokens[this.tpos].type;
-															if(_g._hx_index == 31) {
-																var d = _g.s;
-																if(bh_multianim_MacroManimParser.isKeyword(d,"debug")) {
-																	this.advance();
-																	debug = true;
-																	if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+														var insideSlot = false;
+														var checkNode = parent;
+														while(checkNode != null) {
+															var _g = checkNode.type;
+															if(_g._hx_index == 30) {
+																var _g2 = _g.parameters;
+																var _g3 = _g.paramOrder;
+																insideSlot = true;
+																break;
+															}
+															checkNode = checkNode.parent;
+														}
+														if(!insideSlot) {
+															this.error("slotContent can only be used inside a slot body");
+														}
+														node = this.createNode(bh_multianim_NodeType.SLOT_CONTENT,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+													} else {
+														var s = _g1;
+														if(bh_multianim_MacroManimParser.isKeyword(s,"interactive")) {
+															this.advance();
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+															var w = this.parseIntegerOrReference();
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+															var h = this.parseIntegerOrReference();
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+															var id = this.parseStringOrReference();
+															var debug = false;
+															var metadata = null;
+															if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																var _g = this.tokens[this.tpos].type;
+																if(_g._hx_index == 31) {
+																	var d = _g.s;
+																	if(bh_multianim_MacroManimParser.isKeyword(d,"debug")) {
+																		this.advance();
+																		debug = true;
+																		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																			metadata = this.parseInteractiveMetadata();
+																		}
+																	} else {
 																		metadata = this.parseInteractiveMetadata();
 																	}
 																} else {
 																	metadata = this.parseInteractiveMetadata();
 																}
-															} else {
-																metadata = this.parseInteractiveMetadata();
 															}
-														}
-														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-														node = this.createNode(bh_multianim_NodeType.INTERACTIVE(w,h,id,debug,metadata),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-													} else {
-														var s = _g1;
-														if(bh_multianim_MacroManimParser.isKeyword(s,"flow")) {
-															this.advance();
-															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-															var maxWidth = null;
-															var maxHeight = null;
-															var minWidth = null;
-															var minHeight = null;
-															var lineHeight = null;
-															var colWidth = null;
-															var layout = null;
-															var paddingLeft = null;
-															var paddingRight = null;
-															var paddingTop = null;
-															var paddingBottom = null;
-															var hSpacing = null;
-															var vSpacing = null;
-															var debug = false;
-															var multiline = false;
-															var bgSheet = null;
-															var bgTile = null;
-															var overflow = null;
-															var fillWidth = false;
-															var fillHeight = false;
-															var reverse = false;
-															var hAlign = null;
-															var vAlign = null;
-															while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
-																this.eatComma();
-																if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
-																	break;
-																}
-																if(!this.isNamedParamNext()) {
-																	if(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-																		this.error("unexpected token in flow parameters: " + Std.string(this.tokens[this.tpos].type));
-																	}
-																	continue;
-																}
-																var pname = this.expectIdentifierOrString();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																switch(pname.toLowerCase()) {
-																case "background":
-																	this.expectKeyword("ninepatch");
-																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																	bgSheet = this.parseStringOrReference();
-																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																	bgTile = this.parseStringOrReference();
-																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																	break;
-																case "colwidth":
-																	colWidth = this.parseIntegerOrReference();
-																	break;
-																case "debug":
-																	debug = this.parseBool();
-																	break;
-																case "fillheight":
-																	fillHeight = this.parseBool();
-																	break;
-																case "fillwidth":
-																	fillWidth = this.parseBool();
-																	break;
-																case "horizontalalign":
-																	hAlign = this.parseFlowAlign();
-																	break;
-																case "horizontalspacing":
-																	hSpacing = this.parseIntegerOrReference();
-																	break;
-																case "layout":
-																	layout = this.parseFlowOrientation();
-																	break;
-																case "lineheight":
-																	lineHeight = this.parseIntegerOrReference();
-																	break;
-																case "maxheight":
-																	maxHeight = this.parseIntegerOrReference();
-																	break;
-																case "maxwidth":
-																	maxWidth = this.parseIntegerOrReference();
-																	break;
-																case "minheight":
-																	minHeight = this.parseIntegerOrReference();
-																	break;
-																case "minwidth":
-																	minWidth = this.parseIntegerOrReference();
-																	break;
-																case "multiline":
-																	multiline = this.parseBool();
-																	break;
-																case "overflow":
-																	overflow = this.parseFlowOverflow();
-																	break;
-																case "padding":
-																	var p = this.parseIntegerOrReference();
-																	paddingLeft = p;
-																	paddingRight = p;
-																	paddingTop = p;
-																	paddingBottom = p;
-																	break;
-																case "paddingbottom":
-																	paddingBottom = this.parseIntegerOrReference();
-																	break;
-																case "paddingleft":
-																	paddingLeft = this.parseIntegerOrReference();
-																	break;
-																case "paddingright":
-																	paddingRight = this.parseIntegerOrReference();
-																	break;
-																case "paddingtop":
-																	paddingTop = this.parseIntegerOrReference();
-																	break;
-																case "reverse":
-																	reverse = this.parseBool();
-																	break;
-																case "verticalalign":
-																	vAlign = this.parseFlowAlign();
-																	break;
-																case "verticalspacing":
-																	vSpacing = this.parseIntegerOrReference();
-																	break;
-																default:
-																	this.error("unknown flow param: " + pname);
-																}
-															}
-															node = this.createNode(bh_multianim_NodeType.FLOW(maxWidth,maxHeight,minWidth,minHeight,lineHeight,colWidth,layout,paddingTop,paddingBottom,paddingLeft,paddingRight,hSpacing,vSpacing,debug,multiline,bgSheet,bgTile,overflow,fillWidth,fillHeight,reverse,hAlign,vAlign),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+															node = this.createNode(bh_multianim_NodeType.INTERACTIVE(w,h,id,debug,metadata),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 														} else {
 															var s = _g1;
-															if(bh_multianim_MacroManimParser.isKeyword(s,"programmable")) {
+															if(bh_multianim_MacroManimParser.isKeyword(s,"flow")) {
 																this.advance();
-																var isTileGroup = false;
-																var _g = this.tokens[this.tpos].type;
-																if(_g._hx_index == 31) {
-																	var s2 = _g.s;
-																	if(bh_multianim_MacroManimParser.isKeyword(s2,"tilegroup")) {
-																		this.advance();
-																		isTileGroup = true;
+																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																var maxWidth = null;
+																var maxHeight = null;
+																var minWidth = null;
+																var minHeight = null;
+																var lineHeight = null;
+																var colWidth = null;
+																var layout = null;
+																var paddingLeft = null;
+																var paddingRight = null;
+																var paddingTop = null;
+																var paddingBottom = null;
+																var hSpacing = null;
+																var vSpacing = null;
+																var debug = false;
+																var multiline = false;
+																var bgSheet = null;
+																var bgTile = null;
+																var overflow = null;
+																var fillWidth = false;
+																var fillHeight = false;
+																var reverse = false;
+																var hAlign = null;
+																var vAlign = null;
+																while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+																	this.eatComma();
+																	if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+																		break;
+																	}
+																	if(!this.isNamedParamNext()) {
+																		if(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																			this.error("unexpected token in flow parameters: " + Std.string(this.tokens[this.tpos].type));
+																		}
+																		continue;
+																	}
+																	var pname = this.expectIdentifierOrString();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																	switch(pname.toLowerCase()) {
+																	case "background":
+																		this.expectKeyword("ninepatch");
+																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																		bgSheet = this.parseStringOrReference();
+																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																		bgTile = this.parseStringOrReference();
+																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																		break;
+																	case "colwidth":
+																		colWidth = this.parseIntegerOrReference();
+																		break;
+																	case "debug":
+																		debug = this.parseBool();
+																		break;
+																	case "fillheight":
+																		fillHeight = this.parseBool();
+																		break;
+																	case "fillwidth":
+																		fillWidth = this.parseBool();
+																		break;
+																	case "horizontalalign":
+																		hAlign = this.parseFlowAlign();
+																		break;
+																	case "horizontalspacing":
+																		hSpacing = this.parseIntegerOrReference();
+																		break;
+																	case "layout":
+																		layout = this.parseFlowOrientation();
+																		break;
+																	case "lineheight":
+																		lineHeight = this.parseIntegerOrReference();
+																		break;
+																	case "maxheight":
+																		maxHeight = this.parseIntegerOrReference();
+																		break;
+																	case "maxwidth":
+																		maxWidth = this.parseIntegerOrReference();
+																		break;
+																	case "minheight":
+																		minHeight = this.parseIntegerOrReference();
+																		break;
+																	case "minwidth":
+																		minWidth = this.parseIntegerOrReference();
+																		break;
+																	case "multiline":
+																		multiline = this.parseBool();
+																		break;
+																	case "overflow":
+																		overflow = this.parseFlowOverflow();
+																		break;
+																	case "padding":
+																		var p = this.parseIntegerOrReference();
+																		paddingLeft = p;
+																		paddingRight = p;
+																		paddingTop = p;
+																		paddingBottom = p;
+																		break;
+																	case "paddingbottom":
+																		paddingBottom = this.parseIntegerOrReference();
+																		break;
+																	case "paddingleft":
+																		paddingLeft = this.parseIntegerOrReference();
+																		break;
+																	case "paddingright":
+																		paddingRight = this.parseIntegerOrReference();
+																		break;
+																	case "paddingtop":
+																		paddingTop = this.parseIntegerOrReference();
+																		break;
+																	case "reverse":
+																		reverse = this.parseBool();
+																		break;
+																	case "verticalalign":
+																		vAlign = this.parseFlowAlign();
+																		break;
+																	case "verticalspacing":
+																		vSpacing = this.parseIntegerOrReference();
+																		break;
+																	default:
+																		this.error("unknown flow param: " + pname);
 																	}
 																}
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																var parsed = this.parseDefines();
-																currentDefs = parsed.defs;
-																this.activeDefs = parsed.defs;
-																this.scopeVars = [];
-																node = this.createNode(bh_multianim_NodeType.PROGRAMMABLE(isTileGroup,parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																node = this.createNode(bh_multianim_NodeType.FLOW(maxWidth,maxHeight,minWidth,minHeight,lineHeight,colWidth,layout,paddingTop,paddingBottom,paddingLeft,paddingRight,hSpacing,vSpacing,debug,multiline,bgSheet,bgTile,overflow,fillWidth,fillHeight,reverse,hAlign,vAlign),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 															} else {
 																var s = _g1;
-																if(bh_multianim_MacroManimParser.isKeyword(s,"layouts")) {
+																if(bh_multianim_MacroManimParser.isKeyword(s,"programmable")) {
 																	this.advance();
-																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																	var layoutsDef = this.parseLayouts();
-																	var n = bh_multianim_NodeType.RELATIVE_LAYOUTS(layoutsDef);
-																	var n1;
-																	switch(updatableName._hx_index) {
-																	case 0:
-																		var _g = updatableName.name;
-																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
-																		break;
-																	case 1:
-																		var _g = updatableName.name;
-																		n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultLayoutNodeName);
-																		break;
-																	case 2:
-																		var _g = updatableName.name;
-																		var _g = updatableName.indexVar;
-																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
-																		break;
-																	case 3:
-																		var _g = updatableName.name;
-																		var _g = updatableName.indexVarX;
-																		var _g = updatableName.indexVarY;
-																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
-																		break;
+																	var isTileGroup = false;
+																	var _g = this.tokens[this.tpos].type;
+																	if(_g._hx_index == 31) {
+																		var s2 = _g.s;
+																		if(bh_multianim_MacroManimParser.isKeyword(s2,"tilegroup")) {
+																			this.advance();
+																			isTileGroup = true;
+																		}
 																	}
-																	var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
-																	return n2;
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																	var parsed = this.parseDefines();
+																	currentDefs = parsed.defs;
+																	this.activeDefs = parsed.defs;
+																	this.scopeVars = [];
+																	node = this.createNode(bh_multianim_NodeType.PROGRAMMABLE(isTileGroup,parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																} else {
 																	var s = _g1;
-																	if(bh_multianim_MacroManimParser.isKeyword(s,"particles")) {
+																	if(bh_multianim_MacroManimParser.isKeyword(s,"layouts")) {
 																		this.advance();
 																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																		var p = this.parseParticles();
-																		var n = this.createNode(bh_multianim_NodeType.PARTICLES(p),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																		return n;
+																		var layoutsDef = this.parseLayouts();
+																		var n = bh_multianim_NodeType.RELATIVE_LAYOUTS(layoutsDef);
+																		var n1;
+																		switch(updatableName._hx_index) {
+																		case 0:
+																			var _g = updatableName.name;
+																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
+																			break;
+																		case 1:
+																			var _g = updatableName.name;
+																			n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultLayoutNodeName);
+																			break;
+																		case 2:
+																			var _g = updatableName.name;
+																			var _g = updatableName.indexVar;
+																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
+																			break;
+																		case 3:
+																			var _g = updatableName.name;
+																			var _g = updatableName.indexVarX;
+																			var _g = updatableName.indexVarY;
+																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultLayoutNodeName);
+																			break;
+																		}
+																		var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
+																		return n2;
 																	} else {
 																		var s = _g1;
-																		if(bh_multianim_MacroManimParser.isKeyword(s,"staticRef")) {
+																		if(bh_multianim_MacroManimParser.isKeyword(s,"particles")) {
 																			this.advance();
-																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																			var extRef = null;
-																			var _g = this.tokens[this.tpos].type;
-																			if(_g._hx_index == 31) {
-																				var s2 = _g.s;
-																				if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
-																					this.advance();
-																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																					extRef = this.expectIdentifierOrString();
-																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																				}
-																			}
-																			var progRef = this.expectReferenceOrIdentifier();
-																			var params = new haxe_ds_StringMap();
-																			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-																				params = this.parseReferenceParams();
-																			}
-																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																			node = this.createNode(bh_multianim_NodeType.STATIC_REF(extRef,progRef,params),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																			var p = this.parseParticles();
+																			var n = this.createNode(bh_multianim_NodeType.PARTICLES(p),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																			return n;
 																		} else {
 																			var s = _g1;
-																			if(bh_multianim_MacroManimParser.isKeyword(s,"dynamicRef")) {
+																			if(bh_multianim_MacroManimParser.isKeyword(s,"staticRef")) {
 																				this.advance();
 																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																				var extRef = null;
@@ -11532,115 +11601,154 @@ bh_multianim_MacroManimParser.prototype = {
 																					params = this.parseReferenceParams();
 																				}
 																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																				node = this.createNode(bh_multianim_NodeType.DYNAMIC_REF(extRef,progRef,params),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																				node = this.createNode(bh_multianim_NodeType.STATIC_REF(extRef,progRef,params),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																			} else {
 																				var s = _g1;
-																				if(bh_multianim_MacroManimParser.isKeyword(s,"placeholder")) {
+																				if(bh_multianim_MacroManimParser.isKeyword(s,"dynamicRef")) {
 																					this.advance();
 																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																					var type;
+																					var extRef = null;
 																					var _g = this.tokens[this.tpos].type;
 																					if(_g._hx_index == 31) {
-																						var _g2 = _g.s;
-																						var s2 = _g2;
-																						if(bh_multianim_MacroManimParser.isKeyword(s2,"error")) {
-																							this.advance();
-																							type = bh_multianim_PlaceholderTypes.PHError;
-																						} else {
-																							var s2 = _g2;
-																							if(bh_multianim_MacroManimParser.isKeyword(s2,"nothing")) {
-																								this.advance();
-																								type = bh_multianim_PlaceholderTypes.PHNothing;
-																							} else {
-																								type = bh_multianim_PlaceholderTypes.PHTileSource(this.parseTileSource());
-																							}
-																						}
-																					} else {
-																						type = bh_multianim_PlaceholderTypes.PHTileSource(this.parseTileSource());
-																					}
-																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																					var source = null;
-																					var _g = this.tokens[this.tpos].type;
-																					if(_g._hx_index == 31) {
-																						var _g2 = _g.s;
-																						var s2 = _g2;
-																						if(bh_multianim_MacroManimParser.isKeyword(s2,"callback")) {
+																						var s2 = _g.s;
+																						if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
 																							this.advance();
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																							var name = this.parseStringOrReference();
-																							if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-																								var idx = this.parseIntegerOrReference();
-																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																								source = bh_multianim_PlaceholderReplacementSource.PRSCallbackWithIndex(name,idx);
+																							extRef = this.expectIdentifierOrString();
+																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																						}
+																					}
+																					var progRef = this.expectReferenceOrIdentifier();
+																					var params = new haxe_ds_StringMap();
+																					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																						params = this.parseReferenceParams();
+																					}
+																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																					node = this.createNode(bh_multianim_NodeType.DYNAMIC_REF(extRef,progRef,params),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																				} else {
+																					var s = _g1;
+																					if(bh_multianim_MacroManimParser.isKeyword(s,"placeholder")) {
+																						this.advance();
+																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																						var type;
+																						var _g = this.tokens[this.tpos].type;
+																						if(_g._hx_index == 31) {
+																							var _g2 = _g.s;
+																							var s2 = _g2;
+																							if(bh_multianim_MacroManimParser.isKeyword(s2,"error")) {
+																								this.advance();
+																								type = bh_multianim_PlaceholderTypes.PHError;
 																							} else {
-																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																								source = bh_multianim_PlaceholderReplacementSource.PRSCallback(name);
+																								var s2 = _g2;
+																								if(bh_multianim_MacroManimParser.isKeyword(s2,"nothing")) {
+																									this.advance();
+																									type = bh_multianim_PlaceholderTypes.PHNothing;
+																								} else {
+																									type = bh_multianim_PlaceholderTypes.PHTileSource(this.parseTileSource());
+																								}
 																							}
 																						} else {
+																							type = bh_multianim_PlaceholderTypes.PHTileSource(this.parseTileSource());
+																						}
+																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																						var source = null;
+																						var _g = this.tokens[this.tpos].type;
+																						if(_g._hx_index == 31) {
+																							var _g2 = _g.s;
 																							var s2 = _g2;
-																							if(bh_multianim_MacroManimParser.isKeyword(s2,"builderparameter")) {
+																							if(bh_multianim_MacroManimParser.isKeyword(s2,"callback")) {
 																								this.advance();
 																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																								var name = this.parseStringOrReference();
-																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																								source = bh_multianim_PlaceholderReplacementSource.PRSBuilderParameterSource(name);
+																								if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																									var idx = this.parseIntegerOrReference();
+																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																									source = bh_multianim_PlaceholderReplacementSource.PRSCallbackWithIndex(name,idx);
+																								} else {
+																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																									source = bh_multianim_PlaceholderReplacementSource.PRSCallback(name);
+																								}
 																							} else {
-																								this.error("expected callback or builderParameter");
+																								var s2 = _g2;
+																								if(bh_multianim_MacroManimParser.isKeyword(s2,"builderparameter")) {
+																									this.advance();
+																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																									var name = this.parseStringOrReference();
+																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																									source = bh_multianim_PlaceholderReplacementSource.PRSBuilderParameterSource(name);
+																								} else {
+																									this.error("expected callback or builderParameter");
+																								}
 																							}
+																						} else {
+																							this.error("expected callback or builderParameter");
 																						}
-																					} else {
-																						this.error("expected callback or builderParameter");
-																					}
-																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																					node = this.createNode(bh_multianim_NodeType.PLACEHOLDER(type,source),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																				} else {
-																					var s = _g1;
-																					if(bh_multianim_MacroManimParser.isKeyword(s,"repeatable2d")) {
-																						this.advance();
-																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																						var varNameX = this.expectReferenceOrIdentifier();
-																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																						var varNameY = this.expectReferenceOrIdentifier();
-																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																						var repeatTypeX = this.parseRepeatIterator(currentDefs);
-																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																						var repeatTypeY = this.parseRepeatIterator(currentDefs);
 																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																						node = this.createNode(bh_multianim_NodeType.REPEAT2D(varNameX,varNameY,repeatTypeX,repeatTypeY),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																						node = this.createNode(bh_multianim_NodeType.PLACEHOLDER(type,source),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																					} else {
 																						var s = _g1;
-																						if(bh_multianim_MacroManimParser.isKeyword(s,"repeatable")) {
+																						if(bh_multianim_MacroManimParser.isKeyword(s,"repeatable2d")) {
 																							this.advance();
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																							var varName = this.expectReferenceOrIdentifier();
+																							var varNameX = this.expectReferenceOrIdentifier();
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																							var repeatType = this.parseRepeatIterator(currentDefs);
+																							var varNameY = this.expectReferenceOrIdentifier();
+																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																							var repeatTypeX = this.parseRepeatIterator(currentDefs);
+																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																							var repeatTypeY = this.parseRepeatIterator(currentDefs);
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																							node = this.createNode(bh_multianim_NodeType.REPEAT(varName,repeatType),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																							node = this.createNode(bh_multianim_NodeType.REPEAT2D(varNameX,varNameY,repeatTypeX,repeatTypeY),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																						} else {
 																							var s = _g1;
-																							if(bh_multianim_MacroManimParser.isKeyword(s,"stateanim")) {
+																							if(bh_multianim_MacroManimParser.isKeyword(s,"repeatable")) {
 																								this.advance();
-																								var _g = this.tokens[this.tpos].type;
-																								if(_g._hx_index == 31) {
-																									var s2 = _g.s;
-																									if(bh_multianim_MacroManimParser.isKeyword(s2,"construct")) {
-																										this.advance();
-																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																										var initialState = this.parseStringOrReference();
-																										this.eatComma();
-																										var externallyDriven = false;
-																										var _g = this.tokens[this.tpos].type;
-																										if(_g._hx_index == 31) {
-																											var s3 = _g.s;
-																											if(bh_multianim_MacroManimParser.isKeyword(s3,"externallydriven")) {
-																												this.advance();
-																												externallyDriven = true;
-																												this.eatComma();
+																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																								var varName = this.expectReferenceOrIdentifier();
+																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																								var repeatType = this.parseRepeatIterator(currentDefs);
+																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																								node = this.createNode(bh_multianim_NodeType.REPEAT(varName,repeatType),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																							} else {
+																								var s = _g1;
+																								if(bh_multianim_MacroManimParser.isKeyword(s,"stateanim")) {
+																									this.advance();
+																									var _g = this.tokens[this.tpos].type;
+																									if(_g._hx_index == 31) {
+																										var s2 = _g.s;
+																										if(bh_multianim_MacroManimParser.isKeyword(s2,"construct")) {
+																											this.advance();
+																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																											var initialState = this.parseStringOrReference();
+																											this.eatComma();
+																											var externallyDriven = false;
+																											var _g = this.tokens[this.tpos].type;
+																											if(_g._hx_index == 31) {
+																												var s3 = _g.s;
+																												if(bh_multianim_MacroManimParser.isKeyword(s3,"externallydriven")) {
+																													this.advance();
+																													externallyDriven = true;
+																													this.eatComma();
+																												}
 																											}
+																											var constructs = this.parseStateAnimConstruct();
+																											node = this.createNode(bh_multianim_NodeType.STATEANIM_CONSTRUCT(initialState,constructs,externallyDriven),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																										} else {
+																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																											var filename = this.expectIdentifierOrString();
+																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																											var initialState = this.parseStringOrReference();
+																											var selector = new haxe_ds_StringMap();
+																											while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+																												var key = this.expectIdentifierOrString();
+																												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
+																												var val = this.parseStringOrReference();
+																												selector.h[key] = val;
+																											}
+																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																											node = this.createNode(bh_multianim_NodeType.STATEANIM(filename,initialState,selector),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																										}
-																										var constructs = this.parseStateAnimConstruct();
-																										node = this.createNode(bh_multianim_NodeType.STATEANIM_CONSTRUCT(initialState,constructs,externallyDriven),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																									} else {
 																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																										var filename = this.expectIdentifierOrString();
@@ -11657,300 +11765,286 @@ bh_multianim_MacroManimParser.prototype = {
 																										node = this.createNode(bh_multianim_NodeType.STATEANIM(filename,initialState,selector),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																									}
 																								} else {
-																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																									var filename = this.expectIdentifierOrString();
-																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																									var initialState = this.parseStringOrReference();
-																									var selector = new haxe_ds_StringMap();
-																									while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
-																										var key = this.expectIdentifierOrString();
-																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
-																										var val = this.parseStringOrReference();
-																										selector.h[key] = val;
-																									}
-																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																									node = this.createNode(bh_multianim_NodeType.STATEANIM(filename,initialState,selector),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																								}
-																							} else {
-																								var s = _g1;
-																								if(bh_multianim_MacroManimParser.isKeyword(s,"tilegroup")) {
-																									this.advance();
-																									node = this.createNode(bh_multianim_NodeType.TILEGROUP,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																								} else {
 																									var s = _g1;
-																									if(bh_multianim_MacroManimParser.isKeyword(s,"graphics")) {
+																									if(bh_multianim_MacroManimParser.isKeyword(s,"tilegroup")) {
 																										this.advance();
-																										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																										var elements = this.parseGraphicsElements();
-																										node = this.createNode(bh_multianim_NodeType.GRAPHICS(elements),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																										node = this.createNode(bh_multianim_NodeType.TILEGROUP,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																									} else {
 																										var s = _g1;
-																										if(bh_multianim_MacroManimParser.isKeyword(s,"palette")) {
+																										if(bh_multianim_MacroManimParser.isKeyword(s,"graphics")) {
 																											this.advance();
-																											if(this.currentName == null) {
-																												this.error("palette requires a #name");
-																											}
-																											if(parent != null) {
-																												this.error("palette must be a root node");
-																											}
-																											var paletteNode;
-																											switch(this.tokens[this.tpos].type._hx_index) {
-																											case 1:
-																												this.advance();
-																												var _g = this.tokens[this.tpos].type;
-																												if(_g._hx_index == 31) {
-																													var _g2 = _g.s;
-																													var s2 = _g2;
-																													if(bh_multianim_MacroManimParser.isKeyword(s2,"2d")) {
-																														this.advance();
-																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																														var width = this.parseInteger();
-																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																														var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
-																														paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors2D(colors,width)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																													} else {
-																														var s2 = _g2;
-																														if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
-																															this.advance();
-																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																															var filename = this.parseStringOrReference();
-																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																															paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																														} else {
-																															paletteNode = this.error("expected 2d or file in palette()");
-																														}
-																													}
-																												} else {
-																													paletteNode = this.error("expected 2d or file in palette()");
-																												}
-																												break;
-																											case 5:
-																												this.advance();
-																												var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
-																												paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors(colors)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																												break;
-																											default:
-																												paletteNode = this.error("expected { or ( after palette");
-																											}
-																											return paletteNode;
+																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																											var elements = this.parseGraphicsElements();
+																											node = this.createNode(bh_multianim_NodeType.GRAPHICS(elements),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																										} else {
 																											var s = _g1;
-																											if(bh_multianim_MacroManimParser.isKeyword(s,"pixels")) {
+																											if(bh_multianim_MacroManimParser.isKeyword(s,"palette")) {
 																												this.advance();
-																												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																												var shapes = this.parsePixelShapes();
-																												node = this.createNode(bh_multianim_NodeType.PIXELS(shapes),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																												if(this.currentName == null) {
+																													this.error("palette requires a #name");
+																												}
+																												if(parent != null) {
+																													this.error("palette must be a root node");
+																												}
+																												var paletteNode;
+																												switch(this.tokens[this.tpos].type._hx_index) {
+																												case 1:
+																													this.advance();
+																													var _g = this.tokens[this.tpos].type;
+																													if(_g._hx_index == 31) {
+																														var _g2 = _g.s;
+																														var s2 = _g2;
+																														if(bh_multianim_MacroManimParser.isKeyword(s2,"2d")) {
+																															this.advance();
+																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																															var width = this.parseInteger();
+																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																															var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
+																															paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors2D(colors,width)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																														} else {
+																															var s2 = _g2;
+																															if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
+																																this.advance();
+																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																																var filename = this.parseStringOrReference();
+																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																																paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																															} else {
+																																paletteNode = this.error("expected 2d or file in palette()");
+																															}
+																														}
+																													} else {
+																														paletteNode = this.error("expected 2d or file in palette()");
+																													}
+																													break;
+																												case 5:
+																													this.advance();
+																													var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
+																													paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors(colors)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																													break;
+																												default:
+																													paletteNode = this.error("expected { or ( after palette");
+																												}
+																												return paletteNode;
 																											} else {
 																												var s = _g1;
-																												if(bh_multianim_MacroManimParser.isKeyword(s,"paths")) {
+																												if(bh_multianim_MacroManimParser.isKeyword(s,"pixels")) {
 																													this.advance();
-																													if(this.currentName == null) {
-																														this.currentName = "paths";
-																													}
-																													if(parent != null) {
-																														this.error("paths must be a root node");
-																													}
-																													this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																													var pathsDef = this.parsePaths();
-																													var n = bh_multianim_NodeType.PATHS(pathsDef);
-																													var n1;
-																													switch(updatableName._hx_index) {
-																													case 0:
-																														var _g = updatableName.name;
-																														n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																														break;
-																													case 1:
-																														var _g = updatableName.name;
-																														n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultPathNodeName);
-																														break;
-																													case 2:
-																														var _g = updatableName.name;
-																														var _g = updatableName.indexVar;
-																														n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																														break;
-																													case 3:
-																														var _g = updatableName.name;
-																														var _g = updatableName.indexVarX;
-																														var _g = updatableName.indexVarY;
-																														n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																														break;
-																													}
-																													var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
-																													return n2;
+																													this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																													var shapes = this.parsePixelShapes();
+																													node = this.createNode(bh_multianim_NodeType.PIXELS(shapes),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																												} else {
 																													var s = _g1;
-																													if(bh_multianim_MacroManimParser.isKeyword(s,"animated_path") || bh_multianim_MacroManimParser.isKeyword(s,"animatedPath") || bh_multianim_MacroManimParser.isKeyword(s,"animatedpath")) {
+																													if(bh_multianim_MacroManimParser.isKeyword(s,"paths")) {
 																														this.advance();
 																														if(this.currentName == null) {
-																															this.error("animated_path requires a #name");
+																															this.currentName = "paths";
 																														}
 																														if(parent != null) {
-																															this.error("animated_path must be a root node");
+																															this.error("paths must be a root node");
 																														}
 																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																														var apDef = this.parseAnimatedPath();
-																														var n = this.createNode(bh_multianim_NodeType.ANIMATED_PATH(apDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																														return n;
+																														var pathsDef = this.parsePaths();
+																														var n = bh_multianim_NodeType.PATHS(pathsDef);
+																														var n1;
+																														switch(updatableName._hx_index) {
+																														case 0:
+																															var _g = updatableName.name;
+																															n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																															break;
+																														case 1:
+																															var _g = updatableName.name;
+																															n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultPathNodeName);
+																															break;
+																														case 2:
+																															var _g = updatableName.name;
+																															var _g = updatableName.indexVar;
+																															n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																															break;
+																														case 3:
+																															var _g = updatableName.name;
+																															var _g = updatableName.indexVarX;
+																															var _g = updatableName.indexVarY;
+																															n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																															break;
+																														}
+																														var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
+																														return n2;
 																													} else {
 																														var s = _g1;
-																														if(bh_multianim_MacroManimParser.isKeyword(s,"curves")) {
+																														if(bh_multianim_MacroManimParser.isKeyword(s,"animated_path") || bh_multianim_MacroManimParser.isKeyword(s,"animatedPath") || bh_multianim_MacroManimParser.isKeyword(s,"animatedpath")) {
 																															this.advance();
 																															if(this.currentName == null) {
-																																this.currentName = "curves";
+																																this.error("animated_path requires a #name");
 																															}
 																															if(parent != null) {
-																																this.error("curves must be a root node");
+																																this.error("animated_path must be a root node");
 																															}
 																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																															var curvesDef = this.parseCurves();
-																															var n = bh_multianim_NodeType.CURVES(curvesDef);
-																															var n1;
-																															switch(updatableName._hx_index) {
-																															case 0:
-																																var _g = updatableName.name;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																break;
-																															case 1:
-																																var _g = updatableName.name;
-																																n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																break;
-																															case 2:
-																																var _g = updatableName.name;
-																																var _g = updatableName.indexVar;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																break;
-																															case 3:
-																																var _g = updatableName.name;
-																																var _g = updatableName.indexVarX;
-																																var _g = updatableName.indexVarY;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																break;
-																															}
-																															var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
-																															return n2;
+																															var apDef = this.parseAnimatedPath();
+																															var n = this.createNode(bh_multianim_NodeType.ANIMATED_PATH(apDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																															return n;
 																														} else {
 																															var s = _g1;
-																															if(bh_multianim_MacroManimParser.isKeyword(s,"autotile")) {
+																															if(bh_multianim_MacroManimParser.isKeyword(s,"curves")) {
 																																this.advance();
 																																if(this.currentName == null) {
-																																	this.error("autotile requires a #name");
+																																	this.currentName = "curves";
 																																}
 																																if(parent != null) {
-																																	this.error("autotile must be a root node");
+																																	this.error("curves must be a root node");
 																																}
 																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																var atDef = this.parseAutotile();
-																																var n = this.createNode(bh_multianim_NodeType.AUTOTILE(atDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																return n;
+																																var curvesDef = this.parseCurves();
+																																var n = bh_multianim_NodeType.CURVES(curvesDef);
+																																var n1;
+																																switch(updatableName._hx_index) {
+																																case 0:
+																																	var _g = updatableName.name;
+																																	n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																	break;
+																																case 1:
+																																	var _g = updatableName.name;
+																																	n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																	break;
+																																case 2:
+																																	var _g = updatableName.name;
+																																	var _g = updatableName.indexVar;
+																																	n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																	break;
+																																case 3:
+																																	var _g = updatableName.name;
+																																	var _g = updatableName.indexVarX;
+																																	var _g = updatableName.indexVarY;
+																																	n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																	break;
+																																}
+																																var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
+																																return n2;
 																															} else {
 																																var s = _g1;
-																																if(bh_multianim_MacroManimParser.isKeyword(s,"atlas2")) {
+																																if(bh_multianim_MacroManimParser.isKeyword(s,"autotile")) {
 																																	this.advance();
 																																	if(this.currentName == null) {
-																																		this.error("atlas2 requires a #name");
+																																		this.error("autotile requires a #name");
 																																	}
 																																	if(parent != null) {
-																																		this.error("atlas2 must be a root node");
+																																		this.error("autotile must be a root node");
 																																	}
-																																	var a2Def = this.parseAtlas2();
-																																	var n = this.createNode(bh_multianim_NodeType.ATLAS2(a2Def),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																	var atDef = this.parseAutotile();
+																																	var n = this.createNode(bh_multianim_NodeType.AUTOTILE(atDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																	return n;
 																																} else {
 																																	var s = _g1;
-																																	if(bh_multianim_MacroManimParser.isKeyword(s,"data")) {
+																																	if(bh_multianim_MacroManimParser.isKeyword(s,"atlas2")) {
 																																		this.advance();
 																																		if(this.currentName == null) {
-																																			this.error("data requires a #name");
+																																			this.error("atlas2 requires a #name");
 																																		}
 																																		if(parent != null) {
-																																			this.error("data must be a root node");
+																																			this.error("atlas2 must be a root node");
 																																		}
-																																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																		var dataDef = this.parseData();
-																																		var n = this.createNode(bh_multianim_NodeType.DATA(dataDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																		var a2Def = this.parseAtlas2();
+																																		var n = this.createNode(bh_multianim_NodeType.ATLAS2(a2Def),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																		return n;
 																																	} else {
 																																		var s = _g1;
-																																		if(bh_multianim_MacroManimParser.isKeyword(s,"rect") || bh_multianim_MacroManimParser.isKeyword(s,"circle") || bh_multianim_MacroManimParser.isKeyword(s,"line") || bh_multianim_MacroManimParser.isKeyword(s,"polygon") || bh_multianim_MacroManimParser.isKeyword(s,"ellipse") || bh_multianim_MacroManimParser.isKeyword(s,"roundrect") || bh_multianim_MacroManimParser.isKeyword(s,"arc")) {
+																																		if(bh_multianim_MacroManimParser.isKeyword(s,"data")) {
 																																			this.advance();
-																																			var element;
-																																			switch(s.toLowerCase()) {
-																																			case "arc":
-																																				element = this.parseGraphicsArc();
-																																				break;
-																																			case "circle":
-																																				element = this.parseGraphicsCircle();
-																																				break;
-																																			case "ellipse":
-																																				element = this.parseGraphicsEllipse();
-																																				break;
-																																			case "line":
-																																				element = this.parseGraphicsLine();
-																																				break;
-																																			case "polygon":
-																																				element = this.parseGraphicsPolygon();
-																																				break;
-																																			case "rect":
-																																				element = this.parseGraphicsRect();
-																																				break;
-																																			case "roundrect":
-																																				element = this.parseGraphicsRoundRect();
-																																				break;
-																																			default:
-																																				this.error("unexpected graphics shorthand: " + s);
-																																				element = null;
+																																			if(this.currentName == null) {
+																																				this.error("data requires a #name");
 																																			}
-																																			var nodePos = element.pos;
-																																			element.pos = bh_multianim_Coordinates.ZERO;
-																																			var n = this.createNode(bh_multianim_NodeType.GRAPHICS([element]),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																			n.pos = nodePos;
-																																			this.eatSemicolon();
+																																			if(parent != null) {
+																																				this.error("data must be a root node");
+																																			}
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																			var dataDef = this.parseData();
+																																			var n = this.createNode(bh_multianim_NodeType.DATA(dataDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																			return n;
 																																		} else {
 																																			var s = _g1;
-																																			if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																			if(bh_multianim_MacroManimParser.isKeyword(s,"rect") || bh_multianim_MacroManimParser.isKeyword(s,"circle") || bh_multianim_MacroManimParser.isKeyword(s,"line") || bh_multianim_MacroManimParser.isKeyword(s,"polygon") || bh_multianim_MacroManimParser.isKeyword(s,"ellipse") || bh_multianim_MacroManimParser.isKeyword(s,"roundrect") || bh_multianim_MacroManimParser.isKeyword(s,"arc")) {
 																																				this.advance();
-																																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																				if(parent == null) {
-																																					this.error("settings must have a parent");
+																																				var element;
+																																				switch(s.toLowerCase()) {
+																																				case "arc":
+																																					element = this.parseGraphicsArc();
+																																					break;
+																																				case "circle":
+																																					element = this.parseGraphicsCircle();
+																																					break;
+																																				case "ellipse":
+																																					element = this.parseGraphicsEllipse();
+																																					break;
+																																				case "line":
+																																					element = this.parseGraphicsLine();
+																																					break;
+																																				case "polygon":
+																																					element = this.parseGraphicsPolygon();
+																																					break;
+																																				case "rect":
+																																					element = this.parseGraphicsRect();
+																																					break;
+																																				case "roundrect":
+																																					element = this.parseGraphicsRoundRect();
+																																					break;
+																																				default:
+																																					this.error("unexpected graphics shorthand: " + s);
+																																					element = null;
 																																				}
-																																				if(parent.settings == null) {
-																																					parent.settings = new haxe_ds_StringMap();
-																																				}
-																																				while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
-																																					var key = this.expectIdentifierOrString();
-																																					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
-																																						var suffix = this.expectIdentifierOrString();
-																																						key = key + "." + suffix;
-																																					}
-																																					switch(this.tokens[this.tpos].type._hx_index) {
-																																					case 11:
-																																						this.advance();
-																																						var tv = this.parseTypedSettingValue();
-																																						if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																							this.error("setting " + key + " already defined");
-																																						}
-																																						parent.settings.h[key] = { type : tv.type, value : tv.value};
-																																						break;
-																																					case 15:
-																																						this.advance();
-																																						var value = this.parseAnything();
-																																						if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																							this.error("setting " + key + " already defined");
-																																						}
-																																						var this1 = parent.settings;
-																																						var value1 = { type : this.inferSettingType(value), value : value};
-																																						this1.h[key] = value1;
-																																						break;
-																																					default:
-																																						this.error("expected :type=> or => after setting key");
-																																					}
-																																					this.eatComma();
-																																				}
-																																				return null;
+																																				var nodePos = element.pos;
+																																				element.pos = bh_multianim_Coordinates.ZERO;
+																																				var n = this.createNode(bh_multianim_NodeType.GRAPHICS([element]),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																				n.pos = nodePos;
+																																				this.eatSemicolon();
+																																				return n;
 																																			} else {
-																																				node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+																																				var s = _g1;
+																																				if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																					this.advance();
+																																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																					if(parent == null) {
+																																						this.error("settings must have a parent");
+																																					}
+																																					if(parent.settings == null) {
+																																						parent.settings = new haxe_ds_StringMap();
+																																					}
+																																					while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+																																						var key = this.expectIdentifierOrString();
+																																						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
+																																							var suffix = this.expectIdentifierOrString();
+																																							key = key + "." + suffix;
+																																						}
+																																						switch(this.tokens[this.tpos].type._hx_index) {
+																																						case 11:
+																																							this.advance();
+																																							var tv = this.parseTypedSettingValue();
+																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																								this.error("setting " + key + " already defined");
+																																							}
+																																							parent.settings.h[key] = { type : tv.type, value : tv.value};
+																																							break;
+																																						case 15:
+																																							this.advance();
+																																							var value = this.parseAnything();
+																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																								this.error("setting " + key + " already defined");
+																																							}
+																																							var this1 = parent.settings;
+																																							var value1 = { type : this.inferSettingType(value), value : value};
+																																							this1.h[key] = value1;
+																																							break;
+																																						default:
+																																							this.error("expected :type=> or => after setting key");
+																																						}
+																																						this.eatComma();
+																																					}
+																																					return null;
+																																				} else {
+																																					node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+																																				}
 																																			}
 																																		}
 																																	}
@@ -12000,7 +12094,7 @@ bh_multianim_MacroManimParser.prototype = {
 			if(this.scopeVars != null) {
 				var _g = node.type;
 				switch(_g._hx_index) {
-				case 18:
+				case 19:
 					var varName = _g.varName;
 					var repeatType = _g.repeatType;
 					this.scopeVars.push(varName);
@@ -12035,7 +12129,7 @@ bh_multianim_MacroManimParser.prototype = {
 					default:
 					}
 					break;
-				case 19:
+				case 20:
 					var _g1 = _g.repeatTypeX;
 					var _g1 = _g.repeatTypeY;
 					var varNameX = _g.varNameX;
@@ -12507,45 +12601,82 @@ bh_multianim_MacroManimParser.prototype = {
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 			var color = null;
 			var fontName = null;
-			var _g = this.tokens[this.tpos].type;
-			switch(_g._hx_index) {
-			case 10:
-				color = this.parseColorOrReference();
-				break;
-			case 33:
-				var _g1 = _g.s;
-				color = this.parseColorOrReference();
-				break;
-			default:
-				var c = this.tryParseColor();
-				if(c != null) {
-					color = bh_multianim_ReferenceableValue.RVInteger(c);
+			var _g = 0;
+			while(_g < 2) {
+				var _ = _g++;
+				var _g1 = this.tokens[this.tpos].type;
+				if(_g1._hx_index == 31) {
+					var _g2 = _g1.s;
+					var s = _g2;
+					if(bh_multianim_MacroManimParser.isKeyword(s,"color")) {
+						this.advance();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+						var _g3 = this.tokens[this.tpos].type;
+						switch(_g3._hx_index) {
+						case 10:
+							color = this.parseColorOrReference();
+							break;
+						case 33:
+							var _g4 = _g3.s;
+							color = this.parseColorOrReference();
+							break;
+						default:
+							var c = this.tryParseColor();
+							if(c != null) {
+								color = bh_multianim_ReferenceableValue.RVInteger(c);
+							} else {
+								this.error("expected color value inside color()");
+							}
+						}
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+					} else {
+						var s1 = _g2;
+						if(bh_multianim_MacroManimParser.isKeyword(s1,"font")) {
+							this.advance();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+							var _g5 = this.tokens[this.tpos].type;
+							switch(_g5._hx_index) {
+							case 33:
+								var r = _g5.s;
+								this.advance();
+								fontName = bh_multianim_ReferenceableValue.RVReference(r);
+								break;
+							case 34:
+								var s2 = _g5.s;
+								this.advance();
+								fontName = bh_multianim_ReferenceableValue.RVString(s2);
+								break;
+							default:
+								this.error("expected font name string or $" + "param inside font()");
+							}
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+						} else {
+							break;
+						}
+					}
+				} else {
+					break;
 				}
 			}
-			var _g2 = this.tokens[this.tpos].type;
-			if(_g2._hx_index == 34) {
-				var s = _g2.s;
-				this.advance();
-				fontName = s;
-			}
 			if(color == null && fontName == null) {
-				this.error("style \"" + name + "\" must have at least a color or a font name");
+				this.error("style \"" + name + "\" must have at least color() or font() — example: styles: {" + name + ": color(#FF0000) font(\"myFont\")}");
 			}
 			styles.push({ name : name, color : color, fontName : fontName});
 		}
 		return styles;
 	}
 	,parseTextImages: function() {
-		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 		var images = [];
-		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			if(images.length > 0) {
 				this.eatComma();
-				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 					break;
 				}
 			}
 			var name = this.expectIdentifierOrString();
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 			var ts = this.parseTileSource();
 			var valign = null;
 			var spacing = null;
@@ -13614,12 +13745,12 @@ bh_multianim_MacroManimParser.prototype = {
 					while(checkNode != null) {
 						var _g12 = checkNode.type;
 						switch(_g12._hx_index) {
-						case 18:
+						case 19:
 							var _g13 = _g12.repeatType;
 							var varName = _g12.varName;
 							this.error("#" + name + " requires indexed form #" + name + "[$" + varName + "] inside repeatable");
 							break;
-						case 19:
+						case 20:
 							var _g14 = _g12.repeatTypeX;
 							var _g15 = _g12.repeatTypeY;
 							var varNameX = _g12.varNameX;
@@ -13637,12 +13768,12 @@ bh_multianim_MacroManimParser.prototype = {
 					while(checkNode1 != null) {
 						var _g17 = checkNode1.type;
 						switch(_g17._hx_index) {
-						case 18:
+						case 19:
 							var _g18 = _g17.repeatType;
 							var varName1 = _g17.varName;
 							this.error("#" + name + " requires indexed form #" + name + "[$" + varName1 + "] inside repeatable");
 							break;
-						case 19:
+						case 20:
 							var _g19 = _g17.repeatTypeX;
 							var _g20 = _g17.repeatTypeY;
 							var varNameX1 = _g17.varNameX;
@@ -14507,7 +14638,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var pathsNode = this.nodes.h[bh_multianim_MacroManimParser.defaultPathNodeName];
 		if(pathsNode != null) {
 			var _g = pathsNode.type;
-			if(_g._hx_index == 11) {
+			if(_g._hx_index == 12) {
 				var pathsDef = _g.paths;
 				var pathElements = pathsDef.h[pathName];
 				if(pathElements == null) {
@@ -16166,7 +16297,7 @@ bh_multianim_SlotHandle.prototype = {
 	}
 	,__class__: bh_multianim_SlotHandle
 };
-var bh_multianim_BuilderResult = function(object,name,names,interactives,layouts,palettes,rootSettings,gridCoordinateSystem,hexCoordinateSystem,slots,dynamicRefs,incrementalContext) {
+var bh_multianim_BuilderResult = function(object,name,names,interactives,layouts,palettes,rootSettings,gridCoordinateSystem,hexCoordinateSystem,slots,dynamicRefs,incrementalContext,htmlTextsWithLinks) {
 	this.object = object;
 	this.name = name;
 	this.names = names;
@@ -16179,6 +16310,7 @@ var bh_multianim_BuilderResult = function(object,name,names,interactives,layouts
 	this.slots = slots;
 	this.dynamicRefs = dynamicRefs;
 	this.incrementalContext = incrementalContext;
+	this.htmlTextsWithLinks = htmlTextsWithLinks;
 };
 $hxClasses["bh.multianim.BuilderResult"] = bh_multianim_BuilderResult;
 bh_multianim_BuilderResult.__name__ = "bh.multianim.BuilderResult";
@@ -16367,7 +16499,7 @@ bh_multianim_MultiAnimBuilder.cleanupFinalVars = function(children,indexedParams
 		var childNode = children[_g];
 		++_g;
 		var _g1 = childNode.type;
-		if(_g1._hx_index == 32) {
+		if(_g1._hx_index == 33) {
 			var _g2 = _g1.value;
 			var name = _g1.name;
 			if(Object.prototype.hasOwnProperty.call(indexedParams.h,name)) {
@@ -17918,7 +18050,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		var autotileDef;
 		var _g = node.type;
-		if(_g._hx_index == 26) {
+		if(_g._hx_index == 27) {
 			var def = _g.autotileDef;
 			autotileDef = def;
 		} else {
@@ -18035,7 +18167,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		var autotileDef;
 		var _g = node.type;
-		if(_g._hx_index == 26) {
+		if(_g._hx_index == 27) {
 			var def = _g.autotileDef;
 			autotileDef = def;
 		} else {
@@ -18607,17 +18739,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var textRefs = [];
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,textRefs);
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,textRefs);
-			if(textDef.styles != null) {
-				var _g1 = 0;
-				var _g2 = textDef.styles;
-				while(_g1 < _g2.length) {
-					var style = _g2[_g1];
-					++_g1;
-					if(style.color != null) {
-						bh_multianim_MultiAnimBuilder.collectParamRefs(style.color,textRefs);
-					}
-				}
-			}
 			if(textRefs.length > 0) {
 				var t;
 				if(builtObject._hx_index == 4) {
@@ -18628,28 +18749,95 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				if(t != null) {
 					var textDefCapture = textDef;
-					var needsConversion = textDefCapture.styles != null || textDefCapture.images != null || textDefCapture.hasMarkup || textDefCapture.condenseWhite != null;
 					ctx.trackExpression(function() {
-						var rawText = _gthis.resolveAsString(textDefCapture.text);
-						t.set_text(needsConversion ? bh_multianim_TextMarkupConverter.convert(rawText) : rawText);
+						t.set_text(_gthis.resolveAsString(textDefCapture.text));
 						t.set_textColor(_gthis.resolveAsColorInteger(textDefCapture.color));
-						if(textDefCapture.styles != null) {
-							var ht = t;
+					},textRefs);
+				}
+			}
+			break;
+		case 8:
+			var textDef = _g.textDef;
+			var textRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,textRefs);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,textRefs);
+			if(textDef.styles != null) {
+				var _g1 = 0;
+				var _g2 = textDef.styles;
+				while(_g1 < _g2.length) {
+					var style = _g2[_g1];
+					++_g1;
+					if(style.color != null) {
+						bh_multianim_MultiAnimBuilder.collectParamRefs(style.color,textRefs);
+					}
+					if(style.fontName != null) {
+						bh_multianim_MultiAnimBuilder.collectParamRefs(style.fontName,textRefs);
+					}
+				}
+			}
+			if(textDef.images != null) {
+				var _g1 = 0;
+				var _g2 = textDef.images;
+				while(_g1 < _g2.length) {
+					var img = _g2[_g1];
+					++_g1;
+					var _g3 = img.tileSource;
+					if(_g3._hx_index == 5) {
+						var varName = _g3.varName;
+						if(textRefs.indexOf(varName) < 0) {
+							textRefs.push(varName);
+						}
+					}
+				}
+			}
+			if(textRefs.length > 0) {
+				var t1;
+				if(builtObject._hx_index == 4) {
+					var t2 = builtObject.b;
+					t1 = t2;
+				} else {
+					t1 = null;
+				}
+				if(t1 != null) {
+					var textDefCapture1 = textDef;
+					ctx.trackExpression(function() {
+						var rawText = _gthis.resolveAsString(textDefCapture1.text);
+						t1.set_text(bh_multianim_TextMarkupConverter.convert(rawText));
+						t1.set_textColor(_gthis.resolveAsColorInteger(textDefCapture1.color));
+						if(textDefCapture1.styles != null) {
+							var ht = t1;
 							var _g = 0;
-							var _g1 = textDefCapture.styles;
+							var _g1 = textDefCapture1.styles;
 							while(_g < _g1.length) {
 								var style = _g1[_g];
 								++_g;
-								if(style.color != null) {
-									ht.defineHtmlTag(style.name,_gthis.resolveAsColorInteger(style.color) & 16777215,style.fontName);
-								}
+								var c = style.color != null ? _gthis.resolveAsColorInteger(style.color) & 16777215 : null;
+								var f = style.fontName != null ? _gthis.resolveAsString(style.fontName) : null;
+								ht.defineHtmlTag(style.name,c,f);
 							}
+						}
+						if(textDefCapture1.images != null) {
+							var ht = t1;
+							var imageMap_h = Object.create(null);
+							var _g = 0;
+							var _g1 = textDefCapture1.images;
+							while(_g < _g1.length) {
+								var img = _g1[_g];
+								++_g;
+								var key = img.name;
+								var value = _gthis.loadTileSource(img.tileSource);
+								imageMap_h[key] = value;
+							}
+							ht.loadImage = function(url) {
+								return imageMap_h[url];
+							};
+							ht.set_text(ht.text);
 						}
 					},textRefs);
 				}
 			}
 			break;
-		case 22:
+		case 23:
 			var _g1 = _g.sheet;
 			var _g1 = _g.tilename;
 			var width = _g.width;
@@ -18675,7 +18863,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			break;
-		case 25:
+		case 26:
 			var elements = _g.elements;
 			var gfxRefs = [];
 			var _g = 0;
@@ -19629,7 +19817,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var pixelsResult = this.drawPixels(shapes,gridCoordinateSystem,hexCoordinateSystem);
 			tileGroupTile = pixelsResult.pixelLines.tile;
 			break;
-		case 18:
+		case 19:
 			var varName = _g.varName;
 			var repeatType = _g.repeatType;
 			var info = this.resolveTileGroupRepeatAxis(repeatType,node,true);
@@ -19678,7 +19866,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			skipChildren = true;
 			tileGroupTile = null;
 			break;
-		case 19:
+		case 20:
 			var varNameX = _g.varNameX;
 			var varNameY = _g.varNameY;
 			var repeatTypeX = _g.repeatTypeX;
@@ -19759,7 +19947,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			skipChildren = true;
 			tileGroupTile = null;
 			break;
-		case 22:
+		case 23:
 			var sheet = _g.sheet;
 			var tilename = _g.tilename;
 			var width = _g.width;
@@ -19767,7 +19955,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.addNinePatchToTileGroup(node,sheet,tilename,width,height,currentPos,tileGroup);
 			tileGroupTile = null;
 			break;
-		case 32:
+		case 33:
 			var name = _g.name;
 			var expr = _g.value;
 			this.evaluateAndStoreFinal(name,expr,node);
@@ -20148,47 +20336,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 7:
 			var textDef = _g.textDef;
 			var font = this.resourceLoader.loadFont(this.resolveAsString(textDef.fontName));
-			var needsHtml = textDef.styles != null || textDef.images != null || textDef.hasMarkup || textDef.condenseWhite != null;
-			var t = needsHtml ? this.createHtmlText(font) : new h2d_Text(font);
-			if(needsHtml) {
-				var ht = t;
-				if(textDef.styles != null) {
-					var _g1 = 0;
-					var _g2 = textDef.styles;
-					while(_g1 < _g2.length) {
-						var style = _g2[_g1];
-						++_g1;
-						var color = style.color != null ? this.resolveAsColorInteger(style.color) & 16777215 : null;
-						ht.defineHtmlTag(style.name,color,style.fontName);
-					}
-				}
-				if(textDef.images != null) {
-					var imageMap_h = Object.create(null);
-					var _g1 = 0;
-					var _g2 = textDef.images;
-					while(_g1 < _g2.length) {
-						var img = _g2[_g1];
-						++_g1;
-						var key = img.name;
-						var value = this.loadTileSource(img.tileSource);
-						imageMap_h[key] = value;
-					}
-					ht.loadImage = function(url) {
-						return imageMap_h[url];
-					};
-				}
-				if(textDef.condenseWhite != null) {
-					ht.set_condenseWhite(textDef.condenseWhite);
-				}
-				ht.onHyperlink = function(url) {
-					if(builderParams != null && builderParams.callback != null) {
-						try {
-							builderParams.callback(bh_multianim_CallbackRequest.Name("link:" + url));
-						} catch( _g ) {
-						}
-					}
-				};
-			}
+			var t = new h2d_Text(font);
 			var _g1 = textDef.halign;
 			var builtObject1;
 			if(_g1 == null) {
@@ -20232,37 +20380,131 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				t.dropShadow = { dx : textDef.dropShadowXY.x, dy : textDef.dropShadowXY.y, color : textDef.dropShadowColor, alpha : textDef.dropShadowAlpha};
 			}
 			t.set_textColor(this.resolveAsColorInteger(textDef.color));
-			var rawText = this.resolveAsString(textDef.text);
-			t.set_text(needsHtml ? bh_multianim_TextMarkupConverter.convert(rawText) : rawText);
+			t.set_text(this.resolveAsString(textDef.text));
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsText(t);
 			break;
 		case 8:
+			var textDef = _g.textDef;
+			var font = this.resourceLoader.loadFont(this.resolveAsString(textDef.fontName));
+			var ht = this.createHtmlText(font);
+			if(textDef.styles != null) {
+				var _g1 = 0;
+				var _g2 = textDef.styles;
+				while(_g1 < _g2.length) {
+					var style = _g2[_g1];
+					++_g1;
+					var color = style.color != null ? this.resolveAsColorInteger(style.color) & 16777215 : null;
+					var fontStr = style.fontName != null ? this.resolveAsString(style.fontName) : null;
+					ht.defineHtmlTag(bh_multianim_TextMarkupConverter.escapeStyleName(style.name),color,fontStr);
+				}
+			}
+			if(textDef.images != null) {
+				var imageMap_h = Object.create(null);
+				var _g1 = 0;
+				var _g2 = textDef.images;
+				while(_g1 < _g2.length) {
+					var img = _g2[_g1];
+					++_g1;
+					var key = img.name;
+					var value = this.loadTileSource(img.tileSource);
+					imageMap_h[key] = value;
+				}
+				ht.loadImage = function(url) {
+					return imageMap_h[url];
+				};
+			}
+			if(textDef.condenseWhite != null) {
+				ht.set_condenseWhite(textDef.condenseWhite);
+			}
+			ht.onHyperlink = function(url) {
+				if(builderParams != null && builderParams.callback != null) {
+					try {
+						builderParams.callback(bh_multianim_CallbackRequest.Name("link:" + url));
+					} catch( _g ) {
+					}
+				}
+			};
+			ht.onOverHyperlink = function(url) {
+				hxd_System.setCursor(hxd_Cursor.Button);
+			};
+			ht.onOutHyperlink = function(url) {
+				hxd_System.setCursor(hxd_Cursor.Default);
+			};
+			internalResults.htmlTextsWithLinks.push(ht);
+			var _g1 = textDef.halign;
+			var builtObject1;
+			if(_g1 == null) {
+				builtObject1 = h2d_Align.Left;
+			} else {
+				switch(_g1._hx_index) {
+				case 0:
+					builtObject1 = h2d_Align.Left;
+					break;
+				case 1:
+					builtObject1 = h2d_Align.Right;
+					break;
+				case 2:
+					builtObject1 = h2d_Align.Center;
+					break;
+				}
+			}
+			ht.set_textAlign(builtObject1);
+			if(textDef.textAlignWidth != null) {
+				var scaleAdjust = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
+				var _g1 = textDef.textAlignWidth;
+				switch(_g1._hx_index) {
+				case 0:
+					ht.set_maxWidth(null);
+					break;
+				case 1:
+					var value = _g1.value;
+					ht.set_maxWidth(this.resolveAsNumber(value) / scaleAdjust);
+					break;
+				case 2:
+					if(gridCoordinateSystem != null) {
+						ht.set_maxWidth(gridCoordinateSystem.spacingX / scaleAdjust);
+					}
+					break;
+				}
+			}
+			ht.set_letterSpacing(textDef.letterSpacing);
+			ht.set_lineSpacing(textDef.lineSpacing);
+			ht.set_lineBreak(textDef.lineBreak);
+			if(textDef.dropShadowXY != null) {
+				ht.dropShadow = { dx : textDef.dropShadowXY.x, dy : textDef.dropShadowXY.y, color : textDef.dropShadowColor, alpha : textDef.dropShadowAlpha};
+			}
+			ht.set_textColor(this.resolveAsColorInteger(textDef.color));
+			var rawText = this.resolveAsString(textDef.text);
+			ht.set_text(bh_multianim_TextMarkupConverter.convert(rawText));
+			builtObject = bh_multianim_BuiltHeapsComponent.HeapsText(ht);
+			break;
+		case 9:
 			var _g1 = _g.isTileGroup;
 			var _g1 = _g.parameters;
 			var _g1 = _g.paramOrder;
 			throw haxe_Exception.thrown("invalid state, programmable should not be built");
-		case 9:
+		case 10:
 			var tg = new h2d_TileGroup();
 			selectedBuildMode = bh_multianim__$MultiAnimBuilder_InternalBuildMode.TileGroupMode(tg);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(tg);
 			break;
-		case 10:
+		case 11:
 			var _g1 = _g.layoutsDef;
 			throw haxe_Exception.thrown("layouts not allowed as non-root node");
-		case 11:
+		case 12:
 			var _g1 = _g.paths;
 			throw haxe_Exception.thrown("paths not allowed as non-root node");
-		case 12:
+		case 13:
 			var _g1 = _g.animatedPathDef;
 			throw haxe_Exception.thrown("animatedPath not allowed as non-root node");
-		case 13:
+		case 14:
 			var _g1 = _g.curves;
 			throw haxe_Exception.thrown("curves not allowed as non-root node");
-		case 14:
+		case 15:
 			var particlesDef = _g.particles;
 			builtObject = bh_multianim_BuiltHeapsComponent.Particles(this.createParticleImpl(particlesDef,node.uniqueNodeName));
 			break;
-		case 15:
+		case 16:
 			if(current == null) {
 				throw haxe_Exception.thrown("apply not allowed as root node");
 			}
@@ -20286,12 +20528,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				this.applyExtendedFormProperties(current,node);
 			}
 			return null;
-		case 16:
+		case 17:
 			var l = new h2d_Layers(current);
 			selectedBuildMode = bh_multianim__$MultiAnimBuilder_InternalBuildMode.LayersMode(l);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsLayers(l);
 			break;
-		case 17:
+		case 18:
 			var width = _g.width;
 			var height = _g.height;
 			var w = Math.round(this.resolveAsNumber(width));
@@ -20299,7 +20541,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var m = new h2d_Mask(w,h);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsMask(m);
 			break;
-		case 18:
+		case 19:
 			var varName = _g.varName;
 			var repeatType = _g.repeatType;
 			var dx = 0;
@@ -20596,7 +20838,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					capturedObject.removeChildren();
 					var gcs = bh_multianim_MultiAnimParser.getGridCoordinateSystem(capturedNode);
 					var hcs = bh_multianim_MultiAnimParser.getHexCoordinateSystem(capturedNode);
-					var ir = { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap()};
+					var ir = { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap(), htmlTextsWithLinks : []};
 					var _g = 0;
 					var _g1 = newCount;
 					while(_g < _g1) {
@@ -20639,7 +20881,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				return null;
 			}
 			break;
-		case 19:
+		case 20:
 			var varNameX = _g.varNameX;
 			var varNameY = _g.varNameY;
 			var repeatTypeX = _g.repeatTypeX;
@@ -20902,7 +21144,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			skipChildren = true;
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(object);
 			break;
-		case 20:
+		case 21:
 			var externalReference = _g.externalReference;
 			var reference = _g.programmableReference;
 			var parameters = _g.parameters;
@@ -20930,7 +21172,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(object);
 			break;
-		case 21:
+		case 22:
 			var type = _g.type;
 			var source = _g.replacementSource;
 			var settings = this.resolveSettings(node);
@@ -20981,7 +21223,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3241, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3304, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -21012,7 +21254,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(callbackResultH2dObject);
 			}
 			break;
-		case 22:
+		case 23:
 			var sheet = _g.sheet;
 			var tilename = _g.tilename;
 			var width = _g.width;
@@ -21025,7 +21267,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			sg.set_ignoreScale(false);
 			builtObject = bh_multianim_BuiltHeapsComponent.NinePatch(sg);
 			break;
-		case 23:
+		case 24:
 			var width = _g.width;
 			var height = _g.height;
 			var id = _g.id;
@@ -21064,35 +21306,35 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			internalResults.interactives.push(obj);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(obj);
 			break;
-		case 24:
+		case 25:
 			var _g1 = _g.paletteType;
 			throw haxe_Exception.thrown("palette not allowed as non-root node");
-		case 25:
+		case 26:
 			var elements = _g.elements;
 			var g = new h2d_Graphics();
 			this.drawGraphicsElements(g,elements,gridCoordinateSystem,hexCoordinateSystem);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(g);
 			break;
-		case 26:
+		case 27:
 			var _g1 = _g.autotileDef;
 			throw haxe_Exception.thrown("autotile not allowed as non-root node");
-		case 27:
+		case 28:
 			var _g1 = _g.atlas2Def;
 			throw haxe_Exception.thrown("atlas2 is a definition node, not a renderable element");
-		case 28:
+		case 29:
 			var _g1 = _g.dataDef;
 			throw haxe_Exception.thrown("data is a definition node, not a renderable element");
-		case 29:
+		case 30:
 			var parameters = _g.parameters;
 			var paramOrder = _g.paramOrder;
 			var container = new h2d_Object();
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(container);
 			break;
-		case 30:
+		case 31:
 			var obj = new bh_multianim_SlotContentRoot();
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(obj);
 			break;
-		case 31:
+		case 32:
 			var externalReference = _g.externalReference;
 			var reference = _g.programmableReference;
 			var parameters = _g.parameters;
@@ -21184,7 +21426,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(object);
 			break;
-		case 32:
+		case 33:
 			var name = _g.name;
 			var expr = _g.value;
 			this.evaluateAndStoreFinal(name,expr,node);
@@ -21333,7 +21575,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var savedSlotIncrementalContext = null;
 		var savedSlotIndexedParams = null;
 		var _g = node.type;
-		if(_g._hx_index == 29) {
+		if(_g._hx_index == 30) {
 			var _g1 = _g.paramOrder;
 			var parameters = _g.parameters;
 			if(parameters != null) {
@@ -21391,7 +21633,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.indexedParams = savedSlotIndexedParams;
 		}
 		var _g = node.type;
-		if(_g._hx_index == 29) {
+		if(_g._hx_index == 30) {
 			var _g1 = _g.paramOrder;
 			var parameters = _g.parameters;
 			var slotContentTarget = null;
@@ -21542,7 +21784,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			object.blendMode = bh_multianim_MacroCompatConvert.toH2dBlendMode(node.blendMode);
 		}
 		if(node.filter != null) {
-			object.set_filter(this.buildFilter(node.filter));
+			var f = this.buildFilter(node.filter);
+			if(f != null) {
+				object.set_filter(f);
+			}
 		}
 		if(node.tint != null) {
 			if(((object) instanceof h2d_Drawable)) {
@@ -21581,7 +21826,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			while(_g < filters.length) {
 				var f = filters[_g];
 				++_g;
-				ret.add(this.buildFilter(f));
+				var built = this.buildFilter(f);
+				if(built != null) {
+					ret.add(built);
+				}
 			}
 			return ret;
 		case 2:
@@ -21686,7 +21934,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throwIfNotProgrammable = false;
 		}
 		var _g = node.type;
-		if(_g._hx_index == 8) {
+		if(_g._hx_index == 9) {
 			var _g1 = _g.isTileGroup;
 			var _g1 = _g.paramOrder;
 			var d = _g.parameters;
@@ -21701,7 +21949,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var isProgrammable = false;
 		var isTileGroup = false;
 		var _g = rootNode.type;
-		if(_g._hx_index == 8) {
+		if(_g._hx_index == 9) {
 			var _g1 = _g.parameters;
 			var _g1 = _g.paramOrder;
 			var isTG = _g.isTileGroup;
@@ -21709,7 +21957,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			isTileGroup = isTG;
 		}
 		var retRoot;
-		var internalResults = { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap()};
+		var internalResults = { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap(), htmlTextsWithLinks : []};
 		if(isTileGroup) {
 			var root = new h2d_TileGroup();
 			retRoot = root;
@@ -21777,7 +22025,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		} else {
 			finalObject = retRoot;
 		}
-		return new bh_multianim_BuilderResult(finalObject,name,internalResults.names,internalResults.interactives,new haxe_ds_StringMap(),new haxe_ds_StringMap(),new bh_multianim_BuilderResolvedSettings(this.resolveSettings(rootNode)),gridCoordinateSystem,hexCoordinateSystem,internalResults.slots,internalResults.dynamicRefs,null);
+		var _g = internalResults.names;
+		var _g1 = internalResults.interactives;
+		var _g2 = new haxe_ds_StringMap();
+		var _g3 = new haxe_ds_StringMap();
+		var tmp = this.resolveSettings(rootNode);
+		var tmp1 = internalResults.htmlTextsWithLinks.length > 0 ? internalResults.htmlTextsWithLinks : null;
+		return new bh_multianim_BuilderResult(finalObject,name,_g,_g1,_g2,_g3,new bh_multianim_BuilderResolvedSettings(tmp),gridCoordinateSystem,hexCoordinateSystem,internalResults.slots,internalResults.dynamicRefs,null,tmp1);
 	}
 	,getPalette: function(name) {
 		return this.buildPalettes(name);
@@ -21788,7 +22042,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("could not get palette node #" + name + "");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 24) {
+		if(_g._hx_index == 25) {
 			var paletteType = _g.paletteType;
 			switch(paletteType._hx_index) {
 			case 0:
@@ -22221,7 +22475,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("could not get particles node #" + name + "");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 14) {
+		if(_g._hx_index == 15) {
 			var particlesDef = _g.particles;
 			return this.createParticleImpl(particlesDef,name);
 		} else {
@@ -22234,7 +22488,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("could not get particles node #" + name + "");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 14) {
+		if(_g._hx_index == 15) {
 			var particlesDef = _g.particles;
 			this.createParticleImpl(particlesDef,name,particles);
 		} else {
@@ -22247,7 +22501,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("could not get animatedPath node #" + name + "");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 12) {
+		if(_g._hx_index == 13) {
 			var pathDef = _g.animatedPathDef;
 			var paths = this.getPaths();
 			var path = paths.getPath(pathDef.pathName,normalization);
@@ -22381,7 +22635,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("layouts block does not exist");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 10) {
+		if(_g._hx_index == 11) {
 			var layoutsDef = _g.layoutsDef;
 			return new bh_multianim_layouts_MultiAnimLayouts(layoutsDef,this);
 		} else {
@@ -22394,7 +22648,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("paths does not exist");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 11) {
+		if(_g._hx_index == 12) {
 			var pathsDef = _g.paths;
 			return new bh_paths_MultiAnimPaths(pathsDef,this);
 		} else {
@@ -22407,7 +22661,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("curves does not exist");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 13) {
+		if(_g._hx_index == 14) {
 			var curvesDef = _g.curves;
 			var result = new haxe_ds_StringMap();
 			var h = curvesDef.h;
@@ -22471,7 +22725,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("could not get autotile node #" + name + "");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 26) {
+		if(_g._hx_index == 27) {
 			var autotileDef = _g.autotileDef;
 			return this.buildAutotileImpl(autotileDef,grid,null);
 		} else {
@@ -23162,7 +23416,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5246, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5315, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -23272,7 +23526,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5470, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5539, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -23306,7 +23560,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5486, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5555, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -23415,7 +23669,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return null;
 		}
 		var _g = node.type;
-		if(_g._hx_index == 27) {
+		if(_g._hx_index == 28) {
 			var atlas2Def = _g.atlas2Def;
 			var sourceTile;
 			var _g = atlas2Def.source;
@@ -23981,33 +24235,34 @@ var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true
 	,STATEANIM_CONSTRUCT: ($_=function(initialState,construct,externallyDriven) { return {_hx_index:5,initialState:initialState,construct:construct,externallyDriven:externallyDriven,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATEANIM_CONSTRUCT",$_.__params__ = ["initialState","construct","externallyDriven"],$_)
 	,PIXELS: ($_=function(shapes) { return {_hx_index:6,shapes:shapes,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PIXELS",$_.__params__ = ["shapes"],$_)
 	,TEXT: ($_=function(textDef) { return {_hx_index:7,textDef:textDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TEXT",$_.__params__ = ["textDef"],$_)
-	,PROGRAMMABLE: ($_=function(isTileGroup,parameters,paramOrder) { return {_hx_index:8,isTileGroup:isTileGroup,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PROGRAMMABLE",$_.__params__ = ["isTileGroup","parameters","paramOrder"],$_)
-	,TILEGROUP: {_hx_name:"TILEGROUP",_hx_index:9,__enum__:"bh.multianim.NodeType",toString:$estr}
-	,RELATIVE_LAYOUTS: ($_=function(layoutsDef) { return {_hx_index:10,layoutsDef:layoutsDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="RELATIVE_LAYOUTS",$_.__params__ = ["layoutsDef"],$_)
-	,PATHS: ($_=function(paths) { return {_hx_index:11,paths:paths,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PATHS",$_.__params__ = ["paths"],$_)
-	,ANIMATED_PATH: ($_=function(animatedPathDef) { return {_hx_index:12,animatedPathDef:animatedPathDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ANIMATED_PATH",$_.__params__ = ["animatedPathDef"],$_)
-	,CURVES: ($_=function(curves) { return {_hx_index:13,curves:curves,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="CURVES",$_.__params__ = ["curves"],$_)
-	,PARTICLES: ($_=function(particles) { return {_hx_index:14,particles:particles,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PARTICLES",$_.__params__ = ["particles"],$_)
-	,APPLY: {_hx_name:"APPLY",_hx_index:15,__enum__:"bh.multianim.NodeType",toString:$estr}
-	,LAYERS: {_hx_name:"LAYERS",_hx_index:16,__enum__:"bh.multianim.NodeType",toString:$estr}
-	,MASK: ($_=function(width,height) { return {_hx_index:17,width:width,height:height,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="MASK",$_.__params__ = ["width","height"],$_)
-	,REPEAT: ($_=function(varName,repeatType) { return {_hx_index:18,varName:varName,repeatType:repeatType,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="REPEAT",$_.__params__ = ["varName","repeatType"],$_)
-	,REPEAT2D: ($_=function(varNameX,varNameY,repeatTypeX,repeatTypeY) { return {_hx_index:19,varNameX:varNameX,varNameY:varNameY,repeatTypeX:repeatTypeX,repeatTypeY:repeatTypeY,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="REPEAT2D",$_.__params__ = ["varNameX","varNameY","repeatTypeX","repeatTypeY"],$_)
-	,STATIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:20,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
-	,PLACEHOLDER: ($_=function(type,replacementSource) { return {_hx_index:21,type:type,replacementSource:replacementSource,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PLACEHOLDER",$_.__params__ = ["type","replacementSource"],$_)
-	,NINEPATCH: ($_=function(sheet,tilename,width,height) { return {_hx_index:22,sheet:sheet,tilename:tilename,width:width,height:height,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="NINEPATCH",$_.__params__ = ["sheet","tilename","width","height"],$_)
-	,INTERACTIVE: ($_=function(width,height,id,debug,metadata) { return {_hx_index:23,width:width,height:height,id:id,debug:debug,metadata:metadata,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="INTERACTIVE",$_.__params__ = ["width","height","id","debug","metadata"],$_)
-	,PALETTE: ($_=function(paletteType) { return {_hx_index:24,paletteType:paletteType,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PALETTE",$_.__params__ = ["paletteType"],$_)
-	,GRAPHICS: ($_=function(elements) { return {_hx_index:25,elements:elements,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="GRAPHICS",$_.__params__ = ["elements"],$_)
-	,AUTOTILE: ($_=function(autotileDef) { return {_hx_index:26,autotileDef:autotileDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="AUTOTILE",$_.__params__ = ["autotileDef"],$_)
-	,ATLAS2: ($_=function(atlas2Def) { return {_hx_index:27,atlas2Def:atlas2Def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ATLAS2",$_.__params__ = ["atlas2Def"],$_)
-	,DATA: ($_=function(dataDef) { return {_hx_index:28,dataDef:dataDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DATA",$_.__params__ = ["dataDef"],$_)
-	,SLOT: ($_=function(parameters,paramOrder) { return {_hx_index:29,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SLOT",$_.__params__ = ["parameters","paramOrder"],$_)
-	,SLOT_CONTENT: {_hx_name:"SLOT_CONTENT",_hx_index:30,__enum__:"bh.multianim.NodeType",toString:$estr}
-	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:31,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
-	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:32,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
+	,RICHTEXT: ($_=function(textDef) { return {_hx_index:8,textDef:textDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="RICHTEXT",$_.__params__ = ["textDef"],$_)
+	,PROGRAMMABLE: ($_=function(isTileGroup,parameters,paramOrder) { return {_hx_index:9,isTileGroup:isTileGroup,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PROGRAMMABLE",$_.__params__ = ["isTileGroup","parameters","paramOrder"],$_)
+	,TILEGROUP: {_hx_name:"TILEGROUP",_hx_index:10,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,RELATIVE_LAYOUTS: ($_=function(layoutsDef) { return {_hx_index:11,layoutsDef:layoutsDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="RELATIVE_LAYOUTS",$_.__params__ = ["layoutsDef"],$_)
+	,PATHS: ($_=function(paths) { return {_hx_index:12,paths:paths,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PATHS",$_.__params__ = ["paths"],$_)
+	,ANIMATED_PATH: ($_=function(animatedPathDef) { return {_hx_index:13,animatedPathDef:animatedPathDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ANIMATED_PATH",$_.__params__ = ["animatedPathDef"],$_)
+	,CURVES: ($_=function(curves) { return {_hx_index:14,curves:curves,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="CURVES",$_.__params__ = ["curves"],$_)
+	,PARTICLES: ($_=function(particles) { return {_hx_index:15,particles:particles,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PARTICLES",$_.__params__ = ["particles"],$_)
+	,APPLY: {_hx_name:"APPLY",_hx_index:16,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,LAYERS: {_hx_name:"LAYERS",_hx_index:17,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,MASK: ($_=function(width,height) { return {_hx_index:18,width:width,height:height,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="MASK",$_.__params__ = ["width","height"],$_)
+	,REPEAT: ($_=function(varName,repeatType) { return {_hx_index:19,varName:varName,repeatType:repeatType,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="REPEAT",$_.__params__ = ["varName","repeatType"],$_)
+	,REPEAT2D: ($_=function(varNameX,varNameY,repeatTypeX,repeatTypeY) { return {_hx_index:20,varNameX:varNameX,varNameY:varNameY,repeatTypeX:repeatTypeX,repeatTypeY:repeatTypeY,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="REPEAT2D",$_.__params__ = ["varNameX","varNameY","repeatTypeX","repeatTypeY"],$_)
+	,STATIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:21,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="STATIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
+	,PLACEHOLDER: ($_=function(type,replacementSource) { return {_hx_index:22,type:type,replacementSource:replacementSource,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PLACEHOLDER",$_.__params__ = ["type","replacementSource"],$_)
+	,NINEPATCH: ($_=function(sheet,tilename,width,height) { return {_hx_index:23,sheet:sheet,tilename:tilename,width:width,height:height,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="NINEPATCH",$_.__params__ = ["sheet","tilename","width","height"],$_)
+	,INTERACTIVE: ($_=function(width,height,id,debug,metadata) { return {_hx_index:24,width:width,height:height,id:id,debug:debug,metadata:metadata,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="INTERACTIVE",$_.__params__ = ["width","height","id","debug","metadata"],$_)
+	,PALETTE: ($_=function(paletteType) { return {_hx_index:25,paletteType:paletteType,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PALETTE",$_.__params__ = ["paletteType"],$_)
+	,GRAPHICS: ($_=function(elements) { return {_hx_index:26,elements:elements,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="GRAPHICS",$_.__params__ = ["elements"],$_)
+	,AUTOTILE: ($_=function(autotileDef) { return {_hx_index:27,autotileDef:autotileDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="AUTOTILE",$_.__params__ = ["autotileDef"],$_)
+	,ATLAS2: ($_=function(atlas2Def) { return {_hx_index:28,atlas2Def:atlas2Def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ATLAS2",$_.__params__ = ["atlas2Def"],$_)
+	,DATA: ($_=function(dataDef) { return {_hx_index:29,dataDef:dataDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DATA",$_.__params__ = ["dataDef"],$_)
+	,SLOT: ($_=function(parameters,paramOrder) { return {_hx_index:30,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SLOT",$_.__params__ = ["parameters","paramOrder"],$_)
+	,SLOT_CONTENT: {_hx_name:"SLOT_CONTENT",_hx_index:31,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:32,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
+	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:33,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
 };
-bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR];
+bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.RICHTEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR];
 bh_multianim_NodeType.__empty_constructs__ = [bh_multianim_NodeType.POINT,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.SLOT_CONTENT];
 var bh_multianim_NodeConditionalValues = $hxEnums["bh.multianim.NodeConditionalValues"] = { __ename__:true,__constructs__:null
 	,Conditional: ($_=function(values,strict) { return {_hx_index:0,values:values,strict:strict,__enum__:"bh.multianim.NodeConditionalValues",toString:$estr}; },$_._hx_name="Conditional",$_.__params__ = ["values","strict"],$_)
@@ -24301,7 +24556,7 @@ bh_multianim_TextMarkupConverter.convert = function(text) {
 	if(text == null || text.length == 0) {
 		return text;
 	}
-	if(text.indexOf("%{") < 0) {
+	if(text.indexOf("[") < 0) {
 		return text;
 	}
 	var buf_b = "";
@@ -24310,17 +24565,17 @@ bh_multianim_TextMarkupConverter.convert = function(text) {
 	var len = text.length;
 	while(i < len) {
 		var ch = HxOverrides.cca(text,i);
-		if(ch == 37 && i + 1 < len && HxOverrides.cca(text,i + 1) == 37 && i + 2 < len && HxOverrides.cca(text,i + 2) == 123) {
-			buf_b += "%{";
-			i += 3;
-		} else if(ch == 37 && i + 1 < len && HxOverrides.cca(text,i + 1) == 123) {
-			var closeIdx = text.indexOf("}",i + 2);
+		if(ch == 91 && i + 1 < len && HxOverrides.cca(text,i + 1) == 91) {
+			buf_b += "[";
+			i += 2;
+		} else if(ch == 91) {
+			var closeIdx = text.indexOf("]",i + 1);
 			if(closeIdx < 0) {
 				buf_b += String.fromCodePoint(ch);
 				++i;
 				continue;
 			}
-			var tag = text.substring(i + 2,closeIdx);
+			var tag = text.substring(i + 1,closeIdx);
 			if(tag == "/") {
 				if(tagStack.length > 0) {
 					var openTag = tagStack.pop();
@@ -24328,21 +24583,6 @@ bh_multianim_TextMarkupConverter.convert = function(text) {
 					buf_b += openTag == null ? "null" : "" + openTag;
 					buf_b += ">";
 				}
-				i = closeIdx + 1;
-			} else if(StringTools.startsWith(tag,"c:")) {
-				var colorVal = tag.substring(2);
-				var hexColor = bh_multianim_TextMarkupConverter.resolveColorToHex(colorVal);
-				buf_b += "<font color=\"";
-				buf_b += hexColor == null ? "null" : "" + hexColor;
-				buf_b += "\">";
-				tagStack.push("font");
-				i = closeIdx + 1;
-			} else if(StringTools.startsWith(tag,"f:")) {
-				var fontName = tag.substring(2);
-				buf_b += "<font face=\"";
-				buf_b += fontName == null ? "null" : "" + fontName;
-				buf_b += "\">";
-				tagStack.push("font");
 				i = closeIdx + 1;
 			} else if(StringTools.startsWith(tag,"img:")) {
 				var imgName = tag.substring(4);
@@ -24364,12 +24604,16 @@ bh_multianim_TextMarkupConverter.convert = function(text) {
 				buf_b += "\">";
 				tagStack.push("a");
 				i = closeIdx + 1;
-			} else {
+			} else if(bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
+				var safeTag = bh_multianim_TextMarkupConverter.escapeStyleName(tag);
 				buf_b += "<";
-				buf_b += tag == null ? "null" : "" + tag;
+				buf_b += safeTag == null ? "null" : "" + safeTag;
 				buf_b += ">";
-				tagStack.push(tag);
+				tagStack.push(safeTag);
 				i = closeIdx + 1;
+			} else {
+				buf_b += String.fromCodePoint(ch);
+				++i;
 			}
 		} else {
 			buf_b += String.fromCodePoint(ch);
@@ -24382,73 +24626,78 @@ bh_multianim_TextMarkupConverter.hasMarkup = function(text) {
 	if(text == null) {
 		return false;
 	}
-	var idx = text.indexOf("%{");
-	while(idx >= 0 && idx + 2 < text.length) {
-		if(idx > 0 && HxOverrides.cca(text,idx - 1) == 37) {
-			idx = text.indexOf("%{",idx + 1);
+	if(text.indexOf("[") < 0) {
+		return false;
+	}
+	var hasCloseTag = text.indexOf("[/]") >= 0;
+	var hasSpecial = false;
+	var idx = text.indexOf("[");
+	while(idx >= 0 && idx + 1 < text.length) {
+		if(HxOverrides.cca(text,idx + 1) == 91) {
+			idx = text.indexOf("[",idx + 2);
 			continue;
 		}
-		var closeIdx = text.indexOf("}",idx + 2);
-		if(closeIdx > idx + 2) {
-			var tag = text.substring(idx + 2,closeIdx);
-			if(tag == "/" || StringTools.startsWith(tag,"c:") || StringTools.startsWith(tag,"f:") || StringTools.startsWith(tag,"img:") || StringTools.startsWith(tag,"align:") || StringTools.startsWith(tag,"link:") || bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
-				return true;
+		var closeIdx = text.indexOf("]",idx + 1);
+		if(closeIdx > idx + 1) {
+			var tag = text.substring(idx + 1,closeIdx);
+			if(StringTools.startsWith(tag,"img:") || StringTools.startsWith(tag,"align:") || StringTools.startsWith(tag,"link:")) {
+				hasSpecial = true;
+				break;
 			}
 		}
-		idx = text.indexOf("%{",idx + 1);
+		idx = text.indexOf("[",idx + 1);
 	}
-	return false;
+	if(!hasCloseTag) {
+		return hasSpecial;
+	} else {
+		return true;
+	}
 };
 bh_multianim_TextMarkupConverter.extractStyleReferences = function(text) {
 	var refs = [];
 	if(text == null) {
 		return refs;
 	}
-	var idx = text.indexOf("%{");
-	while(idx >= 0 && idx + 2 < text.length) {
-		if(idx > 0 && HxOverrides.cca(text,idx - 1) == 37) {
-			idx = text.indexOf("%{",idx + 1);
+	var idx = text.indexOf("[");
+	while(idx >= 0 && idx + 1 < text.length) {
+		if(idx + 1 < text.length && HxOverrides.cca(text,idx + 1) == 91) {
+			idx = text.indexOf("[",idx + 2);
 			continue;
 		}
-		var closeIdx = text.indexOf("}",idx + 2);
-		if(closeIdx > idx + 2) {
-			var tag = text.substring(idx + 2,closeIdx);
-			if(tag != "/" && !StringTools.startsWith(tag,"c:") && !StringTools.startsWith(tag,"f:") && !StringTools.startsWith(tag,"img:") && !StringTools.startsWith(tag,"align:") && !StringTools.startsWith(tag,"link:") && bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
+		var closeIdx = text.indexOf("]",idx + 1);
+		if(closeIdx > idx + 1) {
+			var tag = text.substring(idx + 1,closeIdx);
+			if(tag != "/" && !StringTools.startsWith(tag,"img:") && !StringTools.startsWith(tag,"align:") && !StringTools.startsWith(tag,"link:") && bh_multianim_TextMarkupConverter.isValidStyleName(tag)) {
 				refs.push(tag);
 			}
 		}
-		idx = text.indexOf("%{",closeIdx > idx ? closeIdx : idx + 1);
+		idx = text.indexOf("[",closeIdx > idx ? closeIdx : idx + 1);
 	}
 	return refs;
 };
-bh_multianim_TextMarkupConverter.resolveColorToHex = function(colorStr) {
-	if(colorStr == null || colorStr.length == 0) {
-		return "#000000";
+bh_multianim_TextMarkupConverter.escapeStyleName = function(name) {
+	if(bh_multianim_TextMarkupConverter.isReservedHtmlTag(name)) {
+		return "_s_" + name;
+	} else {
+		return name;
 	}
-	if(StringTools.startsWith(colorStr,"#")) {
-		var hex = colorStr.substring(1);
-		if(hex.length == 3) {
-			return "#" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
-		}
-		if(hex.length == 6) {
-			return colorStr;
-		}
-		if(hex.length == 8) {
-			return "#" + hex.substring(0,6);
-		}
-		return colorStr;
+};
+bh_multianim_TextMarkupConverter.isReservedHtmlTag = function(name) {
+	if(!(name == "b" || name == "i" || name == "u" || name == "s" || name == "bold" || name == "italic")) {
+		return name == "font";
+	} else {
+		return true;
 	}
-	var resolved = bh_multianim_MacroManimParser.tryStringToColor(colorStr);
-	if(resolved != null) {
-		return "#" + StringTools.hex(resolved & 16777215,6);
-	}
-	return colorStr;
 };
 bh_multianim_TextMarkupConverter.isValidStyleName = function(name) {
 	if(name.length == 0) {
 		return false;
 	}
-	var _g = 0;
+	var first = HxOverrides.cca(name,0);
+	if(!(first >= 97 && first <= 122 || first >= 65 && first <= 90 || first == 95)) {
+		return false;
+	}
+	var _g = 1;
 	var _g1 = name.length;
 	while(_g < _g1) {
 		var i = _g++;
@@ -26302,21 +26551,37 @@ var bh_stateanim_APToken = $hxEnums["bh.stateanim.APToken"] = { __ename__:true,_
 	,APCurlyOpen: {_hx_name:"APCurlyOpen",_hx_index:9,__enum__:"bh.stateanim.APToken",toString:$estr}
 	,APBracketClosed: {_hx_name:"APBracketClosed",_hx_index:10,__enum__:"bh.stateanim.APToken",toString:$estr}
 	,APBracketOpen: {_hx_name:"APBracketOpen",_hx_index:11,__enum__:"bh.stateanim.APToken",toString:$estr}
-	,APNewLine: {_hx_name:"APNewLine",_hx_index:12,__enum__:"bh.stateanim.APToken",toString:$estr}
-	,APDoubleDot: {_hx_name:"APDoubleDot",_hx_index:13,__enum__:"bh.stateanim.APToken",toString:$estr}
-	,APAt: {_hx_name:"APAt",_hx_index:14,__enum__:"bh.stateanim.APToken",toString:$estr}
-	,APArrow: {_hx_name:"APArrow",_hx_index:15,__enum__:"bh.stateanim.APToken",toString:$estr}
-	,APNotEquals: {_hx_name:"APNotEquals",_hx_index:16,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APDoubleDot: {_hx_name:"APDoubleDot",_hx_index:12,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APAt: {_hx_name:"APAt",_hx_index:13,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APArrow: {_hx_name:"APArrow",_hx_index:14,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APNotEquals: {_hx_name:"APNotEquals",_hx_index:15,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APGreater: {_hx_name:"APGreater",_hx_index:16,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APLess: {_hx_name:"APLess",_hx_index:17,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APGreaterEq: {_hx_name:"APGreaterEq",_hx_index:18,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APLessEq: {_hx_name:"APLessEq",_hx_index:19,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APColor: ($_=function(i) { return {_hx_index:20,i:i,__enum__:"bh.stateanim.APToken",toString:$estr}; },$_._hx_name="APColor",$_.__params__ = ["i"],$_)
+	,APMinus: {_hx_name:"APMinus",_hx_index:21,__enum__:"bh.stateanim.APToken",toString:$estr}
+	,APEquals: {_hx_name:"APEquals",_hx_index:22,__enum__:"bh.stateanim.APToken",toString:$estr}
 };
-bh_stateanim_APToken.__constructs__ = [bh_stateanim_APToken.APEof,bh_stateanim_APToken.APOpen,bh_stateanim_APToken.APClosed,bh_stateanim_APToken.APComma,bh_stateanim_APToken.APColon,bh_stateanim_APToken.APSemiColon,bh_stateanim_APToken.APNumber,bh_stateanim_APToken.APIdentifier,bh_stateanim_APToken.APCurlyClosed,bh_stateanim_APToken.APCurlyOpen,bh_stateanim_APToken.APBracketClosed,bh_stateanim_APToken.APBracketOpen,bh_stateanim_APToken.APNewLine,bh_stateanim_APToken.APDoubleDot,bh_stateanim_APToken.APAt,bh_stateanim_APToken.APArrow,bh_stateanim_APToken.APNotEquals];
-bh_stateanim_APToken.__empty_constructs__ = [bh_stateanim_APToken.APEof,bh_stateanim_APToken.APOpen,bh_stateanim_APToken.APClosed,bh_stateanim_APToken.APComma,bh_stateanim_APToken.APColon,bh_stateanim_APToken.APSemiColon,bh_stateanim_APToken.APCurlyClosed,bh_stateanim_APToken.APCurlyOpen,bh_stateanim_APToken.APBracketClosed,bh_stateanim_APToken.APBracketOpen,bh_stateanim_APToken.APNewLine,bh_stateanim_APToken.APDoubleDot,bh_stateanim_APToken.APAt,bh_stateanim_APToken.APArrow,bh_stateanim_APToken.APNotEquals];
+bh_stateanim_APToken.__constructs__ = [bh_stateanim_APToken.APEof,bh_stateanim_APToken.APOpen,bh_stateanim_APToken.APClosed,bh_stateanim_APToken.APComma,bh_stateanim_APToken.APColon,bh_stateanim_APToken.APSemiColon,bh_stateanim_APToken.APNumber,bh_stateanim_APToken.APIdentifier,bh_stateanim_APToken.APCurlyClosed,bh_stateanim_APToken.APCurlyOpen,bh_stateanim_APToken.APBracketClosed,bh_stateanim_APToken.APBracketOpen,bh_stateanim_APToken.APDoubleDot,bh_stateanim_APToken.APAt,bh_stateanim_APToken.APArrow,bh_stateanim_APToken.APNotEquals,bh_stateanim_APToken.APGreater,bh_stateanim_APToken.APLess,bh_stateanim_APToken.APGreaterEq,bh_stateanim_APToken.APLessEq,bh_stateanim_APToken.APColor,bh_stateanim_APToken.APMinus,bh_stateanim_APToken.APEquals];
+bh_stateanim_APToken.__empty_constructs__ = [bh_stateanim_APToken.APEof,bh_stateanim_APToken.APOpen,bh_stateanim_APToken.APClosed,bh_stateanim_APToken.APComma,bh_stateanim_APToken.APColon,bh_stateanim_APToken.APSemiColon,bh_stateanim_APToken.APCurlyClosed,bh_stateanim_APToken.APCurlyOpen,bh_stateanim_APToken.APBracketClosed,bh_stateanim_APToken.APBracketOpen,bh_stateanim_APToken.APDoubleDot,bh_stateanim_APToken.APAt,bh_stateanim_APToken.APArrow,bh_stateanim_APToken.APNotEquals,bh_stateanim_APToken.APGreater,bh_stateanim_APToken.APLess,bh_stateanim_APToken.APGreaterEq,bh_stateanim_APToken.APLessEq,bh_stateanim_APToken.APMinus,bh_stateanim_APToken.APEquals];
 var bh_stateanim_AnimConditionalValue = $hxEnums["bh.stateanim.AnimConditionalValue"] = { __ename__:true,__constructs__:null
 	,ACVSingle: ($_=function(value) { return {_hx_index:0,value:value,__enum__:"bh.stateanim.AnimConditionalValue",toString:$estr}; },$_._hx_name="ACVSingle",$_.__params__ = ["value"],$_)
 	,ACVMulti: ($_=function(values) { return {_hx_index:1,values:values,__enum__:"bh.stateanim.AnimConditionalValue",toString:$estr}; },$_._hx_name="ACVMulti",$_.__params__ = ["values"],$_)
 	,ACVNot: ($_=function(inner) { return {_hx_index:2,inner:inner,__enum__:"bh.stateanim.AnimConditionalValue",toString:$estr}; },$_._hx_name="ACVNot",$_.__params__ = ["inner"],$_)
+	,ACVCompare: ($_=function(op,value) { return {_hx_index:3,op:op,value:value,__enum__:"bh.stateanim.AnimConditionalValue",toString:$estr}; },$_._hx_name="ACVCompare",$_.__params__ = ["op","value"],$_)
+	,ACVRange: ($_=function(min,max) { return {_hx_index:4,min:min,max:max,__enum__:"bh.stateanim.AnimConditionalValue",toString:$estr}; },$_._hx_name="ACVRange",$_.__params__ = ["min","max"],$_)
 };
-bh_stateanim_AnimConditionalValue.__constructs__ = [bh_stateanim_AnimConditionalValue.ACVSingle,bh_stateanim_AnimConditionalValue.ACVMulti,bh_stateanim_AnimConditionalValue.ACVNot];
+bh_stateanim_AnimConditionalValue.__constructs__ = [bh_stateanim_AnimConditionalValue.ACVSingle,bh_stateanim_AnimConditionalValue.ACVMulti,bh_stateanim_AnimConditionalValue.ACVNot,bh_stateanim_AnimConditionalValue.ACVCompare,bh_stateanim_AnimConditionalValue.ACVRange];
 bh_stateanim_AnimConditionalValue.__empty_constructs__ = [];
+var bh_stateanim_AnimCompareOp = $hxEnums["bh.stateanim.AnimCompareOp"] = { __ename__:true,__constructs__:null
+	,ACmpGte: {_hx_name:"ACmpGte",_hx_index:0,__enum__:"bh.stateanim.AnimCompareOp",toString:$estr}
+	,ACmpLte: {_hx_name:"ACmpLte",_hx_index:1,__enum__:"bh.stateanim.AnimCompareOp",toString:$estr}
+	,ACmpGt: {_hx_name:"ACmpGt",_hx_index:2,__enum__:"bh.stateanim.AnimCompareOp",toString:$estr}
+	,ACmpLt: {_hx_name:"ACmpLt",_hx_index:3,__enum__:"bh.stateanim.AnimCompareOp",toString:$estr}
+};
+bh_stateanim_AnimCompareOp.__constructs__ = [bh_stateanim_AnimCompareOp.ACmpGte,bh_stateanim_AnimCompareOp.ACmpLte,bh_stateanim_AnimCompareOp.ACmpGt,bh_stateanim_AnimCompareOp.ACmpLt];
+bh_stateanim_AnimCompareOp.__empty_constructs__ = [bh_stateanim_AnimCompareOp.ACmpGte,bh_stateanim_AnimCompareOp.ACmpLte,bh_stateanim_AnimCompareOp.ACmpGt,bh_stateanim_AnimCompareOp.ACmpLt];
 var bh_stateanim_APKeywords = $hxEnums["bh.stateanim.APKeywords"] = { __ename__:true,__constructs__:null
 	,APSheet: {_hx_name:"APSheet",_hx_index:0,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APFile: {_hx_name:"APFile",_hx_index:1,__enum__:"bh.stateanim.APKeywords",toString:$estr}
@@ -26334,9 +26599,14 @@ var bh_stateanim_APKeywords = $hxEnums["bh.stateanim.APKeywords"] = { __ename__:
 	,APRandom: {_hx_name:"APRandom",_hx_index:13,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APFrames: {_hx_name:"APFrames",_hx_index:14,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APMetadata: {_hx_name:"APMetadata",_hx_index:15,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APAnim: {_hx_name:"APAnim",_hx_index:16,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFinal: {_hx_name:"APFinal",_hx_index:17,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APElse: {_hx_name:"APElse",_hx_index:18,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APDefault: {_hx_name:"APDefault",_hx_index:19,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFilters: {_hx_name:"APFilters",_hx_index:20,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 };
-bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata];
-bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata];
+bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters];
+bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters];
 var bh_stateanim__$AnimParser_AnimToken = function(type,line,col) {
 	this.type = type;
 	this.line = line;
@@ -26365,6 +26635,19 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			if(c == 32 || c == 9) {
 				this.pos++;
 				this.col++;
+			} else if(c == 10) {
+				this.pos++;
+				this.line++;
+				this.col = 1;
+				this.lineStart = this.pos;
+			} else if(c == 13) {
+				this.pos++;
+				if(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 10) {
+					this.pos++;
+				}
+				this.line++;
+				this.col = 1;
+				this.lineStart = this.pos;
 			} else {
 				break;
 			}
@@ -26402,23 +26685,6 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			}
 			return this.nextToken();
 		}
-		if(c == 10) {
-			this.pos++;
-			this.line++;
-			this.col = 1;
-			this.lineStart = this.pos;
-			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APNewLine,startLine,startCol);
-		}
-		if(c == 13) {
-			this.pos++;
-			if(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 10) {
-				this.pos++;
-			}
-			this.line++;
-			this.col = 1;
-			this.lineStart = this.pos;
-			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APNewLine,startLine,startCol);
-		}
 		if(c == 33 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 61) {
 			this.pos += 2;
 			this.col += 2;
@@ -26433,6 +26699,16 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			this.pos += 2;
 			this.col += 2;
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APDoubleDot,startLine,startCol);
+		}
+		if(c == 62 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 61) {
+			this.pos += 2;
+			this.col += 2;
+			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APGreaterEq,startLine,startCol);
+		}
+		if(c == 60 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 61) {
+			this.pos += 2;
+			this.col += 2;
+			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APLessEq,startLine,startCol);
 		}
 		switch(c) {
 		case 40:
@@ -26455,6 +26731,18 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			this.pos++;
 			this.col++;
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APSemiColon,startLine,startCol);
+		case 60:
+			this.pos++;
+			this.col++;
+			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APLess,startLine,startCol);
+		case 61:
+			this.pos++;
+			this.col++;
+			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APEquals,startLine,startCol);
+		case 62:
+			this.pos++;
+			this.col++;
+			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APGreater,startLine,startCol);
 		case 64:
 			this.pos++;
 			this.col++;
@@ -26517,6 +26805,13 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			}
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APIdentifier(buf_b,null,bh_stateanim_APIdentifierType.AITQuotedString),startLine,startCol);
 		}
+		if(c == 45) {
+			if(!(this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) >= 48 && HxOverrides.cca(this.src,this.pos + 1) <= 57)) {
+				this.pos++;
+				this.col++;
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APMinus,startLine,startCol);
+			}
+		}
 		if(c >= 48 && c <= 57 || c == 45 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) >= 48 && HxOverrides.cca(this.src,this.pos + 1) <= 57) {
 			var start = this.pos;
 			if(c == 45) {
@@ -26527,9 +26822,110 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 				this.pos++;
 				this.col++;
 			}
+			if(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 46 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) >= 48 && HxOverrides.cca(this.src,this.pos + 1) <= 57) {
+				this.pos++;
+				this.col++;
+				while(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) >= 48 && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) <= 57) {
+					this.pos++;
+					this.col++;
+				}
+			}
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APNumber(StringTools.replace(this.src.substring(start,this.pos),"_","")),startLine,startCol);
 		}
-		if(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 95 || c == 64 || c == 35 || c == 33 || c == 36) {
+		if(c == 35) {
+			this.pos++;
+			this.col++;
+			var hexStart = this.pos;
+			while(true) {
+				var tmp;
+				if(this.pos < this.len) {
+					var c1 = this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1;
+					tmp = c1 >= 48 && c1 <= 57 || c1 >= 97 && c1 <= 102 || c1 >= 65 && c1 <= 70;
+				} else {
+					tmp = false;
+				}
+				if(!tmp) {
+					break;
+				}
+				this.pos++;
+				this.col++;
+			}
+			var hexStr = this.src.substring(hexStart,this.pos);
+			if(hexStr.length == 3) {
+				var s = "0x" + hexStr.charAt(0) + hexStr.charAt(0);
+				var r;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					r = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var s = "0x" + hexStr.charAt(1) + hexStr.charAt(1);
+				var g;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					g = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var s = "0x" + hexStr.charAt(2) + hexStr.charAt(2);
+				var b;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					b = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(r << 16 | g << 8 | b),startLine,startCol);
+			} else if(hexStr.length == 6) {
+				var s = "0x" + hexStr;
+				var tmp;
+				var tmp1 = Std.parseInt(s);
+				if(tmp1 != null) {
+					tmp = tmp1;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(tmp),startLine,startCol);
+			} else if(hexStr.length == 8) {
+				var s = "0x" + hexStr.substring(0,2);
+				var rr;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					rr = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var s = "0x" + hexStr.substring(2,4);
+				var gg;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					gg = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var s = "0x" + hexStr.substring(4,6);
+				var bb;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					bb = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var s = "0x" + hexStr.substring(6,8);
+				var aa;
+				var tmp = Std.parseInt(s);
+				if(tmp != null) {
+					aa = tmp;
+				} else {
+					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(aa << 24 | rr << 16 | gg << 8 | bb),startLine,startCol);
+			} else {
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APIdentifier("#" + hexStr,null,bh_stateanim_APIdentifierType.AITString),startLine,startCol);
+			}
+		}
+		if(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 95 || c == 36) {
 			var start = this.pos;
 			this.pos++;
 			this.col++;
@@ -26559,9 +26955,11 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 };
 var bh_stateanim_MetadataValue = $hxEnums["bh.stateanim.MetadataValue"] = { __ename__:true,__constructs__:null
 	,MVInt: ($_=function(i) { return {_hx_index:0,i:i,__enum__:"bh.stateanim.MetadataValue",toString:$estr}; },$_._hx_name="MVInt",$_.__params__ = ["i"],$_)
-	,MVString: ($_=function(s) { return {_hx_index:1,s:s,__enum__:"bh.stateanim.MetadataValue",toString:$estr}; },$_._hx_name="MVString",$_.__params__ = ["s"],$_)
+	,MVFloat: ($_=function(f) { return {_hx_index:1,f:f,__enum__:"bh.stateanim.MetadataValue",toString:$estr}; },$_._hx_name="MVFloat",$_.__params__ = ["f"],$_)
+	,MVString: ($_=function(s) { return {_hx_index:2,s:s,__enum__:"bh.stateanim.MetadataValue",toString:$estr}; },$_._hx_name="MVString",$_.__params__ = ["s"],$_)
+	,MVColor: ($_=function(c) { return {_hx_index:3,c:c,__enum__:"bh.stateanim.MetadataValue",toString:$estr}; },$_._hx_name="MVColor",$_.__params__ = ["c"],$_)
 };
-bh_stateanim_MetadataValue.__constructs__ = [bh_stateanim_MetadataValue.MVInt,bh_stateanim_MetadataValue.MVString];
+bh_stateanim_MetadataValue.__constructs__ = [bh_stateanim_MetadataValue.MVInt,bh_stateanim_MetadataValue.MVFloat,bh_stateanim_MetadataValue.MVString,bh_stateanim_MetadataValue.MVColor];
 bh_stateanim_MetadataValue.__empty_constructs__ = [];
 var bh_stateanim_AnimMetadata = function(metadata) {
 	this.metadata = metadata;
@@ -26576,8 +26974,9 @@ var bh_stateanim_AnimPlaylistFrames = $hxEnums["bh.stateanim.AnimPlaylistFrames"
 	,SheetFrameAnimWithIndex: ($_=function(name,from,to,durationMilliseconds) { return {_hx_index:1,name:name,from:from,to:to,durationMilliseconds:durationMilliseconds,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="SheetFrameAnimWithIndex",$_.__params__ = ["name","from","to","durationMilliseconds"],$_)
 	,FileSingleFrame: ($_=function(filename,durationMilliseconds) { return {_hx_index:2,filename:filename,durationMilliseconds:durationMilliseconds,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="FileSingleFrame",$_.__params__ = ["filename","durationMilliseconds"],$_)
 	,PlaylistEvent: ($_=function(playlistEvent) { return {_hx_index:3,playlistEvent:playlistEvent,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="PlaylistEvent",$_.__params__ = ["playlistEvent"],$_)
+	,PlaylistEventData: ($_=function(name,meta) { return {_hx_index:4,name:name,meta:meta,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="PlaylistEventData",$_.__params__ = ["name","meta"],$_)
 };
-bh_stateanim_AnimPlaylistFrames.__constructs__ = [bh_stateanim_AnimPlaylistFrames.SheetFrameAnim,bh_stateanim_AnimPlaylistFrames.SheetFrameAnimWithIndex,bh_stateanim_AnimPlaylistFrames.FileSingleFrame,bh_stateanim_AnimPlaylistFrames.PlaylistEvent];
+bh_stateanim_AnimPlaylistFrames.__constructs__ = [bh_stateanim_AnimPlaylistFrames.SheetFrameAnim,bh_stateanim_AnimPlaylistFrames.SheetFrameAnimWithIndex,bh_stateanim_AnimPlaylistFrames.FileSingleFrame,bh_stateanim_AnimPlaylistFrames.PlaylistEvent,bh_stateanim_AnimPlaylistFrames.PlaylistEventData];
 bh_stateanim_AnimPlaylistFrames.__empty_constructs__ = [];
 var bh_stateanim_ExtraPointsHelper = function() { };
 $hxClasses["bh.stateanim.ExtraPointsHelper"] = bh_stateanim_ExtraPointsHelper;
@@ -26621,6 +27020,9 @@ bh_stateanim_AnimParserResult.prototype = {
 };
 var bh_stateanim_AnimParser = function(tokens,sourceName,resourceLoader) {
 	this.cache = new haxe_ds_StringMap();
+	this.defaultLoop = null;
+	this.defaultFps = null;
+	this.constants = new haxe_ds_StringMap();
 	this.metadata = null;
 	this.metadataMap = new haxe_ds_StringMap();
 	this.center = null;
@@ -26657,7 +27059,7 @@ bh_stateanim_AnimParser.parseString = function(content,sourceName,resourceLoader
 		return p;
 	} catch( _g ) {
 		var e = haxe_Exception.caught(_g);
-		haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 500, className : "bh.stateanim.AnimParser", methodName : "parseString"});
+		haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 643, className : "bh.stateanim.AnimParser", methodName : "parseString"});
 		throw haxe_Exception.thrown(e);
 	}
 };
@@ -26724,6 +27126,40 @@ bh_stateanim_AnimParser.matchConditionalValue = function(condValue,runtimeValue)
 	case 2:
 		var inner = condValue.inner;
 		return !bh_stateanim_AnimParser.matchConditionalValue(inner,runtimeValue);
+	case 3:
+		var op = condValue.op;
+		var cmpVal = condValue.value;
+		var numRuntime = parseFloat(runtimeValue);
+		var numCmp = parseFloat(cmpVal);
+		if(isNaN(numRuntime) || isNaN(numCmp)) {
+			return false;
+		} else {
+			switch(op._hx_index) {
+			case 0:
+				return numRuntime >= numCmp;
+			case 1:
+				return numRuntime <= numCmp;
+			case 2:
+				return numRuntime > numCmp;
+			case 3:
+				return numRuntime < numCmp;
+			}
+		}
+		break;
+	case 4:
+		var minVal = condValue.min;
+		var maxVal = condValue.max;
+		var numRuntime = parseFloat(runtimeValue);
+		var numMin = parseFloat(minVal);
+		var numMax = parseFloat(maxVal);
+		if(isNaN(numRuntime) || isNaN(numMin) || isNaN(numMax)) {
+			return false;
+		} else if(numRuntime >= numMin) {
+			return numRuntime <= numMax;
+		} else {
+			return false;
+		}
+		break;
 	}
 };
 bh_stateanim_AnimParser.countStateMatch = function(match,selector) {
@@ -26806,7 +27242,15 @@ bh_stateanim_AnimParser.findBestStateMatch = function(items,stateSelector,ambigu
 	return best;
 };
 bh_stateanim_AnimParser.prototype = {
-	advance: function() {
+	peekAt: function(offset) {
+		var idx = this.tpos + offset;
+		if(idx < this.tokens.length) {
+			return this.tokens[idx].type;
+		} else {
+			return bh_stateanim_APToken.APEof;
+		}
+	}
+	,advance: function() {
 		var t = this.tokens[this.tpos];
 		if(this.tpos < this.tokens.length - 1) {
 			this.tpos++;
@@ -26826,9 +27270,6 @@ bh_stateanim_AnimParser.prototype = {
 		}
 		return false;
 	}
-	,skipNewlines: function() {
-		while(Type.enumEq(this.tokens[this.tpos].type,bh_stateanim_APToken.APNewLine)) this.advance();
-	}
 	,curPos: function() {
 		var t = this.tokens[this.tpos];
 		return new bh_base_ParsePosition(this.sourceName,t.line,t.col);
@@ -26836,13 +27277,13 @@ bh_stateanim_AnimParser.prototype = {
 	,syntaxError: function(error,pos) {
 		var p = pos != null ? pos : this.curPos();
 		var err = new bh_stateanim_InvalidSyntax(error,p);
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 471, className : "bh.stateanim.AnimParser", methodName : "syntaxError"});
+		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 614, className : "bh.stateanim.AnimParser", methodName : "syntaxError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,unexpectedError: function(message) {
 		var tmp = message;
 		var err = new bh_stateanim_AnimUnexpected(this.tokens[this.tpos].type,this.curPos(),tmp != null ? tmp : "unexpected");
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 477, className : "bh.stateanim.AnimParser", methodName : "unexpectedError"});
+		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 620, className : "bh.stateanim.AnimParser", methodName : "unexpectedError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,parse: function() {
@@ -26865,7 +27306,6 @@ bh_stateanim_AnimParser.prototype = {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
 							var value = this.expectIdentifier();
-							this.expectNewline();
 							if(animationParsingStarted) {
 								this.syntaxError("sheet must be defined before animations");
 							}
@@ -26920,10 +27360,39 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
+					case 7:
+						if(_g3._hx_index == 0) {
+							this.advance();
+							this.expect(bh_stateanim_APToken.APColon);
+							if(animationParsingStarted) {
+								this.syntaxError("file-level loop default must be before animations");
+							}
+							this.defaultLoop = this.parseLoopValue();
+						} else {
+							this.unexpectedError();
+						}
+						break;
 					case 8:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							animationParsingStarted = true;
+							var headerName = null;
+							var _g4 = this.tokens[this.tpos].type;
+							var _g5 = this.peekAt(1);
+							if(_g4._hx_index == 7) {
+								var _g6 = _g4.s;
+								var _g7 = _g4.keyword;
+								if(_g4.identType._hx_index == 0) {
+									switch(_g5._hx_index) {
+									case 9:case 13:
+										var s = _g6;
+										this.advance();
+										headerName = s;
+										break;
+									default:
+									}
+								}
+							}
 							var animationStates = this.parseStates();
 							var h = animationStates.h;
 							var _g_h = h;
@@ -26940,12 +27409,34 @@ bh_stateanim_AnimParser.prototype = {
 							}
 							this.expect(bh_stateanim_APToken.APCurlyOpen);
 							var startOfAnim = this.curPos();
-							var parsedAnim = this.parseAnimation(this.definedStates,animationStates,this.allowedExtraPoints);
-							if(parsedAnim.fps == null) {
-								this.syntaxError("fps expected",startOfAnim);
+							var parsedAnim = this.parseAnimation(this.definedStates,animationStates,this.allowedExtraPoints,headerName);
+							var tmp = parsedAnim.fps;
+							var animFps = tmp != null ? tmp : this.defaultFps;
+							if(animFps == null) {
+								this.syntaxError("fps expected (set fps in animation body or as file-level default)",startOfAnim);
 							}
-							var anim = { states : animationStates, name : parsedAnim.name, loop : parsedAnim.loop, fps : parsedAnim.fps, extraPoint : parsedAnim.extraPoints, playlist : parsedAnim.playlist};
+							var tmp1 = parsedAnim.loop;
+							var anim = { states : animationStates, name : parsedAnim.name, loop : tmp1 != null ? tmp1 : this.defaultLoop, fps : animFps, extraPoint : parsedAnim.extraPoints, playlist : parsedAnim.playlist, filters : parsedAnim.filters};
 							this.animations.push(anim);
+						} else {
+							this.unexpectedError();
+						}
+						break;
+					case 10:
+						if(_g3._hx_index == 0) {
+							this.advance();
+							this.expect(bh_stateanim_APToken.APColon);
+							if(animationParsingStarted) {
+								this.syntaxError("file-level fps default must be before animations");
+							}
+							if(this.defaultFps != null) {
+								this.syntaxError("default fps already set");
+							}
+							var parsedDefaultFps = this.parseIntNumber();
+							if(parsedDefaultFps <= 0) {
+								this.syntaxError("default fps must be greater than 0");
+							}
+							this.defaultFps = parsedDefaultFps;
 						} else {
 							this.unexpectedError();
 						}
@@ -26965,13 +27456,47 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
+					case 16:
+						if(_g3._hx_index == 0) {
+							this.advance();
+							animationParsingStarted = true;
+							this.parseAnimShorthand();
+						} else {
+							this.unexpectedError();
+						}
+						break;
 					default:
 						this.unexpectedError();
 					}
 				}
 				break;
-			case 12:
+			case 13:
 				this.advance();
+				var _g8 = this.tokens[this.tpos].type;
+				if(_g8._hx_index == 7) {
+					var _g9 = _g8.s;
+					var _g10 = _g8.keyword;
+					var _g11 = _g8.identType;
+					if(_g10 == null) {
+						this.unexpectedError("expected 'final' after @");
+					} else if(_g10._hx_index == 17) {
+						this.advance();
+						if(animationParsingStarted) {
+							this.syntaxError("@final must be declared before animations");
+						}
+						var constName = this.expectIdentifier();
+						this.expect(bh_stateanim_APToken.APEquals);
+						var constVal = this.parseConstantExpr();
+						if(Object.prototype.hasOwnProperty.call(this.constants.h,constName)) {
+							this.syntaxError("@final \"" + constName + "\" already defined");
+						}
+						this.constants.h[constName] = constVal;
+					} else {
+						this.unexpectedError("expected 'final' after @");
+					}
+				} else {
+					this.unexpectedError("expected 'final' after @");
+				}
 				break;
 			default:
 				this.unexpectedError();
@@ -26992,7 +27517,7 @@ bh_stateanim_AnimParser.prototype = {
 		}
 		var allStates = this.createAllStates(this.definedStates);
 		if(allStates.length > 50) {
-			haxe_Log.trace("Warning: large number of states in AnimParser: " + allStates.length + "}",{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 586, className : "bh.stateanim.AnimParser", methodName : "parse"});
+			haxe_Log.trace("Warning: large number of states in AnimParser: " + allStates.length + "}",{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 769, className : "bh.stateanim.AnimParser", methodName : "parse"});
 		}
 		var _g = 0;
 		while(_g < allStates.length) {
@@ -27088,47 +27613,109 @@ bh_stateanim_AnimParser.prototype = {
 			return this.syntaxError("expected identifier, got " + Std.string(this.tokens[this.tpos].type));
 		}
 	}
-	,expectNewline: function() {
-		switch(this.tokens[this.tpos].type._hx_index) {
-		case 0:
-			break;
-		case 12:
-			this.advance();
-			break;
-		default:
-			this.syntaxError("expected newline, got " + Std.string(this.tokens[this.tpos].type));
-		}
-	}
-	,parseCoordinates: function() {
+	,parseIntNumber: function() {
 		var _g = this.tokens[this.tpos].type;
 		if(_g._hx_index == 6) {
-			var x = _g.s;
+			var s = _g.s;
 			this.advance();
-			this.expect(bh_stateanim_APToken.APComma);
-			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 6) {
-				var y = _g.s;
-				this.advance();
-				var _g;
-				var tmp = Std.parseInt(x);
-				if(tmp != null) {
-					_g = tmp;
-				} else {
-					throw haxe_Exception.thrown("expected integer, got \"" + x + "\"");
-				}
-				var tmp = Std.parseInt(y);
-				var tmp1;
-				if(tmp != null) {
-					tmp1 = tmp;
-				} else {
-					throw haxe_Exception.thrown("expected integer, got \"" + y + "\"");
-				}
-				return new bh_base_Point(_g,tmp1);
+			var tmp = Std.parseInt(s);
+			if(tmp != null) {
+				return tmp;
 			} else {
-				return this.unexpectedError("expected y coordinate");
+				return this.syntaxError("expected integer, got \"" + s + "\"");
 			}
 		} else {
-			return this.unexpectedError("expected coordinates");
+			return this.unexpectedError("expected integer number");
+		}
+	}
+	,parseConstantExpr: function() {
+		var isNeg = this.match(bh_stateanim_APToken.APMinus);
+		var _g = this.tokens[this.tpos].type;
+		switch(_g._hx_index) {
+		case 6:
+			var s = _g.s;
+			this.advance();
+			var f = parseFloat(s);
+			if(isNeg) {
+				return -f;
+			} else {
+				return f;
+			}
+			break;
+		case 7:
+			var _g1 = _g.keyword;
+			if(_g.identType._hx_index == 0) {
+				var s = _g.s;
+				if(s.charAt(0) == "$") {
+					this.advance();
+					var refName = s.substring(1);
+					var cv = this.constants.h[refName];
+					if(cv == null) {
+						var tmp = "constant \"" + refName + "\" not defined. Defined constants: ";
+						var _g = [];
+						var h = this.constants.h;
+						var k_h = h;
+						var k_keys = Object.keys(h);
+						var k_length = k_keys.length;
+						var k_current = 0;
+						while(k_current < k_length) {
+							var k = k_keys[k_current++];
+							_g.push(k);
+						}
+						this.syntaxError(tmp + Std.string(_g));
+					}
+					if(isNeg) {
+						return -cv;
+					} else {
+						return cv;
+					}
+				} else {
+					return this.unexpectedError("expected number or $constant");
+				}
+			} else {
+				return this.unexpectedError("expected number or $constant");
+			}
+			break;
+		default:
+			return this.unexpectedError("expected number or $constant");
+		}
+	}
+	,parseIntCoord: function() {
+		return this.parseConstantExpr() | 0;
+	}
+	,parseCoordinates: function() {
+		var x = this.parseIntCoord();
+		this.expect(bh_stateanim_APToken.APComma);
+		var y = this.parseIntCoord();
+		return new bh_base_Point(x,y);
+	}
+	,parseLoopValue: function() {
+		var _g = this.tokens[this.tpos].type;
+		switch(_g._hx_index) {
+		case 6:
+			var number = _g.s;
+			this.advance();
+			var cnt = Std.parseInt(number);
+			if(cnt == null || cnt <= 0) {
+				this.syntaxError("loop counter must be greater than 0");
+			}
+			return cnt;
+		case 7:
+			var _g1 = _g.keyword;
+			var _g1 = _g.identType;
+			switch(_g.s) {
+			case "false":case "no":
+				this.advance();
+				return null;
+			case "true":case "yes":
+				this.advance();
+				return -1;
+			default:
+				return this.unexpectedError("expected loop value (yes/no/true/false/number)");
+			}
+			break;
+		default:
+			return this.unexpectedError("expected loop value (yes/no/true/false/number)");
 		}
 	}
 	,parseAllStates: function() {
@@ -27169,61 +27756,139 @@ bh_stateanim_AnimParser.prototype = {
 	}
 	,parseStates: function() {
 		var states = new haxe_ds_StringMap();
-		while(true) {
-			this.skipNewlines();
-			if(this.tokens[this.tpos].type._hx_index == 14) {
+		while(true) if(this.tokens[this.tpos].type._hx_index == 13) {
+			this.advance();
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 1:
 				this.advance();
-				this.expect(bh_stateanim_APToken.APOpen);
 				this.parseConditionalState(states);
-			} else {
-				return states;
+				break;
+			case 7:
+				var _g1 = _g.s;
+				var _g2 = _g.keyword;
+				var _g3 = _g.identType;
+				if(_g2 == null) {
+					return this.unexpectedError("expected (, else, or default after @");
+				} else {
+					switch(_g2._hx_index) {
+					case 18:
+						this.advance();
+						if(this.match(bh_stateanim_APToken.APOpen)) {
+							var elseStates = new haxe_ds_StringMap();
+							this.parseConditionalState(elseStates);
+							return elseStates;
+						}
+						return new haxe_ds_StringMap();
+					case 19:
+						this.advance();
+						return new haxe_ds_StringMap();
+					default:
+						return this.unexpectedError("expected (, else, or default after @");
+					}
+				}
+				break;
+			default:
+				return this.unexpectedError("expected (, else, or default after @");
 			}
+		} else {
+			return states;
 		}
 	}
 	,parseConditionalState: function(states) {
 		var stateName = this.expectIdentifier();
-		var negated = false;
+		var condValue;
 		switch(this.tokens[this.tpos].type._hx_index) {
+		case 14:
+			this.advance();
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 6:
+				var v = _g.s;
+				this.advance();
+				if(this.match(bh_stateanim_APToken.APDoubleDot)) {
+					var val2 = this.expectIdentifier();
+					condValue = bh_stateanim_AnimConditionalValue.ACVRange(v,val2);
+				} else {
+					condValue = bh_stateanim_AnimConditionalValue.ACVSingle(v);
+				}
+				break;
+			case 7:
+				var _g1 = _g.s;
+				var _g2 = _g.keyword;
+				switch(_g.identType._hx_index) {
+				case 0:case 2:
+					var v = _g1;
+					this.advance();
+					if(this.match(bh_stateanim_APToken.APDoubleDot)) {
+						var val2 = this.expectIdentifier();
+						condValue = bh_stateanim_AnimConditionalValue.ACVRange(v,val2);
+					} else {
+						condValue = bh_stateanim_AnimConditionalValue.ACVSingle(v);
+					}
+					break;
+				default:
+					condValue = this.syntaxError("Expected value, [values], or range after =>");
+				}
+				break;
+			case 11:
+				this.advance();
+				condValue = bh_stateanim_AnimConditionalValue.ACVMulti(this.parseConditionalValueList());
+				break;
+			default:
+				condValue = this.syntaxError("Expected value, [values], or range after =>");
+			}
+			break;
 		case 15:
 			this.advance();
+			var innerVal;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 6:
+				var value = _g.s;
+				this.advance();
+				innerVal = bh_stateanim_AnimConditionalValue.ACVSingle(value);
+				break;
+			case 7:
+				var _g1 = _g.s;
+				var _g2 = _g.keyword;
+				switch(_g.identType._hx_index) {
+				case 0:case 2:
+					var value = _g1;
+					this.advance();
+					innerVal = bh_stateanim_AnimConditionalValue.ACVSingle(value);
+					break;
+				default:
+					innerVal = this.syntaxError("Expected value or [values] after !=");
+				}
+				break;
+			case 11:
+				this.advance();
+				innerVal = bh_stateanim_AnimConditionalValue.ACVMulti(this.parseConditionalValueList());
+				break;
+			default:
+				innerVal = this.syntaxError("Expected value or [values] after !=");
+			}
+			condValue = bh_stateanim_AnimConditionalValue.ACVNot(innerVal);
 			break;
 		case 16:
 			this.advance();
-			negated = true;
+			condValue = bh_stateanim_AnimConditionalValue.ACVCompare(bh_stateanim_AnimCompareOp.ACmpGt,this.expectIdentifier());
+			break;
+		case 17:
+			this.advance();
+			condValue = bh_stateanim_AnimConditionalValue.ACVCompare(bh_stateanim_AnimCompareOp.ACmpLt,this.expectIdentifier());
+			break;
+		case 18:
+			this.advance();
+			condValue = bh_stateanim_AnimConditionalValue.ACVCompare(bh_stateanim_AnimCompareOp.ACmpGte,this.expectIdentifier());
+			break;
+		case 19:
+			this.advance();
+			condValue = bh_stateanim_AnimConditionalValue.ACVCompare(bh_stateanim_AnimCompareOp.ACmpLte,this.expectIdentifier());
 			break;
 		default:
-			this.unexpectedError("Expected => or !=");
-		}
-		var condValue;
-		var _g = this.tokens[this.tpos].type;
-		switch(_g._hx_index) {
-		case 6:
-			var value = _g.s;
-			this.advance();
-			condValue = bh_stateanim_AnimConditionalValue.ACVSingle(value);
-			break;
-		case 7:
-			var _g1 = _g.s;
-			var _g2 = _g.keyword;
-			switch(_g.identType._hx_index) {
-			case 0:case 2:
-				var value = _g1;
-				this.advance();
-				condValue = bh_stateanim_AnimConditionalValue.ACVSingle(value);
-				break;
-			default:
-				condValue = this.syntaxError("Expected value or [values]");
-			}
-			break;
-		case 11:
-			this.advance();
-			condValue = bh_stateanim_AnimConditionalValue.ACVMulti(this.parseConditionalValueList());
-			break;
-		default:
-			condValue = this.syntaxError("Expected value or [values]");
-		}
-		if(negated) {
-			condValue = bh_stateanim_AnimConditionalValue.ACVNot(condValue);
+			condValue = this.syntaxError("Expected =>, !=, >=, <=, >, or < in conditional");
 		}
 		this.expect(bh_stateanim_APToken.APClosed);
 		states.h[stateName] = condValue;
@@ -27266,33 +27931,27 @@ bh_stateanim_AnimParser.prototype = {
 		}
 	}
 	,parseMetadata: function() {
-		while(true) {
-			this.skipNewlines();
-			if(this.match(bh_stateanim_APToken.APCurlyClosed)) {
-				break;
-			}
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
 			var states = this.parseStates();
 			var key = this.expectIdentifier();
 			this.expect(bh_stateanim_APToken.APColon);
+			var entryValue;
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
 			case 6:
 				var numStr = _g.s;
 				this.advance();
-				var tmp = Std.parseInt(numStr);
-				var entry;
-				if(tmp != null) {
-					entry = tmp;
+				if(numStr.indexOf(".") != -1) {
+					entryValue = bh_stateanim_MetadataValue.MVFloat(parseFloat(numStr));
 				} else {
-					throw haxe_Exception.thrown("expected integer, got \"" + numStr + "\"");
-				}
-				var entry1 = { states : states, value : bh_stateanim_MetadataValue.MVInt(entry)};
-				var existing = this.metadataMap.h[key];
-				if(existing != null) {
-					existing.push(entry1);
-				} else {
-					var v = [entry1];
-					this.metadataMap.h[key] = v;
+					var tmp = Std.parseInt(numStr);
+					var entryValue1;
+					if(tmp != null) {
+						entryValue1 = tmp;
+					} else {
+						throw haxe_Exception.thrown("expected integer, got \"" + numStr + "\"");
+					}
+					entryValue = bh_stateanim_MetadataValue.MVInt(entryValue1);
 				}
 				break;
 			case 7:
@@ -27300,28 +27959,34 @@ bh_stateanim_AnimParser.prototype = {
 				if(_g.identType._hx_index == 2) {
 					var strVal = _g.s;
 					this.advance();
-					var entry2 = { states : states, value : bh_stateanim_MetadataValue.MVString(strVal)};
-					var existing1 = this.metadataMap.h[key];
-					if(existing1 != null) {
-						existing1.push(entry2);
-					} else {
-						var v1 = [entry2];
-						this.metadataMap.h[key] = v1;
-					}
+					entryValue = bh_stateanim_MetadataValue.MVString(strVal);
 				} else {
-					this.unexpectedError("Expected number or string value in metadata");
+					entryValue = this.unexpectedError("Expected number, string, or color value in metadata");
 				}
 				break;
+			case 20:
+				var c = _g.i;
+				this.advance();
+				entryValue = bh_stateanim_MetadataValue.MVColor(c);
+				break;
 			default:
-				this.unexpectedError("Expected number or string value in metadata");
+				entryValue = this.unexpectedError("Expected number, string, or color value in metadata");
+			}
+			var entry = { states : states, value : entryValue};
+			var existing = this.metadataMap.h[key];
+			if(existing != null) {
+				existing.push(entry);
+			} else {
+				var v = [entry];
+				this.metadataMap.h[key] = v;
 			}
 		}
 	}
-	,parseAnimation: function(statesDefinitions,animationStates,allowedExtraPointsList) {
+	,parseAnimation: function(statesDefinitions,animationStates,allowedExtraPointsList,headerName) {
 		var extraPoints = new haxe_ds_StringMap();
-		var ret = { loop : null, name : null, fps : null, extraPoints : extraPoints, playlist : []};
+		var filters = [];
+		var ret = { loop : null, name : headerName, fps : null, extraPoints : extraPoints, playlist : [], filters : filters};
 		_hx_loop1: while(true) {
-			this.skipNewlines();
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
 			case 7:
@@ -27376,52 +28041,8 @@ bh_stateanim_AnimParser.prototype = {
 					case 7:
 						if(_g3._hx_index == 0) {
 							this.advance();
-							switch(this.tokens[this.tpos].type._hx_index) {
-							case 4:
-								this.advance();
-								var _g4 = this.tokens[this.tpos].type;
-								switch(_g4._hx_index) {
-								case 6:
-									var number = _g4.s;
-									this.advance();
-									var cnt;
-									var tmp = Std.parseInt(number);
-									if(tmp != null) {
-										cnt = tmp;
-									} else {
-										throw haxe_Exception.thrown("expected integer, got \"" + number + "\"");
-									}
-									if(cnt <= 0) {
-										this.syntaxError("loop counter must be greater than 0");
-									}
-									ret.loop = cnt;
-									break;
-								case 7:
-									var _g5 = _g4.keyword;
-									var _g6 = _g4.identType;
-									switch(_g4.s) {
-									case "false":case "no":
-										this.advance();
-										ret.loop = null;
-										break;
-									case "true":case "yes":
-										this.advance();
-										ret.loop = -1;
-										break;
-									default:
-										this.syntaxError("unknown loop value " + Std.string(this.tokens[this.tpos].type));
-									}
-									break;
-								default:
-									this.syntaxError("unknown loop value " + Std.string(this.tokens[this.tpos].type));
-								}
-								break;
-							case 12:
-								ret.loop = -1;
-								break;
-							default:
-								this.unexpectedError();
-							}
+							this.expect(bh_stateanim_APToken.APColon);
+							ret.loop = this.parseLoopValue();
 						} else {
 							this.unexpectedError();
 						}
@@ -27430,7 +28051,11 @@ bh_stateanim_AnimParser.prototype = {
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
-							ret.name = this.expectIdentifier();
+							var bodyName = this.expectIdentifier();
+							if(ret.name != null && ret.name != bodyName) {
+								this.syntaxError("animation name \"" + ret.name + "\" (in header) conflicts with name: \"" + bodyName + "\" (in body)");
+							}
+							ret.name = bodyName;
 							if(this.animationNames.indexOf(ret.name) == -1) {
 								this.animationNames.push(ret.name);
 							}
@@ -27442,27 +28067,23 @@ bh_stateanim_AnimParser.prototype = {
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
-							var _g7 = this.tokens[this.tpos].type;
-							if(_g7._hx_index == 6) {
-								var number1 = _g7.s;
-								this.advance();
-								if(ret.fps != null) {
-									this.syntaxError("fps already set");
-								}
-								var tmp1 = Std.parseInt(number1);
-								var tmp2;
-								if(tmp1 != null) {
-									tmp2 = tmp1;
-								} else {
-									throw haxe_Exception.thrown("expected integer, got \"" + number1 + "\"");
-								}
-								ret.fps = tmp2;
-								if(ret.fps <= 0) {
-									this.syntaxError("fps must be greater than 0");
-								}
-							} else {
-								this.unexpectedError("expected fps number");
+							if(ret.fps != null) {
+								this.syntaxError("fps already set");
 							}
+							var parsedFps = this.parseIntNumber();
+							if(parsedFps <= 0) {
+								this.syntaxError("fps must be greater than 0");
+							}
+							ret.fps = parsedFps;
+						} else {
+							this.unexpectedError();
+						}
+						break;
+					case 20:
+						if(_g3._hx_index == 0) {
+							this.advance();
+							this.expect(bh_stateanim_APToken.APCurlyOpen);
+							ret.filters = this.parseFilterBlock();
 						} else {
 							this.unexpectedError();
 						}
@@ -27480,19 +28101,79 @@ bh_stateanim_AnimParser.prototype = {
 			}
 		}
 		if(ret.name == null) {
-			this.syntaxError("name not defined");
+			this.syntaxError("animation name not set (use 'animation name { }' or 'name:' inside body)");
+		}
+		if(this.animationNames.indexOf(ret.name) == -1) {
+			this.animationNames.push(ret.name);
 		}
 		if(ret.playlist.length == 0) {
 			this.syntaxError("animation requires playlist");
 		}
 		return ret;
 	}
-	,parseExtraPoints: function(statesDefinitions,animationStates,extraPoints,allowedExtraPointsList) {
-		while(true) {
-			this.skipNewlines();
-			if(this.match(bh_stateanim_APToken.APCurlyClosed)) {
-				break;
+	,parseAnimShorthand: function() {
+		var name = this.expectIdentifier();
+		var overrideFps = null;
+		var overrideLoop = null;
+		if(this.match(bh_stateanim_APToken.APOpen)) {
+			var first = true;
+			while(!this.match(bh_stateanim_APToken.APClosed)) {
+				if(!first) {
+					this.expect(bh_stateanim_APToken.APComma);
+				}
+				first = false;
+				var _g = this.tokens[this.tpos].type;
+				if(_g._hx_index == 7) {
+					var _g1 = _g.s;
+					var _g2 = _g.keyword;
+					var _g3 = _g.identType;
+					if(_g2 == null) {
+						this.unexpectedError("expected fps or loop modifier in anim shorthand");
+					} else {
+						switch(_g2._hx_index) {
+						case 7:
+							this.advance();
+							this.expect(bh_stateanim_APToken.APColon);
+							overrideLoop = this.parseLoopValue();
+							break;
+						case 10:
+							this.advance();
+							this.expect(bh_stateanim_APToken.APColon);
+							var fps = this.parseIntNumber();
+							if(fps <= 0) {
+								this.syntaxError("fps must be greater than 0");
+							}
+							overrideFps = fps;
+							break;
+						default:
+							this.unexpectedError("expected fps or loop modifier in anim shorthand");
+						}
+					}
+				} else {
+					this.unexpectedError("expected fps or loop modifier in anim shorthand");
+				}
 			}
+		}
+		this.expect(bh_stateanim_APToken.APColon);
+		var sheetStr = this.expectIdentifier();
+		var sheetPos = this.curPos();
+		this.validateSheetName(sheetStr,sheetPos);
+		var tmp = overrideFps;
+		var animFps = tmp != null ? tmp : this.defaultFps;
+		if(animFps == null) {
+			this.syntaxError("anim shorthand \"" + name + "\" requires fps (set in modifiers or file-level default)");
+		}
+		var tmp = overrideLoop;
+		var animLoop = tmp != null ? tmp : this.defaultLoop;
+		var playlist = { anims : [bh_stateanim_AnimPlaylistFrames.SheetFrameAnim(sheetStr,null)], states : new haxe_ds_StringMap()};
+		var anim = { states : new haxe_ds_StringMap(), name : name, loop : animLoop, fps : animFps, extraPoint : new haxe_ds_StringMap(), playlist : [playlist]};
+		if(this.animationNames.indexOf(name) == -1) {
+			this.animationNames.push(name);
+		}
+		this.animations.push(anim);
+	}
+	,parseExtraPoints: function(statesDefinitions,animationStates,extraPoints,allowedExtraPointsList) {
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
 			var states = this.parseStates();
 			var pointName = this.expectIdentifier();
 			this.expect(bh_stateanim_APToken.APColon);
@@ -27525,7 +28206,6 @@ bh_stateanim_AnimParser.prototype = {
 	}
 	,parseFrames: function(anims) {
 		while(true) {
-			this.skipNewlines();
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
 			case 7:
@@ -27541,74 +28221,70 @@ bh_stateanim_AnimParser.prototype = {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
 							var frameName = this.expectIdentifier();
+							var sheetPos = this.curPos();
+							this.validateSheetName(frameName,sheetPos);
 							this.match(bh_stateanim_APToken.APComma);
 							var start = null;
 							var end = null;
 							var duration = null;
 							var _g4 = this.tokens[this.tpos].type;
 							switch(_g4._hx_index) {
+							case 0:case 8:
+								break;
 							case 7:
 								var _g5 = _g4.s;
 								var _g6 = _g4.keyword;
+								var _g7 = _g4.identType;
 								if(_g6 == null) {
-									this.unexpectedError("expected frames, newline or }");
-								} else if(_g6._hx_index == 14) {
-									if(_g4.identType._hx_index == 0) {
-										this.advance();
-										this.expect(bh_stateanim_APToken.APColon);
-										var _g7 = this.tokens[this.tpos].type;
-										if(_g7._hx_index == 6) {
-											var startIndex = _g7.s;
+									duration = this.tryParseDuration();
+								} else {
+									switch(_g6._hx_index) {
+									case 0:case 1:case 11:
+										break;
+									case 14:
+										if(_g7._hx_index == 0) {
 											this.advance();
-											var startN;
-											var tmp = Std.parseInt(startIndex);
-											if(tmp != null) {
-												startN = tmp;
-											} else {
-												throw haxe_Exception.thrown("expected integer, got \"" + startIndex + "\"");
-											}
-											start = startN;
-											this.expect(bh_stateanim_APToken.APDoubleDot);
+											this.expect(bh_stateanim_APToken.APColon);
 											var _g8 = this.tokens[this.tpos].type;
 											if(_g8._hx_index == 6) {
-												var endIndex = _g8.s;
+												var startIndex = _g8.s;
 												this.advance();
-												var endN;
-												var tmp1 = Std.parseInt(endIndex);
-												if(tmp1 != null) {
-													endN = tmp1;
+												var tmp = Std.parseInt(startIndex);
+												var startN = tmp != null ? tmp : 0;
+												start = startN;
+												this.expect(bh_stateanim_APToken.APDoubleDot);
+												var _g9 = this.tokens[this.tpos].type;
+												if(_g9._hx_index == 6) {
+													var endIndex = _g9.s;
+													this.advance();
+													var tmp1 = Std.parseInt(endIndex);
+													var endN = tmp1 != null ? tmp1 : 0;
+													end = endN;
+													if(startN < 0) {
+														this.syntaxError("frame index must be non-negative, was " + startN);
+													}
+													if(endN < 0) {
+														this.syntaxError("frame index must be non-negative, was " + endN);
+													}
 												} else {
-													throw haxe_Exception.thrown("expected integer, got \"" + endIndex + "\"");
-												}
-												end = endN;
-												if(startN < 0) {
-													this.syntaxError("frame index must be non-negative, was " + startN);
-												}
-												if(endN < 0) {
-													this.syntaxError("frame index must be non-negative, was " + endN);
+													this.unexpectedError("expected end index");
 												}
 											} else {
-												this.unexpectedError("expected end index");
+												this.unexpectedError("expected start index");
 											}
+											this.match(bh_stateanim_APToken.APComma);
+											duration = this.tryParseDuration();
 										} else {
-											this.unexpectedError("expected start index");
+											duration = this.tryParseDuration();
 										}
-										this.match(bh_stateanim_APToken.APComma);
+										break;
+									default:
 										duration = this.tryParseDuration();
-									} else {
-										this.unexpectedError("expected frames, newline or }");
 									}
-								} else {
-									this.unexpectedError("expected frames, newline or }");
 								}
 								break;
-							case 8:
-								break;
-							case 12:
-								this.advance();
-								break;
 							default:
-								this.unexpectedError("expected frames, newline or }");
+								duration = this.tryParseDuration();
 							}
 							if(start == null && end == null) {
 								anims.push(bh_stateanim_AnimPlaylistFrames.SheetFrameAnim(frameName,duration));
@@ -27623,11 +28299,11 @@ bh_stateanim_AnimParser.prototype = {
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
-							var _g9 = this.tokens[this.tpos].type;
-							if(_g9._hx_index == 7) {
-								var _g10 = _g9.keyword;
-								if(_g9.identType._hx_index == 2) {
-									var frameFilename = _g9.s;
+							var _g10 = this.tokens[this.tpos].type;
+							if(_g10._hx_index == 7) {
+								var _g11 = _g10.keyword;
+								if(_g10.identType._hx_index == 2) {
+									var frameFilename = _g10.s;
 									this.advance();
 									var duration1 = this.tryParseDuration();
 									anims.push(bh_stateanim_AnimPlaylistFrames.FileSingleFrame(frameFilename,duration1));
@@ -27645,39 +28321,43 @@ bh_stateanim_AnimParser.prototype = {
 						if(_g3._hx_index == 0) {
 							this.advance();
 							var eventName = this.expectIdentifier();
-							var _g11 = this.tokens[this.tpos].type;
-							switch(_g11._hx_index) {
-							case 5:case 12:
+							var _g12 = this.tokens[this.tpos].type;
+							switch(_g12._hx_index) {
+							case 5:
 								this.advance();
 								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.Trigger(eventName)));
 								break;
 							case 6:
-								var _g12 = _g11.s;
+								var _g13 = _g12.s;
 								var p = this.parseCoordinates();
-								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.PointEvent(eventName,new h2d_col_IPoint(p.x,p.y))));
+								if(this.match(bh_stateanim_APToken.APCurlyOpen)) {
+									var meta = this.parseEventMeta();
+									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta));
+								} else {
+									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.PointEvent(eventName,new h2d_col_IPoint(p.x,p.y))));
+								}
 								break;
 							case 7:
-								var _g13 = _g11.s;
-								var _g14 = _g11.keyword;
-								if(_g14 == null) {
+								var _g14 = _g12.s;
+								var _g15 = _g12.keyword;
+								if(_g15 == null) {
 									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.Trigger(eventName)));
-								} else if(_g14._hx_index == 13) {
-									if(_g11.identType._hx_index == 0) {
+								} else if(_g15._hx_index == 13) {
+									if(_g12.identType._hx_index == 0) {
 										this.advance();
 										var p1 = this.parseCoordinates();
 										this.expect(bh_stateanim_APToken.APComma);
-										var _g15 = this.tokens[this.tpos].type;
-										if(_g15._hx_index == 6) {
-											var randomRadius = _g15.s;
+										var _g16 = this.tokens[this.tpos].type;
+										if(_g16._hx_index == 6) {
+											var randomRadius = _g16.s;
 											this.advance();
-											var r;
-											var tmp2 = Std.parseInt(randomRadius);
-											if(tmp2 != null) {
-												r = tmp2;
+											var r = parseFloat(randomRadius);
+											if(this.match(bh_stateanim_APToken.APCurlyOpen)) {
+												var meta1 = this.parseEventMeta();
+												anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta1));
 											} else {
-												throw haxe_Exception.thrown("expected integer, got \"" + randomRadius + "\"");
+												anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.RandomPointEvent(eventName,new h2d_col_IPoint(p1.x,p1.y),r)));
 											}
-											anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.RandomPointEvent(eventName,new h2d_col_IPoint(p1.x,p1.y),r)));
 										} else {
 											this.unexpectedError("expected radius");
 										}
@@ -27687,6 +28367,11 @@ bh_stateanim_AnimParser.prototype = {
 								} else {
 									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.Trigger(eventName)));
 								}
+								break;
+							case 9:
+								this.advance();
+								var meta2 = this.parseEventMeta();
+								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta2));
 								break;
 							default:
 								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.Trigger(eventName)));
@@ -27706,6 +28391,104 @@ bh_stateanim_AnimParser.prototype = {
 			default:
 				this.unexpectedError();
 			}
+		}
+	}
+	,parseEventMeta: function() {
+		var meta = new haxe_ds_StringMap();
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
+			var key = this.expectIdentifier();
+			var typeHint = null;
+			if(this.match(bh_stateanim_APToken.APColon)) {
+				typeHint = this.expectIdentifier();
+			}
+			this.expect(bh_stateanim_APToken.APArrow);
+			var val;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 6:
+				var s = _g.s;
+				this.advance();
+				if(typeHint == "float" || s.indexOf(".") != -1) {
+					val = bh_stateanim_MetadataValue.MVFloat(parseFloat(s));
+				} else {
+					var tmp = Std.parseInt(s);
+					var val1;
+					if(tmp != null) {
+						val1 = tmp;
+					} else {
+						throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+					}
+					val = bh_stateanim_MetadataValue.MVInt(val1);
+				}
+				break;
+			case 7:
+				var _g1 = _g.s;
+				var _g2 = _g.keyword;
+				if(_g.identType._hx_index == 2) {
+					var s1 = _g1;
+					this.advance();
+					val = bh_stateanim_MetadataValue.MVString(s1);
+				} else {
+					switch(_g1) {
+					case "false":case "true":
+						var b = this.expectIdentifier();
+						val = bh_stateanim_MetadataValue.MVInt(b == "true" ? 1 : 0);
+						break;
+					default:
+						val = this.unexpectedError("expected metadata value");
+					}
+				}
+				break;
+			case 20:
+				var c = _g.i;
+				this.advance();
+				val = bh_stateanim_MetadataValue.MVColor(c);
+				break;
+			default:
+				val = this.unexpectedError("expected metadata value");
+			}
+			meta.h[key] = val;
+			this.match(bh_stateanim_APToken.APComma);
+		}
+		return meta;
+	}
+	,parseFilterBlock: function() {
+		var filters = [];
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
+			var filterType = this.expectIdentifier();
+			this.expect(bh_stateanim_APToken.APColon);
+			var params = new haxe_ds_StringMap();
+			var v1 = this.parseFilterValue();
+			if(this.match(bh_stateanim_APToken.APArrow)) {
+				var v2 = this.parseFilterValue();
+				params.h["from"] = v1;
+				params.h["to"] = v2;
+			} else {
+				params.h["value"] = v1;
+			}
+			filters.push({ type : filterType, params : params});
+		}
+		return filters;
+	}
+	,parseFilterValue: function() {
+		var _g = this.tokens[this.tpos].type;
+		switch(_g._hx_index) {
+		case 6:
+			var n = _g.s;
+			this.advance();
+			return n;
+		case 7:
+			var _g1 = _g.keyword;
+			var _g1 = _g.identType;
+			var s = _g.s;
+			this.advance();
+			return s;
+		case 20:
+			var c = _g.i;
+			this.advance();
+			return "#" + StringTools.hex(c,6);
+		default:
+			return this.unexpectedError("expected filter value");
 		}
 	}
 	,tryParseDuration: function() {
@@ -27742,51 +28525,31 @@ bh_stateanim_AnimParser.prototype = {
 				if(_g1.s == "ms") {
 					if(_g1.identType._hx_index == 0) {
 						this.advance();
-						var d;
 						var tmp = Std.parseInt(duration);
-						if(tmp != null) {
-							d = tmp;
-						} else {
-							throw haxe_Exception.thrown("expected integer, got \"" + duration + "\"");
-						}
+						var d = tmp != null ? tmp : 0;
 						if(d <= 0) {
 							return this.syntaxError("duration must be greater than 0");
 						}
 						return d;
 					} else {
-						var d;
 						var tmp = Std.parseInt(duration);
-						if(tmp != null) {
-							d = tmp;
-						} else {
-							throw haxe_Exception.thrown("expected integer, got \"" + duration + "\"");
-						}
+						var d = tmp != null ? tmp : 0;
 						if(d <= 0) {
 							return this.syntaxError("duration must be greater than 0");
 						}
 						return d;
 					}
 				} else {
-					var d;
 					var tmp = Std.parseInt(duration);
-					if(tmp != null) {
-						d = tmp;
-					} else {
-						throw haxe_Exception.thrown("expected integer, got \"" + duration + "\"");
-					}
+					var d = tmp != null ? tmp : 0;
 					if(d <= 0) {
 						return this.syntaxError("duration must be greater than 0");
 					}
 					return d;
 				}
 			} else {
-				var d;
 				var tmp = Std.parseInt(duration);
-				if(tmp != null) {
-					d = tmp;
-				} else {
-					throw haxe_Exception.thrown("expected integer, got \"" + duration + "\"");
-				}
+				var d = tmp != null ? tmp : 0;
 				if(d <= 0) {
 					return this.syntaxError("duration must be greater than 0");
 				}
@@ -27799,14 +28562,8 @@ bh_stateanim_AnimParser.prototype = {
 				var durationStr = _g.s;
 				this.advance();
 				if(StringTools.endsWith(durationStr,"ms")) {
-					var s = durationStr.substring(0,durationStr.length - 2);
-					var d;
-					var tmp = Std.parseInt(s);
-					if(tmp != null) {
-						d = tmp;
-					} else {
-						throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
-					}
+					var tmp = Std.parseInt(durationStr.substring(0,durationStr.length - 2));
+					var d = tmp != null ? tmp : 0;
 					if(d <= 0) {
 						this.syntaxError("duration must be greater than 0");
 					}
@@ -27820,6 +28577,42 @@ bh_stateanim_AnimParser.prototype = {
 			break;
 		default:
 			return null;
+		}
+	}
+	,validateSheetName: function(name,pos) {
+		var i = 0;
+		while(i < name.length - 1) {
+			if(name.charAt(i) == "$" && name.charAt(i + 1) == "$") {
+				var closeIdx = name.indexOf("$",i + 2);
+				var oldStateName = closeIdx >= 0 ? name.substring(i + 2,closeIdx) : "state";
+				this.syntaxError("Sheet name \"" + name + "\" uses old $" + "state$" + " syntax. Use " + (" + oldStateName + " + " instead."),pos);
+			}
+			++i;
+		}
+		var j = 0;
+		while(j < name.length) if(name.charAt(j) == "$" && j + 1 < name.length && name.charAt(j + 1) == "{") {
+			var end = name.indexOf("}",j + 2);
+			if(end == -1) {
+				this.syntaxError("Unclosed $" + "{...} in sheet name \"" + name + "\"",pos);
+			}
+			var stateName = name.substring(j + 2,end);
+			if(!Object.prototype.hasOwnProperty.call(this.definedStates.h,stateName)) {
+				var tmp = "Unknown state \"" + stateName + "\" in sheet name \"" + name + "\". Defined states: [";
+				var _g = [];
+				var h = this.definedStates.h;
+				var k_h = h;
+				var k_keys = Object.keys(h);
+				var k_length = k_keys.length;
+				var k_current = 0;
+				while(k_current < k_length) {
+					var k = k_keys[k_current++];
+					_g.push(k);
+				}
+				this.syntaxError(tmp + _g.join(", ") + "]",pos);
+			}
+			j = end + 1;
+		} else {
+			++j;
 		}
 	}
 	,parserValidateState: function(animStates,name,value) {
@@ -27849,9 +28642,26 @@ bh_stateanim_AnimParser.prototype = {
 			var inner = value.inner;
 			this.parserValidateConditionalState(animStates,name,inner);
 			break;
+		case 3:
+			var _g = value.op;
+			var _g = value.value;
+			if(!Object.prototype.hasOwnProperty.call(animStates.h,name)) {
+				this.syntaxError("state \"" + name + "\" not defined");
+			}
+			break;
+		case 4:
+			var _g = value.min;
+			var _g = value.max;
+			if(!Object.prototype.hasOwnProperty.call(animStates.h,name)) {
+				this.syntaxError("state \"" + name + "\" not defined");
+			}
+			break;
 		}
 	}
 	,checkForUnreachableState: function(parentState,childState) {
+		if(bh_base_MapTools.count(childState) == 0) {
+			return true;
+		}
 		var h = childState.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -27946,7 +28756,8 @@ bh_stateanim_AnimParser.prototype = {
 				var _g_value = _g_h[key];
 				var key1 = _g_key;
 				var value = _g_value;
-				result = StringTools.replace(result,"$" + "$" + key1 + "$" + "$",value);
+				var pattern = "${" + key1 + "}";
+				result = StringTools.replace(result,pattern,value);
 			}
 			return result;
 		};
@@ -28030,6 +28841,44 @@ bh_stateanim_AnimParser.prototype = {
 			case 3:
 				var playlistEvent = frames.playlistEvent;
 				retVal.push(bh_stateanim_AnimationFrameState.Event(playlistEvent));
+				break;
+			case 4:
+				var name2 = frames.name;
+				var meta = frames.meta;
+				var strMeta = new haxe_ds_StringMap();
+				var h = meta.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current1 = 0;
+				while(_g_current1 < _g_length) {
+					var key = _g_keys[_g_current1++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var k = _g_key;
+					var v = _g_value;
+					var value;
+					switch(v._hx_index) {
+					case 0:
+						var i1 = v.i;
+						value = i1 == null ? "null" : "" + i1;
+						break;
+					case 1:
+						var f = v.f;
+						value = f == null ? "null" : "" + f;
+						break;
+					case 2:
+						var s = v.s;
+						value = s;
+						break;
+					case 3:
+						var c = v.c;
+						value = "#" + StringTools.hex(c,6);
+						break;
+					}
+					strMeta.h[k] = value;
+				}
+				retVal.push(bh_stateanim_AnimationFrameState.Event(bh_stateanim_AnimationPlaylistEvent.TriggerData(name2,strMeta)));
 				break;
 			}
 		}
@@ -28182,16 +29031,18 @@ bh_stateanim_AnimationFrame.prototype = {
 };
 var bh_stateanim_AnimationPlaylistEvent = $hxEnums["bh.stateanim.AnimationPlaylistEvent"] = { __ename__:true,__constructs__:null
 	,Trigger: ($_=function(data) { return {_hx_index:0,data:data,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="Trigger",$_.__params__ = ["data"],$_)
-	,PointEvent: ($_=function(name,point) { return {_hx_index:1,name:name,point:point,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="PointEvent",$_.__params__ = ["name","point"],$_)
-	,RandomPointEvent: ($_=function(name,point,randomRadius) { return {_hx_index:2,name:name,point:point,randomRadius:randomRadius,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="RandomPointEvent",$_.__params__ = ["name","point","randomRadius"],$_)
+	,TriggerData: ($_=function(name,meta) { return {_hx_index:1,name:name,meta:meta,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="TriggerData",$_.__params__ = ["name","meta"],$_)
+	,PointEvent: ($_=function(name,point) { return {_hx_index:2,name:name,point:point,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="PointEvent",$_.__params__ = ["name","point"],$_)
+	,RandomPointEvent: ($_=function(name,point,randomRadius) { return {_hx_index:3,name:name,point:point,randomRadius:randomRadius,__enum__:"bh.stateanim.AnimationPlaylistEvent",toString:$estr}; },$_._hx_name="RandomPointEvent",$_.__params__ = ["name","point","randomRadius"],$_)
 };
-bh_stateanim_AnimationPlaylistEvent.__constructs__ = [bh_stateanim_AnimationPlaylistEvent.Trigger,bh_stateanim_AnimationPlaylistEvent.PointEvent,bh_stateanim_AnimationPlaylistEvent.RandomPointEvent];
+bh_stateanim_AnimationPlaylistEvent.__constructs__ = [bh_stateanim_AnimationPlaylistEvent.Trigger,bh_stateanim_AnimationPlaylistEvent.TriggerData,bh_stateanim_AnimationPlaylistEvent.PointEvent,bh_stateanim_AnimationPlaylistEvent.RandomPointEvent];
 bh_stateanim_AnimationPlaylistEvent.__empty_constructs__ = [];
 var bh_stateanim_AnimationEvent = $hxEnums["bh.stateanim.AnimationEvent"] = { __ename__:true,__constructs__:null
 	,Trigger: ($_=function(data) { return {_hx_index:0,data:data,__enum__:"bh.stateanim.AnimationEvent",toString:$estr}; },$_._hx_name="Trigger",$_.__params__ = ["data"],$_)
-	,PointEvent: ($_=function(name,point) { return {_hx_index:1,name:name,point:point,__enum__:"bh.stateanim.AnimationEvent",toString:$estr}; },$_._hx_name="PointEvent",$_.__params__ = ["name","point"],$_)
+	,TriggerData: ($_=function(name,meta) { return {_hx_index:1,name:name,meta:meta,__enum__:"bh.stateanim.AnimationEvent",toString:$estr}; },$_._hx_name="TriggerData",$_.__params__ = ["name","meta"],$_)
+	,PointEvent: ($_=function(name,point) { return {_hx_index:2,name:name,point:point,__enum__:"bh.stateanim.AnimationEvent",toString:$estr}; },$_._hx_name="PointEvent",$_.__params__ = ["name","point"],$_)
 };
-bh_stateanim_AnimationEvent.__constructs__ = [bh_stateanim_AnimationEvent.Trigger,bh_stateanim_AnimationEvent.PointEvent];
+bh_stateanim_AnimationEvent.__constructs__ = [bh_stateanim_AnimationEvent.Trigger,bh_stateanim_AnimationEvent.TriggerData,bh_stateanim_AnimationEvent.PointEvent];
 bh_stateanim_AnimationEvent.__empty_constructs__ = [];
 var bh_stateanim_AnimationSM = function(selector,externallyDriven) {
 	if(externallyDriven == null) {
@@ -28342,11 +29193,16 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					break;
 				case 1:
 					var name1 = event.name;
-					var point = event.point;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name1,point));
+					var meta = event.meta;
+					this.onAnimationEvent(bh_stateanim_AnimationEvent.TriggerData(name1,meta));
 					break;
 				case 2:
 					var name2 = event.name;
+					var point = event.point;
+					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name2,point));
+					break;
+				case 3:
+					var name3 = event.name;
 					var point1 = event.point;
 					var randomRadius = event.randomRadius;
 					var randomAngle = this.randomFunc() * 2 * Math.PI;
@@ -28354,7 +29210,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					var randomPoint = new h2d_col_IPoint(point1.x,point1.y);
 					randomPoint.x += r * Math.cos(randomAngle) | 0;
 					randomPoint.y += r * Math.sin(randomAngle) | 0;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name2,randomPoint));
+					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name3,randomPoint));
 					break;
 				}
 				break;
@@ -104713,6 +105569,11 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				break;
 			case 1:
 				var name = event.name;
+				var meta = event.meta;
+				logEntry = "TriggerData: " + name + " " + (meta != null ? meta == null ? "null" : meta.toString() : "");
+				break;
+			case 2:
+				var name = event.name;
 				var point = event.point;
 				logEntry = "Event: " + name + " at (" + point.x + ", " + point.y + ")";
 				break;
@@ -107361,9 +108222,14 @@ screens_graphics_PixelsGraphicsDemoScreen.prototype = $extend(DemoScreenBase.pro
 	,__class__: screens_graphics_PixelsGraphicsDemoScreen
 });
 var screens_graphics_RichTextDemoScreen = function(screenManager,layers) {
-	this.msgIdx = 0;
-	this.messages = ["idle","combat","loot"];
-	this.msgTimer = 0;
+	this.popupTimer = 0;
+	this.popupText = null;
+	this.equipIdx = 0;
+	this.equips = ["sword","shield","empty"];
+	this.questIdx = 0;
+	this.quests = ["accepted","progress","complete"];
+	this.equipTimer = 0;
+	this.questTimer = 0;
 	this.dmgTimer = 0;
 	DemoScreenBase.call(this,screenManager,layers);
 };
@@ -107372,13 +108238,15 @@ screens_graphics_RichTextDemoScreen.__name__ = "screens.graphics.RichTextDemoScr
 screens_graphics_RichTextDemoScreen.__super__ = DemoScreenBase;
 screens_graphics_RichTextDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Rich Text","Native markup with named styles, inline colors, font switching, and images");
+		var _gthis = this;
+		this.setupDemo("Rich Text","BBCode markup with named styles, inline images, alignment, drop shadow, spacing, and hyperlinks");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/graphics/rich-text.manim",false);
 		var tmp = this.demoBuilder;
 		var _g = new haxe_ds_StringMap();
 		_g.h["dmg"] = 3;
 		_g.h["dmgColor"] = -48060;
-		_g.h["msg"] = "idle";
+		_g.h["quest"] = "accepted";
+		_g.h["equip"] = "sword";
 		this.result = tmp.buildWithParameters("richTextShowcase",_g,null,null,true);
 		var _this = this.result.object;
 		_this.posChanged = true;
@@ -107386,6 +108254,36 @@ screens_graphics_RichTextDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		_this.posChanged = true;
 		_this.y = 80;
 		this.addBuilderResult(this.result);
+		if(this.result.htmlTextsWithLinks != null) {
+			var _g = 0;
+			var _g1 = this.result.htmlTextsWithLinks;
+			while(_g < _g1.length) {
+				var ht = _g1[_g];
+				++_g;
+				ht.onHyperlink = function(url) {
+					_gthis.showPopup("Clicked: " + url);
+				};
+			}
+		}
+	}
+	,showPopup: function(msg) {
+		if(this.popupText != null) {
+			var _this = this.popupText;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
+		var font = hxd_res_DefaultFont.get();
+		this.popupText = new h2d_Text(font);
+		this.popupText.set_text(msg);
+		this.popupText.set_textColor(4521983);
+		var _this = this.popupText;
+		_this.posChanged = true;
+		_this.x = 690;
+		_this.posChanged = true;
+		_this.y = 840;
+		this.result.object.addChild(this.popupText);
+		this.popupTimer = 2.0;
 	}
 	,dmgToColor: function(dmg) {
 		switch(dmg) {
@@ -107406,6 +108304,18 @@ screens_graphics_RichTextDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		if(this.result == null) {
 			return;
 		}
+		if(this.popupText != null) {
+			this.popupTimer -= dt;
+			if(this.popupTimer <= 0) {
+				var _this = this.popupText;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+				this.popupText = null;
+			} else if(this.popupTimer < 0.5) {
+				this.popupText.alpha = this.popupTimer / 0.5;
+			}
+		}
 		this.dmgTimer += dt;
 		if(this.dmgTimer >= 0.8) {
 			this.dmgTimer = 0;
@@ -107415,17 +108325,30 @@ screens_graphics_RichTextDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			this.result.setParameter("dmgColor",this.dmgToColor(dmg));
 			this.result.endUpdate();
 		}
-		this.msgTimer += dt;
-		if(this.msgTimer >= 2.0) {
-			this.msgTimer = 0;
-			this.msgIdx = (this.msgIdx + 1) % this.messages.length;
-			this.result.setParameter("msg",this.messages[this.msgIdx]);
+		this.questTimer += dt;
+		if(this.questTimer >= 2.0) {
+			this.questTimer = 0;
+			this.questIdx = (this.questIdx + 1) % this.quests.length;
+			this.result.setParameter("quest",this.quests[this.questIdx]);
+		}
+		this.equipTimer += dt;
+		if(this.equipTimer >= 1.5) {
+			this.equipTimer = 0;
+			this.equipIdx = (this.equipIdx + 1) % this.equips.length;
+			this.result.setParameter("equip",this.equips[this.equipIdx]);
 		}
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
 		this.result = null;
+		if(this.popupText != null) {
+			var _this = this.popupText;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.popupText = null;
+		}
 	}
 	,__class__: screens_graphics_RichTextDemoScreen
 });
@@ -110649,6 +111572,11 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	_g.h["random"] = bh_stateanim_APKeywords.APRandom;
 	_g.h["frames"] = bh_stateanim_APKeywords.APFrames;
 	_g.h["metadata"] = bh_stateanim_APKeywords.APMetadata;
+	_g.h["anim"] = bh_stateanim_APKeywords.APAnim;
+	_g.h["final"] = bh_stateanim_APKeywords.APFinal;
+	_g.h["else"] = bh_stateanim_APKeywords.APElse;
+	_g.h["default"] = bh_stateanim_APKeywords.APDefault;
+	_g.h["filters"] = bh_stateanim_APKeywords.APFilters;
 	$r = _g;
 	return $r;
 }(this));

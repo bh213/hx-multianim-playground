@@ -3,13 +3,11 @@ allowedExtraPoints: ["line_TR", "line_BR", "line_TL", "line_BL"]
 states: direction(l, r)
 center: 32,48
 
-
-animation {
-    name: idle_0
+animation idle_0 {
     fps: 4
     loop: yes
     playlist {
-        sheet: "shield_$$direction$$_layer0"
+        sheet: "shield_${direction}_layer0"
     }
     extrapoints {
         line_TR: 8, -16
@@ -19,24 +17,18 @@ animation {
     }
 }
 
-
-animation {
-    name: impact
+animation impact {
     fps: 10
     loop: yes
     playlist {
-        sheet: "shield_$$direction$$_layer2_impact fast"
+        sheet: "shield_${direction}_layer2_impact fast"
     }
 }
 
-animation {
-    name: idle_1
+animation idle_1 {
     fps: 10
     loop: yes
     playlist {
-        sheet: "shield_$$direction$$_layer1"
+        sheet: "shield_${direction}_layer1"
     }
 }
-
-
-

@@ -345,6 +345,7 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		anim.onAnimationEvent = function(event) {
 			var logEntry = switch (event) {
 				case Trigger(data): 'Trigger: $data';
+				case TriggerData(name, meta): 'TriggerData: $name ${meta != null ? Std.string(meta) : ""}';
 				case PointEvent(name, point): 'Event: $name at (${point.x}, ${point.y})';
 			};
 			addEventLogEntry(logEntry);

@@ -1,0 +1,99 @@
+version: 0.5
+
+// Tab 4: Filters — Showcasing all .anim filter types applied to state animations
+
+#filtersUI programmable() {
+
+    // Reference (no filter)
+    text(exo2_14, ".anim Filter Types", #7fdbda): 0, 0
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 18
+
+    text(m6x11, "No Filter", #888888): 10, 28
+    bitmap(generated(color(64, 64, #222233))): 10, 42
+    #filterNone stateanim("marine.anim", "idle", direction=>"r"): 42, 90
+
+    // Row 1: tint, brightness, saturate, grayscale
+    text(m6x11, "tint: #FF4444", #888888): 120, 28
+    bitmap(generated(color(64, 64, #222233))): 120, 42
+    #filterTint stateanim("marine.anim", "idle", direction=>"r"): 152, 90
+
+    text(m6x11, "brightness: 1.5", #888888): 230, 28
+    bitmap(generated(color(64, 64, #222233))): 230, 42
+    #filterBrightness stateanim("marine.anim", "idle", direction=>"r"): 262, 90
+
+    text(m6x11, "saturate: 0.0", #888888): 340, 28
+    bitmap(generated(color(64, 64, #222233))): 340, 42
+    #filterSaturate stateanim("marine.anim", "idle", direction=>"r"): 372, 90
+
+    text(m6x11, "grayscale: 1.0", #888888): 450, 28
+    bitmap(generated(color(64, 64, #222233))): 450, 42
+    #filterGrayscale stateanim("marine.anim", "idle", direction=>"r"): 482, 90
+
+    // Row 2: hue, outline, pixelOutline, replaceColor
+    text(m6x11, "hue: 120", #888888): 10, 115
+    bitmap(generated(color(64, 64, #222233))): 10, 129
+    #filterHue stateanim("marine.anim", "idle", direction=>"r"): 42, 177
+
+    text(m6x11, "outline: 2, #FFFF00", #888888): 120, 115
+    bitmap(generated(color(64, 64, #222233))): 120, 129
+    #filterOutline stateanim("marine.anim", "idle", direction=>"r"): 152, 177
+
+    text(m6x11, "pixelOutline: #00FF00", #888888): 230, 115
+    bitmap(generated(color(64, 64, #222233))): 230, 129
+    #filterPixelOutline stateanim("marine.anim", "idle", direction=>"r"): 262, 177
+
+    text(m6x11, "replaceColor", #888888): 340, 115
+    bitmap(generated(color(64, 64, #222233))): 340, 129
+    #filterReplaceColor stateanim("marine.anim", "idle", direction=>"r"): 372, 177
+
+    // Row 3: combined examples
+    text(exo2_14, "Combined Filters", #7fdbda): 0, 205
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 223
+
+    text(m6x11, "tint + outline", #888888): 10, 233
+    bitmap(generated(color(64, 64, #222233))): 10, 247
+    #filterCombo1 stateanim("marine.anim", "idle", direction=>"r"): 42, 295
+
+    text(m6x11, "grayscale + pixelOutline", #888888): 150, 233
+    bitmap(generated(color(64, 64, #222233))): 150, 247
+    #filterCombo2 stateanim("marine.anim", "idle", direction=>"r"): 182, 295
+
+    text(m6x11, "hue + brightness", #888888): 310, 233
+    bitmap(generated(color(64, 64, #222233))): 310, 247
+    #filterCombo3 stateanim("marine.anim", "idle", direction=>"r"): 342, 295
+
+    // Row 4: per-frame filter blinking
+    text(exo2_14, "Per-frame Filters (Blinking)", #7fdbda): 0, 320
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 338
+
+    text(m6x11, "outline blink", #888888): 10, 348
+    bitmap(generated(color(64, 64, #222233))): 10, 362
+    stateanim("marine-blink.anim", "outline-blink"): 42, 410
+
+    text(m6x11, "tint blink", #888888): 150, 348
+    bitmap(generated(color(64, 64, #222233))): 150, 362
+    stateanim("marine-blink.anim", "tint-blink"): 182, 410
+
+    text(m6x11, "brightness blink", #888888): 310, 348
+    bitmap(generated(color(64, 64, #222233))): 310, 362
+    stateanim("marine-blink.anim", "brightness-blink"): 342, 410
+
+    // .anim syntax reference
+    text(exo2_14, ".anim Syntax", #7fdbda): 0, 440
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 458
+
+    text(m6x11, "animation idle {", #aaaaaa): 10, 473
+    text(m6x11, "    filters {", #aaaaaa): 10, 485
+    text(m6x11, "        tint: #FF4444", #7fdbda): 10, 497
+    text(m6x11, "        brightness: 1.5", #7fdbda): 10, 509
+    text(m6x11, "        @(state >= 3) outline: 2, #FFFF00", #7fdbda): 10, 521
+    text(m6x11, "        @else pixelOutline: #00FF00", #7fdbda): 10, 533
+    text(m6x11, "    }", #aaaaaa): 10, 545
+    text(m6x11, "    playlist {", #aaaaaa): 10, 557
+    text(m6x11, "        filter tint: #FF0000", #ff7f50): 10, 569
+    text(m6x11, "        sheet: \"marine_r_idle\"", #aaaaaa): 10, 581
+    text(m6x11, "        filter none", #ff7f50): 10, 593
+    text(m6x11, "        sheet: \"marine_r_stand\"", #aaaaaa): 10, 605
+    text(m6x11, "    }", #aaaaaa): 10, 617
+    text(m6x11, "}", #aaaaaa): 10, 629
+}

@@ -9,22 +9,27 @@ import bh.ui.UIMultiAnimScrollableList;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.stateanim.AnimationSM;
+import bh.stateanim.AnimParser;
+import bh.stateanim.AnimParser.AnimFilterType;
 
 class StateAnimDemoScreen extends DemoScreenBase {
 	static final TAB_ITEMS:Array<UIElementListItem> = [
 		{name: "Gallery"},
 		{name: "Interactive"},
 		{name: "Points & Events"},
+		{name: "Filters"},
 	];
 	static final TAB_FILES = [
 		"demos/animation/state-anim-gallery.manim",
 		"demos/animation/state-anim-interactive.manim",
 		"demos/animation/state-anim-points.manim",
+		"demos/animation/state-anim-filters.manim",
 	];
 	static final TAB_DESCRIPTIONS = [
 		"All state animations from .anim files — marine, turret, shield, arrows with direction state selectors",
 		"Interactive control: select animation, adjust speed, toggle externally-driven mode, scrub with progress slider",
 		"Visualize extra points (fire, targeting, line_*) and animation events on live animations",
+		"Filter types: tint, brightness, saturate, grayscale, hue, outline, pixelOutline, replaceColor — applied to state animations",
 	];
 
 	static final MARINE_ANIMS = [
@@ -105,6 +110,9 @@ class StateAnimDemoScreen extends DemoScreenBase {
 	var ptsCurrentSource:Int = 0; // 0=marine, 1=shield, 2=turret, 3=arrows
 	var ptsCurrentDir:Bool = false; // false=right, true=left
 
+	// Tab 4: Filters
+	var filtersResult:Null<BuilderResult>;
+
 	override public function load():Void {
 		setupDemo("State Animations", "Interactive exploration of .anim state machine animations");
 
@@ -139,6 +147,8 @@ class StateAnimDemoScreen extends DemoScreenBase {
 					loadInteractiveTab();
 				case 2:
 					loadPointsTab();
+				case 3:
+					loadFiltersTab();
 			}
 		} catch (e) {
 			trace('Error loading tab $index: $e');
@@ -493,6 +503,74 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		}
 	}
 
+	// ---- Tab 4: Filters ----
+
+	function loadFiltersTab():Void {
+		var builder = screenManager.buildFromResourceName(TAB_FILES[3], false);
+		if (builder == null) return;
+		filtersResult = builder.buildWithParameters("filtersUI", []);
+		addBuilderResult(filtersResult);
+
+		// Apply filters to named state animations
+		applyAnimFilter("filterTint", AFTint(0xFF4444));
+		applyAnimFilter("filterBrightness", AFBrightness(1.5));
+		applyAnimFilter("filterSaturate", AFSaturate(0.0));
+		applyAnimFilter("filterGrayscale", AFGrayscale(1.0));
+		applyAnimFilter("filterHue", AFHue(120.0));
+		applyAnimFilter("filterOutline", AFOutline(2.0, 0xFFFF00));
+		applyAnimFilter("filterPixelOutline", AFPixelOutline(0x00FF00));
+		applyAnimFilter("filterReplaceColor", AFReplaceColor([0x5B6EE1, 0x3F3F74], [0xE15B5B, 0x743F3F]));
+
+		// Combined filter examples
+		applyAnimFilterCombo("filterCombo1", AFTint(0xFF6644), AFOutline(1.0, 0xFFFFFF));
+		applyAnimFilterCombo("filterCombo2", AFGrayscale(1.0), AFPixelOutline(0xFF0000));
+		applyAnimFilterCombo("filterCombo3", AFHue(60.0), AFBrightness(1.3));
+
+	}
+
+	function applyAnimFilter(name:String, filterType:AnimFilterType):Void {
+		if (filtersResult == null) return;
+		var item = filtersResult.getSingleItemByName(name);
+		if (item == null) return;
+		var anim:AnimationSM = item.asStateAnim();
+		switch filterType {
+			case AFTint(color):
+				var c = color;
+				if (c >>> 24 == 0) c |= 0xFF000000;
+				anim.clip.color.setColor(c);
+			default:
+				@:nullSafety(Off) anim.clip.filter = AnimParser.buildAnimFilter(filterType);
+		}
+	}
+
+	function applyAnimFilterCombo(name:String, filter1:AnimFilterType, filter2:AnimFilterType):Void {
+		if (filtersResult == null) return;
+		var item = filtersResult.getSingleItemByName(name);
+		if (item == null) return;
+		var anim:AnimationSM = item.asStateAnim();
+
+		var group = new h2d.filter.Group();
+		var hasFilter = false;
+
+		for (ft in [filter1, filter2]) {
+			switch ft {
+				case AFTint(color):
+					var c = color;
+					if (c >>> 24 == 0) c |= 0xFF000000;
+					anim.clip.color.setColor(c);
+				default:
+					var f = AnimParser.buildAnimFilter(ft);
+					if (f != null) {
+						group.add(f);
+						hasFilter = true;
+					}
+			}
+		}
+
+		if (hasFilter)
+			@:nullSafety(Off) anim.clip.filter = group;
+	}
+
 	// ---- Shared ----
 
 	function setUpdatable(result:Null<BuilderResult>, name:String, text:String):Void {
@@ -524,6 +602,7 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		if (ptsAnim != null && pointsGraphics != null) {
 			drawExtraPoints();
 		}
+
 	}
 
 	// ---- Event handling ----
@@ -619,6 +698,7 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		ptsSourceList = null;
 		ptsAnimList = null;
 		eventLog = [];
+		filtersResult = null;
 		super.onClear();
 	}
 }

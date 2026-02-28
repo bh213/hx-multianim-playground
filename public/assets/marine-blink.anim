@@ -1,0 +1,35 @@
+sheet: crew2
+center: 32,48
+
+animation outline-blink {
+    fps: 6
+    loop: yes
+    playlist {
+        filter outline: 1, #FFFF00
+        sheet: "marine_r_idle"
+        filter none
+        sheet: "marine_r_idle"
+    }
+}
+
+animation tint-blink {
+    fps: 10
+    loop: yes
+    playlist {
+        filter tint: #FF4444
+        sheet: "marine_r_idle"
+        filter none
+        sheet: "marine_r_idle"
+    }
+}
+
+animation brightness-blink {
+    fps: 16
+    loop: yes
+    playlist {
+        filter brightness: 1.8
+        sheet: "marine_r_idle"
+        filter none
+        sheet: "marine_r_idle"
+    }
+}

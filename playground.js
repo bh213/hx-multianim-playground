@@ -12352,7 +12352,7 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 	}
 	,parseParticles: function() {
-		var p = { count : null, loop : null, relative : null, emitDelay : null, emitSync : null, maxLife : null, lifeRandom : null, size : null, sizeRandom : null, blendMode : null, speed : null, speedRandom : null, speedIncrease : null, gravity : null, gravityAngle : null, fadeIn : null, fadeOut : null, fadePower : null, tiles : [], emit : bh_multianim_ParticlesEmitMode.Point(bh_multianim_ReferenceableValue.RVFloat(0),bh_multianim_ReferenceableValue.RVFloat(0)), rotationInitial : null, rotationSpeed : null, rotationSpeedRandom : null, rotateAuto : null, forwardAngle : null, colorCurves : null, colorStops : null, forceFields : null, velocityCurve : null, sizeCurve : null, boundsMode : null, boundsMinX : null, boundsMaxX : null, boundsMinY : null, boundsMaxY : null, boundsLines : null, subEmitters : null, animationRepeat : null, attachTo : null, spawnCurve : null, animFile : null, animSelector : null, animStates : null, animEventOverrides : null};
+		var p = { count : null, loop : null, relative : null, emitDelay : null, emitSync : null, maxLife : null, lifeRandom : null, size : null, sizeRandom : null, blendMode : null, speed : null, speedRandom : null, speedIncrease : null, gravity : null, gravityAngle : null, fadeIn : null, fadeOut : null, fadePower : null, tiles : [], emit : bh_multianim_ParticlesEmitMode.Point(bh_multianim_ReferenceableValue.RVFloat(0),bh_multianim_ReferenceableValue.RVFloat(0)), rotationInitial : null, rotationSpeed : null, rotationSpeedRandom : null, rotateAuto : null, forwardAngle : null, colorStops : null, forceFields : null, velocityCurve : null, sizeCurve : null, boundsMode : null, boundsMinX : null, boundsMaxX : null, boundsMinY : null, boundsMaxY : null, boundsLines : null, subEmitters : null, animationRepeat : null, attachTo : null, spawnCurve : null, animFile : null, animSelector : null, animStates : null, animEventOverrides : null};
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
@@ -12415,33 +12415,8 @@ bh_multianim_MacroManimParser.prototype = {
 			case "bounds":
 				this.parseBoundsCombined(p);
 				break;
-			case "boundsline":
-				var x1 = this.parseFloatOrReference();
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-				var y1 = this.parseFloatOrReference();
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-				var x2 = this.parseFloatOrReference();
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-				var y2 = this.parseFloatOrReference();
-				if(p.boundsLines == null) {
-					p.boundsLines = [];
-				}
-				p.boundsLines.push({ x1 : x1, y1 : y1, x2 : x2, y2 : y2});
-				break;
-			case "boundsmaxx":
-				p.boundsMaxX = this.parseFloatOrReference();
-				break;
-			case "boundsmaxy":
-				p.boundsMaxY = this.parseFloatOrReference();
-				break;
-			case "boundsminx":
-				p.boundsMinX = this.parseFloatOrReference();
-				break;
-			case "boundsminy":
-				p.boundsMinY = this.parseFloatOrReference();
-				break;
-			case "boundsmode":
-				p.boundsMode = this.parseBoundsMode();
+			case "boundsline":case "boundsmaxx":case "boundsmaxy":case "boundsminx":case "boundsminy":case "boundsmode":
+				this.error("legacy \"" + name + "\" syntax removed — use combined \"bounds: kill, box(x: 0, y: 0, w: 800, h: 600)\" instead");
 				break;
 			case "colorstops":
 				p.colorStops = this.parseColorStops();
@@ -12575,16 +12550,7 @@ bh_multianim_MacroManimParser.prototype = {
 			p.animStates.push({ atRate : atRate, animName : animName});
 			break;
 		case "colorcurve":
-			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-			var c = this.parseCurveNameOrEasing();
-			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-			var startColor = this.parseColorOrReference();
-			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-			var endColor = this.parseColorOrReference();
-			if(p.colorCurves == null) {
-				p.colorCurves = [];
-			}
-			p.colorCurves.push({ atRate : atRate, curveName : c.curveName, inlineEasing : c.inlineEasing, startColor : startColor, endColor : endColor});
+			this.error("legacy \"N.N: colorCurve:\" syntax removed — use \"colorStops: 0.0 #FF0000, 0.5 #00FF00 easeInQuad, 1.0 #0000FF\" instead");
 			break;
 		default:
 			this.error("unknown particle rate action: " + actionName);
@@ -12761,65 +12727,37 @@ bh_multianim_MacroManimParser.prototype = {
 			if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-				if(this.isNamedParamNext()) {
-					return this.parseEmitModeNamed("point");
+				if(!this.isNamedParamNext()) {
+					return this.error("positional emit syntax removed — use named params: point(dist: 0, distRand: 0)");
 				}
-				var dist = this.parseFloatOrReference();
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-				var distRand = this.parseFloatOrReference();
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-				return bh_multianim_ParticlesEmitMode.Point(dist,distRand);
+				return this.parseEmitModeNamed("point");
 			} else {
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"cone")) {
 					this.advance();
 					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-					if(this.isNamedParamNext()) {
-						return this.parseEmitModeNamed("cone");
+					if(!this.isNamedParamNext()) {
+						return this.error("positional emit syntax removed — use named params: cone(dist: 0, distRand: 0, angle: 0, angleSpread: 0)");
 					}
-					var dist = this.parseFloatOrReference();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-					var distRand = this.parseFloatOrReference();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-					var angle = this.parseAngleOrReference();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-					var angleRand = this.parseAngleOrReference();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-					return bh_multianim_ParticlesEmitMode.Cone(dist,distRand,angle,angleRand);
+					return this.parseEmitModeNamed("cone");
 				} else {
 					var s = _g1;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"box")) {
 						this.advance();
 						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-						if(this.isNamedParamNext()) {
-							return this.parseEmitModeNamed("box");
+						if(!this.isNamedParamNext()) {
+							return this.error("positional emit syntax removed — use named params: box(w: 0, h: 0, angle: 0, angleSpread: 0)");
 						}
-						var w = this.parseFloatOrReference();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-						var h = this.parseFloatOrReference();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-						var angle = this.parseAngleOrReference();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-						var angleRand = this.parseAngleOrReference();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-						return bh_multianim_ParticlesEmitMode.Box(w,h,angle,angleRand,false);
+						return this.parseEmitModeNamed("box");
 					} else {
 						var s = _g1;
 						if(bh_multianim_MacroManimParser.isKeyword(s,"circle")) {
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-							if(this.isNamedParamNext()) {
-								return this.parseEmitModeNamed("circle");
+							if(!this.isNamedParamNext()) {
+								return this.error("positional emit syntax removed — use named params: circle(r: 0, rRand: 0, angle: 0, angleSpread: 0)");
 							}
-							var r = this.parseFloatOrReference();
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-							var rRand = this.parseFloatOrReference();
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-							var angle = this.parseAngleOrReference();
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-							var angleRand = this.parseAngleOrReference();
-							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-							return bh_multianim_ParticlesEmitMode.Circle(r,rRand,angle,angleRand);
+							return this.parseEmitModeNamed("circle");
 						} else {
 							var s = _g1;
 							if(bh_multianim_MacroManimParser.isKeyword(s,"path")) {
@@ -22166,29 +22104,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(particlesDef.animationRepeat != null) {
 			group.animationRepeat = this.resolveAsNumber(particlesDef.animationRepeat);
 		}
-		if(particlesDef.colorCurves != null) {
-			group.colorEnabled = true;
-			var colorCurvesArray = particlesDef.colorCurves;
-			var _g = 0;
-			while(_g < colorCurvesArray.length) {
-				var cc = colorCurvesArray[_g];
-				++_g;
-				var curve;
-				if(cc.inlineEasing != null) {
-					curve = new bh_paths_Curve(null,cc.inlineEasing,null);
-				} else if(cc.curveName != null) {
-					var curves = this.getCurves();
-					var found = curves.h[cc.curveName];
-					if(found == null) {
-						throw haxe_Exception.thrown("color curve not found: " + cc.curveName + "");
-					}
-					curve = found;
-				} else {
-					throw haxe_Exception.thrown("color curve must have either curveName or inlineEasing");
-				}
-				group.addColorCurveSegment(this.resolveAsNumber(cc.atRate),curve,this.resolveAsColorInteger(cc.startColor),this.resolveAsColorInteger(cc.endColor));
-			}
-		}
 		if(particlesDef.colorStops != null) {
 			group.colorEnabled = true;
 			var stops = particlesDef.colorStops;
@@ -23419,7 +23334,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5315, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5294, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -23529,7 +23444,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5539, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5518, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -23563,7 +23478,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5555, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5534, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}

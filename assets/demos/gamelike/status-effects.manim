@@ -82,7 +82,7 @@ version: 0.5
 // Buff: sparkles drifting outward from card edges
 #buffSparkle particles {
     count: 10
-    emit: circle(36, 6, 0, 360)
+    emit: circle(r: 36, rRand: 6, angle: 0, angleSpread: 360deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 1.8
@@ -92,15 +92,14 @@ version: 0.5
     sizeRandom: 0.1
     fadeIn: 0.2
     fadeOut: 0.7
-    0.0: colorCurve: linear, #FFEE88, #88FFAA
-    0.5: colorCurve: linear, #88FFAA, #44CC4400
+    colorStops: 0.0 #FFEE88, 0.5 #88FFAA, 1.0 #44CC4400
     blendMode: add
 }
 
 // Debuff: wisps rising from card top
 #debuffSmoke particles {
     count: 8
-    emit: box(60, 2, 270, 20)
+    emit: box(w: 60, h: 2, angle: 270deg, angleSpread: 20deg)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 1.6
@@ -110,8 +109,7 @@ version: 0.5
     sizeRandom: 0.15
     fadeIn: 0.2
     fadeOut: 0.6
-    0.0: colorCurve: linear, #8844AA, #664488
-    0.5: colorCurve: linear, #664488, #44004400
+    colorStops: 0.0 #8844AA, 0.5 #664488, 1.0 #44004400
     blendMode: alpha
 }
 
@@ -119,7 +117,7 @@ version: 0.5
 #buffRefreshBurst particles {
     count: 40
     loop: false
-    emit: circle(24, 10, 0, 360)
+    emit: circle(r: 24, rRand: 10, angle: 0, angleSpread: 360deg)
     tiles: file("circle_soft.png")
     maxLife: 0.6
     speed: 100
@@ -128,8 +126,7 @@ version: 0.5
     sizeRandom: 0.2
     fadeIn: 0.05
     fadeOut: 0.6
-    0.0: colorCurve: linear, #FFFFFF, #FFEE44
-    0.3: colorCurve: linear, #FFEE44, #FF880000
+    colorStops: 0.0 #FFFFFF, 0.3 #FFEE44, 1.0 #FF880000
     blendMode: add
 }
 
@@ -137,7 +134,7 @@ version: 0.5
 #debuffRefreshBurst particles {
     count: 40
     loop: false
-    emit: circle(24, 10, 0, 360)
+    emit: circle(r: 24, rRand: 10, angle: 0, angleSpread: 360deg)
     tiles: file("circle_soft.png")
     maxLife: 0.6
     speed: 100
@@ -146,8 +143,7 @@ version: 0.5
     sizeRandom: 0.2
     fadeIn: 0.05
     fadeOut: 0.6
-    0.0: colorCurve: linear, #BB66DD, #8844AA
-    0.3: colorCurve: linear, #8844AA, #44004400
+    colorStops: 0.0 #BB66DD, 0.3 #8844AA, 1.0 #44004400
     blendMode: add
 }
 

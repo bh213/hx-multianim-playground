@@ -18,7 +18,7 @@ version: 0.5
 // ── Particle systems for slide 6 (top-level, managed by Haxe) ─
 #navFireworkLauncher particles {
     count: 6
-    emit: cone(0, 3, 270, 15)
+    emit: cone(dist: 0, distRand: 3, angle: 270deg, angleSpread: 15deg)
     tiles: file("circle_hard.png")
     loop: true
     maxLife: 1.0
@@ -26,18 +26,14 @@ version: 0.5
     speed: 90
     speedRandom: 0.3
     gravity: 60
-    gravityAngle: 90
+    gravityAngle: 90deg
     size: 0.35
     fadeIn: 0.0
     fadeOut: 0.8
-    0.0: colorCurve: linear, #FFFFFF, #FFFF88
+    colorStops: 0.0 #FFFFFF, 1.0 #FFFF88
     blendMode: add
     emitSync: 0.15
-    boundsMode: kill
-    boundsMinX: -260
-    boundsMaxX: 260
-    boundsMinY: -150
-    boundsMaxY: 75
+    bounds: kill, box(x: -260, y: -150, w: 520, h: 225)
     subEmitters: [{
         groupId: "navFireworkBurst"
         trigger: ondeath
@@ -48,7 +44,7 @@ version: 0.5
 
 #navFireworkBurst particles {
     count: 0
-    emit: point(0, 20)
+    emit: point(dist: 0, distRand: 20)
     tiles: file("star.png") file("dot.png")
     loop: false
     maxLife: 1.4
@@ -56,22 +52,16 @@ version: 0.5
     speed: 70
     speedRandom: 0.5
     gravity: 40
-    gravityAngle: 90
+    gravityAngle: 90deg
     size: 0.35
     sizeRandom: 0.3
     fadeIn: 0.0
     fadeOut: 0.5
-    0.0: colorCurve: linear, #FFFFFF, #88DDFF
-    0.3: colorCurve: linear, #88DDFF, #FF44AA
-    0.7: colorCurve: linear, #FF44AA, #4400AA
+    colorStops: 0.0 #FFFFFF, 0.3 #88DDFF, 0.7 #FF44AA, 1.0 #4400AA
     blendMode: add
-    rotationSpeed: 60
+    rotationSpeed: 60deg
     rotationSpeedRandom: 0.5
-    boundsMode: bounce(0.6)
-    boundsMinX: -260
-    boundsMaxX: 260
-    boundsMinY: -150
-    boundsMaxY: 75
+    bounds: bounce(0.6), box(x: -260, y: -150, w: 520, h: 225)
 }
 
 #carouselContent programmable(currentSlide:0..6=0, condValue:uint=50, condState:0..2=0, npW:uint=200, npH:uint=80) {

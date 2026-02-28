@@ -39,7 +39,7 @@ layouts {
 // Burst of sparks on firework death
 #fireworkBurst particles {
     count: 0
-    emit: point(0, 25)
+    emit: point(dist: 0, distRand: 25)
     tiles: file("star.png") file("dot.png")
     loop: false
     maxLife: 1.2
@@ -59,7 +59,7 @@ layouts {
 // Bouncing ball that spawns sparks on collision
 #bounceBall particles {
     count: 5
-    emit: point(0, 10)
+    emit: point(dist: 0, distRand: 10)
     tiles: file("circle_hard.png")
     loop: true
     maxLife: 5.0
@@ -84,7 +84,7 @@ layouts {
 // Sparks on bounce
 #bounceSparks particles {
     count: 0
-    emit: point(0, 8)
+    emit: point(dist: 0, distRand: 8)
     tiles: file("dot.png")
     loop: false
     maxLife: 0.5

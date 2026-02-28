@@ -11332,7 +11332,7 @@ bh_multianim_MacroManimParser.prototype = {
 												var s = _g1;
 												if(bh_multianim_MacroManimParser.isKeyword(s,"slot")) {
 													this.advance();
-													if(updatableName == null) {
+													if(updatableName._hx_index == 0 && updatableName.name == null) {
 														this.error("slot requires a #name prefix");
 													}
 													if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
@@ -11532,6 +11532,9 @@ bh_multianim_MacroManimParser.prototype = {
 																			this.advance();
 																			isTileGroup = true;
 																		}
+																	}
+																	if(updatableName._hx_index == 0 && updatableName.name == null) {
+																		this.error("programmable requires a #name prefix");
 																	}
 																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																	var parsed = this.parseDefines();
@@ -26604,9 +26607,11 @@ var bh_stateanim_APKeywords = $hxEnums["bh.stateanim.APKeywords"] = { __ename__:
 	,APElse: {_hx_name:"APElse",_hx_index:18,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APDefault: {_hx_name:"APDefault",_hx_index:19,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APFilters: {_hx_name:"APFilters",_hx_index:20,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFilter: {_hx_name:"APFilter",_hx_index:21,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APNone: {_hx_name:"APNone",_hx_index:22,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 };
-bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters];
-bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters];
+bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone];
+bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone];
 var bh_stateanim__$AnimParser_AnimToken = function(type,line,col) {
 	this.type = type;
 	this.line = line;
@@ -26975,9 +26980,23 @@ var bh_stateanim_AnimPlaylistFrames = $hxEnums["bh.stateanim.AnimPlaylistFrames"
 	,FileSingleFrame: ($_=function(filename,durationMilliseconds) { return {_hx_index:2,filename:filename,durationMilliseconds:durationMilliseconds,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="FileSingleFrame",$_.__params__ = ["filename","durationMilliseconds"],$_)
 	,PlaylistEvent: ($_=function(playlistEvent) { return {_hx_index:3,playlistEvent:playlistEvent,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="PlaylistEvent",$_.__params__ = ["playlistEvent"],$_)
 	,PlaylistEventData: ($_=function(name,meta) { return {_hx_index:4,name:name,meta:meta,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="PlaylistEventData",$_.__params__ = ["name","meta"],$_)
+	,PlaylistFilter: ($_=function(filter) { return {_hx_index:5,filter:filter,__enum__:"bh.stateanim.AnimPlaylistFrames",toString:$estr}; },$_._hx_name="PlaylistFilter",$_.__params__ = ["filter"],$_)
 };
-bh_stateanim_AnimPlaylistFrames.__constructs__ = [bh_stateanim_AnimPlaylistFrames.SheetFrameAnim,bh_stateanim_AnimPlaylistFrames.SheetFrameAnimWithIndex,bh_stateanim_AnimPlaylistFrames.FileSingleFrame,bh_stateanim_AnimPlaylistFrames.PlaylistEvent,bh_stateanim_AnimPlaylistFrames.PlaylistEventData];
+bh_stateanim_AnimPlaylistFrames.__constructs__ = [bh_stateanim_AnimPlaylistFrames.SheetFrameAnim,bh_stateanim_AnimPlaylistFrames.SheetFrameAnimWithIndex,bh_stateanim_AnimPlaylistFrames.FileSingleFrame,bh_stateanim_AnimPlaylistFrames.PlaylistEvent,bh_stateanim_AnimPlaylistFrames.PlaylistEventData,bh_stateanim_AnimPlaylistFrames.PlaylistFilter];
 bh_stateanim_AnimPlaylistFrames.__empty_constructs__ = [];
+var bh_stateanim_AnimFilterType = $hxEnums["bh.stateanim.AnimFilterType"] = { __ename__:true,__constructs__:null
+	,AFTint: ($_=function(color) { return {_hx_index:0,color:color,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFTint",$_.__params__ = ["color"],$_)
+	,AFBrightness: ($_=function(v) { return {_hx_index:1,v:v,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFBrightness",$_.__params__ = ["v"],$_)
+	,AFSaturate: ($_=function(v) { return {_hx_index:2,v:v,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFSaturate",$_.__params__ = ["v"],$_)
+	,AFGrayscale: ($_=function(v) { return {_hx_index:3,v:v,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFGrayscale",$_.__params__ = ["v"],$_)
+	,AFHue: ($_=function(v) { return {_hx_index:4,v:v,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFHue",$_.__params__ = ["v"],$_)
+	,AFOutline: ($_=function(size,color) { return {_hx_index:5,size:size,color:color,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFOutline",$_.__params__ = ["size","color"],$_)
+	,AFPixelOutline: ($_=function(color) { return {_hx_index:6,color:color,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFPixelOutline",$_.__params__ = ["color"],$_)
+	,AFReplaceColor: ($_=function(sourceColors,replacementColors) { return {_hx_index:7,sourceColors:sourceColors,replacementColors:replacementColors,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}; },$_._hx_name="AFReplaceColor",$_.__params__ = ["sourceColors","replacementColors"],$_)
+	,AFNone: {_hx_name:"AFNone",_hx_index:8,__enum__:"bh.stateanim.AnimFilterType",toString:$estr}
+};
+bh_stateanim_AnimFilterType.__constructs__ = [bh_stateanim_AnimFilterType.AFTint,bh_stateanim_AnimFilterType.AFBrightness,bh_stateanim_AnimFilterType.AFSaturate,bh_stateanim_AnimFilterType.AFGrayscale,bh_stateanim_AnimFilterType.AFHue,bh_stateanim_AnimFilterType.AFOutline,bh_stateanim_AnimFilterType.AFPixelOutline,bh_stateanim_AnimFilterType.AFReplaceColor,bh_stateanim_AnimFilterType.AFNone];
+bh_stateanim_AnimFilterType.__empty_constructs__ = [bh_stateanim_AnimFilterType.AFNone];
 var bh_stateanim_ExtraPointsHelper = function() { };
 $hxClasses["bh.stateanim.ExtraPointsHelper"] = bh_stateanim_ExtraPointsHelper;
 bh_stateanim_ExtraPointsHelper.__name__ = "bh.stateanim.ExtraPointsHelper";
@@ -27059,7 +27078,7 @@ bh_stateanim_AnimParser.parseString = function(content,sourceName,resourceLoader
 		return p;
 	} catch( _g ) {
 		var e = haxe_Exception.caught(_g);
-		haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 643, className : "bh.stateanim.AnimParser", methodName : "parseString"});
+		haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 663, className : "bh.stateanim.AnimParser", methodName : "parseString"});
 		throw haxe_Exception.thrown(e);
 	}
 };
@@ -27241,6 +27260,92 @@ bh_stateanim_AnimParser.findBestStateMatch = function(items,stateSelector,ambigu
 	}
 	return best;
 };
+bh_stateanim_AnimParser.buildAnimFilter = function(filter) {
+	switch(filter._hx_index) {
+	case 0:
+		var _g = filter.color;
+		return null;
+	case 1:
+		var v = filter.v;
+		var m = new h3d_MatrixImpl();
+		m.identity();
+		m.colorLightness(v);
+		return new h2d_filter_ColorMatrix(m);
+	case 2:
+		var v = filter.v;
+		var m = new h3d_MatrixImpl();
+		m.identity();
+		m.colorSaturate(v);
+		return new h2d_filter_ColorMatrix(m);
+	case 3:
+		var v = filter.v;
+		var m = new h3d_MatrixImpl();
+		m.identity();
+		m.colorSaturate(-v);
+		return new h2d_filter_ColorMatrix(m);
+	case 4:
+		var v = filter.v;
+		var m = new h3d_MatrixImpl();
+		m.identity();
+		m.colorHue(v);
+		return new h2d_filter_ColorMatrix(m);
+	case 5:
+		var size = filter.size;
+		var color = filter.color;
+		return new h2d_filter_Outline(size,color);
+	case 6:
+		var color = filter.color;
+		return new bh_base_filters_PixelOutline(bh_base_filters_PixelOutlineFilterMode.Knockout(color,1.0),false);
+	case 7:
+		var src = filter.sourceColors;
+		var dst = filter.replacementColors;
+		return bh_base_filters_ReplacePaletteShader.createAsColorsFilter(src,dst);
+	case 8:
+		return null;
+	}
+};
+bh_stateanim_AnimParser.resolveAnimFilters = function(filters,stateSelector) {
+	if(filters == null || filters.length == 0) {
+		return { filter : null, tintColor : null};
+	}
+	var tintColor = null;
+	var heapsFilters = [];
+	var _g = 0;
+	while(_g < filters.length) {
+		var entry = filters[_g];
+		++_g;
+		if(bh_stateanim_AnimParser.countStateMatch(entry.states,stateSelector) >= 0) {
+			var _g1 = entry.filter;
+			switch(_g1._hx_index) {
+			case 0:
+				var color = _g1.color;
+				tintColor = color;
+				break;
+			case 8:
+				break;
+			default:
+				var f = bh_stateanim_AnimParser.buildAnimFilter(entry.filter);
+				if(f != null) {
+					heapsFilters.push(f);
+				}
+			}
+		}
+	}
+	var filter = null;
+	if(heapsFilters.length == 1) {
+		filter = heapsFilters[0];
+	} else if(heapsFilters.length > 1) {
+		var group = new h2d_filter_Group();
+		var _g = 0;
+		while(_g < heapsFilters.length) {
+			var f = heapsFilters[_g];
+			++_g;
+			group.add(f);
+		}
+		filter = group;
+	}
+	return { filter : filter, tintColor : tintColor};
+};
 bh_stateanim_AnimParser.prototype = {
 	peekAt: function(offset) {
 		var idx = this.tpos + offset;
@@ -27277,13 +27382,13 @@ bh_stateanim_AnimParser.prototype = {
 	,syntaxError: function(error,pos) {
 		var p = pos != null ? pos : this.curPos();
 		var err = new bh_stateanim_InvalidSyntax(error,p);
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 614, className : "bh.stateanim.AnimParser", methodName : "syntaxError"});
+		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 634, className : "bh.stateanim.AnimParser", methodName : "syntaxError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,unexpectedError: function(message) {
 		var tmp = message;
 		var err = new bh_stateanim_AnimUnexpected(this.tokens[this.tpos].type,this.curPos(),tmp != null ? tmp : "unexpected");
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 620, className : "bh.stateanim.AnimParser", methodName : "unexpectedError"});
+		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 640, className : "bh.stateanim.AnimParser", methodName : "unexpectedError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,parse: function() {
@@ -27517,7 +27622,7 @@ bh_stateanim_AnimParser.prototype = {
 		}
 		var allStates = this.createAllStates(this.definedStates);
 		if(allStates.length > 50) {
-			haxe_Log.trace("Warning: large number of states in AnimParser: " + allStates.length + "}",{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 769, className : "bh.stateanim.AnimParser", methodName : "parse"});
+			haxe_Log.trace("Warning: large number of states in AnimParser: " + allStates.length + "}",{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 789, className : "bh.stateanim.AnimParser", methodName : "parse"});
 		}
 		var _g = 0;
 		while(_g < allStates.length) {
@@ -28083,7 +28188,7 @@ bh_stateanim_AnimParser.prototype = {
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APCurlyOpen);
-							ret.filters = this.parseFilterBlock();
+							ret.filters = this.parseFilterBlock(statesDefinitions,animationStates);
 						} else {
 							this.unexpectedError();
 						}
@@ -28239,8 +28344,6 @@ bh_stateanim_AnimParser.prototype = {
 									duration = this.tryParseDuration();
 								} else {
 									switch(_g6._hx_index) {
-									case 0:case 1:case 11:
-										break;
 									case 14:
 										if(_g7._hx_index == 0) {
 											this.advance();
@@ -28277,6 +28380,8 @@ bh_stateanim_AnimParser.prototype = {
 										} else {
 											duration = this.tryParseDuration();
 										}
+										break;
+									case 0:case 1:case 11:case 21:
 										break;
 									default:
 										duration = this.tryParseDuration();
@@ -28380,6 +28485,15 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
+					case 21:
+						if(_g3._hx_index == 0) {
+							this.advance();
+							var filter = this.parseFilterEntry();
+							anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistFilter(filter));
+						} else {
+							this.unexpectedError();
+						}
+						break;
 					default:
 						this.unexpectedError();
 					}
@@ -28452,44 +28566,110 @@ bh_stateanim_AnimParser.prototype = {
 		}
 		return meta;
 	}
-	,parseFilterBlock: function() {
+	,parseFilterBlock: function(statesDefinitions,animationStates) {
 		var filters = [];
 		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
-			var filterType = this.expectIdentifier();
-			this.expect(bh_stateanim_APToken.APColon);
-			var params = new haxe_ds_StringMap();
-			var v1 = this.parseFilterValue();
-			if(this.match(bh_stateanim_APToken.APArrow)) {
-				var v2 = this.parseFilterValue();
-				params.h["from"] = v1;
-				params.h["to"] = v2;
-			} else {
-				params.h["value"] = v1;
+			var states = this.parseStates();
+			var h = states.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				this.parserValidateConditionalState(statesDefinitions,key1,value);
 			}
-			filters.push({ type : filterType, params : params});
+			this.checkForUnreachableState(animationStates,states);
+			var filter = this.parseFilterEntry();
+			filters.push({ states : states, filter : filter});
 		}
 		return filters;
 	}
-	,parseFilterValue: function() {
+	,parseFilterEntry: function() {
+		var filterName = this.expectIdentifier();
+		switch(filterName) {
+		case "brightness":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFBrightness(this.expectFloat());
+		case "grayscale":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFGrayscale(this.expectFloat());
+		case "hue":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFHue(this.expectFloat());
+		case "none":
+			return bh_stateanim_AnimFilterType.AFNone;
+		case "outline":
+			this.expect(bh_stateanim_APToken.APColon);
+			var size = this.expectFloat();
+			this.expect(bh_stateanim_APToken.APComma);
+			var color = this.expectColor();
+			return bh_stateanim_AnimFilterType.AFOutline(size,color);
+		case "pixelOutline":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFPixelOutline(this.expectColor());
+		case "replaceColor":
+			this.expect(bh_stateanim_APToken.APColon);
+			var sourceColors = this.parseFilterColorList();
+			this.expect(bh_stateanim_APToken.APArrow);
+			var replacementColors = this.parseFilterColorList();
+			if(sourceColors.length != replacementColors.length) {
+				this.syntaxError("replaceColor: source and replacement color lists must have same length (" + sourceColors.length + " vs " + replacementColors.length + ")");
+			}
+			return bh_stateanim_AnimFilterType.AFReplaceColor(sourceColors,replacementColors);
+		case "saturate":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFSaturate(this.expectFloat());
+		case "tint":
+			this.expect(bh_stateanim_APToken.APColon);
+			return bh_stateanim_AnimFilterType.AFTint(this.expectColor());
+		default:
+			return this.syntaxError("unknown filter type: " + filterName);
+		}
+	}
+	,expectColor: function() {
 		var _g = this.tokens[this.tpos].type;
-		switch(_g._hx_index) {
-		case 6:
-			var n = _g.s;
-			this.advance();
-			return n;
-		case 7:
-			var _g1 = _g.keyword;
-			var _g1 = _g.identType;
-			var s = _g.s;
-			this.advance();
-			return s;
-		case 20:
+		if(_g._hx_index == 20) {
 			var c = _g.i;
 			this.advance();
-			return "#" + StringTools.hex(c,6);
-		default:
-			return this.unexpectedError("expected filter value");
+			return c;
+		} else {
+			return this.unexpectedError("expected color (#RRGGBB)");
 		}
+	}
+	,expectFloat: function() {
+		var negative = this.match(bh_stateanim_APToken.APMinus);
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 6) {
+			var n = _g.s;
+			this.advance();
+			var v = parseFloat(n);
+			if(negative) {
+				return -v;
+			} else {
+				return v;
+			}
+		} else {
+			return this.unexpectedError("expected number");
+		}
+	}
+	,parseFilterColorList: function() {
+		this.expect(bh_stateanim_APToken.APBracketOpen);
+		var colors = [];
+		while(!this.match(bh_stateanim_APToken.APBracketClosed)) {
+			if(colors.length > 0) {
+				this.expect(bh_stateanim_APToken.APComma);
+			}
+			colors.push(this.expectColor());
+		}
+		if(colors.length == 0) {
+			this.syntaxError("color list must not be empty");
+		}
+		return colors;
 	}
 	,tryParseDuration: function() {
 		var _g = this.tokens[this.tpos].type;
@@ -28880,6 +29060,18 @@ bh_stateanim_AnimParser.prototype = {
 				}
 				retVal.push(bh_stateanim_AnimationFrameState.Event(bh_stateanim_AnimationPlaylistEvent.TriggerData(name2,strMeta)));
 				break;
+			case 5:
+				var filterType = frames.filter;
+				var builtFilter = bh_stateanim_AnimParser.buildAnimFilter(filterType);
+				var tint;
+				if(filterType._hx_index == 0) {
+					var c1 = filterType.color;
+					tint = c1;
+				} else {
+					tint = null;
+				}
+				retVal.push(bh_stateanim_AnimationFrameState.SetFilter(builtFilter,tint));
+				break;
 			}
 		}
 		return retVal;
@@ -28945,7 +29137,8 @@ bh_stateanim_AnimParser.prototype = {
 				}
 				var tmp = anim.loop;
 				var loopCount = tmp != null ? tmp : 0;
-				cacheArray.push({ name : name, states : states, loopCount : loopCount, extraPoints : extraPoints});
+				var resolved = bh_stateanim_AnimParser.resolveAnimFilters(anim.filters,stateSelector);
+				cacheArray.push({ name : name, states : states, loopCount : loopCount, extraPoints : extraPoints, filter : resolved.filter, tintColor : resolved.tintColor});
 			}
 			this.cache.h[hex] = cacheArray;
 		}
@@ -28957,7 +29150,7 @@ bh_stateanim_AnimParser.prototype = {
 		while(_g < cacheEntries.length) {
 			var e = cacheEntries[_g];
 			++_g;
-			animSM.addAnimationState(e.name,e.states,e.loopCount,e.extraPoints);
+			animSM.addAnimationState(e.name,e.states,e.loopCount,e.extraPoints,e.filter,e.tintColor);
 		}
 	}
 	,createAnimSM: function(stateSelector) {
@@ -29089,11 +29282,11 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		}
 		return this.current.extraPoints.h[name];
 	}
-	,addAnimationState: function(name,states,loopCount,extraPoints) {
+	,addAnimationState: function(name,states,loopCount,extraPoints,filter,tintColor) {
 		if(Object.prototype.hasOwnProperty.call(this.animationStates.h,name)) {
 			throw haxe_Exception.thrown("animation state " + name + " already exists");
 		}
-		var animDesc = { name : name, states : states, loopCount : loopCount, extraPoints : extraPoints};
+		var animDesc = { name : name, states : states, loopCount : loopCount, extraPoints : extraPoints, filter : filter, tintColor : tintColor};
 		this.animationStates.h[name] = animDesc;
 	}
 	,play: function(name) {
@@ -29107,6 +29300,22 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		this.currentStateIndex = 0;
 		this.loopsRemaining = state.loopCount;
 		this.clip.setFrames([]);
+		this.clip.set_filter(state.filter);
+		var tc = state.tintColor;
+		if(tc != null) {
+			var _this = this.clip.color;
+			var c = tc | (tc >>> 24 == 0 ? -16777216 : 0);
+			_this.x = (c >> 16 & 255) / 255;
+			_this.y = (c >> 8 & 255) / 255;
+			_this.z = (c & 255) / 255;
+			_this.w = (c >>> 24) / 255;
+		} else {
+			var _this = this.clip.color;
+			_this.x = 1.;
+			_this.y = 1.;
+			_this.z = 1.;
+			_this.w = 1.;
+		}
 		this.handleCurrent(1e-10);
 	}
 	,isFinished: function() {
@@ -29214,6 +29423,44 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					break;
 				}
 				break;
+			case 2:
+				var filter = currentState.filter;
+				var tintColor = currentState.tintColor;
+				var _current = this.current;
+				if(filter != null) {
+					this.clip.set_filter(filter);
+				} else {
+					this.clip.set_filter(_current != null ? _current.filter : null);
+				}
+				if(tintColor != null) {
+					var tc = tintColor;
+					var _this = this.clip.color;
+					var c = tc | (tc >>> 24 == 0 ? -16777216 : 0);
+					_this.x = (c >> 16 & 255) / 255;
+					_this.y = (c >> 8 & 255) / 255;
+					_this.z = (c & 255) / 255;
+					_this.w = (c >>> 24) / 255;
+				} else {
+					var animTint = _current != null ? _current.tintColor : null;
+					if(animTint != null) {
+						var _this1 = this.clip.color;
+						var c1 = animTint | (animTint >>> 24 == 0 ? -16777216 : 0);
+						_this1.x = (c1 >> 16 & 255) / 255;
+						_this1.y = (c1 >> 8 & 255) / 255;
+						_this1.z = (c1 & 255) / 255;
+						_this1.w = (c1 >>> 24) / 255;
+					} else {
+						var _this2 = this.clip.color;
+						_this2.x = 1.;
+						_this2.y = 1.;
+						_this2.z = 1.;
+						_this2.w = 1.;
+					}
+				}
+				if(currentFrame == null) {
+					this.currentStateIndex++;
+				}
+				break;
 			}
 		}
 		if(iterations >= maxIterations) {
@@ -29239,8 +29486,9 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 var bh_stateanim_AnimationFrameState = $hxEnums["bh.stateanim.AnimationFrameState"] = { __ename__:true,__constructs__:null
 	,Frame: ($_=function(frame) { return {_hx_index:0,frame:frame,__enum__:"bh.stateanim.AnimationFrameState",toString:$estr}; },$_._hx_name="Frame",$_.__params__ = ["frame"],$_)
 	,Event: ($_=function(event) { return {_hx_index:1,event:event,__enum__:"bh.stateanim.AnimationFrameState",toString:$estr}; },$_._hx_name="Event",$_.__params__ = ["event"],$_)
+	,SetFilter: ($_=function(filter,tintColor) { return {_hx_index:2,filter:filter,tintColor:tintColor,__enum__:"bh.stateanim.AnimationFrameState",toString:$estr}; },$_._hx_name="SetFilter",$_.__params__ = ["filter","tintColor"],$_)
 };
-bh_stateanim_AnimationFrameState.__constructs__ = [bh_stateanim_AnimationFrameState.Frame,bh_stateanim_AnimationFrameState.Event];
+bh_stateanim_AnimationFrameState.__constructs__ = [bh_stateanim_AnimationFrameState.Frame,bh_stateanim_AnimationFrameState.Event,bh_stateanim_AnimationFrameState.SetFilter];
 bh_stateanim_AnimationFrameState.__empty_constructs__ = [];
 var bh_ui_ControllerEventHandler = function(scene,$window,screenManager) {
 	this.scene = scene;
@@ -105237,7 +105485,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		var _gthis = this;
 		this.setupDemo("State Animations","Interactive exploration of .anim state machine animations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/state-anim.manim",false);
-		var generatedByMacroBuildWithParametersload4597Builder = function() {
+		var generatedByMacroBuildWithParametersload4932Builder = function() {
 			var animTabs;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -105256,7 +105504,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4597Builder();
+		var ui = generatedByMacroBuildWithParametersload4932Builder();
 		this.demoResult = ui.builderResults;
 		this.tabs = ui.animTabs;
 		this.addBuilderResult(this.demoResult);
@@ -105286,10 +105534,13 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			case 2:
 				this.loadPointsTab();
 				break;
+			case 3:
+				this.loadFiltersTab();
+				break;
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace("Error loading tab " + index + ": " + Std.string(e),{ fileName : "src/screens/animation/StateAnimDemoScreen.hx", lineNumber : 144, className : "screens.animation.StateAnimDemoScreen", methodName : "loadTabContent"});
+			haxe_Log.trace("Error loading tab " + index + ": " + Std.string(e),{ fileName : "src/screens/animation/StateAnimDemoScreen.hx", lineNumber : 154, className : "screens.animation.StateAnimDemoScreen", methodName : "loadTabContent"});
 		}
 		this.tabs.endTab();
 	}
@@ -105306,7 +105557,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		if(this.interactiveBuilder == null) {
 			return;
 		}
-		var generatedByMacroBuildWithParametersloadInteractiveTab5786Builder = function() {
+		var generatedByMacroBuildWithParametersloadInteractiveTab6156Builder = function() {
 			var speedSlider;
 			var progressSlider;
 			var pauseChk;
@@ -105369,7 +105620,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadInteractiveTab5786Builder();
+		var ui = generatedByMacroBuildWithParametersloadInteractiveTab6156Builder();
 		this.interactiveResult = ui.builderResults;
 		this.speedSlider = ui.speedSlider;
 		this.extDrivenChk = ui.extDrivenChk;
@@ -105500,7 +105751,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		if(this.pointsBuilder == null) {
 			return;
 		}
-		var generatedByMacroBuildWithParametersloadPointsTab9797Builder = function() {
+		var generatedByMacroBuildWithParametersloadPointsTab10167Builder = function() {
 			var ptsLeftChk;
 			var _gthis1 = _gthis.pointsBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -105519,7 +105770,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadPointsTab9797Builder();
+		var ui = generatedByMacroBuildWithParametersloadPointsTab10167Builder();
 		this.pointsResult = ui.builderResults;
 		this.ptsLeftChk = ui.ptsLeftChk;
 		this.addBuilderResult(this.pointsResult);
@@ -105758,6 +106009,102 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 			this.setUpdatable(this.pointsResult,"pointInfo" + i,"");
 		}
 	}
+	,loadFiltersTab: function() {
+		var builder = this.screenManager.buildFromResourceName(screens_animation_StateAnimDemoScreen.TAB_FILES[3],false);
+		if(builder == null) {
+			return;
+		}
+		this.filtersResult = builder.buildWithParameters("filtersUI",new haxe_ds_StringMap());
+		this.addBuilderResult(this.filtersResult);
+		this.applyAnimFilter("filterTint",bh_stateanim_AnimFilterType.AFTint(16729156));
+		this.applyAnimFilter("filterBrightness",bh_stateanim_AnimFilterType.AFBrightness(1.5));
+		this.applyAnimFilter("filterSaturate",bh_stateanim_AnimFilterType.AFSaturate(0.0));
+		this.applyAnimFilter("filterGrayscale",bh_stateanim_AnimFilterType.AFGrayscale(1.0));
+		this.applyAnimFilter("filterHue",bh_stateanim_AnimFilterType.AFHue(120.0));
+		this.applyAnimFilter("filterOutline",bh_stateanim_AnimFilterType.AFOutline(2.0,16776960));
+		this.applyAnimFilter("filterPixelOutline",bh_stateanim_AnimFilterType.AFPixelOutline(65280));
+		this.applyAnimFilter("filterReplaceColor",bh_stateanim_AnimFilterType.AFReplaceColor([5992161,4145012],[14768987,7618367]));
+		this.applyAnimFilterCombo("filterCombo1",bh_stateanim_AnimFilterType.AFTint(16737860),bh_stateanim_AnimFilterType.AFOutline(1.0,16777215));
+		this.applyAnimFilterCombo("filterCombo2",bh_stateanim_AnimFilterType.AFGrayscale(1.0),bh_stateanim_AnimFilterType.AFPixelOutline(16711680));
+		this.applyAnimFilterCombo("filterCombo3",bh_stateanim_AnimFilterType.AFHue(60.0),bh_stateanim_AnimFilterType.AFBrightness(1.3));
+	}
+	,applyAnimFilter: function(name,filterType) {
+		if(this.filtersResult == null) {
+			return;
+		}
+		var item = this.filtersResult.getSingleItemByName(name);
+		if(item == null) {
+			return;
+		}
+		var anim = bh_multianim_MultiAnimParser_asStateAnim(item);
+		if(filterType._hx_index == 0) {
+			var color = filterType.color;
+			var c = color;
+			if(c >>> 24 == 0) {
+				c |= -16777216;
+			}
+			var _this = anim.clip.color;
+			_this.x = (c >> 16 & 255) / 255;
+			_this.y = (c >> 8 & 255) / 255;
+			_this.z = (c & 255) / 255;
+			_this.w = (c >>> 24) / 255;
+		} else {
+			anim.clip.set_filter(bh_stateanim_AnimParser.buildAnimFilter(filterType));
+		}
+	}
+	,applyAnimFilterCombo: function(name,filter1,filter2) {
+		if(this.filtersResult == null) {
+			return;
+		}
+		var item = this.filtersResult.getSingleItemByName(name);
+		if(item == null) {
+			return;
+		}
+		var anim = bh_multianim_MultiAnimParser_asStateAnim(item);
+		var group = new h2d_filter_Group();
+		var hasFilter = false;
+		var ft = filter1;
+		if(ft._hx_index == 0) {
+			var color = ft.color;
+			var c = color;
+			if(c >>> 24 == 0) {
+				c |= -16777216;
+			}
+			var _this = anim.clip.color;
+			_this.x = (c >> 16 & 255) / 255;
+			_this.y = (c >> 8 & 255) / 255;
+			_this.z = (c & 255) / 255;
+			_this.w = (c >>> 24) / 255;
+		} else {
+			var f = bh_stateanim_AnimParser.buildAnimFilter(ft);
+			if(f != null) {
+				group.add(f);
+				hasFilter = true;
+			}
+		}
+		var ft = filter2;
+		if(ft._hx_index == 0) {
+			var color = ft.color;
+			var c = color;
+			if(c >>> 24 == 0) {
+				c |= -16777216;
+			}
+			var _this = anim.clip.color;
+			_this.x = (c >> 16 & 255) / 255;
+			_this.y = (c >> 8 & 255) / 255;
+			_this.z = (c & 255) / 255;
+			_this.w = (c >>> 24) / 255;
+		} else {
+			var f = bh_stateanim_AnimParser.buildAnimFilter(ft);
+			if(f != null) {
+				group.add(f);
+				hasFilter = true;
+			}
+		}
+		if(hasFilter) {
+			anim.clip.set_filter(group);
+		}
+	}
 	,setUpdatable: function(result,name,text) {
 		if(result == null) {
 			return;
@@ -105879,6 +106226,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		this.ptsSourceList = null;
 		this.ptsAnimList = null;
 		this.eventLog = [];
+		this.filtersResult = null;
 		DemoScreenBase.prototype.onClear.call(this);
 	}
 	,__class__: screens_animation_StateAnimDemoScreen
@@ -111577,6 +111925,8 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	_g.h["else"] = bh_stateanim_APKeywords.APElse;
 	_g.h["default"] = bh_stateanim_APKeywords.APDefault;
 	_g.h["filters"] = bh_stateanim_APKeywords.APFilters;
+	_g.h["filter"] = bh_stateanim_APKeywords.APFilter;
+	_g.h["none"] = bh_stateanim_APKeywords.APNone;
 	$r = _g;
 	return $r;
 }(this));
@@ -111925,9 +112275,9 @@ screens_animation_ParticlesDemoScreen.SUB_EMITTER_GROUPS = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
-screens_animation_StateAnimDemoScreen.TAB_ITEMS = [{ name : "Gallery"},{ name : "Interactive"},{ name : "Points & Events"}];
-screens_animation_StateAnimDemoScreen.TAB_FILES = ["demos/animation/state-anim-gallery.manim","demos/animation/state-anim-interactive.manim","demos/animation/state-anim-points.manim"];
-screens_animation_StateAnimDemoScreen.TAB_DESCRIPTIONS = ["All state animations from .anim files — marine, turret, shield, arrows with direction state selectors","Interactive control: select animation, adjust speed, toggle externally-driven mode, scrub with progress slider","Visualize extra points (fire, targeting, line_*) and animation events on live animations"];
+screens_animation_StateAnimDemoScreen.TAB_ITEMS = [{ name : "Gallery"},{ name : "Interactive"},{ name : "Points & Events"},{ name : "Filters"}];
+screens_animation_StateAnimDemoScreen.TAB_FILES = ["demos/animation/state-anim-gallery.manim","demos/animation/state-anim-interactive.manim","demos/animation/state-anim-points.manim","demos/animation/state-anim-filters.manim"];
+screens_animation_StateAnimDemoScreen.TAB_DESCRIPTIONS = ["All state animations from .anim files — marine, turret, shield, arrows with direction state selectors","Interactive control: select animation, adjust speed, toggle externally-driven mode, scrub with progress slider","Visualize extra points (fire, targeting, line_*) and animation events on live animations","Filter types: tint, brightness, saturate, grayscale, hue, outline, pixelOutline, replaceColor — applied to state animations"];
 screens_animation_StateAnimDemoScreen.MARINE_ANIMS = ["idle","stand","hit","killed","dead","dodge","fire-up","fire-down","fire-left","fire-right","fire-upright","fire-downleft","fire-upleft","fire-downright"];
 screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS = [{ name : "idle"},{ name : "stand"},{ name : "hit"},{ name : "killed"},{ name : "dead"},{ name : "dodge"},{ name : "fire-up"},{ name : "fire-down"},{ name : "fire-left"},{ name : "fire-right"},{ name : "fire-upright"},{ name : "fire-downleft"},{ name : "fire-upleft"},{ name : "fire-downright"}];
 screens_animation_StateAnimDemoScreen.SHIELD_ANIMS = ["idle_0","idle_1","impact"];

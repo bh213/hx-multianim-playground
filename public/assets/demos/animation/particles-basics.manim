@@ -68,7 +68,7 @@ layouts {
 
 #explosion particles {
     count: 60
-    emit: point(0, 15)
+    emit: point(dist: 0, distRand: 15)
     tiles: file("circle_hard.png") file("flare.png")
     loop: true
     maxLife: 0.8

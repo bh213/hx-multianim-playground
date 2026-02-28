@@ -15,7 +15,7 @@ layouts {
 // Kill at boundaries — particles disappear at edges
 #killBounds particles {
     count: 60
-    emit: point(0, 30)
+    emit: point(dist: 0, distRand: 30)
     tiles: file("dot.png")
     loop: true
     maxLife: 3.0
@@ -33,7 +33,7 @@ layouts {
 // Bounce off walls with damping
 #bounceBounds particles {
     count: 40
-    emit: point(0, 20)
+    emit: point(dist: 0, distRand: 20)
     tiles: file("circle_hard.png")
     loop: true
     maxLife: 4.0
@@ -72,7 +72,7 @@ layouts {
 // Line bounds — bounce off diagonal walls
 #lineBounds particles {
     count: 40
-    emit: point(0, 15)
+    emit: point(dist: 0, distRand: 15)
     tiles: file("circle_soft.png")
     loop: true
     maxLife: 4.0

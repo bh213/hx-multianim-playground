@@ -46,7 +46,7 @@ curves {
 // Size curve: grow then shrink using named curve
 #sizeCurveDemo particles {
     count: 50
-    emit: point(0, 10)
+    emit: point(dist: 0, distRand: 10)
     tiles: file("ring.png")
     loop: true
     maxLife: 2.0
@@ -64,7 +64,7 @@ curves {
 // Velocity curve: particles slow down over time
 #velocityCurveDemo particles {
     count: 60
-    emit: point(0, 20)
+    emit: point(dist: 0, distRand: 20)
     tiles: file("dot.png")
     loop: true
     maxLife: 1.5

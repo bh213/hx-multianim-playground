@@ -11,10 +11,10 @@ import bh.ui.UICardHandTypes;
 import bh.ui.UICardHandTypes.HandLayoutMode;
 import bh.ui.UICardHandTypes.PathDistribution;
 import bh.ui.UICardHandTypes.PathOrientation;
+import bh.ui.UIInteractiveWrapper;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.base.FPoint;
-import h2d.col.Bounds;
 import h2d.col.Point;
 
 class CardHandDemoScreen extends DemoScreenBase {
@@ -85,6 +85,8 @@ class CardHandDemoScreen extends DemoScreenBase {
 		{name: "easeOutElastic"}, {name: "easeOutBounce"}, {name: "easeInOutCubic"},
 		{name: "easeInOutBack"}, {name: "easeInOutQuad"}, {name: "easeInBack"},
 		{name: "easeInCubic"}, {name: "easeInQuad"},
+		{name: "spiral"}, {name: "wave"}, {name: "highArc"}, {name: "zigzag"},
+		{name: "spinFlip"}, {name: "loop"}, {name: "bouncyArc"}, {name: "flicker"},
 	];
 
 	static final DISCARD_EASINGS:Array<UIElementListItem> = [
@@ -92,18 +94,24 @@ class CardHandDemoScreen extends DemoScreenBase {
 		{name: "easeOutQuad"}, {name: "easeOutCubic"}, {name: "easeOutBack"},
 		{name: "easeOutBounce"}, {name: "easeOutElastic"}, {name: "easeInOutCubic"},
 		{name: "easeInOutQuad"}, {name: "easeInOutBack"},
+		{name: "spiral"}, {name: "wave"}, {name: "highArc"}, {name: "zigzag"},
+		{name: "spinFlip"}, {name: "loop"}, {name: "bouncyArc"}, {name: "flicker"},
 	];
 
 	static final RETURN_EASINGS:Array<UIElementListItem> = [
 		{name: "linear"}, {name: "easeOutCubic"}, {name: "easeOutQuad"}, {name: "easeOutBack"},
 		{name: "easeOutElastic"}, {name: "easeOutBounce"}, {name: "easeInOutCubic"},
 		{name: "easeInOutBack"},
+		{name: "spiral"}, {name: "wave"}, {name: "highArc"}, {name: "zigzag"},
+		{name: "spinFlip"}, {name: "loop"}, {name: "bouncyArc"}, {name: "flicker"},
 	];
 
 	static final REARRANGE_EASINGS:Array<UIElementListItem> = [
 		{name: "linear"}, {name: "easeInOutCubic"}, {name: "easeOutQuad"}, {name: "easeOutCubic"},
 		{name: "easeOutBack"}, {name: "easeOutBounce"}, {name: "easeOutElastic"},
 		{name: "easeInOutQuad"},
+		{name: "spiral"}, {name: "wave"}, {name: "highArc"}, {name: "zigzag"},
+		{name: "spinFlip"}, {name: "loop"}, {name: "bouncyArc"}, {name: "flicker"},
 	];
 
 	static final HAND_PATHS:Array<UIElementListItem> = [
@@ -338,18 +346,21 @@ class CardHandDemoScreen extends DemoScreenBase {
 
 	function registerTargets():Void {
 		if (cardHand == null) return;
+		// Register interactive wrappers from the built target zone results
+		var wrappers:Array<UIInteractiveWrapper> = [];
 		for (i in 0...targetResults.length) {
-			final x = 20.0 + i * 200.0;
-			final y = 100.0;
-			cardHand.registerTarget({
-				id: 'target_$i',
-				boundsProvider: () -> Bounds.fromValues(x, y, 180, 180),
-			});
+			var resultWrappers = addInteractives(targetResults[i], 'target_$i');
+			for (w in resultWrappers)
+				wrappers.push(w);
 		}
-		cardHand.setTargetHighlightCallback((targetId, highlight) -> {
-			var idx = Std.parseInt(targetId.split("_").pop());
-			if (idx != null && idx < targetResults.length) {
-				targetResults[idx].setParameter("highlighted", highlight);
+		cardHand.registerTargetInteractives(wrappers);
+		cardHand.setTargetHighlightCallback((targetId, highlight, metadata) -> {
+			// Interactive IDs are "target_N.target" — extract the index
+			for (i in 0...targetResults.length) {
+				if (targetId == 'target_$i.target') {
+					targetResults[i].setParameter("highlighted", highlight);
+					break;
+				}
 			}
 		});
 	}

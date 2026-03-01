@@ -73,6 +73,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },
             { name: 'statusEffects', displayName: 'Status Effects', category: 'Game-Like Demos', manimFile: 'demos/gamelike/status-effects.manim' },
+            { name: 'cardHand', displayName: 'Card Hand', category: 'Game-Like Demos', manimFile: 'demos/gamelike/card-hand.manim' },
         ]
     }
 ];

@@ -178,6 +178,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));
 		screenManager.addScreen("statusEffects", new StatusEffectsDemoScreen(screenManager));
+		screenManager.addScreen("cardHand", new CardHandDemoScreen(screenManager));
 
 		// Advanced demos
 		screenManager.addScreen("incremental", new IncrementalDemoScreen(screenManager));

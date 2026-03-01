@@ -14,6 +14,33 @@ curves {
 
     // Fade in: alpha 0→1 (for draw animations)
     #fadeIn curve { points: [(0, 0), (1, 1.0)] }
+
+    // Quick fade in: alpha reaches 1 by 15% of animation (for improved draw)
+    #quickFadeIn curve { points: [(0, 0), (0.15, 1.0), (1, 1.0)] }
+
+    // Linear grow: scale from draw-pile ratio (0.4) to full size (for improved draw)
+    #linearGrowIn curve { points: [(0, 0.4), (1, 1.0)] }
+
+    // Quick fade out: alpha stays at 1 until 85% then drops fast (for improved discard)
+    #quickFadeOut curve { points: [(0, 1.0), (0.85, 1.0), (1, 0)] }
+
+    // Linear shrink: scale from full to draw-pile ratio (for improved discard)
+    #linearShrinkOut curve { points: [(0, 1.0), (1, 0.4)] }
+
+    // Scale pulse: overshoot then settle (for creative draw)
+    #scalePulse curve { points: [(0, 0.4), (0.4, 1.3), (0.7, 0.85), (1, 1.0)] }
+
+    // Full spin: one 360° rotation (for creative spin variants)
+    #spinOnce curve { points: [(0, 0), (1, 6.283)] }
+
+    // Half spin: 180° rotation
+    #spinHalf curve { points: [(0, 0), (1, 3.14)] }
+
+    // Alpha flicker: rapid blink during middle of animation
+    #flickerAlpha curve { points: [(0, 0), (0.15, 1.0), (0.3, 0.3), (0.45, 1.0), (0.6, 0.5), (0.75, 1.0), (1, 1.0)] }
+
+    // Scale bounce: overshoot with secondary bounce
+    #scaleBounce curve { points: [(0, 0.4), (0.5, 1.2), (0.7, 0.9), (0.85, 1.05), (1, 1.0)] }
 }
 
 // ===== Paths =====
@@ -36,6 +63,28 @@ paths {
 
     // Targeting arrow curve (Stretch-normalized from card to cursor)
     #arrowCurve path { bezier(100, 0, 50, -30) }
+
+    // Straight line path (for return/rearrange)
+    #cardStraight path { lineTo(100, 0) }
+
+    // Creative paths
+    #spiralPath path { spiral(5, 35, 540) }
+    #wavePath path { wave(25, 40, 3) }
+    #highArcPath path { bezier(100, 0, 50, -100) }
+    #zigzagPath path {
+        lineTo(33, -25)
+        lineTo(34, 50)
+        lineTo(33, -25)
+    }
+    #loopPath path {
+        bezier(50, 0, 25, -50)
+        bezier(50, 0, 25, 50)
+    }
+    #sCurvePath path {
+        bezier(50, 0, 10, -40, 40, -40)
+        bezier(50, 0, 10, 40, 40, 40)
+    }
+    #tightSpiralPath path { spiral(3, 20, 720) }
 }
 
 // ===== Default Animated Paths =====
@@ -44,25 +93,25 @@ paths {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutBack, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #discardPath animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInQuad, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #returnPath animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
-    0.0: progressCurve: easeOutCubic
+    0.0: progressCurve: easeInOutCubic
 }
 
 #rearrangePath animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeInOutCubic
@@ -74,84 +123,84 @@ paths {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: scaleCurve: fadeIn, alphaCurve: fadeIn
+    0.0: scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeOutQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutQuad, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeOutBack animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutBack, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeOutElastic animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutElastic, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutElastic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInOutCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInOutCubic, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeOutCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutCubic, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeOutBounce animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeOutBounce, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeOutBounce, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInOutBack animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInOutBack, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInOutBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInOutQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInOutQuad, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInBack animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInBack, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInCubic, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 #draw_easeInQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.35
-    0.0: progressCurve: easeInQuad, scaleCurve: growIn, alphaCurve: fadeIn
+    0.0: progressCurve: easeInQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
 }
 
 // ===== Discard Path Easing Variants =====
@@ -160,138 +209,138 @@ paths {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInQuad, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeOutQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeOutQuad, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInOutCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInOutCubic, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInOutCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInBack animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInBack, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInCubic, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInOutQuad animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInOutQuad, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInOutQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeInOutBack animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeInOutBack, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeInOutBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeOutCubic animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeOutCubic, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeOutBack animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeOutBack, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeOutBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeOutBounce animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeOutBounce, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeOutBounce, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 #discard_easeOutElastic animatedPath {
     path: cardArc
     type: time
     duration: 0.25
-    0.0: progressCurve: easeOutElastic, scaleCurve: shrinkOut, alphaCurve: fadeOut
+    0.0: progressCurve: easeOutElastic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
 }
 
 // ===== Return Path Easing Variants =====
 
 #return_linear animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
 }
 
 #return_easeOutCubic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeOutCubic
 }
 
 #return_easeOutQuad animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeOutQuad
 }
 
 #return_easeOutBack animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeOutBack
 }
 
 #return_easeOutElastic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeOutElastic
 }
 
 #return_easeInOutCubic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeInOutCubic
 }
 
 #return_easeOutBounce animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeOutBounce
 }
 
 #return_easeInOutBack animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.2
     0.0: progressCurve: easeInOutBack
@@ -300,58 +349,290 @@ paths {
 // ===== Rearrange Path Easing Variants =====
 
 #rearrange_linear animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
 }
 
 #rearrange_easeInOutCubic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeInOutCubic
 }
 
 #rearrange_easeOutQuad animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeOutQuad
 }
 
 #rearrange_easeOutBack animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeOutBack
 }
 
 #rearrange_easeInOutQuad animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeInOutQuad
 }
 
 #rearrange_easeOutCubic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeOutCubic
 }
 
 #rearrange_easeOutBounce animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeOutBounce
 }
 
 #rearrange_easeOutElastic animatedPath {
-    path: cardArc
+    path: cardStraight
     type: time
     duration: 0.15
     0.0: progressCurve: easeOutElastic
+}
+
+// ===== Creative Draw Variants =====
+
+#draw_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_spinFlip animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn, rotationCurve: spinOnce
+}
+
+#draw_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutBounce, scaleCurve: scaleBounce, alphaCurve: quickFadeIn
+}
+
+#draw_flicker animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: scalePulse, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Discard Variants =====
+
+#discard_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_spinFlip animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut, rotationCurve: spinOnce
+}
+
+#discard_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_flicker animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Return Variants =====
+
+#return_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_spinFlip animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic, rotationCurve: spinHalf
+}
+
+#return_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutBounce
+}
+
+#return_flicker animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Rearrange Variants =====
+
+#rearrange_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_spinFlip animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic, rotationCurve: spinHalf
+}
+
+#rearrange_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutBounce
+}
+
+#rearrange_flicker animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic, alphaCurve: flickerAlpha
 }
 
 // ===== Targeting Arrow =====
@@ -453,6 +734,7 @@ paths {
 // ===== Target Zone (180x180) =====
 
 #targetZone programmable(highlighted:bool=false) {
+    interactive(180, 180, "target", events: [hover]): 0, 0
     @(highlighted => false) graphics(
         rect(#446688, 1.0, 180, 180);
     ): 0, 0

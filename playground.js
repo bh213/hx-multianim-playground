@@ -29691,6 +29691,8 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.nextCardSeq = 0;
 	this.currentTargetId = null;
 	this.cardToCardTarget = null;
+	this.sceneCursorY = 0;
+	this.sceneCursorX = 0;
 	this.cursorY = 0;
 	this.cursorX = 0;
 	this.dragOffsetY = 0;
@@ -29738,13 +29740,14 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.rearrangePathName = config != null ? config.rearrangePathName : null;
 	this.handContainer = new h2d_Layers();
 	screen.addObjectToLayer(this.handContainer,this.handLayer);
+	this.dragContainer = new h2d_Layers();
+	screen.addObjectToLayer(this.dragContainer,this.dragLayer);
 	var segName = config != null ? config.arrowSegmentName : null;
 	var headName = config != null ? config.arrowHeadName : null;
 	var arrowPath = config != null ? config.arrowPathName : null;
 	var arrowSpacing = config != null && config.arrowSegmentSpacing != null ? config.arrowSegmentSpacing : 25.0;
 	this.targeting = new bh_ui_UICardHandTargeting(builder,segName,headName,arrowPath,arrowSpacing);
-	var targetingLayer = config != null && config.targetingLineLayer != null ? config.targetingLineLayer : bh_ui_screens_LayersEnum.ModalLayer;
-	screen.addObjectToLayer(this.targeting.getObject(),targetingLayer);
+	this.dragContainer.addChild(this.targeting.getObject());
 };
 $hxClasses["bh.ui.UICardHandHelper"] = bh_ui_UICardHandHelper;
 bh_ui_UICardHandHelper.__name__ = "bh.ui.UICardHandHelper";
@@ -29857,8 +29860,8 @@ bh_ui_UICardHandHelper.prototype = {
 	,getCardCount: function() {
 		return this.cards.length;
 	}
-	,registerTarget: function(target) {
-		this.targeting.registerTarget(target);
+	,registerTargetInteractives: function(wrappers) {
+		this.targeting.registerTargets(wrappers);
 	}
 	,setTargetHighlightCallback: function(cb) {
 		this.targeting.onTargetHighlight = cb;
@@ -29871,9 +29874,6 @@ bh_ui_UICardHandHelper.prototype = {
 		this.targeting.getObject().set_visible(visible);
 	}
 	,handleScreenEvent: function(event) {
-		if(!this.isDragging) {
-			this.interactiveHelper.handleEvent(event);
-		}
 		if(event._hx_index == 14) {
 			var innerEvent = event.event;
 			var id = event.id;
@@ -29882,25 +29882,10 @@ bh_ui_UICardHandHelper.prototype = {
 			if(entry == null) {
 				return false;
 			}
-			switch(innerEvent._hx_index) {
-			case 1:
+			if(innerEvent._hx_index == 1) {
 				if(!this.isDragging) {
 					return this.startDragFromInteractive(entry);
 				}
-				break;
-			case 11:
-				if(!this.isDragging) {
-					this.setHoveredEntry(entry);
-					return true;
-				}
-				break;
-			case 12:
-				if(!this.isDragging && this.hoveredEntry == entry) {
-					this.setHoveredEntry(null);
-					return true;
-				}
-				break;
-			default:
 			}
 			return false;
 		} else {
@@ -29908,17 +29893,43 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 	}
 	,onMouseMove: function(screenX,screenY) {
-		this.cursorX = screenX;
-		this.cursorY = screenY;
+		this.sceneCursorX = screenX;
+		this.sceneCursorY = screenY;
+		var x = screenX;
+		var y = screenY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var local = this.handContainer.globalToLocal(new h2d_col_PointImpl(x,y));
+		this.cursorX = local.x;
+		this.cursorY = local.y;
 		if(this.isDragging) {
 			this.updateDrag();
 			return true;
 		}
-		return false;
+		var hit = this.getCardAtBasePosition(this.cursorX,this.cursorY);
+		if(hit != this.hoveredEntry) {
+			this.setHoveredEntry(hit);
+		}
+		return this.hoveredEntry != null;
 	}
 	,onMouseRelease: function(screenX,screenY) {
-		this.cursorX = screenX;
-		this.cursorY = screenY;
+		this.sceneCursorX = screenX;
+		this.sceneCursorY = screenY;
+		var x = screenX;
+		var y = screenY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var local = this.handContainer.globalToLocal(new h2d_col_PointImpl(x,y));
+		this.cursorX = local.x;
+		this.cursorY = local.y;
 		if(this.isDragging) {
 			return this.endDrag();
 		}
@@ -29937,7 +29948,7 @@ bh_ui_UICardHandHelper.prototype = {
 			var rate = state.rate;
 			var _this1 = anim.entry.container;
 			_this1.posChanged = true;
-			_this1.rotation = anim.startRotation + (anim.endRotation - anim.startRotation) * rate;
+			_this1.rotation = anim.startRotation + (anim.endRotation - anim.startRotation) * rate + state.rotation;
 			var _this2 = anim.entry.container;
 			_this2.posChanged = true;
 			_this2.scaleX = state.scale;
@@ -29958,7 +29969,7 @@ bh_ui_UICardHandHelper.prototype = {
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
 		}
-		var _this = this.targeting.getObject();
+		var _this = this.dragContainer;
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
 		}
@@ -30059,6 +30070,17 @@ bh_ui_UICardHandHelper.prototype = {
 				this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(pos.x,pos.y),entry.container.rotation,pos.rotation,this.rearrangePathName,function() {
 				});
 			} else if(entry.state != bh_ui_CardState.Animating) {
+				var _g2 = [];
+				var _g3 = 0;
+				var _g4 = this.activeAnimations;
+				while(_g3 < _g4.length) {
+					var v = _g4[_g3];
+					++_g3;
+					if(v.entry != entry) {
+						_g2.push(v);
+					}
+				}
+				this.activeAnimations = _g2;
 				var _this = entry.container;
 				_this.posChanged = true;
 				_this.x = pos.x;
@@ -30114,6 +30136,8 @@ bh_ui_UICardHandHelper.prototype = {
 		if(this.hoveredEntry != null) {
 			if(this.hoveredEntry.state == bh_ui_CardState.Hovered) {
 				this.hoveredEntry.state = bh_ui_CardState.InHand;
+				this.interactiveHelper.resetState(this.hoveredEntry.interactiveId);
+				this.addToHandLayer(this.hoveredEntry);
 				this.emitEvent(bh_ui_CardHandEvent.CardHoverEnd(this.hoveredEntry.descriptor.id));
 			}
 		}
@@ -30121,6 +30145,8 @@ bh_ui_UICardHandHelper.prototype = {
 		if(this.hoveredEntry != null) {
 			if(this.hoveredEntry.state == bh_ui_CardState.InHand) {
 				this.hoveredEntry.state = bh_ui_CardState.Hovered;
+				this.interactiveHelper.setHoverState(this.hoveredEntry.interactiveId);
+				this.handContainer.add(this.hoveredEntry.container,this.cards.length);
 				this.emitEvent(bh_ui_CardHandEvent.CardHoverStart(this.hoveredEntry.descriptor.id));
 			}
 		}
@@ -30144,7 +30170,7 @@ bh_ui_UICardHandHelper.prototype = {
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.rotation = 0;
-		this.screen.addObjectToLayer(entry.container,this.dragLayer);
+		this.dragContainer.addChild(entry.container);
 		this.isDragging = true;
 		this.hoveredEntry = null;
 		this.emitEvent(bh_ui_CardHandEvent.CardDragStart(entry.descriptor.id));
@@ -30166,6 +30192,7 @@ bh_ui_UICardHandHelper.prototype = {
 					var _this = this.cardToCardTarget.container;
 					_this.posChanged = true;
 					_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+					this.addToHandLayer(this.cardToCardTarget);
 				}
 				this.cardToCardTarget = targetEntry;
 				if(this.cardToCardTarget != null) {
@@ -30175,6 +30202,7 @@ bh_ui_UICardHandHelper.prototype = {
 					var _this = this.cardToCardTarget.container;
 					_this.posChanged = true;
 					_this.scaleY = this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
+					this.handContainer.add(this.cardToCardTarget.container,this.cards.length);
 				}
 			}
 			if(this.cardToCardTarget != null) {
@@ -30196,7 +30224,7 @@ bh_ui_UICardHandHelper.prototype = {
 			}
 			var originX = entry.layoutPos.x + entry.layoutPos.normalX * this.hoverPopDistance;
 			var originY = entry.layoutPos.y + entry.layoutPos.normalY * this.hoverPopDistance;
-			this.currentTargetId = this.targeting.updateTargetingLine(originX,originY,this.cursorX,this.cursorY,entry.descriptor.id);
+			this.currentTargetId = this.targeting.updateTargetingLine(originX,originY,this.cursorX,this.cursorY,this.sceneCursorX,this.sceneCursorY,entry.descriptor.id);
 		} else {
 			var _this = entry.container;
 			_this.posChanged = true;
@@ -30207,6 +30235,9 @@ bh_ui_UICardHandHelper.prototype = {
 				this.targeting.clearLine();
 				this.exitTargetingMode(entry);
 				this.currentTargetId = null;
+			}
+			if(!this.targeting.arrowEnabled) {
+				this.currentTargetId = this.targeting.updateHighlight(this.sceneCursorX,this.sceneCursorY,entry.descriptor.id);
 			}
 		}
 	}
@@ -30228,12 +30259,11 @@ bh_ui_UICardHandHelper.prototype = {
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.scaleY = this.hoverScale;
-		this.screen.addObjectToLayer(this.targeting.getObject(),this.dragLayer);
 	}
 	,exitTargetingMode: function(entry) {
 		this.isTargeting = false;
 		entry.state = bh_ui_CardState.Dragging;
-		this.screen.addObjectToLayer(entry.container,this.dragLayer);
+		this.dragContainer.addChild(entry.container);
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.rotation = 0;
@@ -30255,6 +30285,7 @@ bh_ui_UICardHandHelper.prototype = {
 			var _this = this.cardToCardTarget.container;
 			_this.posChanged = true;
 			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+			this.addToHandLayer(this.cardToCardTarget);
 		}
 		var result = bh_ui_TargetingResult.NoTarget;
 		var cardPlayed = false;
@@ -30272,7 +30303,7 @@ bh_ui_UICardHandHelper.prototype = {
 				cardPlayed = true;
 			}
 		} else {
-			var dropTarget = this.targeting.hitTestTargets(this.cursorX,this.cursorY,cardId);
+			var dropTarget = this.targeting.hitTestTargets(this.sceneCursorX,this.sceneCursorY,cardId);
 			if(dropTarget != null) {
 				result = bh_ui_TargetingResult.TargetZone(dropTarget);
 				if(this.canPlayCard == null || this.canPlayCard(cardId,result)) {
@@ -30295,7 +30326,7 @@ bh_ui_UICardHandHelper.prototype = {
 			if(spliceIdx >= 0) {
 				this.cards.splice(spliceIdx,1);
 			}
-			this.screen.addObjectToLayer(entry.container,this.dragLayer);
+			this.dragContainer.addChild(entry.container);
 			var fromPos = new bh_base_FPoint(entry.container.x,entry.container.y);
 			this.animateCardTo(entry,fromPos,this.discardPilePosition,0,0,this.discardPathName,function() {
 				var _this = entry.container;
@@ -30340,6 +30371,7 @@ bh_ui_UICardHandHelper.prototype = {
 			var _this = this.cardToCardTarget.container;
 			_this.posChanged = true;
 			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+			this.addToHandLayer(this.cardToCardTarget);
 			this.cardToCardTarget = null;
 		}
 		this.currentTargetId = null;
@@ -30349,6 +30381,38 @@ bh_ui_UICardHandHelper.prototype = {
 		entry.container.alpha = 1.0;
 		this.addToHandLayer(entry);
 		this.emitEvent(bh_ui_CardHandEvent.CardDragEnd(entry.descriptor.id));
+	}
+	,getCardAtBasePosition: function(x,y) {
+		var basePositions = this.computeLayout(-1);
+		var bestEntry = null;
+		var bestDistSq = Infinity;
+		var _g = 0;
+		var _g1 = this.cards.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var entry = this.cards[i];
+			if(i >= basePositions.length || entry.state == bh_ui_CardState.Animating || entry.state == bh_ui_CardState.Disabled) {
+				continue;
+			}
+			var pos = basePositions[i];
+			var halfW = this.cardWidth * pos.scale / 2.0;
+			var halfH = this.cardHeight * pos.scale / 2.0;
+			var dx = x - pos.x;
+			var dy = y - pos.y;
+			var cos = Math.cos(-pos.rotation);
+			var sin = Math.sin(-pos.rotation);
+			var localX = dx * cos - dy * sin;
+			var localY = dx * sin + dy * cos;
+			if(localX < -halfW || localX > halfW || localY < -halfH || localY > halfH) {
+				continue;
+			}
+			var distSq = dx * dx + dy * dy;
+			if(distSq < bestDistSq) {
+				bestDistSq = distSq;
+				bestEntry = entry;
+			}
+		}
+		return bestEntry;
 	}
 	,getCardAtPosition: function(x,y,skipEntry) {
 		var i = this.cards.length - 1;
@@ -30693,6 +30757,7 @@ var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,s
 	if(spacing == null) {
 		spacing = 25.0;
 	}
+	this.acceptsFilter = null;
 	this.onTargetHighlight = null;
 	this.arrowEnabled = true;
 	this.currentValid = false;
@@ -30745,103 +30810,135 @@ bh_ui_UICardHandTargeting.prototype = {
 	getObject: function() {
 		return this.arrowContainer;
 	}
-	,registerTarget: function(target) {
+	,registerTarget: function(wrapper) {
 		var _g = 0;
 		var _g1 = this.targets.length;
 		while(_g < _g1) {
 			var i = _g++;
-			if(this.targets[i].id == target.id) {
-				this.targets[i] = target;
+			if(this.targets[i].id == wrapper.id) {
+				this.targets[i] = wrapper;
 				return;
 			}
 		}
-		this.targets.push(target);
+		this.targets.push(wrapper);
+	}
+	,registerTargets: function(wrappers) {
+		var _g = 0;
+		while(_g < wrappers.length) {
+			var w = wrappers[_g];
+			++_g;
+			this.registerTarget(w);
+		}
 	}
 	,clearTargets: function() {
 		if(this.activeTargetId != null && this.onTargetHighlight != null) {
-			this.onTargetHighlight(this.activeTargetId,false);
+			var wrapper = this.findTarget(this.activeTargetId);
+			if(wrapper != null) {
+				this.onTargetHighlight(this.activeTargetId,false,wrapper.metadata);
+			}
 		}
 		this.activeTargetId = null;
 		this.targets = [];
 	}
-	,hitTestTargets: function(x,y,cardId) {
+	,updateHighlight: function(sceneX,sceneY,cardId) {
+		var hoveredWrapper = null;
+		var x = sceneX;
+		var y = sceneY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var pt = new h2d_col_PointImpl(x,y);
 		var _g = 0;
 		var _g1 = this.targets;
 		while(_g < _g1.length) {
-			var target = _g1[_g];
+			var wrapper = _g1[_g];
 			++_g;
-			var bounds = target.boundsProvider();
-			var x1 = x;
-			var y1 = y;
-			if(y1 == null) {
-				y1 = 0.;
+			if(wrapper.containsPoint(pt)) {
+				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
+					hoveredWrapper = wrapper;
+					break;
+				}
 			}
-			if(x1 == null) {
-				x1 = 0.;
+		}
+		var newTargetId = hoveredWrapper != null ? hoveredWrapper.id : null;
+		if(newTargetId != this.activeTargetId) {
+			if(this.activeTargetId != null && this.onTargetHighlight != null) {
+				var oldWrapper = this.findTarget(this.activeTargetId);
+				if(oldWrapper != null) {
+					this.onTargetHighlight(this.activeTargetId,false,oldWrapper.metadata);
+				}
 			}
-			var x2 = x1;
-			var y2 = y1;
-			if(y2 == null) {
-				y2 = 0.;
+			this.activeTargetId = newTargetId;
+			if(this.activeTargetId != null && this.onTargetHighlight != null && hoveredWrapper != null) {
+				this.onTargetHighlight(this.activeTargetId,true,hoveredWrapper.metadata);
 			}
-			if(x2 == null) {
-				x2 = 0.;
-			}
-			var p_x = x2;
-			var p_y = y2;
-			if(p_x >= bounds.xMin && p_x < bounds.xMax && p_y >= bounds.yMin && p_y < bounds.yMax) {
-				if(target.accepts == null || target.accepts(cardId)) {
-					return target.id;
+		}
+		return newTargetId;
+	}
+	,hitTestTargets: function(sceneX,sceneY,cardId) {
+		var x = sceneX;
+		var y = sceneY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var pt = new h2d_col_PointImpl(x,y);
+		var _g = 0;
+		var _g1 = this.targets;
+		while(_g < _g1.length) {
+			var wrapper = _g1[_g];
+			++_g;
+			if(wrapper.containsPoint(pt)) {
+				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
+					return wrapper.id;
 				}
 			}
 		}
 		return null;
 	}
-	,updateTargetingLine: function(originX,originY,cursorX,cursorY,cardId) {
+	,updateTargetingLine: function(originX,originY,cursorX,cursorY,sceneX,sceneY,cardId) {
 		this.arrowContainer.set_visible(this.arrowEnabled);
-		var hoveredTarget = null;
+		var hoveredWrapper = null;
+		var x = sceneX;
+		var y = sceneY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var pt = new h2d_col_PointImpl(x,y);
 		var _g = 0;
 		var _g1 = this.targets;
 		while(_g < _g1.length) {
-			var target = _g1[_g];
+			var wrapper = _g1[_g];
 			++_g;
-			var bounds = target.boundsProvider();
-			var x = cursorX;
-			var y = cursorY;
-			if(y == null) {
-				y = 0.;
-			}
-			if(x == null) {
-				x = 0.;
-			}
-			var x1 = x;
-			var y1 = y;
-			if(y1 == null) {
-				y1 = 0.;
-			}
-			if(x1 == null) {
-				x1 = 0.;
-			}
-			var p_x = x1;
-			var p_y = y1;
-			if(p_x >= bounds.xMin && p_x < bounds.xMax && p_y >= bounds.yMin && p_y < bounds.yMax) {
-				if(target.accepts == null || target.accepts(cardId)) {
-					hoveredTarget = target;
+			if(wrapper.containsPoint(pt)) {
+				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
+					hoveredWrapper = wrapper;
 					break;
 				}
 			}
 		}
-		var newTargetId = hoveredTarget != null ? hoveredTarget.id : null;
+		var newTargetId = hoveredWrapper != null ? hoveredWrapper.id : null;
 		if(newTargetId != this.activeTargetId) {
 			if(this.activeTargetId != null && this.onTargetHighlight != null) {
-				this.onTargetHighlight(this.activeTargetId,false);
+				var oldWrapper = this.findTarget(this.activeTargetId);
+				if(oldWrapper != null) {
+					this.onTargetHighlight(this.activeTargetId,false,oldWrapper.metadata);
+				}
 			}
 			this.activeTargetId = newTargetId;
-			if(this.activeTargetId != null && this.onTargetHighlight != null) {
-				this.onTargetHighlight(this.activeTargetId,true);
+			if(this.activeTargetId != null && this.onTargetHighlight != null && hoveredWrapper != null) {
+				this.onTargetHighlight(this.activeTargetId,true,hoveredWrapper.metadata);
 			}
 		}
-		var valid = hoveredTarget != null;
+		var valid = hoveredWrapper != null;
 		if(this.hasArrowVisual && this.arrowEnabled && this.arrowPathName != null) {
 			var paths = this.builder.getPaths();
 			var origin = new bh_base_FPoint(originX,originY);
@@ -30863,7 +30960,7 @@ bh_ui_UICardHandTargeting.prototype = {
 			while(_g < _g1) {
 				var i = _g++;
 				var rate = (i + 0.5) / (count + 1);
-				var pt = path.getPoint(rate);
+				var pt2 = path.getPoint(rate);
 				var angle = path.getTangentAngle(rate);
 				var inv = this.segmentPoolInvalid[i];
 				var val = this.segmentPoolValid[i];
@@ -30871,17 +30968,17 @@ bh_ui_UICardHandTargeting.prototype = {
 				val.object.set_visible(this.currentValid);
 				var _this = inv.object;
 				_this.posChanged = true;
-				_this.x = pt.x;
+				_this.x = pt2.x;
 				_this.posChanged = true;
-				_this.y = pt.y;
+				_this.y = pt2.y;
 				var _this1 = inv.object;
 				_this1.posChanged = true;
 				_this1.rotation = angle;
 				var _this2 = val.object;
 				_this2.posChanged = true;
-				_this2.x = pt.x;
+				_this2.x = pt2.x;
 				_this2.posChanged = true;
-				_this2.y = pt.y;
+				_this2.y = pt2.y;
 				var _this3 = val.object;
 				_this3.posChanged = true;
 				_this3.rotation = angle;
@@ -30938,9 +31035,24 @@ bh_ui_UICardHandTargeting.prototype = {
 			this.headValid.object.set_visible(false);
 		}
 		if(this.activeTargetId != null && this.onTargetHighlight != null) {
-			this.onTargetHighlight(this.activeTargetId,false);
+			var wrapper = this.findTarget(this.activeTargetId);
+			if(wrapper != null) {
+				this.onTargetHighlight(this.activeTargetId,false,wrapper.metadata);
+			}
 		}
 		this.activeTargetId = null;
+	}
+	,findTarget: function(id) {
+		var _g = 0;
+		var _g1 = this.targets;
+		while(_g < _g1.length) {
+			var w = _g1[_g];
+			++_g;
+			if(w.id == id) {
+				return w;
+			}
+		}
+		return null;
 	}
 	,__class__: bh_ui_UICardHandTargeting
 };
@@ -31006,19 +31118,6 @@ var bh_ui_CardHandEvent = $hxEnums["bh.ui.CardHandEvent"] = { __ename__:true,__c
 };
 bh_ui_CardHandEvent.__constructs__ = [bh_ui_CardHandEvent.CardPlayed,bh_ui_CardHandEvent.CardCombined,bh_ui_CardHandEvent.CardHoverStart,bh_ui_CardHandEvent.CardHoverEnd,bh_ui_CardHandEvent.CardDragStart,bh_ui_CardHandEvent.CardDragEnd,bh_ui_CardHandEvent.DrawAnimComplete,bh_ui_CardHandEvent.DiscardAnimComplete];
 bh_ui_CardHandEvent.__empty_constructs__ = [];
-var bh_ui_CardTarget = function(id,boundsProvider,accepts) {
-	this.accepts = null;
-	this.id = id;
-	this.boundsProvider = boundsProvider;
-	if(accepts != null) {
-		this.accepts = accepts;
-	}
-};
-$hxClasses["bh.ui.CardTarget"] = bh_ui_CardTarget;
-bh_ui_CardTarget.__name__ = "bh.ui.CardTarget";
-bh_ui_CardTarget.prototype = {
-	__class__: bh_ui_CardTarget
-};
 var bh_ui_StandardUIElementStates = $hxEnums["bh.ui.StandardUIElementStates"] = { __ename__:true,__constructs__:null
 	,SUIPressed: {_hx_name:"SUIPressed",_hx_index:0,__enum__:"bh.ui.StandardUIElementStates",toString:$estr}
 	,SUIHover: {_hx_name:"SUIHover",_hx_index:1,__enum__:"bh.ui.StandardUIElementStates",toString:$estr}
@@ -34598,6 +34697,14 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 		}
 		binding.currentState = bh_ui_InteractiveState.Normal;
 		binding.result.setParameter(binding.stateParam,"normal");
+	}
+	,setHoverState: function(interactiveId) {
+		var binding = this.bindings.h[interactiveId];
+		if(binding == null) {
+			return;
+		}
+		binding.currentState = bh_ui_InteractiveState.Hover;
+		binding.result.setParameter(binding.stateParam,"hover");
 	}
 	,setDisabled: function(interactiveId,disabled) {
 		var binding = this.bindings.h[interactiveId];
@@ -108067,7 +108174,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/cards-demo.manim",false);
 		this.cardBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-hand.manim",false);
 		this.statesBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-states.manim",false);
-		var generatedByMacroBuildWithParametersload6531Builder = function() {
+		var generatedByMacroBuildWithParametersload7147Builder = function() {
 			var cardTabs;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -108086,7 +108193,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6531Builder();
+		var ui = generatedByMacroBuildWithParametersload7147Builder();
 		this.demoResult = ui.builderResults;
 		this.tabs = ui.cardTabs;
 		this.addBuilderResult(this.demoResult);
@@ -108313,7 +108420,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	,loadCardHandTab: function() {
 		var _gthis = this;
 		this.tabs.beginTab(1);
-		var generatedByMacroBuildWithParametersloadCardHandTab13344Builder = function() {
+		var generatedByMacroBuildWithParametersloadCardHandTab13960Builder = function() {
 			var thresholdSlider;
 			var spreadSlider;
 			var returnSlider;
@@ -108585,7 +108692,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadCardHandTab13344Builder();
+		var ui = generatedByMacroBuildWithParametersloadCardHandTab13960Builder();
 		this.handResult = ui.builderResults;
 		this.drawButton = ui.drawBtn;
 		this.discardButton = ui.discardBtn;
@@ -108767,27 +108874,29 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.cardHand == null) {
 			return;
 		}
+		var wrappers = [];
 		var _g = 0;
 		var _g1 = this.targetResults.length;
 		while(_g < _g1) {
 			var i = _g++;
-			var x = [20.0 + i * 200.0];
-			var y = [100.0];
-			this.cardHand.registerTarget(new bh_ui_CardTarget("target_" + i,(function(y,x) {
-				return function() {
-					var b = new h2d_col_Bounds();
-					b.xMin = x[0];
-					b.yMin = y[0];
-					b.xMax = x[0] + 180;
-					b.yMax = y[0] + 180;
-					return b;
-				};
-			})(y,x),null));
+			var resultWrappers = this.addInteractives(this.targetResults[i],"target_" + i);
+			var _g2 = 0;
+			while(_g2 < resultWrappers.length) {
+				var w = resultWrappers[_g2];
+				++_g2;
+				wrappers.push(w);
+			}
 		}
-		this.cardHand.setTargetHighlightCallback(function(targetId,highlight) {
-			var idx = Std.parseInt(targetId.split("_").pop());
-			if(idx != null && idx < _gthis.targetResults.length) {
-				_gthis.targetResults[idx].setParameter("highlighted",highlight);
+		this.cardHand.registerTargetInteractives(wrappers);
+		this.cardHand.setTargetHighlightCallback(function(targetId,highlight,metadata) {
+			var _g = 0;
+			var _g1 = _gthis.targetResults.length;
+			while(_g < _g1) {
+				var i = _g++;
+				if(targetId == "target_" + i + ".target") {
+					_gthis.targetResults[i].setParameter("highlighted",highlight);
+					break;
+				}
 			}
 		});
 	}
@@ -114875,10 +114984,10 @@ screens_animation_StateAnimDemoScreen.SOURCE_HAS_DIRECTION = [true,true,false,fa
 screens_gamelike_CardsDemoScreen.TAB_ITEMS = [{ name : "Card States"},{ name : "Card Hand"}];
 screens_gamelike_CardsDemoScreen.TAB_DESCRIPTIONS = ["Visual states a card passes through in the Card Hand system","Interactive card hand — drag to play, target enemies, combine cards"];
 screens_gamelike_CardsDemoScreen.CARD_DEFS = [{ name : "Fireball", desc : "Deal 3 fire damage", cost : 3, color : 13386786, artColor : 8921617, image : "potion_r"},{ name : "Shield", desc : "Block 4 damage", cost : 2, color : 2254540, artColor : 1127270, image : "shield_i"},{ name : "Heal", desc : "Restore 5 health", cost : 1, color : 2280516, artColor : 1140258, image : "potion_b"},{ name : "Lightning", desc : "Deal 4 to random", cost : 4, color : 13421602, artColor : 6710801, image : "sword_l"},{ name : "Poison", desc : "2 damage per turn", cost : 2, color : 6736930, artColor : 3368465, image : "ring_i"},{ name : "Ice Bolt", desc : "Freeze 1 turn", cost : 3, color : 2280652, artColor : 1140326, image : "scroll_i"},{ name : "Rage", desc : "Double attack", cost : 5, color : 13378082, artColor : 6689041, image : "helmet_i"},{ name : "Bless", desc : "Draw 2 cards", cost : 1, color : 13421704, artColor : 6710852, image : "armor_i"}];
-screens_gamelike_CardsDemoScreen.DRAW_EASINGS = [{ name : "linear"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"},{ name : "easeInOutQuad"},{ name : "easeInBack"},{ name : "easeInCubic"},{ name : "easeInQuad"}];
-screens_gamelike_CardsDemoScreen.DISCARD_EASINGS = [{ name : "linear"},{ name : "easeInQuad"},{ name : "easeInCubic"},{ name : "easeInBack"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutCubic"},{ name : "easeInOutQuad"},{ name : "easeInOutBack"}];
-screens_gamelike_CardsDemoScreen.RETURN_EASINGS = [{ name : "linear"},{ name : "easeOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"}];
-screens_gamelike_CardsDemoScreen.REARRANGE_EASINGS = [{ name : "linear"},{ name : "easeInOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutQuad"}];
+screens_gamelike_CardsDemoScreen.DRAW_EASINGS = [{ name : "linear"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"},{ name : "easeInOutQuad"},{ name : "easeInBack"},{ name : "easeInCubic"},{ name : "easeInQuad"},{ name : "spiral"},{ name : "wave"},{ name : "highArc"},{ name : "zigzag"},{ name : "spinFlip"},{ name : "loop"},{ name : "bouncyArc"},{ name : "flicker"}];
+screens_gamelike_CardsDemoScreen.DISCARD_EASINGS = [{ name : "linear"},{ name : "easeInQuad"},{ name : "easeInCubic"},{ name : "easeInBack"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutCubic"},{ name : "easeInOutQuad"},{ name : "easeInOutBack"},{ name : "spiral"},{ name : "wave"},{ name : "highArc"},{ name : "zigzag"},{ name : "spinFlip"},{ name : "loop"},{ name : "bouncyArc"},{ name : "flicker"}];
+screens_gamelike_CardsDemoScreen.RETURN_EASINGS = [{ name : "linear"},{ name : "easeOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"},{ name : "spiral"},{ name : "wave"},{ name : "highArc"},{ name : "zigzag"},{ name : "spinFlip"},{ name : "loop"},{ name : "bouncyArc"},{ name : "flicker"}];
+screens_gamelike_CardsDemoScreen.REARRANGE_EASINGS = [{ name : "linear"},{ name : "easeInOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutQuad"},{ name : "spiral"},{ name : "wave"},{ name : "highArc"},{ name : "zigzag"},{ name : "spinFlip"},{ name : "loop"},{ name : "bouncyArc"},{ name : "flicker"}];
 screens_gamelike_CardsDemoScreen.HAND_PATHS = [{ name : "handCurve"},{ name : "handFlat"},{ name : "handDeep"},{ name : "handWave"},{ name : "handTight"}];
 screens_gamelike_CardsDemoScreen.PATH_DISTS = [{ name : "EvenArcLength"},{ name : "EvenRate"}];
 screens_gamelike_CardsDemoScreen.PATH_ORIENTS = [{ name : "Tangent"},{ name : "Straight"}];

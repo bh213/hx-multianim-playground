@@ -78,15 +78,24 @@ version: 0.5
 
     #largeText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 260, 770
 
-    // Section: Text Shadow
-    text(exo2_16, "Text Shadow", #b0b0b0): 0, 840
+    // Section: Disabled
+    text(exo2_16, "Disabled", #b0b0b0): 0, 840
     bitmap(generated(color(600, 1, #b0b0b033))): 0, 862
-    text(exo2_light_14, "Dropdown with text shadow effect:", #cccccc): 0, 875
+    text(exo2_light_14, "Dropdown with disabled state:", #cccccc): 0, 875
 
-    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownShadow")) {
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownDisabled")) {
         pos: 0, 895
-        settings{dropdownBuildName=>dropdown-shadow, height:int=>150, font=>"dd", fontColor:color=>white}
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
     }
 
-    #shadowText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 905
+    #disabledText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 905
+
+    // Disable toggle section
+    text(exo2_16, "Disable Toggle", #7fdbda): 0, 970
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 992
+    placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
+        pos: 0, 1010
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Toggle to disable all dropdowns", #aaaaaa): 30, 1012
 }

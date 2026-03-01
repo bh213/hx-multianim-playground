@@ -3,6 +3,7 @@ package screens.ui;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
@@ -17,7 +18,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 	var dropdownCustom:Null<UIStandardMultiAnimDropdown>;
 	var dropdownWide:Null<UIStandardMultiAnimDropdown>;
 	var dropdownLarge:Null<UIStandardMultiAnimDropdown>;
-	var dropdownShadow:Null<UIStandardMultiAnimDropdown>;
+	var dropdownDisabled:Null<UIStandardMultiAnimDropdown>;
+	var disableCheckbox:Null<UIStandardMultiCheckbox>;
+	var allDropdowns:Array<UIStandardMultiAnimDropdown> = [];
 
 	static final FRUITS:Array<UIElementListItem> = [
 		{name: "Apple"},
@@ -64,7 +67,9 @@ class DropdownsDemoScreen extends DemoScreenBase {
 			dropdownCustom => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
 			dropdownWide => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
 			dropdownLarge => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
-			dropdownShadow => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			dropdownDisabled => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar", FRUITS, 0),
+			// Checkbox
+			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
 		demoResult = ui.builderResults;
@@ -74,7 +79,13 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownCustom = ui.dropdownCustom;
 		dropdownWide = ui.dropdownWide;
 		dropdownLarge = ui.dropdownLarge;
-		dropdownShadow = ui.dropdownShadow;
+		dropdownDisabled = ui.dropdownDisabled;
+		dropdownDisabled.disabled = true;
+		disableCheckbox = ui.disableCheckbox;
+		allDropdowns = [
+			dropdownScrollable, dropdownAutoFew, dropdownAutoMany,
+			dropdownCustom, dropdownWide, dropdownLarge, dropdownDisabled,
+		];
 
 		addBuilderResult(demoResult);
 	}
@@ -94,8 +105,13 @@ class DropdownsDemoScreen extends DemoScreenBase {
 					updateSelectedText(index, items, "wideText");
 				} else if (source == dropdownLarge) {
 					updateSelectedText(index, items, "largeText");
-				} else if (source == dropdownShadow) {
-					updateSelectedText(index, items, "shadowText");
+				} else if (source == dropdownDisabled) {
+					updateSelectedText(index, items, "disabledText");
+				}
+			case UIToggle(pressed):
+				if (source == disableCheckbox) {
+					for (dd in allDropdowns)
+						dd.disabled = pressed;
 				}
 			default:
 		}
@@ -124,6 +140,8 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownCustom = null;
 		dropdownWide = null;
 		dropdownLarge = null;
-		dropdownShadow = null;
+		dropdownDisabled = null;
+		disableCheckbox = null;
+		allDropdowns = [];
 	}
 }

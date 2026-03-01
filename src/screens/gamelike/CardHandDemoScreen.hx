@@ -214,6 +214,8 @@ class CardHandDemoScreen extends DemoScreenBase {
 		for (_ in 0...5)
 			drawRandomCard();
 
+		autoSyncInitialState = true;
+		updateControlStates();
 		updateUI();
 	}
 
@@ -254,7 +256,9 @@ class CardHandDemoScreen extends DemoScreenBase {
 			discardPathName: "discard_easeInQuad",
 			returnPathName: "return_easeOutCubic",
 			rearrangePathName: "rearrange_easeInOutCubic",
-			targetingArrowName: "targetingArrow",
+			arrowSegmentName: "arrowSegment",
+			arrowHeadName: "arrowHead",
+			arrowPathName: "arrowCurve",
 			allowCardToCard: c2c,
 			layoutPathName: currentHandPath,
 			pathDistribution: currentPathDist,
@@ -268,6 +272,7 @@ class CardHandDemoScreen extends DemoScreenBase {
 
 		cardHand.onCardEvent = onCardEvent;
 		cardHand.canPlayCard = (cardId, target) -> true;
+		cardHand.setArrowVisible(if (arrowToggle != null) arrowToggle.selected else true);
 
 		registerTargets();
 	}
@@ -314,6 +319,7 @@ class CardHandDemoScreen extends DemoScreenBase {
 			cardHand.setHand(descriptors);
 
 		setStatus('Layout: ${currentLayoutMode == Fan ? "Fan" : currentLayoutMode == Linear ? "Linear" : "Path"}');
+		updateControlStates();
 		updateUI();
 	}
 
@@ -419,6 +425,20 @@ class CardHandDemoScreen extends DemoScreenBase {
 		if (demoResult == null) return;
 		var count = if (cardHand != null) cardHand.getCardCount() else 0;
 		demoResult.getUpdatable("handCount").updateText('Hand: $count');
+	}
+
+	function updateControlStates():Void {
+		var isFan = currentLayoutMode == Fan;
+		var isPath = currentLayoutMode == PathLayout;
+
+		// Fan-only controls
+		if (fanAngleSlider != null) fanAngleSlider.disabled = !isFan;
+		if (fanRadiusSlider != null) fanRadiusSlider.disabled = !isFan;
+
+		// Path-only controls
+		if (handPathDropdown != null) handPathDropdown.disabled = !isPath;
+		if (pathDistDropdown != null) pathDistDropdown.disabled = !isPath;
+		if (pathOrientDropdown != null) pathOrientDropdown.disabled = !isPath;
 	}
 
 	function toggleDisableCard():Void {

@@ -156,6 +156,7 @@ class NavScreen extends UIScreenBase {
 				{id: "skillTree", title: "Equipment Tree"},
 				{id: "dialogue", title: "Dialogue Box"},
 				{id: "statusEffects", title: "Status Effects"},
+			{id: "cards", title: "Cards"},
 			]
 		}
 	];

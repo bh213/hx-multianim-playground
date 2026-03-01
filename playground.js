@@ -1534,6 +1534,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("skillTree",new screens_gamelike_SkillTreeDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogue",new screens_gamelike_DialogueDemoScreen(this.screenManager));
 		this.screenManager.addScreen("statusEffects",new screens_gamelike_StatusEffectsDemoScreen(this.screenManager));
+		this.screenManager.addScreen("cards",new screens_gamelike_CardsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("incremental",new screens_advanced_IncrementalDemoScreen(this.screenManager));
 		this.screenManager.addScreen("interactives",new screens_advanced_InteractivesDemoScreen(this.screenManager));
 		this.screenManager.addScreen("conditionals",new screens_advanced_ConditionalsDemoScreen(this.screenManager));
@@ -1568,7 +1569,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 370, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 371, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -1599,7 +1600,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload5975Builder = function() {
+		var generatedByMacroBuildWithParametersload6009Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1662,7 +1663,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload5975Builder();
+		var ui = generatedByMacroBuildWithParametersload6009Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -22547,6 +22548,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw haxe_Exception.thrown("" + name + " has to be animatedPath" + "");
 		}
 	}
+	,createProjectilePath: function(name,startPoint,endPoint) {
+		return this.createAnimatedPath(name,bh_paths_PathNormalization.Stretch(startPoint,endPoint));
+	}
 	,getLayouts: function(builderParams) {
 		var node = this.multiParserResult.nodes.h[bh_multianim_MultiAnimParser.defaultLayoutNodeName];
 		if(node == null) {
@@ -24928,6 +24932,7 @@ var bh_paths_AnimatedPath = function(path,mode) {
 	this.isDone = false;
 	this.distance = 0.;
 	this.time = 0.;
+	this.durationOverride = null;
 	this.pingPong = false;
 	this.loop = false;
 	this.path = path;
@@ -25027,7 +25032,8 @@ bh_paths_AnimatedPath.prototype = {
 			modeComplete = rate >= 1.0;
 			break;
 		case 1:
-			var duration = _g.duration;
+			var baseDuration = _g.duration;
+			var duration = this.durationOverride != null ? this.durationOverride : baseDuration;
 			var timeRate = Math.min(this.time / duration,1.0);
 			rate = this.progressCurveSegments.length > 0 ? this.evaluateCurveSlot(this.progressCurveSegments,timeRate) : timeRate;
 			effectiveSpeed = this.time > 0 ? this.pathLength * rate / this.time : 0.;
@@ -25062,8 +25068,8 @@ bh_paths_AnimatedPath.prototype = {
 					this.distance -= this.pathLength;
 					break;
 				case 1:
-					var duration = _g.duration;
-					this.time -= duration;
+					var baseDuration = _g.duration;
+					this.time -= this.durationOverride != null ? this.durationOverride : baseDuration;
 					break;
 				}
 				if(this.pingPong) {
@@ -25077,7 +25083,8 @@ bh_paths_AnimatedPath.prototype = {
 					rate = this.pathLength <= 0 ? 0. : Math.min(this.distance / this.pathLength,1.0);
 					break;
 				case 1:
-					var duration = _g.duration;
+					var baseDuration = _g.duration;
+					var duration = this.durationOverride != null ? this.durationOverride : baseDuration;
 					var timeRate = Math.min(this.time / duration,1.0);
 					rate = this.progressCurveSegments.length > 0 ? this.evaluateCurveSlot(this.progressCurveSegments,timeRate) : timeRate;
 					break;
@@ -29651,6 +29658,1367 @@ bh_ui_DefaultUIController.prototype = $extend(bh_ui_controllers_UIControllerBase
 	}
 	,__class__: bh_ui_DefaultUIController
 });
+var bh_ui__$UICardHandHelper_CardEntry = function(descriptor,result,container,interactiveId) {
+	this.state = bh_ui_CardState.InHand;
+	this.descriptor = descriptor;
+	this.result = result;
+	this.container = container;
+	this.interactiveId = interactiveId;
+	this.layoutPos = new bh_ui_CardLayoutPosition(0.0,0.0,0.0,1.0,0.0,-1.0);
+};
+$hxClasses["bh.ui._UICardHandHelper.CardEntry"] = bh_ui__$UICardHandHelper_CardEntry;
+bh_ui__$UICardHandHelper_CardEntry.__name__ = "bh.ui._UICardHandHelper.CardEntry";
+bh_ui__$UICardHandHelper_CardEntry.prototype = {
+	__class__: bh_ui__$UICardHandHelper_CardEntry
+};
+var bh_ui__$UICardHandHelper_ActiveAnimation = function(entry,anim,startRotation,endRotation,onComplete) {
+	this.entry = entry;
+	this.anim = anim;
+	this.startRotation = startRotation;
+	this.endRotation = endRotation;
+	this.onComplete = onComplete;
+};
+$hxClasses["bh.ui._UICardHandHelper.ActiveAnimation"] = bh_ui__$UICardHandHelper_ActiveAnimation;
+bh_ui__$UICardHandHelper_ActiveAnimation.__name__ = "bh.ui._UICardHandHelper.ActiveAnimation";
+bh_ui__$UICardHandHelper_ActiveAnimation.prototype = {
+	__class__: bh_ui__$UICardHandHelper_ActiveAnimation
+};
+var bh_ui_UICardHandHelper = function(screen,builder,config) {
+	this.canDragCard = null;
+	this.canPlayCard = null;
+	this.onCardEvent = null;
+	this.activeAnimations = [];
+	this.nextCardSeq = 0;
+	this.currentTargetId = null;
+	this.cardToCardTarget = null;
+	this.cursorY = 0;
+	this.cursorX = 0;
+	this.dragOffsetY = 0;
+	this.dragOffsetX = 0;
+	this.draggedEntry = null;
+	this.hoveredEntry = null;
+	this.isTargeting = false;
+	this.isDragging = false;
+	this.cards = [];
+	this.rearrangeDuration = 0;
+	this.returnDuration = 0;
+	this.discardDuration = 0;
+	this.drawDuration = 0;
+	this.resolvedPath = null;
+	this.screen = screen;
+	this.builder = builder;
+	this.interactiveHelper = new bh_ui_UIRichInteractiveHelper(screen);
+	this.layoutMode = config != null && config.layoutMode != null ? config.layoutMode : bh_ui_HandLayoutMode.Fan;
+	this.anchorX = config != null && config.anchorX != null ? config.anchorX : 640.0;
+	this.anchorY = config != null && config.anchorY != null ? config.anchorY : 680.0;
+	this.cardWidth = config != null && config.cardWidth != null ? config.cardWidth : 80.0;
+	this.cardHeight = config != null && config.cardHeight != null ? config.cardHeight : 110.0;
+	this.fanRadius = config != null && config.fanRadius != null ? config.fanRadius : 800.0;
+	this.fanMaxAngle = config != null && config.fanMaxAngle != null ? config.fanMaxAngle : 40.0;
+	this.linearSpacing = config != null && config.linearSpacing != null ? config.linearSpacing : 8.0;
+	this.linearMaxWidth = config != null && config.linearMaxWidth != null ? config.linearMaxWidth : 600.0;
+	this.hoverPopDistance = config != null && config.hoverPopDistance != null ? config.hoverPopDistance : 30.0;
+	this.hoverScale = config != null && config.hoverScale != null ? config.hoverScale : 1.15;
+	this.hoverNeighborSpread = config != null && config.hoverNeighborSpread != null ? config.hoverNeighborSpread : 20.0;
+	this.targetingThresholdY = config != null && config.targetingThresholdY != null ? config.targetingThresholdY : 100.0;
+	this.allowCardToCard = config != null && config.allowCardToCard != null && config.allowCardToCard;
+	this.cardToCardHighlightScale = config != null && config.cardToCardHighlightScale != null ? config.cardToCardHighlightScale : 1.1;
+	this.drawPilePosition = config != null && config.drawPilePosition != null ? config.drawPilePosition : new bh_base_FPoint(50,680);
+	this.discardPilePosition = config != null && config.discardPilePosition != null ? config.discardPilePosition : new bh_base_FPoint(1230,680);
+	this.handLayer = config != null && config.handLayer != null ? config.handLayer : bh_ui_screens_LayersEnum.DefaultLayer;
+	this.dragLayer = config != null && config.dragLayer != null ? config.dragLayer : bh_ui_screens_LayersEnum.ModalLayer;
+	this.interactivePrefix = config != null && config.interactivePrefix != null ? config.interactivePrefix : "card";
+	this.layoutPathName = config != null ? config.layoutPathName : null;
+	this.pathDistribution = config != null && config.pathDistribution != null ? config.pathDistribution : bh_ui_PathDistribution.EvenArcLength;
+	this.pathOrientation = config != null && config.pathOrientation != null ? config.pathOrientation : bh_ui_PathOrientation.Tangent;
+	this.onCardBuilt = config != null ? config.onCardBuilt : null;
+	this.drawPathName = config != null ? config.drawPathName : null;
+	this.discardPathName = config != null ? config.discardPathName : null;
+	this.returnPathName = config != null ? config.returnPathName : null;
+	this.rearrangePathName = config != null ? config.rearrangePathName : null;
+	this.handContainer = new h2d_Layers();
+	screen.addObjectToLayer(this.handContainer,this.handLayer);
+	var segName = config != null ? config.arrowSegmentName : null;
+	var headName = config != null ? config.arrowHeadName : null;
+	var arrowPath = config != null ? config.arrowPathName : null;
+	var arrowSpacing = config != null && config.arrowSegmentSpacing != null ? config.arrowSegmentSpacing : 25.0;
+	this.targeting = new bh_ui_UICardHandTargeting(builder,segName,headName,arrowPath,arrowSpacing);
+	var targetingLayer = config != null && config.targetingLineLayer != null ? config.targetingLineLayer : bh_ui_screens_LayersEnum.ModalLayer;
+	screen.addObjectToLayer(this.targeting.getObject(),targetingLayer);
+};
+$hxClasses["bh.ui.UICardHandHelper"] = bh_ui_UICardHandHelper;
+bh_ui_UICardHandHelper.__name__ = "bh.ui.UICardHandHelper";
+bh_ui_UICardHandHelper.prototype = {
+	setHand: function(descriptors) {
+		this.clearHand();
+		var _g = 0;
+		while(_g < descriptors.length) {
+			var desc = descriptors[_g];
+			++_g;
+			var entry = this.buildCardEntry(desc);
+			this.cards.push(entry);
+			this.addToHandLayer(entry);
+		}
+		this.applyLayout(false);
+	}
+	,drawCard: function(descriptor,insertIndex) {
+		if(insertIndex == null) {
+			insertIndex = -1;
+		}
+		var _gthis = this;
+		var entry = this.buildCardEntry(descriptor);
+		entry.state = bh_ui_CardState.Animating;
+		if(insertIndex < 0 || insertIndex >= this.cards.length) {
+			this.cards.push(entry);
+		} else {
+			this.cards.splice(insertIndex,0,entry);
+		}
+		this.addToHandLayer(entry);
+		var positions = this.computeLayout(-1);
+		var targetIdx = this.cards.indexOf(entry);
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.x = this.drawPilePosition.x;
+		_this.posChanged = true;
+		_this.y = this.drawPilePosition.y;
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.rotation = 0;
+		if(targetIdx >= 0 && targetIdx < positions.length) {
+			var targetPos = positions[targetIdx];
+			entry.layoutPos = targetPos;
+			this.animateCardTo(entry,new bh_base_FPoint(this.drawPilePosition.x,this.drawPilePosition.y),new bh_base_FPoint(targetPos.x,targetPos.y),0,targetPos.rotation,this.drawPathName,function() {
+				if(entry.state == bh_ui_CardState.Animating) {
+					entry.state = bh_ui_CardState.InHand;
+				}
+				var _this = entry.container;
+				var v = targetPos.scale;
+				_this.posChanged = true;
+				_this.scaleX = v;
+				var _this = entry.container;
+				var v = targetPos.scale;
+				_this.posChanged = true;
+				_this.scaleY = v;
+				_gthis.emitEvent(bh_ui_CardHandEvent.DrawAnimComplete(descriptor.id));
+				_gthis.applyLayout(true);
+			});
+		}
+		this.rearrangeCards(positions,targetIdx);
+	}
+	,discardCard: function(cardId) {
+		var _gthis = this;
+		var idx = this.findCardIndex(cardId);
+		if(idx < 0) {
+			return;
+		}
+		var entry = this.cards[idx];
+		if(this.draggedEntry == entry) {
+			this.cancelDrag();
+		}
+		if(this.hoveredEntry == entry) {
+			this.hoveredEntry = null;
+		}
+		if(this.cardToCardTarget == entry) {
+			this.cardToCardTarget = null;
+		}
+		entry.state = bh_ui_CardState.Animating;
+		this.interactiveHelper.unbind(entry.interactiveId);
+		this.screen.removeInteractives(entry.interactiveId);
+		this.cards.splice(idx,1);
+		var fromPos = new bh_base_FPoint(entry.container.x,entry.container.y);
+		this.animateCardTo(entry,fromPos,this.discardPilePosition,entry.container.rotation,0,this.discardPathName,function() {
+			var _this = entry.container;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			_gthis.emitEvent(bh_ui_CardHandEvent.DiscardAnimComplete(cardId));
+		});
+		var positions = this.computeLayout(-1);
+		this.rearrangeCards(positions,-1);
+	}
+	,setCardEnabled: function(cardId,enabled) {
+		var idx = this.findCardIndex(cardId);
+		if(idx < 0) {
+			return;
+		}
+		var entry = this.cards[idx];
+		if(!enabled && this.draggedEntry == entry) {
+			this.cancelDrag();
+		}
+		if(entry.state == bh_ui_CardState.Animating) {
+			if(!enabled) {
+				entry.state = bh_ui_CardState.Disabled;
+			}
+		} else {
+			entry.state = enabled ? bh_ui_CardState.InHand : bh_ui_CardState.Disabled;
+		}
+		this.interactiveHelper.setDisabled(entry.interactiveId,!enabled);
+	}
+	,getCardCount: function() {
+		return this.cards.length;
+	}
+	,registerTarget: function(target) {
+		this.targeting.registerTarget(target);
+	}
+	,setTargetHighlightCallback: function(cb) {
+		this.targeting.onTargetHighlight = cb;
+	}
+	,setArrowVisible: function(visible) {
+		this.targeting.arrowEnabled = visible;
+	}
+	,setVisible: function(visible) {
+		this.handContainer.set_visible(visible);
+		this.targeting.getObject().set_visible(visible);
+	}
+	,handleScreenEvent: function(event) {
+		if(!this.isDragging) {
+			this.interactiveHelper.handleEvent(event);
+		}
+		if(event._hx_index == 14) {
+			var innerEvent = event.event;
+			var id = event.id;
+			var meta = event.metadata;
+			var entry = this.findCardByInteractiveId(id);
+			if(entry == null) {
+				return false;
+			}
+			switch(innerEvent._hx_index) {
+			case 1:
+				if(!this.isDragging) {
+					return this.startDragFromInteractive(entry);
+				}
+				break;
+			case 11:
+				if(!this.isDragging) {
+					this.setHoveredEntry(entry);
+					return true;
+				}
+				break;
+			case 12:
+				if(!this.isDragging && this.hoveredEntry == entry) {
+					this.setHoveredEntry(null);
+					return true;
+				}
+				break;
+			default:
+			}
+			return false;
+		} else {
+			return false;
+		}
+	}
+	,onMouseMove: function(screenX,screenY) {
+		this.cursorX = screenX;
+		this.cursorY = screenY;
+		if(this.isDragging) {
+			this.updateDrag();
+			return true;
+		}
+		return false;
+	}
+	,onMouseRelease: function(screenX,screenY) {
+		this.cursorX = screenX;
+		this.cursorY = screenY;
+		if(this.isDragging) {
+			return this.endDrag();
+		}
+		return false;
+	}
+	,update: function(dt) {
+		var i = this.activeAnimations.length - 1;
+		while(i >= 0) {
+			var anim = this.activeAnimations[i];
+			var state = anim.anim.update(dt);
+			var _this = anim.entry.container;
+			_this.posChanged = true;
+			_this.x = state.position.x;
+			_this.posChanged = true;
+			_this.y = state.position.y;
+			var rate = state.rate;
+			var _this1 = anim.entry.container;
+			_this1.posChanged = true;
+			_this1.rotation = anim.startRotation + (anim.endRotation - anim.startRotation) * rate;
+			var _this2 = anim.entry.container;
+			_this2.posChanged = true;
+			_this2.scaleX = state.scale;
+			var _this3 = anim.entry.container;
+			_this3.posChanged = true;
+			_this3.scaleY = state.scale;
+			anim.entry.container.alpha = state.alpha;
+			if(state.done) {
+				this.activeAnimations.splice(i,1);
+				anim.onComplete();
+			}
+			--i;
+		}
+	}
+	,dispose: function() {
+		this.clearHand();
+		var _this = this.handContainer;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		var _this = this.targeting.getObject();
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		this.targeting.clearTargets();
+		this.interactiveHelper.unbindAll();
+	}
+	,buildCardEntry: function(descriptor) {
+		var params = descriptor.params != null ? haxe_ds_StringMap.createCopy(descriptor.params.h) : new haxe_ds_StringMap();
+		var result = this.builder.buildWithParameters(descriptor.buildName,params,null,null,true);
+		var container = new h2d_Object();
+		var pivotWrapper = new h2d_Object(container);
+		pivotWrapper.posChanged = true;
+		pivotWrapper.x = -this.cardWidth / 2.0;
+		pivotWrapper.posChanged = true;
+		pivotWrapper.y = -this.cardHeight / 2.0;
+		pivotWrapper.addChild(result.object);
+		var interactiveId = "" + this.interactivePrefix + "_" + this.nextCardSeq;
+		this.nextCardSeq++;
+		this.screen.addInteractives(result,interactiveId);
+		this.interactiveHelper.register(result,interactiveId);
+		var entry = new bh_ui__$UICardHandHelper_CardEntry(descriptor,result,container,interactiveId);
+		var enabled = descriptor.enabled != null ? descriptor.enabled : true;
+		if(!enabled) {
+			entry.state = bh_ui_CardState.Disabled;
+			this.interactiveHelper.setDisabled(interactiveId,true);
+		}
+		if(this.onCardBuilt != null) {
+			this.onCardBuilt(descriptor.id,result,container);
+		}
+		return entry;
+	}
+	,clearHand: function() {
+		var _g = 0;
+		var _g1 = this.cards;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			this.interactiveHelper.unbind(entry.interactiveId);
+			this.screen.removeInteractives(entry.interactiveId);
+			var _this = entry.container;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
+		this.cards = [];
+		this.activeAnimations = [];
+		this.hoveredEntry = null;
+		this.draggedEntry = null;
+		this.isDragging = false;
+		this.isTargeting = false;
+	}
+	,computeLayout: function(hoverIdx) {
+		switch(this.layoutMode._hx_index) {
+		case 0:
+			var spreadDeg = this.fanRadius > 0 ? this.hoverNeighborSpread / this.fanRadius * (180.0 / Math.PI) : this.hoverNeighborSpread;
+			return bh_ui_UICardHandLayout.computeFanLayout(this.cards.length,this.anchorX,this.anchorY,this.fanRadius,this.fanMaxAngle,hoverIdx,this.hoverPopDistance,this.hoverScale,spreadDeg);
+		case 1:
+			return bh_ui_UICardHandLayout.computeLinearLayout(this.cards.length,this.anchorX,this.anchorY,this.cardWidth,this.linearSpacing,this.linearMaxWidth,hoverIdx,this.hoverPopDistance,this.hoverScale,this.hoverNeighborSpread);
+		case 2:
+			var spreadRate = this.hoverNeighborSpread * 0.0025;
+			var positions = bh_ui_UICardHandLayout.computePathLayout(this.cards.length,this.getLayoutPath(),this.pathDistribution,this.pathOrientation,hoverIdx,this.hoverPopDistance,this.hoverScale,spreadRate);
+			var _g = 0;
+			while(_g < positions.length) {
+				var pos = positions[_g];
+				++_g;
+				pos.x += this.anchorX;
+				pos.y += this.anchorY;
+			}
+			return positions;
+		}
+	}
+	,getLayoutPath: function() {
+		if(this.resolvedPath == null) {
+			if(this.layoutPathName == null) {
+				throw haxe_Exception.thrown("PathLayout mode requires layoutPathName in config");
+			}
+			this.resolvedPath = this.builder.getPaths().getPath(this.layoutPathName);
+		}
+		return this.resolvedPath;
+	}
+	,applyLayout: function(animated) {
+		var hoverIdx = this.hoveredEntry != null ? this.cards.indexOf(this.hoveredEntry) : -1;
+		var positions = this.computeLayout(hoverIdx);
+		var _g = 0;
+		var _g1 = this.cards.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(i >= positions.length) {
+				break;
+			}
+			var entry = this.cards[i];
+			var pos = positions[i];
+			entry.layoutPos = pos;
+			if(entry.state == bh_ui_CardState.Dragging || entry.state == bh_ui_CardState.Targeting) {
+				continue;
+			}
+			if(animated && entry.state == bh_ui_CardState.InHand) {
+				this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(pos.x,pos.y),entry.container.rotation,pos.rotation,this.rearrangePathName,function() {
+				});
+			} else if(entry.state != bh_ui_CardState.Animating) {
+				var _this = entry.container;
+				_this.posChanged = true;
+				_this.x = pos.x;
+				_this.posChanged = true;
+				_this.y = pos.y;
+				var _this1 = entry.container;
+				_this1.posChanged = true;
+				_this1.rotation = pos.rotation;
+				var _this2 = entry.container;
+				_this2.posChanged = true;
+				_this2.scaleX = pos.scale;
+				var _this3 = entry.container;
+				_this3.posChanged = true;
+				_this3.scaleY = pos.scale;
+			}
+		}
+	}
+	,rearrangeCards: function(positions,skipIndex) {
+		var _g = 0;
+		var _g1 = this.cards.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(i == skipIndex || i >= positions.length) {
+				continue;
+			}
+			var entry = [this.cards[i]];
+			if(entry[0].state == bh_ui_CardState.Dragging || entry[0].state == bh_ui_CardState.Targeting || entry[0].state == bh_ui_CardState.Animating) {
+				continue;
+			}
+			var pos = [positions[i]];
+			entry[0].layoutPos = pos[0];
+			this.animateCardTo(entry[0],new bh_base_FPoint(entry[0].container.x,entry[0].container.y),new bh_base_FPoint(pos[0].x,pos[0].y),entry[0].container.rotation,pos[0].rotation,this.rearrangePathName,(function(pos,entry) {
+				return function() {
+					if(entry[0].state == bh_ui_CardState.Animating) {
+						entry[0].state = bh_ui_CardState.InHand;
+					}
+					var _this = entry[0].container;
+					var v = pos[0].scale;
+					_this.posChanged = true;
+					_this.scaleX = v;
+					var _this = entry[0].container;
+					var v = pos[0].scale;
+					_this.posChanged = true;
+					_this.scaleY = v;
+				};
+			})(pos,entry));
+		}
+	}
+	,setHoveredEntry: function(entry) {
+		if(entry == this.hoveredEntry) {
+			return;
+		}
+		if(this.hoveredEntry != null) {
+			if(this.hoveredEntry.state == bh_ui_CardState.Hovered) {
+				this.hoveredEntry.state = bh_ui_CardState.InHand;
+				this.emitEvent(bh_ui_CardHandEvent.CardHoverEnd(this.hoveredEntry.descriptor.id));
+			}
+		}
+		this.hoveredEntry = entry;
+		if(this.hoveredEntry != null) {
+			if(this.hoveredEntry.state == bh_ui_CardState.InHand) {
+				this.hoveredEntry.state = bh_ui_CardState.Hovered;
+				this.emitEvent(bh_ui_CardHandEvent.CardHoverStart(this.hoveredEntry.descriptor.id));
+			}
+		}
+		this.applyLayout(true);
+	}
+	,startDragFromInteractive: function(entry) {
+		if(this.isDragging) {
+			return false;
+		}
+		if(entry.state == bh_ui_CardState.Disabled || entry.state == bh_ui_CardState.Animating) {
+			return false;
+		}
+		if(this.canDragCard != null && !this.canDragCard(entry.descriptor.id)) {
+			return false;
+		}
+		this.draggedEntry = entry;
+		this.dragOffsetX = entry.container.x - this.cursorX;
+		this.dragOffsetY = entry.container.y - this.cursorY;
+		entry.state = bh_ui_CardState.Dragging;
+		this.interactiveHelper.resetState(entry.interactiveId);
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.rotation = 0;
+		this.screen.addObjectToLayer(entry.container,this.dragLayer);
+		this.isDragging = true;
+		this.hoveredEntry = null;
+		this.emitEvent(bh_ui_CardHandEvent.CardDragStart(entry.descriptor.id));
+		this.applyLayout(true);
+		return true;
+	}
+	,updateDrag: function() {
+		if(this.draggedEntry == null) {
+			return;
+		}
+		var entry = this.draggedEntry;
+		if(this.allowCardToCard) {
+			var targetEntry = this.getCardAtPosition(this.cursorX,this.cursorY,entry);
+			if(targetEntry != this.cardToCardTarget) {
+				if(this.cardToCardTarget != null) {
+					var _this = this.cardToCardTarget.container;
+					_this.posChanged = true;
+					_this.scaleX = this.cardToCardTarget.layoutPos.scale;
+					var _this = this.cardToCardTarget.container;
+					_this.posChanged = true;
+					_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+				}
+				this.cardToCardTarget = targetEntry;
+				if(this.cardToCardTarget != null) {
+					var _this = this.cardToCardTarget.container;
+					_this.posChanged = true;
+					_this.scaleX = this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
+					var _this = this.cardToCardTarget.container;
+					_this.posChanged = true;
+					_this.scaleY = this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
+				}
+			}
+			if(this.cardToCardTarget != null) {
+				var _this = entry.container;
+				_this.posChanged = true;
+				_this.x = this.cursorX + this.dragOffsetX;
+				_this.posChanged = true;
+				_this.y = this.cursorY + this.dragOffsetY;
+				if(this.isTargeting) {
+					this.targeting.clearLine();
+					this.exitTargetingMode(entry);
+				}
+				return;
+			}
+		}
+		if(this.targeting.arrowEnabled && this.cursorY < this.anchorY - this.targetingThresholdY) {
+			if(!this.isTargeting) {
+				this.enterTargetingMode(entry);
+			}
+			var originX = entry.layoutPos.x + entry.layoutPos.normalX * this.hoverPopDistance;
+			var originY = entry.layoutPos.y + entry.layoutPos.normalY * this.hoverPopDistance;
+			this.currentTargetId = this.targeting.updateTargetingLine(originX,originY,this.cursorX,this.cursorY,entry.descriptor.id);
+		} else {
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.x = this.cursorX + this.dragOffsetX;
+			_this.posChanged = true;
+			_this.y = this.cursorY + this.dragOffsetY;
+			if(this.isTargeting) {
+				this.targeting.clearLine();
+				this.exitTargetingMode(entry);
+				this.currentTargetId = null;
+			}
+		}
+	}
+	,enterTargetingMode: function(entry) {
+		this.isTargeting = true;
+		entry.state = bh_ui_CardState.Targeting;
+		this.addToHandLayer(entry);
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.x = entry.layoutPos.x + entry.layoutPos.normalX * this.hoverPopDistance;
+		_this.posChanged = true;
+		_this.y = entry.layoutPos.y + entry.layoutPos.normalY * this.hoverPopDistance;
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.rotation = entry.layoutPos.rotation;
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.scaleX = this.hoverScale;
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.scaleY = this.hoverScale;
+		this.screen.addObjectToLayer(this.targeting.getObject(),this.dragLayer);
+	}
+	,exitTargetingMode: function(entry) {
+		this.isTargeting = false;
+		entry.state = bh_ui_CardState.Dragging;
+		this.screen.addObjectToLayer(entry.container,this.dragLayer);
+		var _this = entry.container;
+		_this.posChanged = true;
+		_this.rotation = 0;
+	}
+	,endDrag: function() {
+		var _gthis = this;
+		if(this.draggedEntry == null) {
+			return false;
+		}
+		var entry = this.draggedEntry;
+		var cardId = entry.descriptor.id;
+		var wasTargeting = this.isTargeting;
+		this.targeting.clearLine();
+		entry.container.alpha = 1.0;
+		if(this.cardToCardTarget != null) {
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleX = this.cardToCardTarget.layoutPos.scale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+		}
+		var result = bh_ui_TargetingResult.NoTarget;
+		var cardPlayed = false;
+		if(this.cardToCardTarget != null) {
+			var targetId = this.cardToCardTarget.descriptor.id;
+			var canCombine = entry.descriptor.canCombineWith;
+			if(canCombine == null || canCombine(targetId)) {
+				this.emitEvent(bh_ui_CardHandEvent.CardCombined(cardId,targetId));
+				cardPlayed = true;
+			}
+		} else if(wasTargeting) {
+			result = this.currentTargetId != null ? bh_ui_TargetingResult.TargetZone(this.currentTargetId) : bh_ui_TargetingResult.NoTarget;
+			if(this.canPlayCard == null || this.canPlayCard(cardId,result)) {
+				this.emitEvent(bh_ui_CardHandEvent.CardPlayed(cardId,result));
+				cardPlayed = true;
+			}
+		} else {
+			var dropTarget = this.targeting.hitTestTargets(this.cursorX,this.cursorY,cardId);
+			if(dropTarget != null) {
+				result = bh_ui_TargetingResult.TargetZone(dropTarget);
+				if(this.canPlayCard == null || this.canPlayCard(cardId,result)) {
+					this.emitEvent(bh_ui_CardHandEvent.CardPlayed(cardId,result));
+					cardPlayed = true;
+				}
+			}
+		}
+		this.cardToCardTarget = null;
+		this.currentTargetId = null;
+		this.draggedEntry = null;
+		this.isDragging = false;
+		this.isTargeting = false;
+		this.emitEvent(bh_ui_CardHandEvent.CardDragEnd(cardId));
+		if(cardPlayed) {
+			entry.state = bh_ui_CardState.Animating;
+			this.interactiveHelper.unbind(entry.interactiveId);
+			this.screen.removeInteractives(entry.interactiveId);
+			var spliceIdx = this.cards.indexOf(entry);
+			if(spliceIdx >= 0) {
+				this.cards.splice(spliceIdx,1);
+			}
+			this.screen.addObjectToLayer(entry.container,this.dragLayer);
+			var fromPos = new bh_base_FPoint(entry.container.x,entry.container.y);
+			this.animateCardTo(entry,fromPos,this.discardPilePosition,0,0,this.discardPathName,function() {
+				var _this = entry.container;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+			});
+			this.applyLayout(true);
+		} else {
+			entry.state = bh_ui_CardState.Animating;
+			if(!wasTargeting) {
+				this.addToHandLayer(entry);
+			}
+			var targetPos = entry.layoutPos;
+			this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(targetPos.x,targetPos.y),entry.container.rotation,targetPos.rotation,this.returnPathName,function() {
+				if(entry.state == bh_ui_CardState.Animating) {
+					entry.state = bh_ui_CardState.InHand;
+				}
+				var _this = entry.container;
+				var v = targetPos.scale;
+				_this.posChanged = true;
+				_this.scaleX = v;
+				var _this = entry.container;
+				var v = targetPos.scale;
+				_this.posChanged = true;
+				_this.scaleY = v;
+				_gthis.interactiveHelper.resetState(entry.interactiveId);
+			});
+		}
+		return true;
+	}
+	,cancelDrag: function() {
+		if(!this.isDragging || this.draggedEntry == null) {
+			return;
+		}
+		var entry = this.draggedEntry;
+		this.targeting.clearLine();
+		if(this.cardToCardTarget != null) {
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleX = this.cardToCardTarget.layoutPos.scale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+			this.cardToCardTarget = null;
+		}
+		this.currentTargetId = null;
+		this.isDragging = false;
+		this.isTargeting = false;
+		this.draggedEntry = null;
+		entry.container.alpha = 1.0;
+		this.addToHandLayer(entry);
+		this.emitEvent(bh_ui_CardHandEvent.CardDragEnd(entry.descriptor.id));
+	}
+	,getCardAtPosition: function(x,y,skipEntry) {
+		var i = this.cards.length - 1;
+		while(i >= 0) {
+			var entry = this.cards[i];
+			if(entry == skipEntry) {
+				--i;
+				continue;
+			}
+			if(entry.state == bh_ui_CardState.Animating || entry.state == bh_ui_CardState.Disabled) {
+				--i;
+				continue;
+			}
+			var pos = entry.layoutPos;
+			var halfW = this.cardWidth * pos.scale / 2.0;
+			var halfH = this.cardHeight * pos.scale / 2.0;
+			var dx = x - pos.x;
+			var dy = y - pos.y;
+			var cos = Math.cos(-pos.rotation);
+			var sin = Math.sin(-pos.rotation);
+			var localX = dx * cos - dy * sin;
+			var localY = dx * sin + dy * cos;
+			if(localX >= -halfW && localX <= halfW && localY >= -halfH && localY <= halfH) {
+				return entry;
+			}
+			--i;
+		}
+		return null;
+	}
+	,animateCardTo: function(entry,from,to,startRotation,endRotation,pathName,onComplete) {
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.activeAnimations;
+		while(_g1 < _g2.length) {
+			var v = _g2[_g1];
+			++_g1;
+			if(v.entry != entry) {
+				_g.push(v);
+			}
+		}
+		this.activeAnimations = _g;
+		var dx = to.x - from.x;
+		var dy = to.y - from.y;
+		if(dx * dx + dy * dy < 1.0) {
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.x = to.x;
+			_this.posChanged = true;
+			_this.y = to.y;
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.rotation = endRotation;
+			onComplete();
+			return;
+		}
+		if(pathName != null) {
+			var ap = this.builder.createProjectilePath(pathName,from,to);
+			var durationOv = this.getDurationOverride(pathName);
+			if(durationOv > 0) {
+				ap.durationOverride = durationOv;
+			}
+			this.activeAnimations.push(new bh_ui__$UICardHandHelper_ActiveAnimation(entry,ap,startRotation,endRotation,onComplete));
+		} else {
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.x = to.x;
+			_this.posChanged = true;
+			_this.y = to.y;
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.rotation = endRotation;
+			onComplete();
+		}
+	}
+	,emitEvent: function(event) {
+		if(this.onCardEvent != null) {
+			this.onCardEvent(event);
+		}
+	}
+	,addToHandLayer: function(entry) {
+		this.handContainer.add(entry.container,this.cards.indexOf(entry));
+	}
+	,findCardIndex: function(cardId) {
+		var _g = 0;
+		var _g1 = this.cards.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.cards[i].descriptor.id == cardId) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	,findCardByInteractiveId: function(id) {
+		var _g = 0;
+		var _g1 = this.cards;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.interactiveId == id || id.indexOf(entry.interactiveId + ".") == 0) {
+				return entry;
+			}
+		}
+		return null;
+	}
+	,getDurationOverride: function(pathName) {
+		if(pathName == this.drawPathName) {
+			return this.drawDuration;
+		}
+		if(pathName == this.discardPathName) {
+			return this.discardDuration;
+		}
+		if(pathName == this.returnPathName) {
+			return this.returnDuration;
+		}
+		if(pathName == this.rearrangePathName) {
+			return this.rearrangeDuration;
+		}
+		return 0;
+	}
+	,__class__: bh_ui_UICardHandHelper
+};
+var bh_ui_UICardHandLayout = function() { };
+$hxClasses["bh.ui.UICardHandLayout"] = bh_ui_UICardHandLayout;
+bh_ui_UICardHandLayout.__name__ = "bh.ui.UICardHandLayout";
+bh_ui_UICardHandLayout.computeFanLayout = function(cardCount,anchorX,anchorY,radius,maxAngleDeg,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadDeg) {
+	if(cardCount <= 0) {
+		return [];
+	}
+	var result = [];
+	if(cardCount == 1) {
+		var pop = hoverIndex == 0 ? hoverPopDistance : 0.0;
+		var s = hoverIndex == 0 ? hoverScale : 1.0;
+		result.push(new bh_ui_CardLayoutPosition(anchorX,anchorY - pop,0.0,s,0.0,-1.0));
+		return result;
+	}
+	var maxAngleRad = maxAngleDeg * Math.PI / 180.0;
+	var maxPerCardDeg = 8.0;
+	var maxPerCardRad = maxPerCardDeg * Math.PI / 180.0;
+	var angleStep = Math.min(maxAngleRad / (cardCount - 1),maxPerCardRad);
+	var totalArc = angleStep * (cardCount - 1);
+	var halfArc = totalArc / 2.0;
+	var neighborSpreadRad = neighborSpreadDeg * Math.PI / 180.0;
+	var _g = 0;
+	var _g1 = cardCount;
+	while(_g < _g1) {
+		var i = _g++;
+		var baseAngle = -halfArc + i * angleStep;
+		var angle = baseAngle;
+		if(hoverIndex >= 0 && i != hoverIndex) {
+			if(i < hoverIndex) {
+				var dist = hoverIndex - i;
+				var spread = neighborSpreadRad / dist;
+				angle -= spread;
+			} else {
+				var dist1 = i - hoverIndex;
+				var spread1 = neighborSpreadRad / dist1;
+				angle += spread1;
+			}
+		}
+		var x = anchorX + radius * Math.sin(angle);
+		var y = anchorY + radius - radius * Math.cos(angle);
+		var scale = 1.0;
+		var pop = 0.0;
+		if(i == hoverIndex) {
+			pop = hoverPopDistance;
+			scale = hoverScale;
+		}
+		var normalAngle = angle;
+		x -= pop * Math.sin(normalAngle);
+		y -= pop * Math.cos(normalAngle);
+		result.push(new bh_ui_CardLayoutPosition(x,y,angle,scale,-Math.sin(angle),-Math.cos(angle)));
+	}
+	return result;
+};
+bh_ui_UICardHandLayout.computeLinearLayout = function(cardCount,anchorX,anchorY,cardWidth,spacing,maxWidth,hoverIndex,hoverPopDistance,hoverScale,neighborSpread) {
+	if(cardCount <= 0) {
+		return [];
+	}
+	var result = [];
+	var totalWidth = cardCount * cardWidth + (cardCount - 1) * spacing;
+	var effectiveStep = cardWidth + spacing;
+	if(totalWidth > maxWidth && cardCount > 1) {
+		effectiveStep = (maxWidth - cardWidth) / (cardCount - 1);
+	}
+	var startX = anchorX - (cardCount - 1) * effectiveStep / 2.0;
+	var _g = 0;
+	var _g1 = cardCount;
+	while(_g < _g1) {
+		var i = _g++;
+		var x = startX + i * effectiveStep;
+		var y = anchorY;
+		if(hoverIndex >= 0 && i != hoverIndex) {
+			if(i < hoverIndex) {
+				var dist = hoverIndex - i;
+				x -= neighborSpread / dist;
+			} else {
+				var dist1 = i - hoverIndex;
+				x += neighborSpread / dist1;
+			}
+		}
+		var scale = 1.0;
+		if(i == hoverIndex) {
+			y -= hoverPopDistance;
+			scale = hoverScale;
+		}
+		result.push(new bh_ui_CardLayoutPosition(x,y,0.0,scale,0.0,-1.0));
+	}
+	return result;
+};
+bh_ui_UICardHandLayout.computePathLayout = function(cardCount,path,distribution,orientation,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadRate) {
+	if(cardCount <= 0) {
+		return [];
+	}
+	var result = [];
+	var rates = [];
+	if(cardCount == 1) {
+		rates.push(0.5);
+	} else {
+		switch(distribution._hx_index) {
+		case 0:
+			rates = bh_ui_UICardHandLayout.computeEvenArcLengthRates(path,cardCount);
+			break;
+		case 1:
+			var _g = 0;
+			var _g1 = cardCount;
+			while(_g < _g1) {
+				var i = _g++;
+				rates.push(i / (cardCount - 1));
+			}
+			break;
+		}
+	}
+	if(hoverIndex >= 0 && hoverIndex < cardCount) {
+		var adjustedRates = rates.slice();
+		var _g = 0;
+		var _g1 = cardCount;
+		while(_g < _g1) {
+			var i = _g++;
+			if(i == hoverIndex) {
+				continue;
+			}
+			var dist = hoverIndex - i;
+			if(dist < 0) {
+				dist = -dist;
+			}
+			var shift = neighborSpreadRate / dist;
+			if(i < hoverIndex) {
+				adjustedRates[i] = Math.max(0.0,rates[i] - shift);
+			} else {
+				adjustedRates[i] = Math.min(1.0,rates[i] + shift);
+			}
+		}
+		rates = adjustedRates;
+	}
+	var _g = 0;
+	var _g1 = cardCount;
+	while(_g < _g1) {
+		var i = _g++;
+		var rate = rates[i];
+		var pt = path.getPoint(rate);
+		var tangent = path.getTangentAngle(rate);
+		var nrmX = -Math.sin(tangent);
+		var nrmY = Math.cos(tangent);
+		var x = pt.x;
+		var y = pt.y;
+		var scale = 1.0;
+		if(i == hoverIndex) {
+			x += nrmX * hoverPopDistance;
+			y += nrmY * hoverPopDistance;
+			scale = hoverScale;
+		}
+		var rotation;
+		switch(orientation._hx_index) {
+		case 0:
+			rotation = tangent;
+			break;
+		case 1:
+			rotation = 0.0;
+			break;
+		case 2:
+			var maxDeg = orientation.maxDeg;
+			var maxRad = maxDeg * Math.PI / 180.0;
+			rotation = Math.max(-maxRad,Math.min(maxRad,tangent));
+			break;
+		}
+		result.push(new bh_ui_CardLayoutPosition(x,y,rotation,scale,nrmX,nrmY));
+	}
+	return result;
+};
+bh_ui_UICardHandLayout.computeEvenArcLengthRates = function(path,cardCount) {
+	var sampleCount = 100;
+	var sampleRates = [];
+	var sampleLengths = [];
+	var cumLength = 0.0;
+	var prevPt = path.getPoint(0.0);
+	sampleRates.push(0.0);
+	sampleLengths.push(0.0);
+	var _g = 1;
+	var _g1 = sampleCount + 1;
+	while(_g < _g1) {
+		var s = _g++;
+		var r = s / sampleCount;
+		var pt = path.getPoint(r);
+		var dx = pt.x - prevPt.x;
+		var dy = pt.y - prevPt.y;
+		cumLength += Math.sqrt(dx * dx + dy * dy);
+		sampleRates.push(r);
+		sampleLengths.push(cumLength);
+		prevPt = pt;
+	}
+	var totalArcLength = cumLength;
+	var rates = [];
+	var _g = 0;
+	var _g1 = cardCount;
+	while(_g < _g1) {
+		var i = _g++;
+		var targetLength = cardCount == 1 ? totalArcLength * 0.5 : i * totalArcLength / (cardCount - 1);
+		var lo = 0;
+		var hi = sampleCount;
+		while(lo < hi) {
+			var mid = lo + hi >> 1;
+			if(sampleLengths[mid] < targetLength) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+		if(lo == 0) {
+			rates.push(0.0);
+		} else {
+			var segStart = sampleLengths[lo - 1];
+			var segEnd = sampleLengths[lo];
+			var segLen = segEnd - segStart;
+			var t = segLen > 0.001 ? (targetLength - segStart) / segLen : 0.0;
+			rates.push(sampleRates[lo - 1] + t * (sampleRates[lo] - sampleRates[lo - 1]));
+		}
+	}
+	return rates;
+};
+var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,spacing) {
+	if(spacing == null) {
+		spacing = 25.0;
+	}
+	this.onTargetHighlight = null;
+	this.arrowEnabled = true;
+	this.currentValid = false;
+	this.activeTargetId = null;
+	this.targets = [];
+	this.hasArrowVisual = false;
+	this.activeSegmentCount = 0;
+	this.headValid = null;
+	this.headInvalid = null;
+	this.segmentPoolValid = [];
+	this.segmentPoolInvalid = [];
+	this.builder = builder;
+	this.arrowPathName = pathName;
+	this.segmentSpacing = spacing;
+	this.arrowContainer = new h2d_Object();
+	this.arrowContainer.set_visible(false);
+	if(segmentName != null && headName != null && pathName != null) {
+		this.hasArrowVisual = true;
+		var _g = 0;
+		while(_g < 30) {
+			var _ = _g++;
+			var _g1 = new haxe_ds_StringMap();
+			_g1.h["valid"] = false;
+			var inv = builder.buildWithParameters(segmentName,_g1,null,null,false);
+			var _g2 = new haxe_ds_StringMap();
+			_g2.h["valid"] = true;
+			var val = builder.buildWithParameters(segmentName,_g2,null,null,false);
+			inv.object.set_visible(false);
+			val.object.set_visible(false);
+			this.arrowContainer.addChild(inv.object);
+			this.arrowContainer.addChild(val.object);
+			this.segmentPoolInvalid.push(inv);
+			this.segmentPoolValid.push(val);
+		}
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = false;
+		this.headInvalid = builder.buildWithParameters(headName,_g,null,null,false);
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = true;
+		this.headValid = builder.buildWithParameters(headName,_g,null,null,false);
+		this.headInvalid.object.set_visible(false);
+		this.headValid.object.set_visible(false);
+		this.arrowContainer.addChild(this.headInvalid.object);
+		this.arrowContainer.addChild(this.headValid.object);
+	}
+};
+$hxClasses["bh.ui.UICardHandTargeting"] = bh_ui_UICardHandTargeting;
+bh_ui_UICardHandTargeting.__name__ = "bh.ui.UICardHandTargeting";
+bh_ui_UICardHandTargeting.prototype = {
+	getObject: function() {
+		return this.arrowContainer;
+	}
+	,registerTarget: function(target) {
+		var _g = 0;
+		var _g1 = this.targets.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.targets[i].id == target.id) {
+				this.targets[i] = target;
+				return;
+			}
+		}
+		this.targets.push(target);
+	}
+	,clearTargets: function() {
+		if(this.activeTargetId != null && this.onTargetHighlight != null) {
+			this.onTargetHighlight(this.activeTargetId,false);
+		}
+		this.activeTargetId = null;
+		this.targets = [];
+	}
+	,hitTestTargets: function(x,y,cardId) {
+		var _g = 0;
+		var _g1 = this.targets;
+		while(_g < _g1.length) {
+			var target = _g1[_g];
+			++_g;
+			var bounds = target.boundsProvider();
+			var x1 = x;
+			var y1 = y;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			var x2 = x1;
+			var y2 = y1;
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			var p_x = x2;
+			var p_y = y2;
+			if(p_x >= bounds.xMin && p_x < bounds.xMax && p_y >= bounds.yMin && p_y < bounds.yMax) {
+				if(target.accepts == null || target.accepts(cardId)) {
+					return target.id;
+				}
+			}
+		}
+		return null;
+	}
+	,updateTargetingLine: function(originX,originY,cursorX,cursorY,cardId) {
+		this.arrowContainer.set_visible(this.arrowEnabled);
+		var hoveredTarget = null;
+		var _g = 0;
+		var _g1 = this.targets;
+		while(_g < _g1.length) {
+			var target = _g1[_g];
+			++_g;
+			var bounds = target.boundsProvider();
+			var x = cursorX;
+			var y = cursorY;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var x1 = x;
+			var y1 = y;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			var p_x = x1;
+			var p_y = y1;
+			if(p_x >= bounds.xMin && p_x < bounds.xMax && p_y >= bounds.yMin && p_y < bounds.yMax) {
+				if(target.accepts == null || target.accepts(cardId)) {
+					hoveredTarget = target;
+					break;
+				}
+			}
+		}
+		var newTargetId = hoveredTarget != null ? hoveredTarget.id : null;
+		if(newTargetId != this.activeTargetId) {
+			if(this.activeTargetId != null && this.onTargetHighlight != null) {
+				this.onTargetHighlight(this.activeTargetId,false);
+			}
+			this.activeTargetId = newTargetId;
+			if(this.activeTargetId != null && this.onTargetHighlight != null) {
+				this.onTargetHighlight(this.activeTargetId,true);
+			}
+		}
+		var valid = hoveredTarget != null;
+		if(this.hasArrowVisual && this.arrowEnabled && this.arrowPathName != null) {
+			var paths = this.builder.getPaths();
+			var origin = new bh_base_FPoint(originX,originY);
+			var cursor = new bh_base_FPoint(cursorX,cursorY);
+			var path = paths.getPath(this.arrowPathName,bh_paths_PathNormalization.Stretch(origin,cursor));
+			var totalLen = path.totalLength;
+			var count = Math.floor(totalLen / this.segmentSpacing);
+			if(count > 30) {
+				count = 30;
+			}
+			if(count < 1) {
+				count = 1;
+			}
+			if(valid != this.currentValid) {
+				this.currentValid = valid;
+			}
+			var _g = 0;
+			var _g1 = count;
+			while(_g < _g1) {
+				var i = _g++;
+				var rate = (i + 0.5) / (count + 1);
+				var pt = path.getPoint(rate);
+				var angle = path.getTangentAngle(rate);
+				var inv = this.segmentPoolInvalid[i];
+				var val = this.segmentPoolValid[i];
+				inv.object.set_visible(!this.currentValid);
+				val.object.set_visible(this.currentValid);
+				var _this = inv.object;
+				_this.posChanged = true;
+				_this.x = pt.x;
+				_this.posChanged = true;
+				_this.y = pt.y;
+				var _this1 = inv.object;
+				_this1.posChanged = true;
+				_this1.rotation = angle;
+				var _this2 = val.object;
+				_this2.posChanged = true;
+				_this2.x = pt.x;
+				_this2.posChanged = true;
+				_this2.y = pt.y;
+				var _this3 = val.object;
+				_this3.posChanged = true;
+				_this3.rotation = angle;
+			}
+			var _g = count;
+			var _g1 = this.activeSegmentCount;
+			while(_g < _g1) {
+				var i = _g++;
+				this.segmentPoolInvalid[i].object.set_visible(false);
+				this.segmentPoolValid[i].object.set_visible(false);
+			}
+			this.activeSegmentCount = count;
+			var endPt = path.getPoint(1.0);
+			var endAngle = path.getTangentAngle(1.0);
+			if(this.headInvalid != null) {
+				this.headInvalid.object.set_visible(!this.currentValid);
+				var _this = this.headInvalid.object;
+				_this.posChanged = true;
+				_this.x = endPt.x;
+				_this.posChanged = true;
+				_this.y = endPt.y;
+				var _this = this.headInvalid.object;
+				_this.posChanged = true;
+				_this.rotation = endAngle;
+			}
+			if(this.headValid != null) {
+				this.headValid.object.set_visible(this.currentValid);
+				var _this = this.headValid.object;
+				_this.posChanged = true;
+				_this.x = endPt.x;
+				_this.posChanged = true;
+				_this.y = endPt.y;
+				var _this = this.headValid.object;
+				_this.posChanged = true;
+				_this.rotation = endAngle;
+			}
+		}
+		return newTargetId;
+	}
+	,clearLine: function() {
+		this.arrowContainer.set_visible(false);
+		var _g = 0;
+		var _g1 = this.activeSegmentCount;
+		while(_g < _g1) {
+			var i = _g++;
+			this.segmentPoolInvalid[i].object.set_visible(false);
+			this.segmentPoolValid[i].object.set_visible(false);
+		}
+		this.activeSegmentCount = 0;
+		if(this.headInvalid != null) {
+			this.headInvalid.object.set_visible(false);
+		}
+		if(this.headValid != null) {
+			this.headValid.object.set_visible(false);
+		}
+		if(this.activeTargetId != null && this.onTargetHighlight != null) {
+			this.onTargetHighlight(this.activeTargetId,false);
+		}
+		this.activeTargetId = null;
+	}
+	,__class__: bh_ui_UICardHandTargeting
+};
+var bh_ui_CardState = $hxEnums["bh.ui.CardState"] = { __ename__:true,__constructs__:null
+	,InHand: {_hx_name:"InHand",_hx_index:0,__enum__:"bh.ui.CardState",toString:$estr}
+	,Hovered: {_hx_name:"Hovered",_hx_index:1,__enum__:"bh.ui.CardState",toString:$estr}
+	,Dragging: {_hx_name:"Dragging",_hx_index:2,__enum__:"bh.ui.CardState",toString:$estr}
+	,Targeting: {_hx_name:"Targeting",_hx_index:3,__enum__:"bh.ui.CardState",toString:$estr}
+	,Animating: {_hx_name:"Animating",_hx_index:4,__enum__:"bh.ui.CardState",toString:$estr}
+	,Disabled: {_hx_name:"Disabled",_hx_index:5,__enum__:"bh.ui.CardState",toString:$estr}
+};
+bh_ui_CardState.__constructs__ = [bh_ui_CardState.InHand,bh_ui_CardState.Hovered,bh_ui_CardState.Dragging,bh_ui_CardState.Targeting,bh_ui_CardState.Animating,bh_ui_CardState.Disabled];
+bh_ui_CardState.__empty_constructs__ = [bh_ui_CardState.InHand,bh_ui_CardState.Hovered,bh_ui_CardState.Dragging,bh_ui_CardState.Targeting,bh_ui_CardState.Animating,bh_ui_CardState.Disabled];
+var bh_ui_HandLayoutMode = $hxEnums["bh.ui.HandLayoutMode"] = { __ename__:true,__constructs__:null
+	,Fan: {_hx_name:"Fan",_hx_index:0,__enum__:"bh.ui.HandLayoutMode",toString:$estr}
+	,Linear: {_hx_name:"Linear",_hx_index:1,__enum__:"bh.ui.HandLayoutMode",toString:$estr}
+	,PathLayout: {_hx_name:"PathLayout",_hx_index:2,__enum__:"bh.ui.HandLayoutMode",toString:$estr}
+};
+bh_ui_HandLayoutMode.__constructs__ = [bh_ui_HandLayoutMode.Fan,bh_ui_HandLayoutMode.Linear,bh_ui_HandLayoutMode.PathLayout];
+bh_ui_HandLayoutMode.__empty_constructs__ = [bh_ui_HandLayoutMode.Fan,bh_ui_HandLayoutMode.Linear,bh_ui_HandLayoutMode.PathLayout];
+var bh_ui_PathDistribution = $hxEnums["bh.ui.PathDistribution"] = { __ename__:true,__constructs__:null
+	,EvenArcLength: {_hx_name:"EvenArcLength",_hx_index:0,__enum__:"bh.ui.PathDistribution",toString:$estr}
+	,EvenRate: {_hx_name:"EvenRate",_hx_index:1,__enum__:"bh.ui.PathDistribution",toString:$estr}
+};
+bh_ui_PathDistribution.__constructs__ = [bh_ui_PathDistribution.EvenArcLength,bh_ui_PathDistribution.EvenRate];
+bh_ui_PathDistribution.__empty_constructs__ = [bh_ui_PathDistribution.EvenArcLength,bh_ui_PathDistribution.EvenRate];
+var bh_ui_PathOrientation = $hxEnums["bh.ui.PathOrientation"] = { __ename__:true,__constructs__:null
+	,Tangent: {_hx_name:"Tangent",_hx_index:0,__enum__:"bh.ui.PathOrientation",toString:$estr}
+	,Straight: {_hx_name:"Straight",_hx_index:1,__enum__:"bh.ui.PathOrientation",toString:$estr}
+	,TangentClamped: ($_=function(maxDeg) { return {_hx_index:2,maxDeg:maxDeg,__enum__:"bh.ui.PathOrientation",toString:$estr}; },$_._hx_name="TangentClamped",$_.__params__ = ["maxDeg"],$_)
+};
+bh_ui_PathOrientation.__constructs__ = [bh_ui_PathOrientation.Tangent,bh_ui_PathOrientation.Straight,bh_ui_PathOrientation.TangentClamped];
+bh_ui_PathOrientation.__empty_constructs__ = [bh_ui_PathOrientation.Tangent,bh_ui_PathOrientation.Straight];
+var bh_ui_CardLayoutPosition = function(x,y,rotation,scale,normalX,normalY) {
+	this.x = x;
+	this.y = y;
+	this.rotation = rotation;
+	this.scale = scale;
+	this.normalX = normalX;
+	this.normalY = normalY;
+};
+$hxClasses["bh.ui.CardLayoutPosition"] = bh_ui_CardLayoutPosition;
+bh_ui_CardLayoutPosition.__name__ = "bh.ui.CardLayoutPosition";
+bh_ui_CardLayoutPosition.prototype = {
+	__class__: bh_ui_CardLayoutPosition
+};
+var bh_ui_TargetingResult = $hxEnums["bh.ui.TargetingResult"] = { __ename__:true,__constructs__:null
+	,TargetZone: ($_=function(targetId) { return {_hx_index:0,targetId:targetId,__enum__:"bh.ui.TargetingResult",toString:$estr}; },$_._hx_name="TargetZone",$_.__params__ = ["targetId"],$_)
+	,TargetCard: ($_=function(targetCardId) { return {_hx_index:1,targetCardId:targetCardId,__enum__:"bh.ui.TargetingResult",toString:$estr}; },$_._hx_name="TargetCard",$_.__params__ = ["targetCardId"],$_)
+	,NoTarget: {_hx_name:"NoTarget",_hx_index:2,__enum__:"bh.ui.TargetingResult",toString:$estr}
+};
+bh_ui_TargetingResult.__constructs__ = [bh_ui_TargetingResult.TargetZone,bh_ui_TargetingResult.TargetCard,bh_ui_TargetingResult.NoTarget];
+bh_ui_TargetingResult.__empty_constructs__ = [bh_ui_TargetingResult.NoTarget];
+var bh_ui_CardHandEvent = $hxEnums["bh.ui.CardHandEvent"] = { __ename__:true,__constructs__:null
+	,CardPlayed: ($_=function(cardId,target) { return {_hx_index:0,cardId:cardId,target:target,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardPlayed",$_.__params__ = ["cardId","target"],$_)
+	,CardCombined: ($_=function(sourceCardId,targetCardId) { return {_hx_index:1,sourceCardId:sourceCardId,targetCardId:targetCardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardCombined",$_.__params__ = ["sourceCardId","targetCardId"],$_)
+	,CardHoverStart: ($_=function(cardId) { return {_hx_index:2,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardHoverStart",$_.__params__ = ["cardId"],$_)
+	,CardHoverEnd: ($_=function(cardId) { return {_hx_index:3,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardHoverEnd",$_.__params__ = ["cardId"],$_)
+	,CardDragStart: ($_=function(cardId) { return {_hx_index:4,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardDragStart",$_.__params__ = ["cardId"],$_)
+	,CardDragEnd: ($_=function(cardId) { return {_hx_index:5,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardDragEnd",$_.__params__ = ["cardId"],$_)
+	,DrawAnimComplete: ($_=function(cardId) { return {_hx_index:6,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="DrawAnimComplete",$_.__params__ = ["cardId"],$_)
+	,DiscardAnimComplete: ($_=function(cardId) { return {_hx_index:7,cardId:cardId,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="DiscardAnimComplete",$_.__params__ = ["cardId"],$_)
+};
+bh_ui_CardHandEvent.__constructs__ = [bh_ui_CardHandEvent.CardPlayed,bh_ui_CardHandEvent.CardCombined,bh_ui_CardHandEvent.CardHoverStart,bh_ui_CardHandEvent.CardHoverEnd,bh_ui_CardHandEvent.CardDragStart,bh_ui_CardHandEvent.CardDragEnd,bh_ui_CardHandEvent.DrawAnimComplete,bh_ui_CardHandEvent.DiscardAnimComplete];
+bh_ui_CardHandEvent.__empty_constructs__ = [];
+var bh_ui_CardTarget = function(id,boundsProvider,accepts) {
+	this.accepts = null;
+	this.id = id;
+	this.boundsProvider = boundsProvider;
+	if(accepts != null) {
+		this.accepts = accepts;
+	}
+};
+$hxClasses["bh.ui.CardTarget"] = bh_ui_CardTarget;
+bh_ui_CardTarget.__name__ = "bh.ui.CardTarget";
+bh_ui_CardTarget.prototype = {
+	__class__: bh_ui_CardTarget
+};
 var bh_ui_StandardUIElementStates = $hxEnums["bh.ui.StandardUIElementStates"] = { __ename__:true,__constructs__:null
 	,SUIPressed: {_hx_name:"SUIPressed",_hx_index:0,__enum__:"bh.ui.StandardUIElementStates",toString:$estr}
 	,SUIHover: {_hx_name:"SUIHover",_hx_index:1,__enum__:"bh.ui.StandardUIElementStates",toString:$estr}
@@ -29997,9 +31365,26 @@ bh_ui_UIInteractiveWrapper.prototype = {
 		return this.interactive;
 	}
 	,containsPoint: function(pos) {
-		var _this = this.interactive.getBounds();
-		if(pos.x >= _this.xMin && pos.x < _this.xMax && pos.y >= _this.yMin) {
-			return pos.y < _this.yMax;
+		var _g = this.interactive.multiAnimType;
+		if(_g._hx_index == 0) {
+			var _g1 = _g.identifier;
+			var _g1 = _g.metadata;
+			var width = _g.width;
+			var height = _g.height;
+			var x = pos.x;
+			var y = pos.y;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			var local = this.interactive.globalToLocal(new h2d_col_PointImpl(x,y));
+			if(local.x >= 0 && local.x <= width && local.y >= 0) {
+				return local.y <= height;
+			} else {
+				return false;
+			}
 		} else {
 			return false;
 		}
@@ -30916,6 +32301,13 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		}
 		return value;
 	}
+	,set_disabled: function(value) {
+		if(this.disabled != value) {
+			this.disabled = value;
+			this.requestRedraw = true;
+		}
+		return value;
+	}
 	,isOpen: function() {
 		switch(this.panelStatus._hx_index) {
 		case 0:case 2:
@@ -31074,7 +32466,8 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 			pStatus = "closed";
 			break;
 		}
-		var currentResult = this.mainPartImages.findResultByCombo(bh_ui_UIElement_standardUIElementStatusToString(this.status),pStatus);
+		var statusStr = this.disabled ? "disabled" : bh_ui_UIElement_standardUIElementStatusToString(this.status);
+		var currentResult = this.mainPartImages.findResultByCombo(statusStr,pStatus);
 		var updatable = currentResult.getUpdatable("panelPoint");
 		var tmp = this.transitionTimerOverride;
 		this.transitionTimer = tmp != null ? tmp : currentResult.rootSettings.getFloatOrDefault("transitionTimer",1.0);
@@ -31921,6 +33314,13 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 			return bh_base_CursorManager.getDefaultCursor();
 		}
 		return bh_base_CursorManager.getDefaultInteractiveCursor();
+	}
+	,set_disabled: function(value) {
+		if(this.disabled != value) {
+			this.disabled = value;
+			this.requestRedraw = true;
+		}
+		return value;
 	}
 	,set_status: function(value) {
 		if(this.status != value) {
@@ -33181,6 +34581,23 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 			stateParam = "status";
 		}
 		this.bindings.h[interactiveId] = { result : result, stateParam : stateParam, currentState : bh_ui_InteractiveState.Normal};
+	}
+	,unbind: function(interactiveId) {
+		var _this = this.bindings;
+		if(Object.prototype.hasOwnProperty.call(_this.h,interactiveId)) {
+			delete(_this.h[interactiveId]);
+		}
+	}
+	,unbindAll: function() {
+		this.bindings.h = Object.create(null);
+	}
+	,resetState: function(interactiveId) {
+		var binding = this.bindings.h[interactiveId];
+		if(binding == null) {
+			return;
+		}
+		binding.currentState = bh_ui_InteractiveState.Normal;
+		binding.result.setParameter(binding.stateParam,"normal");
 	}
 	,setDisabled: function(interactiveId,disabled) {
 		var binding = this.bindings.h[interactiveId];
@@ -66130,6 +67547,11 @@ var haxe_ds_StringMap = function() {
 $hxClasses["haxe.ds.StringMap"] = haxe_ds_StringMap;
 haxe_ds_StringMap.__name__ = "haxe.ds.StringMap";
 haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
+haxe_ds_StringMap.createCopy = function(h) {
+	var copy = new haxe_ds_StringMap();
+	for (var key in h) copy.h[key] = h[key];
+	return copy;
+};
 haxe_ds_StringMap.stringify = function(h) {
 	var s = "[";
 	var first = true;
@@ -106620,6 +108042,1219 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,__class__: screens_gamelike_Blob47DemoScreen
 });
+var screens_gamelike_CardsDemoScreen = function(screenManager,layers) {
+	this.currentHandPath = "handCurve";
+	this.currentPathOrient = bh_ui_PathOrientation.Tangent;
+	this.currentPathDist = bh_ui_PathDistribution.EvenArcLength;
+	this.disabledCardIndex = -1;
+	this.currentLayoutMode = bh_ui_HandLayoutMode.Fan;
+	this.handCardIds = [];
+	this.nextCardId = 0;
+	this.targetResults = [];
+	this.stateCardResults = [];
+	this.activeTab = 0;
+	this.tabs = null;
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.gamelike.CardsDemoScreen"] = screens_gamelike_CardsDemoScreen;
+screens_gamelike_CardsDemoScreen.__name__ = "screens.gamelike.CardsDemoScreen";
+screens_gamelike_CardsDemoScreen.__super__ = DemoScreenBase;
+screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.set_autoSyncInitialState(true);
+		this.setupDemo("Cards","Card visual states and interactive card hand");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/cards-demo.manim",false);
+		this.cardBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-hand.manim",false);
+		this.statesBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-states.manim",false);
+		var generatedByMacroBuildWithParametersload6531Builder = function() {
+			var cardTabs;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTabs(_gthis.stdBuilder,settings,screens_gamelike_CardsDemoScreen.TAB_ITEMS,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cardTabs = _el;
+				return _el.getObject();
+			});
+			_g.h["cardTabs"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("cardsDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { cardTabs : cardTabs, builderResults : builderResults1};
+			if(retVal.cardTabs == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cardTabs" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload6531Builder();
+		this.demoResult = ui.builderResults;
+		this.tabs = ui.cardTabs;
+		this.addBuilderResult(this.demoResult);
+		if(this.demoResult != null) {
+			var updatable = this.demoResult.getUpdatable("description");
+			if(updatable != null) {
+				updatable.updateText(screens_gamelike_CardsDemoScreen.TAB_DESCRIPTIONS[0]);
+			}
+		}
+		this.loadCardStatesTab();
+		this.loadCardHandTab();
+	}
+	,loadCardStatesTab: function() {
+		this.tabs.beginTab(0);
+		this.statesResult = this.statesBuilder.buildWithParameters("cardStatesDemo",new haxe_ds_StringMap());
+		this.addBuilderResult(this.statesResult);
+		this.tooltipHelper = new bh_ui_UITooltipHelper(this,this.statesBuilder,{ delay : 0.15, position : bh_ui_TooltipPosition.Right, offset : 8});
+		this.buildStatusCards();
+		this.buildBehaviorCards();
+		this.tabs.endTab();
+	}
+	,buildStatusCards: function() {
+		var positions = [{ prefix : "sNormal", status : "normal", x : 90.0, y : 92.0},{ prefix : "sHover", status : "hover", x : 280.0, y : 92.0},{ prefix : "sPressed", status : "pressed", x : 470.0, y : 92.0},{ prefix : "sDisabled", status : "disabled", x : 660.0, y : 92.0}];
+		var _g = 0;
+		while(_g < positions.length) {
+			var p = positions[_g];
+			++_g;
+			var result = this.cardBuilder;
+			var _g1 = new haxe_ds_StringMap();
+			_g1.h["status"] = p.status;
+			_g1.h["cardName"] = "Shield";
+			_g1.h["description"] = "Block 4 damage";
+			_g1.h["cost"] = 2;
+			_g1.h["cardColor"] = 2254540;
+			_g1.h["artColor"] = 1127270;
+			_g1.h["cardImage"] = "shield_i";
+			var result1 = result.buildWithParameters("card",_g1,null,null,true);
+			var _this = result1.object;
+			_this.posChanged = true;
+			_this.x = p.x;
+			_this.posChanged = true;
+			_this.y = p.y;
+			this.addObjectToLayer(result1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+			this.addInteractives(result1,p.prefix);
+			this.stateCardResults.push(result1);
+		}
+	}
+	,buildBehaviorCards: function() {
+		var hoverPop = this.buildStateCard("Fireball","Deal 3 fire damage",3,13386786,8921617,"potion_r");
+		var _this = hoverPop.object;
+		_this.posChanged = true;
+		_this.x = 60;
+		_this.posChanged = true;
+		_this.y = 350;
+		var _this = hoverPop.object;
+		_this.posChanged = true;
+		_this.scaleX = 1.15;
+		_this.posChanged = true;
+		_this.scaleY = 1.15;
+		this.addObjectToLayer(hoverPop.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addInteractives(hoverPop,"sHoverPop");
+		this.tooltipHelper.setPosition("sHoverPop.card",bh_ui_TooltipPosition.Above);
+		this.stateCardResults.push(hoverPop);
+		var dragging = this.buildStateCard("Lightning","Deal 4 to random",4,13421602,6710801,"sword_l");
+		var _this = dragging.object;
+		_this.posChanged = true;
+		_this.x = 250;
+		_this.posChanged = true;
+		_this.y = 370;
+		var _this = dragging.object;
+		_this.posChanged = true;
+		_this.rotation = -0.14;
+		this.addObjectToLayer(dragging.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addInteractives(dragging,"sDragging");
+		this.tooltipHelper.setPosition("sDragging.card",bh_ui_TooltipPosition.Above);
+		this.stateCardResults.push(dragging);
+		var targeting = this.buildStateCard("Poison","2 damage per turn",2,6736930,3368465,"ring_i");
+		var _this = targeting.object;
+		_this.posChanged = true;
+		_this.x = 430;
+		_this.posChanged = true;
+		_this.y = 348;
+		var _this = targeting.object;
+		_this.posChanged = true;
+		_this.scaleX = 1.1;
+		_this.posChanged = true;
+		_this.scaleY = 1.1;
+		this.addObjectToLayer(targeting.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addInteractives(targeting,"sTargeting");
+		this.tooltipHelper.setPosition("sTargeting.card",bh_ui_TooltipPosition.Above);
+		this.stateCardResults.push(targeting);
+		var segValid = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = true;
+		var segValid1 = segValid.buildWithParameters("arrowSegment",_g);
+		var _this = segValid1.object;
+		_this.posChanged = true;
+		_this.x = 590;
+		_this.posChanged = true;
+		_this.y = 430;
+		var _this = segValid1.object;
+		_this.posChanged = true;
+		_this.rotation = -0.3;
+		var _this = segValid1.object;
+		_this.posChanged = true;
+		_this.scaleX = 2.0;
+		_this.posChanged = true;
+		_this.scaleY = 2.0;
+		this.addObjectToLayer(segValid1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		var headValid = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = true;
+		var headValid1 = headValid.buildWithParameters("arrowHead",_g);
+		var _this = headValid1.object;
+		_this.posChanged = true;
+		_this.x = 620;
+		_this.posChanged = true;
+		_this.y = 425;
+		var _this = headValid1.object;
+		_this.posChanged = true;
+		_this.rotation = -0.3;
+		var _this = headValid1.object;
+		_this.posChanged = true;
+		_this.scaleX = 2.0;
+		_this.posChanged = true;
+		_this.scaleY = 2.0;
+		this.addObjectToLayer(headValid1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		var segInvalid = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = false;
+		var segInvalid1 = segInvalid.buildWithParameters("arrowSegment",_g);
+		var _this = segInvalid1.object;
+		_this.posChanged = true;
+		_this.x = 590;
+		_this.posChanged = true;
+		_this.y = 480;
+		var _this = segInvalid1.object;
+		_this.posChanged = true;
+		_this.rotation = 0.3;
+		var _this = segInvalid1.object;
+		_this.posChanged = true;
+		_this.scaleX = 2.0;
+		_this.posChanged = true;
+		_this.scaleY = 2.0;
+		segInvalid1.object.alpha = 0.5;
+		this.addObjectToLayer(segInvalid1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		var headInvalid = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["valid"] = false;
+		var headInvalid1 = headInvalid.buildWithParameters("arrowHead",_g);
+		var _this = headInvalid1.object;
+		_this.posChanged = true;
+		_this.x = 620;
+		_this.posChanged = true;
+		_this.y = 485;
+		var _this = headInvalid1.object;
+		_this.posChanged = true;
+		_this.rotation = 0.3;
+		var _this = headInvalid1.object;
+		_this.posChanged = true;
+		_this.scaleX = 2.0;
+		_this.posChanged = true;
+		_this.scaleY = 2.0;
+		headInvalid1.object.alpha = 0.5;
+		this.addObjectToLayer(headInvalid1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		var ghost = this.buildStateCard("Ice Bolt","Freeze 1 turn",3,2280652,1140326,"scroll_i");
+		var _this = ghost.object;
+		_this.posChanged = true;
+		_this.x = 770;
+		_this.posChanged = true;
+		_this.y = 365;
+		ghost.object.alpha = 0.25;
+		this.addObjectToLayer(ghost.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		var animCard = this.buildStateCard("Ice Bolt","Freeze 1 turn",3,2280652,1140326,"scroll_i");
+		var _this = animCard.object;
+		_this.posChanged = true;
+		_this.x = 795;
+		_this.posChanged = true;
+		_this.y = 390;
+		this.addObjectToLayer(animCard.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.addInteractives(animCard,"sAnimating");
+		this.tooltipHelper.setPosition("sAnimating.card",bh_ui_TooltipPosition.Above);
+		this.stateCardResults.push(animCard);
+	}
+	,buildStateCard: function(name,desc,cost,color,artColor,image) {
+		var tmp = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["status"] = "normal";
+		_g.h["cardName"] = name;
+		_g.h["description"] = desc;
+		_g.h["cost"] = cost;
+		_g.h["cardColor"] = color;
+		_g.h["artColor"] = artColor;
+		_g.h["cardImage"] = image;
+		return tmp.buildWithParameters("card",_g,null,null,true);
+	}
+	,getTooltipData: function(id) {
+		if(id == "sNormal.card") {
+			return { title : "Normal (idle)", desc : "Default card appearance. Thin border, base colors.", detail : "status=normal. No user interaction occurring."};
+		}
+		if(id == "sHover.card") {
+			return { title : "Hover", desc : "Golden border when mouse enters the card area.", detail : "status=hover. Driven by UIRichInteractiveHelper."};
+		}
+		if(id == "sPressed.card") {
+			return { title : "Pressed", desc : "White border while mouse button is held down.", detail : "status=pressed. Triggers on UIPush event."};
+		}
+		if(id == "sDisabled.card") {
+			return { title : "Disabled", desc : "Dark overlay and dim border. Card unplayable.", detail : "status=disabled. setCardEnabled(id, false)."};
+		}
+		if(id == "sHoverPop.card") {
+			return { title : "Hover Pop (in hand)", desc : "Card pops up above hand and scales when hovered.", detail : "Config: hoverPopDistance, hoverScale, neighborSpread."};
+		}
+		if(id == "sDragging.card") {
+			return { title : "Dragging", desc : "Card follows cursor. Reparented to drag layer.", detail : "Rotation resets to 0. Only one card dragged at a time."};
+		}
+		if(id == "sTargeting.card") {
+			return { title : "Targeting", desc : "Drag past threshold. Arrow connects to cursor.", detail : "Green = valid target. Red = no target in range."};
+		}
+		if(id == "sAnimating.card") {
+			return { title : "Animating", desc : "Card traveling along animatedPath bezier curve.", detail : "Draw, discard, rearrange, return. Input blocked."};
+		}
+		return null;
+	}
+	,loadCardHandTab: function() {
+		var _gthis = this;
+		this.tabs.beginTab(1);
+		var generatedByMacroBuildWithParametersloadCardHandTab13344Builder = function() {
+			var thresholdSlider;
+			var spreadSlider;
+			var returnSlider;
+			var returnDropdown;
+			var resetBtn;
+			var rearrangeSlider;
+			var rearrangeDropdown;
+			var pathOrientDropdown;
+			var pathDistDropdown;
+			var layoutDropdown;
+			var hoverScaleSlider;
+			var hoverPopSlider;
+			var handPathDropdown;
+			var fanRadiusSlider;
+			var fanAngleSlider;
+			var drawSlider;
+			var drawDropdown;
+			var drawBtn;
+			var discardSlider;
+			var discardDropdown;
+			var discardBtn;
+			var disableBtn;
+			var c2cToggle;
+			var arrowToggle;
+			var _gthis1 = _gthis.cardBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,240);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				thresholdSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["thresholdSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,20);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				spreadSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["spreadSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,20);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				returnSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["returnSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.RETURN_EASINGS,settings,1);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				returnDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["returnDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Reset");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				resetBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["resetBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,15);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				rearrangeSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["rearrangeSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.REARRANGE_EASINGS,settings,1);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				rearrangeDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["rearrangeDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.PATH_ORIENTS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				pathOrientDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["pathOrientDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.PATH_DISTS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				pathDistDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["pathDistDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.LAYOUT_MODES,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				layoutDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["layoutDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,120);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				hoverScaleSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["hoverScaleSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,40);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				hoverPopSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["hoverPopSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.HAND_PATHS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				handPathDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["handPathDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,600);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				fanRadiusSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["fanRadiusSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,45);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				fanAngleSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["fanAngleSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,100);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				drawSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["drawSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.DRAW_EASINGS,settings,3);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				drawDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["drawDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Draw");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				drawBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["drawBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,100);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				discardSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["discardSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_CardsDemoScreen.DISCARD_EASINGS,settings,1);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				discardDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["discardDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Discard");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				discardBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["discardBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Disable");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["disableBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				c2cToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["c2cToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				arrowToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["arrowToggle"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("cardHandDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { thresholdSlider : thresholdSlider, spreadSlider : spreadSlider, returnSlider : returnSlider, returnDropdown : returnDropdown, resetBtn : resetBtn, rearrangeSlider : rearrangeSlider, rearrangeDropdown : rearrangeDropdown, pathOrientDropdown : pathOrientDropdown, pathDistDropdown : pathDistDropdown, layoutDropdown : layoutDropdown, hoverScaleSlider : hoverScaleSlider, hoverPopSlider : hoverPopSlider, handPathDropdown : handPathDropdown, fanRadiusSlider : fanRadiusSlider, fanAngleSlider : fanAngleSlider, drawSlider : drawSlider, drawDropdown : drawDropdown, drawBtn : drawBtn, discardSlider : discardSlider, discardDropdown : discardDropdown, discardBtn : discardBtn, disableBtn : disableBtn, c2cToggle : c2cToggle, arrowToggle : arrowToggle, builderResults : builderResults1};
+			if(retVal.thresholdSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "thresholdSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.spreadSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "spreadSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.returnSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "returnSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.returnDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "returnDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.resetBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "resetBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.rearrangeSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "rearrangeSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.rearrangeDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "rearrangeDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.pathOrientDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "pathOrientDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.pathDistDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "pathDistDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.layoutDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "layoutDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.hoverScaleSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "hoverScaleSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.hoverPopSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "hoverPopSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.handPathDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "handPathDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.fanRadiusSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "fanRadiusSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.fanAngleSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "fanAngleSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.drawSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "drawSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.drawDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "drawDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.drawBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "drawBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.discardSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "discardSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.discardDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "discardDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.discardBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "discardBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.disableBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.c2cToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2cToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.arrowToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "arrowToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersloadCardHandTab13344Builder();
+		this.handResult = ui.builderResults;
+		this.drawButton = ui.drawBtn;
+		this.discardButton = ui.discardBtn;
+		this.resetButton = ui.resetBtn;
+		this.disableButton = ui.disableBtn;
+		this.layoutDropdown = ui.layoutDropdown;
+		this.arrowToggle = ui.arrowToggle;
+		this.c2cToggle = ui.c2cToggle;
+		this.handPathDropdown = ui.handPathDropdown;
+		this.drawDropdown = ui.drawDropdown;
+		this.discardDropdown = ui.discardDropdown;
+		this.returnDropdown = ui.returnDropdown;
+		this.rearrangeDropdown = ui.rearrangeDropdown;
+		this.drawSlider = ui.drawSlider;
+		this.discardSlider = ui.discardSlider;
+		this.returnSlider = ui.returnSlider;
+		this.rearrangeSlider = ui.rearrangeSlider;
+		this.hoverScaleSlider = ui.hoverScaleSlider;
+		this.fanAngleSlider = ui.fanAngleSlider;
+		this.thresholdSlider = ui.thresholdSlider;
+		this.hoverPopSlider = ui.hoverPopSlider;
+		this.spreadSlider = ui.spreadSlider;
+		this.fanRadiusSlider = ui.fanRadiusSlider;
+		this.pathDistDropdown = ui.pathDistDropdown;
+		this.pathOrientDropdown = ui.pathOrientDropdown;
+		this.addBuilderResult(this.handResult);
+		this.addInteractives(this.handResult);
+		this.handTooltipHelper = new bh_ui_UITooltipHelper(this,this.cardBuilder,{ delay : 0.15, position : bh_ui_TooltipPosition.Above, offset : 6});
+		this.configureSlider(this.drawSlider,10,300,5);
+		this.configureSlider(this.discardSlider,10,300,5);
+		this.configureSlider(this.returnSlider,5,200,5);
+		this.configureSlider(this.rearrangeSlider,5,200,5);
+		this.configureSlider(this.hoverScaleSlider,100,200,5);
+		this.configureSlider(this.fanAngleSlider,10,90,5);
+		this.configureSlider(this.thresholdSlider,50,400,10);
+		this.configureSlider(this.hoverPopSlider,0,80,5);
+		this.configureSlider(this.spreadSlider,0,60,5);
+		this.configureSlider(this.fanRadiusSlider,200,1200,50);
+		this.createTargetZones();
+		this.createCardHand();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.updateControlStates();
+		this.updateHandUI();
+		if(this.cardHand != null) {
+			this.cardHand.setVisible(false);
+		}
+		this.tabs.endTab();
+	}
+	,configureSlider: function(slider,min,max,step) {
+		if(slider == null) {
+			return;
+		}
+		slider.min = min;
+		slider.max = max;
+		slider.step = step;
+	}
+	,createCardHand: function() {
+		if(this.cardBuilder == null) {
+			return;
+		}
+		var ax = this.currentLayoutMode == bh_ui_HandLayoutMode.PathLayout ? 200.0 : 640.0;
+		var hScale = this.getSliderVal(this.hoverScaleSlider,120) / 100.0;
+		var fAngle = this.getSliderVal(this.fanAngleSlider,45) * 1.0;
+		var threshold = this.getSliderVal(this.thresholdSlider,240) * 1.0;
+		var hPop = this.getSliderVal(this.hoverPopSlider,40) * 1.0;
+		var nSpread = this.getSliderVal(this.spreadSlider,20) * 1.0;
+		var fRadius = this.getSliderVal(this.fanRadiusSlider,600) * 1.0;
+		var c2c = this.c2cToggle != null ? this.c2cToggle.selected : true;
+		this.cardHand = new bh_ui_UICardHandHelper(this,this.cardBuilder,{ layoutMode : this.currentLayoutMode, anchorX : ax, anchorY : 620.0, cardWidth : 140.0, cardHeight : 200.0, fanRadius : fRadius, fanMaxAngle : fAngle, hoverPopDistance : hPop, hoverScale : hScale, hoverNeighborSpread : nSpread, targetingThresholdY : threshold, drawPilePosition : new bh_base_FPoint(45.0,615.0), discardPilePosition : new bh_base_FPoint(1210.0,615.0), drawPathName : "draw_easeOutBack", discardPathName : "discard_easeInQuad", returnPathName : "return_easeOutCubic", rearrangePathName : "rearrange_easeInOutCubic", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve", allowCardToCard : c2c, layoutPathName : this.currentHandPath, pathDistribution : this.currentPathDist, pathOrientation : this.currentPathOrient});
+		var tmp = this.getSliderVal(this.drawSlider,100);
+		this.cardHand.drawDuration = tmp / 100.0;
+		var tmp = this.getSliderVal(this.discardSlider,100);
+		this.cardHand.discardDuration = tmp / 100.0;
+		var tmp = this.getSliderVal(this.returnSlider,20);
+		this.cardHand.returnDuration = tmp / 100.0;
+		var tmp = this.getSliderVal(this.rearrangeSlider,15);
+		this.cardHand.rearrangeDuration = tmp / 100.0;
+		this.cardHand.onCardEvent = $bind(this,this.onCardEvent);
+		this.cardHand.canPlayCard = function(cardId,target) {
+			return true;
+		};
+		this.cardHand.setArrowVisible(this.arrowToggle != null ? this.arrowToggle.selected : true);
+		this.registerTargets();
+	}
+	,switchLayoutMode: function(mode) {
+		if(mode == this.currentLayoutMode) {
+			return;
+		}
+		this.currentLayoutMode = mode;
+		this.recreateCardHand();
+	}
+	,recreateCardHand: function() {
+		var savedCards = this.handCardIds.slice();
+		if(this.cardHand != null) {
+			this.cardHand.dispose();
+			this.cardHand = null;
+		}
+		this.createCardHand();
+		this.handCardIds = [];
+		var descriptors = [];
+		var _g = 0;
+		while(_g < savedCards.length) {
+			var id = savedCards[_g];
+			++_g;
+			var idx = Std.parseInt(id.split("_").pop());
+			if(idx == null) {
+				continue;
+			}
+			var def = screens_gamelike_CardsDemoScreen.CARD_DEFS[idx % screens_gamelike_CardsDemoScreen.CARD_DEFS.length];
+			this.handCardIds.push(id);
+			var _g1 = new haxe_ds_StringMap();
+			_g1.h["cardName"] = def.name;
+			_g1.h["description"] = def.desc;
+			_g1.h["cost"] = def.cost;
+			_g1.h["cardColor"] = def.color;
+			_g1.h["artColor"] = def.artColor;
+			_g1.h["cardImage"] = def.image;
+			descriptors.push({ id : id, buildName : "card", params : _g1, canTarget : true, canCombineWith : function(targetCardId) {
+				return true;
+			}});
+		}
+		if(this.cardHand != null) {
+			this.cardHand.setHand(descriptors);
+		}
+		this.setHandStatus("Layout: " + (this.currentLayoutMode == bh_ui_HandLayoutMode.Fan ? "Fan" : this.currentLayoutMode == bh_ui_HandLayoutMode.Linear ? "Linear" : "Path"));
+		this.updateControlStates();
+		this.updateHandUI();
+	}
+	,createTargetZones: function() {
+		if(this.cardBuilder == null) {
+			return;
+		}
+		var result = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["highlighted"] = false;
+		var result1 = result.buildWithParameters("targetZone",_g,null,null,true);
+		var x = 20.0;
+		var y = 100.0;
+		var _this = result1.object;
+		_this.posChanged = true;
+		_this.x = x;
+		_this.posChanged = true;
+		_this.y = y;
+		this.addObjectToLayer(result1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.targetResults.push(result1);
+		var result = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["highlighted"] = false;
+		var result1 = result.buildWithParameters("targetZone",_g,null,null,true);
+		var x = 220.;
+		var y = 100.0;
+		var _this = result1.object;
+		_this.posChanged = true;
+		_this.x = x;
+		_this.posChanged = true;
+		_this.y = y;
+		this.addObjectToLayer(result1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.targetResults.push(result1);
+		var result = this.cardBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["highlighted"] = false;
+		var result1 = result.buildWithParameters("targetZone",_g,null,null,true);
+		var x = 420.;
+		var y = 100.0;
+		var _this = result1.object;
+		_this.posChanged = true;
+		_this.x = x;
+		_this.posChanged = true;
+		_this.y = y;
+		this.addObjectToLayer(result1.object,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.targetResults.push(result1);
+	}
+	,registerTargets: function() {
+		var _gthis = this;
+		if(this.cardHand == null) {
+			return;
+		}
+		var _g = 0;
+		var _g1 = this.targetResults.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var x = [20.0 + i * 200.0];
+			var y = [100.0];
+			this.cardHand.registerTarget(new bh_ui_CardTarget("target_" + i,(function(y,x) {
+				return function() {
+					var b = new h2d_col_Bounds();
+					b.xMin = x[0];
+					b.yMin = y[0];
+					b.xMax = x[0] + 180;
+					b.yMax = y[0] + 180;
+					return b;
+				};
+			})(y,x),null));
+		}
+		this.cardHand.setTargetHighlightCallback(function(targetId,highlight) {
+			var idx = Std.parseInt(targetId.split("_").pop());
+			if(idx != null && idx < _gthis.targetResults.length) {
+				_gthis.targetResults[idx].setParameter("highlighted",highlight);
+			}
+		});
+	}
+	,drawRandomCard: function() {
+		if(this.cardHand == null) {
+			return;
+		}
+		var def = screens_gamelike_CardsDemoScreen.CARD_DEFS[this.nextCardId % screens_gamelike_CardsDemoScreen.CARD_DEFS.length];
+		var id = "card_" + this.nextCardId;
+		this.nextCardId++;
+		this.handCardIds.push(id);
+		var tmp = this.cardHand;
+		var _g = new haxe_ds_StringMap();
+		_g.h["cardName"] = def.name;
+		_g.h["description"] = def.desc;
+		_g.h["cost"] = def.cost;
+		_g.h["cardColor"] = def.color;
+		_g.h["artColor"] = def.artColor;
+		_g.h["cardImage"] = def.image;
+		tmp.drawCard({ id : id, buildName : "card", params : _g, canTarget : true, canCombineWith : function(targetCardId) {
+			return true;
+		}});
+	}
+	,onCardEvent: function(event) {
+		switch(event._hx_index) {
+		case 0:
+			var _g = event.cardId;
+			var _g1 = event.target;
+			switch(_g1._hx_index) {
+			case 0:
+				var targetId = _g1.targetId;
+				var cardId = _g;
+				HxOverrides.remove(this.handCardIds,cardId);
+				this.setHandStatus("Played " + cardId + " on " + targetId);
+				this.setHandEvent("Play -> " + targetId);
+				break;
+			case 1:
+				var targetCardId = _g1.targetCardId;
+				var cardId = _g;
+				HxOverrides.remove(this.handCardIds,cardId);
+				this.setHandStatus("Played " + cardId + " on card " + targetCardId);
+				this.setHandEvent("Play -> card");
+				break;
+			case 2:
+				var cardId = _g;
+				HxOverrides.remove(this.handCardIds,cardId);
+				this.setHandStatus("Played " + cardId + " (no target)");
+				this.setHandEvent("Play (no target)");
+				break;
+			}
+			break;
+		case 1:
+			var source = event.sourceCardId;
+			var target = event.targetCardId;
+			this.setHandStatus("Combined " + source + " + " + target);
+			this.setHandEvent("Combined");
+			break;
+		case 2:
+			var cardId = event.cardId;
+			this.setHandStatus("Hovering " + cardId);
+			break;
+		case 3:
+			var _g = event.cardId;
+			this.setHandStatus("Ready");
+			break;
+		case 4:
+			var cardId = event.cardId;
+			this.setHandStatus("Dragging " + cardId);
+			this.setHandEvent("Drag start");
+			break;
+		case 5:
+			var _g = event.cardId;
+			this.setHandEvent("Drag end");
+			break;
+		case 6:
+			var cardId = event.cardId;
+			this.setHandStatus("Drew " + cardId);
+			break;
+		case 7:
+			var cardId = event.cardId;
+			this.setHandStatus("Discarded " + cardId);
+			break;
+		}
+		this.updateHandUI();
+	}
+	,setHandStatus: function(text) {
+		if(this.handResult != null) {
+			this.handResult.getUpdatable("statusText").updateText(text);
+		}
+	}
+	,setHandEvent: function(text) {
+		if(this.handResult != null) {
+			this.handResult.getUpdatable("eventText").updateText(text);
+		}
+	}
+	,updateHandUI: function() {
+		if(this.handResult == null) {
+			return;
+		}
+		var count = this.cardHand != null ? this.cardHand.getCardCount() : 0;
+		this.handResult.getUpdatable("handCount").updateText("Hand: " + count);
+	}
+	,updateControlStates: function() {
+		var isFan = this.currentLayoutMode == bh_ui_HandLayoutMode.Fan;
+		var isPath = this.currentLayoutMode == bh_ui_HandLayoutMode.PathLayout;
+		if(this.fanAngleSlider != null) {
+			this.fanAngleSlider.set_disabled(!isFan);
+		}
+		if(this.fanRadiusSlider != null) {
+			this.fanRadiusSlider.set_disabled(!isFan);
+		}
+		if(this.handPathDropdown != null) {
+			this.handPathDropdown.set_disabled(!isPath);
+		}
+		if(this.pathDistDropdown != null) {
+			this.pathDistDropdown.set_disabled(!isPath);
+		}
+		if(this.pathOrientDropdown != null) {
+			this.pathOrientDropdown.set_disabled(!isPath);
+		}
+	}
+	,toggleDisableCard: function() {
+		if(this.cardHand == null || this.handCardIds.length == 0) {
+			return;
+		}
+		if(this.disabledCardIndex >= 0 && this.disabledCardIndex < this.handCardIds.length) {
+			this.cardHand.setCardEnabled(this.handCardIds[this.disabledCardIndex],true);
+		}
+		this.disabledCardIndex++;
+		if(this.disabledCardIndex >= this.handCardIds.length) {
+			this.disabledCardIndex = -1;
+			this.setHandStatus("All cards enabled");
+			return;
+		}
+		this.cardHand.setCardEnabled(this.handCardIds[this.disabledCardIndex],false);
+		this.setHandStatus("Disabled " + this.handCardIds[this.disabledCardIndex]);
+	}
+	,updateLabel: function(name,value) {
+		if(this.handResult != null) {
+			var u = this.handResult.getUpdatable(name);
+			if(u != null) {
+				u.updateText(value);
+			}
+		}
+	}
+	,getSliderVal: function(slider,defaultVal) {
+		if(slider == null) {
+			return defaultVal;
+		}
+		var s = slider;
+		return s.getIntValue();
+	}
+	,getHelpText: function(id) {
+		switch(id) {
+		case "hlpArrow":
+			return "Show/hide targeting arrow when dragging cards";
+		case "hlpC2C":
+			return "Card-to-Card: allow playing a card onto another card";
+		case "hlpDiscard":
+			return "Easing for discard animation (hand to discard pile)";
+		case "hlpDraw":
+			return "Easing for draw animation (draw pile to hand)";
+		case "hlpFanAngle":
+			return "Maximum angle spread in Fan layout (degrees)";
+		case "hlpFanRadius":
+			return "Arc radius for Fan layout (pixels)";
+		case "hlpHandPath":
+			return "Bezier curve shape used in Path layout mode";
+		case "hlpHoverPop":
+			return "Distance card pops up when hovered (pixels)";
+		case "hlpHoverScale":
+			return "Scale multiplier applied when hovering a card";
+		case "hlpLayout":
+			return "Fan: arc layout. Linear: side-by-side. Path: follow a bezier curve";
+		case "hlpOrient":
+			return "Tangent: rotate with curve. Straight: no rotation";
+		case "hlpPathDist":
+			return "EvenArcLength: equal visual spacing. EvenRate: equal parametric spacing";
+		case "hlpRearr":
+			return "Easing for cards sliding to fill gaps";
+		case "hlpReturn":
+			return "Easing for snap-back after cancelled drag";
+		case "hlpSpread":
+			return "Neighbor cards shift apart when hovering (pixels)";
+		case "hlpThreshold":
+			return "Y distance to drag before targeting mode activates";
+		default:
+			return null;
+		}
+	}
+	,resetHand: function() {
+		if(this.cardHand == null) {
+			return;
+		}
+		this.cardHand.setHand([]);
+		this.handCardIds = [];
+		this.nextCardId = 0;
+		this.disabledCardIndex = -1;
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.drawRandomCard();
+		this.setHandStatus("Reset!");
+		this.updateHandUI();
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 6) {
+			var index = event.index;
+			var items = event.items;
+			if(source == this.tabs) {
+				this.activeTab = index;
+				if(this.demoResult != null) {
+					var updatable = this.demoResult.getUpdatable("description");
+					if(updatable != null && index < screens_gamelike_CardsDemoScreen.TAB_DESCRIPTIONS.length) {
+						updatable.updateText(screens_gamelike_CardsDemoScreen.TAB_DESCRIPTIONS[index]);
+					}
+				}
+				if(this.cardHand != null) {
+					this.cardHand.setVisible(index == 1);
+				}
+				return;
+			}
+		}
+		if(this.activeTab == 0) {
+			if(event._hx_index == 14) {
+				var _g = event.id;
+				var _g1 = event.metadata;
+				switch(event.event._hx_index) {
+				case 11:
+					var id = _g;
+					var data = this.getTooltipData(id);
+					if(data != null && this.tooltipHelper != null) {
+						var params = new haxe_ds_StringMap();
+						params.h["title"] = data.title;
+						params.h["desc"] = data.desc;
+						params.h["detail"] = data.detail;
+						this.tooltipHelper.startHover(id,"stateTooltip",params);
+					}
+					if(this.statesResult != null && data != null) {
+						this.statesResult.getUpdatable("statusText").updateText("State: " + data.title);
+					}
+					break;
+				case 12:
+					var id = _g;
+					if(this.tooltipHelper != null) {
+						this.tooltipHelper.cancelHover(id);
+					}
+					if(this.statesResult != null) {
+						this.statesResult.getUpdatable("statusText").updateText("Hover a card to see state description");
+					}
+					break;
+				default:
+				}
+			}
+			return;
+		}
+		if(this.activeTab == 1) {
+			if(this.cardHand != null && this.cardHand.handleScreenEvent(event)) {
+				return;
+			}
+			switch(event._hx_index) {
+			case 0:
+				if(source == this.drawButton) {
+					this.drawRandomCard();
+					this.updateHandUI();
+				} else if(source == this.discardButton) {
+					if(this.handCardIds.length > 0 && this.cardHand != null) {
+						var id = this.handCardIds[0];
+						HxOverrides.remove(this.handCardIds,id);
+						this.cardHand.discardCard(id);
+						this.updateHandUI();
+					}
+				} else if(source == this.resetButton) {
+					this.resetHand();
+				} else if(source == this.disableButton) {
+					this.toggleDisableCard();
+				}
+				break;
+			case 3:
+				var pressed = event.pressed;
+				if(source == this.arrowToggle && this.cardHand != null) {
+					this.cardHand.setArrowVisible(pressed);
+				} else if(source == this.c2cToggle) {
+					this.recreateCardHand();
+				}
+				break;
+			case 4:
+				var value = event.value;
+				if(this.cardHand != null) {
+					if(source == this.drawSlider) {
+						this.cardHand.drawDuration = value / 100.0;
+						this.updateLabel("drawDurLabel","" + value / 100.0);
+					} else if(source == this.discardSlider) {
+						this.cardHand.discardDuration = value / 100.0;
+						this.updateLabel("discardDurLabel","" + value / 100.0);
+					} else if(source == this.returnSlider) {
+						this.cardHand.returnDuration = value / 100.0;
+						this.updateLabel("returnDurLabel","" + value / 100.0);
+					} else if(source == this.rearrangeSlider) {
+						this.cardHand.rearrangeDuration = value / 100.0;
+						this.updateLabel("rearrangeDurLabel","" + value / 100.0);
+					} else if(source == this.hoverScaleSlider) {
+						this.recreateCardHand();
+						this.updateLabel("hoverScaleLabel","" + value / 100.0);
+					} else if(source == this.fanAngleSlider) {
+						this.recreateCardHand();
+						this.updateLabel("fanAngleLabel","" + value);
+					} else if(source == this.thresholdSlider) {
+						this.recreateCardHand();
+						this.updateLabel("thresholdLabel","" + value);
+					} else if(source == this.hoverPopSlider) {
+						this.recreateCardHand();
+						this.updateLabel("hoverPopLabel","" + value);
+					} else if(source == this.spreadSlider) {
+						this.recreateCardHand();
+						this.updateLabel("spreadLabel","" + value);
+					} else if(source == this.fanRadiusSlider) {
+						this.recreateCardHand();
+						this.updateLabel("fanRadiusLabel","" + value);
+					}
+				}
+				break;
+			case 6:
+				var index = event.index;
+				var items = event.items;
+				if(this.cardHand != null && index >= 0 && index < items.length) {
+					if(source == this.drawDropdown) {
+						this.cardHand.drawPathName = "draw_" + items[index].name;
+						this.setHandEvent("Draw: " + items[index].name);
+					} else if(source == this.discardDropdown) {
+						this.cardHand.discardPathName = "discard_" + items[index].name;
+						this.setHandEvent("Disc: " + items[index].name);
+					} else if(source == this.returnDropdown) {
+						this.cardHand.returnPathName = "return_" + items[index].name;
+						this.setHandEvent("Ret: " + items[index].name);
+					} else if(source == this.rearrangeDropdown) {
+						this.cardHand.rearrangePathName = "rearrange_" + items[index].name;
+						this.setHandEvent("Rearr: " + items[index].name);
+					} else if(source == this.handPathDropdown) {
+						this.currentHandPath = items[index].name;
+						this.recreateCardHand();
+						this.setHandEvent("Path: " + items[index].name);
+					} else if(source == this.pathDistDropdown) {
+						this.currentPathDist = index == 0 ? bh_ui_PathDistribution.EvenArcLength : bh_ui_PathDistribution.EvenRate;
+						this.recreateCardHand();
+					} else if(source == this.pathOrientDropdown) {
+						this.currentPathOrient = index == 0 ? bh_ui_PathOrientation.Tangent : bh_ui_PathOrientation.Straight;
+						this.recreateCardHand();
+					} else if(source == this.layoutDropdown) {
+						var tmp;
+						switch(index) {
+						case 0:
+							tmp = bh_ui_HandLayoutMode.Fan;
+							break;
+						case 1:
+							tmp = bh_ui_HandLayoutMode.Linear;
+							break;
+						case 2:
+							tmp = bh_ui_HandLayoutMode.PathLayout;
+							break;
+						default:
+							tmp = bh_ui_HandLayoutMode.Fan;
+						}
+						this.switchLayoutMode(tmp);
+						this.setHandEvent("Layout: " + items[index].name);
+					}
+				}
+				break;
+			case 14:
+				var _g = event.id;
+				var _g1 = event.metadata;
+				switch(event.event._hx_index) {
+				case 11:
+					var id = _g;
+					var desc = this.getHelpText(id);
+					if(desc != null && this.handTooltipHelper != null) {
+						var params = new haxe_ds_StringMap();
+						params.h["desc"] = desc;
+						this.handTooltipHelper.startHover(id,"helpTip",params);
+					}
+					break;
+				case 12:
+					var id = _g;
+					if(this.handTooltipHelper != null) {
+						this.handTooltipHelper.cancelHover(id);
+					}
+					break;
+				default:
+				}
+				break;
+			default:
+			}
+			DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
+		}
+	}
+	,onMouseMove: function(pos) {
+		if(this.activeTab == 1 && this.cardHand != null && this.cardHand.onMouseMove(pos.x,pos.y)) {
+			return false;
+		}
+		return DemoScreenBase.prototype.onMouseMove.call(this,pos);
+	}
+	,onMouseClick: function(pos,button,release) {
+		if(this.activeTab == 1 && release && this.cardHand != null && this.cardHand.onMouseRelease(pos.x,pos.y)) {
+			return false;
+		}
+		return DemoScreenBase.prototype.onMouseClick.call(this,pos,button,release);
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.activeTab == 0 && this.tooltipHelper != null) {
+			this.tooltipHelper.update(dt);
+		}
+		if(this.activeTab == 1 && this.cardHand != null) {
+			this.cardHand.update(dt);
+		}
+		if(this.activeTab == 1 && this.handTooltipHelper != null) {
+			this.handTooltipHelper.update(dt);
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		if(this.cardHand != null) {
+			this.cardHand.dispose();
+			this.cardHand = null;
+		}
+		this.tabs = null;
+		this.demoBuilder = null;
+		this.demoResult = null;
+		this.cardBuilder = null;
+		this.statesBuilder = null;
+		this.statesResult = null;
+		this.tooltipHelper = null;
+		this.stateCardResults = [];
+		this.handResult = null;
+		this.handTooltipHelper = null;
+		this.drawButton = null;
+		this.discardButton = null;
+		this.resetButton = null;
+		this.disableButton = null;
+		this.arrowToggle = null;
+		this.layoutDropdown = null;
+		this.c2cToggle = null;
+		this.handPathDropdown = null;
+		this.drawDropdown = null;
+		this.discardDropdown = null;
+		this.returnDropdown = null;
+		this.rearrangeDropdown = null;
+		this.drawSlider = null;
+		this.discardSlider = null;
+		this.returnSlider = null;
+		this.rearrangeSlider = null;
+		this.hoverScaleSlider = null;
+		this.fanAngleSlider = null;
+		this.thresholdSlider = null;
+		this.hoverPopSlider = null;
+		this.spreadSlider = null;
+		this.fanRadiusSlider = null;
+		this.pathDistDropdown = null;
+		this.pathOrientDropdown = null;
+		this.targetResults = [];
+		this.handCardIds = [];
+		this.nextCardId = 0;
+		this.disabledCardIndex = -1;
+	}
+	,__class__: screens_gamelike_CardsDemoScreen
+});
 var screens_gamelike_CharacterSheetDemoScreen = function(screenManager,layers) {
 	this.currentMp = 50;
 	this.currentHp = 100;
@@ -110272,6 +112907,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	,__class__: screens_ui_DraggableDemoScreen
 });
 var screens_ui_DropdownsDemoScreen = function(screenManager,layers) {
+	this.allDropdowns = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.ui.DropdownsDemoScreen"] = screens_ui_DropdownsDemoScreen;
@@ -110283,14 +112919,15 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.set_autoSyncInitialState(true);
 		this.setupDemo("Dropdowns","Dropdown menus: scrollable (fixed height) and autoscale (auto-sizing) modes");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/dropdowns.manim",false);
-		var generatedByMacroBuildWithParametersload1720Builder = function() {
+		var generatedByMacroBuildWithParametersload1891Builder = function() {
 			var dropdownWide;
-			var dropdownShadow;
 			var dropdownScrollable;
 			var dropdownLarge;
+			var dropdownDisabled;
 			var dropdownCustom;
 			var dropdownAutoMany;
 			var dropdownAutoFew;
+			var disableCheckbox;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -110301,13 +112938,6 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return _el.getObject();
 			});
 			_g.h["dropdownWide"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				dropdownShadow = _el;
-				return _el.getObject();
-			});
-			_g.h["dropdownShadow"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -110322,6 +112952,13 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return _el.getObject();
 			});
 			_g.h["dropdownLarge"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dropdownDisabled = _el;
+				return _el.getObject();
+			});
+			_g.h["dropdownDisabled"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_ui_DropdownsDemoScreen.FRUITS,settings,0);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -110343,19 +112980,26 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return _el.getObject();
 			});
 			_g.h["dropdownAutoFew"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableCheckbox = _el;
+				return _el.getObject();
+			});
+			_g.h["disableCheckbox"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("dropdownsDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { dropdownWide : dropdownWide, dropdownShadow : dropdownShadow, dropdownScrollable : dropdownScrollable, dropdownLarge : dropdownLarge, dropdownCustom : dropdownCustom, dropdownAutoMany : dropdownAutoMany, dropdownAutoFew : dropdownAutoFew, builderResults : builderResults1};
+			var retVal = { dropdownWide : dropdownWide, dropdownScrollable : dropdownScrollable, dropdownLarge : dropdownLarge, dropdownDisabled : dropdownDisabled, dropdownCustom : dropdownCustom, dropdownAutoMany : dropdownAutoMany, dropdownAutoFew : dropdownAutoFew, disableCheckbox : disableCheckbox, builderResults : builderResults1};
 			if(retVal.dropdownWide == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownWide" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.dropdownShadow == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownShadow" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.dropdownScrollable == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownScrollable" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.dropdownLarge == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownLarge" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dropdownDisabled == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownDisabled" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.dropdownCustom == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownCustom" + " is null (check if placeholder object is named correctly)");
@@ -110366,9 +113010,12 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			if(retVal.dropdownAutoFew == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdownAutoFew" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.disableCheckbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableCheckbox" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1720Builder();
+		var ui = generatedByMacroBuildWithParametersload1891Builder();
 		this.demoResult = ui.builderResults;
 		this.dropdownScrollable = ui.dropdownScrollable;
 		this.dropdownAutoFew = ui.dropdownAutoFew;
@@ -110376,11 +113023,27 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.dropdownCustom = ui.dropdownCustom;
 		this.dropdownWide = ui.dropdownWide;
 		this.dropdownLarge = ui.dropdownLarge;
-		this.dropdownShadow = ui.dropdownShadow;
+		this.dropdownDisabled = ui.dropdownDisabled;
+		this.dropdownDisabled.set_disabled(true);
+		this.disableCheckbox = ui.disableCheckbox;
+		this.allDropdowns = [this.dropdownScrollable,this.dropdownAutoFew,this.dropdownAutoMany,this.dropdownCustom,this.dropdownWide,this.dropdownLarge,this.dropdownDisabled];
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 6) {
+		switch(event._hx_index) {
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.disableCheckbox) {
+				var _g = 0;
+				var _g1 = this.allDropdowns;
+				while(_g < _g1.length) {
+					var dd = _g1[_g];
+					++_g;
+					dd.set_disabled(pressed);
+				}
+			}
+			break;
+		case 6:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.dropdownScrollable) {
@@ -110395,9 +113058,11 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.updateSelectedText(index,items,"wideText");
 			} else if(source == this.dropdownLarge) {
 				this.updateSelectedText(index,items,"largeText");
-			} else if(source == this.dropdownShadow) {
-				this.updateSelectedText(index,items,"shadowText");
+			} else if(source == this.dropdownDisabled) {
+				this.updateSelectedText(index,items,"disabledText");
 			}
+			break;
+		default:
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
@@ -110424,7 +113089,9 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.dropdownCustom = null;
 		this.dropdownWide = null;
 		this.dropdownLarge = null;
-		this.dropdownShadow = null;
+		this.dropdownDisabled = null;
+		this.disableCheckbox = null;
+		this.allDropdowns = [];
 	}
 	,__class__: screens_ui_DropdownsDemoScreen
 });
@@ -111779,7 +114446,7 @@ hx__registerFont = function(name,data) {
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -112205,6 +114872,17 @@ screens_animation_StateAnimDemoScreen.SOURCE_ITEMS = [{ name : "Marine"},{ name 
 screens_animation_StateAnimDemoScreen.SOURCE_ANIMS = [screens_animation_StateAnimDemoScreen.MARINE_ANIMS,screens_animation_StateAnimDemoScreen.SHIELD_ANIMS,screens_animation_StateAnimDemoScreen.TURRET_ANIMS,screens_animation_StateAnimDemoScreen.ARROWS_ANIMS];
 screens_animation_StateAnimDemoScreen.SOURCE_ANIM_ITEMS = [screens_animation_StateAnimDemoScreen.MARINE_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.SHIELD_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.TURRET_ANIM_ITEMS,screens_animation_StateAnimDemoScreen.ARROWS_ANIM_ITEMS];
 screens_animation_StateAnimDemoScreen.SOURCE_HAS_DIRECTION = [true,true,false,false];
+screens_gamelike_CardsDemoScreen.TAB_ITEMS = [{ name : "Card States"},{ name : "Card Hand"}];
+screens_gamelike_CardsDemoScreen.TAB_DESCRIPTIONS = ["Visual states a card passes through in the Card Hand system","Interactive card hand — drag to play, target enemies, combine cards"];
+screens_gamelike_CardsDemoScreen.CARD_DEFS = [{ name : "Fireball", desc : "Deal 3 fire damage", cost : 3, color : 13386786, artColor : 8921617, image : "potion_r"},{ name : "Shield", desc : "Block 4 damage", cost : 2, color : 2254540, artColor : 1127270, image : "shield_i"},{ name : "Heal", desc : "Restore 5 health", cost : 1, color : 2280516, artColor : 1140258, image : "potion_b"},{ name : "Lightning", desc : "Deal 4 to random", cost : 4, color : 13421602, artColor : 6710801, image : "sword_l"},{ name : "Poison", desc : "2 damage per turn", cost : 2, color : 6736930, artColor : 3368465, image : "ring_i"},{ name : "Ice Bolt", desc : "Freeze 1 turn", cost : 3, color : 2280652, artColor : 1140326, image : "scroll_i"},{ name : "Rage", desc : "Double attack", cost : 5, color : 13378082, artColor : 6689041, image : "helmet_i"},{ name : "Bless", desc : "Draw 2 cards", cost : 1, color : 13421704, artColor : 6710852, image : "armor_i"}];
+screens_gamelike_CardsDemoScreen.DRAW_EASINGS = [{ name : "linear"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"},{ name : "easeInOutQuad"},{ name : "easeInBack"},{ name : "easeInCubic"},{ name : "easeInQuad"}];
+screens_gamelike_CardsDemoScreen.DISCARD_EASINGS = [{ name : "linear"},{ name : "easeInQuad"},{ name : "easeInCubic"},{ name : "easeInBack"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutCubic"},{ name : "easeInOutQuad"},{ name : "easeInOutBack"}];
+screens_gamelike_CardsDemoScreen.RETURN_EASINGS = [{ name : "linear"},{ name : "easeOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutBack"},{ name : "easeOutElastic"},{ name : "easeOutBounce"},{ name : "easeInOutCubic"},{ name : "easeInOutBack"}];
+screens_gamelike_CardsDemoScreen.REARRANGE_EASINGS = [{ name : "linear"},{ name : "easeInOutCubic"},{ name : "easeOutQuad"},{ name : "easeOutCubic"},{ name : "easeOutBack"},{ name : "easeOutBounce"},{ name : "easeOutElastic"},{ name : "easeInOutQuad"}];
+screens_gamelike_CardsDemoScreen.HAND_PATHS = [{ name : "handCurve"},{ name : "handFlat"},{ name : "handDeep"},{ name : "handWave"},{ name : "handTight"}];
+screens_gamelike_CardsDemoScreen.PATH_DISTS = [{ name : "EvenArcLength"},{ name : "EvenRate"}];
+screens_gamelike_CardsDemoScreen.PATH_ORIENTS = [{ name : "Tangent"},{ name : "Straight"}];
+screens_gamelike_CardsDemoScreen.LAYOUT_MODES = [{ name : "Fan"},{ name : "Linear"},{ name : "Path"}];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS = ["head","arm","armor","arm","legs"];
 screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];

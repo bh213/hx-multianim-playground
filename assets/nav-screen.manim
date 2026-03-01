@@ -62,7 +62,7 @@ layouts {
         point: 520, 594
         point: 680, 594
         point: 840, 594
-        // Game-Like Demos (7)
+        // Game-Like Demos (8, wraps to 2 rows)
         point: 40, 652
         point: 200, 652
         point: 360, 652
@@ -70,6 +70,7 @@ layouts {
         point: 680, 652
         point: 840, 652
         point: 1000, 652
+        point: 40, 684
     }
 }
 

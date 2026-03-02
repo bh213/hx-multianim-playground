@@ -47,6 +47,9 @@ class CardsDemoScreen extends DemoScreenBase {
 	var layoutDropdown:Null<UIStandardMultiAnimDropdown>;
 	var arrowToggle:Null<UIStandardMultiCheckbox>;
 	var c2cToggle:Null<UIStandardMultiCheckbox>;
+	var c2cHoverPopToggle:Null<UIStandardMultiCheckbox>;
+	var c2cHoverScaleToggle:Null<UIStandardMultiCheckbox>;
+	var c2cSpreadToggle:Null<UIStandardMultiCheckbox>;
 	var handPathDropdown:Null<UIStandardMultiAnimDropdown>;
 	var drawDropdown:Null<UIStandardMultiAnimDropdown>;
 	var discardDropdown:Null<UIStandardMultiAnimDropdown>;
@@ -358,6 +361,9 @@ class CardsDemoScreen extends DemoScreenBase {
 				PATH_DISTS, 0),
 			pathOrientDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
 				PATH_ORIENTS, 0),
+			c2cHoverPopToggle => addCheckbox(stdBuilder, false),
+			c2cHoverScaleToggle => addCheckbox(stdBuilder, false),
+			c2cSpreadToggle => addCheckbox(stdBuilder, false),
 		]);
 		handResult = ui.builderResults;
 
@@ -385,6 +391,9 @@ class CardsDemoScreen extends DemoScreenBase {
 		fanRadiusSlider = ui.fanRadiusSlider;
 		pathDistDropdown = ui.pathDistDropdown;
 		pathOrientDropdown = ui.pathOrientDropdown;
+		c2cHoverPopToggle = ui.c2cHoverPopToggle;
+		c2cHoverScaleToggle = ui.c2cHoverScaleToggle;
+		c2cSpreadToggle = ui.c2cSpreadToggle;
 
 		addBuilderResult(handResult);
 		addInteractives(handResult);
@@ -442,6 +451,9 @@ class CardsDemoScreen extends DemoScreenBase {
 		var nSpread = getSliderVal(spreadSlider, 20) * 1.0;
 		var fRadius = getSliderVal(fanRadiusSlider, 600) * 1.0;
 		var c2c = if (c2cToggle != null) c2cToggle.selected else true;
+		var c2cPop = if (c2cHoverPopToggle != null) c2cHoverPopToggle.selected else false;
+		var c2cScale = if (c2cHoverScaleToggle != null) c2cHoverScaleToggle.selected else false;
+		var c2cSpr = if (c2cSpreadToggle != null) c2cSpreadToggle.selected else false;
 
 		cardHand = new UICardHandHelper(this, cardBuilder, {
 			layoutMode: currentLayoutMode,
@@ -465,6 +477,9 @@ class CardsDemoScreen extends DemoScreenBase {
 			arrowHeadName: "arrowHead",
 			arrowPathName: "arrowCurve",
 			allowCardToCard: c2c,
+			cardToCardHoverPop: c2cPop,
+			cardToCardHoverScale: c2cScale,
+			cardToCardSpread: c2cSpr,
 			layoutPathName: currentHandPath,
 			pathDistribution: currentPathDist,
 			pathOrientation: currentPathOrient,
@@ -647,6 +662,12 @@ class CardsDemoScreen extends DemoScreenBase {
 		if (handPathDropdown != null) handPathDropdown.disabled = !isPath;
 		if (pathDistDropdown != null) pathDistDropdown.disabled = !isPath;
 		if (pathOrientDropdown != null) pathOrientDropdown.disabled = !isPath;
+
+		// C2C-only controls
+		var c2cEnabled = if (c2cToggle != null) c2cToggle.selected else false;
+		if (c2cHoverPopToggle != null) c2cHoverPopToggle.disabled = !c2cEnabled;
+		if (c2cHoverScaleToggle != null) c2cHoverScaleToggle.disabled = !c2cEnabled;
+		if (c2cSpreadToggle != null) c2cSpreadToggle.disabled = !c2cEnabled;
 	}
 
 	function toggleDisableCard():Void {
@@ -698,6 +719,9 @@ class CardsDemoScreen extends DemoScreenBase {
 			case "hlpFanRadius": "Arc radius for Fan layout (pixels)";
 			case "hlpPathDist": "EvenArcLength: equal visual spacing. EvenRate: equal parametric spacing";
 			case "hlpOrient": "Tangent: rotate with curve. Straight: no rotation";
+			case "hlpC2CPop": "Apply hover pop to card-to-card target";
+			case "hlpC2CScale": "Use hover scale (instead of highlight scale) for C2C target";
+			case "hlpC2CSpread": "Spread neighbors when hovering C2C target";
 			default: null;
 		};
 	}
@@ -787,6 +811,8 @@ class CardsDemoScreen extends DemoScreenBase {
 					if (source == arrowToggle && cardHand != null) {
 						cardHand.setArrowVisible(pressed);
 					} else if (source == c2cToggle) {
+						recreateCardHand();
+					} else if (source == c2cHoverPopToggle || source == c2cHoverScaleToggle || source == c2cSpreadToggle) {
 						recreateCardHand();
 					}
 				case UIChangeItem(index, items):
@@ -929,6 +955,9 @@ class CardsDemoScreen extends DemoScreenBase {
 		arrowToggle = null;
 		layoutDropdown = null;
 		c2cToggle = null;
+		c2cHoverPopToggle = null;
+		c2cHoverScaleToggle = null;
+		c2cSpreadToggle = null;
 		handPathDropdown = null;
 		drawDropdown = null;
 		discardDropdown = null;

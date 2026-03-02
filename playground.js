@@ -27,6 +27,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.contentTarget = null;
 	this.initialSyncDone = false;
 	this._autoSyncInitialState = false;
+	this.modalOverlayConfig = null;
 	this.tabAutoWired = false;
 	this.tabGroup = null;
 	this.interactiveMap = new haxe_ds_StringMap();
@@ -307,6 +308,38 @@ bh_ui_screens_UIScreenBase.prototype = {
 			return c != 0;
 		}
 	}
+	,parseOverlaySettings: function(rootSettings) {
+		if(rootSettings == null || !rootSettings.hasSettings()) {
+			return null;
+		}
+		var hasAny = false;
+		var config = { };
+		if(rootSettings.has("overlay.color")) {
+			config.color = rootSettings.getIntOrDefault("overlay.color",0);
+			hasAny = true;
+		}
+		if(rootSettings.has("overlay.alpha")) {
+			config.alpha = rootSettings.getFloatOrDefault("overlay.alpha",0.5);
+			hasAny = true;
+		}
+		if(rootSettings.has("overlay.fadeIn")) {
+			config.fadeIn = rootSettings.getFloatOrDefault("overlay.fadeIn",0.3);
+			hasAny = true;
+		}
+		if(rootSettings.has("overlay.fadeOut")) {
+			config.fadeOut = rootSettings.getFloatOrDefault("overlay.fadeOut",0.3);
+			hasAny = true;
+		}
+		if(rootSettings.has("overlay.blur")) {
+			config.blur = rootSettings.getFloatOrDefault("overlay.blur",0.0);
+			hasAny = true;
+		}
+		if(hasAny) {
+			return config;
+		} else {
+			return null;
+		}
+	}
 	,settingValueToDynamic: function(v) {
 		switch(v._hx_index) {
 		case 0:
@@ -352,7 +385,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 				var prefix = HxOverrides.substr(key,0,dotIdx);
 				var paramName = HxOverrides.substr(key,dotIdx + 1,null);
 				if(registeredPrefixes.indexOf(prefix) == -1) {
-					throw haxe_Exception.thrown("Unknown sub-component prefix \"" + prefix + "\" in setting \"" + key + "\" for " + elementName + ". Valid prefixes: " + registeredPrefixes.join(", "));
+					continue;
 				}
 				var prefixMap = prefixed.h[prefix];
 				if(prefixMap == null) {
@@ -942,7 +975,8 @@ DemoMasterScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
 			if(source == this.backButton) {
-				this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(this.screenManager.getScreen("nav")));
+				this.screenManager.switchTo(this.screenManager.getScreen("nav"),bh_ui_screens_ScreenTransition.SlideRight(0.25,bh_multianim_EasingType.EaseOutCubic));
+				Main.instance.currentScreenName = "nav";
 				window.location.hash = "screen=nav";
 			}
 		}
@@ -1101,6 +1135,16 @@ Lambda.array = function(it) {
 	}
 	return a;
 };
+Lambda.foreach = function(it,f) {
+	var x = $getIterator(it);
+	while(x.hasNext()) {
+		var x1 = x.next();
+		if(!f(x1)) {
+			return false;
+		}
+	}
+	return true;
+};
 Lambda.iter = function(it,f) {
 	var x = $getIterator(it);
 	while(x.hasNext()) {
@@ -1238,6 +1282,7 @@ hxd_App.prototype = {
 	,__class__: hxd_App
 };
 var Main = function() {
+	this.currentScreenName = "nav";
 	hxd_App.call(this);
 };
 $hxClasses["Main"] = Main;
@@ -1410,11 +1455,11 @@ Main.prototype = $extend(hxd_App.prototype,{
 		_this.y = 30;
 	}
 	,reload: function(screen) {
-		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 40, className : "Main", methodName : "reload"});
+		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 52, className : "Main", methodName : "reload"});
 		try {
 			var res = this.screenManager.reload(null,false);
 			if(!res.success) {
-				haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 44, className : "Main", methodName : "reload"});
+				haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 56, className : "Main", methodName : "reload"});
 				this.error("Error loading screen: " + res.error);
 				return res;
 			}
@@ -1424,6 +1469,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			}
 			var tmp = screen;
 			var screenName = tmp != null ? tmp : "nav";
+			this.currentScreenName = screenName;
 			if(screenName == "nav") {
 				this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(this.screenManager.getScreen(screenName)));
 			} else {
@@ -1439,10 +1485,31 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during reload: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 64, className : "Main", methodName : "reload"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 77, className : "Main", methodName : "reload"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 			return { success : false, error : msg, file : null, line : null, col : null};
+		}
+	}
+	,navigateTo: function(screenName) {
+		if(screenName == this.currentScreenName) {
+			return;
+		}
+		var fromIdx = Main.SCREEN_ORDER.indexOf(this.currentScreenName);
+		var toIdx = Main.SCREEN_ORDER.indexOf(screenName);
+		var goingDown = toIdx > fromIdx;
+		var transition = goingDown ? bh_ui_screens_ScreenTransition.SlideDown(0.25,bh_multianim_EasingType.EaseOutCubic) : bh_ui_screens_ScreenTransition.SlideUp(0.25,bh_multianim_EasingType.EaseOutCubic);
+		this.currentScreenName = screenName;
+		if(screenName == "nav") {
+			this.screenManager.switchTo(this.screenManager.getScreen(screenName),transition);
+		} else {
+			var targetScreen = this.screenManager.getScreen(screenName);
+			var masterScreen = js_Boot.__cast(this.screenManager.getScreen("demoMaster") , DemoMasterScreen);
+			if(((targetScreen) instanceof DemoScreenBase)) {
+				var demo = targetScreen;
+				masterScreen.setDemoInfo(demo.demoTitle,demo.demoDescription);
+			}
+			this.screenManager.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle(masterScreen,targetScreen),transition);
 		}
 	}
 	,init: function() {
@@ -1569,7 +1636,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 371, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 413, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -1600,7 +1667,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload6009Builder = function() {
+		var generatedByMacroBuildWithParametersload6048Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1663,7 +1730,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6009Builder();
+		var ui = generatedByMacroBuildWithParametersload6048Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -1839,7 +1906,8 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			var demo = targetScreen;
 			masterScreen.setDemoInfo(demo.demoTitle,demo.demoDescription);
 		}
-		this.screenManager.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle(masterScreen,targetScreen));
+		this.screenManager.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle(masterScreen,targetScreen),bh_ui_screens_ScreenTransition.SlideLeft(0.25,bh_multianim_EasingType.EaseOutCubic));
+		Main.instance.currentScreenName = screenId;
 		window.location.hash = "screen=" + screenId;
 	}
 	,onScreenEvent: function(event,source) {
@@ -6031,6 +6099,503 @@ bh_base_CachingResourceLoader.prototype = {
 		return retVal;
 	}
 	,__class__: bh_base_CachingResourceLoader
+};
+var bh_base_TweenProperty = $hxEnums["bh.base.TweenProperty"] = { __ename__:true,__constructs__:null
+	,Alpha: ($_=function(to) { return {_hx_index:0,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="Alpha",$_.__params__ = ["to"],$_)
+	,X: ($_=function(to) { return {_hx_index:1,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="X",$_.__params__ = ["to"],$_)
+	,Y: ($_=function(to) { return {_hx_index:2,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="Y",$_.__params__ = ["to"],$_)
+	,ScaleX: ($_=function(to) { return {_hx_index:3,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="ScaleX",$_.__params__ = ["to"],$_)
+	,ScaleY: ($_=function(to) { return {_hx_index:4,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="ScaleY",$_.__params__ = ["to"],$_)
+	,Scale: ($_=function(to) { return {_hx_index:5,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="Scale",$_.__params__ = ["to"],$_)
+	,Rotation: ($_=function(to) { return {_hx_index:6,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="Rotation",$_.__params__ = ["to"],$_)
+	,Custom: ($_=function(getter,setter,to) { return {_hx_index:7,getter:getter,setter:setter,to:to,__enum__:"bh.base.TweenProperty",toString:$estr}; },$_._hx_name="Custom",$_.__params__ = ["getter","setter","to"],$_)
+};
+bh_base_TweenProperty.__constructs__ = [bh_base_TweenProperty.Alpha,bh_base_TweenProperty.X,bh_base_TweenProperty.Y,bh_base_TweenProperty.ScaleX,bh_base_TweenProperty.ScaleY,bh_base_TweenProperty.Scale,bh_base_TweenProperty.Rotation,bh_base_TweenProperty.Custom];
+bh_base_TweenProperty.__empty_constructs__ = [];
+var bh_base__$TweenManager_TweenPropertyKind = $hxEnums["bh.base._TweenManager.TweenPropertyKind"] = { __ename__:true,__constructs__:null
+	,KAlpha: {_hx_name:"KAlpha",_hx_index:0,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KX: {_hx_name:"KX",_hx_index:1,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KY: {_hx_name:"KY",_hx_index:2,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KScaleX: {_hx_name:"KScaleX",_hx_index:3,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KScaleY: {_hx_name:"KScaleY",_hx_index:4,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KRotation: {_hx_name:"KRotation",_hx_index:5,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}
+	,KCustom: ($_=function(getter,setter) { return {_hx_index:6,getter:getter,setter:setter,__enum__:"bh.base._TweenManager.TweenPropertyKind",toString:$estr}; },$_._hx_name="KCustom",$_.__params__ = ["getter","setter"],$_)
+};
+bh_base__$TweenManager_TweenPropertyKind.__constructs__ = [bh_base__$TweenManager_TweenPropertyKind.KAlpha,bh_base__$TweenManager_TweenPropertyKind.KX,bh_base__$TweenManager_TweenPropertyKind.KY,bh_base__$TweenManager_TweenPropertyKind.KScaleX,bh_base__$TweenManager_TweenPropertyKind.KScaleY,bh_base__$TweenManager_TweenPropertyKind.KRotation,bh_base__$TweenManager_TweenPropertyKind.KCustom];
+bh_base__$TweenManager_TweenPropertyKind.__empty_constructs__ = [bh_base__$TweenManager_TweenPropertyKind.KAlpha,bh_base__$TweenManager_TweenPropertyKind.KX,bh_base__$TweenManager_TweenPropertyKind.KY,bh_base__$TweenManager_TweenPropertyKind.KScaleX,bh_base__$TweenManager_TweenPropertyKind.KScaleY,bh_base__$TweenManager_TweenPropertyKind.KRotation];
+var bh_base__$TweenManager_TweenPropertyEntry = function(kind,to) {
+	this.kind = kind;
+	this.to = to;
+	this.from = 0.0;
+};
+$hxClasses["bh.base._TweenManager.TweenPropertyEntry"] = bh_base__$TweenManager_TweenPropertyEntry;
+bh_base__$TweenManager_TweenPropertyEntry.__name__ = "bh.base._TweenManager.TweenPropertyEntry";
+bh_base__$TweenManager_TweenPropertyEntry.prototype = {
+	__class__: bh_base__$TweenManager_TweenPropertyEntry
+};
+var bh_base__$TweenManager_TweenHandle = $hxEnums["bh.base._TweenManager.TweenHandle"] = { __ename__:true,__constructs__:null
+	,HTween: ($_=function(tween) { return {_hx_index:0,tween:tween,__enum__:"bh.base._TweenManager.TweenHandle",toString:$estr}; },$_._hx_name="HTween",$_.__params__ = ["tween"],$_)
+	,HSequence: ($_=function(seq) { return {_hx_index:1,seq:seq,__enum__:"bh.base._TweenManager.TweenHandle",toString:$estr}; },$_._hx_name="HSequence",$_.__params__ = ["seq"],$_)
+	,HGroup: ($_=function(group) { return {_hx_index:2,group:group,__enum__:"bh.base._TweenManager.TweenHandle",toString:$estr}; },$_._hx_name="HGroup",$_.__params__ = ["group"],$_)
+};
+bh_base__$TweenManager_TweenHandle.__constructs__ = [bh_base__$TweenManager_TweenHandle.HTween,bh_base__$TweenManager_TweenHandle.HSequence,bh_base__$TweenManager_TweenHandle.HGroup];
+bh_base__$TweenManager_TweenHandle.__empty_constructs__ = [];
+var bh_base_Tween = function(target,duration,properties,easing) {
+	this.skipFirstDt = false;
+	this.initialized = false;
+	this.cancelled = false;
+	this.onComplete = null;
+	this.elapsed = 0.0;
+	this.target = target;
+	this.duration = duration;
+	this.easingFn = easing != null ? function(t) {
+		return bh_base_FloatTools.applyEasing(easing,t);
+	} : function(t) {
+		return t;
+	};
+	this.entries = [];
+	var _g = 0;
+	while(_g < properties.length) {
+		var prop = properties[_g];
+		++_g;
+		switch(prop._hx_index) {
+		case 0:
+			var to = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KAlpha,to));
+			break;
+		case 1:
+			var to1 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KX,to1));
+			break;
+		case 2:
+			var to2 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KY,to2));
+			break;
+		case 3:
+			var to3 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleX,to3));
+			break;
+		case 4:
+			var to4 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleY,to4));
+			break;
+		case 5:
+			var to5 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleX,to5));
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleY,to5));
+			break;
+		case 6:
+			var to6 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KRotation,to6));
+			break;
+		case 7:
+			var getter = prop.getter;
+			var setter = prop.setter;
+			var to7 = prop.to;
+			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KCustom(getter,setter),to7));
+			break;
+		}
+	}
+};
+$hxClasses["bh.base.Tween"] = bh_base_Tween;
+bh_base_Tween.__name__ = "bh.base.Tween";
+bh_base_Tween.prototype = {
+	setOnComplete: function(cb) {
+		this.onComplete = cb;
+		return this;
+	}
+	,cancel: function() {
+		this.cancelled = true;
+	}
+	,init: function() {
+		if(this.initialized) {
+			return;
+		}
+		this.initialized = true;
+		var _g = 0;
+		var _g1 = this.entries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			entry.from = this.getPropertyValue(entry.kind);
+		}
+	}
+	,step: function(dt) {
+		if(this.cancelled) {
+			return true;
+		}
+		if(!this.initialized) {
+			this.init();
+		}
+		if(this.skipFirstDt) {
+			this.skipFirstDt = false;
+			return false;
+		}
+		this.elapsed += dt;
+		var value = this.elapsed / this.duration;
+		var min = 0.0;
+		var max = 1.0;
+		if(max == null) {
+			max = 1.0;
+		}
+		if(min == null) {
+			min = 0.0;
+		}
+		var t = value <= min ? min : max <= value ? max : value;
+		var easedT = this.easingFn(t);
+		var _g = 0;
+		var _g1 = this.entries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			var value = entry.from * (1 - easedT) + entry.to * easedT;
+			this.setPropertyValue(entry.kind,value);
+		}
+		return this.elapsed >= this.duration;
+	}
+	,getPropertyValue: function(kind) {
+		switch(kind._hx_index) {
+		case 0:
+			return this.target.alpha;
+		case 1:
+			return this.target.x;
+		case 2:
+			return this.target.y;
+		case 3:
+			return this.target.scaleX;
+		case 4:
+			return this.target.scaleY;
+		case 5:
+			return this.target.rotation;
+		case 6:
+			var _g = kind.setter;
+			var getter = kind.getter;
+			return getter();
+		}
+	}
+	,setPropertyValue: function(kind,value) {
+		switch(kind._hx_index) {
+		case 0:
+			this.target.alpha = value;
+			break;
+		case 1:
+			var _this = this.target;
+			_this.posChanged = true;
+			_this.x = value;
+			break;
+		case 2:
+			var _this = this.target;
+			_this.posChanged = true;
+			_this.y = value;
+			break;
+		case 3:
+			var _this = this.target;
+			_this.posChanged = true;
+			_this.scaleX = value;
+			break;
+		case 4:
+			var _this = this.target;
+			_this.posChanged = true;
+			_this.scaleY = value;
+			break;
+		case 5:
+			var _this = this.target;
+			_this.posChanged = true;
+			_this.rotation = value;
+			break;
+		case 6:
+			var _g = kind.getter;
+			var setter = kind.setter;
+			setter(value);
+			break;
+		}
+	}
+	,__class__: bh_base_Tween
+};
+var bh_base_TweenSequence = function(tweens) {
+	this.currentIndex = 0;
+	this.cancelled = false;
+	this.onComplete = null;
+	this.tweens = tweens;
+};
+$hxClasses["bh.base.TweenSequence"] = bh_base_TweenSequence;
+bh_base_TweenSequence.__name__ = "bh.base.TweenSequence";
+bh_base_TweenSequence.prototype = {
+	cancel: function() {
+		this.cancelled = true;
+		if(this.currentIndex < this.tweens.length) {
+			this.tweens[this.currentIndex].cancel();
+		}
+	}
+	,step: function(dt) {
+		if(this.cancelled) {
+			return true;
+		}
+		if(this.currentIndex >= this.tweens.length) {
+			return true;
+		}
+		var current = this.tweens[this.currentIndex];
+		current.init();
+		if(current.step(dt)) {
+			var cb = current.onComplete;
+			if(cb != null) {
+				cb();
+			}
+			this.currentIndex++;
+			var remaining = current.elapsed - current.duration;
+			if(remaining > 0 && this.currentIndex < this.tweens.length) {
+				return this.step(remaining);
+			}
+			return this.currentIndex >= this.tweens.length;
+		}
+		return false;
+	}
+	,getTargets: function() {
+		var targets = [];
+		var _g = 0;
+		var _g1 = this.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			if(targets.indexOf(tween.target) == -1) {
+				targets.push(tween.target);
+			}
+		}
+		return targets;
+	}
+	,__class__: bh_base_TweenSequence
+};
+var bh_base_TweenGroup = function(tweens) {
+	this.cancelled = false;
+	this.onComplete = null;
+	this.tweens = tweens;
+	var _g = 0;
+	while(_g < tweens.length) {
+		var tween = tweens[_g];
+		++_g;
+		tween.init();
+	}
+};
+$hxClasses["bh.base.TweenGroup"] = bh_base_TweenGroup;
+bh_base_TweenGroup.__name__ = "bh.base.TweenGroup";
+bh_base_TweenGroup.prototype = {
+	cancel: function() {
+		this.cancelled = true;
+		var _g = 0;
+		var _g1 = this.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			tween.cancel();
+		}
+	}
+	,step: function(dt) {
+		if(this.cancelled) {
+			return true;
+		}
+		var allDone = true;
+		var _g = 0;
+		var _g1 = this.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			if(!tween.cancelled && tween.elapsed < tween.duration) {
+				if(!tween.step(dt)) {
+					allDone = false;
+				}
+			}
+		}
+		return allDone;
+	}
+	,getTargets: function() {
+		var targets = [];
+		var _g = 0;
+		var _g1 = this.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			if(targets.indexOf(tween.target) == -1) {
+				targets.push(tween.target);
+			}
+		}
+		return targets;
+	}
+	,__class__: bh_base_TweenGroup
+};
+var bh_base_TweenManager = function() {
+	this.handles = [];
+};
+$hxClasses["bh.base.TweenManager"] = bh_base_TweenManager;
+bh_base_TweenManager.__name__ = "bh.base.TweenManager";
+bh_base_TweenManager.isChildOf = function(obj,root) {
+	var current = obj;
+	while(current != null) {
+		if(current == root) {
+			return true;
+		}
+		current = current.parent;
+	}
+	return false;
+};
+bh_base_TweenManager.prototype = {
+	update: function(dt) {
+		var i = 0;
+		while(i < this.handles.length) {
+			var handle = this.handles[i];
+			var done = false;
+			switch(handle._hx_index) {
+			case 0:
+				var tween = handle.tween;
+				if(tween.cancelled) {
+					done = true;
+				} else if(tween.step(dt)) {
+					done = true;
+					var cb = tween.onComplete;
+					if(cb != null) {
+						cb();
+					}
+				}
+				break;
+			case 1:
+				var seq = handle.seq;
+				if(seq.cancelled) {
+					done = true;
+				} else if(seq.step(dt)) {
+					done = true;
+					var cb1 = seq.onComplete;
+					if(cb1 != null) {
+						cb1();
+					}
+				}
+				break;
+			case 2:
+				var group = handle.group;
+				if(group.cancelled) {
+					done = true;
+				} else if(group.step(dt)) {
+					done = true;
+					var cb2 = group.onComplete;
+					if(cb2 != null) {
+						cb2();
+					}
+				}
+				break;
+			}
+			if(done) {
+				this.handles[i] = this.handles[this.handles.length - 1];
+				this.handles.pop();
+			} else {
+				++i;
+			}
+		}
+	}
+	,tween: function(target,duration,properties,easing) {
+		var t = new bh_base_Tween(target,duration,properties,easing);
+		t.init();
+		this.handles.push(bh_base__$TweenManager_TweenHandle.HTween(t));
+		return t;
+	}
+	,cancelAll: function(target) {
+		var _g = 0;
+		var _g1 = this.handles;
+		while(_g < _g1.length) {
+			var handle = _g1[_g];
+			++_g;
+			switch(handle._hx_index) {
+			case 0:
+				var tween = handle.tween;
+				if(tween.target == target) {
+					tween.cancel();
+				}
+				break;
+			case 1:
+				var seq = handle.seq;
+				var _g2 = 0;
+				var _g3 = seq.tweens;
+				while(_g2 < _g3.length) {
+					var tween1 = _g3[_g2];
+					++_g2;
+					if(tween1.target == target) {
+						tween1.cancel();
+					}
+				}
+				if(seq.getTargets().length == 0 || Lambda.foreach(seq.tweens,function(t) {
+					return t.cancelled;
+				})) {
+					seq.cancel();
+				}
+				break;
+			case 2:
+				var group = handle.group;
+				var _g4 = 0;
+				var _g5 = group.tweens;
+				while(_g4 < _g5.length) {
+					var tween2 = _g5[_g4];
+					++_g4;
+					if(tween2.target == target) {
+						tween2.cancel();
+					}
+				}
+				if(group.getTargets().length == 0 || Lambda.foreach(group.tweens,function(t) {
+					return t.cancelled;
+				})) {
+					group.cancel();
+				}
+				break;
+			}
+		}
+	}
+	,cancelAllChildren: function(root) {
+		var _g = 0;
+		var _g1 = this.handles;
+		while(_g < _g1.length) {
+			var handle = _g1[_g];
+			++_g;
+			switch(handle._hx_index) {
+			case 0:
+				var tween = handle.tween;
+				if(bh_base_TweenManager.isChildOf(tween.target,root)) {
+					tween.cancel();
+				}
+				break;
+			case 1:
+				var seq = handle.seq;
+				var _g2 = 0;
+				var _g3 = seq.tweens;
+				while(_g2 < _g3.length) {
+					var tween1 = _g3[_g2];
+					++_g2;
+					if(bh_base_TweenManager.isChildOf(tween1.target,root)) {
+						tween1.cancel();
+					}
+				}
+				if(Lambda.foreach(seq.tweens,function(t) {
+					return t.cancelled;
+				})) {
+					seq.cancel();
+				}
+				break;
+			case 2:
+				var group = handle.group;
+				var _g4 = 0;
+				var _g5 = group.tweens;
+				while(_g4 < _g5.length) {
+					var tween2 = _g5[_g4];
+					++_g4;
+					if(bh_base_TweenManager.isChildOf(tween2.target,root)) {
+						tween2.cancel();
+					}
+				}
+				if(Lambda.foreach(group.tweens,function(t) {
+					return t.cancelled;
+				})) {
+					group.cancel();
+				}
+				break;
+			}
+		}
+	}
+	,__class__: bh_base_TweenManager
 };
 var bh_base_FloatTools = function() { };
 $hxClasses["bh.base.FloatTools"] = bh_base_FloatTools;
@@ -15691,6 +16256,12 @@ bh_multianim_BuilderResolvedSettings.__name__ = "bh.multianim.BuilderResolvedSet
 bh_multianim_BuilderResolvedSettings.prototype = {
 	hasSettings: function() {
 		return this.settings != null;
+	}
+	,has: function(key) {
+		if(this.settings == null) {
+			return false;
+		}
+		return Object.prototype.hasOwnProperty.call(this.settings.h,key);
 	}
 	,getStringOrDefault: function(settingName,defaultString) {
 		if(this.settings == null) {
@@ -35222,6 +35793,13 @@ var bh_ui_screens__$ScreenManager_ScreenManagerMode = $hxEnums["bh.ui.screens._S
 bh_ui_screens__$ScreenManager_ScreenManagerMode.__constructs__ = [bh_ui_screens__$ScreenManager_ScreenManagerMode.None,bh_ui_screens__$ScreenManager_ScreenManagerMode.Single,bh_ui_screens__$ScreenManager_ScreenManagerMode.MasterAndSingle,bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog];
 bh_ui_screens__$ScreenManager_ScreenManagerMode.__empty_constructs__ = [bh_ui_screens__$ScreenManager_ScreenManagerMode.None];
 var bh_ui_screens_ScreenManager = function(app,loader) {
+	this.layerOverlay = 5;
+	this.modalOverlayBlurTargets = [];
+	this.modalOverlayTargetAlpha = 0.0;
+	this.modalOverlay = null;
+	this.transitionCleanup = null;
+	this.isTransitioning = false;
+	this.tweens = new bh_base_TweenManager();
 	this.builders = new haxe_ds_ObjectMap();
 	this.failedScreens = new haxe_ds_StringMap();
 	this.configuredScreens = new haxe_ds_StringMap();
@@ -35294,6 +35872,7 @@ bh_ui_screens_ScreenManager.prototype = {
 	onReload: function(resource) {
 	}
 	,update: function(dt) {
+		this.tweens.update(dt);
 		var _g = 0;
 		var _g1 = this.activeScreens;
 		while(_g < _g1.length) {
@@ -35366,7 +35945,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 247, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+			haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 260, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 			this.loader.clearCache();
 			this.builders = oldBuilders;
 			if(throwOnError) {
@@ -35407,7 +35986,7 @@ bh_ui_screens_ScreenManager.prototype = {
 				var this1 = this.failedScreens;
 				var v = e.toString();
 				this1.h[name] = v;
-				haxe_Log.trace("Failed to reload screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 305, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+				haxe_Log.trace("Failed to reload screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 318, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 				return { success : false, error : e.toString(), file : null, line : null, col : null};
 			}
 			reloadedScreenNames.push(name);
@@ -35431,7 +36010,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			var this1 = this.failedScreens;
 			var v = e.toString();
 			this1.h[name] = v;
-			haxe_Log.trace("Failed to load screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 347, className : "bh.ui.screens.ScreenManager", methodName : "addScreen"});
+			haxe_Log.trace("Failed to load screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 360, className : "bh.ui.screens.ScreenManager", methodName : "addScreen"});
 		}
 		return screen;
 	}
@@ -35482,6 +36061,14 @@ bh_ui_screens_ScreenManager.prototype = {
 	}
 	,modalDialog: function(dialog,caller,dialogName) {
 		dialog.load();
+		var overlayConfig = this.readOverlayConfig(dialog);
+		if(overlayConfig != null) {
+			this.modalOverlay = this.createModalOverlay(overlayConfig);
+			if(overlayConfig.blur != null && overlayConfig.blur > 0) {
+				this.applyBlurToUnderlyingScreens(overlayConfig.blur);
+			}
+			this.modalOverlay.alpha = this.modalOverlayTargetAlpha;
+		}
 		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName));
 	}
 	,updateScreenMode: function(newScreenMode) {
@@ -35512,6 +36099,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			_gthis.activeScreens.push(newScreen);
 		};
 		var removeScreen = function(screen) {
+			_gthis.tweens.cancelAllChildren(screen.getSceneRoot());
 			HxOverrides.remove(_gthis.activeScreens,screen);
 			var _this = screen.getSceneRoot();
 			if(_this != null && _this.parent != null) {
@@ -35653,6 +36241,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			var caller = _g.caller;
 			var previousMode = _g.previousMode;
 			var dialogName = _g.dialogName;
+			this.removeModalOverlay();
 			switch(newScreenMode._hx_index) {
 			case 0:
 				removedScreens = [oldDialog];
@@ -35727,8 +36316,715 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		this.mode = newScreenMode;
 	}
+	,finalizeTransition: function() {
+		if(!this.isTransitioning) {
+			return;
+		}
+		var overlay = this.modalOverlay;
+		if(overlay != null) {
+			this.tweens.cancelAll(overlay);
+			overlay.alpha = this.modalOverlayTargetAlpha;
+		}
+		var cleanup = this.transitionCleanup;
+		this.isTransitioning = false;
+		this.transitionCleanup = null;
+		if(cleanup != null) {
+			cleanup();
+		}
+	}
+	,switchScreen: function(newScreenMode,transition) {
+		var _gthis = this;
+		if(transition == null || (transition == null ? false : transition._hx_index == 0)) {
+			this.finalizeTransition();
+			this.updateScreenMode(newScreenMode);
+			return;
+		}
+		this.finalizeTransition();
+		var _g = this.mode;
+		if(_g._hx_index == 3) {
+			var _g1 = _g.dialog;
+			var _g1 = _g.caller;
+			var _g1 = _g.previousMode;
+			var _g1 = _g.dialogName;
+			this.closeDialogWithTransition(bh_ui_screens_ScreenTransition.None);
+		}
+		switch(newScreenMode._hx_index) {
+		case 0:
+			break;
+		case 1:
+			var single = newScreenMode.single;
+			this.assertScreenNotFailed(single);
+			break;
+		case 2:
+			var master = newScreenMode.master;
+			var single = newScreenMode.single;
+			this.assertScreenNotFailed(master);
+			this.assertScreenNotFailed(single);
+			break;
+		case 3:
+			var dialog = newScreenMode.dialog;
+			var caller = newScreenMode.caller;
+			var previousMode = newScreenMode.previousMode;
+			var dialogName = newScreenMode.dialogName;
+			this.assertScreenNotFailed(dialog);
+			break;
+		}
+		var layerContent = 2;
+		var layerMaster = 4;
+		var layerDialog = 6;
+		var screensToAdd = new haxe_ds_ObjectMap();
+		var screensToRemove = [];
+		this.computeScreenDiff(this.mode,newScreenMode,layerContent,layerMaster,layerDialog,screensToAdd,screensToRemove);
+		if(screensToRemove.length == 0 && Lambda.count(screensToAdd) == 0) {
+			this.mode = newScreenMode;
+			return;
+		}
+		var map = screensToAdd;
+		var _g_map = map;
+		var _g_keys = map.keys();
+		while(_g_keys.hasNext()) {
+			var key = _g_keys.next();
+			var _g_value = _g_map.get(key);
+			var _g_key = key;
+			var screen = _g_key;
+			var layerIndex = _g_value;
+			this.app.s2d.add(screen.getSceneRoot(),layerIndex);
+			this.activeScreens.push(screen);
+			screen.onScreenEvent(bh_ui_UIScreenEvent.UIEntering,null);
+			screen.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Entering),null);
+			screen.getController().lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerStarted);
+			this.activeScreenControllers.push(screen);
+		}
+		var _g = 0;
+		while(_g < screensToRemove.length) {
+			var screen = screensToRemove[_g];
+			++_g;
+			HxOverrides.remove(this.activeScreens,screen);
+			HxOverrides.remove(this.activeScreenControllers,screen);
+		}
+		if(newScreenMode._hx_index == 3) {
+			var _g = newScreenMode.caller;
+			var _g = newScreenMode.previousMode;
+			var _g = newScreenMode.dialogName;
+			var dialog = newScreenMode.dialog;
+			this.activeScreenControllers = [dialog];
+		}
+		this.isTransitioning = true;
+		var oldMode = this.mode;
+		this.transitionCleanup = function() {
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				screen.getController().lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerFinished);
+				screen.onScreenEvent(bh_ui_UIScreenEvent.UILeaving,null);
+				screen.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Leaving),null);
+				_gthis.tweens.cancelAllChildren(screen.getSceneRoot());
+				screen.getSceneRoot().alpha = 1.0;
+				var _this = screen.getSceneRoot();
+				_this.posChanged = true;
+				_this.x = 0;
+				var _this1 = screen.getSceneRoot();
+				_this1.posChanged = true;
+				_this1.y = 0;
+				var _this2 = screen.getSceneRoot();
+				if(_this2 != null && _this2.parent != null) {
+					_this2.parent.removeChild(_this2);
+				}
+			}
+		};
+		this.mode = newScreenMode;
+		this.executeTransition(transition,screensToRemove,screensToAdd);
+	}
+	,switchTo: function(screen,transition) {
+		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(screen),transition);
+	}
+	,modalDialogWithTransition: function(dialog,caller,dialogName,transition) {
+		dialog.load();
+		var overlayConfig = this.readOverlayConfig(dialog);
+		if(overlayConfig != null) {
+			this.modalOverlay = this.createModalOverlay(overlayConfig);
+			if(overlayConfig.blur != null && overlayConfig.blur > 0) {
+				this.applyBlurToUnderlyingScreens(overlayConfig.blur);
+			}
+			this.tweenOverlayIn(overlayConfig,transition);
+		}
+		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),transition);
+	}
+	,closeDialogWithTransition: function(transition) {
+		var _gthis = this;
+		var _g = this.mode;
+		if(_g._hx_index == 3) {
+			var dialog = _g.dialog;
+			var caller = _g.caller;
+			var previousMode = _g.previousMode;
+			var dialogName = _g.dialogName;
+			var result = dialog.getController().exitResponse;
+			if(transition == null || (transition == null ? false : transition._hx_index == 0)) {
+				this.removeModalOverlay();
+				caller.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.OnDialogResult(dialogName,result)),null);
+				this.updateScreenMode(previousMode);
+				return;
+			}
+			this.finalizeTransition();
+			this.isTransitioning = true;
+			var dialogRoot = dialog.getSceneRoot();
+			HxOverrides.remove(this.activeScreens,dialog);
+			HxOverrides.remove(this.activeScreenControllers,dialog);
+			switch(previousMode._hx_index) {
+			case 1:
+				var single = previousMode.single;
+				if(this.activeScreenControllers.indexOf(single) == -1) {
+					this.activeScreenControllers.push(single);
+				}
+				break;
+			case 2:
+				var master = previousMode.master;
+				var single = previousMode.single;
+				if(this.activeScreenControllers.indexOf(master) == -1) {
+					this.activeScreenControllers.push(master);
+				}
+				if(this.activeScreenControllers.indexOf(single) == -1) {
+					this.activeScreenControllers.push(single);
+				}
+				break;
+			default:
+			}
+			var overlayConfig = this.readOverlayConfig(dialog);
+			if(overlayConfig != null) {
+				this.tweenOverlayOut(overlayConfig,transition);
+			}
+			this.transitionCleanup = function() {
+				_gthis.removeModalOverlay();
+				dialog.getController().lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerFinished);
+				dialog.onScreenEvent(bh_ui_UIScreenEvent.UILeaving,null);
+				dialog.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Leaving),null);
+				_gthis.tweens.cancelAllChildren(dialogRoot);
+				dialogRoot.alpha = 1.0;
+				dialogRoot.posChanged = true;
+				dialogRoot.x = 0;
+				dialogRoot.posChanged = true;
+				dialogRoot.y = 0;
+				if(dialogRoot != null && dialogRoot.parent != null) {
+					dialogRoot.parent.removeChild(dialogRoot);
+				}
+				caller.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.OnDialogResult(dialogName,result)),null);
+			};
+			this.mode = previousMode;
+			this.executeExitTransition(transition,dialogRoot);
+		} else {
+			throw haxe_Exception.thrown("closeDialogWithTransition called but not in Dialog mode");
+		}
+	}
+	,computeScreenDiff: function(oldMode,newMode,layerContent,layerMaster,layerDialog,screensToAdd,screensToRemove) {
+		switch(oldMode._hx_index) {
+		case 0:
+			switch(newMode._hx_index) {
+			case 0:
+				break;
+			case 1:
+				var single = newMode.single;
+				screensToAdd.set(single,layerContent);
+				break;
+			case 2:
+				var master = newMode.master;
+				var single = newMode.single;
+				screensToAdd.set(master,layerMaster);
+				screensToAdd.set(single,layerContent);
+				break;
+			case 3:
+				var _g = newMode.caller;
+				var _g = newMode.previousMode;
+				var _g = newMode.dialogName;
+				var dialog = newMode.dialog;
+				screensToAdd.set(dialog,layerDialog);
+				break;
+			}
+			break;
+		case 1:
+			var oldSingle = oldMode.single;
+			switch(newMode._hx_index) {
+			case 0:
+				screensToRemove.push(oldSingle);
+				break;
+			case 1:
+				var single = newMode.single;
+				if(single != oldSingle) {
+					screensToRemove.push(oldSingle);
+					screensToAdd.set(single,layerContent);
+				}
+				break;
+			case 2:
+				var master = newMode.master;
+				var single = newMode.single;
+				screensToAdd.set(master,layerMaster);
+				if(single != oldSingle) {
+					screensToRemove.push(oldSingle);
+					screensToAdd.set(single,layerContent);
+				}
+				break;
+			case 3:
+				var _g = newMode.caller;
+				var _g = newMode.previousMode;
+				var _g = newMode.dialogName;
+				var dialog = newMode.dialog;
+				screensToAdd.set(dialog,layerDialog);
+				break;
+			}
+			break;
+		case 2:
+			var oldMaster = oldMode.master;
+			var oldSingle = oldMode.single;
+			switch(newMode._hx_index) {
+			case 0:
+				screensToRemove.push(oldMaster);
+				screensToRemove.push(oldSingle);
+				break;
+			case 1:
+				var single = newMode.single;
+				screensToRemove.push(oldMaster);
+				if(oldSingle != single) {
+					screensToRemove.push(oldSingle);
+					screensToAdd.set(single,layerContent);
+				}
+				break;
+			case 2:
+				var master = newMode.master;
+				var single = newMode.single;
+				if(oldMaster != master) {
+					screensToRemove.push(oldMaster);
+					screensToAdd.set(master,layerMaster);
+				}
+				if(oldSingle != single) {
+					screensToRemove.push(oldSingle);
+					screensToAdd.set(single,layerContent);
+				}
+				break;
+			case 3:
+				var _g = newMode.caller;
+				var _g = newMode.previousMode;
+				var _g = newMode.dialogName;
+				var dialog = newMode.dialog;
+				screensToAdd.set(dialog,layerDialog);
+				break;
+			}
+			break;
+		case 3:
+			var _g = oldMode.caller;
+			var _g = oldMode.previousMode;
+			var _g = oldMode.dialogName;
+			var oldDialog = oldMode.dialog;
+			switch(newMode._hx_index) {
+			case 0:
+				screensToRemove.push(oldDialog);
+				break;
+			case 1:
+				var single = newMode.single;
+				screensToRemove.push(oldDialog);
+				screensToAdd.set(single,layerContent);
+				break;
+			case 2:
+				var master = newMode.master;
+				var single = newMode.single;
+				screensToRemove.push(oldDialog);
+				screensToAdd.set(single,layerContent);
+				screensToAdd.set(master,layerMaster);
+				break;
+			case 3:
+				var _g = newMode.caller;
+				var _g = newMode.previousMode;
+				var _g = newMode.dialogName;
+				var dialog = newMode.dialog;
+				screensToRemove.push(oldDialog);
+				screensToAdd.set(dialog,layerDialog);
+				break;
+			}
+			break;
+		}
+	}
+	,executeTransition: function(transition,screensToRemove,screensToAdd) {
+		var _gthis = this;
+		var screenWidth = this.app.s2d.width;
+		var screenHeight = this.app.s2d.height;
+		var onComplete = function() {
+			var cleanup = _gthis.transitionCleanup;
+			_gthis.isTransitioning = false;
+			_gthis.transitionCleanup = null;
+			if(cleanup != null) {
+				cleanup();
+			}
+		};
+		switch(transition._hx_index) {
+		case 0:
+			onComplete();
+			break;
+		case 1:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			var lastTween = null;
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var screen = _g_key;
+				var _ = _g_value;
+				var root = screen.getSceneRoot();
+				root.alpha = 0.0;
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Alpha(1.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				var root = screen.getSceneRoot();
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Alpha(0.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			if(lastTween != null) {
+				lastTween.setOnComplete(onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		case 2:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			var lastTween = null;
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var screen = _g_key;
+				var _ = _g_value;
+				var root = screen.getSceneRoot();
+				root.posChanged = true;
+				root.x = screenWidth;
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.X(0.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				var root = screen.getSceneRoot();
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.X(-screenWidth)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			if(lastTween != null) {
+				lastTween.setOnComplete(onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		case 3:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			var lastTween = null;
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var screen = _g_key;
+				var _ = _g_value;
+				var root = screen.getSceneRoot();
+				root.posChanged = true;
+				root.x = -screenWidth;
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.X(0.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				var root = screen.getSceneRoot();
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.X(screenWidth)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			if(lastTween != null) {
+				lastTween.setOnComplete(onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		case 4:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			var lastTween = null;
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var screen = _g_key;
+				var _ = _g_value;
+				var root = screen.getSceneRoot();
+				root.posChanged = true;
+				root.y = screenHeight;
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Y(0.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				var root = screen.getSceneRoot();
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Y(-screenHeight)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			if(lastTween != null) {
+				lastTween.setOnComplete(onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		case 5:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			var lastTween = null;
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var screen = _g_key;
+				var _ = _g_value;
+				var root = screen.getSceneRoot();
+				root.posChanged = true;
+				root.y = -screenHeight;
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Y(0.0)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			var _g = 0;
+			while(_g < screensToRemove.length) {
+				var screen = screensToRemove[_g];
+				++_g;
+				var root = screen.getSceneRoot();
+				lastTween = _gthis.tweens.tween(root,duration,[bh_base_TweenProperty.Y(screenHeight)],easing);
+				lastTween.skipFirstDt = true;
+			}
+			if(lastTween != null) {
+				lastTween.setOnComplete(onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		case 6:
+			var fn = transition.fn;
+			var oldRoot = null;
+			var newRoot = null;
+			if(screensToRemove.length > 0) {
+				oldRoot = screensToRemove[0].getSceneRoot();
+			}
+			var map = screensToAdd;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var s = _g_key;
+				var _ = _g_value;
+				newRoot = s.getSceneRoot();
+				break;
+			}
+			if(oldRoot != null && newRoot != null) {
+				fn(this.tweens,oldRoot,newRoot,onComplete);
+			} else {
+				onComplete();
+			}
+			break;
+		}
+	}
+	,executeExitTransition: function(transition,root) {
+		var _gthis = this;
+		var screenWidth = this.app.s2d.width;
+		var screenHeight = this.app.s2d.height;
+		var onComplete = function() {
+			var cleanup = _gthis.transitionCleanup;
+			_gthis.isTransitioning = false;
+			_gthis.transitionCleanup = null;
+			if(cleanup != null) {
+				cleanup();
+			}
+		};
+		switch(transition._hx_index) {
+		case 0:
+			onComplete();
+			break;
+		case 1:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			this.tweens.tween(root,duration,[bh_base_TweenProperty.Alpha(0.0)],easing).setOnComplete(onComplete);
+			break;
+		case 2:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			this.tweens.tween(root,duration,[bh_base_TweenProperty.X(-screenWidth)],easing).setOnComplete(onComplete);
+			break;
+		case 3:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			this.tweens.tween(root,duration,[bh_base_TweenProperty.X(screenWidth)],easing).setOnComplete(onComplete);
+			break;
+		case 4:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			this.tweens.tween(root,duration,[bh_base_TweenProperty.Y(-screenHeight)],easing).setOnComplete(onComplete);
+			break;
+		case 5:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			this.tweens.tween(root,duration,[bh_base_TweenProperty.Y(screenHeight)],easing).setOnComplete(onComplete);
+			break;
+		case 6:
+			var fn = transition.fn;
+			fn(this.tweens,root,root,onComplete);
+			break;
+		}
+	}
+	,readOverlayConfig: function(dialog) {
+		if(((dialog) instanceof bh_ui_screens_UIScreenBase)) {
+			return (js_Boot.__cast(dialog , bh_ui_screens_UIScreenBase)).modalOverlayConfig;
+		}
+		return null;
+	}
+	,createModalOverlay: function(config) {
+		var tmp = config.color;
+		var color = tmp != null ? tmp : 0;
+		var overlay = new h2d_Bitmap(h2d_Tile.fromColor(color,4096,4096));
+		overlay.alpha = 0.0;
+		this.app.s2d.add(overlay,this.layerOverlay);
+		var tmp = config.alpha;
+		this.modalOverlayTargetAlpha = tmp != null ? tmp : 0.5;
+		return overlay;
+	}
+	,removeModalOverlay: function() {
+		var overlay = this.modalOverlay;
+		if(overlay == null) {
+			return;
+		}
+		this.tweens.cancelAll(overlay);
+		if(overlay != null && overlay.parent != null) {
+			overlay.parent.removeChild(overlay);
+		}
+		this.modalOverlay = null;
+		this.modalOverlayTargetAlpha = 0.0;
+		var _g = 0;
+		var _g1 = this.modalOverlayBlurTargets;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			entry.root.set_filter(entry.saved);
+		}
+		this.modalOverlayBlurTargets = [];
+	}
+	,applyBlurToUnderlyingScreens: function(blurRadius) {
+		var _g = 0;
+		var _g1 = this.activeScreens;
+		while(_g < _g1.length) {
+			var screen = _g1[_g];
+			++_g;
+			var root = screen.getSceneRoot();
+			this.modalOverlayBlurTargets.push({ root : root, saved : root.filter});
+			root.set_filter(new h2d_filter_Blur(blurRadius,1.0,1.0));
+		}
+	}
+	,getTransitionDurationAndEasing: function(transition) {
+		switch(transition._hx_index) {
+		case 0:
+			return { duration : 0.0, easing : null};
+		case 1:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			return { duration : duration, easing : easing};
+		case 2:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			return { duration : duration, easing : easing};
+		case 3:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			return { duration : duration, easing : easing};
+		case 4:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			return { duration : duration, easing : easing};
+		case 5:
+			var duration = transition.duration;
+			var easing = transition.easing;
+			return { duration : duration, easing : easing};
+		case 6:
+			var _g = transition.fn;
+			return { duration : 0.3, easing : null};
+		}
+	}
+	,tweenOverlayIn: function(config,transition) {
+		var overlay = this.modalOverlay;
+		if(overlay == null) {
+			return;
+		}
+		var tmp = config.alpha;
+		var targetAlpha = tmp != null ? tmp : 0.5;
+		if(transition == null || (transition == null ? false : transition._hx_index == 0)) {
+			overlay.alpha = targetAlpha;
+			return;
+		}
+		var te = this.getTransitionDurationAndEasing(transition);
+		var tmp = config.fadeIn;
+		var duration = tmp != null ? tmp : te.duration;
+		if(duration <= 0) {
+			overlay.alpha = targetAlpha;
+			return;
+		}
+		var tween = this.tweens.tween(overlay,duration,[bh_base_TweenProperty.Alpha(targetAlpha)],te.easing);
+		tween.skipFirstDt = true;
+	}
+	,tweenOverlayOut: function(config,transition) {
+		var overlay = this.modalOverlay;
+		if(overlay == null) {
+			return;
+		}
+		if(transition == null || (transition == null ? false : transition._hx_index == 0)) {
+			this.removeModalOverlay();
+			return;
+		}
+		var te = this.getTransitionDurationAndEasing(transition);
+		var tmp = config.fadeOut;
+		var duration = tmp != null ? tmp : te.duration;
+		if(duration <= 0) {
+			this.removeModalOverlay();
+			return;
+		}
+		this.tweens.cancelAll(overlay);
+		this.tweens.tween(overlay,duration,[bh_base_TweenProperty.Alpha(0.0)],te.easing);
+	}
 	,__class__: bh_ui_screens_ScreenManager
 };
+var bh_ui_screens_ScreenTransition = $hxEnums["bh.ui.screens.ScreenTransition"] = { __ename__:true,__constructs__:null
+	,None: {_hx_name:"None",_hx_index:0,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}
+	,Fade: ($_=function(duration,easing) { return {_hx_index:1,duration:duration,easing:easing,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="Fade",$_.__params__ = ["duration","easing"],$_)
+	,SlideLeft: ($_=function(duration,easing) { return {_hx_index:2,duration:duration,easing:easing,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="SlideLeft",$_.__params__ = ["duration","easing"],$_)
+	,SlideRight: ($_=function(duration,easing) { return {_hx_index:3,duration:duration,easing:easing,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="SlideRight",$_.__params__ = ["duration","easing"],$_)
+	,SlideUp: ($_=function(duration,easing) { return {_hx_index:4,duration:duration,easing:easing,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="SlideUp",$_.__params__ = ["duration","easing"],$_)
+	,SlideDown: ($_=function(duration,easing) { return {_hx_index:5,duration:duration,easing:easing,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="SlideDown",$_.__params__ = ["duration","easing"],$_)
+	,Custom: ($_=function(fn) { return {_hx_index:6,fn:fn,__enum__:"bh.ui.screens.ScreenTransition",toString:$estr}; },$_._hx_name="Custom",$_.__params__ = ["fn"],$_)
+};
+bh_ui_screens_ScreenTransition.__constructs__ = [bh_ui_screens_ScreenTransition.None,bh_ui_screens_ScreenTransition.Fade,bh_ui_screens_ScreenTransition.SlideLeft,bh_ui_screens_ScreenTransition.SlideRight,bh_ui_screens_ScreenTransition.SlideUp,bh_ui_screens_ScreenTransition.SlideDown,bh_ui_screens_ScreenTransition.Custom];
+bh_ui_screens_ScreenTransition.__empty_constructs__ = [bh_ui_screens_ScreenTransition.None];
 var bh_ui_screens_LayersEnum = $hxEnums["bh.ui.screens.LayersEnum"] = { __ename__:true,__constructs__:null
 	,ModalLayer: {_hx_name:"ModalLayer",_hx_index:0,__enum__:"bh.ui.screens.LayersEnum",toString:$estr}
 	,DefaultLayer: {_hx_name:"DefaultLayer",_hx_index:1,__enum__:"bh.ui.screens.LayersEnum",toString:$estr}
@@ -103549,6 +104845,7 @@ screens_ColorPickerDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototy
 	,__class__: screens_ColorPickerDialog
 });
 var screens_OkCancelDialog = function(screenManager,dialogBuilder,okButtonBuilder,cancelButtonBuilder,okText,cancelText,dialogText) {
+	this.closeTransition = null;
 	bh_ui_screens_UIScreenBase.call(this,screenManager);
 	this.initialDialogText = dialogText;
 	this.dialogBuilder = dialogBuilder;
@@ -103563,7 +104860,7 @@ screens_OkCancelDialog.__super__ = bh_ui_screens_UIScreenBase;
 screens_OkCancelDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		var generatedByMacroBuildWithParametersload1201Builder = function() {
+		var generatedByMacroBuildWithParametersload1424Builder = function() {
 			var ok;
 			var cancel;
 			var _gthis1 = _gthis.dialogBuilder.builder;
@@ -103595,31 +104892,41 @@ screens_OkCancelDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,
 			}
 			return retVal;
 		};
-		var dialog = generatedByMacroBuildWithParametersload1201Builder();
+		var dialog = generatedByMacroBuildWithParametersload1424Builder();
 		this.addBuilderResult(dialog.builderResults);
 		this.okButton = dialog.ok;
 		this.cancelButton = dialog.cancel;
 		this.dialogText = dialog.builderResults.getUpdatable("dialogText");
+		var overlayFromManim = this.parseOverlaySettings(dialog.builderResults.rootSettings);
+		if(overlayFromManim != null) {
+			this.modalOverlayConfig = overlayFromManim;
+		}
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
 		case 0:
 			if(source == this.okButton) {
-				this.getController().exitResponse = true;
+				this.closeWith(true);
 			} else if(source == this.cancelButton) {
-				this.getController().exitResponse = false;
+				this.closeWith(false);
 			}
 			break;
 		case 9:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
-				this.getController().exitResponse = true;
+				this.closeWith(true);
 			} else if(keyCode == 27) {
-				this.getController().exitResponse = false;
+				this.closeWith(false);
 			}
 			break;
 		default:
+		}
+	}
+	,closeWith: function(result) {
+		this.getController().exitResponse = result;
+		if(this.closeTransition != null) {
+			this.screenManager.closeDialogWithTransition(this.closeTransition);
 		}
 	}
 	,__class__: screens_OkCancelDialog
@@ -112858,31 +114165,63 @@ screens_ui_DialogsDemoScreen.__super__ = DemoScreenBase;
 screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Dialogs","Modal OK/Cancel dialogs with result tracking");
+		this.setupDemo("Dialogs","Modal OK/Cancel dialogs with overlay variants");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/dialogs.manim",false);
-		this.dialogBuilder = this.demoBuilder;
-		var generatedByMacroBuildWithParametersload809Builder = function() {
+		var generatedByMacroBuildWithParametersload925Builder = function() {
+			var openButton5;
+			var openButton4;
+			var openButton3;
 			var openButton2;
 			var openButton1;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Confirm Action");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Slide Up");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				openButton5 = _el;
+				return _el.getObject();
+			});
+			_g.h["openButton5"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Fade In");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				openButton4 = _el;
+				return _el.getObject();
+			});
+			_g.h["openButton4"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Slide Down");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				openButton3 = _el;
+				return _el.getObject();
+			});
+			_g.h["openButton3"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Fade In");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				openButton2 = _el;
 				return _el.getObject();
 			});
 			_g.h["openButton2"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Open Dialog");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Instant Open");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				openButton1 = _el;
 				return _el.getObject();
 			});
 			_g.h["openButton1"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("dialogsDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { openButton2 : openButton2, openButton1 : openButton1, builderResults : builderResults1};
+			var retVal = { openButton5 : openButton5, openButton4 : openButton4, openButton3 : openButton3, openButton2 : openButton2, openButton1 : openButton1, builderResults : builderResults1};
+			if(retVal.openButton5 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "openButton5" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.openButton4 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "openButton4" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.openButton3 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "openButton3" + " is null (check if placeholder object is named correctly)");
+			}
 			if(retVal.openButton2 == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "openButton2" + " is null (check if placeholder object is named correctly)");
 			}
@@ -112891,19 +114230,28 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload809Builder();
+		var ui = generatedByMacroBuildWithParametersload925Builder();
 		this.demoResult = ui.builderResults;
 		this.openButton1 = ui.openButton1;
 		this.openButton2 = ui.openButton2;
+		this.openButton3 = ui.openButton3;
+		this.openButton4 = ui.openButton4;
+		this.openButton5 = ui.openButton5;
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
 		case 0:
 			if(source == this.openButton1) {
-				this.openDialog("dialog1","Do you want to proceed with this action?");
+				this.openDialog("noOverlay","dialogNoOverlay","No overlay - dialog appears instantly");
 			} else if(source == this.openButton2) {
-				this.openDialog("dialog2","Are you sure you want to confirm?");
+				this.openDialog("darkOverlay","dialogDarkOverlay","Dark overlay fades in with dialog",bh_ui_screens_ScreenTransition.Fade(0.3,bh_multianim_EasingType.EaseOutCubic),bh_ui_screens_ScreenTransition.Fade(0.2,bh_multianim_EasingType.EaseInQuad));
+			} else if(source == this.openButton3) {
+				this.openDialog("blueOverlay","dialogBlueOverlay","Blue-tinted overlay with slide",bh_ui_screens_ScreenTransition.SlideDown(0.3,bh_multianim_EasingType.EaseOutCubic),bh_ui_screens_ScreenTransition.SlideUp(0.2,bh_multianim_EasingType.EaseInQuad));
+			} else if(source == this.openButton4) {
+				this.openDialog("heavyOverlay","dialogHeavyOverlay","Heavy dark overlay (85% opacity)",bh_ui_screens_ScreenTransition.Fade(0.5,bh_multianim_EasingType.EaseOutCubic),bh_ui_screens_ScreenTransition.Fade(0.3,bh_multianim_EasingType.EaseInQuad));
+			} else if(source == this.openButton5) {
+				this.openDialog("redWarning","dialogRedOverlay","Red warning overlay with slide",bh_ui_screens_ScreenTransition.SlideUp(0.3,bh_multianim_EasingType.EaseOutCubic),bh_ui_screens_ScreenTransition.SlideDown(0.2,bh_multianim_EasingType.EaseInQuad));
 			}
 			break;
 		case 10:
@@ -112912,24 +114260,28 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				var dialogName = controllerEvent.dialogName;
 				var result = controllerEvent.result;
 				var resultStr = result == true ? "OK" : "Cancel";
-				var displayName = dialogName == "dialog1" ? "Dialog 1" : "Dialog 2";
-				this.updateResult("" + displayName + " result: " + resultStr);
-				this.addHistoryEntry("" + displayName + " -> " + resultStr);
+				this.updateResult("" + dialogName + ": " + resultStr);
+				this.addHistoryEntry("" + dialogName + " -> " + resultStr);
 			}
 			break;
 		default:
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
-	,openDialog: function(dialogName,text) {
-		if(this.dialogBuilder == null || this.stdBuilder == null) {
+	,openDialog: function(dialogName,dialogProgrammable,text,openTransition,closeTransition) {
+		if(this.demoBuilder == null || this.stdBuilder == null) {
 			return;
 		}
 		var okBuilder = this.stdBuilder.createElementBuilder("button");
 		var cancelBuilder = this.stdBuilder.createElementBuilder("button");
-		var dialogScreenBuilder = this.dialogBuilder.createElementBuilder("okCancelDemoDialog");
+		var dialogScreenBuilder = this.demoBuilder.createElementBuilder(dialogProgrammable);
 		var dialog = new screens_OkCancelDialog(this.screenManager,dialogScreenBuilder,okBuilder,cancelBuilder,"OK","Cancel",text);
-		this.screenManager.modalDialog(dialog,this,dialogName);
+		dialog.closeTransition = closeTransition;
+		if(openTransition != null) {
+			this.screenManager.modalDialogWithTransition(dialog,this,dialogName,openTransition);
+		} else {
+			this.screenManager.modalDialog(dialog,this,dialogName);
+		}
 	}
 	,updateResult: function(text) {
 		if(this.demoResult == null) {
@@ -112997,10 +114349,12 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoBuilder = null;
-		this.dialogBuilder = null;
 		this.demoResult = null;
 		this.openButton1 = null;
 		this.openButton2 = null;
+		this.openButton3 = null;
+		this.openButton4 = null;
+		this.openButton5 = null;
 		this.history = [];
 	}
 	,__class__: screens_ui_DialogsDemoScreen
@@ -114711,6 +116065,7 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
 NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];

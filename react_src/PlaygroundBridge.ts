@@ -154,7 +154,10 @@ export class PlaygroundBridge {
         this.currentScreen = screenName;
         if (window.PlaygroundMain?.instance) {
             try {
-                return window.PlaygroundMain.instance.reload(screenName);
+                // Use lightweight navigateTo for slide transitions;
+                // reload() is only needed when .manim files change.
+                window.PlaygroundMain.instance.navigateTo(screenName);
+                return { success: true, error: null, file: null, line: null, col: null };
             } catch (error) {
                 console.error('Failed to switch screen:', error);
                 return null;

@@ -22,8 +22,20 @@ class Main extends hxd.App {
 	private static inline var DEFAULT_SCREEN = "nav";
 	public static var instance:Main = null;
 	var errorText:h2d.Text;
+	public var currentScreenName:String = DEFAULT_SCREEN;
 
 	public var screenManager:ScreenManager;
+
+	// Flat screen order matching sidebar layout, used to determine slide direction
+	static final SCREEN_ORDER:Array<String> = [
+		"nav",
+		"featureShowcase", "incremental", "interactives", "conditionals", "expressions", "settings", "macroPerformance",
+		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
+		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
+		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "pixelsGraphics",
+		"stateAnim", "particles", "paths", "curves", "animPath", "filters",
+		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards",
+	];
 
 	function getFont() {
 		return hxd.res.DefaultFont.get();
@@ -47,6 +59,7 @@ class Main extends hxd.App {
 			}
 			errorText.remove();
 			final screenName = screen ?? DEFAULT_SCREEN;
+			currentScreenName = screenName;
 			if (screenName == DEFAULT_SCREEN) {
 				screenManager.updateScreenMode(Single(screenManager.getScreen(screenName)));
 			} else {
@@ -67,6 +80,35 @@ class Main extends hxd.App {
 			js.Browser.alert(msg);
 			#end
 			return {success: false, error: msg, file: null, line: null, col: null};
+		}
+	}
+
+	/** Lightweight screen navigation with slide transitions (no reload). */
+	public function navigateTo(screenName:String) {
+		if (screenName == currentScreenName)
+			return;
+
+		// Determine direction based on position in sidebar order
+		final fromIdx = SCREEN_ORDER.indexOf(currentScreenName);
+		final toIdx = SCREEN_ORDER.indexOf(screenName);
+		final goingDown = toIdx > fromIdx;
+		final transition = if (goingDown)
+			bh.ui.screens.ScreenTransition.SlideDown(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic)
+		else
+			bh.ui.screens.ScreenTransition.SlideUp(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic);
+
+		currentScreenName = screenName;
+
+		if (screenName == DEFAULT_SCREEN) {
+			screenManager.switchTo(screenManager.getScreen(screenName), transition);
+		} else {
+			final targetScreen = screenManager.getScreen(screenName);
+			final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
+			if (Std.isOfType(targetScreen, DemoScreenBase)) {
+				final demo:DemoScreenBase = cast targetScreen;
+				masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
+			}
+			screenManager.switchScreen(MasterAndSingle(masterScreen, targetScreen), transition);
 		}
 	}
 

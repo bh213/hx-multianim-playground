@@ -4,6 +4,7 @@ import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.ui.screens.ScreenTransition;
 
 class DemoMasterScreen extends UIScreenBase {
 	var commonBuilder:Null<MultiAnimBuilder>;
@@ -38,8 +39,9 @@ class DemoMasterScreen extends UIScreenBase {
 		switch event {
 			case UIClick:
 				if (source == backButton) {
-					screenManager.updateScreenMode(Single(screenManager.getScreen("nav")));
+					screenManager.switchTo(screenManager.getScreen("nav"), SlideRight(0.25, EaseOutCubic));
 					#if js
+					Main.instance.currentScreenName = "nav";
 					js.Browser.window.location.hash = 'screen=nav';
 					#end
 				}

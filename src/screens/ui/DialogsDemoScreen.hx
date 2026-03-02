@@ -3,32 +3,40 @@ package screens.ui;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
+import bh.ui.screens.ScreenTransition;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import screens.OkCancelDialog;
 
 class DialogsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
-	var dialogBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var openButton1:Null<UIStandardMultiAnimButton>;
 	var openButton2:Null<UIStandardMultiAnimButton>;
+	var openButton3:Null<UIStandardMultiAnimButton>;
+	var openButton4:Null<UIStandardMultiAnimButton>;
+	var openButton5:Null<UIStandardMultiAnimButton>;
 	var history:Array<String> = [];
 
 	override public function load():Void {
-		setupDemo("Dialogs", "Modal OK/Cancel dialogs with result tracking");
+		setupDemo("Dialogs", "Modal OK/Cancel dialogs with overlay variants");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/dialogs.manim", false);
-		dialogBuilder = demoBuilder;
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dialogsDemo", [], [
-			openButton1 => addButtonWithSingleBuilder(stdBuilder, "button", "Open Dialog"),
-			openButton2 => addButtonWithSingleBuilder(stdBuilder, "button", "Confirm Action"),
+			openButton1 => addButtonWithSingleBuilder(stdBuilder, "button", "Instant Open"),
+			openButton2 => addButtonWithSingleBuilder(stdBuilder, "button", "Fade In"),
+			openButton3 => addButtonWithSingleBuilder(stdBuilder, "button", "Slide Down"),
+			openButton4 => addButtonWithSingleBuilder(stdBuilder, "button", "Fade In"),
+			openButton5 => addButtonWithSingleBuilder(stdBuilder, "button", "Slide Up"),
 		]);
 
 		demoResult = ui.builderResults;
 		openButton1 = ui.openButton1;
 		openButton2 = ui.openButton2;
+		openButton3 = ui.openButton3;
+		openButton4 = ui.openButton4;
+		openButton5 = ui.openButton5;
 		addBuilderResult(demoResult);
 	}
 
@@ -36,17 +44,26 @@ class DialogsDemoScreen extends DemoScreenBase {
 		switch event {
 			case UIClick:
 				if (source == openButton1) {
-					openDialog("dialog1", "Do you want to proceed with this action?");
+					openDialog("noOverlay", "dialogNoOverlay", "No overlay - dialog appears instantly");
 				} else if (source == openButton2) {
-					openDialog("dialog2", "Are you sure you want to confirm?");
+					openDialog("darkOverlay", "dialogDarkOverlay", "Dark overlay fades in with dialog",
+						Fade(0.3, EaseOutCubic), Fade(0.2, EaseInQuad));
+				} else if (source == openButton3) {
+					openDialog("blueOverlay", "dialogBlueOverlay", "Blue-tinted overlay with slide",
+						SlideDown(0.3, EaseOutCubic), SlideUp(0.2, EaseInQuad));
+				} else if (source == openButton4) {
+					openDialog("heavyOverlay", "dialogHeavyOverlay", "Heavy dark overlay (85% opacity)",
+						Fade(0.5, EaseOutCubic), Fade(0.3, EaseInQuad));
+				} else if (source == openButton5) {
+					openDialog("redWarning", "dialogRedOverlay", "Red warning overlay with slide",
+						SlideUp(0.3, EaseOutCubic), SlideDown(0.2, EaseInQuad));
 				}
 			case UIOnControllerEvent(controllerEvent):
 				switch controllerEvent {
 					case OnDialogResult(dialogName, result):
 						final resultStr = result == true ? "OK" : "Cancel";
-						final displayName = dialogName == "dialog1" ? "Dialog 1" : "Dialog 2";
-						updateResult('$displayName result: $resultStr');
-						addHistoryEntry('$displayName -> $resultStr');
+						updateResult('$dialogName: $resultStr');
+						addHistoryEntry('$dialogName -> $resultStr');
 					default:
 				}
 			default:
@@ -54,13 +71,19 @@ class DialogsDemoScreen extends DemoScreenBase {
 		super.onScreenEvent(event, source);
 	}
 
-	function openDialog(dialogName:String, text:String):Void {
-		if (dialogBuilder == null || stdBuilder == null) return;
+	function openDialog(dialogName:String, dialogProgrammable:String, text:String, ?openTransition:ScreenTransition,
+			?closeTransition:ScreenTransition):Void {
+		if (demoBuilder == null || stdBuilder == null) return;
 		final okBuilder = stdBuilder.createElementBuilder("button");
 		final cancelBuilder = stdBuilder.createElementBuilder("button");
-		final dialogScreenBuilder = dialogBuilder.createElementBuilder("okCancelDemoDialog");
+		final dialogScreenBuilder = demoBuilder.createElementBuilder(dialogProgrammable);
 		final dialog = new OkCancelDialog(screenManager, dialogScreenBuilder, okBuilder, cancelBuilder, "OK", "Cancel", text);
-		screenManager.modalDialog(dialog, this, dialogName);
+		dialog.closeTransition = closeTransition;
+		if (openTransition != null) {
+			screenManager.modalDialogWithTransition(dialog, this, dialogName, openTransition);
+		} else {
+			screenManager.modalDialog(dialog, this, dialogName);
+		}
 	}
 
 	function updateResult(text:String):Void {
@@ -92,10 +115,12 @@ class DialogsDemoScreen extends DemoScreenBase {
 	override public function onClear():Void {
 		super.onClear();
 		demoBuilder = null;
-		dialogBuilder = null;
 		demoResult = null;
 		openButton1 = null;
 		openButton2 = null;
+		openButton3 = null;
+		openButton4 = null;
+		openButton5 = null;
 		history = [];
 	}
 }

@@ -4,6 +4,7 @@ import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
+import bh.ui.screens.ScreenTransition;
 import bh.base.MacroUtils;
 
 class NavScreen extends UIScreenBase {
@@ -342,8 +343,9 @@ class NavScreen extends UIScreenBase {
 			final demo:DemoScreenBase = cast targetScreen;
 			masterScreen.setDemoInfo(demo.demoTitle, demo.demoDescription);
 		}
-		screenManager.updateScreenMode(MasterAndSingle(masterScreen, targetScreen));
+		screenManager.switchScreen(MasterAndSingle(masterScreen, targetScreen), SlideLeft(0.25, EaseOutCubic));
 		#if js
+		Main.instance.currentScreenName = screenId;
 		js.Browser.window.location.hash = 'screen=${screenId}';
 		#end
 	}

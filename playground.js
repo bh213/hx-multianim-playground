@@ -108928,6 +108928,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			this.cardHand.dispose();
 			this.cardHand = null;
 		}
+		this.tabs.beginTab(1);
 		this.createCardHand();
 		this.handCardIds = [];
 		var descriptors = [];
@@ -108955,6 +108956,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.cardHand != null) {
 			this.cardHand.setHand(descriptors);
 		}
+		this.tabs.endTab();
 		this.setHandStatus("Layout: " + (this.currentLayoutMode == bh_ui_HandLayoutMode.Fan ? "Fan" : this.currentLayoutMode == bh_ui_HandLayoutMode.Linear ? "Linear" : "Path"));
 		this.updateControlStates();
 		this.updateHandUI();

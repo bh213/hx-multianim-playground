@@ -774,8 +774,8 @@ paths {
     text(m5x7, "--- targeting threshold ---", #FFDD4444): 250, 368
 
     // ===== Right Panel =====
-    // Panel background (588 x 386, starts at X=677)
-    bitmap(generated(color(588, 386, #0D0D1A99))): 677, 42
+    // Panel background (588 x 450, starts at X=677)
+    bitmap(generated(color(588, 450, #0D0D1A99))): 677, 0
 
     // --- Row 1: Status --- Y=48
     text(m5x7, "Status:", #667799): 690, 50
@@ -923,9 +923,26 @@ paths {
         pos: 990, 366
     }
 
-    // --- Row 13: Event log --- Y=402
-    text(m5x7, "Event:", #555555): 690, 402
-    #eventText text(m5x7, "", #667799): 738, 402
+    // --- Row 13: Card-to-card toggles --- Y=400
+    text(m5x7, "Hover pop:", #667799): 690, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cHoverPopToggle")) {
+        pos: 768, 395
+        settings{buildName=>toggle}
+    }
+    text(m5x7, "Hover scale:", #667799): 800, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cHoverScaleToggle")) {
+        pos: 890, 395
+        settings{buildName=>toggle}
+    }
+    text(m5x7, "Spread:", #667799): 920, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cSpreadToggle")) {
+        pos: 976, 395
+        settings{buildName=>toggle}
+    }
+
+    // --- Row 14: Event log --- Y=424
+    text(m5x7, "Event:", #555555): 690, 424
+    #eventText text(m5x7, "", #667799): 738, 424
 
     // --- Help tooltips (hover any label for description) ---
     interactive(50, 14, "hlpLayout", events: [hover]): 690, 102
@@ -944,4 +961,7 @@ paths {
     interactive(74, 14, "hlpFanRadius", events: [hover]): 940, 338
     interactive(68, 14, "hlpPathDist", events: [hover]): 690, 372
     interactive(50, 14, "hlpOrient", events: [hover]): 940, 372
+    interactive(68, 14, "hlpC2CPop", events: [hover]): 690, 396
+    interactive(80, 14, "hlpC2CScale", events: [hover]): 800, 396
+    interactive(50, 14, "hlpC2CSpread", events: [hover]): 920, 396
 }

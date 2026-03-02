@@ -29725,6 +29725,9 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.targetingThresholdY = config != null && config.targetingThresholdY != null ? config.targetingThresholdY : 100.0;
 	this.allowCardToCard = config != null && config.allowCardToCard != null && config.allowCardToCard;
 	this.cardToCardHighlightScale = config != null && config.cardToCardHighlightScale != null ? config.cardToCardHighlightScale : 1.1;
+	this.cardToCardHoverPop = config != null && config.cardToCardHoverPop != null && config.cardToCardHoverPop;
+	this.cardToCardHoverScale = config != null && config.cardToCardHoverScale != null && config.cardToCardHoverScale;
+	this.cardToCardSpread = config != null && config.cardToCardSpread != null && config.cardToCardSpread;
 	this.drawPilePosition = config != null && config.drawPilePosition != null ? config.drawPilePosition : new bh_base_FPoint(50,680);
 	this.discardPilePosition = config != null && config.discardPilePosition != null ? config.discardPilePosition : new bh_base_FPoint(1230,680);
 	this.handLayer = config != null && config.handLayer != null ? config.handLayer : bh_ui_screens_LayersEnum.DefaultLayer;
@@ -30177,6 +30180,130 @@ bh_ui_UICardHandHelper.prototype = {
 		this.applyLayout(true);
 		return true;
 	}
+	,restoreCardToCardEffects: function() {
+		if(this.cardToCardTarget == null) {
+			return;
+		}
+		var _this = this.cardToCardTarget.container;
+		_this.posChanged = true;
+		_this.scaleX = this.cardToCardTarget.layoutPos.scale;
+		var _this = this.cardToCardTarget.container;
+		_this.posChanged = true;
+		_this.scaleY = this.cardToCardTarget.layoutPos.scale;
+		this.addToHandLayer(this.cardToCardTarget);
+		if(this.cardToCardHoverPop) {
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.x = this.cardToCardTarget.layoutPos.x;
+			_this.posChanged = true;
+			_this.y = this.cardToCardTarget.layoutPos.y;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.rotation = this.cardToCardTarget.layoutPos.rotation;
+		}
+		if(this.cardToCardSpread) {
+			var _g = 0;
+			var _g1 = this.cards;
+			while(_g < _g1.length) {
+				var entry = _g1[_g];
+				++_g;
+				if(entry.state == bh_ui_CardState.Dragging || entry.state == bh_ui_CardState.Targeting || entry.state == bh_ui_CardState.Animating) {
+					continue;
+				}
+				if(entry == this.cardToCardTarget) {
+					continue;
+				}
+				var _this = entry.container;
+				_this.posChanged = true;
+				_this.x = entry.layoutPos.x;
+				_this.posChanged = true;
+				_this.y = entry.layoutPos.y;
+				var _this1 = entry.container;
+				_this1.posChanged = true;
+				_this1.rotation = entry.layoutPos.rotation;
+				var _this2 = entry.container;
+				_this2.posChanged = true;
+				_this2.scaleX = entry.layoutPos.scale;
+				var _this3 = entry.container;
+				_this3.posChanged = true;
+				_this3.scaleY = entry.layoutPos.scale;
+			}
+		}
+	}
+	,applyCardToCardEffects: function() {
+		if(this.cardToCardTarget == null) {
+			return;
+		}
+		var targetIdx = this.cards.indexOf(this.cardToCardTarget);
+		if(this.cardToCardSpread || this.cardToCardHoverPop) {
+			var hoverPositions = this.computeLayout(targetIdx);
+			if(this.cardToCardSpread) {
+				var _g = 0;
+				var _g1 = this.cards.length;
+				while(_g < _g1) {
+					var i = _g++;
+					if(i >= hoverPositions.length) {
+						break;
+					}
+					var entry = this.cards[i];
+					if(entry.state == bh_ui_CardState.Dragging || entry.state == bh_ui_CardState.Targeting || entry.state == bh_ui_CardState.Animating) {
+						continue;
+					}
+					if(i == targetIdx) {
+						continue;
+					}
+					var _this = entry.container;
+					var x = hoverPositions[i].x;
+					var y = hoverPositions[i].y;
+					_this.posChanged = true;
+					_this.x = x;
+					_this.posChanged = true;
+					_this.y = y;
+					var _this1 = entry.container;
+					var v = hoverPositions[i].rotation;
+					_this1.posChanged = true;
+					_this1.rotation = v;
+					var _this2 = entry.container;
+					var v1 = hoverPositions[i].scale;
+					_this2.posChanged = true;
+					_this2.scaleX = v1;
+					var _this3 = entry.container;
+					var v2 = hoverPositions[i].scale;
+					_this3.posChanged = true;
+					_this3.scaleY = v2;
+				}
+			}
+			if(this.cardToCardHoverPop) {
+				var _this = this.cardToCardTarget.container;
+				var x = hoverPositions[targetIdx].x;
+				var y = hoverPositions[targetIdx].y;
+				_this.posChanged = true;
+				_this.x = x;
+				_this.posChanged = true;
+				_this.y = y;
+				var _this = this.cardToCardTarget.container;
+				var v = hoverPositions[targetIdx].rotation;
+				_this.posChanged = true;
+				_this.rotation = v;
+			}
+			var scale = this.cardToCardHoverScale ? hoverPositions[targetIdx].scale : this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleX = scale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleY = scale;
+		} else {
+			var scale = this.cardToCardHoverScale ? this.hoverScale : this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleX = scale;
+			var _this = this.cardToCardTarget.container;
+			_this.posChanged = true;
+			_this.scaleY = scale;
+		}
+		this.handContainer.add(this.cardToCardTarget.container,this.cards.length);
+	}
 	,updateDrag: function() {
 		if(this.draggedEntry == null) {
 			return;
@@ -30185,25 +30312,9 @@ bh_ui_UICardHandHelper.prototype = {
 		if(this.allowCardToCard) {
 			var targetEntry = this.getCardAtPosition(this.cursorX,this.cursorY,entry);
 			if(targetEntry != this.cardToCardTarget) {
-				if(this.cardToCardTarget != null) {
-					var _this = this.cardToCardTarget.container;
-					_this.posChanged = true;
-					_this.scaleX = this.cardToCardTarget.layoutPos.scale;
-					var _this = this.cardToCardTarget.container;
-					_this.posChanged = true;
-					_this.scaleY = this.cardToCardTarget.layoutPos.scale;
-					this.addToHandLayer(this.cardToCardTarget);
-				}
+				this.restoreCardToCardEffects();
 				this.cardToCardTarget = targetEntry;
-				if(this.cardToCardTarget != null) {
-					var _this = this.cardToCardTarget.container;
-					_this.posChanged = true;
-					_this.scaleX = this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
-					var _this = this.cardToCardTarget.container;
-					_this.posChanged = true;
-					_this.scaleY = this.cardToCardTarget.layoutPos.scale * this.cardToCardHighlightScale;
-					this.handContainer.add(this.cardToCardTarget.container,this.cards.length);
-				}
+				this.applyCardToCardEffects();
 			}
 			if(this.cardToCardTarget != null) {
 				var _this = entry.container;
@@ -30278,15 +30389,7 @@ bh_ui_UICardHandHelper.prototype = {
 		var wasTargeting = this.isTargeting;
 		this.targeting.clearLine();
 		entry.container.alpha = 1.0;
-		if(this.cardToCardTarget != null) {
-			var _this = this.cardToCardTarget.container;
-			_this.posChanged = true;
-			_this.scaleX = this.cardToCardTarget.layoutPos.scale;
-			var _this = this.cardToCardTarget.container;
-			_this.posChanged = true;
-			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
-			this.addToHandLayer(this.cardToCardTarget);
-		}
+		this.restoreCardToCardEffects();
 		var result = bh_ui_TargetingResult.NoTarget;
 		var cardPlayed = false;
 		if(this.cardToCardTarget != null) {
@@ -30364,16 +30467,8 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 		var entry = this.draggedEntry;
 		this.targeting.clearLine();
-		if(this.cardToCardTarget != null) {
-			var _this = this.cardToCardTarget.container;
-			_this.posChanged = true;
-			_this.scaleX = this.cardToCardTarget.layoutPos.scale;
-			var _this = this.cardToCardTarget.container;
-			_this.posChanged = true;
-			_this.scaleY = this.cardToCardTarget.layoutPos.scale;
-			this.addToHandLayer(this.cardToCardTarget);
-			this.cardToCardTarget = null;
-		}
+		this.restoreCardToCardEffects();
+		this.cardToCardTarget = null;
 		this.currentTargetId = null;
 		this.isDragging = false;
 		this.isTargeting = false;
@@ -108174,7 +108269,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/cards-demo.manim",false);
 		this.cardBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-hand.manim",false);
 		this.statesBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-states.manim",false);
-		var generatedByMacroBuildWithParametersload7147Builder = function() {
+		var generatedByMacroBuildWithParametersload7309Builder = function() {
 			var cardTabs;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -108193,7 +108288,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload7147Builder();
+		var ui = generatedByMacroBuildWithParametersload7309Builder();
 		this.demoResult = ui.builderResults;
 		this.tabs = ui.cardTabs;
 		this.addBuilderResult(this.demoResult);
@@ -108420,7 +108515,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	,loadCardHandTab: function() {
 		var _gthis = this;
 		this.tabs.beginTab(1);
-		var generatedByMacroBuildWithParametersloadCardHandTab13960Builder = function() {
+		var generatedByMacroBuildWithParametersloadCardHandTab14122Builder = function() {
 			var thresholdSlider;
 			var spreadSlider;
 			var returnSlider;
@@ -108444,6 +108539,9 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var discardBtn;
 			var disableBtn;
 			var c2cToggle;
+			var c2cSpreadToggle;
+			var c2cHoverScaleToggle;
+			var c2cHoverPopToggle;
 			var arrowToggle;
 			var _gthis1 = _gthis.cardBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -108610,6 +108708,27 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["c2cToggle"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				c2cSpreadToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["c2cSpreadToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				c2cHoverScaleToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["c2cHoverScaleToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				c2cHoverPopToggle = _el;
+				return _el.getObject();
+			});
+			_g.h["c2cHoverPopToggle"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				arrowToggle = _el;
@@ -108617,7 +108736,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["arrowToggle"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("cardHandDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { thresholdSlider : thresholdSlider, spreadSlider : spreadSlider, returnSlider : returnSlider, returnDropdown : returnDropdown, resetBtn : resetBtn, rearrangeSlider : rearrangeSlider, rearrangeDropdown : rearrangeDropdown, pathOrientDropdown : pathOrientDropdown, pathDistDropdown : pathDistDropdown, layoutDropdown : layoutDropdown, hoverScaleSlider : hoverScaleSlider, hoverPopSlider : hoverPopSlider, handPathDropdown : handPathDropdown, fanRadiusSlider : fanRadiusSlider, fanAngleSlider : fanAngleSlider, drawSlider : drawSlider, drawDropdown : drawDropdown, drawBtn : drawBtn, discardSlider : discardSlider, discardDropdown : discardDropdown, discardBtn : discardBtn, disableBtn : disableBtn, c2cToggle : c2cToggle, arrowToggle : arrowToggle, builderResults : builderResults1};
+			var retVal = { thresholdSlider : thresholdSlider, spreadSlider : spreadSlider, returnSlider : returnSlider, returnDropdown : returnDropdown, resetBtn : resetBtn, rearrangeSlider : rearrangeSlider, rearrangeDropdown : rearrangeDropdown, pathOrientDropdown : pathOrientDropdown, pathDistDropdown : pathDistDropdown, layoutDropdown : layoutDropdown, hoverScaleSlider : hoverScaleSlider, hoverPopSlider : hoverPopSlider, handPathDropdown : handPathDropdown, fanRadiusSlider : fanRadiusSlider, fanAngleSlider : fanAngleSlider, drawSlider : drawSlider, drawDropdown : drawDropdown, drawBtn : drawBtn, discardSlider : discardSlider, discardDropdown : discardDropdown, discardBtn : discardBtn, disableBtn : disableBtn, c2cToggle : c2cToggle, c2cSpreadToggle : c2cSpreadToggle, c2cHoverScaleToggle : c2cHoverScaleToggle, c2cHoverPopToggle : c2cHoverPopToggle, arrowToggle : arrowToggle, builderResults : builderResults1};
 			if(retVal.thresholdSlider == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "thresholdSlider" + " is null (check if placeholder object is named correctly)");
 			}
@@ -108687,12 +108806,21 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			if(retVal.c2cToggle == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2cToggle" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.c2cSpreadToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2cSpreadToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.c2cHoverScaleToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2cHoverScaleToggle" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.c2cHoverPopToggle == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "c2cHoverPopToggle" + " is null (check if placeholder object is named correctly)");
+			}
 			if(retVal.arrowToggle == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "arrowToggle" + " is null (check if placeholder object is named correctly)");
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadCardHandTab13960Builder();
+		var ui = generatedByMacroBuildWithParametersloadCardHandTab14122Builder();
 		this.handResult = ui.builderResults;
 		this.drawButton = ui.drawBtn;
 		this.discardButton = ui.discardBtn;
@@ -108718,6 +108846,9 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.fanRadiusSlider = ui.fanRadiusSlider;
 		this.pathDistDropdown = ui.pathDistDropdown;
 		this.pathOrientDropdown = ui.pathOrientDropdown;
+		this.c2cHoverPopToggle = ui.c2cHoverPopToggle;
+		this.c2cHoverScaleToggle = ui.c2cHoverScaleToggle;
+		this.c2cSpreadToggle = ui.c2cSpreadToggle;
 		this.addBuilderResult(this.handResult);
 		this.addInteractives(this.handResult);
 		this.handTooltipHelper = new bh_ui_UITooltipHelper(this,this.cardBuilder,{ delay : 0.15, position : bh_ui_TooltipPosition.Above, offset : 6});
@@ -108765,7 +108896,10 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var nSpread = this.getSliderVal(this.spreadSlider,20) * 1.0;
 		var fRadius = this.getSliderVal(this.fanRadiusSlider,600) * 1.0;
 		var c2c = this.c2cToggle != null ? this.c2cToggle.selected : true;
-		this.cardHand = new bh_ui_UICardHandHelper(this,this.cardBuilder,{ layoutMode : this.currentLayoutMode, anchorX : ax, anchorY : 620.0, cardWidth : 140.0, cardHeight : 200.0, fanRadius : fRadius, fanMaxAngle : fAngle, hoverPopDistance : hPop, hoverScale : hScale, hoverNeighborSpread : nSpread, targetingThresholdY : threshold, drawPilePosition : new bh_base_FPoint(45.0,615.0), discardPilePosition : new bh_base_FPoint(1210.0,615.0), drawPathName : "draw_easeOutBack", discardPathName : "discard_easeInQuad", returnPathName : "return_easeOutCubic", rearrangePathName : "rearrange_easeInOutCubic", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve", allowCardToCard : c2c, layoutPathName : this.currentHandPath, pathDistribution : this.currentPathDist, pathOrientation : this.currentPathOrient});
+		var c2cPop = this.c2cHoverPopToggle != null && this.c2cHoverPopToggle.selected;
+		var c2cScale = this.c2cHoverScaleToggle != null && this.c2cHoverScaleToggle.selected;
+		var c2cSpr = this.c2cSpreadToggle != null && this.c2cSpreadToggle.selected;
+		this.cardHand = new bh_ui_UICardHandHelper(this,this.cardBuilder,{ layoutMode : this.currentLayoutMode, anchorX : ax, anchorY : 620.0, cardWidth : 140.0, cardHeight : 200.0, fanRadius : fRadius, fanMaxAngle : fAngle, hoverPopDistance : hPop, hoverScale : hScale, hoverNeighborSpread : nSpread, targetingThresholdY : threshold, drawPilePosition : new bh_base_FPoint(45.0,615.0), discardPilePosition : new bh_base_FPoint(1210.0,615.0), drawPathName : "draw_easeOutBack", discardPathName : "discard_easeInQuad", returnPathName : "return_easeOutCubic", rearrangePathName : "rearrange_easeInOutCubic", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve", allowCardToCard : c2c, cardToCardHoverPop : c2cPop, cardToCardHoverScale : c2cScale, cardToCardSpread : c2cSpr, layoutPathName : this.currentHandPath, pathDistribution : this.currentPathDist, pathOrientation : this.currentPathOrient});
 		var tmp = this.getSliderVal(this.drawSlider,100);
 		this.cardHand.drawDuration = tmp / 100.0;
 		var tmp = this.getSliderVal(this.discardSlider,100);
@@ -109017,6 +109151,16 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.pathOrientDropdown != null) {
 			this.pathOrientDropdown.set_disabled(!isPath);
 		}
+		var c2cEnabled = this.c2cToggle != null && this.c2cToggle.selected;
+		if(this.c2cHoverPopToggle != null) {
+			this.c2cHoverPopToggle.set_disabled(!c2cEnabled);
+		}
+		if(this.c2cHoverScaleToggle != null) {
+			this.c2cHoverScaleToggle.set_disabled(!c2cEnabled);
+		}
+		if(this.c2cSpreadToggle != null) {
+			this.c2cSpreadToggle.set_disabled(!c2cEnabled);
+		}
 	}
 	,toggleDisableCard: function() {
 		if(this.cardHand == null || this.handCardIds.length == 0) {
@@ -109055,6 +109199,12 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			return "Show/hide targeting arrow when dragging cards";
 		case "hlpC2C":
 			return "Card-to-Card: allow playing a card onto another card";
+		case "hlpC2CPop":
+			return "Apply hover pop to card-to-card target";
+		case "hlpC2CScale":
+			return "Use hover scale (instead of highlight scale) for C2C target";
+		case "hlpC2CSpread":
+			return "Spread neighbors when hovering C2C target";
 		case "hlpDiscard":
 			return "Easing for discard animation (hand to discard pile)";
 		case "hlpDraw":
@@ -109181,6 +109331,8 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				if(source == this.arrowToggle && this.cardHand != null) {
 					this.cardHand.setArrowVisible(pressed);
 				} else if(source == this.c2cToggle) {
+					this.recreateCardHand();
+				} else if(source == this.c2cHoverPopToggle || source == this.c2cHoverScaleToggle || source == this.c2cSpreadToggle) {
 					this.recreateCardHand();
 				}
 				break;
@@ -109340,6 +109492,9 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.arrowToggle = null;
 		this.layoutDropdown = null;
 		this.c2cToggle = null;
+		this.c2cHoverPopToggle = null;
+		this.c2cHoverScaleToggle = null;
+		this.c2cSpreadToggle = null;
 		this.handPathDropdown = null;
 		this.drawDropdown = null;
 		this.discardDropdown = null;

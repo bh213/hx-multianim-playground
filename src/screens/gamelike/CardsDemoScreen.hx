@@ -511,6 +511,10 @@ class CardsDemoScreen extends DemoScreenBase {
 			cardHand = null;
 		}
 
+		// Route new containers through tab 1's content target so they end up
+		// in the same coordinate space as the original hand (not screen root).
+		tabs.beginTab(1);
+
 		createCardHand();
 
 		handCardIds = [];
@@ -537,6 +541,8 @@ class CardsDemoScreen extends DemoScreenBase {
 		}
 		if (cardHand != null)
 			cardHand.setHand(descriptors);
+
+		tabs.endTab();
 
 		setHandStatus('Layout: ${currentLayoutMode == Fan ? "Fan" : currentLayoutMode == Linear ? "Linear" : "Path"}');
 		updateControlStates();

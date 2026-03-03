@@ -22746,7 +22746,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var curves = this.getCurves();
 					var found = curves.h[s.curveName];
 					if(found == null) {
-						throw haxe_Exception.thrown("color curve not found: " + s.curveName + "");
+						var easing = bh_multianim_MacroManimParser.tryMatchEasingName(s.curveName);
+						if(easing == null) {
+							throw haxe_Exception.thrown("color curve not found: " + s.curveName + "");
+						}
+						found = new bh_paths_Curve(null,easing,null);
+						curves.h[s.curveName] = found;
 					}
 					curve = found;
 				} else {
@@ -23108,7 +23113,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 					var resolved = allCurves.h[ca.curveName];
 					if(resolved == null) {
-						throw haxe_Exception.thrown("curve not found: " + ca.curveName + "");
+						var easing = bh_multianim_MacroManimParser.tryMatchEasingName(ca.curveName);
+						if(easing == null) {
+							throw haxe_Exception.thrown("curve not found: " + ca.curveName + "");
+						}
+						resolved = new bh_paths_Curve(null,easing,null);
+						allCurves.h[ca.curveName] = resolved;
 					}
 					curve = resolved;
 				} else {
@@ -23223,7 +23233,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				var def = curvesDef.h[name];
 				if(def == null) {
-					throw haxe_Exception.thrown("unknown curve reference: " + name);
+					var easing = bh_multianim_MacroManimParser.tryMatchEasingName(name);
+					if(easing == null) {
+						throw haxe_Exception.thrown("unknown curve reference: " + name);
+					}
+					var curve = new bh_paths_Curve(null,easing,null);
+					result.h[name] = curve;
+					return curve;
 				}
 				resolving_h[name] = true;
 				var curve;
@@ -23313,7 +23329,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var curves = this.getCurves();
 			var curve = curves.h[ref.curveName];
 			if(curve == null) {
-				throw haxe_Exception.thrown("curve not found: " + ref.curveName + "");
+				var easing = bh_multianim_MacroManimParser.tryMatchEasingName(ref.curveName);
+				if(easing == null) {
+					throw haxe_Exception.thrown("curve not found: " + ref.curveName + "");
+				}
+				curve = new bh_paths_Curve(null,easing,null);
+				curves.h[ref.curveName] = curve;
 			}
 			return curve;
 		}
@@ -24016,7 +24037,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5328, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5355, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -24126,7 +24147,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5552, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5579, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -24160,7 +24181,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5568, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5595, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -34163,6 +34184,20 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			_this.posChanged = true;
 			_this.y = v;
 		}
+	}
+	,set_disabled: function(value) {
+		if(this.disabled != value) {
+			this.disabled = value;
+			if(value) {
+				this.root.alpha = 0.5;
+				this.set_currentHoverIndex(-1);
+				this.set_currentPressedIndex(-1);
+			} else {
+				this.root.alpha = 1.0;
+			}
+			this.requestRedraw = true;
+		}
+		return value;
 	}
 	,onEvent: function(wrapper) {
 		if(this.disabled) {
@@ -114943,9 +114978,31 @@ screens_ui_DraggableDemoScreen.__name__ = "screens.ui.DraggableDemoScreen";
 screens_ui_DraggableDemoScreen.__super__ = DemoScreenBase;
 screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
+		var _gthis = this;
 		this.setupDemo("Draggable","All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/draggable.manim",false);
-		this.demoResult = this.demoBuilder.buildWithParameters("draggableDemo",new haxe_ds_StringMap());
+		var generatedByMacroBuildWithParametersload1009Builder = function() {
+			var disableCheckbox;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableCheckbox = _el;
+				return _el.getObject();
+			});
+			_g.h["disableCheckbox"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("draggableDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { disableCheckbox : disableCheckbox, builderResults : builderResults1};
+			if(retVal.disableCheckbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableCheckbox" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload1009Builder();
+		this.demoResult = ui.builderResults;
+		this.disableCheckbox = ui.disableCheckbox;
 		this.addBuilderResult(this.demoResult);
 		this.setupDropZoneDrag();
 		this.setupConstraintDrag();
@@ -115091,6 +115148,18 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 	}
 	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 3) {
+			var pressed = event.pressed;
+			if(source == this.disableCheckbox) {
+				var _g = 0;
+				var _g1 = this.draggables;
+				while(_g < _g1.length) {
+					var drag = _g1[_g];
+					++_g;
+					drag.enabled = !pressed;
+				}
+			}
+		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
 	,onClear: function() {
@@ -115098,6 +115167,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoBuilder = null;
 		this.demoResult = null;
 		this.draggables = [];
+		this.disableCheckbox = null;
 	}
 	,__class__: screens_ui_DraggableDemoScreen
 });
@@ -115588,8 +115658,9 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		var _gthis = this;
 		this.setupDemo("Scrollable List","Scrollable list with 25 items and selection tracking");
 		var demoBuilder = this.screenManager.buildFromResourceName("demos/ui/scrollable-list.manim",false);
-		var generatedByMacroBuildWithParametersload1436Builder = function() {
+		var generatedByMacroBuildWithParametersload1546Builder = function() {
 			var scrollableList;
+			var disableCheckbox;
 			var demoBuilder1 = demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -115600,21 +115671,40 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["scrollableList"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableCheckbox = _el;
+				return _el.getObject();
+			});
+			_g.h["disableCheckbox"] = value;
 			var builderResults1 = demoBuilder1.buildWithParameters("scrollableListDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { scrollableList : scrollableList, builderResults : builderResults1};
+			var retVal = { scrollableList : scrollableList, disableCheckbox : disableCheckbox, builderResults : builderResults1};
 			if(retVal.scrollableList == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "scrollableList" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.disableCheckbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableCheckbox" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1436Builder();
+		var ui = generatedByMacroBuildWithParametersload1546Builder();
 		this.scrollableList = ui.scrollableList;
+		this.disableCheckbox = ui.disableCheckbox;
 		this.demoResult = ui.builderResults;
 		this.addBuilderResult(this.demoResult);
 		this.updateSelectedText(0);
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.disableCheckbox) {
+				if(this.scrollableList != null) {
+					this.scrollableList.set_disabled(pressed);
+				}
+			}
+			break;
 		case 6:
 			var index = event.index;
 			var items = event.items;
@@ -115663,10 +115753,12 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		DemoScreenBase.prototype.onClear.call(this);
 		this.demoResult = null;
 		this.scrollableList = null;
+		this.disableCheckbox = null;
 	}
 	,__class__: screens_ui_ScrollableListDemoScreen
 });
 var screens_ui_SlidersDemoScreen = function(screenManager,layers) {
+	this.allSliders = [];
 	DemoScreenBase.call(this,screenManager,layers);
 };
 $hxClasses["screens.ui.SlidersDemoScreen"] = screens_ui_SlidersDemoScreen;
@@ -115677,7 +115769,7 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Sliders","Sliders: sizes, scales, and min/max/step combinations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/sliders.manim",false);
-		var generatedByMacroBuildWithParametersload1012Builder = function() {
+		var generatedByMacroBuildWithParametersload1178Builder = function() {
 			var sliderStep25;
 			var sliderStep100;
 			var sliderStep1;
@@ -115687,6 +115779,7 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var slider3;
 			var slider2;
 			var slider1;
+			var disableCheckbox;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
@@ -115753,8 +115846,15 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return _el.getObject();
 			});
 			_g.h["slider1"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				disableCheckbox = _el;
+				return _el.getObject();
+			});
+			_g.h["disableCheckbox"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("slidersDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { sliderStep25 : sliderStep25, sliderStep100 : sliderStep100, sliderStep1 : sliderStep1, sliderScale2 : sliderScale2, sliderScale05 : sliderScale05, sliderRange1 : sliderRange1, slider3 : slider3, slider2 : slider2, slider1 : slider1, builderResults : builderResults1};
+			var retVal = { sliderStep25 : sliderStep25, sliderStep100 : sliderStep100, sliderStep1 : sliderStep1, sliderScale2 : sliderScale2, sliderScale05 : sliderScale05, sliderRange1 : sliderRange1, slider3 : slider3, slider2 : slider2, slider1 : slider1, disableCheckbox : disableCheckbox, builderResults : builderResults1};
 			if(retVal.sliderStep25 == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "sliderStep25" + " is null (check if placeholder object is named correctly)");
 			}
@@ -115782,9 +115882,12 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			if(retVal.slider1 == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "slider1" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.disableCheckbox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "disableCheckbox" + " is null (check if placeholder object is named correctly)");
+			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1012Builder();
+		var ui = generatedByMacroBuildWithParametersload1178Builder();
 		this.demoResult = ui.builderResults;
 		this.slider1 = ui.slider1;
 		this.slider2 = ui.slider2;
@@ -115795,6 +115898,8 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.sliderRange1 = ui.sliderRange1;
 		this.sliderStep100 = ui.sliderStep100;
 		this.sliderStep25 = ui.sliderStep25;
+		this.disableCheckbox = ui.disableCheckbox;
+		this.allSliders = [ui.slider1,ui.slider2,ui.slider3,ui.sliderScale2,ui.sliderScale05,ui.sliderStep1,ui.sliderRange1,ui.sliderStep100,ui.sliderStep25];
 		var _this = this.sliderScale2.getObject();
 		_this.posChanged = true;
 		_this.scaleX = 2;
@@ -115821,7 +115926,20 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		switch(event._hx_index) {
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.disableCheckbox) {
+				var _g = 0;
+				var _g1 = this.allSliders;
+				while(_g < _g1.length) {
+					var s = _g1[_g];
+					++_g;
+					s.set_disabled(pressed);
+				}
+			}
+			break;
+		case 4:
 			var value = event.value;
 			if(source == this.slider1) {
 				this.updateValueDisplay("value1",value);
@@ -115842,6 +115960,8 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			} else if(source == this.sliderStep25) {
 				this.updateValueDisplay("valueStep25",value);
 			}
+			break;
+		default:
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
@@ -115867,6 +115987,8 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.sliderRange1 = null;
 		this.sliderStep100 = null;
 		this.sliderStep25 = null;
+		this.disableCheckbox = null;
+		this.allSliders = [];
 	}
 	,__class__: screens_ui_SlidersDemoScreen
 });

@@ -61,6 +61,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'curves', displayName: 'Curves', category: 'Animation & Effects', manimFile: 'demos/animation/curves.manim' },
             { name: 'animPath', displayName: 'Anim Paths', category: 'Animation & Effects', manimFile: 'demos/animation/anim-path.manim' },
             { name: 'filters', displayName: 'Filters', category: 'Animation & Effects', manimFile: 'demos/animation/filters.manim' },
+            { name: 'floatingText', displayName: 'Floating Text', category: 'Animation & Effects', manimFile: 'demos/animation/floating-text.manim' },
         ]
     },
     {

@@ -113,6 +113,24 @@ version: 0.5
     }
 }
 
+// ─── Fade Panel (for Section 5) ────────────────────────────
+
+#panelFade programmable(closeS:[normal, hover, pressed]=normal) {
+    ninepatch("ui", "Window_3x3_idle", 200, 90): 0, 0
+    text(exo2_14, "Fading Panel", #88cc88, left, 180): 10, 10
+    text(m6x11, "This panel fades in and out", #aaaaaa, left, 180): 10, 32
+    text(m5x7, "fadeIn: 0.3s  fadeOut: 0.2s", #666666, left, 180): 10, 50
+
+    point {
+        pos: 10, 64
+        @(closeS => normal)  bitmap(generated(color(60, 18, #553333))): 0, 0
+        @(closeS => hover)   bitmap(generated(color(60, 18, #664444))): 0, 0
+        @(closeS => pressed) bitmap(generated(color(60, 18, #442222))): 0, 0
+        text(m6x11, "Close", #ff8888, center, 60): 0, 3
+        interactive(60, 18, "closeBtn", bind => "closeS"): 0, 0
+    }
+}
+
 // ─── Combo Panel (for Section 4) ───────────────────────────
 
 #panelCombo programmable(equipS:[normal, hover, pressed]=normal, discardS:[normal, hover, pressed]=normal) {
@@ -145,7 +163,8 @@ version: 0.5
     leftS:[normal, hover, pressed]=normal, rightS:[normal, hover, pressed]=normal,
     swordS:[normal, hover]=normal, shieldS:[normal, hover]=normal, crownS:[normal, hover]=normal,
     actionsS:[normal, hover, pressed]=normal, colorsS:[normal, hover, pressed]=normal, manualS:[normal, hover, pressed]=normal,
-    comboS:[normal, hover, pressed]=normal
+    comboS:[normal, hover, pressed]=normal,
+    fadeInstantS:[normal, hover, pressed]=normal, fadeSmoothS:[normal, hover, pressed]=normal
 ) {
     pos: 50, 80
 
@@ -285,4 +304,31 @@ version: 0.5
     }
 
     #statusCombo(updatable) text(m6x11, "Hover for tooltip, click for panel", #666666): 0, 660
+
+    // ── Section 5: Fade Transitions ─────────────────────
+    text(exo2_16, "Fade Transitions", #88cc88): 0, 700
+    bitmap(generated(color(700, 1, #88cc8833))): 0, 722
+    text(exo2_light_14, "Panels with configurable fade-in/fade-out via TweenManager. Tooltips above also fade smoothly.", #aaaaaa, left, 700): 0, 730
+
+    // Instant panel (no fade — existing behavior)
+    point {
+        pos: 0, 760
+        @(fadeInstantS => normal)  bitmap(generated(color(140, 40, #444444))): 0, 0
+        @(fadeInstantS => hover)   bitmap(generated(color(140, 40, #555555))): 0, 0
+        @(fadeInstantS => pressed) bitmap(generated(color(140, 40, #333333))): 0, 0
+        text(m6x11, "Instant Panel", #cccccc, center, 140): 0, 13
+        interactive(140, 40, "fadeInstant", panel => "panelFade", bind => "fadeInstantS"): 0, 0
+    }
+
+    // Fading panel (fadeIn: 0.3, fadeOut: 0.2)
+    point {
+        pos: 160, 760
+        @(fadeSmoothS => normal)  bitmap(generated(color(140, 40, #335533))): 0, 0
+        @(fadeSmoothS => hover)   bitmap(generated(color(140, 40, #447744))): 0, 0
+        @(fadeSmoothS => pressed) bitmap(generated(color(140, 40, #224422))): 0, 0
+        text(m6x11, "Fading Panel", #88cc88, center, 140): 0, 13
+        interactive(140, 40, "fadeSmooth", panel => "panelFade", bind => "fadeSmoothS"): 0, 0
+    }
+
+    #statusFade(updatable) text(m6x11, "Click to compare instant vs fading panels", #666666): 0, 810
 }

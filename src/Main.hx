@@ -33,7 +33,7 @@ class Main extends hxd.App {
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "pixelsGraphics",
-		"stateAnim", "particles", "paths", "curves", "animPath", "filters",
+		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText",
 		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards",
 	];
 
@@ -211,6 +211,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("curves", new CurvesDemoScreen(screenManager));
 		screenManager.addScreen("animPath", new AnimPathDemoScreen(screenManager));
 		screenManager.addScreen("filters", new FiltersDemoScreen(screenManager));
+		screenManager.addScreen("floatingText", new FloatingTextDemoScreen(screenManager));
 
 		// Game-like demos
 		screenManager.addScreen("inventory", new InventoryDemoScreen(screenManager));

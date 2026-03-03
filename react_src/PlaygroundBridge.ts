@@ -62,6 +62,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'animPath', displayName: 'Anim Paths', category: 'Animation & Effects', manimFile: 'demos/animation/anim-path.manim' },
             { name: 'filters', displayName: 'Filters', category: 'Animation & Effects', manimFile: 'demos/animation/filters.manim' },
             { name: 'floatingText', displayName: 'Floating Text', category: 'Animation & Effects', manimFile: 'demos/animation/floating-text.manim' },
+            { name: 'transitions', displayName: 'Transitions', category: 'Animation & Effects', manimFile: 'demos/animation/transitions.manim' },
         ]
     },
     {

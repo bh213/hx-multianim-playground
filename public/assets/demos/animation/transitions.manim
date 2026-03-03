@@ -1,0 +1,151 @@
+version: 0.5
+
+// Transition Declarations Demo
+// Animate parameter changes with transition {} blocks in programmables.
+// When a parameter with a declared transition changes, visibility animates
+// via TweenManager instead of snapping instantly.
+
+// ─── Layout shell ───────────────────────────────────────
+
+#transitionsDemo programmable() {
+    pos: 40, 70
+
+    text(exo2_16, "Crossfade vs Instant", #7fdbda): 0, 0
+    text(exo2_light_14, "Both boxes switch between 3 color states. Left uses crossfade, right snaps instantly.", #aaaaaa, left, 700): 0, 22
+
+    placeholder(generated(cross(140, 100, white)), builderParameter("crossfadeBox")): 0, 55
+    text(m6x11, "crossfade(0.2)", #888888): 0, 160
+
+    placeholder(generated(cross(140, 100, white)), builderParameter("instantBox")): 160, 55
+    text(m6x11, "instant (no transition)", #888888): 160, 160
+
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnNormal")): 320, 55
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnHover")): 320, 90
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnPressed")): 320, 125
+
+    // ─── FlipX ──────────────────────────────────────────
+
+    text(exo2_16, "FlipX", #7fdbda): 0, 190
+    text(exo2_light_14, "Flip animation on bool toggle.", #aaaaaa, left, 300): 0, 210
+
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipBox")): 0, 235
+    text(m6x11, "flipX(0.15)", #888888): 0, 320
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlip")): 0, 340
+
+    // ─── Fade ───────────────────────────────────────────
+
+    text(exo2_16, "Fade", #7fdbda): 0, 385
+    text(exo2_light_14, "Alpha fade in/out on toggle.", #aaaaaa, left, 300): 0, 405
+
+    placeholder(generated(cross(120, 60, white)), builderParameter("fadeBox")): 0, 430
+    text(m6x11, "fade(0.3)", #888888): 0, 495
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFade")): 0, 515
+
+    // ─── Slide ──────────────────────────────────────────
+
+    text(exo2_16, "Slide", #7fdbda): 350, 190
+    text(exo2_light_14, "Slide with different directions and distances.", #aaaaaa, left, 400): 350, 210
+
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideLeft")): 350, 240
+    text(m6x11, "left 20px", #888888): 350, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideRight")): 430, 240
+    text(m6x11, "right 50px", #888888): 430, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideUp")): 510, 240
+    text(m6x11, "up 80px", #888888): 510, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideDown")): 590, 240
+    text(m6x11, "down 120px", #888888): 590, 285
+
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnSlide")): 350, 310
+
+    // ─── FlipY ──────────────────────────────────────────
+
+    text(exo2_16, "FlipY", #7fdbda): 350, 350
+    text(exo2_light_14, "Vertical flip on bool toggle.", #aaaaaa, left, 400): 350, 370
+
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipYBox")): 350, 395
+    text(m6x11, "flipY(0.2)", #888888): 350, 480
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlipY")): 350, 500
+
+    // ─── Status ─────────────────────────────────────────
+
+    #statusText text(exo2_light_14, "Click buttons to trigger transitions", #666666, left, 700): 0, 560
+}
+
+// ─── Crossfade demo ─────────────────────────────────────
+
+#crossfadeBox programmable(status:[normal,hover,pressed]=normal) {
+    transition {
+        status: crossfade(0.2, easeOutQuad)
+    }
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42
+}
+
+#instantBox programmable(status:[normal,hover,pressed]=normal) {
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42
+}
+
+// ─── FlipX demo ─────────────────────────────────────────
+
+#flipBox programmable(checked:bool=false) {
+    transition {
+        checked: flipX(0.15, easeOutQuad)
+    }
+    @(checked => false) bitmap(generated(color(80, 80, #666666))): 0, 0
+    @(checked => false) text(m6x11, "OFF", #cccccc): 28, 34
+    @(checked => true) bitmap(generated(color(80, 80, #44cc44))): 0, 0
+    @(checked => true) text(m6x11, "ON", #ffffff): 30, 34
+}
+
+// ─── Fade demo ──────────────────────────────────────────
+
+#fadeBox programmable(show:bool=true) {
+    transition {
+        show: fade(0.3, easeOutCubic)
+    }
+    @(show => true) bitmap(generated(color(120, 60, #cc8844))): 0, 0
+    @(show => true) text(m6x11, "Visible", #ffffff): 38, 22
+}
+
+// ─── Slide demos ────────────────────────────────────────
+
+#slideLeftBox programmable(show:bool=true) {
+    transition { show: slide(left, 0.25, 20, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #8844aa))): 0, 0
+}
+
+#slideRightBox programmable(show:bool=true) {
+    transition { show: slide(right, 0.25, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #4488aa))): 0, 0
+}
+
+#slideUpBox programmable(show:bool=true) {
+    transition { show: slide(up, 0.3, 80, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #44aa88))): 0, 0
+}
+
+#slideDownBox programmable(show:bool=true) {
+    transition { show: slide(down, 0.4, 120, easeOutBack) }
+    @(show => true) bitmap(generated(color(60, 40, #aa8844))): 0, 0
+}
+
+// ─── FlipY demo ─────────────────────────────────────────
+
+#flipYBox programmable(checked:bool=false) {
+    transition {
+        checked: flipY(0.2, easeOutQuad)
+    }
+    @(checked => false) bitmap(generated(color(80, 80, #555577))): 0, 0
+    @(checked => false) text(m6x11, "A", #cccccc): 34, 34
+    @(checked => true) bitmap(generated(color(80, 80, #7755aa))): 0, 0
+    @(checked => true) text(m6x11, "B", #ffffff): 34, 34
+}

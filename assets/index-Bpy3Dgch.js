@@ -3026,7 +3026,158 @@ paths {
 
     #description(updatable) text(exo2_light_14, "", #aaaaaa, left, 1200): 20, 40
 }
-`,wp=`version: 0.5
+`,wp=`version: 0.5\r
+\r
+// Transition Declarations Demo\r
+// Animate parameter changes with transition {} blocks in programmables.\r
+// When a parameter with a declared transition changes, visibility animates\r
+// via TweenManager instead of snapping instantly.\r
+\r
+// ─── Layout shell ───────────────────────────────────────\r
+\r
+#transitionsDemo programmable() {\r
+    pos: 40, 70\r
+\r
+    text(exo2_16, "Crossfade vs Instant", #7fdbda): 0, 0\r
+    text(exo2_light_14, "Both boxes switch between 3 color states. Left uses crossfade, right snaps instantly.", #aaaaaa, left, 700): 0, 22\r
+\r
+    placeholder(generated(cross(140, 100, white)), builderParameter("crossfadeBox")): 0, 55\r
+    text(m6x11, "crossfade(0.2)", #888888): 0, 160\r
+\r
+    placeholder(generated(cross(140, 100, white)), builderParameter("instantBox")): 160, 55\r
+    text(m6x11, "instant (no transition)", #888888): 160, 160\r
+\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnNormal")): 320, 55\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnHover")): 320, 90\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnPressed")): 320, 125\r
+\r
+    // ─── FlipX ──────────────────────────────────────────\r
+\r
+    text(exo2_16, "FlipX", #7fdbda): 0, 190\r
+    text(exo2_light_14, "Flip animation on bool toggle.", #aaaaaa, left, 300): 0, 210\r
+\r
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipBox")): 0, 235\r
+    text(m6x11, "flipX(0.15)", #888888): 0, 320\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlip")): 0, 340\r
+\r
+    // ─── Fade ───────────────────────────────────────────\r
+\r
+    text(exo2_16, "Fade", #7fdbda): 0, 385\r
+    text(exo2_light_14, "Alpha fade in/out on toggle.", #aaaaaa, left, 300): 0, 405\r
+\r
+    placeholder(generated(cross(120, 60, white)), builderParameter("fadeBox")): 0, 430\r
+    text(m6x11, "fade(0.3)", #888888): 0, 495\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFade")): 0, 515\r
+\r
+    // ─── Slide ──────────────────────────────────────────\r
+\r
+    text(exo2_16, "Slide", #7fdbda): 350, 190\r
+    text(exo2_light_14, "Slide with different directions and distances.", #aaaaaa, left, 400): 350, 210\r
+\r
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideLeft")): 350, 240\r
+    text(m6x11, "left 20px", #888888): 350, 285\r
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideRight")): 430, 240\r
+    text(m6x11, "right 50px", #888888): 430, 285\r
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideUp")): 510, 240\r
+    text(m6x11, "up 80px", #888888): 510, 285\r
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideDown")): 590, 240\r
+    text(m6x11, "down 120px", #888888): 590, 285\r
+\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnSlide")): 350, 310\r
+\r
+    // ─── FlipY ──────────────────────────────────────────\r
+\r
+    text(exo2_16, "FlipY", #7fdbda): 350, 350\r
+    text(exo2_light_14, "Vertical flip on bool toggle.", #aaaaaa, left, 400): 350, 370\r
+\r
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipYBox")): 350, 395\r
+    text(m6x11, "flipY(0.2)", #888888): 350, 480\r
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlipY")): 350, 500\r
+\r
+    // ─── Status ─────────────────────────────────────────\r
+\r
+    #statusText text(exo2_light_14, "Click buttons to trigger transitions", #666666, left, 700): 0, 560\r
+}\r
+\r
+// ─── Crossfade demo ─────────────────────────────────────\r
+\r
+#crossfadeBox programmable(status:[normal,hover,pressed]=normal) {\r
+    transition {\r
+        status: crossfade(0.2, easeOutQuad)\r
+    }\r
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0\r
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42\r
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0\r
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42\r
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0\r
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42\r
+}\r
+\r
+#instantBox programmable(status:[normal,hover,pressed]=normal) {\r
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0\r
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42\r
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0\r
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42\r
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0\r
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42\r
+}\r
+\r
+// ─── FlipX demo ─────────────────────────────────────────\r
+\r
+#flipBox programmable(checked:bool=false) {\r
+    transition {\r
+        checked: flipX(0.15, easeOutQuad)\r
+    }\r
+    @(checked => false) bitmap(generated(color(80, 80, #666666))): 0, 0\r
+    @(checked => false) text(m6x11, "OFF", #cccccc): 28, 34\r
+    @(checked => true) bitmap(generated(color(80, 80, #44cc44))): 0, 0\r
+    @(checked => true) text(m6x11, "ON", #ffffff): 30, 34\r
+}\r
+\r
+// ─── Fade demo ──────────────────────────────────────────\r
+\r
+#fadeBox programmable(show:bool=true) {\r
+    transition {\r
+        show: fade(0.3, easeOutCubic)\r
+    }\r
+    @(show => true) bitmap(generated(color(120, 60, #cc8844))): 0, 0\r
+    @(show => true) text(m6x11, "Visible", #ffffff): 38, 22\r
+}\r
+\r
+// ─── Slide demos ────────────────────────────────────────\r
+\r
+#slideLeftBox programmable(show:bool=true) {\r
+    transition { show: slide(left, 0.25, 20, easeOutCubic) }\r
+    @(show => true) bitmap(generated(color(60, 40, #8844aa))): 0, 0\r
+}\r
+\r
+#slideRightBox programmable(show:bool=true) {\r
+    transition { show: slide(right, 0.25, easeOutCubic) }\r
+    @(show => true) bitmap(generated(color(60, 40, #4488aa))): 0, 0\r
+}\r
+\r
+#slideUpBox programmable(show:bool=true) {\r
+    transition { show: slide(up, 0.3, 80, easeOutCubic) }\r
+    @(show => true) bitmap(generated(color(60, 40, #44aa88))): 0, 0\r
+}\r
+\r
+#slideDownBox programmable(show:bool=true) {\r
+    transition { show: slide(down, 0.4, 120, easeOutBack) }\r
+    @(show => true) bitmap(generated(color(60, 40, #aa8844))): 0, 0\r
+}\r
+\r
+// ─── FlipY demo ─────────────────────────────────────────\r
+\r
+#flipYBox programmable(checked:bool=false) {\r
+    transition {\r
+        checked: flipY(0.2, easeOutQuad)\r
+    }\r
+    @(checked => false) bitmap(generated(color(80, 80, #555577))): 0, 0\r
+    @(checked => false) text(m6x11, "A", #cccccc): 34, 34\r
+    @(checked => true) bitmap(generated(color(80, 80, #7755aa))): 0, 0\r
+    @(checked => true) text(m6x11, "B", #ffffff): 34, 34\r
+}\r
+`,Sp=`version: 0.5
 
 // Battle HUD — 3 visual styles, same parameter interface
 // Demonstrates that UI can change considerably without changing the driving code
@@ -3251,7 +3402,7 @@ paths {
         settings { }
     }
 }
-`,Sp=`version: 0.5
+`,kp=`version: 0.5
 
 // Blob47 Autotile Demo
 // Interactive 2D terrain painter. Select tile type then click/drag to paint.
@@ -3329,7 +3480,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Left click to paint | Drag to paint | Select tile type above", #666666): 0, 525
 }
-`,kp=`version: 0.5
+`,Fp=`version: 0.5
 
 // ===== Curves =====
 
@@ -4296,7 +4447,7 @@ paths {
     interactive(80, 14, "hlpC2CScale", events: [hover]): 800, 396
     interactive(50, 14, "hlpC2CSpread", events: [hover]): 920, 396
 }
-`,Fp=`version: 0.5
+`,Cp=`version: 0.5
 
 // ===== Tooltip for state descriptions =====
 
@@ -4338,7 +4489,7 @@ paths {
     // Status
     #statusText text(m5x7, "Hover a card to see state description", #888888): 20, 660
 }
-`,Cp=`version: 0.5
+`,$p=`version: 0.5
 
 // Cards Demo — tabbed view: Card States + Card Hand
 
@@ -4352,7 +4503,7 @@ paths {
         settings{tabButtonBuildName=>tab, tabPanel.width=>1280, tabPanel.height=>720, tabPanel.contentRoot=>contentArea}
     }
 }
-`,$p=`version: 0.5
+`,Pp=`version: 0.5
 
 // Character Sheet Demo - Dynamic References
 // Reusable child programmables embedded via dynamicRef for automatic parameter-driven updates.
@@ -4446,7 +4597,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Click Level Up to gain XP and increase stats.", #666666): 0, 490
 }
-`,Pp=`version: 0.5
+`,Tp=`version: 0.5
 
 // Dialogue Demo
 // Dialogue panel with speaker name, typewriter text, and branching choices.
@@ -4498,7 +4649,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Text appears character by character. Choose responses to branch the story.", #666666): 0, 405
 }
-`,Tp=`version: 0.5
+`,Rp=`version: 0.5
 
 // Inventory Demo — Shop, Player Inventory (3x4), Equipment (head, 2 arms, armor, legs)
 
@@ -4684,7 +4835,7 @@ layouts {
     // ===== LOG =====
     #logText(updatable) text(exo2_light_14, "Drag items from shop to inventory or equip them.", #666666): 0, 375
 }
-`,Rp=`version: 0.5
+`,Ep=`version: 0.5
 
 // Equipment Tree Demo
 // 4 tiers x 3 paths using roguelike item icons.
@@ -4920,7 +5071,7 @@ layouts {
 
     } // end point (10px down offset)
 }
-`,Ep=`version: 0.5
+`,Ap=`version: 0.5
 
 // Status Bar Demo
 // Horizontal flow layout with dynamic buff/debuff cards, progress bars, particles,
@@ -5127,7 +5278,7 @@ layouts {
     text(exo2_light_14, "Hover over an effect card to see details. Effects expire when their timer runs out.", #666666): 0, 295
     text(exo2_light_14, "Features: flow layout, slots, incremental updates, particles, hover tooltips, glow", #555555): 0, 315
 }
-`,Ap=`version: 0.5
+`,Bp=`version: 0.5
 
 #bitmapsAtlasShowcase programmable() {
   // Section 1: Generated color bitmaps
@@ -5266,7 +5417,7 @@ layouts {
   text(m6x11, "3x", #888888): 80, 960
   text(m6x11, "4x", #888888): 150, 960
 }
-`,Bp=`version: 0.5
+`,Dp=`version: 0.5
 
 paths {
     #straightLine path {
@@ -5339,7 +5490,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
     #sizeText(updatable) text(m6x11, "210 x 150", #ffffff, left, 200): 10, 10
 }
-`,Dp=`version: 0.5
+`,Ip=`version: 0.5
 
 #pixelsGraphicsShowcase programmable() {
   // Section 1: Pixels primitives
@@ -5533,7 +5684,7 @@ paths {
     text(m6x11, "Arrow", #888888, center, 80): -40, 40
   }
 }
-`,Ip=`version: 0.5
+`,zp=`version: 0.5
 
 #richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, quest:[accepted,progress,complete]=accepted, equip:[sword,shield,empty]=sword) {
 
@@ -5663,7 +5814,7 @@ paths {
       styles: {hl: color(cyan)}): 648, 784
   text(m6x11, '[link:id]...[/] fires callback on click', #666666): 640, 812
 }
-`,zp=`version: 0.5
+`,Np=`version: 0.5
 
 #textFontsShowcase programmable() {
   // Section 1: Bitmap fonts
@@ -5771,7 +5922,7 @@ paths {
   bitmap(generated(color(300, 28, #002200))): 0, 1060
   @scale(2) text(pixellari, "Pixellari green glow", #88ff88, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #00ff44, dropShadowAlpha: 0.9): 4, 1064
 }
-`,Np=`version: 0.5
+`,Op=`version: 0.5
 
 // Combo States Demo
 // Shows @if, @else, @default conditional patterns
@@ -5834,7 +5985,7 @@ paths {
     pos: 350, 234
   }
 }
-`,Op=`version: 0.5
+`,Lp=`version: 0.5
 
 // A health bar that changes color based on value
 #healthBar programmable(value:uint=50, label:string="HP") {
@@ -5888,7 +6039,7 @@ paths {
   dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
   dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
 }
-`,Lp=`version: 0.5
+`,Mp=`version: 0.5
 
 // Colored box for flow items
 #flowItem programmable(w:uint=40, h:uint=20, color:color=#448, num:uint=0) {
@@ -6049,7 +6200,7 @@ paths {
     }
   }
 }
-`,Mp=`version: 0.5
+`,Hp=`version: 0.5
 
 #repeatableControls programmable() {
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
@@ -6132,7 +6283,7 @@ paths {
     }
   }
 }
-`,Hp=`version: 0.5
+`,Wp=`version: 0.5
 
 // Item that goes into a slot - uses same icons as inventory demo
 #slotItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
@@ -6344,7 +6495,7 @@ paths {
   #comboStatusText(updatable) text(exo2_light_14, "Click an enabled slot to add/remove an item.", #666666, left, 500): 0, 575
   #comboInfoText(updatable) text(exo2_light_14, "", #aaaaaa, left, 500): 0, 593
 }
-`,Wp=`version: 0.5
+`,Vp=`version: 0.5
 
 // Child programmable: a colored card with configurable size and color
 #colorCard programmable(w:uint=60, h:uint=40, cardColor:color=#4488cc, label:string="Card") {
@@ -6409,7 +6560,7 @@ paths {
     }
   }
 }
-`,Vp=`version: 0.5
+`,jp=`version: 0.5
 
 // Buttons Demo
 // Shows all button styles from buttons.manim builder: Normal, Warning, Small
@@ -6553,7 +6704,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 852
 }
-`,jp=`version: 0.5
+`,Up=`version: 0.5
 
 // Checkboxes Demo
 // Shows checkbox, tickbox, toggle, radio, and simple variants with selected count.
@@ -6642,7 +6793,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 482
 }
-`,Up=`version: 0.5
+`,Gp=`version: 0.5
 
 // Dialogs Demo
 // Shows modal dialogs with different overlay configurations.
@@ -6808,7 +6959,7 @@ paths {
     #historyText4(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 415
     #historyText5(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 435
 }
-`,Gp=`version: 0.5
+`,Qp=`version: 0.5
 
 // Draggable Demo
 // All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight.
@@ -6911,7 +7062,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all draggables", #aaaaaa): 380, 352
 }
-`,Qp=`version: 0.5
+`,qp=`version: 0.5
 
 // Dropdowns Demo
 // Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).
@@ -7012,7 +7163,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all dropdowns", #aaaaaa): 30, 1012
 }
-`,qp=`version: 0.5
+`,Yp=`version: 0.5
 
 // Progress Bar Demo
 // Shows progress bars at various values with auto-animation.
@@ -7120,7 +7271,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 510
     #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 518
 }
-`,Yp=`version: 0.5
+`,Xp=`version: 0.5
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with selection feedback.
@@ -7163,7 +7314,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", 300, 40): 250, 410
     #radio2Text(updatable) text(exo2_16, "Selected: Easy", #ffffff, left, 280): 265, 420
 }
-`,Xp=`version: 0.5
+`,Kp=`version: 0.5
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with different styles, selection feedback, and disabled state.
@@ -7227,7 +7378,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 772
 }
-`,Kp=`version: 0.5
+`,Zp=`version: 0.5
 
 // Scrollable List Demo
 // Shows a scrollable list with 20+ items and selected item display.
@@ -7274,7 +7425,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable scrollable list", #aaaaaa): 30, 412
 }
-`,Zp=`version: 0.5
+`,Jp=`version: 0.5
 
 // Sliders Demo
 // Shows sliders of different sizes, scales, and min/max/step combinations.
@@ -7384,7 +7535,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all sliders", #aaaaaa): 30, 752
 }
-`,Jp=`version: 0.5
+`,ef=`version: 0.5
 
 // Tabs Demo
 // Shows tab bars with content switching, disabled tabs, and custom sizes.
@@ -7434,7 +7585,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disable all tabs", #aaaaaa): 60, 792
 }
-`,ef=`version: 0.5
+`,nf=`version: 0.5
 
 // Text Input Demo
 // Shows text input variants, input filters, and tab navigation between fields.
@@ -7538,7 +7689,7 @@ paths {
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 447
     #eventLog(updatable) text(exo2_light_14, "Interact with inputs to see events here...", #ffffff, left, 580): 0, 460
 }
-`,nf=`version: 0.5
+`,tf=`version: 0.5
 
 // Tooltips & Panels Demo
 // Hover tooltips (UITooltipHelper), click panels (UIPanelHelper),
@@ -7872,7 +8023,7 @@ paths {
 
     #statusFade(updatable) text(m6x11, "Click to compare instant vs fading panels", #666666): 0, 810
 }
-`,tf=`version: 0.5
+`,af=`version: 0.5
 
 // NavScreen Carousel — 7 feature highlight slides
 // Controlled by currentSlide parameter, switched via setParameter() in NavScreen.hx
@@ -8131,7 +8282,7 @@ paths {
   @(currentSlide => 5) bitmap(generated(color(10, 10, #7fdbda))): 188, 250
   @(currentSlide => 6) bitmap(generated(color(10, 10, #7fdbda))): 206, 250
 }
-`,af=`version: 0.5
+`,rf=`version: 0.5
 
 // NavScreen layout — positions, info panel, control buttons
 // Carousel visual and particles are built separately, positioned via layouts
@@ -8230,7 +8381,7 @@ layouts {
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("playBtn")): 70, 286
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("nextBtn")): 100, 286
 }
-`,rf=`version: 0.5
+`,of=`version: 0.5
 
 // Radio Button Styles Builder
 // #radio    - Small radio button (ui atlas: RadioButton_off/on_*)
@@ -8272,7 +8423,7 @@ layouts {
         text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
     }
 }
-`,of=`version: 0.5
+`,lf=`version: 0.5
 
       #main palette {
       0x1a1a1a  0x2c5f7c  0x4a90a4  0x7fdbda  0xff7f50  0xff4444  0x4caf50  0xffeb3b  0xffffff  0x666666  0xb0b0b0  0x000000
@@ -8660,7 +8811,7 @@ ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeigh
     @(placeholder=>true) text(dd, $placeholderText, #888888): 6, 6
 
     #textArea point: 6, 6
-}`,lf=`sheet: crew2
+}`,sf=`sheet: crew2
 allowedExtraPoints: ["point", "text"]
 center: 64,64
 fps: 10
@@ -8730,7 +8881,7 @@ animation dir5 {
         text: -25, -60
     }
 }
-`,sf=`sheet: crew2
+`,cf=`sheet: crew2
 center: 32,48
 
 animation outline-blink {
@@ -8765,7 +8916,7 @@ animation brightness-blink {
         sheet: "marine_r_idle"
     }
 }
-`,cf=`sheet: crew2
+`,df=`sheet: crew2
 allowedExtraPoints: [fire, targeting]
 states: direction(l, r)
 center: 32,48
@@ -8893,7 +9044,7 @@ animation dodge {
         sheet: "marine_\${direction}_dodging_\${direction}" frames: 0..3
     }
 }
-`,df=`sheet: crew2
+`,uf=`sheet: crew2
 allowedExtraPoints: ["line_TR", "line_BR", "line_TL", "line_BL"]
 states: direction(l, r)
 center: 32,48
@@ -8927,7 +9078,7 @@ animation idle_1 {
         sheet: "shield_\${direction}_layer1"
     }
 }
-`,uf=`sheet: crew2
+`,pf=`sheet: crew2
 center: 32,48
 
 animation explode {
@@ -8967,7 +9118,7 @@ animation destroyed {
         sheet: "Turret_Destroyed_SW"
     }
 }
-`,pf=Object.assign({"../public/assets/buttons.manim":Qu,"../public/assets/checkbox.manim":qu,"../public/assets/demo-common.manim":Yu,"../public/assets/demos/advanced/conditionals.manim":Xu,"../public/assets/demos/advanced/expressions.manim":Ku,"../public/assets/demos/advanced/feature-showcase.manim":Zu,"../public/assets/demos/advanced/incremental.manim":Ju,"../public/assets/demos/advanced/interactives.manim":ep,"../public/assets/demos/advanced/macro-performance.manim":np,"../public/assets/demos/advanced/settings.manim":tp,"../public/assets/demos/animation/anim-path.manim":ap,"../public/assets/demos/animation/color-picker-dialog.manim":rp,"../public/assets/demos/animation/curves.manim":ip,"../public/assets/demos/animation/filters.manim":op,"../public/assets/demos/animation/floating-text.manim":lp,"../public/assets/demos/animation/particles-basics.manim":sp,"../public/assets/demos/animation/particles-bounds.manim":cp,"../public/assets/demos/animation/particles-colors.manim":dp,"../public/assets/demos/animation/particles-demo.manim":up,"../public/assets/demos/animation/particles-motion.manim":pp,"../public/assets/demos/animation/particles-paths.manim":fp,"../public/assets/demos/animation/particles-subemitters.manim":mp,"../public/assets/demos/animation/particles.manim":hp,"../public/assets/demos/animation/paths.manim":gp,"../public/assets/demos/animation/state-anim-filters.manim":xp,"../public/assets/demos/animation/state-anim-gallery.manim":bp,"../public/assets/demos/animation/state-anim-interactive.manim":vp,"../public/assets/demos/animation/state-anim-points.manim":yp,"../public/assets/demos/animation/state-anim.manim":_p,"../public/assets/demos/gamelike/battle-hud.manim":wp,"../public/assets/demos/gamelike/blob47.manim":Sp,"../public/assets/demos/gamelike/card-hand.manim":kp,"../public/assets/demos/gamelike/card-states.manim":Fp,"../public/assets/demos/gamelike/cards-demo.manim":Cp,"../public/assets/demos/gamelike/character-sheet.manim":$p,"../public/assets/demos/gamelike/dialogue.manim":Pp,"../public/assets/demos/gamelike/inventory.manim":Tp,"../public/assets/demos/gamelike/skill-tree.manim":Rp,"../public/assets/demos/gamelike/status-effects.manim":Ep,"../public/assets/demos/graphics/bitmaps-atlas.manim":Ap,"../public/assets/demos/graphics/ninepatch.manim":Bp,"../public/assets/demos/graphics/pixels-graphics.manim":Dp,"../public/assets/demos/graphics/rich-text.manim":Ip,"../public/assets/demos/graphics/text-fonts.manim":zp,"../public/assets/demos/layout/combo-states.manim":Np,"../public/assets/demos/layout/dynamic-refs.manim":Op,"../public/assets/demos/layout/flow-layout.manim":Lp,"../public/assets/demos/layout/repeatable.manim":Mp,"../public/assets/demos/layout/slots.manim":Hp,"../public/assets/demos/layout/static-refs.manim":Wp,"../public/assets/demos/ui/buttons-demo.manim":Vp,"../public/assets/demos/ui/checkboxes-demo.manim":jp,"../public/assets/demos/ui/dialogs.manim":Up,"../public/assets/demos/ui/draggable.manim":Gp,"../public/assets/demos/ui/dropdowns.manim":Qp,"../public/assets/demos/ui/progress-bar.manim":qp,"../public/assets/demos/ui/radio.manim":Yp,"../public/assets/demos/ui/radios-demo.manim":Xp,"../public/assets/demos/ui/scrollable-list.manim":Kp,"../public/assets/demos/ui/sliders.manim":Zp,"../public/assets/demos/ui/tabs-demo.manim":Jp,"../public/assets/demos/ui/textinput-demo.manim":ef,"../public/assets/demos/ui/tooltips-panels.manim":nf,"../public/assets/nav-carousel.manim":tf,"../public/assets/nav-screen.manim":af,"../public/assets/radio.manim":rf,"../public/assets/std.manim":of}),ff=Object.assign({"../public/assets/arrows.anim":lf,"../public/assets/marine-blink.anim":sf,"../public/assets/marine.anim":cf,"../public/assets/shield.anim":df,"../public/assets/turret.anim":uf}),mf=Object.fromEntries([...Object.entries(pf).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(ff).map(([e,n])=>[e.replace("../public/assets/",""),n])]),ka=e=>mf[e]||null,qi=[{name:"Advanced Features",screens:[{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"},{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"}]},{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radio.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"},{name:"tabs",displayName:"Tabs",category:"UI Components",manimFile:"demos/ui/tabs-demo.manim"},{name:"textInput",displayName:"Text Input",category:"UI Components",manimFile:"demos/ui/textinput-demo.manim"},{name:"tooltipsPanels",displayName:"Tooltips & Panels",category:"UI Components",manimFile:"demos/ui/tooltips-panels.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"richText",displayName:"Rich Text",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles-basics.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"},{name:"floatingText",displayName:"Floating Text",category:"Animation & Effects",manimFile:"demos/animation/floating-text.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"blob47",displayName:"Blob47 Autotile",category:"Game-Like Demos",manimFile:"demos/gamelike/blob47.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"},{name:"cards",displayName:"Cards",category:"Game-Like Demos",manimFile:"demos/gamelike/cards-demo.manim"}]}];class hf{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:a=>{if(a.startsWith("http")||a.startsWith("//")||a.startsWith("file://"))return a;try{return new URL(a,n).href}catch{return n+a}},load:a=>this.loadFile(a),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){var t;const n=(t=window.PlaygroundMain)==null?void 0:t.instance;n&&n.screenManager?(this.mainApp=n,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const a=new XMLHttpRequest;return a.open("GET",n,!1),a.send(),a.status===200?this.stringToArrayBuffer(a.response):new ArrayBuffer(0)}findFileContent(n){const t=n.split("?")[0].split("#")[0];let a=ka(t);if(a)return a;const r=t.indexOf("/assets/");if(r>=0&&(a=ka(t.substring(r+8)),a))return a;const i=t.split("/"),o=i[i.length-1];return o&&(a=ka(o),a)?a:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.navigateTo(n),{success:!0,error:null,file:null,line:null,col:null}}catch(a){return console.error("Failed to switch screen:",a),null}return null}getSourceForScreen(n){for(const t of qi){const a=t.screens.find(r=>r.name===n);if(a)return ka(a.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function gf({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:a}){const[r,i]=be.useState(new Set(qi.map(l=>l.name))),o=l=>{i(d=>{const f=new Set(d);return f.has(l)?f.delete(l):f.add(l),f})};return t?D.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):D.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[D.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[D.jsx("button",{onClick:()=>n("nav"),className:"text-base font-bold text-gray-100 hover:text-blue-300 transition-colors",children:"Demos"}),D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),D.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:qi.map(l=>D.jsxs("div",{className:"mb-1",children:[D.jsxs("button",{onClick:()=>o(l.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[D.jsx("span",{className:"mr-1.5 text-[10px]",children:r.has(l.name)?"▾":"▸"}),l.name]}),r.has(l.name)&&D.jsx("div",{className:"ml-6",children:l.screens.map(d=>D.jsx("button",{onClick:()=>n(d.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===d.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:d.displayName},d.name))})]},l.name))})]})}var mc={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
+`,ff=Object.assign({"../public/assets/buttons.manim":Qu,"../public/assets/checkbox.manim":qu,"../public/assets/demo-common.manim":Yu,"../public/assets/demos/advanced/conditionals.manim":Xu,"../public/assets/demos/advanced/expressions.manim":Ku,"../public/assets/demos/advanced/feature-showcase.manim":Zu,"../public/assets/demos/advanced/incremental.manim":Ju,"../public/assets/demos/advanced/interactives.manim":ep,"../public/assets/demos/advanced/macro-performance.manim":np,"../public/assets/demos/advanced/settings.manim":tp,"../public/assets/demos/animation/anim-path.manim":ap,"../public/assets/demos/animation/color-picker-dialog.manim":rp,"../public/assets/demos/animation/curves.manim":ip,"../public/assets/demos/animation/filters.manim":op,"../public/assets/demos/animation/floating-text.manim":lp,"../public/assets/demos/animation/particles-basics.manim":sp,"../public/assets/demos/animation/particles-bounds.manim":cp,"../public/assets/demos/animation/particles-colors.manim":dp,"../public/assets/demos/animation/particles-demo.manim":up,"../public/assets/demos/animation/particles-motion.manim":pp,"../public/assets/demos/animation/particles-paths.manim":fp,"../public/assets/demos/animation/particles-subemitters.manim":mp,"../public/assets/demos/animation/particles.manim":hp,"../public/assets/demos/animation/paths.manim":gp,"../public/assets/demos/animation/state-anim-filters.manim":xp,"../public/assets/demos/animation/state-anim-gallery.manim":bp,"../public/assets/demos/animation/state-anim-interactive.manim":vp,"../public/assets/demos/animation/state-anim-points.manim":yp,"../public/assets/demos/animation/state-anim.manim":_p,"../public/assets/demos/animation/transitions.manim":wp,"../public/assets/demos/gamelike/battle-hud.manim":Sp,"../public/assets/demos/gamelike/blob47.manim":kp,"../public/assets/demos/gamelike/card-hand.manim":Fp,"../public/assets/demos/gamelike/card-states.manim":Cp,"../public/assets/demos/gamelike/cards-demo.manim":$p,"../public/assets/demos/gamelike/character-sheet.manim":Pp,"../public/assets/demos/gamelike/dialogue.manim":Tp,"../public/assets/demos/gamelike/inventory.manim":Rp,"../public/assets/demos/gamelike/skill-tree.manim":Ep,"../public/assets/demos/gamelike/status-effects.manim":Ap,"../public/assets/demos/graphics/bitmaps-atlas.manim":Bp,"../public/assets/demos/graphics/ninepatch.manim":Dp,"../public/assets/demos/graphics/pixels-graphics.manim":Ip,"../public/assets/demos/graphics/rich-text.manim":zp,"../public/assets/demos/graphics/text-fonts.manim":Np,"../public/assets/demos/layout/combo-states.manim":Op,"../public/assets/demos/layout/dynamic-refs.manim":Lp,"../public/assets/demos/layout/flow-layout.manim":Mp,"../public/assets/demos/layout/repeatable.manim":Hp,"../public/assets/demos/layout/slots.manim":Wp,"../public/assets/demos/layout/static-refs.manim":Vp,"../public/assets/demos/ui/buttons-demo.manim":jp,"../public/assets/demos/ui/checkboxes-demo.manim":Up,"../public/assets/demos/ui/dialogs.manim":Gp,"../public/assets/demos/ui/draggable.manim":Qp,"../public/assets/demos/ui/dropdowns.manim":qp,"../public/assets/demos/ui/progress-bar.manim":Yp,"../public/assets/demos/ui/radio.manim":Xp,"../public/assets/demos/ui/radios-demo.manim":Kp,"../public/assets/demos/ui/scrollable-list.manim":Zp,"../public/assets/demos/ui/sliders.manim":Jp,"../public/assets/demos/ui/tabs-demo.manim":ef,"../public/assets/demos/ui/textinput-demo.manim":nf,"../public/assets/demos/ui/tooltips-panels.manim":tf,"../public/assets/nav-carousel.manim":af,"../public/assets/nav-screen.manim":rf,"../public/assets/radio.manim":of,"../public/assets/std.manim":lf}),mf=Object.assign({"../public/assets/arrows.anim":sf,"../public/assets/marine-blink.anim":cf,"../public/assets/marine.anim":df,"../public/assets/shield.anim":uf,"../public/assets/turret.anim":pf}),hf=Object.fromEntries([...Object.entries(ff).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(mf).map(([e,n])=>[e.replace("../public/assets/",""),n])]),ka=e=>hf[e]||null,qi=[{name:"Advanced Features",screens:[{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"},{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"}]},{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radio.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"},{name:"tabs",displayName:"Tabs",category:"UI Components",manimFile:"demos/ui/tabs-demo.manim"},{name:"textInput",displayName:"Text Input",category:"UI Components",manimFile:"demos/ui/textinput-demo.manim"},{name:"tooltipsPanels",displayName:"Tooltips & Panels",category:"UI Components",manimFile:"demos/ui/tooltips-panels.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"richText",displayName:"Rich Text",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles-basics.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"},{name:"floatingText",displayName:"Floating Text",category:"Animation & Effects",manimFile:"demos/animation/floating-text.manim"},{name:"transitions",displayName:"Transitions",category:"Animation & Effects",manimFile:"demos/animation/transitions.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"blob47",displayName:"Blob47 Autotile",category:"Game-Like Demos",manimFile:"demos/gamelike/blob47.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"},{name:"cards",displayName:"Cards",category:"Game-Like Demos",manimFile:"demos/gamelike/cards-demo.manim"}]}];class gf{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:a=>{if(a.startsWith("http")||a.startsWith("//")||a.startsWith("file://"))return a;try{return new URL(a,n).href}catch{return n+a}},load:a=>this.loadFile(a),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){var t;const n=(t=window.PlaygroundMain)==null?void 0:t.instance;n&&n.screenManager?(this.mainApp=n,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const a=new XMLHttpRequest;return a.open("GET",n,!1),a.send(),a.status===200?this.stringToArrayBuffer(a.response):new ArrayBuffer(0)}findFileContent(n){const t=n.split("?")[0].split("#")[0];let a=ka(t);if(a)return a;const r=t.indexOf("/assets/");if(r>=0&&(a=ka(t.substring(r+8)),a))return a;const i=t.split("/"),o=i[i.length-1];return o&&(a=ka(o),a)?a:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.navigateTo(n),{success:!0,error:null,file:null,line:null,col:null}}catch(a){return console.error("Failed to switch screen:",a),null}return null}getSourceForScreen(n){for(const t of qi){const a=t.screens.find(r=>r.name===n);if(a)return ka(a.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function xf({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:a}){const[r,i]=be.useState(new Set(qi.map(l=>l.name))),o=l=>{i(d=>{const f=new Set(d);return f.has(l)?f.delete(l):f.add(l),f})};return t?D.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):D.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[D.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[D.jsx("button",{onClick:()=>n("nav"),className:"text-base font-bold text-gray-100 hover:text-blue-300 transition-colors",children:"Demos"}),D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),D.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:qi.map(l=>D.jsxs("div",{className:"mb-1",children:[D.jsxs("button",{onClick:()=>o(l.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[D.jsx("span",{className:"mr-1.5 text-[10px]",children:r.has(l.name)?"▾":"▸"}),l.name]}),r.has(l.name)&&D.jsx("div",{className:"ml-6",children:l.screens.map(d=>D.jsx("button",{onClick:()=>n(d.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===d.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:d.displayName},d.name))})]},l.name))})]})}var mc={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
  * Prism: Lightweight, robust, elegant syntax highlighting
  *
  * @license MIT <https://opensource.org/licenses/MIT>
@@ -8975,5 +9126,5 @@ animation destroyed {
  * @namespace
  * @public
  */var t=function(a){var r=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,i=0,o={},l={manual:a.Prism&&a.Prism.manual,disableWorkerMessageHandler:a.Prism&&a.Prism.disableWorkerMessageHandler,util:{encode:function s(c){return c instanceof d?new d(c.type,s(c.content),c.alias):Array.isArray(c)?c.map(s):c.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++i}),s.__id},clone:function s(c,p){p=p||{};var h,g;switch(l.util.type(c)){case"Object":if(g=l.util.objId(c),p[g])return p[g];h={},p[g]=h;for(var v in c)c.hasOwnProperty(v)&&(h[v]=s(c[v],p));return h;case"Array":return g=l.util.objId(c),p[g]?p[g]:(h=[],p[g]=h,c.forEach(function(y,C){h[C]=s(y,p)}),h);default:return c}},getLanguage:function(s){for(;s;){var c=r.exec(s.className);if(c)return c[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,c){s.className=s.className.replace(RegExp(r,"gi"),""),s.classList.add("language-"+c)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var c=document.getElementsByTagName("script");for(var p in c)if(c[p].src==s)return c[p]}return null}},isActive:function(s,c,p){for(var h="no-"+c;s;){var g=s.classList;if(g.contains(c))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!p}},languages:{plain:o,plaintext:o,text:o,txt:o,extend:function(s,c){var p=l.util.clone(l.languages[s]);for(var h in c)p[h]=c[h];return p},insertBefore:function(s,c,p,h){h=h||l.languages;var g=h[s],v={};for(var y in g)if(g.hasOwnProperty(y)){if(y==c)for(var C in p)p.hasOwnProperty(C)&&(v[C]=p[C]);p.hasOwnProperty(y)||(v[y]=g[y])}var T=h[s];return h[s]=v,l.languages.DFS(l.languages,function(I,ue){ue===T&&I!=s&&(this[I]=v)}),v},DFS:function s(c,p,h,g){g=g||{};var v=l.util.objId;for(var y in c)if(c.hasOwnProperty(y)){p.call(c,y,c[y],h||y);var C=c[y],T=l.util.type(C);T==="Object"&&!g[v(C)]?(g[v(C)]=!0,s(C,p,null,g)):T==="Array"&&!g[v(C)]&&(g[v(C)]=!0,s(C,p,y,g))}}},plugins:{},highlightAll:function(s,c){l.highlightAllUnder(document,s,c)},highlightAllUnder:function(s,c,p){var h={callback:p,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};l.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),l.hooks.run("before-all-elements-highlight",h);for(var g=0,v;v=h.elements[g++];)l.highlightElement(v,c===!0,h.callback)},highlightElement:function(s,c,p){var h=l.util.getLanguage(s),g=l.languages[h];l.util.setLanguage(s,h);var v=s.parentElement;v&&v.nodeName.toLowerCase()==="pre"&&l.util.setLanguage(v,h);var y=s.textContent,C={element:s,language:h,grammar:g,code:y};function T(ue){C.highlightedCode=ue,l.hooks.run("before-insert",C),C.element.innerHTML=C.highlightedCode,l.hooks.run("after-highlight",C),l.hooks.run("complete",C),p&&p.call(C.element)}if(l.hooks.run("before-sanity-check",C),v=C.element.parentElement,v&&v.nodeName.toLowerCase()==="pre"&&!v.hasAttribute("tabindex")&&v.setAttribute("tabindex","0"),!C.code){l.hooks.run("complete",C),p&&p.call(C.element);return}if(l.hooks.run("before-highlight",C),!C.grammar){T(l.util.encode(C.code));return}if(c&&a.Worker){var I=new Worker(l.filename);I.onmessage=function(ue){T(ue.data)},I.postMessage(JSON.stringify({language:C.language,code:C.code,immediateClose:!0}))}else T(l.highlight(C.code,C.grammar,C.language))},highlight:function(s,c,p){var h={code:s,grammar:c,language:p};if(l.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=l.tokenize(h.code,h.grammar),l.hooks.run("after-tokenize",h),d.stringify(l.util.encode(h.tokens),h.language)},tokenize:function(s,c){var p=c.rest;if(p){for(var h in p)c[h]=p[h];delete c.rest}var g=new x;return m(g,g.head,s),b(s,g,c,g.head,0),S(g)},hooks:{all:{},add:function(s,c){var p=l.hooks.all;p[s]=p[s]||[],p[s].push(c)},run:function(s,c){var p=l.hooks.all[s];if(!(!p||!p.length))for(var h=0,g;g=p[h++];)g(c)}},Token:d};a.Prism=l;function d(s,c,p,h){this.type=s,this.content=c,this.alias=p,this.length=(h||"").length|0}d.stringify=function s(c,p){if(typeof c=="string")return c;if(Array.isArray(c)){var h="";return c.forEach(function(T){h+=s(T,p)}),h}var g={type:c.type,content:s(c.content,p),tag:"span",classes:["token",c.type],attributes:{},language:p},v=c.alias;v&&(Array.isArray(v)?Array.prototype.push.apply(g.classes,v):g.classes.push(v)),l.hooks.run("wrap",g);var y="";for(var C in g.attributes)y+=" "+C+'="'+(g.attributes[C]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function f(s,c,p,h){s.lastIndex=c;var g=s.exec(p);if(g&&h&&g[1]){var v=g[1].length;g.index+=v,g[0]=g[0].slice(v)}return g}function b(s,c,p,h,g,v){for(var y in p)if(!(!p.hasOwnProperty(y)||!p[y])){var C=p[y];C=Array.isArray(C)?C:[C];for(var T=0;T<C.length;++T){if(v&&v.cause==y+","+T)return;var I=C[T],ue=I.inside,nn=!!I.lookbehind,ht=!!I.greedy,Sr=I.alias;if(ht&&!I.pattern.global){var gt=I.pattern.toString().match(/[imsuy]*$/)[0];I.pattern=RegExp(I.pattern.source,gt+"g")}for(var On=I.pattern||I,F=h.next,R=g;F!==c.tail&&!(v&&R>=v.reach);R+=F.value.length,F=F.next){var E=F.value;if(c.length>s.length)return;if(!(E instanceof d)){var O=1,z;if(ht){if(z=f(On,R,s,nn),!z||z.index>=s.length)break;var ke=z.index,Ln=z.index+z[0].length,te=R;for(te+=F.value.length;ke>=te;)F=F.next,te+=F.value.length;if(te-=F.value.length,R=te,F.value instanceof d)continue;for(var Ve=F;Ve!==c.tail&&(te<Ln||typeof Ve.value=="string");Ve=Ve.next)O++,te+=Ve.value.length;O--,E=s.slice(R,te),z.index-=R}else if(z=f(On,0,E,nn),!z)continue;var ke=z.index,je=z[0],kr=E.slice(0,ke),Go=E.slice(ke+je.length),Fr=R+E.length;v&&Fr>v.reach&&(v.reach=Fr);var oa=F.prev;kr&&(oa=m(c,oa,kr),R+=kr.length),w(c,oa,O);var xc=new d(y,ue?l.tokenize(je,ue):je,Sr,je);if(F=m(c,oa,xc),Go&&m(c,F,Go),O>1){var Cr={cause:y+","+T,reach:Fr};b(s,c,p,F.prev,R,Cr),v&&Cr.reach>v.reach&&(v.reach=Cr.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},c={value:null,prev:s,next:null};s.next=c,this.head=s,this.tail=c,this.length=0}function m(s,c,p){var h=c.next,g={value:p,prev:c,next:h};return c.next=g,h.prev=g,s.length++,g}function w(s,c,p){for(var h=c.next,g=0;g<p&&h!==s.tail;g++)h=h.next;c.next=h,h.prev=c,s.length-=g}function S(s){for(var c=[],p=s.head.next;p!==s.tail;)c.push(p.value),p=p.next;return c}if(!a.document)return a.addEventListener&&(l.disableWorkerMessageHandler||a.addEventListener("message",function(s){var c=JSON.parse(s.data),p=c.language,h=c.code,g=c.immediateClose;a.postMessage(l.highlight(h,l.languages[p],p)),g&&a.close()},!1)),l;var _=l.util.currentScript();_&&(l.filename=_.src,_.hasAttribute("data-manual")&&(l.manual=!0));function P(){l.manual||l.highlightAll()}if(!l.manual){var u=document.readyState;u==="loading"||u==="interactive"&&_&&_.defer?document.addEventListener("DOMContentLoaded",P):window.requestAnimationFrame?window.requestAnimationFrame(P):window.setTimeout(P,16)}return l}(n);e.exports&&(e.exports=t),typeof ei<"u"&&(ei.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(a){a.type==="entity"&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(r,i){var o={};o["language-"+i]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[i]},o.cdata=/^<!\[CDATA\[|\]\]>$/i;var l={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:o}};l["language-"+i]={pattern:/[\s\S]+/,inside:t.languages[i]};var d={};d[r]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return r}),"i"),lookbehind:!0,greedy:!0,inside:l},t.languages.insertBefore("markup","cdata",d)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(a,r){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+a+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[r,"language-"+r],inside:t.languages[r]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(a){var r=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;a.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+r.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+r.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+r.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+r.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:r,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},a.languages.css.atrule.inside.rest=a.languages.css;var i=a.languages.markup;i&&(i.tag.addInlined("style","css"),i.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var a="Loading…",r=function(_,P){return"✖ Error "+_+" while fetching file: "+P},i="✖ Error: File does not exist or is empty",o={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},l="data-src-status",d="loading",f="loaded",b="failed",x="pre[data-src]:not(["+l+'="'+f+'"]):not(['+l+'="'+d+'"])';function m(_,P,u){var s=new XMLHttpRequest;s.open("GET",_,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?P(s.responseText):s.status>=400?u(r(s.status,s.statusText)):u(i))},s.send(null)}function w(_){var P=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(_||"");if(P){var u=Number(P[1]),s=P[2],c=P[3];return s?c?[u,Number(c)]:[u,void 0]:[u,u]}}t.hooks.add("before-highlightall",function(_){_.selector+=", "+x}),t.hooks.add("before-sanity-check",function(_){var P=_.element;if(P.matches(x)){_.code="",P.setAttribute(l,d);var u=P.appendChild(document.createElement("CODE"));u.textContent=a;var s=P.getAttribute("data-src"),c=_.language;if(c==="none"){var p=(/\.(\w+)$/.exec(s)||[,"none"])[1];c=o[p]||p}t.util.setLanguage(u,c),t.util.setLanguage(P,c);var h=t.plugins.autoloader;h&&h.loadLanguages(c),m(s,function(g){P.setAttribute(l,f);var v=w(P.getAttribute("data-range"));if(v){var y=g.split(/\r\n?|\n/g),C=v[0],T=v[1]==null?y.length:v[1];C<0&&(C+=y.length),C=Math.max(0,Math.min(C-1,y.length)),T<0&&(T+=y.length),T=Math.max(0,Math.min(T,y.length)),g=y.slice(C,T).join(`
-`),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,c;c=u[s++];)t.highlightElement(c)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mc);var xf=mc.exports;const Yi=Xi(xf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function bf({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function vf(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[d]=be.useState(()=>new hf);be.useEffect(()=>{window.playgroundLoader=d;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{d.dispose()}},[d]),be.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const S=w[1];n(S),d.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[d]);const f=x=>{n(x),window.location.hash=`screen=${x}`,d.switchScreen(x);const m=d.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=d.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx(gf,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(bf,{source:o,visible:r})})]})]})]})}var hc={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,w){m=m.push?m:[m];var S=[],_=m.length,P=_,u,s,c,p;for(u=function(h,g){g.length&&S.push(h),P--,P||w(S)};_--;){if(s=m[_],c=r[s],c){u(s,c);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,w){if(m){var S=i[m];if(r[m]=w,!!S)for(;S.length;)S[0](m,w),S.splice(0,1)}}function d(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function f(m,w,S,_){var P=document,u=S.async,s=(S.numRetries||0)+1,c=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(_=_||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(_+=1,_<s)return f(m,w,S,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,T,C.defaultPrevented)},c(m,y)!==!1&&P.head.appendChild(y)}function b(m,w,S){m=m.push?m:[m];var _=m.length,P=_,u=[],s,c;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;_--,_||w(u)},c=0;c<P;c++)f(m[c],s,S)}function x(m,w,S){var _,P;if(w&&w.trim&&(_=w),P=(_?S:w)||{},_){if(_ in a)throw"LoadJS";a[_]=!0}function u(s,c){b(m,function(p){d(P,p),s&&d({success:s,error:c},p),l(_,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(w,S){return o(w,function(_){d(S,_)}),x},x.done=function(w){l(w,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(w){return w in a},x})})(hc);var yf=hc.exports;const _f=Xi(yf);class wf{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);_f("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gc=new wf({maxRetries:5,retryDelay:2e3,timeout:1e4});gc.start();window.haxeLoader=gc;ni.createRoot(document.getElementById("root")).render(D.jsx(Ic.StrictMode,{children:D.jsx(vf,{})}));
-//# sourceMappingURL=index-CkS1GVa9.js.map
+`),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,c;c=u[s++];)t.highlightElement(c)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mc);var bf=mc.exports;const Yi=Xi(bf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function vf({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function yf(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[d]=be.useState(()=>new gf);be.useEffect(()=>{window.playgroundLoader=d;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{d.dispose()}},[d]),be.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const S=w[1];n(S),d.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[d]);const f=x=>{n(x),window.location.hash=`screen=${x}`,d.switchScreen(x);const m=d.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=d.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx(xf,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(vf,{source:o,visible:r})})]})]})]})}var hc={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,w){m=m.push?m:[m];var S=[],_=m.length,P=_,u,s,c,p;for(u=function(h,g){g.length&&S.push(h),P--,P||w(S)};_--;){if(s=m[_],c=r[s],c){u(s,c);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,w){if(m){var S=i[m];if(r[m]=w,!!S)for(;S.length;)S[0](m,w),S.splice(0,1)}}function d(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function f(m,w,S,_){var P=document,u=S.async,s=(S.numRetries||0)+1,c=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(_=_||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(_+=1,_<s)return f(m,w,S,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,T,C.defaultPrevented)},c(m,y)!==!1&&P.head.appendChild(y)}function b(m,w,S){m=m.push?m:[m];var _=m.length,P=_,u=[],s,c;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;_--,_||w(u)},c=0;c<P;c++)f(m[c],s,S)}function x(m,w,S){var _,P;if(w&&w.trim&&(_=w),P=(_?S:w)||{},_){if(_ in a)throw"LoadJS";a[_]=!0}function u(s,c){b(m,function(p){d(P,p),s&&d({success:s,error:c},p),l(_,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(w,S){return o(w,function(_){d(S,_)}),x},x.done=function(w){l(w,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(w){return w in a},x})})(hc);var _f=hc.exports;const wf=Xi(_f);class Sf{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);wf("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gc=new Sf({maxRetries:5,retryDelay:2e3,timeout:1e4});gc.start();window.haxeLoader=gc;ni.createRoot(document.getElementById("root")).render(D.jsx(Ic.StrictMode,{children:D.jsx(yf,{})}));
+//# sourceMappingURL=index-Bpy3Dgch.js.map

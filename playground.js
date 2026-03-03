@@ -1595,6 +1595,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("animPath",new screens_animation_AnimPathDemoScreen(this.screenManager));
 		this.screenManager.addScreen("filters",new screens_animation_FiltersDemoScreen(this.screenManager));
 		this.screenManager.addScreen("floatingText",new screens_animation_FloatingTextDemoScreen(this.screenManager));
+		this.screenManager.addScreen("transitions",new screens_animation_TransitionsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("inventory",new screens_gamelike_InventoryDemoScreen(this.screenManager));
 		this.screenManager.addScreen("characterSheet",new screens_gamelike_CharacterSheetDemoScreen(this.screenManager));
 		this.screenManager.addScreen("blob47",new screens_gamelike_Blob47DemoScreen(this.screenManager));
@@ -1637,7 +1638,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 414, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 415, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -11239,7 +11240,7 @@ bh_multianim_MacroManimParser.prototype = {
 			nameStr = n;
 			break;
 		}
-		return { pos : bh_multianim_Coordinates.ZERO, scale : scale, rotation : rotation, alpha : alpha, tint : tint, layer : layerIndex, gridCoordinateSystem : null, hexCoordinateSystem : null, namedCoordinateSystems : null, blendMode : null, filter : null, parent : parent, updatableName : updatableName, type : type, children : [], conditionals : conditional, uniqueNodeName : this.generateUniqueName(this.uniqueCounter,nameStr,Std.string(type)), settings : null, flowProperties : null};
+		return { pos : bh_multianim_Coordinates.ZERO, scale : scale, rotation : rotation, alpha : alpha, tint : tint, layer : layerIndex, gridCoordinateSystem : null, hexCoordinateSystem : null, namedCoordinateSystems : null, blendMode : null, filter : null, parent : parent, updatableName : updatableName, type : type, children : [], conditionals : conditional, uniqueNodeName : this.generateUniqueName(this.uniqueCounter,nameStr,Std.string(type)), settings : null, transitions : null, flowProperties : null};
 	}
 	,parseNode: function(updatableName,parent,currentDefs) {
 		if(parent == null) {
@@ -12572,48 +12573,85 @@ bh_multianim_MacroManimParser.prototype = {
 																																				return n;
 																																			} else {
 																																				var s = _g1;
-																																				if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																				if(bh_multianim_MacroManimParser.isKeyword(s,"transition")) {
 																																					this.advance();
 																																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 																																					if(parent == null) {
-																																						this.error("settings must have a parent");
+																																						this.error("transition must be inside a programmable");
 																																					}
-																																					if(parent.settings == null) {
-																																						parent.settings = new haxe_ds_StringMap();
+																																					var transParamDefs;
+																																					var _g = parent.type;
+																																					if(_g._hx_index == 9) {
+																																						var _g2 = _g.isTileGroup;
+																																						var _g2 = _g.paramOrder;
+																																						var defs = _g.parameters;
+																																						transParamDefs = defs;
+																																					} else {
+																																						this.error("transition block only valid inside programmable");
+																																						transParamDefs = null;
+																																					}
+																																					if(parent.transitions == null) {
+																																						parent.transitions = new haxe_ds_StringMap();
 																																					}
 																																					while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
-																																						var key = this.expectIdentifierOrString();
-																																						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
-																																							var suffix = this.expectIdentifierOrString();
-																																							key = key + "." + suffix;
+																																						var paramName = this.expectIdentifierOrString();
+																																						if(transParamDefs != null && !Object.prototype.hasOwnProperty.call(transParamDefs.h,paramName)) {
+																																							this.error("transition references unknown parameter \"" + paramName + "\"");
 																																						}
-																																						switch(this.tokens[this.tpos].type._hx_index) {
-																																						case 11:
-																																							this.advance();
-																																							var tv = this.parseTypedSettingValue();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							parent.settings.h[key] = { type : tv.type, value : tv.value};
-																																							break;
-																																						case 15:
-																																							this.advance();
-																																							var value = this.parseAnything();
-																																							if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																								this.error("setting " + key + " already defined");
-																																							}
-																																							var this1 = parent.settings;
-																																							var value1 = { type : this.inferSettingType(value), value : value};
-																																							this1.h[key] = value1;
-																																							break;
-																																						default:
-																																							this.error("expected :type=> or => after setting key");
+																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																																						var transType = this.parseTransitionType();
+																																						if(Object.prototype.hasOwnProperty.call(parent.transitions.h,paramName)) {
+																																							this.error("duplicate transition for parameter \"" + paramName + "\"");
 																																						}
+																																						parent.transitions.h[paramName] = transType;
 																																						this.eatComma();
 																																					}
 																																					return null;
 																																				} else {
-																																					node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+																																					var s = _g1;
+																																					if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																						this.advance();
+																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																						if(parent == null) {
+																																							this.error("settings must have a parent");
+																																						}
+																																						if(parent.settings == null) {
+																																							parent.settings = new haxe_ds_StringMap();
+																																						}
+																																						while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+																																							var key = this.expectIdentifierOrString();
+																																							if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
+																																								var suffix = this.expectIdentifierOrString();
+																																								key = key + "." + suffix;
+																																							}
+																																							switch(this.tokens[this.tpos].type._hx_index) {
+																																							case 11:
+																																								this.advance();
+																																								var tv = this.parseTypedSettingValue();
+																																								if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																									this.error("setting " + key + " already defined");
+																																								}
+																																								parent.settings.h[key] = { type : tv.type, value : tv.value};
+																																								break;
+																																							case 15:
+																																								this.advance();
+																																								var value = this.parseAnything();
+																																								if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																									this.error("setting " + key + " already defined");
+																																								}
+																																								var this1 = parent.settings;
+																																								var value1 = { type : this.inferSettingType(value), value : value};
+																																								this1.h[key] = value1;
+																																								break;
+																																							default:
+																																								this.error("expected :type=> or => after setting key");
+																																							}
+																																							this.eatComma();
+																																						}
+																																						return null;
+																																					} else {
+																																						node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+																																					}
 																																				}
 																																			}
 																																		}
@@ -15384,6 +15422,136 @@ bh_multianim_MacroManimParser.prototype = {
 			return this.error("expected easing type, got " + Std.string(this.tokens[this.tpos].type));
 		}
 	}
+	,parseTransitionType: function() {
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 31) {
+			var _g1 = _g.s;
+			var s = _g1;
+			if(bh_multianim_MacroManimParser.isKeyword(s,"none")) {
+				this.advance();
+				return bh_multianim_TransitionType.TransNone;
+			} else {
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"fade")) {
+					this.advance();
+					return this.parseTransitionArgs(function(dur,eas) {
+						return bh_multianim_TransitionType.TransFade(dur,eas);
+					});
+				} else {
+					var s = _g1;
+					if(bh_multianim_MacroManimParser.isKeyword(s,"crossfade")) {
+						this.advance();
+						return this.parseTransitionArgs(function(dur,eas) {
+							return bh_multianim_TransitionType.TransCrossfade(dur,eas);
+						});
+					} else {
+						var s = _g1;
+						if(bh_multianim_MacroManimParser.isKeyword(s,"flipx")) {
+							this.advance();
+							return this.parseTransitionArgs(function(dur,eas) {
+								return bh_multianim_TransitionType.TransFlipX(dur,eas);
+							});
+						} else {
+							var s = _g1;
+							if(bh_multianim_MacroManimParser.isKeyword(s,"flipy")) {
+								this.advance();
+								return this.parseTransitionArgs(function(dur,eas) {
+									return bh_multianim_TransitionType.TransFlipY(dur,eas);
+								});
+							} else {
+								var s = _g1;
+								if(bh_multianim_MacroManimParser.isKeyword(s,"slide")) {
+									this.advance();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+									var dir = this.parseTransitionDirection();
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+									var dur = this.parseFloat_();
+									var dist = null;
+									var eas = null;
+									if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+										var _g = this.tokens[this.tpos].type;
+										switch(_g._hx_index) {
+										case 20:
+											dist = this.parseFloat_();
+											if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+												eas = this.parseEasingType();
+											}
+											break;
+										case 28:
+											var _g1 = _g.s;
+											dist = this.parseFloat_();
+											if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+												eas = this.parseEasingType();
+											}
+											break;
+										case 29:
+											var _g1 = _g.s;
+											dist = this.parseFloat_();
+											if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+												eas = this.parseEasingType();
+											}
+											break;
+										default:
+											eas = this.parseEasingType();
+										}
+									}
+									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+									return bh_multianim_TransitionType.TransSlide(dir,dur,dist,eas);
+								} else {
+									return this.error("expected transition type (none, fade, crossfade, flipX, flipY, slide), got " + Std.string(this.tokens[this.tpos].type));
+								}
+							}
+						}
+					}
+				}
+			}
+		} else {
+			return this.error("expected transition type (none, fade, crossfade, flipX, flipY, slide), got " + Std.string(this.tokens[this.tpos].type));
+		}
+	}
+	,parseTransitionArgs: function(ctor) {
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+		var dur = this.parseFloat_();
+		var eas = null;
+		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+			eas = this.parseEasingType();
+		}
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+		return ctor(dur,eas);
+	}
+	,parseTransitionDirection: function() {
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 31) {
+			var _g1 = _g.s;
+			var s = _g1;
+			if(bh_multianim_MacroManimParser.isKeyword(s,"left")) {
+				this.advance();
+				return bh_multianim_TransitionDirection.TDLeft;
+			} else {
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"right")) {
+					this.advance();
+					return bh_multianim_TransitionDirection.TDRight;
+				} else {
+					var s = _g1;
+					if(bh_multianim_MacroManimParser.isKeyword(s,"up")) {
+						this.advance();
+						return bh_multianim_TransitionDirection.TDUp;
+					} else {
+						var s = _g1;
+						if(bh_multianim_MacroManimParser.isKeyword(s,"down")) {
+							this.advance();
+							return bh_multianim_TransitionDirection.TDDown;
+						} else {
+							return this.error("expected direction (left, right, up, down), got " + Std.string(this.tokens[this.tpos].type));
+						}
+					}
+				}
+			}
+		} else {
+			return this.error("expected direction (left, right, up, down), got " + Std.string(this.tokens[this.tpos].type));
+		}
+	}
 	,parseCurves: function() {
 		var curves = new haxe_ds_StringMap();
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
@@ -16447,6 +16615,8 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 	,__class__: bh_multianim_BuilderResolvedSettings
 };
 var bh_multianim_IncrementalUpdateContext = function(builder,indexedParams,builderParams,rootNode) {
+	this.activeTransitionTweens = [];
+	this.tweenManager = null;
 	this.changedParams = new haxe_ds_StringMap();
 	this.batchMode = false;
 	this.dynamicRefBindings = [];
@@ -16470,6 +16640,7 @@ var bh_multianim_IncrementalUpdateContext = function(builder,indexedParams,build
 	}
 	this.builderParams = builderParams;
 	this.rootNode = rootNode;
+	this.transitionsDef = rootNode.transitions;
 };
 $hxClasses["bh.multianim.IncrementalUpdateContext"] = bh_multianim_IncrementalUpdateContext;
 bh_multianim_IncrementalUpdateContext.__name__ = "bh.multianim.IncrementalUpdateContext";
@@ -16570,6 +16741,248 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		}
 		this.changedParams = new haxe_ds_StringMap();
 	}
+	,setTweenManager: function(tm) {
+		this.tweenManager = tm;
+	}
+	,findTransitionSpec: function() {
+		if(this.transitionsDef == null) {
+			return null;
+		}
+		var h = this.changedParams.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var paramName = _g_key;
+			var _ = _g_value;
+			var spec = this.transitionsDef.h[paramName];
+			if(spec != null) {
+				return spec;
+			}
+		}
+		return null;
+	}
+	,cancelActiveTransition: function(obj) {
+		var i = 0;
+		while(i < this.activeTransitionTweens.length) if(this.activeTransitionTweens[i].obj == obj) {
+			var entry = this.activeTransitionTweens[i];
+			entry.tween.onComplete = null;
+			entry.tween.cancel();
+			obj.alpha = entry.savedAlpha;
+			obj.posChanged = true;
+			obj.scaleX = entry.savedScaleX;
+			obj.posChanged = true;
+			obj.scaleY = entry.savedScaleY;
+			obj.posChanged = true;
+			obj.x = entry.savedX;
+			obj.posChanged = true;
+			obj.y = entry.savedY;
+			this.activeTransitionTweens.splice(i,1);
+		} else {
+			++i;
+		}
+	}
+	,trackTransitionTween: function(obj,tween,savedAlpha,savedScaleX,savedScaleY,savedX,savedY) {
+		var _gthis = this;
+		this.activeTransitionTweens.push({ obj : obj, tween : tween, savedAlpha : savedAlpha, savedScaleX : savedScaleX, savedScaleY : savedScaleY, savedX : savedX, savedY : savedY});
+		var origOnComplete = tween.onComplete;
+		tween.onComplete = function() {
+			var i = 0;
+			while(i < _gthis.activeTransitionTweens.length) {
+				if(_gthis.activeTransitionTweens[i].tween == tween) {
+					_gthis.activeTransitionTweens.splice(i,1);
+					break;
+				}
+				++i;
+			}
+			if(origOnComplete != null) {
+				origOnComplete();
+			}
+		};
+	}
+	,hasActiveTransition: function(obj) {
+		var _g = 0;
+		var _g1 = this.activeTransitionTweens;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.obj == obj) {
+				return true;
+			}
+		}
+		return false;
+	}
+	,setVisibilityWithTransition: function(obj,newVisible) {
+		if(obj.visible == newVisible && !this.hasActiveTransition(obj)) {
+			return;
+		}
+		var transSpec = this.findTransitionSpec();
+		if(transSpec == null || this.tweenManager == null || (transSpec == null ? false : transSpec._hx_index == 0)) {
+			this.cancelActiveTransition(obj);
+			obj.set_visible(newVisible);
+			return;
+		}
+		this.cancelActiveTransition(obj);
+		this.executeTransition(obj,newVisible,transSpec);
+	}
+	,executeTransition: function(obj,show,spec) {
+		var tm = this.tweenManager;
+		if(tm == null) {
+			obj.set_visible(show);
+			return;
+		}
+		var preAlpha = obj.alpha;
+		var preScaleX = obj.scaleX;
+		var preScaleY = obj.scaleY;
+		var preX = obj.x;
+		var preY = obj.y;
+		switch(spec._hx_index) {
+		case 0:
+			obj.set_visible(show);
+			break;
+		case 1:
+			var duration = spec.duration;
+			var easing = spec.easing;
+			if(show) {
+				obj.set_visible(true);
+				obj.alpha = 0.0;
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(preAlpha)],easing);
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			} else {
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(0.0)],easing);
+				var capturedObj = obj;
+				t.onComplete = function() {
+					capturedObj.set_visible(false);
+					capturedObj.alpha = preAlpha;
+				};
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			}
+			break;
+		case 2:
+			var duration = spec.duration;
+			var easing = spec.easing;
+			if(show) {
+				obj.set_visible(true);
+				obj.alpha = 0.0;
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(preAlpha)],easing);
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			} else {
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(0.0)],easing);
+				var capturedObj1 = obj;
+				t.onComplete = function() {
+					capturedObj1.set_visible(false);
+					capturedObj1.alpha = preAlpha;
+				};
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			}
+			break;
+		case 3:
+			var duration = spec.duration;
+			var easing = spec.easing;
+			var halfDuration = duration / 2.0;
+			if(show) {
+				obj.set_visible(true);
+				obj.posChanged = true;
+				obj.scaleX = 0.0;
+				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleX(preScaleX)],easing);
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			} else {
+				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleX(0.0)],easing);
+				var capturedObj2 = obj;
+				t.onComplete = function() {
+					capturedObj2.set_visible(false);
+					capturedObj2.posChanged = true;
+					capturedObj2.scaleX = preScaleX;
+				};
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			}
+			break;
+		case 4:
+			var duration = spec.duration;
+			var easing = spec.easing;
+			var halfDuration = duration / 2.0;
+			if(show) {
+				obj.set_visible(true);
+				obj.posChanged = true;
+				obj.scaleY = 0.0;
+				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleY(preScaleY)],easing);
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			} else {
+				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleY(0.0)],easing);
+				var capturedObj3 = obj;
+				t.onComplete = function() {
+					capturedObj3.set_visible(false);
+					capturedObj3.posChanged = true;
+					capturedObj3.scaleY = preScaleY;
+				};
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			}
+			break;
+		case 5:
+			var dir = spec.direction;
+			var duration = spec.duration;
+			var distance = spec.distance;
+			var easing = spec.easing;
+			var slideOffset = distance != null ? distance : 50.0;
+			if(show) {
+				obj.set_visible(true);
+				obj.alpha = 0.0;
+				switch(dir._hx_index) {
+				case 0:
+					obj.posChanged = true;
+					obj.x -= slideOffset;
+					break;
+				case 1:
+					obj.posChanged = true;
+					obj.x += slideOffset;
+					break;
+				case 2:
+					obj.posChanged = true;
+					obj.y -= slideOffset;
+					break;
+				case 3:
+					obj.posChanged = true;
+					obj.y += slideOffset;
+					break;
+				}
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.X(preX),bh_base_TweenProperty.Y(preY),bh_base_TweenProperty.Alpha(preAlpha)],easing);
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			} else {
+				var targetX = obj.x;
+				var targetY = obj.y;
+				switch(dir._hx_index) {
+				case 0:
+					targetX -= slideOffset;
+					break;
+				case 1:
+					targetX += slideOffset;
+					break;
+				case 2:
+					targetY -= slideOffset;
+					break;
+				case 3:
+					targetY += slideOffset;
+					break;
+				}
+				var t = tm.tween(obj,duration,[bh_base_TweenProperty.X(targetX),bh_base_TweenProperty.Y(targetY),bh_base_TweenProperty.Alpha(0.0)],easing);
+				var capturedObj4 = obj;
+				t.onComplete = function() {
+					capturedObj4.set_visible(false);
+					capturedObj4.alpha = preAlpha;
+					capturedObj4.posChanged = true;
+					capturedObj4.x = preX;
+					capturedObj4.posChanged = true;
+					capturedObj4.y = preY;
+				};
+				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+			}
+			break;
+		}
+	}
 	,applyUpdates: function() {
 		this.builder.pushBuilderState();
 		this.builder.indexedParams = this.indexedParams;
@@ -16579,7 +16992,8 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		while(_g < _g1.length) {
 			var entry = _g1[_g];
 			++_g;
-			entry.object.set_visible(this.builder.isMatch(entry.node,this.indexedParams));
+			var shouldBeVisible = this.builder.isMatch(entry.node,this.indexedParams);
+			this.setVisibilityWithTransition(entry.object,shouldBeVisible);
 		}
 		var _g = 0;
 		var _g1 = this.conditionalApplyEntries;
@@ -16685,7 +17099,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 					anyConditionalSiblingMatched = true;
 				}
 				if(trackedObj != null) {
-					trackedObj.set_visible(matched);
+					this.setVisibilityWithTransition(trackedObj,matched);
 				}
 				if(trackedApply != null) {
 					if(matched) {
@@ -16702,7 +17116,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 						prevSiblingMatched = true;
 						anyConditionalSiblingMatched = true;
 						if(trackedObj != null) {
-							trackedObj.set_visible(true);
+							this.setVisibilityWithTransition(trackedObj,true);
 						}
 						if(trackedApply != null) {
 							this.applyConditionalApplyEntry(trackedApply);
@@ -16714,7 +17128,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 							anyConditionalSiblingMatched = true;
 						}
 						if(trackedObj != null) {
-							trackedObj.set_visible(matched1);
+							this.setVisibilityWithTransition(trackedObj,matched1);
 						}
 						if(trackedApply != null) {
 							if(matched1) {
@@ -16727,7 +17141,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				} else {
 					prevSiblingMatched = true;
 					if(trackedObj != null) {
-						trackedObj.set_visible(false);
+						this.setVisibilityWithTransition(trackedObj,false);
 					}
 					if(trackedApply != null) {
 						this.unapplyConditionalApplyEntry(trackedApply);
@@ -16736,7 +17150,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				break;
 			case 2:
 				if(trackedObj != null) {
-					trackedObj.set_visible(!anyConditionalSiblingMatched);
+					this.setVisibilityWithTransition(trackedObj,!anyConditionalSiblingMatched);
 				}
 				if(trackedApply != null) {
 					if(!anyConditionalSiblingMatched) {
@@ -17040,6 +17454,7 @@ var bh_multianim__$MultiAnimBuilder_InternalBuildMode = $hxEnums["bh.multianim._
 bh_multianim__$MultiAnimBuilder_InternalBuildMode.__constructs__ = [bh_multianim__$MultiAnimBuilder_InternalBuildMode.RootMode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.LayersMode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.TileGroupMode];
 bh_multianim__$MultiAnimBuilder_InternalBuildMode.__empty_constructs__ = [bh_multianim__$MultiAnimBuilder_InternalBuildMode.RootMode];
 var bh_multianim_MultiAnimBuilder = function(data,resourceLoader,sourceName) {
+	this.tweenManager = null;
 	this.incrementalContext = null;
 	this.incrementalMode = false;
 	this.inlineAtlases = new haxe_ds_StringMap();
@@ -21787,7 +22202,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						case 0:
 							var obj = param.obj;
 							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3304, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
+								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3525, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 							}
 							callbackResultH2dObject = obj;
 							break;
@@ -24037,7 +24452,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5355, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
+			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5576, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -24048,6 +24463,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(incremental) {
 			this.incrementalMode = true;
 			this.incrementalContext = new bh_multianim_IncrementalUpdateContext(this,this.indexedParams,builderParams,node);
+			if(this.tweenManager != null) {
+				this.incrementalContext.setTweenManager(this.tweenManager);
+			}
 		}
 		var retVal = this.startBuild(name,node,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node),builderParams);
 		if(incremental) {
@@ -24147,7 +24565,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var from = _g1.from;
 					var to = _g1.to;
 					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5579, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5803, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 					}
 					var _g7 = [];
 					var _g8 = from;
@@ -24181,7 +24599,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				comboNames.push(prop);
 				comboCounts.push(allValues.length);
 				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5595, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
+					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5819, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
 				} else if(totalStates > 1000) {
 					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
 				}
@@ -24708,6 +25126,24 @@ var bh_multianim_EasingType = $hxEnums["bh.multianim.EasingType"] = { __ename__:
 };
 bh_multianim_EasingType.__constructs__ = [bh_multianim_EasingType.Linear,bh_multianim_EasingType.EaseInQuad,bh_multianim_EasingType.EaseOutQuad,bh_multianim_EasingType.EaseInOutQuad,bh_multianim_EasingType.EaseInCubic,bh_multianim_EasingType.EaseOutCubic,bh_multianim_EasingType.EaseInOutCubic,bh_multianim_EasingType.EaseInBack,bh_multianim_EasingType.EaseOutBack,bh_multianim_EasingType.EaseInOutBack,bh_multianim_EasingType.EaseOutBounce,bh_multianim_EasingType.EaseOutElastic,bh_multianim_EasingType.CubicBezier];
 bh_multianim_EasingType.__empty_constructs__ = [bh_multianim_EasingType.Linear,bh_multianim_EasingType.EaseInQuad,bh_multianim_EasingType.EaseOutQuad,bh_multianim_EasingType.EaseInOutQuad,bh_multianim_EasingType.EaseInCubic,bh_multianim_EasingType.EaseOutCubic,bh_multianim_EasingType.EaseInOutCubic,bh_multianim_EasingType.EaseInBack,bh_multianim_EasingType.EaseOutBack,bh_multianim_EasingType.EaseInOutBack,bh_multianim_EasingType.EaseOutBounce,bh_multianim_EasingType.EaseOutElastic];
+var bh_multianim_TransitionType = $hxEnums["bh.multianim.TransitionType"] = { __ename__:true,__constructs__:null
+	,TransNone: {_hx_name:"TransNone",_hx_index:0,__enum__:"bh.multianim.TransitionType",toString:$estr}
+	,TransFade: ($_=function(duration,easing) { return {_hx_index:1,duration:duration,easing:easing,__enum__:"bh.multianim.TransitionType",toString:$estr}; },$_._hx_name="TransFade",$_.__params__ = ["duration","easing"],$_)
+	,TransCrossfade: ($_=function(duration,easing) { return {_hx_index:2,duration:duration,easing:easing,__enum__:"bh.multianim.TransitionType",toString:$estr}; },$_._hx_name="TransCrossfade",$_.__params__ = ["duration","easing"],$_)
+	,TransFlipX: ($_=function(duration,easing) { return {_hx_index:3,duration:duration,easing:easing,__enum__:"bh.multianim.TransitionType",toString:$estr}; },$_._hx_name="TransFlipX",$_.__params__ = ["duration","easing"],$_)
+	,TransFlipY: ($_=function(duration,easing) { return {_hx_index:4,duration:duration,easing:easing,__enum__:"bh.multianim.TransitionType",toString:$estr}; },$_._hx_name="TransFlipY",$_.__params__ = ["duration","easing"],$_)
+	,TransSlide: ($_=function(direction,duration,distance,easing) { return {_hx_index:5,direction:direction,duration:duration,distance:distance,easing:easing,__enum__:"bh.multianim.TransitionType",toString:$estr}; },$_._hx_name="TransSlide",$_.__params__ = ["direction","duration","distance","easing"],$_)
+};
+bh_multianim_TransitionType.__constructs__ = [bh_multianim_TransitionType.TransNone,bh_multianim_TransitionType.TransFade,bh_multianim_TransitionType.TransCrossfade,bh_multianim_TransitionType.TransFlipX,bh_multianim_TransitionType.TransFlipY,bh_multianim_TransitionType.TransSlide];
+bh_multianim_TransitionType.__empty_constructs__ = [bh_multianim_TransitionType.TransNone];
+var bh_multianim_TransitionDirection = $hxEnums["bh.multianim.TransitionDirection"] = { __ename__:true,__constructs__:null
+	,TDLeft: {_hx_name:"TDLeft",_hx_index:0,__enum__:"bh.multianim.TransitionDirection",toString:$estr}
+	,TDRight: {_hx_name:"TDRight",_hx_index:1,__enum__:"bh.multianim.TransitionDirection",toString:$estr}
+	,TDUp: {_hx_name:"TDUp",_hx_index:2,__enum__:"bh.multianim.TransitionDirection",toString:$estr}
+	,TDDown: {_hx_name:"TDDown",_hx_index:3,__enum__:"bh.multianim.TransitionDirection",toString:$estr}
+};
+bh_multianim_TransitionDirection.__constructs__ = [bh_multianim_TransitionDirection.TDLeft,bh_multianim_TransitionDirection.TDRight,bh_multianim_TransitionDirection.TDUp,bh_multianim_TransitionDirection.TDDown];
+bh_multianim_TransitionDirection.__empty_constructs__ = [bh_multianim_TransitionDirection.TDLeft,bh_multianim_TransitionDirection.TDRight,bh_multianim_TransitionDirection.TDUp,bh_multianim_TransitionDirection.TDDown];
 var bh_multianim_ParsedPaths = $hxEnums["bh.multianim.ParsedPaths"] = { __ename__:true,__constructs__:null
 	,LineTo: ($_=function(end,mode) { return {_hx_index:0,end:end,mode:mode,__enum__:"bh.multianim.ParsedPaths",toString:$estr}; },$_._hx_name="LineTo",$_.__params__ = ["end","mode"],$_)
 	,Forward: ($_=function(distance) { return {_hx_index:1,distance:distance,__enum__:"bh.multianim.ParsedPaths",toString:$estr}; },$_._hx_name="Forward",$_.__params__ = ["distance"],$_)
@@ -36348,6 +36784,7 @@ bh_ui_screens_ScreenManager.prototype = {
 		if(built == null) {
 			throw haxe_Exception.thrown("failed to load multianim " + resource.entry.name);
 		}
+		built.tweenManager = this.tweens;
 		this.builders.set(resource,built);
 		return built;
 	}
@@ -36374,7 +36811,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 260, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+			haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 262, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 			this.loader.clearCache();
 			this.builders = oldBuilders;
 			if(throwOnError) {
@@ -36415,7 +36852,7 @@ bh_ui_screens_ScreenManager.prototype = {
 				var this1 = this.failedScreens;
 				var v = e.toString();
 				this1.h[name] = v;
-				haxe_Log.trace("Failed to reload screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 318, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
+				haxe_Log.trace("Failed to reload screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 320, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 				return { success : false, error : e.toString(), file : null, line : null, col : null};
 			}
 			reloadedScreenNames.push(name);
@@ -36439,7 +36876,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			var this1 = this.failedScreens;
 			var v = e.toString();
 			this1.h[name] = v;
-			haxe_Log.trace("Failed to load screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 360, className : "bh.ui.screens.ScreenManager", methodName : "addScreen"});
+			haxe_Log.trace("Failed to load screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 362, className : "bh.ui.screens.ScreenManager", methodName : "addScreen"});
 		}
 		return screen;
 	}
@@ -109687,6 +110124,248 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 	}
 	,__class__: screens_animation_StateAnimDemoScreen
 });
+var screens_animation_TransitionsDemoScreen = function(screenManager,layers) {
+	this.flipYState = false;
+	this.slideState = true;
+	this.fadeState = true;
+	this.flipState = false;
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.animation.TransitionsDemoScreen"] = screens_animation_TransitionsDemoScreen;
+screens_animation_TransitionsDemoScreen.__name__ = "screens.animation.TransitionsDemoScreen";
+screens_animation_TransitionsDemoScreen.__super__ = DemoScreenBase;
+screens_animation_TransitionsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Transitions","Animate parameter changes with transition {} blocks — crossfade, flip, fade, slide");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/transitions.manim",false);
+		this.buttonsBuilder = this.screenManager.buildFromResourceName("buttons.manim",false);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["status"] = "normal";
+		this.crossfadeResult = tmp.buildWithParameters("crossfadeBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["status"] = "normal";
+		this.instantResult = tmp.buildWithParameters("instantBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["checked"] = false;
+		this.flipResult = tmp.buildWithParameters("flipBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["show"] = true;
+		this.fadeResult = tmp.buildWithParameters("fadeBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["show"] = true;
+		this.slideLeftResult = tmp.buildWithParameters("slideLeftBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["show"] = true;
+		this.slideRightResult = tmp.buildWithParameters("slideRightBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["show"] = true;
+		this.slideUpResult = tmp.buildWithParameters("slideUpBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["show"] = true;
+		this.slideDownResult = tmp.buildWithParameters("slideDownBox",_g,null,null,true);
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["checked"] = false;
+		this.flipYResult = tmp.buildWithParameters("flipYBox",_g,null,null,true);
+		var generatedByMacroBuildWithParametersload2712Builder = function() {
+			var btnSlide;
+			var btnPressed;
+			var btnNormal;
+			var btnHover;
+			var btnFlipY;
+			var btnFlip;
+			var btnFade;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			_g.h["slideUp"] = bh_multianim_PlaceholderValues.PVObject(_gthis.slideUpResult.object);
+			_g.h["slideRight"] = bh_multianim_PlaceholderValues.PVObject(_gthis.slideRightResult.object);
+			_g.h["slideLeft"] = bh_multianim_PlaceholderValues.PVObject(_gthis.slideLeftResult.object);
+			_g.h["slideDown"] = bh_multianim_PlaceholderValues.PVObject(_gthis.slideDownResult.object);
+			_g.h["instantBox"] = bh_multianim_PlaceholderValues.PVObject(_gthis.instantResult.object);
+			_g.h["flipYBox"] = bh_multianim_PlaceholderValues.PVObject(_gthis.flipYResult.object);
+			_g.h["flipBox"] = bh_multianim_PlaceholderValues.PVObject(_gthis.flipResult.object);
+			_g.h["fadeBox"] = bh_multianim_PlaceholderValues.PVObject(_gthis.fadeResult.object);
+			_g.h["crossfadeBox"] = bh_multianim_PlaceholderValues.PVObject(_gthis.crossfadeResult.object);
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Toggle");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnSlide = _el;
+				return _el.getObject();
+			});
+			_g.h["btnSlide"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Pressed");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnPressed = _el;
+				return _el.getObject();
+			});
+			_g.h["btnPressed"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Normal");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnNormal = _el;
+				return _el.getObject();
+			});
+			_g.h["btnNormal"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Hover");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnHover = _el;
+				return _el.getObject();
+			});
+			_g.h["btnHover"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Toggle");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnFlipY = _el;
+				return _el.getObject();
+			});
+			_g.h["btnFlipY"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Toggle");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnFlip = _el;
+				return _el.getObject();
+			});
+			_g.h["btnFlip"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Toggle");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				btnFade = _el;
+				return _el.getObject();
+			});
+			_g.h["btnFade"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("transitionsDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { slideUp : _gthis.slideUpResult.object, slideRight : _gthis.slideRightResult.object, slideLeft : _gthis.slideLeftResult.object, slideDown : _gthis.slideDownResult.object, instantBox : _gthis.instantResult.object, flipYBox : _gthis.flipYResult.object, flipBox : _gthis.flipResult.object, fadeBox : _gthis.fadeResult.object, crossfadeBox : _gthis.crossfadeResult.object, btnSlide : btnSlide, btnPressed : btnPressed, btnNormal : btnNormal, btnHover : btnHover, btnFlipY : btnFlipY, btnFlip : btnFlip, btnFade : btnFade, builderResults : builderResults1};
+			if(retVal.btnSlide == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnSlide" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnPressed == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnPressed" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnNormal == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnNormal" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnHover == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnHover" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnFlipY == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnFlipY" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnFlip == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnFlip" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.btnFade == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "btnFade" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload2712Builder();
+		this.demoResult = ui.builderResults;
+		this.btnNormal = ui.btnNormal;
+		this.btnHover = ui.btnHover;
+		this.btnPressed = ui.btnPressed;
+		this.btnFlip = ui.btnFlip;
+		this.btnFade = ui.btnFade;
+		this.btnSlide = ui.btnSlide;
+		this.btnFlipY = ui.btnFlipY;
+		this.addBuilderResult(this.demoResult);
+	}
+	,setStatus: function(status) {
+		if(this.crossfadeResult != null) {
+			this.crossfadeResult.setParameter("status",status);
+		}
+		if(this.instantResult != null) {
+			this.instantResult.setParameter("status",status);
+		}
+		this.updateStatusText("Status -> " + status);
+	}
+	,updateStatusText: function(msg) {
+		if(this.demoResult != null) {
+			var updatable = this.demoResult.getUpdatable("statusText");
+			if(updatable != null) {
+				updatable.updateText(msg);
+			}
+		}
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 0) {
+			if(source == this.btnNormal) {
+				this.setStatus("normal");
+			} else if(source == this.btnHover) {
+				this.setStatus("hover");
+			} else if(source == this.btnPressed) {
+				this.setStatus("pressed");
+			} else if(source == this.btnFlip) {
+				this.flipState = !this.flipState;
+				if(this.flipResult != null) {
+					this.flipResult.setParameter("checked",this.flipState);
+				}
+				this.updateStatusText("FlipX checked -> " + Std.string(this.flipState));
+			} else if(source == this.btnFade) {
+				this.fadeState = !this.fadeState;
+				if(this.fadeResult != null) {
+					this.fadeResult.setParameter("show",this.fadeState);
+				}
+				this.updateStatusText("Fade show -> " + Std.string(this.fadeState));
+			} else if(source == this.btnSlide) {
+				this.slideState = !this.slideState;
+				if(this.slideLeftResult != null) {
+					this.slideLeftResult.setParameter("show",this.slideState);
+				}
+				if(this.slideRightResult != null) {
+					this.slideRightResult.setParameter("show",this.slideState);
+				}
+				if(this.slideUpResult != null) {
+					this.slideUpResult.setParameter("show",this.slideState);
+				}
+				if(this.slideDownResult != null) {
+					this.slideDownResult.setParameter("show",this.slideState);
+				}
+				this.updateStatusText("Slide show -> " + Std.string(this.slideState));
+			} else if(source == this.btnFlipY) {
+				this.flipYState = !this.flipYState;
+				if(this.flipYResult != null) {
+					this.flipYResult.setParameter("checked",this.flipYState);
+				}
+				this.updateStatusText("FlipY checked -> " + Std.string(this.flipYState));
+			}
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		this.demoBuilder = null;
+		this.buttonsBuilder = null;
+		this.demoResult = null;
+		this.crossfadeResult = null;
+		this.instantResult = null;
+		this.flipResult = null;
+		this.fadeResult = null;
+		this.slideLeftResult = null;
+		this.slideRightResult = null;
+		this.slideUpResult = null;
+		this.slideDownResult = null;
+		this.flipYResult = null;
+		this.btnNormal = null;
+		this.btnHover = null;
+		this.btnPressed = null;
+		this.btnFlip = null;
+		this.btnFade = null;
+		this.btnSlide = null;
+		this.btnFlipY = null;
+	}
+	,__class__: screens_animation_TransitionsDemoScreen
+});
 var screens_gamelike_BattleHudDemoScreen = function(screenManager,layers) {
 	this.isDead = false;
 	this.loopTimer = 0;
@@ -116816,7 +117495,7 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards"];
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
 NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];

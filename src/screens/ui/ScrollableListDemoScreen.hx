@@ -4,6 +4,7 @@ import bh.base.MacroUtils;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimScrollableList;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
@@ -11,6 +12,7 @@ import bh.ui.screens.ScreenManager;
 class ScrollableListDemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 	var scrollableList:Null<UIMultiAnimScrollableList>;
+	var disableCheckbox:Null<UIStandardMultiCheckbox>;
 
 	static final LIST_ITEMS:Array<UIElementListItem> = [
 		{name: "Item 1 - Sword"},
@@ -46,10 +48,12 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 		var demoBuilder = screenManager.buildFromResourceName("demos/ui/scrollable-list.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "scrollableListDemo", [], [
-			scrollableList => addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", LIST_ITEMS, 0, 200, 300)
+			scrollableList => addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar", LIST_ITEMS, 0, 200, 300),
+			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
 		scrollableList = ui.scrollableList;
+		disableCheckbox = ui.disableCheckbox;
 		demoResult = ui.builderResults;
 		addBuilderResult(demoResult);
 		updateSelectedText(0);
@@ -64,6 +68,11 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 			case UIDoubleClickItem(index, items):
 				if (source == scrollableList) {
 					updateDoubleClickText(index);
+				}
+			case UIToggle(pressed):
+				if (source == disableCheckbox) {
+					if (scrollableList != null)
+						scrollableList.disabled = pressed;
 				}
 			default:
 		}
@@ -98,5 +107,6 @@ class ScrollableListDemoScreen extends DemoScreenBase {
 		super.onClear();
 		demoResult = null;
 		scrollableList = null;
+		disableCheckbox = null;
 	}
 }

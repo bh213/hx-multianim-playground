@@ -2,6 +2,7 @@ package screens.ui;
 
 import bh.ui.UIElement;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 
@@ -21,6 +22,9 @@ class SlidersDemoScreen extends DemoScreenBase {
 	var sliderStep100:Null<UIStandardMultiAnimSlider>;
 	var sliderStep25:Null<UIStandardMultiAnimSlider>;
 
+	var disableCheckbox:Null<UIStandardMultiCheckbox>;
+	var allSliders:Array<UIStandardMultiAnimSlider> = [];
+
 	override public function load():Void {
 		setupDemo("Sliders", "Sliders: sizes, scales, and min/max/step combinations");
 
@@ -36,6 +40,7 @@ class SlidersDemoScreen extends DemoScreenBase {
 			sliderRange1 => addSlider(stdBuilder, 0),
 			sliderStep100 => addSlider(stdBuilder, 0),
 			sliderStep25 => addSlider(stdBuilder, 0),
+			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
 		demoResult = ui.builderResults;
@@ -48,6 +53,12 @@ class SlidersDemoScreen extends DemoScreenBase {
 		sliderRange1 = ui.sliderRange1;
 		sliderStep100 = ui.sliderStep100;
 		sliderStep25 = ui.sliderStep25;
+		disableCheckbox = ui.disableCheckbox;
+		allSliders = [
+			ui.slider1, ui.slider2, ui.slider3,
+			ui.sliderScale2, ui.sliderScale05,
+			ui.sliderStep1, ui.sliderRange1, ui.sliderStep100, ui.sliderStep25,
+		];
 
 		sliderScale2.getObject().scaleX = 2;
 		sliderScale2.getObject().scaleY = 2;
@@ -81,6 +92,11 @@ class SlidersDemoScreen extends DemoScreenBase {
 				else if (source == sliderRange1) updateValueDisplay("valueRange1", value);
 				else if (source == sliderStep100) updateValueDisplay("valueStep100", value);
 				else if (source == sliderStep25) updateValueDisplay("valueStep25", value);
+			case UIToggle(pressed):
+				if (source == disableCheckbox) {
+					for (s in allSliders)
+						s.disabled = pressed;
+				}
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -107,5 +123,7 @@ class SlidersDemoScreen extends DemoScreenBase {
 		sliderRange1 = null;
 		sliderStep100 = null;
 		sliderStep25 = null;
+		disableCheckbox = null;
+		allSliders = [];
 	}
 }

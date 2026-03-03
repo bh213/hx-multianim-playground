@@ -4,7 +4,9 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimDraggable;
 import bh.ui.UIMultiAnimDraggable.DragEvent;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
+import bh.base.MacroUtils;
 import bh.ui.screens.UIScreen;
 import bh.ui.screens.ScreenManager;
 import h2d.col.Point;
@@ -14,6 +16,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 	var draggables:Array<UIMultiAnimDraggable> = [];
+	var disableCheckbox:Null<UIStandardMultiCheckbox>;
 
 	// Base position offset of the programmable
 	static inline var BX = 50;
@@ -23,7 +26,13 @@ class DraggableDemoScreen extends DemoScreenBase {
 		setupDemo("Draggable", "All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/draggable.manim", false);
-		demoResult = demoBuilder.buildWithParameters("draggableDemo", []);
+
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "draggableDemo", [], [
+			disableCheckbox => addCheckbox(stdBuilder, false),
+		]);
+
+		demoResult = ui.builderResults;
+		disableCheckbox = ui.disableCheckbox;
 		addBuilderResult(demoResult);
 
 		setupDropZoneDrag();
@@ -167,6 +176,14 @@ class DraggableDemoScreen extends DemoScreenBase {
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
+		switch event {
+			case UIToggle(pressed):
+				if (source == disableCheckbox) {
+					for (drag in draggables)
+						drag.enabled = !pressed;
+				}
+			default:
+		}
 		super.onScreenEvent(event, source);
 	}
 
@@ -175,5 +192,6 @@ class DraggableDemoScreen extends DemoScreenBase {
 		demoBuilder = null;
 		demoResult = null;
 		draggables = [];
+		disableCheckbox = null;
 	}
 }

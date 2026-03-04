@@ -37,7 +37,7 @@ var bc=Object.defineProperty;var vc=(e,n,t)=>n in e?bc(e,n,{enumerable:!0,config
 `+r[o].replace(" at new "," at ");return e.displayName&&d.includes("<anonymous>")&&(d=d.replace("<anonymous>",e.displayName)),d}while(1<=o&&0<=l);break}}}finally{Tr=!1,Error.prepareStackTrace=t}return(e=e?e.displayName||e.name:"")?Ft(e):""}function qc(e){switch(e.tag){case 5:return Ft(e.type);case 16:return Ft("Lazy");case 13:return Ft("Suspense");case 19:return Ft("SuspenseList");case 0:case 2:case 15:return e=Rr(e.type,!1),e;case 11:return e=Rr(e.type.render,!1),e;case 1:return e=Rr(e.type,!0),e;default:return""}}function oi(e){if(e==null)return null;if(typeof e=="function")return e.displayName||e.name||null;if(typeof e=="string")return e;switch(e){case Wn:return"Fragment";case Hn:return"Portal";case ai:return"Profiler";case ro:return"StrictMode";case ri:return"Suspense";case ii:return"SuspenseList"}if(typeof e=="object")switch(e.$$typeof){case bs:return(e.displayName||"Context")+".Consumer";case xs:return(e._context.displayName||"Context")+".Provider";case io:var n=e.render;return e=e.displayName,e||(e=n.displayName||n.name||"",e=e!==""?"ForwardRef("+e+")":"ForwardRef"),e;case oo:return n=e.displayName||null,n!==null?n:oi(e.type)||"Memo";case rn:n=e._payload,e=e._init;try{return oi(e(n))}catch{}}return null}function Yc(e){var n=e.type;switch(e.tag){case 24:return"Cache";case 9:return(n.displayName||"Context")+".Consumer";case 10:return(n._context.displayName||"Context")+".Provider";case 18:return"DehydratedFragment";case 11:return e=n.render,e=e.displayName||e.name||"",n.displayName||(e!==""?"ForwardRef("+e+")":"ForwardRef");case 7:return"Fragment";case 5:return n;case 4:return"Portal";case 3:return"Root";case 6:return"Text";case 16:return oi(n);case 8:return n===ro?"StrictMode":"Mode";case 22:return"Offscreen";case 12:return"Profiler";case 21:return"Scope";case 13:return"Suspense";case 19:return"SuspenseList";case 25:return"TracingMarker";case 1:case 0:case 17:case 2:case 14:case 15:if(typeof n=="function")return n.displayName||n.name||null;if(typeof n=="string")return n}return null}function vn(e){switch(typeof e){case"boolean":case"number":case"string":case"undefined":return e;case"object":return e;default:return""}}function ys(e){var n=e.type;return(e=e.nodeName)&&e.toLowerCase()==="input"&&(n==="checkbox"||n==="radio")}function Xc(e){var n=ys(e)?"checked":"value",t=Object.getOwnPropertyDescriptor(e.constructor.prototype,n),a=""+e[n];if(!e.hasOwnProperty(n)&&typeof t<"u"&&typeof t.get=="function"&&typeof t.set=="function"){var r=t.get,i=t.set;return Object.defineProperty(e,n,{configurable:!0,get:function(){return r.call(this)},set:function(o){a=""+o,i.call(this,o)}}),Object.defineProperty(e,n,{enumerable:t.enumerable}),{getValue:function(){return a},setValue:function(o){a=""+o},stopTracking:function(){e._valueTracker=null,delete e[n]}}}}function ca(e){e._valueTracker||(e._valueTracker=Xc(e))}function _s(e){if(!e)return!1;var n=e._valueTracker;if(!n)return!0;var t=n.getValue(),a="";return e&&(a=ys(e)?e.checked?"true":"false":e.value),e=a,e!==t?(n.setValue(e),!0):!1}function Na(e){if(e=e||(typeof document<"u"?document:void 0),typeof e>"u")return null;try{return e.activeElement||e.body}catch{return e.body}}function li(e,n){var t=n.checked;return U({},n,{defaultChecked:void 0,defaultValue:void 0,value:void 0,checked:t??e._wrapperState.initialChecked})}function Jo(e,n){var t=n.defaultValue==null?"":n.defaultValue,a=n.checked!=null?n.checked:n.defaultChecked;t=vn(n.value!=null?n.value:t),e._wrapperState={initialChecked:a,initialValue:t,controlled:n.type==="checkbox"||n.type==="radio"?n.checked!=null:n.value!=null}}function ws(e,n){n=n.checked,n!=null&&ao(e,"checked",n,!1)}function si(e,n){ws(e,n);var t=vn(n.value),a=n.type;if(t!=null)a==="number"?(t===0&&e.value===""||e.value!=t)&&(e.value=""+t):e.value!==""+t&&(e.value=""+t);else if(a==="submit"||a==="reset"){e.removeAttribute("value");return}n.hasOwnProperty("value")?ci(e,n.type,t):n.hasOwnProperty("defaultValue")&&ci(e,n.type,vn(n.defaultValue)),n.checked==null&&n.defaultChecked!=null&&(e.defaultChecked=!!n.defaultChecked)}function el(e,n,t){if(n.hasOwnProperty("value")||n.hasOwnProperty("defaultValue")){var a=n.type;if(!(a!=="submit"&&a!=="reset"||n.value!==void 0&&n.value!==null))return;n=""+e._wrapperState.initialValue,t||n===e.value||(e.value=n),e.defaultValue=n}t=e.name,t!==""&&(e.name=""),e.defaultChecked=!!e._wrapperState.initialChecked,t!==""&&(e.name=t)}function ci(e,n,t){(n!=="number"||Na(e.ownerDocument)!==e)&&(t==null?e.defaultValue=""+e._wrapperState.initialValue:e.defaultValue!==""+t&&(e.defaultValue=""+t))}var Ct=Array.isArray;function Jn(e,n,t,a){if(e=e.options,n){n={};for(var r=0;r<t.length;r++)n["$"+t[r]]=!0;for(t=0;t<e.length;t++)r=n.hasOwnProperty("$"+e[t].value),e[t].selected!==r&&(e[t].selected=r),r&&a&&(e[t].defaultSelected=!0)}else{for(t=""+vn(t),n=null,r=0;r<e.length;r++){if(e[r].value===t){e[r].selected=!0,a&&(e[r].defaultSelected=!0);return}n!==null||e[r].disabled||(n=e[r])}n!==null&&(n.selected=!0)}}function di(e,n){if(n.dangerouslySetInnerHTML!=null)throw Error(k(91));return U({},n,{value:void 0,defaultValue:void 0,children:""+e._wrapperState.initialValue})}function nl(e,n){var t=n.value;if(t==null){if(t=n.children,n=n.defaultValue,t!=null){if(n!=null)throw Error(k(92));if(Ct(t)){if(1<t.length)throw Error(k(93));t=t[0]}n=t}n==null&&(n=""),t=n}e._wrapperState={initialValue:vn(t)}}function Ss(e,n){var t=vn(n.value),a=vn(n.defaultValue);t!=null&&(t=""+t,t!==e.value&&(e.value=t),n.defaultValue==null&&e.defaultValue!==t&&(e.defaultValue=t)),a!=null&&(e.defaultValue=""+a)}function tl(e){var n=e.textContent;n===e._wrapperState.initialValue&&n!==""&&n!==null&&(e.value=n)}function ks(e){switch(e){case"svg":return"http://www.w3.org/2000/svg";case"math":return"http://www.w3.org/1998/Math/MathML";default:return"http://www.w3.org/1999/xhtml"}}function ui(e,n){return e==null||e==="http://www.w3.org/1999/xhtml"?ks(n):e==="http://www.w3.org/2000/svg"&&n==="foreignObject"?"http://www.w3.org/1999/xhtml":e}var da,Fs=function(e){return typeof MSApp<"u"&&MSApp.execUnsafeLocalFunction?function(n,t,a,r){MSApp.execUnsafeLocalFunction(function(){return e(n,t,a,r)})}:e}(function(e,n){if(e.namespaceURI!=="http://www.w3.org/2000/svg"||"innerHTML"in e)e.innerHTML=n;else{for(da=da||document.createElement("div"),da.innerHTML="<svg>"+n.valueOf().toString()+"</svg>",n=da.firstChild;e.firstChild;)e.removeChild(e.firstChild);for(;n.firstChild;)e.appendChild(n.firstChild)}});function Lt(e,n){if(n){var t=e.firstChild;if(t&&t===e.lastChild&&t.nodeType===3){t.nodeValue=n;return}}e.textContent=n}var Tt={animationIterationCount:!0,aspectRatio:!0,borderImageOutset:!0,borderImageSlice:!0,borderImageWidth:!0,boxFlex:!0,boxFlexGroup:!0,boxOrdinalGroup:!0,columnCount:!0,columns:!0,flex:!0,flexGrow:!0,flexPositive:!0,flexShrink:!0,flexNegative:!0,flexOrder:!0,gridArea:!0,gridRow:!0,gridRowEnd:!0,gridRowSpan:!0,gridRowStart:!0,gridColumn:!0,gridColumnEnd:!0,gridColumnSpan:!0,gridColumnStart:!0,fontWeight:!0,lineClamp:!0,lineHeight:!0,opacity:!0,order:!0,orphans:!0,tabSize:!0,widows:!0,zIndex:!0,zoom:!0,fillOpacity:!0,floodOpacity:!0,stopOpacity:!0,strokeDasharray:!0,strokeDashoffset:!0,strokeMiterlimit:!0,strokeOpacity:!0,strokeWidth:!0},Kc=["Webkit","ms","Moz","O"];Object.keys(Tt).forEach(function(e){Kc.forEach(function(n){n=n+e.charAt(0).toUpperCase()+e.substring(1),Tt[n]=Tt[e]})});function Cs(e,n,t){return n==null||typeof n=="boolean"||n===""?"":t||typeof n!="number"||n===0||Tt.hasOwnProperty(e)&&Tt[e]?(""+n).trim():n+"px"}function $s(e,n){e=e.style;for(var t in n)if(n.hasOwnProperty(t)){var a=t.indexOf("--")===0,r=Cs(t,n[t],a);t==="float"&&(t="cssFloat"),a?e.setProperty(t,r):e[t]=r}}var Zc=U({menuitem:!0},{area:!0,base:!0,br:!0,col:!0,embed:!0,hr:!0,img:!0,input:!0,keygen:!0,link:!0,meta:!0,param:!0,source:!0,track:!0,wbr:!0});function pi(e,n){if(n){if(Zc[e]&&(n.children!=null||n.dangerouslySetInnerHTML!=null))throw Error(k(137,e));if(n.dangerouslySetInnerHTML!=null){if(n.children!=null)throw Error(k(60));if(typeof n.dangerouslySetInnerHTML!="object"||!("__html"in n.dangerouslySetInnerHTML))throw Error(k(61))}if(n.style!=null&&typeof n.style!="object")throw Error(k(62))}}function fi(e,n){if(e.indexOf("-")===-1)return typeof n.is=="string";switch(e){case"annotation-xml":case"color-profile":case"font-face":case"font-face-src":case"font-face-uri":case"font-face-format":case"font-face-name":case"missing-glyph":return!1;default:return!0}}var mi=null;function lo(e){return e=e.target||e.srcElement||window,e.correspondingUseElement&&(e=e.correspondingUseElement),e.nodeType===3?e.parentNode:e}var hi=null,et=null,nt=null;function al(e){if(e=ra(e)){if(typeof hi!="function")throw Error(k(280));var n=e.stateNode;n&&(n=pr(n),hi(e.stateNode,e.type,n))}}function Ps(e){et?nt?nt.push(e):nt=[e]:et=e}function Ts(){if(et){var e=et,n=nt;if(nt=et=null,al(e),n)for(e=0;e<n.length;e++)al(n[e])}}function Rs(e,n){return e(n)}function Es(){}var Er=!1;function As(e,n,t){if(Er)return e(n,t);Er=!0;try{return Rs(e,n,t)}finally{Er=!1,(et!==null||nt!==null)&&(Es(),Ts())}}function Mt(e,n){var t=e.stateNode;if(t===null)return null;var a=pr(t);if(a===null)return null;t=a[n];e:switch(n){case"onClick":case"onClickCapture":case"onDoubleClick":case"onDoubleClickCapture":case"onMouseDown":case"onMouseDownCapture":case"onMouseMove":case"onMouseMoveCapture":case"onMouseUp":case"onMouseUpCapture":case"onMouseEnter":(a=!a.disabled)||(e=e.type,a=!(e==="button"||e==="input"||e==="select"||e==="textarea")),e=!a;break e;default:e=!1}if(e)return null;if(t&&typeof t!="function")throw Error(k(231,n,typeof t));return t}var gi=!1;if(Xe)try{var bt={};Object.defineProperty(bt,"passive",{get:function(){gi=!0}}),window.addEventListener("test",bt,bt),window.removeEventListener("test",bt,bt)}catch{gi=!1}function Jc(e,n,t,a,r,i,o,l,d){var f=Array.prototype.slice.call(arguments,3);try{n.apply(t,f)}catch(b){this.onError(b)}}var Rt=!1,Oa=null,La=!1,xi=null,ed={onError:function(e){Rt=!0,Oa=e}};function nd(e,n,t,a,r,i,o,l,d){Rt=!1,Oa=null,Jc.apply(ed,arguments)}function td(e,n,t,a,r,i,o,l,d){if(nd.apply(this,arguments),Rt){if(Rt){var f=Oa;Rt=!1,Oa=null}else throw Error(k(198));La||(La=!0,xi=f)}}function Nn(e){var n=e,t=e;if(e.alternate)for(;n.return;)n=n.return;else{e=n;do n=e,n.flags&4098&&(t=n.return),e=n.return;while(e)}return n.tag===3?t:null}function Bs(e){if(e.tag===13){var n=e.memoizedState;if(n===null&&(e=e.alternate,e!==null&&(n=e.memoizedState)),n!==null)return n.dehydrated}return null}function rl(e){if(Nn(e)!==e)throw Error(k(188))}function ad(e){var n=e.alternate;if(!n){if(n=Nn(e),n===null)throw Error(k(188));return n!==e?null:e}for(var t=e,a=n;;){var r=t.return;if(r===null)break;var i=r.alternate;if(i===null){if(a=r.return,a!==null){t=a;continue}break}if(r.child===i.child){for(i=r.child;i;){if(i===t)return rl(r),e;if(i===a)return rl(r),n;i=i.sibling}throw Error(k(188))}if(t.return!==a.return)t=r,a=i;else{for(var o=!1,l=r.child;l;){if(l===t){o=!0,t=r,a=i;break}if(l===a){o=!0,a=r,t=i;break}l=l.sibling}if(!o){for(l=i.child;l;){if(l===t){o=!0,t=i,a=r;break}if(l===a){o=!0,a=i,t=r;break}l=l.sibling}if(!o)throw Error(k(189))}}if(t.alternate!==a)throw Error(k(190))}if(t.tag!==3)throw Error(k(188));return t.stateNode.current===t?e:n}function Ds(e){return e=ad(e),e!==null?Is(e):null}function Is(e){if(e.tag===5||e.tag===6)return e;for(e=e.child;e!==null;){var n=Is(e);if(n!==null)return n;e=e.sibling}return null}var zs=_e.unstable_scheduleCallback,il=_e.unstable_cancelCallback,rd=_e.unstable_shouldYield,id=_e.unstable_requestPaint,Q=_e.unstable_now,od=_e.unstable_getCurrentPriorityLevel,so=_e.unstable_ImmediatePriority,Ns=_e.unstable_UserBlockingPriority,Ma=_e.unstable_NormalPriority,ld=_e.unstable_LowPriority,Os=_e.unstable_IdlePriority,sr=null,He=null;function sd(e){if(He&&typeof He.onCommitFiberRoot=="function")try{He.onCommitFiberRoot(sr,e,void 0,(e.current.flags&128)===128)}catch{}}var Ie=Math.clz32?Math.clz32:ud,cd=Math.log,dd=Math.LN2;function ud(e){return e>>>=0,e===0?32:31-(cd(e)/dd|0)|0}var ua=64,pa=4194304;function $t(e){switch(e&-e){case 1:return 1;case 2:return 2;case 4:return 4;case 8:return 8;case 16:return 16;case 32:return 32;case 64:case 128:case 256:case 512:case 1024:case 2048:case 4096:case 8192:case 16384:case 32768:case 65536:case 131072:case 262144:case 524288:case 1048576:case 2097152:return e&4194240;case 4194304:case 8388608:case 16777216:case 33554432:case 67108864:return e&130023424;case 134217728:return 134217728;case 268435456:return 268435456;case 536870912:return 536870912;case 1073741824:return 1073741824;default:return e}}function Ha(e,n){var t=e.pendingLanes;if(t===0)return 0;var a=0,r=e.suspendedLanes,i=e.pingedLanes,o=t&268435455;if(o!==0){var l=o&~r;l!==0?a=$t(l):(i&=o,i!==0&&(a=$t(i)))}else o=t&~r,o!==0?a=$t(o):i!==0&&(a=$t(i));if(a===0)return 0;if(n!==0&&n!==a&&!(n&r)&&(r=a&-a,i=n&-n,r>=i||r===16&&(i&4194240)!==0))return n;if(a&4&&(a|=t&16),n=e.entangledLanes,n!==0)for(e=e.entanglements,n&=a;0<n;)t=31-Ie(n),r=1<<t,a|=e[t],n&=~r;return a}function pd(e,n){switch(e){case 1:case 2:case 4:return n+250;case 8:case 16:case 32:case 64:case 128:case 256:case 512:case 1024:case 2048:case 4096:case 8192:case 16384:case 32768:case 65536:case 131072:case 262144:case 524288:case 1048576:case 2097152:return n+5e3;case 4194304:case 8388608:case 16777216:case 33554432:case 67108864:return-1;case 134217728:case 268435456:case 536870912:case 1073741824:return-1;default:return-1}}function fd(e,n){for(var t=e.suspendedLanes,a=e.pingedLanes,r=e.expirationTimes,i=e.pendingLanes;0<i;){var o=31-Ie(i),l=1<<o,d=r[o];d===-1?(!(l&t)||l&a)&&(r[o]=pd(l,n)):d<=n&&(e.expiredLanes|=l),i&=~l}}function bi(e){return e=e.pendingLanes&-1073741825,e!==0?e:e&1073741824?1073741824:0}function Ls(){var e=ua;return ua<<=1,!(ua&4194240)&&(ua=64),e}function Ar(e){for(var n=[],t=0;31>t;t++)n.push(e);return n}function ta(e,n,t){e.pendingLanes|=n,n!==536870912&&(e.suspendedLanes=0,e.pingedLanes=0),e=e.eventTimes,n=31-Ie(n),e[n]=t}function md(e,n){var t=e.pendingLanes&~n;e.pendingLanes=n,e.suspendedLanes=0,e.pingedLanes=0,e.expiredLanes&=n,e.mutableReadLanes&=n,e.entangledLanes&=n,n=e.entanglements;var a=e.eventTimes;for(e=e.expirationTimes;0<t;){var r=31-Ie(t),i=1<<r;n[r]=0,a[r]=-1,e[r]=-1,t&=~i}}function co(e,n){var t=e.entangledLanes|=n;for(e=e.entanglements;t;){var a=31-Ie(t),r=1<<a;r&n|e[a]&n&&(e[a]|=n),t&=~r}}var N=0;function Ms(e){return e&=-e,1<e?4<e?e&268435455?16:536870912:4:1}var Hs,uo,Ws,Vs,js,vi=!1,fa=[],un=null,pn=null,fn=null,Ht=new Map,Wt=new Map,ln=[],hd="mousedown mouseup touchcancel touchend touchstart auxclick dblclick pointercancel pointerdown pointerup dragend dragstart drop compositionend compositionstart keydown keypress keyup input textInput copy cut paste click change contextmenu reset submit".split(" ");function ol(e,n){switch(e){case"focusin":case"focusout":un=null;break;case"dragenter":case"dragleave":pn=null;break;case"mouseover":case"mouseout":fn=null;break;case"pointerover":case"pointerout":Ht.delete(n.pointerId);break;case"gotpointercapture":case"lostpointercapture":Wt.delete(n.pointerId)}}function vt(e,n,t,a,r,i){return e===null||e.nativeEvent!==i?(e={blockedOn:n,domEventName:t,eventSystemFlags:a,nativeEvent:i,targetContainers:[r]},n!==null&&(n=ra(n),n!==null&&uo(n)),e):(e.eventSystemFlags|=a,n=e.targetContainers,r!==null&&n.indexOf(r)===-1&&n.push(r),e)}function gd(e,n,t,a,r){switch(n){case"focusin":return un=vt(un,e,n,t,a,r),!0;case"dragenter":return pn=vt(pn,e,n,t,a,r),!0;case"mouseover":return fn=vt(fn,e,n,t,a,r),!0;case"pointerover":var i=r.pointerId;return Ht.set(i,vt(Ht.get(i)||null,e,n,t,a,r)),!0;case"gotpointercapture":return i=r.pointerId,Wt.set(i,vt(Wt.get(i)||null,e,n,t,a,r)),!0}return!1}function Us(e){var n=Cn(e.target);if(n!==null){var t=Nn(n);if(t!==null){if(n=t.tag,n===13){if(n=Bs(t),n!==null){e.blockedOn=n,js(e.priority,function(){Ws(t)});return}}else if(n===3&&t.stateNode.current.memoizedState.isDehydrated){e.blockedOn=t.tag===3?t.stateNode.containerInfo:null;return}}}e.blockedOn=null}function $a(e){if(e.blockedOn!==null)return!1;for(var n=e.targetContainers;0<n.length;){var t=yi(e.domEventName,e.eventSystemFlags,n[0],e.nativeEvent);if(t===null){t=e.nativeEvent;var a=new t.constructor(t.type,t);mi=a,t.target.dispatchEvent(a),mi=null}else return n=ra(t),n!==null&&uo(n),e.blockedOn=t,!1;n.shift()}return!0}function ll(e,n,t){$a(e)&&t.delete(n)}function xd(){vi=!1,un!==null&&$a(un)&&(un=null),pn!==null&&$a(pn)&&(pn=null),fn!==null&&$a(fn)&&(fn=null),Ht.forEach(ll),Wt.forEach(ll)}function yt(e,n){e.blockedOn===n&&(e.blockedOn=null,vi||(vi=!0,_e.unstable_scheduleCallback(_e.unstable_NormalPriority,xd)))}function Vt(e){function n(r){return yt(r,e)}if(0<fa.length){yt(fa[0],e);for(var t=1;t<fa.length;t++){var a=fa[t];a.blockedOn===e&&(a.blockedOn=null)}}for(un!==null&&yt(un,e),pn!==null&&yt(pn,e),fn!==null&&yt(fn,e),Ht.forEach(n),Wt.forEach(n),t=0;t<ln.length;t++)a=ln[t],a.blockedOn===e&&(a.blockedOn=null);for(;0<ln.length&&(t=ln[0],t.blockedOn===null);)Us(t),t.blockedOn===null&&ln.shift()}var tt=en.ReactCurrentBatchConfig,Wa=!0;function bd(e,n,t,a){var r=N,i=tt.transition;tt.transition=null;try{N=1,po(e,n,t,a)}finally{N=r,tt.transition=i}}function vd(e,n,t,a){var r=N,i=tt.transition;tt.transition=null;try{N=4,po(e,n,t,a)}finally{N=r,tt.transition=i}}function po(e,n,t,a){if(Wa){var r=yi(e,n,t,a);if(r===null)Wr(e,n,a,Va,t),ol(e,a);else if(gd(r,e,n,t,a))a.stopPropagation();else if(ol(e,a),n&4&&-1<hd.indexOf(e)){for(;r!==null;){var i=ra(r);if(i!==null&&Hs(i),i=yi(e,n,t,a),i===null&&Wr(e,n,a,Va,t),i===r)break;r=i}r!==null&&a.stopPropagation()}else Wr(e,n,a,null,t)}}var Va=null;function yi(e,n,t,a){if(Va=null,e=lo(a),e=Cn(e),e!==null)if(n=Nn(e),n===null)e=null;else if(t=n.tag,t===13){if(e=Bs(n),e!==null)return e;e=null}else if(t===3){if(n.stateNode.current.memoizedState.isDehydrated)return n.tag===3?n.stateNode.containerInfo:null;e=null}else n!==e&&(e=null);return Va=e,null}function Gs(e){switch(e){case"cancel":case"click":case"close":case"contextmenu":case"copy":case"cut":case"auxclick":case"dblclick":case"dragend":case"dragstart":case"drop":case"focusin":case"focusout":case"input":case"invalid":case"keydown":case"keypress":case"keyup":case"mousedown":case"mouseup":case"paste":case"pause":case"play":case"pointercancel":case"pointerdown":case"pointerup":case"ratechange":case"reset":case"resize":case"seeked":case"submit":case"touchcancel":case"touchend":case"touchstart":case"volumechange":case"change":case"selectionchange":case"textInput":case"compositionstart":case"compositionend":case"compositionupdate":case"beforeblur":case"afterblur":case"beforeinput":case"blur":case"fullscreenchange":case"focus":case"hashchange":case"popstate":case"select":case"selectstart":return 1;case"drag":case"dragenter":case"dragexit":case"dragleave":case"dragover":case"mousemove":case"mouseout":case"mouseover":case"pointermove":case"pointerout":case"pointerover":case"scroll":case"toggle":case"touchmove":case"wheel":case"mouseenter":case"mouseleave":case"pointerenter":case"pointerleave":return 4;case"message":switch(od()){case so:return 1;case Ns:return 4;case Ma:case ld:return 16;case Os:return 536870912;default:return 16}default:return 16}}var cn=null,fo=null,Pa=null;function Qs(){if(Pa)return Pa;var e,n=fo,t=n.length,a,r="value"in cn?cn.value:cn.textContent,i=r.length;for(e=0;e<t&&n[e]===r[e];e++);var o=t-e;for(a=1;a<=o&&n[t-a]===r[i-a];a++);return Pa=r.slice(e,1<a?1-a:void 0)}function Ta(e){var n=e.keyCode;return"charCode"in e?(e=e.charCode,e===0&&n===13&&(e=13)):e=n,e===10&&(e=13),32<=e||e===13?e:0}function ma(){return!0}function sl(){return!1}function Se(e){function n(t,a,r,i,o){this._reactName=t,this._targetInst=r,this.type=a,this.nativeEvent=i,this.target=o,this.currentTarget=null;for(var l in e)e.hasOwnProperty(l)&&(t=e[l],this[l]=t?t(i):i[l]);return this.isDefaultPrevented=(i.defaultPrevented!=null?i.defaultPrevented:i.returnValue===!1)?ma:sl,this.isPropagationStopped=sl,this}return U(n.prototype,{preventDefault:function(){this.defaultPrevented=!0;var t=this.nativeEvent;t&&(t.preventDefault?t.preventDefault():typeof t.returnValue!="unknown"&&(t.returnValue=!1),this.isDefaultPrevented=ma)},stopPropagation:function(){var t=this.nativeEvent;t&&(t.stopPropagation?t.stopPropagation():typeof t.cancelBubble!="unknown"&&(t.cancelBubble=!0),this.isPropagationStopped=ma)},persist:function(){},isPersistent:ma}),n}var ft={eventPhase:0,bubbles:0,cancelable:0,timeStamp:function(e){return e.timeStamp||Date.now()},defaultPrevented:0,isTrusted:0},mo=Se(ft),aa=U({},ft,{view:0,detail:0}),yd=Se(aa),Br,Dr,_t,cr=U({},aa,{screenX:0,screenY:0,clientX:0,clientY:0,pageX:0,pageY:0,ctrlKey:0,shiftKey:0,altKey:0,metaKey:0,getModifierState:ho,button:0,buttons:0,relatedTarget:function(e){return e.relatedTarget===void 0?e.fromElement===e.srcElement?e.toElement:e.fromElement:e.relatedTarget},movementX:function(e){return"movementX"in e?e.movementX:(e!==_t&&(_t&&e.type==="mousemove"?(Br=e.screenX-_t.screenX,Dr=e.screenY-_t.screenY):Dr=Br=0,_t=e),Br)},movementY:function(e){return"movementY"in e?e.movementY:Dr}}),cl=Se(cr),_d=U({},cr,{dataTransfer:0}),wd=Se(_d),Sd=U({},aa,{relatedTarget:0}),Ir=Se(Sd),kd=U({},ft,{animationName:0,elapsedTime:0,pseudoElement:0}),Fd=Se(kd),Cd=U({},ft,{clipboardData:function(e){return"clipboardData"in e?e.clipboardData:window.clipboardData}}),$d=Se(Cd),Pd=U({},ft,{data:0}),dl=Se(Pd),Td={Esc:"Escape",Spacebar:" ",Left:"ArrowLeft",Up:"ArrowUp",Right:"ArrowRight",Down:"ArrowDown",Del:"Delete",Win:"OS",Menu:"ContextMenu",Apps:"ContextMenu",Scroll:"ScrollLock",MozPrintableKey:"Unidentified"},Rd={8:"Backspace",9:"Tab",12:"Clear",13:"Enter",16:"Shift",17:"Control",18:"Alt",19:"Pause",20:"CapsLock",27:"Escape",32:" ",33:"PageUp",34:"PageDown",35:"End",36:"Home",37:"ArrowLeft",38:"ArrowUp",39:"ArrowRight",40:"ArrowDown",45:"Insert",46:"Delete",112:"F1",113:"F2",114:"F3",115:"F4",116:"F5",117:"F6",118:"F7",119:"F8",120:"F9",121:"F10",122:"F11",123:"F12",144:"NumLock",145:"ScrollLock",224:"Meta"},Ed={Alt:"altKey",Control:"ctrlKey",Meta:"metaKey",Shift:"shiftKey"};function Ad(e){var n=this.nativeEvent;return n.getModifierState?n.getModifierState(e):(e=Ed[e])?!!n[e]:!1}function ho(){return Ad}var Bd=U({},aa,{key:function(e){if(e.key){var n=Td[e.key]||e.key;if(n!=="Unidentified")return n}return e.type==="keypress"?(e=Ta(e),e===13?"Enter":String.fromCharCode(e)):e.type==="keydown"||e.type==="keyup"?Rd[e.keyCode]||"Unidentified":""},code:0,location:0,ctrlKey:0,shiftKey:0,altKey:0,metaKey:0,repeat:0,locale:0,getModifierState:ho,charCode:function(e){return e.type==="keypress"?Ta(e):0},keyCode:function(e){return e.type==="keydown"||e.type==="keyup"?e.keyCode:0},which:function(e){return e.type==="keypress"?Ta(e):e.type==="keydown"||e.type==="keyup"?e.keyCode:0}}),Dd=Se(Bd),Id=U({},cr,{pointerId:0,width:0,height:0,pressure:0,tangentialPressure:0,tiltX:0,tiltY:0,twist:0,pointerType:0,isPrimary:0}),ul=Se(Id),zd=U({},aa,{touches:0,targetTouches:0,changedTouches:0,altKey:0,metaKey:0,ctrlKey:0,shiftKey:0,getModifierState:ho}),Nd=Se(zd),Od=U({},ft,{propertyName:0,elapsedTime:0,pseudoElement:0}),Ld=Se(Od),Md=U({},cr,{deltaX:function(e){return"deltaX"in e?e.deltaX:"wheelDeltaX"in e?-e.wheelDeltaX:0},deltaY:function(e){return"deltaY"in e?e.deltaY:"wheelDeltaY"in e?-e.wheelDeltaY:"wheelDelta"in e?-e.wheelDelta:0},deltaZ:0,deltaMode:0}),Hd=Se(Md),Wd=[9,13,27,32],go=Xe&&"CompositionEvent"in window,Et=null;Xe&&"documentMode"in document&&(Et=document.documentMode);var Vd=Xe&&"TextEvent"in window&&!Et,qs=Xe&&(!go||Et&&8<Et&&11>=Et),pl=" ",fl=!1;function Ys(e,n){switch(e){case"keyup":return Wd.indexOf(n.keyCode)!==-1;case"keydown":return n.keyCode!==229;case"keypress":case"mousedown":case"focusout":return!0;default:return!1}}function Xs(e){return e=e.detail,typeof e=="object"&&"data"in e?e.data:null}var Vn=!1;function jd(e,n){switch(e){case"compositionend":return Xs(n);case"keypress":return n.which!==32?null:(fl=!0,pl);case"textInput":return e=n.data,e===pl&&fl?null:e;default:return null}}function Ud(e,n){if(Vn)return e==="compositionend"||!go&&Ys(e,n)?(e=Qs(),Pa=fo=cn=null,Vn=!1,e):null;switch(e){case"paste":return null;case"keypress":if(!(n.ctrlKey||n.altKey||n.metaKey)||n.ctrlKey&&n.altKey){if(n.char&&1<n.char.length)return n.char;if(n.which)return String.fromCharCode(n.which)}return null;case"compositionend":return qs&&n.locale!=="ko"?null:n.data;default:return null}}var Gd={color:!0,date:!0,datetime:!0,"datetime-local":!0,email:!0,month:!0,number:!0,password:!0,range:!0,search:!0,tel:!0,text:!0,time:!0,url:!0,week:!0};function ml(e){var n=e&&e.nodeName&&e.nodeName.toLowerCase();return n==="input"?!!Gd[e.type]:n==="textarea"}function Ks(e,n,t,a){Ps(a),n=ja(n,"onChange"),0<n.length&&(t=new mo("onChange","change",null,t,a),e.push({event:t,listeners:n}))}var At=null,jt=null;function Qd(e){s0(e,0)}function dr(e){var n=Gn(e);if(_s(n))return e}function qd(e,n){if(e==="change")return n}var Zs=!1;if(Xe){var zr;if(Xe){var Nr="oninput"in document;if(!Nr){var hl=document.createElement("div");hl.setAttribute("oninput","return;"),Nr=typeof hl.oninput=="function"}zr=Nr}else zr=!1;Zs=zr&&(!document.documentMode||9<document.documentMode)}function gl(){At&&(At.detachEvent("onpropertychange",Js),jt=At=null)}function Js(e){if(e.propertyName==="value"&&dr(jt)){var n=[];Ks(n,jt,e,lo(e)),As(Qd,n)}}function Yd(e,n,t){e==="focusin"?(gl(),At=n,jt=t,At.attachEvent("onpropertychange",Js)):e==="focusout"&&gl()}function Xd(e){if(e==="selectionchange"||e==="keyup"||e==="keydown")return dr(jt)}function Kd(e,n){if(e==="click")return dr(n)}function Zd(e,n){if(e==="input"||e==="change")return dr(n)}function Jd(e,n){return e===n&&(e!==0||1/e===1/n)||e!==e&&n!==n}var Ne=typeof Object.is=="function"?Object.is:Jd;function Ut(e,n){if(Ne(e,n))return!0;if(typeof e!="object"||e===null||typeof n!="object"||n===null)return!1;var t=Object.keys(e),a=Object.keys(n);if(t.length!==a.length)return!1;for(a=0;a<t.length;a++){var r=t[a];if(!ti.call(n,r)||!Ne(e[r],n[r]))return!1}return!0}function xl(e){for(;e&&e.firstChild;)e=e.firstChild;return e}function bl(e,n){var t=xl(e);e=0;for(var a;t;){if(t.nodeType===3){if(a=e+t.textContent.length,e<=n&&a>=n)return{node:t,offset:n-e};e=a}e:{for(;t;){if(t.nextSibling){t=t.nextSibling;break e}t=t.parentNode}t=void 0}t=xl(t)}}function e0(e,n){return e&&n?e===n?!0:e&&e.nodeType===3?!1:n&&n.nodeType===3?e0(e,n.parentNode):"contains"in e?e.contains(n):e.compareDocumentPosition?!!(e.compareDocumentPosition(n)&16):!1:!1}function n0(){for(var e=window,n=Na();n instanceof e.HTMLIFrameElement;){try{var t=typeof n.contentWindow.location.href=="string"}catch{t=!1}if(t)e=n.contentWindow;else break;n=Na(e.document)}return n}function xo(e){var n=e&&e.nodeName&&e.nodeName.toLowerCase();return n&&(n==="input"&&(e.type==="text"||e.type==="search"||e.type==="tel"||e.type==="url"||e.type==="password")||n==="textarea"||e.contentEditable==="true")}function eu(e){var n=n0(),t=e.focusedElem,a=e.selectionRange;if(n!==t&&t&&t.ownerDocument&&e0(t.ownerDocument.documentElement,t)){if(a!==null&&xo(t)){if(n=a.start,e=a.end,e===void 0&&(e=n),"selectionStart"in t)t.selectionStart=n,t.selectionEnd=Math.min(e,t.value.length);else if(e=(n=t.ownerDocument||document)&&n.defaultView||window,e.getSelection){e=e.getSelection();var r=t.textContent.length,i=Math.min(a.start,r);a=a.end===void 0?i:Math.min(a.end,r),!e.extend&&i>a&&(r=a,a=i,i=r),r=bl(t,i);var o=bl(t,a);r&&o&&(e.rangeCount!==1||e.anchorNode!==r.node||e.anchorOffset!==r.offset||e.focusNode!==o.node||e.focusOffset!==o.offset)&&(n=n.createRange(),n.setStart(r.node,r.offset),e.removeAllRanges(),i>a?(e.addRange(n),e.extend(o.node,o.offset)):(n.setEnd(o.node,o.offset),e.addRange(n)))}}for(n=[],e=t;e=e.parentNode;)e.nodeType===1&&n.push({element:e,left:e.scrollLeft,top:e.scrollTop});for(typeof t.focus=="function"&&t.focus(),t=0;t<n.length;t++)e=n[t],e.element.scrollLeft=e.left,e.element.scrollTop=e.top}}var nu=Xe&&"documentMode"in document&&11>=document.documentMode,jn=null,_i=null,Bt=null,wi=!1;function vl(e,n,t){var a=t.window===t?t.document:t.nodeType===9?t:t.ownerDocument;wi||jn==null||jn!==Na(a)||(a=jn,"selectionStart"in a&&xo(a)?a={start:a.selectionStart,end:a.selectionEnd}:(a=(a.ownerDocument&&a.ownerDocument.defaultView||window).getSelection(),a={anchorNode:a.anchorNode,anchorOffset:a.anchorOffset,focusNode:a.focusNode,focusOffset:a.focusOffset}),Bt&&Ut(Bt,a)||(Bt=a,a=ja(_i,"onSelect"),0<a.length&&(n=new mo("onSelect","select",null,n,t),e.push({event:n,listeners:a}),n.target=jn)))}function ha(e,n){var t={};return t[e.toLowerCase()]=n.toLowerCase(),t["Webkit"+e]="webkit"+n,t["Moz"+e]="moz"+n,t}var Un={animationend:ha("Animation","AnimationEnd"),animationiteration:ha("Animation","AnimationIteration"),animationstart:ha("Animation","AnimationStart"),transitionend:ha("Transition","TransitionEnd")},Or={},t0={};Xe&&(t0=document.createElement("div").style,"AnimationEvent"in window||(delete Un.animationend.animation,delete Un.animationiteration.animation,delete Un.animationstart.animation),"TransitionEvent"in window||delete Un.transitionend.transition);function ur(e){if(Or[e])return Or[e];if(!Un[e])return e;var n=Un[e],t;for(t in n)if(n.hasOwnProperty(t)&&t in t0)return Or[e]=n[t];return e}var a0=ur("animationend"),r0=ur("animationiteration"),i0=ur("animationstart"),o0=ur("transitionend"),l0=new Map,yl="abort auxClick cancel canPlay canPlayThrough click close contextMenu copy cut drag dragEnd dragEnter dragExit dragLeave dragOver dragStart drop durationChange emptied encrypted ended error gotPointerCapture input invalid keyDown keyPress keyUp load loadedData loadedMetadata loadStart lostPointerCapture mouseDown mouseMove mouseOut mouseOver mouseUp paste pause play playing pointerCancel pointerDown pointerMove pointerOut pointerOver pointerUp progress rateChange reset resize seeked seeking stalled submit suspend timeUpdate touchCancel touchEnd touchStart volumeChange scroll toggle touchMove waiting wheel".split(" ");function _n(e,n){l0.set(e,n),zn(n,[e])}for(var Lr=0;Lr<yl.length;Lr++){var Mr=yl[Lr],tu=Mr.toLowerCase(),au=Mr[0].toUpperCase()+Mr.slice(1);_n(tu,"on"+au)}_n(a0,"onAnimationEnd");_n(r0,"onAnimationIteration");_n(i0,"onAnimationStart");_n("dblclick","onDoubleClick");_n("focusin","onFocus");_n("focusout","onBlur");_n(o0,"onTransitionEnd");it("onMouseEnter",["mouseout","mouseover"]);it("onMouseLeave",["mouseout","mouseover"]);it("onPointerEnter",["pointerout","pointerover"]);it("onPointerLeave",["pointerout","pointerover"]);zn("onChange","change click focusin focusout input keydown keyup selectionchange".split(" "));zn("onSelect","focusout contextmenu dragend focusin keydown keyup mousedown mouseup selectionchange".split(" "));zn("onBeforeInput",["compositionend","keypress","textInput","paste"]);zn("onCompositionEnd","compositionend focusout keydown keypress keyup mousedown".split(" "));zn("onCompositionStart","compositionstart focusout keydown keypress keyup mousedown".split(" "));zn("onCompositionUpdate","compositionupdate focusout keydown keypress keyup mousedown".split(" "));var Pt="abort canplay canplaythrough durationchange emptied encrypted ended error loadeddata loadedmetadata loadstart pause play playing progress ratechange resize seeked seeking stalled suspend timeupdate volumechange waiting".split(" "),ru=new Set("cancel close invalid load scroll toggle".split(" ").concat(Pt));function _l(e,n,t){var a=e.type||"unknown-event";e.currentTarget=t,td(a,n,void 0,e),e.currentTarget=null}function s0(e,n){n=(n&4)!==0;for(var t=0;t<e.length;t++){var a=e[t],r=a.event;a=a.listeners;e:{var i=void 0;if(n)for(var o=a.length-1;0<=o;o--){var l=a[o],d=l.instance,f=l.currentTarget;if(l=l.listener,d!==i&&r.isPropagationStopped())break e;_l(r,l,f),i=d}else for(o=0;o<a.length;o++){if(l=a[o],d=l.instance,f=l.currentTarget,l=l.listener,d!==i&&r.isPropagationStopped())break e;_l(r,l,f),i=d}}}if(La)throw e=xi,La=!1,xi=null,e}function M(e,n){var t=n[$i];t===void 0&&(t=n[$i]=new Set);var a=e+"__bubble";t.has(a)||(c0(n,e,2,!1),t.add(a))}function Hr(e,n,t){var a=0;n&&(a|=4),c0(t,e,a,n)}var ga="_reactListening"+Math.random().toString(36).slice(2);function Gt(e){if(!e[ga]){e[ga]=!0,gs.forEach(function(t){t!=="selectionchange"&&(ru.has(t)||Hr(t,!1,e),Hr(t,!0,e))});var n=e.nodeType===9?e:e.ownerDocument;n===null||n[ga]||(n[ga]=!0,Hr("selectionchange",!1,n))}}function c0(e,n,t,a){switch(Gs(n)){case 1:var r=bd;break;case 4:r=vd;break;default:r=po}t=r.bind(null,n,t,e),r=void 0,!gi||n!=="touchstart"&&n!=="touchmove"&&n!=="wheel"||(r=!0),a?r!==void 0?e.addEventListener(n,t,{capture:!0,passive:r}):e.addEventListener(n,t,!0):r!==void 0?e.addEventListener(n,t,{passive:r}):e.addEventListener(n,t,!1)}function Wr(e,n,t,a,r){var i=a;if(!(n&1)&&!(n&2)&&a!==null)e:for(;;){if(a===null)return;var o=a.tag;if(o===3||o===4){var l=a.stateNode.containerInfo;if(l===r||l.nodeType===8&&l.parentNode===r)break;if(o===4)for(o=a.return;o!==null;){var d=o.tag;if((d===3||d===4)&&(d=o.stateNode.containerInfo,d===r||d.nodeType===8&&d.parentNode===r))return;o=o.return}for(;l!==null;){if(o=Cn(l),o===null)return;if(d=o.tag,d===5||d===6){a=i=o;continue e}l=l.parentNode}}a=a.return}As(function(){var f=i,b=lo(t),x=[];e:{var m=l0.get(e);if(m!==void 0){var w=mo,S=e;switch(e){case"keypress":if(Ta(t)===0)break e;case"keydown":case"keyup":w=Dd;break;case"focusin":S="focus",w=Ir;break;case"focusout":S="blur",w=Ir;break;case"beforeblur":case"afterblur":w=Ir;break;case"click":if(t.button===2)break e;case"auxclick":case"dblclick":case"mousedown":case"mousemove":case"mouseup":case"mouseout":case"mouseover":case"contextmenu":w=cl;break;case"drag":case"dragend":case"dragenter":case"dragexit":case"dragleave":case"dragover":case"dragstart":case"drop":w=wd;break;case"touchcancel":case"touchend":case"touchmove":case"touchstart":w=Nd;break;case a0:case r0:case i0:w=Fd;break;case o0:w=Ld;break;case"scroll":w=yd;break;case"wheel":w=Hd;break;case"copy":case"cut":case"paste":w=$d;break;case"gotpointercapture":case"lostpointercapture":case"pointercancel":case"pointerdown":case"pointermove":case"pointerout":case"pointerover":case"pointerup":w=ul}var _=(n&4)!==0,P=!_&&e==="scroll",u=_?m!==null?m+"Capture":null:m;_=[];for(var s=f,c;s!==null;){c=s;var p=c.stateNode;if(c.tag===5&&p!==null&&(c=p,u!==null&&(p=Mt(s,u),p!=null&&_.push(Qt(s,p,c)))),P)break;s=s.return}0<_.length&&(m=new w(m,S,null,t,b),x.push({event:m,listeners:_}))}}if(!(n&7)){e:{if(m=e==="mouseover"||e==="pointerover",w=e==="mouseout"||e==="pointerout",m&&t!==mi&&(S=t.relatedTarget||t.fromElement)&&(Cn(S)||S[Ke]))break e;if((w||m)&&(m=b.window===b?b:(m=b.ownerDocument)?m.defaultView||m.parentWindow:window,w?(S=t.relatedTarget||t.toElement,w=f,S=S?Cn(S):null,S!==null&&(P=Nn(S),S!==P||S.tag!==5&&S.tag!==6)&&(S=null)):(w=null,S=f),w!==S)){if(_=cl,p="onMouseLeave",u="onMouseEnter",s="mouse",(e==="pointerout"||e==="pointerover")&&(_=ul,p="onPointerLeave",u="onPointerEnter",s="pointer"),P=w==null?m:Gn(w),c=S==null?m:Gn(S),m=new _(p,s+"leave",w,t,b),m.target=P,m.relatedTarget=c,p=null,Cn(b)===f&&(_=new _(u,s+"enter",S,t,b),_.target=c,_.relatedTarget=P,p=_),P=p,w&&S)n:{for(_=w,u=S,s=0,c=_;c;c=Mn(c))s++;for(c=0,p=u;p;p=Mn(p))c++;for(;0<s-c;)_=Mn(_),s--;for(;0<c-s;)u=Mn(u),c--;for(;s--;){if(_===u||u!==null&&_===u.alternate)break n;_=Mn(_),u=Mn(u)}_=null}else _=null;w!==null&&wl(x,m,w,_,!1),S!==null&&P!==null&&wl(x,P,S,_,!0)}}e:{if(m=f?Gn(f):window,w=m.nodeName&&m.nodeName.toLowerCase(),w==="select"||w==="input"&&m.type==="file")var h=qd;else if(ml(m))if(Zs)h=Zd;else{h=Xd;var g=Yd}else(w=m.nodeName)&&w.toLowerCase()==="input"&&(m.type==="checkbox"||m.type==="radio")&&(h=Kd);if(h&&(h=h(e,f))){Ks(x,h,t,b);break e}g&&g(e,m,f),e==="focusout"&&(g=m._wrapperState)&&g.controlled&&m.type==="number"&&ci(m,"number",m.value)}switch(g=f?Gn(f):window,e){case"focusin":(ml(g)||g.contentEditable==="true")&&(jn=g,_i=f,Bt=null);break;case"focusout":Bt=_i=jn=null;break;case"mousedown":wi=!0;break;case"contextmenu":case"mouseup":case"dragend":wi=!1,vl(x,t,b);break;case"selectionchange":if(nu)break;case"keydown":case"keyup":vl(x,t,b)}var v;if(go)e:{switch(e){case"compositionstart":var y="onCompositionStart";break e;case"compositionend":y="onCompositionEnd";break e;case"compositionupdate":y="onCompositionUpdate";break e}y=void 0}else Vn?Ys(e,t)&&(y="onCompositionEnd"):e==="keydown"&&t.keyCode===229&&(y="onCompositionStart");y&&(qs&&t.locale!=="ko"&&(Vn||y!=="onCompositionStart"?y==="onCompositionEnd"&&Vn&&(v=Qs()):(cn=b,fo="value"in cn?cn.value:cn.textContent,Vn=!0)),g=ja(f,y),0<g.length&&(y=new dl(y,e,null,t,b),x.push({event:y,listeners:g}),v?y.data=v:(v=Xs(t),v!==null&&(y.data=v)))),(v=Vd?jd(e,t):Ud(e,t))&&(f=ja(f,"onBeforeInput"),0<f.length&&(b=new dl("onBeforeInput","beforeinput",null,t,b),x.push({event:b,listeners:f}),b.data=v))}s0(x,n)})}function Qt(e,n,t){return{instance:e,listener:n,currentTarget:t}}function ja(e,n){for(var t=n+"Capture",a=[];e!==null;){var r=e,i=r.stateNode;r.tag===5&&i!==null&&(r=i,i=Mt(e,t),i!=null&&a.unshift(Qt(e,i,r)),i=Mt(e,n),i!=null&&a.push(Qt(e,i,r))),e=e.return}return a}function Mn(e){if(e===null)return null;do e=e.return;while(e&&e.tag!==5);return e||null}function wl(e,n,t,a,r){for(var i=n._reactName,o=[];t!==null&&t!==a;){var l=t,d=l.alternate,f=l.stateNode;if(d!==null&&d===a)break;l.tag===5&&f!==null&&(l=f,r?(d=Mt(t,i),d!=null&&o.unshift(Qt(t,d,l))):r||(d=Mt(t,i),d!=null&&o.push(Qt(t,d,l)))),t=t.return}o.length!==0&&e.push({event:n,listeners:o})}var iu=/\r\n?/g,ou=/\u0000|\uFFFD/g;function Sl(e){return(typeof e=="string"?e:""+e).replace(iu,`
 `).replace(ou,"")}function xa(e,n,t){if(n=Sl(n),Sl(e)!==n&&t)throw Error(k(425))}function Ua(){}var Si=null,ki=null;function Fi(e,n){return e==="textarea"||e==="noscript"||typeof n.children=="string"||typeof n.children=="number"||typeof n.dangerouslySetInnerHTML=="object"&&n.dangerouslySetInnerHTML!==null&&n.dangerouslySetInnerHTML.__html!=null}var Ci=typeof setTimeout=="function"?setTimeout:void 0,lu=typeof clearTimeout=="function"?clearTimeout:void 0,kl=typeof Promise=="function"?Promise:void 0,su=typeof queueMicrotask=="function"?queueMicrotask:typeof kl<"u"?function(e){return kl.resolve(null).then(e).catch(cu)}:Ci;function cu(e){setTimeout(function(){throw e})}function Vr(e,n){var t=n,a=0;do{var r=t.nextSibling;if(e.removeChild(t),r&&r.nodeType===8)if(t=r.data,t==="/$"){if(a===0){e.removeChild(r),Vt(n);return}a--}else t!=="$"&&t!=="$?"&&t!=="$!"||a++;t=r}while(t);Vt(n)}function mn(e){for(;e!=null;e=e.nextSibling){var n=e.nodeType;if(n===1||n===3)break;if(n===8){if(n=e.data,n==="$"||n==="$!"||n==="$?")break;if(n==="/$")return null}}return e}function Fl(e){e=e.previousSibling;for(var n=0;e;){if(e.nodeType===8){var t=e.data;if(t==="$"||t==="$!"||t==="$?"){if(n===0)return e;n--}else t==="/$"&&n++}e=e.previousSibling}return null}var mt=Math.random().toString(36).slice(2),Me="__reactFiber$"+mt,qt="__reactProps$"+mt,Ke="__reactContainer$"+mt,$i="__reactEvents$"+mt,du="__reactListeners$"+mt,uu="__reactHandles$"+mt;function Cn(e){var n=e[Me];if(n)return n;for(var t=e.parentNode;t;){if(n=t[Ke]||t[Me]){if(t=n.alternate,n.child!==null||t!==null&&t.child!==null)for(e=Fl(e);e!==null;){if(t=e[Me])return t;e=Fl(e)}return n}e=t,t=e.parentNode}return null}function ra(e){return e=e[Me]||e[Ke],!e||e.tag!==5&&e.tag!==6&&e.tag!==13&&e.tag!==3?null:e}function Gn(e){if(e.tag===5||e.tag===6)return e.stateNode;throw Error(k(33))}function pr(e){return e[qt]||null}var Pi=[],Qn=-1;function wn(e){return{current:e}}function H(e){0>Qn||(e.current=Pi[Qn],Pi[Qn]=null,Qn--)}function L(e,n){Qn++,Pi[Qn]=e.current,e.current=n}var yn={},oe=wn(yn),me=wn(!1),En=yn;function ot(e,n){var t=e.type.contextTypes;if(!t)return yn;var a=e.stateNode;if(a&&a.__reactInternalMemoizedUnmaskedChildContext===n)return a.__reactInternalMemoizedMaskedChildContext;var r={},i;for(i in t)r[i]=n[i];return a&&(e=e.stateNode,e.__reactInternalMemoizedUnmaskedChildContext=n,e.__reactInternalMemoizedMaskedChildContext=r),r}function he(e){return e=e.childContextTypes,e!=null}function Ga(){H(me),H(oe)}function Cl(e,n,t){if(oe.current!==yn)throw Error(k(168));L(oe,n),L(me,t)}function d0(e,n,t){var a=e.stateNode;if(n=n.childContextTypes,typeof a.getChildContext!="function")return t;a=a.getChildContext();for(var r in a)if(!(r in n))throw Error(k(108,Yc(e)||"Unknown",r));return U({},t,a)}function Qa(e){return e=(e=e.stateNode)&&e.__reactInternalMemoizedMergedChildContext||yn,En=oe.current,L(oe,e),L(me,me.current),!0}function $l(e,n,t){var a=e.stateNode;if(!a)throw Error(k(169));t?(e=d0(e,n,En),a.__reactInternalMemoizedMergedChildContext=e,H(me),H(oe),L(oe,e)):H(me),L(me,t)}var Ge=null,fr=!1,jr=!1;function u0(e){Ge===null?Ge=[e]:Ge.push(e)}function pu(e){fr=!0,u0(e)}function Sn(){if(!jr&&Ge!==null){jr=!0;var e=0,n=N;try{var t=Ge;for(N=1;e<t.length;e++){var a=t[e];do a=a(!0);while(a!==null)}Ge=null,fr=!1}catch(r){throw Ge!==null&&(Ge=Ge.slice(e+1)),zs(so,Sn),r}finally{N=n,jr=!1}}return null}var qn=[],Yn=0,qa=null,Ya=0,Fe=[],Ce=0,An=null,Qe=1,qe="";function kn(e,n){qn[Yn++]=Ya,qn[Yn++]=qa,qa=e,Ya=n}function p0(e,n,t){Fe[Ce++]=Qe,Fe[Ce++]=qe,Fe[Ce++]=An,An=e;var a=Qe;e=qe;var r=32-Ie(a)-1;a&=~(1<<r),t+=1;var i=32-Ie(n)+r;if(30<i){var o=r-r%5;i=(a&(1<<o)-1).toString(32),a>>=o,r-=o,Qe=1<<32-Ie(n)+r|t<<r|a,qe=i+e}else Qe=1<<i|t<<r|a,qe=e}function bo(e){e.return!==null&&(kn(e,1),p0(e,1,0))}function vo(e){for(;e===qa;)qa=qn[--Yn],qn[Yn]=null,Ya=qn[--Yn],qn[Yn]=null;for(;e===An;)An=Fe[--Ce],Fe[Ce]=null,qe=Fe[--Ce],Fe[Ce]=null,Qe=Fe[--Ce],Fe[Ce]=null}var ye=null,ve=null,W=!1,De=null;function f0(e,n){var t=$e(5,null,null,0);t.elementType="DELETED",t.stateNode=n,t.return=e,n=e.deletions,n===null?(e.deletions=[t],e.flags|=16):n.push(t)}function Pl(e,n){switch(e.tag){case 5:var t=e.type;return n=n.nodeType!==1||t.toLowerCase()!==n.nodeName.toLowerCase()?null:n,n!==null?(e.stateNode=n,ye=e,ve=mn(n.firstChild),!0):!1;case 6:return n=e.pendingProps===""||n.nodeType!==3?null:n,n!==null?(e.stateNode=n,ye=e,ve=null,!0):!1;case 13:return n=n.nodeType!==8?null:n,n!==null?(t=An!==null?{id:Qe,overflow:qe}:null,e.memoizedState={dehydrated:n,treeContext:t,retryLane:1073741824},t=$e(18,null,null,0),t.stateNode=n,t.return=e,e.child=t,ye=e,ve=null,!0):!1;default:return!1}}function Ti(e){return(e.mode&1)!==0&&(e.flags&128)===0}function Ri(e){if(W){var n=ve;if(n){var t=n;if(!Pl(e,n)){if(Ti(e))throw Error(k(418));n=mn(t.nextSibling);var a=ye;n&&Pl(e,n)?f0(a,t):(e.flags=e.flags&-4097|2,W=!1,ye=e)}}else{if(Ti(e))throw Error(k(418));e.flags=e.flags&-4097|2,W=!1,ye=e}}}function Tl(e){for(e=e.return;e!==null&&e.tag!==5&&e.tag!==3&&e.tag!==13;)e=e.return;ye=e}function ba(e){if(e!==ye)return!1;if(!W)return Tl(e),W=!0,!1;var n;if((n=e.tag!==3)&&!(n=e.tag!==5)&&(n=e.type,n=n!=="head"&&n!=="body"&&!Fi(e.type,e.memoizedProps)),n&&(n=ve)){if(Ti(e))throw m0(),Error(k(418));for(;n;)f0(e,n),n=mn(n.nextSibling)}if(Tl(e),e.tag===13){if(e=e.memoizedState,e=e!==null?e.dehydrated:null,!e)throw Error(k(317));e:{for(e=e.nextSibling,n=0;e;){if(e.nodeType===8){var t=e.data;if(t==="/$"){if(n===0){ve=mn(e.nextSibling);break e}n--}else t!=="$"&&t!=="$!"&&t!=="$?"||n++}e=e.nextSibling}ve=null}}else ve=ye?mn(e.stateNode.nextSibling):null;return!0}function m0(){for(var e=ve;e;)e=mn(e.nextSibling)}function lt(){ve=ye=null,W=!1}function yo(e){De===null?De=[e]:De.push(e)}var fu=en.ReactCurrentBatchConfig;function wt(e,n,t){if(e=t.ref,e!==null&&typeof e!="function"&&typeof e!="object"){if(t._owner){if(t=t._owner,t){if(t.tag!==1)throw Error(k(309));var a=t.stateNode}if(!a)throw Error(k(147,e));var r=a,i=""+e;return n!==null&&n.ref!==null&&typeof n.ref=="function"&&n.ref._stringRef===i?n.ref:(n=function(o){var l=r.refs;o===null?delete l[i]:l[i]=o},n._stringRef=i,n)}if(typeof e!="string")throw Error(k(284));if(!t._owner)throw Error(k(290,e))}return e}function va(e,n){throw e=Object.prototype.toString.call(n),Error(k(31,e==="[object Object]"?"object with keys {"+Object.keys(n).join(", ")+"}":e))}function Rl(e){var n=e._init;return n(e._payload)}function h0(e){function n(u,s){if(e){var c=u.deletions;c===null?(u.deletions=[s],u.flags|=16):c.push(s)}}function t(u,s){if(!e)return null;for(;s!==null;)n(u,s),s=s.sibling;return null}function a(u,s){for(u=new Map;s!==null;)s.key!==null?u.set(s.key,s):u.set(s.index,s),s=s.sibling;return u}function r(u,s){return u=bn(u,s),u.index=0,u.sibling=null,u}function i(u,s,c){return u.index=c,e?(c=u.alternate,c!==null?(c=c.index,c<s?(u.flags|=2,s):c):(u.flags|=2,s)):(u.flags|=1048576,s)}function o(u){return e&&u.alternate===null&&(u.flags|=2),u}function l(u,s,c,p){return s===null||s.tag!==6?(s=Kr(c,u.mode,p),s.return=u,s):(s=r(s,c),s.return=u,s)}function d(u,s,c,p){var h=c.type;return h===Wn?b(u,s,c.props.children,p,c.key):s!==null&&(s.elementType===h||typeof h=="object"&&h!==null&&h.$$typeof===rn&&Rl(h)===s.type)?(p=r(s,c.props),p.ref=wt(u,s,c),p.return=u,p):(p=za(c.type,c.key,c.props,null,u.mode,p),p.ref=wt(u,s,c),p.return=u,p)}function f(u,s,c,p){return s===null||s.tag!==4||s.stateNode.containerInfo!==c.containerInfo||s.stateNode.implementation!==c.implementation?(s=Zr(c,u.mode,p),s.return=u,s):(s=r(s,c.children||[]),s.return=u,s)}function b(u,s,c,p,h){return s===null||s.tag!==7?(s=Rn(c,u.mode,p,h),s.return=u,s):(s=r(s,c),s.return=u,s)}function x(u,s,c){if(typeof s=="string"&&s!==""||typeof s=="number")return s=Kr(""+s,u.mode,c),s.return=u,s;if(typeof s=="object"&&s!==null){switch(s.$$typeof){case sa:return c=za(s.type,s.key,s.props,null,u.mode,c),c.ref=wt(u,null,s),c.return=u,c;case Hn:return s=Zr(s,u.mode,c),s.return=u,s;case rn:var p=s._init;return x(u,p(s._payload),c)}if(Ct(s)||xt(s))return s=Rn(s,u.mode,c,null),s.return=u,s;va(u,s)}return null}function m(u,s,c,p){var h=s!==null?s.key:null;if(typeof c=="string"&&c!==""||typeof c=="number")return h!==null?null:l(u,s,""+c,p);if(typeof c=="object"&&c!==null){switch(c.$$typeof){case sa:return c.key===h?d(u,s,c,p):null;case Hn:return c.key===h?f(u,s,c,p):null;case rn:return h=c._init,m(u,s,h(c._payload),p)}if(Ct(c)||xt(c))return h!==null?null:b(u,s,c,p,null);va(u,c)}return null}function w(u,s,c,p,h){if(typeof p=="string"&&p!==""||typeof p=="number")return u=u.get(c)||null,l(s,u,""+p,h);if(typeof p=="object"&&p!==null){switch(p.$$typeof){case sa:return u=u.get(p.key===null?c:p.key)||null,d(s,u,p,h);case Hn:return u=u.get(p.key===null?c:p.key)||null,f(s,u,p,h);case rn:var g=p._init;return w(u,s,c,g(p._payload),h)}if(Ct(p)||xt(p))return u=u.get(c)||null,b(s,u,p,h,null);va(s,p)}return null}function S(u,s,c,p){for(var h=null,g=null,v=s,y=s=0,C=null;v!==null&&y<c.length;y++){v.index>y?(C=v,v=null):C=v.sibling;var T=m(u,v,c[y],p);if(T===null){v===null&&(v=C);break}e&&v&&T.alternate===null&&n(u,v),s=i(T,s,y),g===null?h=T:g.sibling=T,g=T,v=C}if(y===c.length)return t(u,v),W&&kn(u,y),h;if(v===null){for(;y<c.length;y++)v=x(u,c[y],p),v!==null&&(s=i(v,s,y),g===null?h=v:g.sibling=v,g=v);return W&&kn(u,y),h}for(v=a(u,v);y<c.length;y++)C=w(v,u,y,c[y],p),C!==null&&(e&&C.alternate!==null&&v.delete(C.key===null?y:C.key),s=i(C,s,y),g===null?h=C:g.sibling=C,g=C);return e&&v.forEach(function(I){return n(u,I)}),W&&kn(u,y),h}function _(u,s,c,p){var h=xt(c);if(typeof h!="function")throw Error(k(150));if(c=h.call(c),c==null)throw Error(k(151));for(var g=h=null,v=s,y=s=0,C=null,T=c.next();v!==null&&!T.done;y++,T=c.next()){v.index>y?(C=v,v=null):C=v.sibling;var I=m(u,v,T.value,p);if(I===null){v===null&&(v=C);break}e&&v&&I.alternate===null&&n(u,v),s=i(I,s,y),g===null?h=I:g.sibling=I,g=I,v=C}if(T.done)return t(u,v),W&&kn(u,y),h;if(v===null){for(;!T.done;y++,T=c.next())T=x(u,T.value,p),T!==null&&(s=i(T,s,y),g===null?h=T:g.sibling=T,g=T);return W&&kn(u,y),h}for(v=a(u,v);!T.done;y++,T=c.next())T=w(v,u,y,T.value,p),T!==null&&(e&&T.alternate!==null&&v.delete(T.key===null?y:T.key),s=i(T,s,y),g===null?h=T:g.sibling=T,g=T);return e&&v.forEach(function(ue){return n(u,ue)}),W&&kn(u,y),h}function P(u,s,c,p){if(typeof c=="object"&&c!==null&&c.type===Wn&&c.key===null&&(c=c.props.children),typeof c=="object"&&c!==null){switch(c.$$typeof){case sa:e:{for(var h=c.key,g=s;g!==null;){if(g.key===h){if(h=c.type,h===Wn){if(g.tag===7){t(u,g.sibling),s=r(g,c.props.children),s.return=u,u=s;break e}}else if(g.elementType===h||typeof h=="object"&&h!==null&&h.$$typeof===rn&&Rl(h)===g.type){t(u,g.sibling),s=r(g,c.props),s.ref=wt(u,g,c),s.return=u,u=s;break e}t(u,g);break}else n(u,g);g=g.sibling}c.type===Wn?(s=Rn(c.props.children,u.mode,p,c.key),s.return=u,u=s):(p=za(c.type,c.key,c.props,null,u.mode,p),p.ref=wt(u,s,c),p.return=u,u=p)}return o(u);case Hn:e:{for(g=c.key;s!==null;){if(s.key===g)if(s.tag===4&&s.stateNode.containerInfo===c.containerInfo&&s.stateNode.implementation===c.implementation){t(u,s.sibling),s=r(s,c.children||[]),s.return=u,u=s;break e}else{t(u,s);break}else n(u,s);s=s.sibling}s=Zr(c,u.mode,p),s.return=u,u=s}return o(u);case rn:return g=c._init,P(u,s,g(c._payload),p)}if(Ct(c))return S(u,s,c,p);if(xt(c))return _(u,s,c,p);va(u,c)}return typeof c=="string"&&c!==""||typeof c=="number"?(c=""+c,s!==null&&s.tag===6?(t(u,s.sibling),s=r(s,c),s.return=u,u=s):(t(u,s),s=Kr(c,u.mode,p),s.return=u,u=s),o(u)):t(u,s)}return P}var st=h0(!0),g0=h0(!1),Xa=wn(null),Ka=null,Xn=null,_o=null;function wo(){_o=Xn=Ka=null}function So(e){var n=Xa.current;H(Xa),e._currentValue=n}function Ei(e,n,t){for(;e!==null;){var a=e.alternate;if((e.childLanes&n)!==n?(e.childLanes|=n,a!==null&&(a.childLanes|=n)):a!==null&&(a.childLanes&n)!==n&&(a.childLanes|=n),e===t)break;e=e.return}}function at(e,n){Ka=e,_o=Xn=null,e=e.dependencies,e!==null&&e.firstContext!==null&&(e.lanes&n&&(fe=!0),e.firstContext=null)}function Te(e){var n=e._currentValue;if(_o!==e)if(e={context:e,memoizedValue:n,next:null},Xn===null){if(Ka===null)throw Error(k(308));Xn=e,Ka.dependencies={lanes:0,firstContext:e}}else Xn=Xn.next=e;return n}var $n=null;function ko(e){$n===null?$n=[e]:$n.push(e)}function x0(e,n,t,a){var r=n.interleaved;return r===null?(t.next=t,ko(n)):(t.next=r.next,r.next=t),n.interleaved=t,Ze(e,a)}function Ze(e,n){e.lanes|=n;var t=e.alternate;for(t!==null&&(t.lanes|=n),t=e,e=e.return;e!==null;)e.childLanes|=n,t=e.alternate,t!==null&&(t.childLanes|=n),t=e,e=e.return;return t.tag===3?t.stateNode:null}var on=!1;function Fo(e){e.updateQueue={baseState:e.memoizedState,firstBaseUpdate:null,lastBaseUpdate:null,shared:{pending:null,interleaved:null,lanes:0},effects:null}}function b0(e,n){e=e.updateQueue,n.updateQueue===e&&(n.updateQueue={baseState:e.baseState,firstBaseUpdate:e.firstBaseUpdate,lastBaseUpdate:e.lastBaseUpdate,shared:e.shared,effects:e.effects})}function Ye(e,n){return{eventTime:e,lane:n,tag:0,payload:null,callback:null,next:null}}function hn(e,n,t){var a=e.updateQueue;if(a===null)return null;if(a=a.shared,B&2){var r=a.pending;return r===null?n.next=n:(n.next=r.next,r.next=n),a.pending=n,Ze(e,t)}return r=a.interleaved,r===null?(n.next=n,ko(a)):(n.next=r.next,r.next=n),a.interleaved=n,Ze(e,t)}function Ra(e,n,t){if(n=n.updateQueue,n!==null&&(n=n.shared,(t&4194240)!==0)){var a=n.lanes;a&=e.pendingLanes,t|=a,n.lanes=t,co(e,t)}}function El(e,n){var t=e.updateQueue,a=e.alternate;if(a!==null&&(a=a.updateQueue,t===a)){var r=null,i=null;if(t=t.firstBaseUpdate,t!==null){do{var o={eventTime:t.eventTime,lane:t.lane,tag:t.tag,payload:t.payload,callback:t.callback,next:null};i===null?r=i=o:i=i.next=o,t=t.next}while(t!==null);i===null?r=i=n:i=i.next=n}else r=i=n;t={baseState:a.baseState,firstBaseUpdate:r,lastBaseUpdate:i,shared:a.shared,effects:a.effects},e.updateQueue=t;return}e=t.lastBaseUpdate,e===null?t.firstBaseUpdate=n:e.next=n,t.lastBaseUpdate=n}function Za(e,n,t,a){var r=e.updateQueue;on=!1;var i=r.firstBaseUpdate,o=r.lastBaseUpdate,l=r.shared.pending;if(l!==null){r.shared.pending=null;var d=l,f=d.next;d.next=null,o===null?i=f:o.next=f,o=d;var b=e.alternate;b!==null&&(b=b.updateQueue,l=b.lastBaseUpdate,l!==o&&(l===null?b.firstBaseUpdate=f:l.next=f,b.lastBaseUpdate=d))}if(i!==null){var x=r.baseState;o=0,b=f=d=null,l=i;do{var m=l.lane,w=l.eventTime;if((a&m)===m){b!==null&&(b=b.next={eventTime:w,lane:0,tag:l.tag,payload:l.payload,callback:l.callback,next:null});e:{var S=e,_=l;switch(m=n,w=t,_.tag){case 1:if(S=_.payload,typeof S=="function"){x=S.call(w,x,m);break e}x=S;break e;case 3:S.flags=S.flags&-65537|128;case 0:if(S=_.payload,m=typeof S=="function"?S.call(w,x,m):S,m==null)break e;x=U({},x,m);break e;case 2:on=!0}}l.callback!==null&&l.lane!==0&&(e.flags|=64,m=r.effects,m===null?r.effects=[l]:m.push(l))}else w={eventTime:w,lane:m,tag:l.tag,payload:l.payload,callback:l.callback,next:null},b===null?(f=b=w,d=x):b=b.next=w,o|=m;if(l=l.next,l===null){if(l=r.shared.pending,l===null)break;m=l,l=m.next,m.next=null,r.lastBaseUpdate=m,r.shared.pending=null}}while(!0);if(b===null&&(d=x),r.baseState=d,r.firstBaseUpdate=f,r.lastBaseUpdate=b,n=r.shared.interleaved,n!==null){r=n;do o|=r.lane,r=r.next;while(r!==n)}else i===null&&(r.shared.lanes=0);Dn|=o,e.lanes=o,e.memoizedState=x}}function Al(e,n,t){if(e=n.effects,n.effects=null,e!==null)for(n=0;n<e.length;n++){var a=e[n],r=a.callback;if(r!==null){if(a.callback=null,a=t,typeof r!="function")throw Error(k(191,r));r.call(a)}}}var ia={},We=wn(ia),Yt=wn(ia),Xt=wn(ia);function Pn(e){if(e===ia)throw Error(k(174));return e}function Co(e,n){switch(L(Xt,n),L(Yt,e),L(We,ia),e=n.nodeType,e){case 9:case 11:n=(n=n.documentElement)?n.namespaceURI:ui(null,"");break;default:e=e===8?n.parentNode:n,n=e.namespaceURI||null,e=e.tagName,n=ui(n,e)}H(We),L(We,n)}function ct(){H(We),H(Yt),H(Xt)}function v0(e){Pn(Xt.current);var n=Pn(We.current),t=ui(n,e.type);n!==t&&(L(Yt,e),L(We,t))}function $o(e){Yt.current===e&&(H(We),H(Yt))}var V=wn(0);function Ja(e){for(var n=e;n!==null;){if(n.tag===13){var t=n.memoizedState;if(t!==null&&(t=t.dehydrated,t===null||t.data==="$?"||t.data==="$!"))return n}else if(n.tag===19&&n.memoizedProps.revealOrder!==void 0){if(n.flags&128)return n}else if(n.child!==null){n.child.return=n,n=n.child;continue}if(n===e)break;for(;n.sibling===null;){if(n.return===null||n.return===e)return null;n=n.return}n.sibling.return=n.return,n=n.sibling}return null}var Ur=[];function Po(){for(var e=0;e<Ur.length;e++)Ur[e]._workInProgressVersionPrimary=null;Ur.length=0}var Ea=en.ReactCurrentDispatcher,Gr=en.ReactCurrentBatchConfig,Bn=0,j=null,Y=null,K=null,er=!1,Dt=!1,Kt=0,mu=0;function ae(){throw Error(k(321))}function To(e,n){if(n===null)return!1;for(var t=0;t<n.length&&t<e.length;t++)if(!Ne(e[t],n[t]))return!1;return!0}function Ro(e,n,t,a,r,i){if(Bn=i,j=n,n.memoizedState=null,n.updateQueue=null,n.lanes=0,Ea.current=e===null||e.memoizedState===null?bu:vu,e=t(a,r),Dt){i=0;do{if(Dt=!1,Kt=0,25<=i)throw Error(k(301));i+=1,K=Y=null,n.updateQueue=null,Ea.current=yu,e=t(a,r)}while(Dt)}if(Ea.current=nr,n=Y!==null&&Y.next!==null,Bn=0,K=Y=j=null,er=!1,n)throw Error(k(300));return e}function Eo(){var e=Kt!==0;return Kt=0,e}function Le(){var e={memoizedState:null,baseState:null,baseQueue:null,queue:null,next:null};return K===null?j.memoizedState=K=e:K=K.next=e,K}function Re(){if(Y===null){var e=j.alternate;e=e!==null?e.memoizedState:null}else e=Y.next;var n=K===null?j.memoizedState:K.next;if(n!==null)K=n,Y=e;else{if(e===null)throw Error(k(310));Y=e,e={memoizedState:Y.memoizedState,baseState:Y.baseState,baseQueue:Y.baseQueue,queue:Y.queue,next:null},K===null?j.memoizedState=K=e:K=K.next=e}return K}function Zt(e,n){return typeof n=="function"?n(e):n}function Qr(e){var n=Re(),t=n.queue;if(t===null)throw Error(k(311));t.lastRenderedReducer=e;var a=Y,r=a.baseQueue,i=t.pending;if(i!==null){if(r!==null){var o=r.next;r.next=i.next,i.next=o}a.baseQueue=r=i,t.pending=null}if(r!==null){i=r.next,a=a.baseState;var l=o=null,d=null,f=i;do{var b=f.lane;if((Bn&b)===b)d!==null&&(d=d.next={lane:0,action:f.action,hasEagerState:f.hasEagerState,eagerState:f.eagerState,next:null}),a=f.hasEagerState?f.eagerState:e(a,f.action);else{var x={lane:b,action:f.action,hasEagerState:f.hasEagerState,eagerState:f.eagerState,next:null};d===null?(l=d=x,o=a):d=d.next=x,j.lanes|=b,Dn|=b}f=f.next}while(f!==null&&f!==i);d===null?o=a:d.next=l,Ne(a,n.memoizedState)||(fe=!0),n.memoizedState=a,n.baseState=o,n.baseQueue=d,t.lastRenderedState=a}if(e=t.interleaved,e!==null){r=e;do i=r.lane,j.lanes|=i,Dn|=i,r=r.next;while(r!==e)}else r===null&&(t.lanes=0);return[n.memoizedState,t.dispatch]}function qr(e){var n=Re(),t=n.queue;if(t===null)throw Error(k(311));t.lastRenderedReducer=e;var a=t.dispatch,r=t.pending,i=n.memoizedState;if(r!==null){t.pending=null;var o=r=r.next;do i=e(i,o.action),o=o.next;while(o!==r);Ne(i,n.memoizedState)||(fe=!0),n.memoizedState=i,n.baseQueue===null&&(n.baseState=i),t.lastRenderedState=i}return[i,a]}function y0(){}function _0(e,n){var t=j,a=Re(),r=n(),i=!Ne(a.memoizedState,r);if(i&&(a.memoizedState=r,fe=!0),a=a.queue,Ao(k0.bind(null,t,a,e),[e]),a.getSnapshot!==n||i||K!==null&&K.memoizedState.tag&1){if(t.flags|=2048,Jt(9,S0.bind(null,t,a,r,n),void 0,null),Z===null)throw Error(k(349));Bn&30||w0(t,n,r)}return r}function w0(e,n,t){e.flags|=16384,e={getSnapshot:n,value:t},n=j.updateQueue,n===null?(n={lastEffect:null,stores:null},j.updateQueue=n,n.stores=[e]):(t=n.stores,t===null?n.stores=[e]:t.push(e))}function S0(e,n,t,a){n.value=t,n.getSnapshot=a,F0(n)&&C0(e)}function k0(e,n,t){return t(function(){F0(n)&&C0(e)})}function F0(e){var n=e.getSnapshot;e=e.value;try{var t=n();return!Ne(e,t)}catch{return!0}}function C0(e){var n=Ze(e,1);n!==null&&ze(n,e,1,-1)}function Bl(e){var n=Le();return typeof e=="function"&&(e=e()),n.memoizedState=n.baseState=e,e={pending:null,interleaved:null,lanes:0,dispatch:null,lastRenderedReducer:Zt,lastRenderedState:e},n.queue=e,e=e.dispatch=xu.bind(null,j,e),[n.memoizedState,e]}function Jt(e,n,t,a){return e={tag:e,create:n,destroy:t,deps:a,next:null},n=j.updateQueue,n===null?(n={lastEffect:null,stores:null},j.updateQueue=n,n.lastEffect=e.next=e):(t=n.lastEffect,t===null?n.lastEffect=e.next=e:(a=t.next,t.next=e,e.next=a,n.lastEffect=e)),e}function $0(){return Re().memoizedState}function Aa(e,n,t,a){var r=Le();j.flags|=e,r.memoizedState=Jt(1|n,t,void 0,a===void 0?null:a)}function mr(e,n,t,a){var r=Re();a=a===void 0?null:a;var i=void 0;if(Y!==null){var o=Y.memoizedState;if(i=o.destroy,a!==null&&To(a,o.deps)){r.memoizedState=Jt(n,t,i,a);return}}j.flags|=e,r.memoizedState=Jt(1|n,t,i,a)}function Dl(e,n){return Aa(8390656,8,e,n)}function Ao(e,n){return mr(2048,8,e,n)}function P0(e,n){return mr(4,2,e,n)}function T0(e,n){return mr(4,4,e,n)}function R0(e,n){if(typeof n=="function")return e=e(),n(e),function(){n(null)};if(n!=null)return e=e(),n.current=e,function(){n.current=null}}function E0(e,n,t){return t=t!=null?t.concat([e]):null,mr(4,4,R0.bind(null,n,e),t)}function Bo(){}function A0(e,n){var t=Re();n=n===void 0?null:n;var a=t.memoizedState;return a!==null&&n!==null&&To(n,a[1])?a[0]:(t.memoizedState=[e,n],e)}function B0(e,n){var t=Re();n=n===void 0?null:n;var a=t.memoizedState;return a!==null&&n!==null&&To(n,a[1])?a[0]:(e=e(),t.memoizedState=[e,n],e)}function D0(e,n,t){return Bn&21?(Ne(t,n)||(t=Ls(),j.lanes|=t,Dn|=t,e.baseState=!0),n):(e.baseState&&(e.baseState=!1,fe=!0),e.memoizedState=t)}function hu(e,n){var t=N;N=t!==0&&4>t?t:4,e(!0);var a=Gr.transition;Gr.transition={};try{e(!1),n()}finally{N=t,Gr.transition=a}}function I0(){return Re().memoizedState}function gu(e,n,t){var a=xn(e);if(t={lane:a,action:t,hasEagerState:!1,eagerState:null,next:null},z0(e))N0(n,t);else if(t=x0(e,n,t,a),t!==null){var r=se();ze(t,e,a,r),O0(t,n,a)}}function xu(e,n,t){var a=xn(e),r={lane:a,action:t,hasEagerState:!1,eagerState:null,next:null};if(z0(e))N0(n,r);else{var i=e.alternate;if(e.lanes===0&&(i===null||i.lanes===0)&&(i=n.lastRenderedReducer,i!==null))try{var o=n.lastRenderedState,l=i(o,t);if(r.hasEagerState=!0,r.eagerState=l,Ne(l,o)){var d=n.interleaved;d===null?(r.next=r,ko(n)):(r.next=d.next,d.next=r),n.interleaved=r;return}}catch{}finally{}t=x0(e,n,r,a),t!==null&&(r=se(),ze(t,e,a,r),O0(t,n,a))}}function z0(e){var n=e.alternate;return e===j||n!==null&&n===j}function N0(e,n){Dt=er=!0;var t=e.pending;t===null?n.next=n:(n.next=t.next,t.next=n),e.pending=n}function O0(e,n,t){if(t&4194240){var a=n.lanes;a&=e.pendingLanes,t|=a,n.lanes=t,co(e,t)}}var nr={readContext:Te,useCallback:ae,useContext:ae,useEffect:ae,useImperativeHandle:ae,useInsertionEffect:ae,useLayoutEffect:ae,useMemo:ae,useReducer:ae,useRef:ae,useState:ae,useDebugValue:ae,useDeferredValue:ae,useTransition:ae,useMutableSource:ae,useSyncExternalStore:ae,useId:ae,unstable_isNewReconciler:!1},bu={readContext:Te,useCallback:function(e,n){return Le().memoizedState=[e,n===void 0?null:n],e},useContext:Te,useEffect:Dl,useImperativeHandle:function(e,n,t){return t=t!=null?t.concat([e]):null,Aa(4194308,4,R0.bind(null,n,e),t)},useLayoutEffect:function(e,n){return Aa(4194308,4,e,n)},useInsertionEffect:function(e,n){return Aa(4,2,e,n)},useMemo:function(e,n){var t=Le();return n=n===void 0?null:n,e=e(),t.memoizedState=[e,n],e},useReducer:function(e,n,t){var a=Le();return n=t!==void 0?t(n):n,a.memoizedState=a.baseState=n,e={pending:null,interleaved:null,lanes:0,dispatch:null,lastRenderedReducer:e,lastRenderedState:n},a.queue=e,e=e.dispatch=gu.bind(null,j,e),[a.memoizedState,e]},useRef:function(e){var n=Le();return e={current:e},n.memoizedState=e},useState:Bl,useDebugValue:Bo,useDeferredValue:function(e){return Le().memoizedState=e},useTransition:function(){var e=Bl(!1),n=e[0];return e=hu.bind(null,e[1]),Le().memoizedState=e,[n,e]},useMutableSource:function(){},useSyncExternalStore:function(e,n,t){var a=j,r=Le();if(W){if(t===void 0)throw Error(k(407));t=t()}else{if(t=n(),Z===null)throw Error(k(349));Bn&30||w0(a,n,t)}r.memoizedState=t;var i={value:t,getSnapshot:n};return r.queue=i,Dl(k0.bind(null,a,i,e),[e]),a.flags|=2048,Jt(9,S0.bind(null,a,i,t,n),void 0,null),t},useId:function(){var e=Le(),n=Z.identifierPrefix;if(W){var t=qe,a=Qe;t=(a&~(1<<32-Ie(a)-1)).toString(32)+t,n=":"+n+"R"+t,t=Kt++,0<t&&(n+="H"+t.toString(32)),n+=":"}else t=mu++,n=":"+n+"r"+t.toString(32)+":";return e.memoizedState=n},unstable_isNewReconciler:!1},vu={readContext:Te,useCallback:A0,useContext:Te,useEffect:Ao,useImperativeHandle:E0,useInsertionEffect:P0,useLayoutEffect:T0,useMemo:B0,useReducer:Qr,useRef:$0,useState:function(){return Qr(Zt)},useDebugValue:Bo,useDeferredValue:function(e){var n=Re();return D0(n,Y.memoizedState,e)},useTransition:function(){var e=Qr(Zt)[0],n=Re().memoizedState;return[e,n]},useMutableSource:y0,useSyncExternalStore:_0,useId:I0,unstable_isNewReconciler:!1},yu={readContext:Te,useCallback:A0,useContext:Te,useEffect:Ao,useImperativeHandle:E0,useInsertionEffect:P0,useLayoutEffect:T0,useMemo:B0,useReducer:qr,useRef:$0,useState:function(){return qr(Zt)},useDebugValue:Bo,useDeferredValue:function(e){var n=Re();return Y===null?n.memoizedState=e:D0(n,Y.memoizedState,e)},useTransition:function(){var e=qr(Zt)[0],n=Re().memoizedState;return[e,n]},useMutableSource:y0,useSyncExternalStore:_0,useId:I0,unstable_isNewReconciler:!1};function Ae(e,n){if(e&&e.defaultProps){n=U({},n),e=e.defaultProps;for(var t in e)n[t]===void 0&&(n[t]=e[t]);return n}return n}function Ai(e,n,t,a){n=e.memoizedState,t=t(a,n),t=t==null?n:U({},n,t),e.memoizedState=t,e.lanes===0&&(e.updateQueue.baseState=t)}var hr={isMounted:function(e){return(e=e._reactInternals)?Nn(e)===e:!1},enqueueSetState:function(e,n,t){e=e._reactInternals;var a=se(),r=xn(e),i=Ye(a,r);i.payload=n,t!=null&&(i.callback=t),n=hn(e,i,r),n!==null&&(ze(n,e,r,a),Ra(n,e,r))},enqueueReplaceState:function(e,n,t){e=e._reactInternals;var a=se(),r=xn(e),i=Ye(a,r);i.tag=1,i.payload=n,t!=null&&(i.callback=t),n=hn(e,i,r),n!==null&&(ze(n,e,r,a),Ra(n,e,r))},enqueueForceUpdate:function(e,n){e=e._reactInternals;var t=se(),a=xn(e),r=Ye(t,a);r.tag=2,n!=null&&(r.callback=n),n=hn(e,r,a),n!==null&&(ze(n,e,a,t),Ra(n,e,a))}};function Il(e,n,t,a,r,i,o){return e=e.stateNode,typeof e.shouldComponentUpdate=="function"?e.shouldComponentUpdate(a,i,o):n.prototype&&n.prototype.isPureReactComponent?!Ut(t,a)||!Ut(r,i):!0}function L0(e,n,t){var a=!1,r=yn,i=n.contextType;return typeof i=="object"&&i!==null?i=Te(i):(r=he(n)?En:oe.current,a=n.contextTypes,i=(a=a!=null)?ot(e,r):yn),n=new n(t,i),e.memoizedState=n.state!==null&&n.state!==void 0?n.state:null,n.updater=hr,e.stateNode=n,n._reactInternals=e,a&&(e=e.stateNode,e.__reactInternalMemoizedUnmaskedChildContext=r,e.__reactInternalMemoizedMaskedChildContext=i),n}function zl(e,n,t,a){e=n.state,typeof n.componentWillReceiveProps=="function"&&n.componentWillReceiveProps(t,a),typeof n.UNSAFE_componentWillReceiveProps=="function"&&n.UNSAFE_componentWillReceiveProps(t,a),n.state!==e&&hr.enqueueReplaceState(n,n.state,null)}function Bi(e,n,t,a){var r=e.stateNode;r.props=t,r.state=e.memoizedState,r.refs={},Fo(e);var i=n.contextType;typeof i=="object"&&i!==null?r.context=Te(i):(i=he(n)?En:oe.current,r.context=ot(e,i)),r.state=e.memoizedState,i=n.getDerivedStateFromProps,typeof i=="function"&&(Ai(e,n,i,t),r.state=e.memoizedState),typeof n.getDerivedStateFromProps=="function"||typeof r.getSnapshotBeforeUpdate=="function"||typeof r.UNSAFE_componentWillMount!="function"&&typeof r.componentWillMount!="function"||(n=r.state,typeof r.componentWillMount=="function"&&r.componentWillMount(),typeof r.UNSAFE_componentWillMount=="function"&&r.UNSAFE_componentWillMount(),n!==r.state&&hr.enqueueReplaceState(r,r.state,null),Za(e,t,r,a),r.state=e.memoizedState),typeof r.componentDidMount=="function"&&(e.flags|=4194308)}function dt(e,n){try{var t="",a=n;do t+=qc(a),a=a.return;while(a);var r=t}catch(i){r=`
 Error generating stack: `+i.message+`
-`+i.stack}return{value:e,source:n,stack:r,digest:null}}function Yr(e,n,t){return{value:e,source:null,stack:t??null,digest:n??null}}function Di(e,n){try{console.error(n.value)}catch(t){setTimeout(function(){throw t})}}var _u=typeof WeakMap=="function"?WeakMap:Map;function M0(e,n,t){t=Ye(-1,t),t.tag=3,t.payload={element:null};var a=n.value;return t.callback=function(){ar||(ar=!0,ji=a),Di(e,n)},t}function H0(e,n,t){t=Ye(-1,t),t.tag=3;var a=e.type.getDerivedStateFromError;if(typeof a=="function"){var r=n.value;t.payload=function(){return a(r)},t.callback=function(){Di(e,n)}}var i=e.stateNode;return i!==null&&typeof i.componentDidCatch=="function"&&(t.callback=function(){Di(e,n),typeof a!="function"&&(gn===null?gn=new Set([this]):gn.add(this));var o=n.stack;this.componentDidCatch(n.value,{componentStack:o!==null?o:""})}),t}function Nl(e,n,t){var a=e.pingCache;if(a===null){a=e.pingCache=new _u;var r=new Set;a.set(n,r)}else r=a.get(n),r===void 0&&(r=new Set,a.set(n,r));r.has(t)||(r.add(t),e=Iu.bind(null,e,n,t),n.then(e,e))}function Ol(e){do{var n;if((n=e.tag===13)&&(n=e.memoizedState,n=n!==null?n.dehydrated!==null:!0),n)return e;e=e.return}while(e!==null);return null}function Ll(e,n,t,a,r){return e.mode&1?(e.flags|=65536,e.lanes=r,e):(e===n?e.flags|=65536:(e.flags|=128,t.flags|=131072,t.flags&=-52805,t.tag===1&&(t.alternate===null?t.tag=17:(n=Ye(-1,1),n.tag=2,hn(t,n,1))),t.lanes|=1),e)}var wu=en.ReactCurrentOwner,fe=!1;function le(e,n,t,a){n.child=e===null?g0(n,null,t,a):st(n,e.child,t,a)}function Ml(e,n,t,a,r){t=t.render;var i=n.ref;return at(n,r),a=Ro(e,n,t,a,i,r),t=Eo(),e!==null&&!fe?(n.updateQueue=e.updateQueue,n.flags&=-2053,e.lanes&=~r,Je(e,n,r)):(W&&t&&bo(n),n.flags|=1,le(e,n,a,r),n.child)}function Hl(e,n,t,a,r){if(e===null){var i=t.type;return typeof i=="function"&&!Ho(i)&&i.defaultProps===void 0&&t.compare===null&&t.defaultProps===void 0?(n.tag=15,n.type=i,W0(e,n,i,a,r)):(e=za(t.type,null,a,n,n.mode,r),e.ref=n.ref,e.return=n,n.child=e)}if(i=e.child,!(e.lanes&r)){var o=i.memoizedProps;if(t=t.compare,t=t!==null?t:Ut,t(o,a)&&e.ref===n.ref)return Je(e,n,r)}return n.flags|=1,e=bn(i,a),e.ref=n.ref,e.return=n,n.child=e}function W0(e,n,t,a,r){if(e!==null){var i=e.memoizedProps;if(Ut(i,a)&&e.ref===n.ref)if(fe=!1,n.pendingProps=a=i,(e.lanes&r)!==0)e.flags&131072&&(fe=!0);else return n.lanes=e.lanes,Je(e,n,r)}return Ii(e,n,t,a,r)}function V0(e,n,t){var a=n.pendingProps,r=a.children,i=e!==null?e.memoizedState:null;if(a.mode==="hidden")if(!(n.mode&1))n.memoizedState={baseLanes:0,cachePool:null,transitions:null},L(Zn,xe),xe|=t;else{if(!(t&1073741824))return e=i!==null?i.baseLanes|t:t,n.lanes=n.childLanes=1073741824,n.memoizedState={baseLanes:e,cachePool:null,transitions:null},n.updateQueue=null,L(Zn,xe),xe|=e,null;n.memoizedState={baseLanes:0,cachePool:null,transitions:null},a=i!==null?i.baseLanes:t,L(Zn,xe),xe|=a}else i!==null?(a=i.baseLanes|t,n.memoizedState=null):a=t,L(Zn,xe),xe|=a;return le(e,n,r,t),n.child}function j0(e,n){var t=n.ref;(e===null&&t!==null||e!==null&&e.ref!==t)&&(n.flags|=512,n.flags|=2097152)}function Ii(e,n,t,a,r){var i=he(t)?En:oe.current;return i=ot(n,i),at(n,r),t=Ro(e,n,t,a,i,r),a=Eo(),e!==null&&!fe?(n.updateQueue=e.updateQueue,n.flags&=-2053,e.lanes&=~r,Je(e,n,r)):(W&&a&&bo(n),n.flags|=1,le(e,n,t,r),n.child)}function Wl(e,n,t,a,r){if(he(t)){var i=!0;Qa(n)}else i=!1;if(at(n,r),n.stateNode===null)Ba(e,n),L0(n,t,a),Bi(n,t,a,r),a=!0;else if(e===null){var o=n.stateNode,l=n.memoizedProps;o.props=l;var d=o.context,f=t.contextType;typeof f=="object"&&f!==null?f=Te(f):(f=he(t)?En:oe.current,f=ot(n,f));var b=t.getDerivedStateFromProps,x=typeof b=="function"||typeof o.getSnapshotBeforeUpdate=="function";x||typeof o.UNSAFE_componentWillReceiveProps!="function"&&typeof o.componentWillReceiveProps!="function"||(l!==a||d!==f)&&zl(n,o,a,f),on=!1;var m=n.memoizedState;o.state=m,Za(n,a,o,r),d=n.memoizedState,l!==a||m!==d||me.current||on?(typeof b=="function"&&(Ai(n,t,b,a),d=n.memoizedState),(l=on||Il(n,t,l,a,m,d,f))?(x||typeof o.UNSAFE_componentWillMount!="function"&&typeof o.componentWillMount!="function"||(typeof o.componentWillMount=="function"&&o.componentWillMount(),typeof o.UNSAFE_componentWillMount=="function"&&o.UNSAFE_componentWillMount()),typeof o.componentDidMount=="function"&&(n.flags|=4194308)):(typeof o.componentDidMount=="function"&&(n.flags|=4194308),n.memoizedProps=a,n.memoizedState=d),o.props=a,o.state=d,o.context=f,a=l):(typeof o.componentDidMount=="function"&&(n.flags|=4194308),a=!1)}else{o=n.stateNode,b0(e,n),l=n.memoizedProps,f=n.type===n.elementType?l:Ae(n.type,l),o.props=f,x=n.pendingProps,m=o.context,d=t.contextType,typeof d=="object"&&d!==null?d=Te(d):(d=he(t)?En:oe.current,d=ot(n,d));var w=t.getDerivedStateFromProps;(b=typeof w=="function"||typeof o.getSnapshotBeforeUpdate=="function")||typeof o.UNSAFE_componentWillReceiveProps!="function"&&typeof o.componentWillReceiveProps!="function"||(l!==x||m!==d)&&zl(n,o,a,d),on=!1,m=n.memoizedState,o.state=m,Za(n,a,o,r);var S=n.memoizedState;l!==x||m!==S||me.current||on?(typeof w=="function"&&(Ai(n,t,w,a),S=n.memoizedState),(f=on||Il(n,t,f,a,m,S,d)||!1)?(b||typeof o.UNSAFE_componentWillUpdate!="function"&&typeof o.componentWillUpdate!="function"||(typeof o.componentWillUpdate=="function"&&o.componentWillUpdate(a,S,d),typeof o.UNSAFE_componentWillUpdate=="function"&&o.UNSAFE_componentWillUpdate(a,S,d)),typeof o.componentDidUpdate=="function"&&(n.flags|=4),typeof o.getSnapshotBeforeUpdate=="function"&&(n.flags|=1024)):(typeof o.componentDidUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=4),typeof o.getSnapshotBeforeUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=1024),n.memoizedProps=a,n.memoizedState=S),o.props=a,o.state=S,o.context=d,a=f):(typeof o.componentDidUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=4),typeof o.getSnapshotBeforeUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=1024),a=!1)}return zi(e,n,t,a,i,r)}function zi(e,n,t,a,r,i){j0(e,n);var o=(n.flags&128)!==0;if(!a&&!o)return r&&$l(n,t,!1),Je(e,n,i);a=n.stateNode,wu.current=n;var l=o&&typeof t.getDerivedStateFromError!="function"?null:a.render();return n.flags|=1,e!==null&&o?(n.child=st(n,e.child,null,i),n.child=st(n,null,l,i)):le(e,n,l,i),n.memoizedState=a.state,r&&$l(n,t,!0),n.child}function U0(e){var n=e.stateNode;n.pendingContext?Cl(e,n.pendingContext,n.pendingContext!==n.context):n.context&&Cl(e,n.context,!1),Co(e,n.containerInfo)}function Vl(e,n,t,a,r){return lt(),yo(r),n.flags|=256,le(e,n,t,a),n.child}var Ni={dehydrated:null,treeContext:null,retryLane:0};function Oi(e){return{baseLanes:e,cachePool:null,transitions:null}}function G0(e,n,t){var a=n.pendingProps,r=V.current,i=!1,o=(n.flags&128)!==0,l;if((l=o)||(l=e!==null&&e.memoizedState===null?!1:(r&2)!==0),l?(i=!0,n.flags&=-129):(e===null||e.memoizedState!==null)&&(r|=1),L(V,r&1),e===null)return Ri(n),e=n.memoizedState,e!==null&&(e=e.dehydrated,e!==null)?(n.mode&1?e.data==="$!"?n.lanes=8:n.lanes=1073741824:n.lanes=1,null):(o=a.children,e=a.fallback,i?(a=n.mode,i=n.child,o={mode:"hidden",children:o},!(a&1)&&i!==null?(i.childLanes=0,i.pendingProps=o):i=br(o,a,0,null),e=Rn(e,a,t,null),i.return=n,e.return=n,i.sibling=e,n.child=i,n.child.memoizedState=Oi(t),n.memoizedState=Ni,e):Do(n,o));if(r=e.memoizedState,r!==null&&(l=r.dehydrated,l!==null))return Su(e,n,o,a,l,r,t);if(i){i=a.fallback,o=n.mode,r=e.child,l=r.sibling;var d={mode:"hidden",children:a.children};return!(o&1)&&n.child!==r?(a=n.child,a.childLanes=0,a.pendingProps=d,n.deletions=null):(a=bn(r,d),a.subtreeFlags=r.subtreeFlags&14680064),l!==null?i=bn(l,i):(i=Rn(i,o,t,null),i.flags|=2),i.return=n,a.return=n,a.sibling=i,n.child=a,a=i,i=n.child,o=e.child.memoizedState,o=o===null?Oi(t):{baseLanes:o.baseLanes|t,cachePool:null,transitions:o.transitions},i.memoizedState=o,i.childLanes=e.childLanes&~t,n.memoizedState=Ni,a}return i=e.child,e=i.sibling,a=bn(i,{mode:"visible",children:a.children}),!(n.mode&1)&&(a.lanes=t),a.return=n,a.sibling=null,e!==null&&(t=n.deletions,t===null?(n.deletions=[e],n.flags|=16):t.push(e)),n.child=a,n.memoizedState=null,a}function Do(e,n){return n=br({mode:"visible",children:n},e.mode,0,null),n.return=e,e.child=n}function ya(e,n,t,a){return a!==null&&yo(a),st(n,e.child,null,t),e=Do(n,n.pendingProps.children),e.flags|=2,n.memoizedState=null,e}function Su(e,n,t,a,r,i,o){if(t)return n.flags&256?(n.flags&=-257,a=Yr(Error(k(422))),ya(e,n,o,a)):n.memoizedState!==null?(n.child=e.child,n.flags|=128,null):(i=a.fallback,r=n.mode,a=br({mode:"visible",children:a.children},r,0,null),i=Rn(i,r,o,null),i.flags|=2,a.return=n,i.return=n,a.sibling=i,n.child=a,n.mode&1&&st(n,e.child,null,o),n.child.memoizedState=Oi(o),n.memoizedState=Ni,i);if(!(n.mode&1))return ya(e,n,o,null);if(r.data==="$!"){if(a=r.nextSibling&&r.nextSibling.dataset,a)var l=a.dgst;return a=l,i=Error(k(419)),a=Yr(i,a,void 0),ya(e,n,o,a)}if(l=(o&e.childLanes)!==0,fe||l){if(a=Z,a!==null){switch(o&-o){case 4:r=2;break;case 16:r=8;break;case 64:case 128:case 256:case 512:case 1024:case 2048:case 4096:case 8192:case 16384:case 32768:case 65536:case 131072:case 262144:case 524288:case 1048576:case 2097152:case 4194304:case 8388608:case 16777216:case 33554432:case 67108864:r=32;break;case 536870912:r=268435456;break;default:r=0}r=r&(a.suspendedLanes|o)?0:r,r!==0&&r!==i.retryLane&&(i.retryLane=r,Ze(e,r),ze(a,e,r,-1))}return Mo(),a=Yr(Error(k(421))),ya(e,n,o,a)}return r.data==="$?"?(n.flags|=128,n.child=e.child,n=zu.bind(null,e),r._reactRetry=n,null):(e=i.treeContext,ve=mn(r.nextSibling),ye=n,W=!0,De=null,e!==null&&(Fe[Ce++]=Qe,Fe[Ce++]=qe,Fe[Ce++]=An,Qe=e.id,qe=e.overflow,An=n),n=Do(n,a.children),n.flags|=4096,n)}function jl(e,n,t){e.lanes|=n;var a=e.alternate;a!==null&&(a.lanes|=n),Ei(e.return,n,t)}function Xr(e,n,t,a,r){var i=e.memoizedState;i===null?e.memoizedState={isBackwards:n,rendering:null,renderingStartTime:0,last:a,tail:t,tailMode:r}:(i.isBackwards=n,i.rendering=null,i.renderingStartTime=0,i.last=a,i.tail=t,i.tailMode=r)}function Q0(e,n,t){var a=n.pendingProps,r=a.revealOrder,i=a.tail;if(le(e,n,a.children,t),a=V.current,a&2)a=a&1|2,n.flags|=128;else{if(e!==null&&e.flags&128)e:for(e=n.child;e!==null;){if(e.tag===13)e.memoizedState!==null&&jl(e,t,n);else if(e.tag===19)jl(e,t,n);else if(e.child!==null){e.child.return=e,e=e.child;continue}if(e===n)break e;for(;e.sibling===null;){if(e.return===null||e.return===n)break e;e=e.return}e.sibling.return=e.return,e=e.sibling}a&=1}if(L(V,a),!(n.mode&1))n.memoizedState=null;else switch(r){case"forwards":for(t=n.child,r=null;t!==null;)e=t.alternate,e!==null&&Ja(e)===null&&(r=t),t=t.sibling;t=r,t===null?(r=n.child,n.child=null):(r=t.sibling,t.sibling=null),Xr(n,!1,r,t,i);break;case"backwards":for(t=null,r=n.child,n.child=null;r!==null;){if(e=r.alternate,e!==null&&Ja(e)===null){n.child=r;break}e=r.sibling,r.sibling=t,t=r,r=e}Xr(n,!0,t,null,i);break;case"together":Xr(n,!1,null,null,void 0);break;default:n.memoizedState=null}return n.child}function Ba(e,n){!(n.mode&1)&&e!==null&&(e.alternate=null,n.alternate=null,n.flags|=2)}function Je(e,n,t){if(e!==null&&(n.dependencies=e.dependencies),Dn|=n.lanes,!(t&n.childLanes))return null;if(e!==null&&n.child!==e.child)throw Error(k(153));if(n.child!==null){for(e=n.child,t=bn(e,e.pendingProps),n.child=t,t.return=n;e.sibling!==null;)e=e.sibling,t=t.sibling=bn(e,e.pendingProps),t.return=n;t.sibling=null}return n.child}function ku(e,n,t){switch(n.tag){case 3:U0(n),lt();break;case 5:v0(n);break;case 1:he(n.type)&&Qa(n);break;case 4:Co(n,n.stateNode.containerInfo);break;case 10:var a=n.type._context,r=n.memoizedProps.value;L(Xa,a._currentValue),a._currentValue=r;break;case 13:if(a=n.memoizedState,a!==null)return a.dehydrated!==null?(L(V,V.current&1),n.flags|=128,null):t&n.child.childLanes?G0(e,n,t):(L(V,V.current&1),e=Je(e,n,t),e!==null?e.sibling:null);L(V,V.current&1);break;case 19:if(a=(t&n.childLanes)!==0,e.flags&128){if(a)return Q0(e,n,t);n.flags|=128}if(r=n.memoizedState,r!==null&&(r.rendering=null,r.tail=null,r.lastEffect=null),L(V,V.current),a)break;return null;case 22:case 23:return n.lanes=0,V0(e,n,t)}return Je(e,n,t)}var q0,Li,Y0,X0;q0=function(e,n){for(var t=n.child;t!==null;){if(t.tag===5||t.tag===6)e.appendChild(t.stateNode);else if(t.tag!==4&&t.child!==null){t.child.return=t,t=t.child;continue}if(t===n)break;for(;t.sibling===null;){if(t.return===null||t.return===n)return;t=t.return}t.sibling.return=t.return,t=t.sibling}};Li=function(){};Y0=function(e,n,t,a){var r=e.memoizedProps;if(r!==a){e=n.stateNode,Pn(We.current);var i=null;switch(t){case"input":r=li(e,r),a=li(e,a),i=[];break;case"select":r=U({},r,{value:void 0}),a=U({},a,{value:void 0}),i=[];break;case"textarea":r=di(e,r),a=di(e,a),i=[];break;default:typeof r.onClick!="function"&&typeof a.onClick=="function"&&(e.onclick=Ua)}pi(t,a);var o;t=null;for(f in r)if(!a.hasOwnProperty(f)&&r.hasOwnProperty(f)&&r[f]!=null)if(f==="style"){var l=r[f];for(o in l)l.hasOwnProperty(o)&&(t||(t={}),t[o]="")}else f!=="dangerouslySetInnerHTML"&&f!=="children"&&f!=="suppressContentEditableWarning"&&f!=="suppressHydrationWarning"&&f!=="autoFocus"&&(Ot.hasOwnProperty(f)?i||(i=[]):(i=i||[]).push(f,null));for(f in a){var d=a[f];if(l=r!=null?r[f]:void 0,a.hasOwnProperty(f)&&d!==l&&(d!=null||l!=null))if(f==="style")if(l){for(o in l)!l.hasOwnProperty(o)||d&&d.hasOwnProperty(o)||(t||(t={}),t[o]="");for(o in d)d.hasOwnProperty(o)&&l[o]!==d[o]&&(t||(t={}),t[o]=d[o])}else t||(i||(i=[]),i.push(f,t)),t=d;else f==="dangerouslySetInnerHTML"?(d=d?d.__html:void 0,l=l?l.__html:void 0,d!=null&&l!==d&&(i=i||[]).push(f,d)):f==="children"?typeof d!="string"&&typeof d!="number"||(i=i||[]).push(f,""+d):f!=="suppressContentEditableWarning"&&f!=="suppressHydrationWarning"&&(Ot.hasOwnProperty(f)?(d!=null&&f==="onScroll"&&M("scroll",e),i||l===d||(i=[])):(i=i||[]).push(f,d))}t&&(i=i||[]).push("style",t);var f=i;(n.updateQueue=f)&&(n.flags|=4)}};X0=function(e,n,t,a){t!==a&&(n.flags|=4)};function St(e,n){if(!W)switch(e.tailMode){case"hidden":n=e.tail;for(var t=null;n!==null;)n.alternate!==null&&(t=n),n=n.sibling;t===null?e.tail=null:t.sibling=null;break;case"collapsed":t=e.tail;for(var a=null;t!==null;)t.alternate!==null&&(a=t),t=t.sibling;a===null?n||e.tail===null?e.tail=null:e.tail.sibling=null:a.sibling=null}}function re(e){var n=e.alternate!==null&&e.alternate.child===e.child,t=0,a=0;if(n)for(var r=e.child;r!==null;)t|=r.lanes|r.childLanes,a|=r.subtreeFlags&14680064,a|=r.flags&14680064,r.return=e,r=r.sibling;else for(r=e.child;r!==null;)t|=r.lanes|r.childLanes,a|=r.subtreeFlags,a|=r.flags,r.return=e,r=r.sibling;return e.subtreeFlags|=a,e.childLanes=t,n}function Fu(e,n,t){var a=n.pendingProps;switch(vo(n),n.tag){case 2:case 16:case 15:case 0:case 11:case 7:case 8:case 12:case 9:case 14:return re(n),null;case 1:return he(n.type)&&Ga(),re(n),null;case 3:return a=n.stateNode,ct(),H(me),H(oe),Po(),a.pendingContext&&(a.context=a.pendingContext,a.pendingContext=null),(e===null||e.child===null)&&(ba(n)?n.flags|=4:e===null||e.memoizedState.isDehydrated&&!(n.flags&256)||(n.flags|=1024,De!==null&&(Qi(De),De=null))),Li(e,n),re(n),null;case 5:$o(n);var r=Pn(Xt.current);if(t=n.type,e!==null&&n.stateNode!=null)Y0(e,n,t,a,r),e.ref!==n.ref&&(n.flags|=512,n.flags|=2097152);else{if(!a){if(n.stateNode===null)throw Error(k(166));return re(n),null}if(e=Pn(We.current),ba(n)){a=n.stateNode,t=n.type;var i=n.memoizedProps;switch(a[Me]=n,a[qt]=i,e=(n.mode&1)!==0,t){case"dialog":M("cancel",a),M("close",a);break;case"iframe":case"object":case"embed":M("load",a);break;case"video":case"audio":for(r=0;r<Pt.length;r++)M(Pt[r],a);break;case"source":M("error",a);break;case"img":case"image":case"link":M("error",a),M("load",a);break;case"details":M("toggle",a);break;case"input":Jo(a,i),M("invalid",a);break;case"select":a._wrapperState={wasMultiple:!!i.multiple},M("invalid",a);break;case"textarea":nl(a,i),M("invalid",a)}pi(t,i),r=null;for(var o in i)if(i.hasOwnProperty(o)){var l=i[o];o==="children"?typeof l=="string"?a.textContent!==l&&(i.suppressHydrationWarning!==!0&&xa(a.textContent,l,e),r=["children",l]):typeof l=="number"&&a.textContent!==""+l&&(i.suppressHydrationWarning!==!0&&xa(a.textContent,l,e),r=["children",""+l]):Ot.hasOwnProperty(o)&&l!=null&&o==="onScroll"&&M("scroll",a)}switch(t){case"input":ca(a),el(a,i,!0);break;case"textarea":ca(a),tl(a);break;case"select":case"option":break;default:typeof i.onClick=="function"&&(a.onclick=Ua)}a=r,n.updateQueue=a,a!==null&&(n.flags|=4)}else{o=r.nodeType===9?r:r.ownerDocument,e==="http://www.w3.org/1999/xhtml"&&(e=ks(t)),e==="http://www.w3.org/1999/xhtml"?t==="script"?(e=o.createElement("div"),e.innerHTML="<script><\/script>",e=e.removeChild(e.firstChild)):typeof a.is=="string"?e=o.createElement(t,{is:a.is}):(e=o.createElement(t),t==="select"&&(o=e,a.multiple?o.multiple=!0:a.size&&(o.size=a.size))):e=o.createElementNS(e,t),e[Me]=n,e[qt]=a,q0(e,n,!1,!1),n.stateNode=e;e:{switch(o=fi(t,a),t){case"dialog":M("cancel",e),M("close",e),r=a;break;case"iframe":case"object":case"embed":M("load",e),r=a;break;case"video":case"audio":for(r=0;r<Pt.length;r++)M(Pt[r],e);r=a;break;case"source":M("error",e),r=a;break;case"img":case"image":case"link":M("error",e),M("load",e),r=a;break;case"details":M("toggle",e),r=a;break;case"input":Jo(e,a),r=li(e,a),M("invalid",e);break;case"option":r=a;break;case"select":e._wrapperState={wasMultiple:!!a.multiple},r=U({},a,{value:void 0}),M("invalid",e);break;case"textarea":nl(e,a),r=di(e,a),M("invalid",e);break;default:r=a}pi(t,r),l=r;for(i in l)if(l.hasOwnProperty(i)){var d=l[i];i==="style"?$s(e,d):i==="dangerouslySetInnerHTML"?(d=d?d.__html:void 0,d!=null&&Fs(e,d)):i==="children"?typeof d=="string"?(t!=="textarea"||d!=="")&&Lt(e,d):typeof d=="number"&&Lt(e,""+d):i!=="suppressContentEditableWarning"&&i!=="suppressHydrationWarning"&&i!=="autoFocus"&&(Ot.hasOwnProperty(i)?d!=null&&i==="onScroll"&&M("scroll",e):d!=null&&ao(e,i,d,o))}switch(t){case"input":ca(e),el(e,a,!1);break;case"textarea":ca(e),tl(e);break;case"option":a.value!=null&&e.setAttribute("value",""+vn(a.value));break;case"select":e.multiple=!!a.multiple,i=a.value,i!=null?Jn(e,!!a.multiple,i,!1):a.defaultValue!=null&&Jn(e,!!a.multiple,a.defaultValue,!0);break;default:typeof r.onClick=="function"&&(e.onclick=Ua)}switch(t){case"button":case"input":case"select":case"textarea":a=!!a.autoFocus;break e;case"img":a=!0;break e;default:a=!1}}a&&(n.flags|=4)}n.ref!==null&&(n.flags|=512,n.flags|=2097152)}return re(n),null;case 6:if(e&&n.stateNode!=null)X0(e,n,e.memoizedProps,a);else{if(typeof a!="string"&&n.stateNode===null)throw Error(k(166));if(t=Pn(Xt.current),Pn(We.current),ba(n)){if(a=n.stateNode,t=n.memoizedProps,a[Me]=n,(i=a.nodeValue!==t)&&(e=ye,e!==null))switch(e.tag){case 3:xa(a.nodeValue,t,(e.mode&1)!==0);break;case 5:e.memoizedProps.suppressHydrationWarning!==!0&&xa(a.nodeValue,t,(e.mode&1)!==0)}i&&(n.flags|=4)}else a=(t.nodeType===9?t:t.ownerDocument).createTextNode(a),a[Me]=n,n.stateNode=a}return re(n),null;case 13:if(H(V),a=n.memoizedState,e===null||e.memoizedState!==null&&e.memoizedState.dehydrated!==null){if(W&&ve!==null&&n.mode&1&&!(n.flags&128))m0(),lt(),n.flags|=98560,i=!1;else if(i=ba(n),a!==null&&a.dehydrated!==null){if(e===null){if(!i)throw Error(k(318));if(i=n.memoizedState,i=i!==null?i.dehydrated:null,!i)throw Error(k(317));i[Me]=n}else lt(),!(n.flags&128)&&(n.memoizedState=null),n.flags|=4;re(n),i=!1}else De!==null&&(Qi(De),De=null),i=!0;if(!i)return n.flags&65536?n:null}return n.flags&128?(n.lanes=t,n):(a=a!==null,a!==(e!==null&&e.memoizedState!==null)&&a&&(n.child.flags|=8192,n.mode&1&&(e===null||V.current&1?X===0&&(X=3):Mo())),n.updateQueue!==null&&(n.flags|=4),re(n),null);case 4:return ct(),Li(e,n),e===null&&Gt(n.stateNode.containerInfo),re(n),null;case 10:return So(n.type._context),re(n),null;case 17:return he(n.type)&&Ga(),re(n),null;case 19:if(H(V),i=n.memoizedState,i===null)return re(n),null;if(a=(n.flags&128)!==0,o=i.rendering,o===null)if(a)St(i,!1);else{if(X!==0||e!==null&&e.flags&128)for(e=n.child;e!==null;){if(o=Ja(e),o!==null){for(n.flags|=128,St(i,!1),a=o.updateQueue,a!==null&&(n.updateQueue=a,n.flags|=4),n.subtreeFlags=0,a=t,t=n.child;t!==null;)i=t,e=a,i.flags&=14680066,o=i.alternate,o===null?(i.childLanes=0,i.lanes=e,i.child=null,i.subtreeFlags=0,i.memoizedProps=null,i.memoizedState=null,i.updateQueue=null,i.dependencies=null,i.stateNode=null):(i.childLanes=o.childLanes,i.lanes=o.lanes,i.child=o.child,i.subtreeFlags=0,i.deletions=null,i.memoizedProps=o.memoizedProps,i.memoizedState=o.memoizedState,i.updateQueue=o.updateQueue,i.type=o.type,e=o.dependencies,i.dependencies=e===null?null:{lanes:e.lanes,firstContext:e.firstContext}),t=t.sibling;return L(V,V.current&1|2),n.child}e=e.sibling}i.tail!==null&&Q()>ut&&(n.flags|=128,a=!0,St(i,!1),n.lanes=4194304)}else{if(!a)if(e=Ja(o),e!==null){if(n.flags|=128,a=!0,t=e.updateQueue,t!==null&&(n.updateQueue=t,n.flags|=4),St(i,!0),i.tail===null&&i.tailMode==="hidden"&&!o.alternate&&!W)return re(n),null}else 2*Q()-i.renderingStartTime>ut&&t!==1073741824&&(n.flags|=128,a=!0,St(i,!1),n.lanes=4194304);i.isBackwards?(o.sibling=n.child,n.child=o):(t=i.last,t!==null?t.sibling=o:n.child=o,i.last=o)}return i.tail!==null?(n=i.tail,i.rendering=n,i.tail=n.sibling,i.renderingStartTime=Q(),n.sibling=null,t=V.current,L(V,a?t&1|2:t&1),n):(re(n),null);case 22:case 23:return Lo(),a=n.memoizedState!==null,e!==null&&e.memoizedState!==null!==a&&(n.flags|=8192),a&&n.mode&1?xe&1073741824&&(re(n),n.subtreeFlags&6&&(n.flags|=8192)):re(n),null;case 24:return null;case 25:return null}throw Error(k(156,n.tag))}function Cu(e,n){switch(vo(n),n.tag){case 1:return he(n.type)&&Ga(),e=n.flags,e&65536?(n.flags=e&-65537|128,n):null;case 3:return ct(),H(me),H(oe),Po(),e=n.flags,e&65536&&!(e&128)?(n.flags=e&-65537|128,n):null;case 5:return $o(n),null;case 13:if(H(V),e=n.memoizedState,e!==null&&e.dehydrated!==null){if(n.alternate===null)throw Error(k(340));lt()}return e=n.flags,e&65536?(n.flags=e&-65537|128,n):null;case 19:return H(V),null;case 4:return ct(),null;case 10:return So(n.type._context),null;case 22:case 23:return Lo(),null;case 24:return null;default:return null}}var _a=!1,ie=!1,$u=typeof WeakSet=="function"?WeakSet:Set,$=null;function Kn(e,n){var t=e.ref;if(t!==null)if(typeof t=="function")try{t(null)}catch(a){G(e,n,a)}else t.current=null}function Mi(e,n,t){try{t()}catch(a){G(e,n,a)}}var Ul=!1;function Pu(e,n){if(Si=Wa,e=n0(),xo(e)){if("selectionStart"in e)var t={start:e.selectionStart,end:e.selectionEnd};else e:{t=(t=e.ownerDocument)&&t.defaultView||window;var a=t.getSelection&&t.getSelection();if(a&&a.rangeCount!==0){t=a.anchorNode;var r=a.anchorOffset,i=a.focusNode;a=a.focusOffset;try{t.nodeType,i.nodeType}catch{t=null;break e}var o=0,l=-1,d=-1,f=0,b=0,x=e,m=null;n:for(;;){for(var w;x!==t||r!==0&&x.nodeType!==3||(l=o+r),x!==i||a!==0&&x.nodeType!==3||(d=o+a),x.nodeType===3&&(o+=x.nodeValue.length),(w=x.firstChild)!==null;)m=x,x=w;for(;;){if(x===e)break n;if(m===t&&++f===r&&(l=o),m===i&&++b===a&&(d=o),(w=x.nextSibling)!==null)break;x=m,m=x.parentNode}x=w}t=l===-1||d===-1?null:{start:l,end:d}}else t=null}t=t||{start:0,end:0}}else t=null;for(ki={focusedElem:e,selectionRange:t},Wa=!1,$=n;$!==null;)if(n=$,e=n.child,(n.subtreeFlags&1028)!==0&&e!==null)e.return=n,$=e;else for(;$!==null;){n=$;try{var S=n.alternate;if(n.flags&1024)switch(n.tag){case 0:case 11:case 15:break;case 1:if(S!==null){var _=S.memoizedProps,P=S.memoizedState,u=n.stateNode,s=u.getSnapshotBeforeUpdate(n.elementType===n.type?_:Ae(n.type,_),P);u.__reactInternalSnapshotBeforeUpdate=s}break;case 3:var c=n.stateNode.containerInfo;c.nodeType===1?c.textContent="":c.nodeType===9&&c.documentElement&&c.removeChild(c.documentElement);break;case 5:case 6:case 4:case 17:break;default:throw Error(k(163))}}catch(p){G(n,n.return,p)}if(e=n.sibling,e!==null){e.return=n.return,$=e;break}$=n.return}return S=Ul,Ul=!1,S}function It(e,n,t){var a=n.updateQueue;if(a=a!==null?a.lastEffect:null,a!==null){var r=a=a.next;do{if((r.tag&e)===e){var i=r.destroy;r.destroy=void 0,i!==void 0&&Mi(n,t,i)}r=r.next}while(r!==a)}}function gr(e,n){if(n=n.updateQueue,n=n!==null?n.lastEffect:null,n!==null){var t=n=n.next;do{if((t.tag&e)===e){var a=t.create;t.destroy=a()}t=t.next}while(t!==n)}}function Hi(e){var n=e.ref;if(n!==null){var t=e.stateNode;switch(e.tag){case 5:e=t;break;default:e=t}typeof n=="function"?n(e):n.current=e}}function K0(e){var n=e.alternate;n!==null&&(e.alternate=null,K0(n)),e.child=null,e.deletions=null,e.sibling=null,e.tag===5&&(n=e.stateNode,n!==null&&(delete n[Me],delete n[qt],delete n[$i],delete n[du],delete n[uu])),e.stateNode=null,e.return=null,e.dependencies=null,e.memoizedProps=null,e.memoizedState=null,e.pendingProps=null,e.stateNode=null,e.updateQueue=null}function Z0(e){return e.tag===5||e.tag===3||e.tag===4}function Gl(e){e:for(;;){for(;e.sibling===null;){if(e.return===null||Z0(e.return))return null;e=e.return}for(e.sibling.return=e.return,e=e.sibling;e.tag!==5&&e.tag!==6&&e.tag!==18;){if(e.flags&2||e.child===null||e.tag===4)continue e;e.child.return=e,e=e.child}if(!(e.flags&2))return e.stateNode}}function Wi(e,n,t){var a=e.tag;if(a===5||a===6)e=e.stateNode,n?t.nodeType===8?t.parentNode.insertBefore(e,n):t.insertBefore(e,n):(t.nodeType===8?(n=t.parentNode,n.insertBefore(e,t)):(n=t,n.appendChild(e)),t=t._reactRootContainer,t!=null||n.onclick!==null||(n.onclick=Ua));else if(a!==4&&(e=e.child,e!==null))for(Wi(e,n,t),e=e.sibling;e!==null;)Wi(e,n,t),e=e.sibling}function Vi(e,n,t){var a=e.tag;if(a===5||a===6)e=e.stateNode,n?t.insertBefore(e,n):t.appendChild(e);else if(a!==4&&(e=e.child,e!==null))for(Vi(e,n,t),e=e.sibling;e!==null;)Vi(e,n,t),e=e.sibling}var J=null,Be=!1;function an(e,n,t){for(t=t.child;t!==null;)J0(e,n,t),t=t.sibling}function J0(e,n,t){if(He&&typeof He.onCommitFiberUnmount=="function")try{He.onCommitFiberUnmount(sr,t)}catch{}switch(t.tag){case 5:ie||Kn(t,n);case 6:var a=J,r=Be;J=null,an(e,n,t),J=a,Be=r,J!==null&&(Be?(e=J,t=t.stateNode,e.nodeType===8?e.parentNode.removeChild(t):e.removeChild(t)):J.removeChild(t.stateNode));break;case 18:J!==null&&(Be?(e=J,t=t.stateNode,e.nodeType===8?Vr(e.parentNode,t):e.nodeType===1&&Vr(e,t),Vt(e)):Vr(J,t.stateNode));break;case 4:a=J,r=Be,J=t.stateNode.containerInfo,Be=!0,an(e,n,t),J=a,Be=r;break;case 0:case 11:case 14:case 15:if(!ie&&(a=t.updateQueue,a!==null&&(a=a.lastEffect,a!==null))){r=a=a.next;do{var i=r,o=i.destroy;i=i.tag,o!==void 0&&(i&2||i&4)&&Mi(t,n,o),r=r.next}while(r!==a)}an(e,n,t);break;case 1:if(!ie&&(Kn(t,n),a=t.stateNode,typeof a.componentWillUnmount=="function"))try{a.props=t.memoizedProps,a.state=t.memoizedState,a.componentWillUnmount()}catch(l){G(t,n,l)}an(e,n,t);break;case 21:an(e,n,t);break;case 22:t.mode&1?(ie=(a=ie)||t.memoizedState!==null,an(e,n,t),ie=a):an(e,n,t);break;default:an(e,n,t)}}function Ql(e){var n=e.updateQueue;if(n!==null){e.updateQueue=null;var t=e.stateNode;t===null&&(t=e.stateNode=new $u),n.forEach(function(a){var r=Nu.bind(null,e,a);t.has(a)||(t.add(a),a.then(r,r))})}}function Ee(e,n){var t=n.deletions;if(t!==null)for(var a=0;a<t.length;a++){var r=t[a];try{var i=e,o=n,l=o;e:for(;l!==null;){switch(l.tag){case 5:J=l.stateNode,Be=!1;break e;case 3:J=l.stateNode.containerInfo,Be=!0;break e;case 4:J=l.stateNode.containerInfo,Be=!0;break e}l=l.return}if(J===null)throw Error(k(160));J0(i,o,r),J=null,Be=!1;var d=r.alternate;d!==null&&(d.return=null),r.return=null}catch(f){G(r,n,f)}}if(n.subtreeFlags&12854)for(n=n.child;n!==null;)ec(n,e),n=n.sibling}function ec(e,n){var t=e.alternate,a=e.flags;switch(e.tag){case 0:case 11:case 14:case 15:if(Ee(n,e),Oe(e),a&4){try{It(3,e,e.return),gr(3,e)}catch(_){G(e,e.return,_)}try{It(5,e,e.return)}catch(_){G(e,e.return,_)}}break;case 1:Ee(n,e),Oe(e),a&512&&t!==null&&Kn(t,t.return);break;case 5:if(Ee(n,e),Oe(e),a&512&&t!==null&&Kn(t,t.return),e.flags&32){var r=e.stateNode;try{Lt(r,"")}catch(_){G(e,e.return,_)}}if(a&4&&(r=e.stateNode,r!=null)){var i=e.memoizedProps,o=t!==null?t.memoizedProps:i,l=e.type,d=e.updateQueue;if(e.updateQueue=null,d!==null)try{l==="input"&&i.type==="radio"&&i.name!=null&&ws(r,i),fi(l,o);var f=fi(l,i);for(o=0;o<d.length;o+=2){var b=d[o],x=d[o+1];b==="style"?$s(r,x):b==="dangerouslySetInnerHTML"?Fs(r,x):b==="children"?Lt(r,x):ao(r,b,x,f)}switch(l){case"input":si(r,i);break;case"textarea":Ss(r,i);break;case"select":var m=r._wrapperState.wasMultiple;r._wrapperState.wasMultiple=!!i.multiple;var w=i.value;w!=null?Jn(r,!!i.multiple,w,!1):m!==!!i.multiple&&(i.defaultValue!=null?Jn(r,!!i.multiple,i.defaultValue,!0):Jn(r,!!i.multiple,i.multiple?[]:"",!1))}r[qt]=i}catch(_){G(e,e.return,_)}}break;case 6:if(Ee(n,e),Oe(e),a&4){if(e.stateNode===null)throw Error(k(162));r=e.stateNode,i=e.memoizedProps;try{r.nodeValue=i}catch(_){G(e,e.return,_)}}break;case 3:if(Ee(n,e),Oe(e),a&4&&t!==null&&t.memoizedState.isDehydrated)try{Vt(n.containerInfo)}catch(_){G(e,e.return,_)}break;case 4:Ee(n,e),Oe(e);break;case 13:Ee(n,e),Oe(e),r=e.child,r.flags&8192&&(i=r.memoizedState!==null,r.stateNode.isHidden=i,!i||r.alternate!==null&&r.alternate.memoizedState!==null||(No=Q())),a&4&&Ql(e);break;case 22:if(b=t!==null&&t.memoizedState!==null,e.mode&1?(ie=(f=ie)||b,Ee(n,e),ie=f):Ee(n,e),Oe(e),a&8192){if(f=e.memoizedState!==null,(e.stateNode.isHidden=f)&&!b&&e.mode&1)for($=e,b=e.child;b!==null;){for(x=$=b;$!==null;){switch(m=$,w=m.child,m.tag){case 0:case 11:case 14:case 15:It(4,m,m.return);break;case 1:Kn(m,m.return);var S=m.stateNode;if(typeof S.componentWillUnmount=="function"){a=m,t=m.return;try{n=a,S.props=n.memoizedProps,S.state=n.memoizedState,S.componentWillUnmount()}catch(_){G(a,t,_)}}break;case 5:Kn(m,m.return);break;case 22:if(m.memoizedState!==null){Yl(x);continue}}w!==null?(w.return=m,$=w):Yl(x)}b=b.sibling}e:for(b=null,x=e;;){if(x.tag===5){if(b===null){b=x;try{r=x.stateNode,f?(i=r.style,typeof i.setProperty=="function"?i.setProperty("display","none","important"):i.display="none"):(l=x.stateNode,d=x.memoizedProps.style,o=d!=null&&d.hasOwnProperty("display")?d.display:null,l.style.display=Cs("display",o))}catch(_){G(e,e.return,_)}}}else if(x.tag===6){if(b===null)try{x.stateNode.nodeValue=f?"":x.memoizedProps}catch(_){G(e,e.return,_)}}else if((x.tag!==22&&x.tag!==23||x.memoizedState===null||x===e)&&x.child!==null){x.child.return=x,x=x.child;continue}if(x===e)break e;for(;x.sibling===null;){if(x.return===null||x.return===e)break e;b===x&&(b=null),x=x.return}b===x&&(b=null),x.sibling.return=x.return,x=x.sibling}}break;case 19:Ee(n,e),Oe(e),a&4&&Ql(e);break;case 21:break;default:Ee(n,e),Oe(e)}}function Oe(e){var n=e.flags;if(n&2){try{e:{for(var t=e.return;t!==null;){if(Z0(t)){var a=t;break e}t=t.return}throw Error(k(160))}switch(a.tag){case 5:var r=a.stateNode;a.flags&32&&(Lt(r,""),a.flags&=-33);var i=Gl(e);Vi(e,i,r);break;case 3:case 4:var o=a.stateNode.containerInfo,l=Gl(e);Wi(e,l,o);break;default:throw Error(k(161))}}catch(d){G(e,e.return,d)}e.flags&=-3}n&4096&&(e.flags&=-4097)}function Tu(e,n,t){$=e,nc(e)}function nc(e,n,t){for(var a=(e.mode&1)!==0;$!==null;){var r=$,i=r.child;if(r.tag===22&&a){var o=r.memoizedState!==null||_a;if(!o){var l=r.alternate,d=l!==null&&l.memoizedState!==null||ie;l=_a;var f=ie;if(_a=o,(ie=d)&&!f)for($=r;$!==null;)o=$,d=o.child,o.tag===22&&o.memoizedState!==null?Xl(r):d!==null?(d.return=o,$=d):Xl(r);for(;i!==null;)$=i,nc(i),i=i.sibling;$=r,_a=l,ie=f}ql(e)}else r.subtreeFlags&8772&&i!==null?(i.return=r,$=i):ql(e)}}function ql(e){for(;$!==null;){var n=$;if(n.flags&8772){var t=n.alternate;try{if(n.flags&8772)switch(n.tag){case 0:case 11:case 15:ie||gr(5,n);break;case 1:var a=n.stateNode;if(n.flags&4&&!ie)if(t===null)a.componentDidMount();else{var r=n.elementType===n.type?t.memoizedProps:Ae(n.type,t.memoizedProps);a.componentDidUpdate(r,t.memoizedState,a.__reactInternalSnapshotBeforeUpdate)}var i=n.updateQueue;i!==null&&Al(n,i,a);break;case 3:var o=n.updateQueue;if(o!==null){if(t=null,n.child!==null)switch(n.child.tag){case 5:t=n.child.stateNode;break;case 1:t=n.child.stateNode}Al(n,o,t)}break;case 5:var l=n.stateNode;if(t===null&&n.flags&4){t=l;var d=n.memoizedProps;switch(n.type){case"button":case"input":case"select":case"textarea":d.autoFocus&&t.focus();break;case"img":d.src&&(t.src=d.src)}}break;case 6:break;case 4:break;case 12:break;case 13:if(n.memoizedState===null){var f=n.alternate;if(f!==null){var b=f.memoizedState;if(b!==null){var x=b.dehydrated;x!==null&&Vt(x)}}}break;case 19:case 17:case 21:case 22:case 23:case 25:break;default:throw Error(k(163))}ie||n.flags&512&&Hi(n)}catch(m){G(n,n.return,m)}}if(n===e){$=null;break}if(t=n.sibling,t!==null){t.return=n.return,$=t;break}$=n.return}}function Yl(e){for(;$!==null;){var n=$;if(n===e){$=null;break}var t=n.sibling;if(t!==null){t.return=n.return,$=t;break}$=n.return}}function Xl(e){for(;$!==null;){var n=$;try{switch(n.tag){case 0:case 11:case 15:var t=n.return;try{gr(4,n)}catch(d){G(n,t,d)}break;case 1:var a=n.stateNode;if(typeof a.componentDidMount=="function"){var r=n.return;try{a.componentDidMount()}catch(d){G(n,r,d)}}var i=n.return;try{Hi(n)}catch(d){G(n,i,d)}break;case 5:var o=n.return;try{Hi(n)}catch(d){G(n,o,d)}}}catch(d){G(n,n.return,d)}if(n===e){$=null;break}var l=n.sibling;if(l!==null){l.return=n.return,$=l;break}$=n.return}}var Ru=Math.ceil,tr=en.ReactCurrentDispatcher,Io=en.ReactCurrentOwner,Pe=en.ReactCurrentBatchConfig,B=0,Z=null,q=null,ee=0,xe=0,Zn=wn(0),X=0,ea=null,Dn=0,xr=0,zo=0,zt=null,pe=null,No=0,ut=1/0,Ue=null,ar=!1,ji=null,gn=null,wa=!1,dn=null,rr=0,Nt=0,Ui=null,Da=-1,Ia=0;function se(){return B&6?Q():Da!==-1?Da:Da=Q()}function xn(e){return e.mode&1?B&2&&ee!==0?ee&-ee:fu.transition!==null?(Ia===0&&(Ia=Ls()),Ia):(e=N,e!==0||(e=window.event,e=e===void 0?16:Gs(e.type)),e):1}function ze(e,n,t,a){if(50<Nt)throw Nt=0,Ui=null,Error(k(185));ta(e,t,a),(!(B&2)||e!==Z)&&(e===Z&&(!(B&2)&&(xr|=t),X===4&&sn(e,ee)),ge(e,a),t===1&&B===0&&!(n.mode&1)&&(ut=Q()+500,fr&&Sn()))}function ge(e,n){var t=e.callbackNode;fd(e,n);var a=Ha(e,e===Z?ee:0);if(a===0)t!==null&&il(t),e.callbackNode=null,e.callbackPriority=0;else if(n=a&-a,e.callbackPriority!==n){if(t!=null&&il(t),n===1)e.tag===0?pu(Kl.bind(null,e)):u0(Kl.bind(null,e)),su(function(){!(B&6)&&Sn()}),t=null;else{switch(Ms(a)){case 1:t=so;break;case 4:t=Ns;break;case 16:t=Ma;break;case 536870912:t=Os;break;default:t=Ma}t=cc(t,tc.bind(null,e))}e.callbackPriority=n,e.callbackNode=t}}function tc(e,n){if(Da=-1,Ia=0,B&6)throw Error(k(327));var t=e.callbackNode;if(rt()&&e.callbackNode!==t)return null;var a=Ha(e,e===Z?ee:0);if(a===0)return null;if(a&30||a&e.expiredLanes||n)n=ir(e,a);else{n=a;var r=B;B|=2;var i=rc();(Z!==e||ee!==n)&&(Ue=null,ut=Q()+500,Tn(e,n));do try{Bu();break}catch(l){ac(e,l)}while(!0);wo(),tr.current=i,B=r,q!==null?n=0:(Z=null,ee=0,n=X)}if(n!==0){if(n===2&&(r=bi(e),r!==0&&(a=r,n=Gi(e,r))),n===1)throw t=ea,Tn(e,0),sn(e,a),ge(e,Q()),t;if(n===6)sn(e,a);else{if(r=e.current.alternate,!(a&30)&&!Eu(r)&&(n=ir(e,a),n===2&&(i=bi(e),i!==0&&(a=i,n=Gi(e,i))),n===1))throw t=ea,Tn(e,0),sn(e,a),ge(e,Q()),t;switch(e.finishedWork=r,e.finishedLanes=a,n){case 0:case 1:throw Error(k(345));case 2:Fn(e,pe,Ue);break;case 3:if(sn(e,a),(a&130023424)===a&&(n=No+500-Q(),10<n)){if(Ha(e,0)!==0)break;if(r=e.suspendedLanes,(r&a)!==a){se(),e.pingedLanes|=e.suspendedLanes&r;break}e.timeoutHandle=Ci(Fn.bind(null,e,pe,Ue),n);break}Fn(e,pe,Ue);break;case 4:if(sn(e,a),(a&4194240)===a)break;for(n=e.eventTimes,r=-1;0<a;){var o=31-Ie(a);i=1<<o,o=n[o],o>r&&(r=o),a&=~i}if(a=r,a=Q()-a,a=(120>a?120:480>a?480:1080>a?1080:1920>a?1920:3e3>a?3e3:4320>a?4320:1960*Ru(a/1960))-a,10<a){e.timeoutHandle=Ci(Fn.bind(null,e,pe,Ue),a);break}Fn(e,pe,Ue);break;case 5:Fn(e,pe,Ue);break;default:throw Error(k(329))}}}return ge(e,Q()),e.callbackNode===t?tc.bind(null,e):null}function Gi(e,n){var t=zt;return e.current.memoizedState.isDehydrated&&(Tn(e,n).flags|=256),e=ir(e,n),e!==2&&(n=pe,pe=t,n!==null&&Qi(n)),e}function Qi(e){pe===null?pe=e:pe.push.apply(pe,e)}function Eu(e){for(var n=e;;){if(n.flags&16384){var t=n.updateQueue;if(t!==null&&(t=t.stores,t!==null))for(var a=0;a<t.length;a++){var r=t[a],i=r.getSnapshot;r=r.value;try{if(!Ne(i(),r))return!1}catch{return!1}}}if(t=n.child,n.subtreeFlags&16384&&t!==null)t.return=n,n=t;else{if(n===e)break;for(;n.sibling===null;){if(n.return===null||n.return===e)return!0;n=n.return}n.sibling.return=n.return,n=n.sibling}}return!0}function sn(e,n){for(n&=~zo,n&=~xr,e.suspendedLanes|=n,e.pingedLanes&=~n,e=e.expirationTimes;0<n;){var t=31-Ie(n),a=1<<t;e[t]=-1,n&=~a}}function Kl(e){if(B&6)throw Error(k(327));rt();var n=Ha(e,0);if(!(n&1))return ge(e,Q()),null;var t=ir(e,n);if(e.tag!==0&&t===2){var a=bi(e);a!==0&&(n=a,t=Gi(e,a))}if(t===1)throw t=ea,Tn(e,0),sn(e,n),ge(e,Q()),t;if(t===6)throw Error(k(345));return e.finishedWork=e.current.alternate,e.finishedLanes=n,Fn(e,pe,Ue),ge(e,Q()),null}function Oo(e,n){var t=B;B|=1;try{return e(n)}finally{B=t,B===0&&(ut=Q()+500,fr&&Sn())}}function In(e){dn!==null&&dn.tag===0&&!(B&6)&&rt();var n=B;B|=1;var t=Pe.transition,a=N;try{if(Pe.transition=null,N=1,e)return e()}finally{N=a,Pe.transition=t,B=n,!(B&6)&&Sn()}}function Lo(){xe=Zn.current,H(Zn)}function Tn(e,n){e.finishedWork=null,e.finishedLanes=0;var t=e.timeoutHandle;if(t!==-1&&(e.timeoutHandle=-1,lu(t)),q!==null)for(t=q.return;t!==null;){var a=t;switch(vo(a),a.tag){case 1:a=a.type.childContextTypes,a!=null&&Ga();break;case 3:ct(),H(me),H(oe),Po();break;case 5:$o(a);break;case 4:ct();break;case 13:H(V);break;case 19:H(V);break;case 10:So(a.type._context);break;case 22:case 23:Lo()}t=t.return}if(Z=e,q=e=bn(e.current,null),ee=xe=n,X=0,ea=null,zo=xr=Dn=0,pe=zt=null,$n!==null){for(n=0;n<$n.length;n++)if(t=$n[n],a=t.interleaved,a!==null){t.interleaved=null;var r=a.next,i=t.pending;if(i!==null){var o=i.next;i.next=r,a.next=o}t.pending=a}$n=null}return e}function ac(e,n){do{var t=q;try{if(wo(),Ea.current=nr,er){for(var a=j.memoizedState;a!==null;){var r=a.queue;r!==null&&(r.pending=null),a=a.next}er=!1}if(Bn=0,K=Y=j=null,Dt=!1,Kt=0,Io.current=null,t===null||t.return===null){X=1,ea=n,q=null;break}e:{var i=e,o=t.return,l=t,d=n;if(n=ee,l.flags|=32768,d!==null&&typeof d=="object"&&typeof d.then=="function"){var f=d,b=l,x=b.tag;if(!(b.mode&1)&&(x===0||x===11||x===15)){var m=b.alternate;m?(b.updateQueue=m.updateQueue,b.memoizedState=m.memoizedState,b.lanes=m.lanes):(b.updateQueue=null,b.memoizedState=null)}var w=Ol(o);if(w!==null){w.flags&=-257,Ll(w,o,l,i,n),w.mode&1&&Nl(i,f,n),n=w,d=f;var S=n.updateQueue;if(S===null){var _=new Set;_.add(d),n.updateQueue=_}else S.add(d);break e}else{if(!(n&1)){Nl(i,f,n),Mo();break e}d=Error(k(426))}}else if(W&&l.mode&1){var P=Ol(o);if(P!==null){!(P.flags&65536)&&(P.flags|=256),Ll(P,o,l,i,n),yo(dt(d,l));break e}}i=d=dt(d,l),X!==4&&(X=2),zt===null?zt=[i]:zt.push(i),i=o;do{switch(i.tag){case 3:i.flags|=65536,n&=-n,i.lanes|=n;var u=M0(i,d,n);El(i,u);break e;case 1:l=d;var s=i.type,c=i.stateNode;if(!(i.flags&128)&&(typeof s.getDerivedStateFromError=="function"||c!==null&&typeof c.componentDidCatch=="function"&&(gn===null||!gn.has(c)))){i.flags|=65536,n&=-n,i.lanes|=n;var p=H0(i,l,n);El(i,p);break e}}i=i.return}while(i!==null)}oc(t)}catch(h){n=h,q===t&&t!==null&&(q=t=t.return);continue}break}while(!0)}function rc(){var e=tr.current;return tr.current=nr,e===null?nr:e}function Mo(){(X===0||X===3||X===2)&&(X=4),Z===null||!(Dn&268435455)&&!(xr&268435455)||sn(Z,ee)}function ir(e,n){var t=B;B|=2;var a=rc();(Z!==e||ee!==n)&&(Ue=null,Tn(e,n));do try{Au();break}catch(r){ac(e,r)}while(!0);if(wo(),B=t,tr.current=a,q!==null)throw Error(k(261));return Z=null,ee=0,X}function Au(){for(;q!==null;)ic(q)}function Bu(){for(;q!==null&&!rd();)ic(q)}function ic(e){var n=sc(e.alternate,e,xe);e.memoizedProps=e.pendingProps,n===null?oc(e):q=n,Io.current=null}function oc(e){var n=e;do{var t=n.alternate;if(e=n.return,n.flags&32768){if(t=Cu(t,n),t!==null){t.flags&=32767,q=t;return}if(e!==null)e.flags|=32768,e.subtreeFlags=0,e.deletions=null;else{X=6,q=null;return}}else if(t=Fu(t,n,xe),t!==null){q=t;return}if(n=n.sibling,n!==null){q=n;return}q=n=e}while(n!==null);X===0&&(X=5)}function Fn(e,n,t){var a=N,r=Pe.transition;try{Pe.transition=null,N=1,Du(e,n,t,a)}finally{Pe.transition=r,N=a}return null}function Du(e,n,t,a){do rt();while(dn!==null);if(B&6)throw Error(k(327));t=e.finishedWork;var r=e.finishedLanes;if(t===null)return null;if(e.finishedWork=null,e.finishedLanes=0,t===e.current)throw Error(k(177));e.callbackNode=null,e.callbackPriority=0;var i=t.lanes|t.childLanes;if(md(e,i),e===Z&&(q=Z=null,ee=0),!(t.subtreeFlags&2064)&&!(t.flags&2064)||wa||(wa=!0,cc(Ma,function(){return rt(),null})),i=(t.flags&15990)!==0,t.subtreeFlags&15990||i){i=Pe.transition,Pe.transition=null;var o=N;N=1;var l=B;B|=4,Io.current=null,Pu(e,t),ec(t,e),eu(ki),Wa=!!Si,ki=Si=null,e.current=t,Tu(t),id(),B=l,N=o,Pe.transition=i}else e.current=t;if(wa&&(wa=!1,dn=e,rr=r),i=e.pendingLanes,i===0&&(gn=null),sd(t.stateNode),ge(e,Q()),n!==null)for(a=e.onRecoverableError,t=0;t<n.length;t++)r=n[t],a(r.value,{componentStack:r.stack,digest:r.digest});if(ar)throw ar=!1,e=ji,ji=null,e;return rr&1&&e.tag!==0&&rt(),i=e.pendingLanes,i&1?e===Ui?Nt++:(Nt=0,Ui=e):Nt=0,Sn(),null}function rt(){if(dn!==null){var e=Ms(rr),n=Pe.transition,t=N;try{if(Pe.transition=null,N=16>e?16:e,dn===null)var a=!1;else{if(e=dn,dn=null,rr=0,B&6)throw Error(k(331));var r=B;for(B|=4,$=e.current;$!==null;){var i=$,o=i.child;if($.flags&16){var l=i.deletions;if(l!==null){for(var d=0;d<l.length;d++){var f=l[d];for($=f;$!==null;){var b=$;switch(b.tag){case 0:case 11:case 15:It(8,b,i)}var x=b.child;if(x!==null)x.return=b,$=x;else for(;$!==null;){b=$;var m=b.sibling,w=b.return;if(K0(b),b===f){$=null;break}if(m!==null){m.return=w,$=m;break}$=w}}}var S=i.alternate;if(S!==null){var _=S.child;if(_!==null){S.child=null;do{var P=_.sibling;_.sibling=null,_=P}while(_!==null)}}$=i}}if(i.subtreeFlags&2064&&o!==null)o.return=i,$=o;else e:for(;$!==null;){if(i=$,i.flags&2048)switch(i.tag){case 0:case 11:case 15:It(9,i,i.return)}var u=i.sibling;if(u!==null){u.return=i.return,$=u;break e}$=i.return}}var s=e.current;for($=s;$!==null;){o=$;var c=o.child;if(o.subtreeFlags&2064&&c!==null)c.return=o,$=c;else e:for(o=s;$!==null;){if(l=$,l.flags&2048)try{switch(l.tag){case 0:case 11:case 15:gr(9,l)}}catch(h){G(l,l.return,h)}if(l===o){$=null;break e}var p=l.sibling;if(p!==null){p.return=l.return,$=p;break e}$=l.return}}if(B=r,Sn(),He&&typeof He.onPostCommitFiberRoot=="function")try{He.onPostCommitFiberRoot(sr,e)}catch{}a=!0}return a}finally{N=t,Pe.transition=n}}return!1}function Zl(e,n,t){n=dt(t,n),n=M0(e,n,1),e=hn(e,n,1),n=se(),e!==null&&(ta(e,1,n),ge(e,n))}function G(e,n,t){if(e.tag===3)Zl(e,e,t);else for(;n!==null;){if(n.tag===3){Zl(n,e,t);break}else if(n.tag===1){var a=n.stateNode;if(typeof n.type.getDerivedStateFromError=="function"||typeof a.componentDidCatch=="function"&&(gn===null||!gn.has(a))){e=dt(t,e),e=H0(n,e,1),n=hn(n,e,1),e=se(),n!==null&&(ta(n,1,e),ge(n,e));break}}n=n.return}}function Iu(e,n,t){var a=e.pingCache;a!==null&&a.delete(n),n=se(),e.pingedLanes|=e.suspendedLanes&t,Z===e&&(ee&t)===t&&(X===4||X===3&&(ee&130023424)===ee&&500>Q()-No?Tn(e,0):zo|=t),ge(e,n)}function lc(e,n){n===0&&(e.mode&1?(n=pa,pa<<=1,!(pa&130023424)&&(pa=4194304)):n=1);var t=se();e=Ze(e,n),e!==null&&(ta(e,n,t),ge(e,t))}function zu(e){var n=e.memoizedState,t=0;n!==null&&(t=n.retryLane),lc(e,t)}function Nu(e,n){var t=0;switch(e.tag){case 13:var a=e.stateNode,r=e.memoizedState;r!==null&&(t=r.retryLane);break;case 19:a=e.stateNode;break;default:throw Error(k(314))}a!==null&&a.delete(n),lc(e,t)}var sc;sc=function(e,n,t){if(e!==null)if(e.memoizedProps!==n.pendingProps||me.current)fe=!0;else{if(!(e.lanes&t)&&!(n.flags&128))return fe=!1,ku(e,n,t);fe=!!(e.flags&131072)}else fe=!1,W&&n.flags&1048576&&p0(n,Ya,n.index);switch(n.lanes=0,n.tag){case 2:var a=n.type;Ba(e,n),e=n.pendingProps;var r=ot(n,oe.current);at(n,t),r=Ro(null,n,a,e,r,t);var i=Eo();return n.flags|=1,typeof r=="object"&&r!==null&&typeof r.render=="function"&&r.$$typeof===void 0?(n.tag=1,n.memoizedState=null,n.updateQueue=null,he(a)?(i=!0,Qa(n)):i=!1,n.memoizedState=r.state!==null&&r.state!==void 0?r.state:null,Fo(n),r.updater=hr,n.stateNode=r,r._reactInternals=n,Bi(n,a,e,t),n=zi(null,n,a,!0,i,t)):(n.tag=0,W&&i&&bo(n),le(null,n,r,t),n=n.child),n;case 16:a=n.elementType;e:{switch(Ba(e,n),e=n.pendingProps,r=a._init,a=r(a._payload),n.type=a,r=n.tag=Lu(a),e=Ae(a,e),r){case 0:n=Ii(null,n,a,e,t);break e;case 1:n=Wl(null,n,a,e,t);break e;case 11:n=Ml(null,n,a,e,t);break e;case 14:n=Hl(null,n,a,Ae(a.type,e),t);break e}throw Error(k(306,a,""))}return n;case 0:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ii(e,n,a,r,t);case 1:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Wl(e,n,a,r,t);case 3:e:{if(U0(n),e===null)throw Error(k(387));a=n.pendingProps,i=n.memoizedState,r=i.element,b0(e,n),Za(n,a,null,t);var o=n.memoizedState;if(a=o.element,i.isDehydrated)if(i={element:a,isDehydrated:!1,cache:o.cache,pendingSuspenseBoundaries:o.pendingSuspenseBoundaries,transitions:o.transitions},n.updateQueue.baseState=i,n.memoizedState=i,n.flags&256){r=dt(Error(k(423)),n),n=Vl(e,n,a,t,r);break e}else if(a!==r){r=dt(Error(k(424)),n),n=Vl(e,n,a,t,r);break e}else for(ve=mn(n.stateNode.containerInfo.firstChild),ye=n,W=!0,De=null,t=g0(n,null,a,t),n.child=t;t;)t.flags=t.flags&-3|4096,t=t.sibling;else{if(lt(),a===r){n=Je(e,n,t);break e}le(e,n,a,t)}n=n.child}return n;case 5:return v0(n),e===null&&Ri(n),a=n.type,r=n.pendingProps,i=e!==null?e.memoizedProps:null,o=r.children,Fi(a,r)?o=null:i!==null&&Fi(a,i)&&(n.flags|=32),j0(e,n),le(e,n,o,t),n.child;case 6:return e===null&&Ri(n),null;case 13:return G0(e,n,t);case 4:return Co(n,n.stateNode.containerInfo),a=n.pendingProps,e===null?n.child=st(n,null,a,t):le(e,n,a,t),n.child;case 11:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ml(e,n,a,r,t);case 7:return le(e,n,n.pendingProps,t),n.child;case 8:return le(e,n,n.pendingProps.children,t),n.child;case 12:return le(e,n,n.pendingProps.children,t),n.child;case 10:e:{if(a=n.type._context,r=n.pendingProps,i=n.memoizedProps,o=r.value,L(Xa,a._currentValue),a._currentValue=o,i!==null)if(Ne(i.value,o)){if(i.children===r.children&&!me.current){n=Je(e,n,t);break e}}else for(i=n.child,i!==null&&(i.return=n);i!==null;){var l=i.dependencies;if(l!==null){o=i.child;for(var d=l.firstContext;d!==null;){if(d.context===a){if(i.tag===1){d=Ye(-1,t&-t),d.tag=2;var f=i.updateQueue;if(f!==null){f=f.shared;var b=f.pending;b===null?d.next=d:(d.next=b.next,b.next=d),f.pending=d}}i.lanes|=t,d=i.alternate,d!==null&&(d.lanes|=t),Ei(i.return,t,n),l.lanes|=t;break}d=d.next}}else if(i.tag===10)o=i.type===n.type?null:i.child;else if(i.tag===18){if(o=i.return,o===null)throw Error(k(341));o.lanes|=t,l=o.alternate,l!==null&&(l.lanes|=t),Ei(o,t,n),o=i.sibling}else o=i.child;if(o!==null)o.return=i;else for(o=i;o!==null;){if(o===n){o=null;break}if(i=o.sibling,i!==null){i.return=o.return,o=i;break}o=o.return}i=o}le(e,n,r.children,t),n=n.child}return n;case 9:return r=n.type,a=n.pendingProps.children,at(n,t),r=Te(r),a=a(r),n.flags|=1,le(e,n,a,t),n.child;case 14:return a=n.type,r=Ae(a,n.pendingProps),r=Ae(a.type,r),Hl(e,n,a,r,t);case 15:return W0(e,n,n.type,n.pendingProps,t);case 17:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ba(e,n),n.tag=1,he(a)?(e=!0,Qa(n)):e=!1,at(n,t),L0(n,a,r),Bi(n,a,r,t),zi(null,n,a,!0,e,t);case 19:return Q0(e,n,t);case 22:return V0(e,n,t)}throw Error(k(156,n.tag))};function cc(e,n){return zs(e,n)}function Ou(e,n,t,a){this.tag=e,this.key=t,this.sibling=this.child=this.return=this.stateNode=this.type=this.elementType=null,this.index=0,this.ref=null,this.pendingProps=n,this.dependencies=this.memoizedState=this.updateQueue=this.memoizedProps=null,this.mode=a,this.subtreeFlags=this.flags=0,this.deletions=null,this.childLanes=this.lanes=0,this.alternate=null}function $e(e,n,t,a){return new Ou(e,n,t,a)}function Ho(e){return e=e.prototype,!(!e||!e.isReactComponent)}function Lu(e){if(typeof e=="function")return Ho(e)?1:0;if(e!=null){if(e=e.$$typeof,e===io)return 11;if(e===oo)return 14}return 2}function bn(e,n){var t=e.alternate;return t===null?(t=$e(e.tag,n,e.key,e.mode),t.elementType=e.elementType,t.type=e.type,t.stateNode=e.stateNode,t.alternate=e,e.alternate=t):(t.pendingProps=n,t.type=e.type,t.flags=0,t.subtreeFlags=0,t.deletions=null),t.flags=e.flags&14680064,t.childLanes=e.childLanes,t.lanes=e.lanes,t.child=e.child,t.memoizedProps=e.memoizedProps,t.memoizedState=e.memoizedState,t.updateQueue=e.updateQueue,n=e.dependencies,t.dependencies=n===null?null:{lanes:n.lanes,firstContext:n.firstContext},t.sibling=e.sibling,t.index=e.index,t.ref=e.ref,t}function za(e,n,t,a,r,i){var o=2;if(a=e,typeof e=="function")Ho(e)&&(o=1);else if(typeof e=="string")o=5;else e:switch(e){case Wn:return Rn(t.children,r,i,n);case ro:o=8,r|=8;break;case ai:return e=$e(12,t,n,r|2),e.elementType=ai,e.lanes=i,e;case ri:return e=$e(13,t,n,r),e.elementType=ri,e.lanes=i,e;case ii:return e=$e(19,t,n,r),e.elementType=ii,e.lanes=i,e;case vs:return br(t,r,i,n);default:if(typeof e=="object"&&e!==null)switch(e.$$typeof){case xs:o=10;break e;case bs:o=9;break e;case io:o=11;break e;case oo:o=14;break e;case rn:o=16,a=null;break e}throw Error(k(130,e==null?e:typeof e,""))}return n=$e(o,t,n,r),n.elementType=e,n.type=a,n.lanes=i,n}function Rn(e,n,t,a){return e=$e(7,e,a,n),e.lanes=t,e}function br(e,n,t,a){return e=$e(22,e,a,n),e.elementType=vs,e.lanes=t,e.stateNode={isHidden:!1},e}function Kr(e,n,t){return e=$e(6,e,null,n),e.lanes=t,e}function Zr(e,n,t){return n=$e(4,e.children!==null?e.children:[],e.key,n),n.lanes=t,n.stateNode={containerInfo:e.containerInfo,pendingChildren:null,implementation:e.implementation},n}function Mu(e,n,t,a,r){this.tag=n,this.containerInfo=e,this.finishedWork=this.pingCache=this.current=this.pendingChildren=null,this.timeoutHandle=-1,this.callbackNode=this.pendingContext=this.context=null,this.callbackPriority=0,this.eventTimes=Ar(0),this.expirationTimes=Ar(-1),this.entangledLanes=this.finishedLanes=this.mutableReadLanes=this.expiredLanes=this.pingedLanes=this.suspendedLanes=this.pendingLanes=0,this.entanglements=Ar(0),this.identifierPrefix=a,this.onRecoverableError=r,this.mutableSourceEagerHydrationData=null}function Wo(e,n,t,a,r,i,o,l,d){return e=new Mu(e,n,t,l,d),n===1?(n=1,i===!0&&(n|=8)):n=0,i=$e(3,null,null,n),e.current=i,i.stateNode=e,i.memoizedState={element:a,isDehydrated:t,cache:null,transitions:null,pendingSuspenseBoundaries:null},Fo(i),e}function Hu(e,n,t){var a=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:Hn,key:a==null?null:""+a,children:e,containerInfo:n,implementation:t}}function dc(e){if(!e)return yn;e=e._reactInternals;e:{if(Nn(e)!==e||e.tag!==1)throw Error(k(170));var n=e;do{switch(n.tag){case 3:n=n.stateNode.context;break e;case 1:if(he(n.type)){n=n.stateNode.__reactInternalMemoizedMergedChildContext;break e}}n=n.return}while(n!==null);throw Error(k(171))}if(e.tag===1){var t=e.type;if(he(t))return d0(e,t,n)}return n}function uc(e,n,t,a,r,i,o,l,d){return e=Wo(t,a,!0,e,r,i,o,l,d),e.context=dc(null),t=e.current,a=se(),r=xn(t),i=Ye(a,r),i.callback=n??null,hn(t,i,r),e.current.lanes=r,ta(e,r,a),ge(e,a),e}function vr(e,n,t,a){var r=n.current,i=se(),o=xn(r);return t=dc(t),n.context===null?n.context=t:n.pendingContext=t,n=Ye(i,o),n.payload={element:e},a=a===void 0?null:a,a!==null&&(n.callback=a),e=hn(r,n,o),e!==null&&(ze(e,r,o,i),Ra(e,r,o)),o}function or(e){if(e=e.current,!e.child)return null;switch(e.child.tag){case 5:return e.child.stateNode;default:return e.child.stateNode}}function Jl(e,n){if(e=e.memoizedState,e!==null&&e.dehydrated!==null){var t=e.retryLane;e.retryLane=t!==0&&t<n?t:n}}function Vo(e,n){Jl(e,n),(e=e.alternate)&&Jl(e,n)}function Wu(){return null}var pc=typeof reportError=="function"?reportError:function(e){console.error(e)};function jo(e){this._internalRoot=e}yr.prototype.render=jo.prototype.render=function(e){var n=this._internalRoot;if(n===null)throw Error(k(409));vr(e,n,null,null)};yr.prototype.unmount=jo.prototype.unmount=function(){var e=this._internalRoot;if(e!==null){this._internalRoot=null;var n=e.containerInfo;In(function(){vr(null,e,null,null)}),n[Ke]=null}};function yr(e){this._internalRoot=e}yr.prototype.unstable_scheduleHydration=function(e){if(e){var n=Vs();e={blockedOn:null,target:e,priority:n};for(var t=0;t<ln.length&&n!==0&&n<ln[t].priority;t++);ln.splice(t,0,e),t===0&&Us(e)}};function Uo(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function _r(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11&&(e.nodeType!==8||e.nodeValue!==" react-mount-point-unstable "))}function es(){}function Vu(e,n,t,a,r){if(r){if(typeof a=="function"){var i=a;a=function(){var f=or(o);i.call(f)}}var o=uc(n,a,e,0,null,!1,!1,"",es);return e._reactRootContainer=o,e[Ke]=o.current,Gt(e.nodeType===8?e.parentNode:e),In(),o}for(;r=e.lastChild;)e.removeChild(r);if(typeof a=="function"){var l=a;a=function(){var f=or(d);l.call(f)}}var d=Wo(e,0,!1,null,null,!1,!1,"",es);return e._reactRootContainer=d,e[Ke]=d.current,Gt(e.nodeType===8?e.parentNode:e),In(function(){vr(n,d,t,a)}),d}function wr(e,n,t,a,r){var i=t._reactRootContainer;if(i){var o=i;if(typeof r=="function"){var l=r;r=function(){var d=or(o);l.call(d)}}vr(n,o,e,r)}else o=Vu(t,n,e,r,a);return or(o)}Hs=function(e){switch(e.tag){case 3:var n=e.stateNode;if(n.current.memoizedState.isDehydrated){var t=$t(n.pendingLanes);t!==0&&(co(n,t|1),ge(n,Q()),!(B&6)&&(ut=Q()+500,Sn()))}break;case 13:In(function(){var a=Ze(e,1);if(a!==null){var r=se();ze(a,e,1,r)}}),Vo(e,1)}};uo=function(e){if(e.tag===13){var n=Ze(e,134217728);if(n!==null){var t=se();ze(n,e,134217728,t)}Vo(e,134217728)}};Ws=function(e){if(e.tag===13){var n=xn(e),t=Ze(e,n);if(t!==null){var a=se();ze(t,e,n,a)}Vo(e,n)}};Vs=function(){return N};js=function(e,n){var t=N;try{return N=e,n()}finally{N=t}};hi=function(e,n,t){switch(n){case"input":if(si(e,t),n=t.name,t.type==="radio"&&n!=null){for(t=e;t.parentNode;)t=t.parentNode;for(t=t.querySelectorAll("input[name="+JSON.stringify(""+n)+'][type="radio"]'),n=0;n<t.length;n++){var a=t[n];if(a!==e&&a.form===e.form){var r=pr(a);if(!r)throw Error(k(90));_s(a),si(a,r)}}}break;case"textarea":Ss(e,t);break;case"select":n=t.value,n!=null&&Jn(e,!!t.multiple,n,!1)}};Rs=Oo;Es=In;var ju={usingClientEntryPoint:!1,Events:[ra,Gn,pr,Ps,Ts,Oo]},kt={findFiberByHostInstance:Cn,bundleType:0,version:"18.3.1",rendererPackageName:"react-dom"},Uu={bundleType:kt.bundleType,version:kt.version,rendererPackageName:kt.rendererPackageName,rendererConfig:kt.rendererConfig,overrideHookState:null,overrideHookStateDeletePath:null,overrideHookStateRenamePath:null,overrideProps:null,overridePropsDeletePath:null,overridePropsRenamePath:null,setErrorHandler:null,setSuspenseHandler:null,scheduleUpdate:null,currentDispatcherRef:en.ReactCurrentDispatcher,findHostInstanceByFiber:function(e){return e=Ds(e),e===null?null:e.stateNode},findFiberByHostInstance:kt.findFiberByHostInstance||Wu,findHostInstancesForRefresh:null,scheduleRefresh:null,scheduleRoot:null,setRefreshHandler:null,getCurrentFiber:null,reconcilerVersion:"18.3.1-next-f1338f8080-20240426"};if(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__<"u"){var Sa=__REACT_DEVTOOLS_GLOBAL_HOOK__;if(!Sa.isDisabled&&Sa.supportsFiber)try{sr=Sa.inject(Uu),He=Sa}catch{}}we.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED=ju;we.createPortal=function(e,n){var t=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!Uo(n))throw Error(k(200));return Hu(e,n,null,t)};we.createRoot=function(e,n){if(!Uo(e))throw Error(k(299));var t=!1,a="",r=pc;return n!=null&&(n.unstable_strictMode===!0&&(t=!0),n.identifierPrefix!==void 0&&(a=n.identifierPrefix),n.onRecoverableError!==void 0&&(r=n.onRecoverableError)),n=Wo(e,1,!1,null,null,t,!1,a,r),e[Ke]=n.current,Gt(e.nodeType===8?e.parentNode:e),new jo(n)};we.findDOMNode=function(e){if(e==null)return null;if(e.nodeType===1)return e;var n=e._reactInternals;if(n===void 0)throw typeof e.render=="function"?Error(k(188)):(e=Object.keys(e).join(","),Error(k(268,e)));return e=Ds(n),e=e===null?null:e.stateNode,e};we.flushSync=function(e){return In(e)};we.hydrate=function(e,n,t){if(!_r(n))throw Error(k(200));return wr(null,e,n,!0,t)};we.hydrateRoot=function(e,n,t){if(!Uo(e))throw Error(k(405));var a=t!=null&&t.hydratedSources||null,r=!1,i="",o=pc;if(t!=null&&(t.unstable_strictMode===!0&&(r=!0),t.identifierPrefix!==void 0&&(i=t.identifierPrefix),t.onRecoverableError!==void 0&&(o=t.onRecoverableError)),n=uc(n,null,e,1,t??null,r,!1,i,o),e[Ke]=n.current,Gt(e),a)for(e=0;e<a.length;e++)t=a[e],r=t._getVersion,r=r(t._source),n.mutableSourceEagerHydrationData==null?n.mutableSourceEagerHydrationData=[t,r]:n.mutableSourceEagerHydrationData.push(t,r);return new yr(n)};we.render=function(e,n,t){if(!_r(n))throw Error(k(200));return wr(null,e,n,!1,t)};we.unmountComponentAtNode=function(e){if(!_r(e))throw Error(k(40));return e._reactRootContainer?(In(function(){wr(null,null,e,!1,function(){e._reactRootContainer=null,e[Ke]=null})}),!0):!1};we.unstable_batchedUpdates=Oo;we.unstable_renderSubtreeIntoContainer=function(e,n,t,a){if(!_r(t))throw Error(k(200));if(e==null||e._reactInternals===void 0)throw Error(k(38));return wr(e,n,t,!1,a)};we.version="18.3.1-next-f1338f8080-20240426";function fc(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>"u"||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!="function"))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(fc)}catch(e){console.error(e)}}fc(),fs.exports=we;var Gu=fs.exports,ns=Gu;ni.createRoot=ns.createRoot,ni.hydrateRoot=ns.hydrateRoot;const Qu=`version: 0.5
+`+i.stack}return{value:e,source:n,stack:r,digest:null}}function Yr(e,n,t){return{value:e,source:null,stack:t??null,digest:n??null}}function Di(e,n){try{console.error(n.value)}catch(t){setTimeout(function(){throw t})}}var _u=typeof WeakMap=="function"?WeakMap:Map;function M0(e,n,t){t=Ye(-1,t),t.tag=3,t.payload={element:null};var a=n.value;return t.callback=function(){ar||(ar=!0,ji=a),Di(e,n)},t}function H0(e,n,t){t=Ye(-1,t),t.tag=3;var a=e.type.getDerivedStateFromError;if(typeof a=="function"){var r=n.value;t.payload=function(){return a(r)},t.callback=function(){Di(e,n)}}var i=e.stateNode;return i!==null&&typeof i.componentDidCatch=="function"&&(t.callback=function(){Di(e,n),typeof a!="function"&&(gn===null?gn=new Set([this]):gn.add(this));var o=n.stack;this.componentDidCatch(n.value,{componentStack:o!==null?o:""})}),t}function Nl(e,n,t){var a=e.pingCache;if(a===null){a=e.pingCache=new _u;var r=new Set;a.set(n,r)}else r=a.get(n),r===void 0&&(r=new Set,a.set(n,r));r.has(t)||(r.add(t),e=Iu.bind(null,e,n,t),n.then(e,e))}function Ol(e){do{var n;if((n=e.tag===13)&&(n=e.memoizedState,n=n!==null?n.dehydrated!==null:!0),n)return e;e=e.return}while(e!==null);return null}function Ll(e,n,t,a,r){return e.mode&1?(e.flags|=65536,e.lanes=r,e):(e===n?e.flags|=65536:(e.flags|=128,t.flags|=131072,t.flags&=-52805,t.tag===1&&(t.alternate===null?t.tag=17:(n=Ye(-1,1),n.tag=2,hn(t,n,1))),t.lanes|=1),e)}var wu=en.ReactCurrentOwner,fe=!1;function le(e,n,t,a){n.child=e===null?g0(n,null,t,a):st(n,e.child,t,a)}function Ml(e,n,t,a,r){t=t.render;var i=n.ref;return at(n,r),a=Ro(e,n,t,a,i,r),t=Eo(),e!==null&&!fe?(n.updateQueue=e.updateQueue,n.flags&=-2053,e.lanes&=~r,Je(e,n,r)):(W&&t&&bo(n),n.flags|=1,le(e,n,a,r),n.child)}function Hl(e,n,t,a,r){if(e===null){var i=t.type;return typeof i=="function"&&!Ho(i)&&i.defaultProps===void 0&&t.compare===null&&t.defaultProps===void 0?(n.tag=15,n.type=i,W0(e,n,i,a,r)):(e=za(t.type,null,a,n,n.mode,r),e.ref=n.ref,e.return=n,n.child=e)}if(i=e.child,!(e.lanes&r)){var o=i.memoizedProps;if(t=t.compare,t=t!==null?t:Ut,t(o,a)&&e.ref===n.ref)return Je(e,n,r)}return n.flags|=1,e=bn(i,a),e.ref=n.ref,e.return=n,n.child=e}function W0(e,n,t,a,r){if(e!==null){var i=e.memoizedProps;if(Ut(i,a)&&e.ref===n.ref)if(fe=!1,n.pendingProps=a=i,(e.lanes&r)!==0)e.flags&131072&&(fe=!0);else return n.lanes=e.lanes,Je(e,n,r)}return Ii(e,n,t,a,r)}function V0(e,n,t){var a=n.pendingProps,r=a.children,i=e!==null?e.memoizedState:null;if(a.mode==="hidden")if(!(n.mode&1))n.memoizedState={baseLanes:0,cachePool:null,transitions:null},L(Zn,xe),xe|=t;else{if(!(t&1073741824))return e=i!==null?i.baseLanes|t:t,n.lanes=n.childLanes=1073741824,n.memoizedState={baseLanes:e,cachePool:null,transitions:null},n.updateQueue=null,L(Zn,xe),xe|=e,null;n.memoizedState={baseLanes:0,cachePool:null,transitions:null},a=i!==null?i.baseLanes:t,L(Zn,xe),xe|=a}else i!==null?(a=i.baseLanes|t,n.memoizedState=null):a=t,L(Zn,xe),xe|=a;return le(e,n,r,t),n.child}function j0(e,n){var t=n.ref;(e===null&&t!==null||e!==null&&e.ref!==t)&&(n.flags|=512,n.flags|=2097152)}function Ii(e,n,t,a,r){var i=he(t)?En:oe.current;return i=ot(n,i),at(n,r),t=Ro(e,n,t,a,i,r),a=Eo(),e!==null&&!fe?(n.updateQueue=e.updateQueue,n.flags&=-2053,e.lanes&=~r,Je(e,n,r)):(W&&a&&bo(n),n.flags|=1,le(e,n,t,r),n.child)}function Wl(e,n,t,a,r){if(he(t)){var i=!0;Qa(n)}else i=!1;if(at(n,r),n.stateNode===null)Ba(e,n),L0(n,t,a),Bi(n,t,a,r),a=!0;else if(e===null){var o=n.stateNode,l=n.memoizedProps;o.props=l;var d=o.context,f=t.contextType;typeof f=="object"&&f!==null?f=Te(f):(f=he(t)?En:oe.current,f=ot(n,f));var b=t.getDerivedStateFromProps,x=typeof b=="function"||typeof o.getSnapshotBeforeUpdate=="function";x||typeof o.UNSAFE_componentWillReceiveProps!="function"&&typeof o.componentWillReceiveProps!="function"||(l!==a||d!==f)&&zl(n,o,a,f),on=!1;var m=n.memoizedState;o.state=m,Za(n,a,o,r),d=n.memoizedState,l!==a||m!==d||me.current||on?(typeof b=="function"&&(Ai(n,t,b,a),d=n.memoizedState),(l=on||Il(n,t,l,a,m,d,f))?(x||typeof o.UNSAFE_componentWillMount!="function"&&typeof o.componentWillMount!="function"||(typeof o.componentWillMount=="function"&&o.componentWillMount(),typeof o.UNSAFE_componentWillMount=="function"&&o.UNSAFE_componentWillMount()),typeof o.componentDidMount=="function"&&(n.flags|=4194308)):(typeof o.componentDidMount=="function"&&(n.flags|=4194308),n.memoizedProps=a,n.memoizedState=d),o.props=a,o.state=d,o.context=f,a=l):(typeof o.componentDidMount=="function"&&(n.flags|=4194308),a=!1)}else{o=n.stateNode,b0(e,n),l=n.memoizedProps,f=n.type===n.elementType?l:Ae(n.type,l),o.props=f,x=n.pendingProps,m=o.context,d=t.contextType,typeof d=="object"&&d!==null?d=Te(d):(d=he(t)?En:oe.current,d=ot(n,d));var w=t.getDerivedStateFromProps;(b=typeof w=="function"||typeof o.getSnapshotBeforeUpdate=="function")||typeof o.UNSAFE_componentWillReceiveProps!="function"&&typeof o.componentWillReceiveProps!="function"||(l!==x||m!==d)&&zl(n,o,a,d),on=!1,m=n.memoizedState,o.state=m,Za(n,a,o,r);var S=n.memoizedState;l!==x||m!==S||me.current||on?(typeof w=="function"&&(Ai(n,t,w,a),S=n.memoizedState),(f=on||Il(n,t,f,a,m,S,d)||!1)?(b||typeof o.UNSAFE_componentWillUpdate!="function"&&typeof o.componentWillUpdate!="function"||(typeof o.componentWillUpdate=="function"&&o.componentWillUpdate(a,S,d),typeof o.UNSAFE_componentWillUpdate=="function"&&o.UNSAFE_componentWillUpdate(a,S,d)),typeof o.componentDidUpdate=="function"&&(n.flags|=4),typeof o.getSnapshotBeforeUpdate=="function"&&(n.flags|=1024)):(typeof o.componentDidUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=4),typeof o.getSnapshotBeforeUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=1024),n.memoizedProps=a,n.memoizedState=S),o.props=a,o.state=S,o.context=d,a=f):(typeof o.componentDidUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=4),typeof o.getSnapshotBeforeUpdate!="function"||l===e.memoizedProps&&m===e.memoizedState||(n.flags|=1024),a=!1)}return zi(e,n,t,a,i,r)}function zi(e,n,t,a,r,i){j0(e,n);var o=(n.flags&128)!==0;if(!a&&!o)return r&&$l(n,t,!1),Je(e,n,i);a=n.stateNode,wu.current=n;var l=o&&typeof t.getDerivedStateFromError!="function"?null:a.render();return n.flags|=1,e!==null&&o?(n.child=st(n,e.child,null,i),n.child=st(n,null,l,i)):le(e,n,l,i),n.memoizedState=a.state,r&&$l(n,t,!0),n.child}function U0(e){var n=e.stateNode;n.pendingContext?Cl(e,n.pendingContext,n.pendingContext!==n.context):n.context&&Cl(e,n.context,!1),Co(e,n.containerInfo)}function Vl(e,n,t,a,r){return lt(),yo(r),n.flags|=256,le(e,n,t,a),n.child}var Ni={dehydrated:null,treeContext:null,retryLane:0};function Oi(e){return{baseLanes:e,cachePool:null,transitions:null}}function G0(e,n,t){var a=n.pendingProps,r=V.current,i=!1,o=(n.flags&128)!==0,l;if((l=o)||(l=e!==null&&e.memoizedState===null?!1:(r&2)!==0),l?(i=!0,n.flags&=-129):(e===null||e.memoizedState!==null)&&(r|=1),L(V,r&1),e===null)return Ri(n),e=n.memoizedState,e!==null&&(e=e.dehydrated,e!==null)?(n.mode&1?e.data==="$!"?n.lanes=8:n.lanes=1073741824:n.lanes=1,null):(o=a.children,e=a.fallback,i?(a=n.mode,i=n.child,o={mode:"hidden",children:o},!(a&1)&&i!==null?(i.childLanes=0,i.pendingProps=o):i=br(o,a,0,null),e=Rn(e,a,t,null),i.return=n,e.return=n,i.sibling=e,n.child=i,n.child.memoizedState=Oi(t),n.memoizedState=Ni,e):Do(n,o));if(r=e.memoizedState,r!==null&&(l=r.dehydrated,l!==null))return Su(e,n,o,a,l,r,t);if(i){i=a.fallback,o=n.mode,r=e.child,l=r.sibling;var d={mode:"hidden",children:a.children};return!(o&1)&&n.child!==r?(a=n.child,a.childLanes=0,a.pendingProps=d,n.deletions=null):(a=bn(r,d),a.subtreeFlags=r.subtreeFlags&14680064),l!==null?i=bn(l,i):(i=Rn(i,o,t,null),i.flags|=2),i.return=n,a.return=n,a.sibling=i,n.child=a,a=i,i=n.child,o=e.child.memoizedState,o=o===null?Oi(t):{baseLanes:o.baseLanes|t,cachePool:null,transitions:o.transitions},i.memoizedState=o,i.childLanes=e.childLanes&~t,n.memoizedState=Ni,a}return i=e.child,e=i.sibling,a=bn(i,{mode:"visible",children:a.children}),!(n.mode&1)&&(a.lanes=t),a.return=n,a.sibling=null,e!==null&&(t=n.deletions,t===null?(n.deletions=[e],n.flags|=16):t.push(e)),n.child=a,n.memoizedState=null,a}function Do(e,n){return n=br({mode:"visible",children:n},e.mode,0,null),n.return=e,e.child=n}function ya(e,n,t,a){return a!==null&&yo(a),st(n,e.child,null,t),e=Do(n,n.pendingProps.children),e.flags|=2,n.memoizedState=null,e}function Su(e,n,t,a,r,i,o){if(t)return n.flags&256?(n.flags&=-257,a=Yr(Error(k(422))),ya(e,n,o,a)):n.memoizedState!==null?(n.child=e.child,n.flags|=128,null):(i=a.fallback,r=n.mode,a=br({mode:"visible",children:a.children},r,0,null),i=Rn(i,r,o,null),i.flags|=2,a.return=n,i.return=n,a.sibling=i,n.child=a,n.mode&1&&st(n,e.child,null,o),n.child.memoizedState=Oi(o),n.memoizedState=Ni,i);if(!(n.mode&1))return ya(e,n,o,null);if(r.data==="$!"){if(a=r.nextSibling&&r.nextSibling.dataset,a)var l=a.dgst;return a=l,i=Error(k(419)),a=Yr(i,a,void 0),ya(e,n,o,a)}if(l=(o&e.childLanes)!==0,fe||l){if(a=Z,a!==null){switch(o&-o){case 4:r=2;break;case 16:r=8;break;case 64:case 128:case 256:case 512:case 1024:case 2048:case 4096:case 8192:case 16384:case 32768:case 65536:case 131072:case 262144:case 524288:case 1048576:case 2097152:case 4194304:case 8388608:case 16777216:case 33554432:case 67108864:r=32;break;case 536870912:r=268435456;break;default:r=0}r=r&(a.suspendedLanes|o)?0:r,r!==0&&r!==i.retryLane&&(i.retryLane=r,Ze(e,r),ze(a,e,r,-1))}return Mo(),a=Yr(Error(k(421))),ya(e,n,o,a)}return r.data==="$?"?(n.flags|=128,n.child=e.child,n=zu.bind(null,e),r._reactRetry=n,null):(e=i.treeContext,ve=mn(r.nextSibling),ye=n,W=!0,De=null,e!==null&&(Fe[Ce++]=Qe,Fe[Ce++]=qe,Fe[Ce++]=An,Qe=e.id,qe=e.overflow,An=n),n=Do(n,a.children),n.flags|=4096,n)}function jl(e,n,t){e.lanes|=n;var a=e.alternate;a!==null&&(a.lanes|=n),Ei(e.return,n,t)}function Xr(e,n,t,a,r){var i=e.memoizedState;i===null?e.memoizedState={isBackwards:n,rendering:null,renderingStartTime:0,last:a,tail:t,tailMode:r}:(i.isBackwards=n,i.rendering=null,i.renderingStartTime=0,i.last=a,i.tail=t,i.tailMode=r)}function Q0(e,n,t){var a=n.pendingProps,r=a.revealOrder,i=a.tail;if(le(e,n,a.children,t),a=V.current,a&2)a=a&1|2,n.flags|=128;else{if(e!==null&&e.flags&128)e:for(e=n.child;e!==null;){if(e.tag===13)e.memoizedState!==null&&jl(e,t,n);else if(e.tag===19)jl(e,t,n);else if(e.child!==null){e.child.return=e,e=e.child;continue}if(e===n)break e;for(;e.sibling===null;){if(e.return===null||e.return===n)break e;e=e.return}e.sibling.return=e.return,e=e.sibling}a&=1}if(L(V,a),!(n.mode&1))n.memoizedState=null;else switch(r){case"forwards":for(t=n.child,r=null;t!==null;)e=t.alternate,e!==null&&Ja(e)===null&&(r=t),t=t.sibling;t=r,t===null?(r=n.child,n.child=null):(r=t.sibling,t.sibling=null),Xr(n,!1,r,t,i);break;case"backwards":for(t=null,r=n.child,n.child=null;r!==null;){if(e=r.alternate,e!==null&&Ja(e)===null){n.child=r;break}e=r.sibling,r.sibling=t,t=r,r=e}Xr(n,!0,t,null,i);break;case"together":Xr(n,!1,null,null,void 0);break;default:n.memoizedState=null}return n.child}function Ba(e,n){!(n.mode&1)&&e!==null&&(e.alternate=null,n.alternate=null,n.flags|=2)}function Je(e,n,t){if(e!==null&&(n.dependencies=e.dependencies),Dn|=n.lanes,!(t&n.childLanes))return null;if(e!==null&&n.child!==e.child)throw Error(k(153));if(n.child!==null){for(e=n.child,t=bn(e,e.pendingProps),n.child=t,t.return=n;e.sibling!==null;)e=e.sibling,t=t.sibling=bn(e,e.pendingProps),t.return=n;t.sibling=null}return n.child}function ku(e,n,t){switch(n.tag){case 3:U0(n),lt();break;case 5:v0(n);break;case 1:he(n.type)&&Qa(n);break;case 4:Co(n,n.stateNode.containerInfo);break;case 10:var a=n.type._context,r=n.memoizedProps.value;L(Xa,a._currentValue),a._currentValue=r;break;case 13:if(a=n.memoizedState,a!==null)return a.dehydrated!==null?(L(V,V.current&1),n.flags|=128,null):t&n.child.childLanes?G0(e,n,t):(L(V,V.current&1),e=Je(e,n,t),e!==null?e.sibling:null);L(V,V.current&1);break;case 19:if(a=(t&n.childLanes)!==0,e.flags&128){if(a)return Q0(e,n,t);n.flags|=128}if(r=n.memoizedState,r!==null&&(r.rendering=null,r.tail=null,r.lastEffect=null),L(V,V.current),a)break;return null;case 22:case 23:return n.lanes=0,V0(e,n,t)}return Je(e,n,t)}var q0,Li,Y0,X0;q0=function(e,n){for(var t=n.child;t!==null;){if(t.tag===5||t.tag===6)e.appendChild(t.stateNode);else if(t.tag!==4&&t.child!==null){t.child.return=t,t=t.child;continue}if(t===n)break;for(;t.sibling===null;){if(t.return===null||t.return===n)return;t=t.return}t.sibling.return=t.return,t=t.sibling}};Li=function(){};Y0=function(e,n,t,a){var r=e.memoizedProps;if(r!==a){e=n.stateNode,Pn(We.current);var i=null;switch(t){case"input":r=li(e,r),a=li(e,a),i=[];break;case"select":r=U({},r,{value:void 0}),a=U({},a,{value:void 0}),i=[];break;case"textarea":r=di(e,r),a=di(e,a),i=[];break;default:typeof r.onClick!="function"&&typeof a.onClick=="function"&&(e.onclick=Ua)}pi(t,a);var o;t=null;for(f in r)if(!a.hasOwnProperty(f)&&r.hasOwnProperty(f)&&r[f]!=null)if(f==="style"){var l=r[f];for(o in l)l.hasOwnProperty(o)&&(t||(t={}),t[o]="")}else f!=="dangerouslySetInnerHTML"&&f!=="children"&&f!=="suppressContentEditableWarning"&&f!=="suppressHydrationWarning"&&f!=="autoFocus"&&(Ot.hasOwnProperty(f)?i||(i=[]):(i=i||[]).push(f,null));for(f in a){var d=a[f];if(l=r!=null?r[f]:void 0,a.hasOwnProperty(f)&&d!==l&&(d!=null||l!=null))if(f==="style")if(l){for(o in l)!l.hasOwnProperty(o)||d&&d.hasOwnProperty(o)||(t||(t={}),t[o]="");for(o in d)d.hasOwnProperty(o)&&l[o]!==d[o]&&(t||(t={}),t[o]=d[o])}else t||(i||(i=[]),i.push(f,t)),t=d;else f==="dangerouslySetInnerHTML"?(d=d?d.__html:void 0,l=l?l.__html:void 0,d!=null&&l!==d&&(i=i||[]).push(f,d)):f==="children"?typeof d!="string"&&typeof d!="number"||(i=i||[]).push(f,""+d):f!=="suppressContentEditableWarning"&&f!=="suppressHydrationWarning"&&(Ot.hasOwnProperty(f)?(d!=null&&f==="onScroll"&&M("scroll",e),i||l===d||(i=[])):(i=i||[]).push(f,d))}t&&(i=i||[]).push("style",t);var f=i;(n.updateQueue=f)&&(n.flags|=4)}};X0=function(e,n,t,a){t!==a&&(n.flags|=4)};function St(e,n){if(!W)switch(e.tailMode){case"hidden":n=e.tail;for(var t=null;n!==null;)n.alternate!==null&&(t=n),n=n.sibling;t===null?e.tail=null:t.sibling=null;break;case"collapsed":t=e.tail;for(var a=null;t!==null;)t.alternate!==null&&(a=t),t=t.sibling;a===null?n||e.tail===null?e.tail=null:e.tail.sibling=null:a.sibling=null}}function re(e){var n=e.alternate!==null&&e.alternate.child===e.child,t=0,a=0;if(n)for(var r=e.child;r!==null;)t|=r.lanes|r.childLanes,a|=r.subtreeFlags&14680064,a|=r.flags&14680064,r.return=e,r=r.sibling;else for(r=e.child;r!==null;)t|=r.lanes|r.childLanes,a|=r.subtreeFlags,a|=r.flags,r.return=e,r=r.sibling;return e.subtreeFlags|=a,e.childLanes=t,n}function Fu(e,n,t){var a=n.pendingProps;switch(vo(n),n.tag){case 2:case 16:case 15:case 0:case 11:case 7:case 8:case 12:case 9:case 14:return re(n),null;case 1:return he(n.type)&&Ga(),re(n),null;case 3:return a=n.stateNode,ct(),H(me),H(oe),Po(),a.pendingContext&&(a.context=a.pendingContext,a.pendingContext=null),(e===null||e.child===null)&&(ba(n)?n.flags|=4:e===null||e.memoizedState.isDehydrated&&!(n.flags&256)||(n.flags|=1024,De!==null&&(Qi(De),De=null))),Li(e,n),re(n),null;case 5:$o(n);var r=Pn(Xt.current);if(t=n.type,e!==null&&n.stateNode!=null)Y0(e,n,t,a,r),e.ref!==n.ref&&(n.flags|=512,n.flags|=2097152);else{if(!a){if(n.stateNode===null)throw Error(k(166));return re(n),null}if(e=Pn(We.current),ba(n)){a=n.stateNode,t=n.type;var i=n.memoizedProps;switch(a[Me]=n,a[qt]=i,e=(n.mode&1)!==0,t){case"dialog":M("cancel",a),M("close",a);break;case"iframe":case"object":case"embed":M("load",a);break;case"video":case"audio":for(r=0;r<Pt.length;r++)M(Pt[r],a);break;case"source":M("error",a);break;case"img":case"image":case"link":M("error",a),M("load",a);break;case"details":M("toggle",a);break;case"input":Jo(a,i),M("invalid",a);break;case"select":a._wrapperState={wasMultiple:!!i.multiple},M("invalid",a);break;case"textarea":nl(a,i),M("invalid",a)}pi(t,i),r=null;for(var o in i)if(i.hasOwnProperty(o)){var l=i[o];o==="children"?typeof l=="string"?a.textContent!==l&&(i.suppressHydrationWarning!==!0&&xa(a.textContent,l,e),r=["children",l]):typeof l=="number"&&a.textContent!==""+l&&(i.suppressHydrationWarning!==!0&&xa(a.textContent,l,e),r=["children",""+l]):Ot.hasOwnProperty(o)&&l!=null&&o==="onScroll"&&M("scroll",a)}switch(t){case"input":ca(a),el(a,i,!0);break;case"textarea":ca(a),tl(a);break;case"select":case"option":break;default:typeof i.onClick=="function"&&(a.onclick=Ua)}a=r,n.updateQueue=a,a!==null&&(n.flags|=4)}else{o=r.nodeType===9?r:r.ownerDocument,e==="http://www.w3.org/1999/xhtml"&&(e=ks(t)),e==="http://www.w3.org/1999/xhtml"?t==="script"?(e=o.createElement("div"),e.innerHTML="<script><\/script>",e=e.removeChild(e.firstChild)):typeof a.is=="string"?e=o.createElement(t,{is:a.is}):(e=o.createElement(t),t==="select"&&(o=e,a.multiple?o.multiple=!0:a.size&&(o.size=a.size))):e=o.createElementNS(e,t),e[Me]=n,e[qt]=a,q0(e,n,!1,!1),n.stateNode=e;e:{switch(o=fi(t,a),t){case"dialog":M("cancel",e),M("close",e),r=a;break;case"iframe":case"object":case"embed":M("load",e),r=a;break;case"video":case"audio":for(r=0;r<Pt.length;r++)M(Pt[r],e);r=a;break;case"source":M("error",e),r=a;break;case"img":case"image":case"link":M("error",e),M("load",e),r=a;break;case"details":M("toggle",e),r=a;break;case"input":Jo(e,a),r=li(e,a),M("invalid",e);break;case"option":r=a;break;case"select":e._wrapperState={wasMultiple:!!a.multiple},r=U({},a,{value:void 0}),M("invalid",e);break;case"textarea":nl(e,a),r=di(e,a),M("invalid",e);break;default:r=a}pi(t,r),l=r;for(i in l)if(l.hasOwnProperty(i)){var d=l[i];i==="style"?$s(e,d):i==="dangerouslySetInnerHTML"?(d=d?d.__html:void 0,d!=null&&Fs(e,d)):i==="children"?typeof d=="string"?(t!=="textarea"||d!=="")&&Lt(e,d):typeof d=="number"&&Lt(e,""+d):i!=="suppressContentEditableWarning"&&i!=="suppressHydrationWarning"&&i!=="autoFocus"&&(Ot.hasOwnProperty(i)?d!=null&&i==="onScroll"&&M("scroll",e):d!=null&&ao(e,i,d,o))}switch(t){case"input":ca(e),el(e,a,!1);break;case"textarea":ca(e),tl(e);break;case"option":a.value!=null&&e.setAttribute("value",""+vn(a.value));break;case"select":e.multiple=!!a.multiple,i=a.value,i!=null?Jn(e,!!a.multiple,i,!1):a.defaultValue!=null&&Jn(e,!!a.multiple,a.defaultValue,!0);break;default:typeof r.onClick=="function"&&(e.onclick=Ua)}switch(t){case"button":case"input":case"select":case"textarea":a=!!a.autoFocus;break e;case"img":a=!0;break e;default:a=!1}}a&&(n.flags|=4)}n.ref!==null&&(n.flags|=512,n.flags|=2097152)}return re(n),null;case 6:if(e&&n.stateNode!=null)X0(e,n,e.memoizedProps,a);else{if(typeof a!="string"&&n.stateNode===null)throw Error(k(166));if(t=Pn(Xt.current),Pn(We.current),ba(n)){if(a=n.stateNode,t=n.memoizedProps,a[Me]=n,(i=a.nodeValue!==t)&&(e=ye,e!==null))switch(e.tag){case 3:xa(a.nodeValue,t,(e.mode&1)!==0);break;case 5:e.memoizedProps.suppressHydrationWarning!==!0&&xa(a.nodeValue,t,(e.mode&1)!==0)}i&&(n.flags|=4)}else a=(t.nodeType===9?t:t.ownerDocument).createTextNode(a),a[Me]=n,n.stateNode=a}return re(n),null;case 13:if(H(V),a=n.memoizedState,e===null||e.memoizedState!==null&&e.memoizedState.dehydrated!==null){if(W&&ve!==null&&n.mode&1&&!(n.flags&128))m0(),lt(),n.flags|=98560,i=!1;else if(i=ba(n),a!==null&&a.dehydrated!==null){if(e===null){if(!i)throw Error(k(318));if(i=n.memoizedState,i=i!==null?i.dehydrated:null,!i)throw Error(k(317));i[Me]=n}else lt(),!(n.flags&128)&&(n.memoizedState=null),n.flags|=4;re(n),i=!1}else De!==null&&(Qi(De),De=null),i=!0;if(!i)return n.flags&65536?n:null}return n.flags&128?(n.lanes=t,n):(a=a!==null,a!==(e!==null&&e.memoizedState!==null)&&a&&(n.child.flags|=8192,n.mode&1&&(e===null||V.current&1?X===0&&(X=3):Mo())),n.updateQueue!==null&&(n.flags|=4),re(n),null);case 4:return ct(),Li(e,n),e===null&&Gt(n.stateNode.containerInfo),re(n),null;case 10:return So(n.type._context),re(n),null;case 17:return he(n.type)&&Ga(),re(n),null;case 19:if(H(V),i=n.memoizedState,i===null)return re(n),null;if(a=(n.flags&128)!==0,o=i.rendering,o===null)if(a)St(i,!1);else{if(X!==0||e!==null&&e.flags&128)for(e=n.child;e!==null;){if(o=Ja(e),o!==null){for(n.flags|=128,St(i,!1),a=o.updateQueue,a!==null&&(n.updateQueue=a,n.flags|=4),n.subtreeFlags=0,a=t,t=n.child;t!==null;)i=t,e=a,i.flags&=14680066,o=i.alternate,o===null?(i.childLanes=0,i.lanes=e,i.child=null,i.subtreeFlags=0,i.memoizedProps=null,i.memoizedState=null,i.updateQueue=null,i.dependencies=null,i.stateNode=null):(i.childLanes=o.childLanes,i.lanes=o.lanes,i.child=o.child,i.subtreeFlags=0,i.deletions=null,i.memoizedProps=o.memoizedProps,i.memoizedState=o.memoizedState,i.updateQueue=o.updateQueue,i.type=o.type,e=o.dependencies,i.dependencies=e===null?null:{lanes:e.lanes,firstContext:e.firstContext}),t=t.sibling;return L(V,V.current&1|2),n.child}e=e.sibling}i.tail!==null&&Q()>ut&&(n.flags|=128,a=!0,St(i,!1),n.lanes=4194304)}else{if(!a)if(e=Ja(o),e!==null){if(n.flags|=128,a=!0,t=e.updateQueue,t!==null&&(n.updateQueue=t,n.flags|=4),St(i,!0),i.tail===null&&i.tailMode==="hidden"&&!o.alternate&&!W)return re(n),null}else 2*Q()-i.renderingStartTime>ut&&t!==1073741824&&(n.flags|=128,a=!0,St(i,!1),n.lanes=4194304);i.isBackwards?(o.sibling=n.child,n.child=o):(t=i.last,t!==null?t.sibling=o:n.child=o,i.last=o)}return i.tail!==null?(n=i.tail,i.rendering=n,i.tail=n.sibling,i.renderingStartTime=Q(),n.sibling=null,t=V.current,L(V,a?t&1|2:t&1),n):(re(n),null);case 22:case 23:return Lo(),a=n.memoizedState!==null,e!==null&&e.memoizedState!==null!==a&&(n.flags|=8192),a&&n.mode&1?xe&1073741824&&(re(n),n.subtreeFlags&6&&(n.flags|=8192)):re(n),null;case 24:return null;case 25:return null}throw Error(k(156,n.tag))}function Cu(e,n){switch(vo(n),n.tag){case 1:return he(n.type)&&Ga(),e=n.flags,e&65536?(n.flags=e&-65537|128,n):null;case 3:return ct(),H(me),H(oe),Po(),e=n.flags,e&65536&&!(e&128)?(n.flags=e&-65537|128,n):null;case 5:return $o(n),null;case 13:if(H(V),e=n.memoizedState,e!==null&&e.dehydrated!==null){if(n.alternate===null)throw Error(k(340));lt()}return e=n.flags,e&65536?(n.flags=e&-65537|128,n):null;case 19:return H(V),null;case 4:return ct(),null;case 10:return So(n.type._context),null;case 22:case 23:return Lo(),null;case 24:return null;default:return null}}var _a=!1,ie=!1,$u=typeof WeakSet=="function"?WeakSet:Set,$=null;function Kn(e,n){var t=e.ref;if(t!==null)if(typeof t=="function")try{t(null)}catch(a){G(e,n,a)}else t.current=null}function Mi(e,n,t){try{t()}catch(a){G(e,n,a)}}var Ul=!1;function Pu(e,n){if(Si=Wa,e=n0(),xo(e)){if("selectionStart"in e)var t={start:e.selectionStart,end:e.selectionEnd};else e:{t=(t=e.ownerDocument)&&t.defaultView||window;var a=t.getSelection&&t.getSelection();if(a&&a.rangeCount!==0){t=a.anchorNode;var r=a.anchorOffset,i=a.focusNode;a=a.focusOffset;try{t.nodeType,i.nodeType}catch{t=null;break e}var o=0,l=-1,d=-1,f=0,b=0,x=e,m=null;n:for(;;){for(var w;x!==t||r!==0&&x.nodeType!==3||(l=o+r),x!==i||a!==0&&x.nodeType!==3||(d=o+a),x.nodeType===3&&(o+=x.nodeValue.length),(w=x.firstChild)!==null;)m=x,x=w;for(;;){if(x===e)break n;if(m===t&&++f===r&&(l=o),m===i&&++b===a&&(d=o),(w=x.nextSibling)!==null)break;x=m,m=x.parentNode}x=w}t=l===-1||d===-1?null:{start:l,end:d}}else t=null}t=t||{start:0,end:0}}else t=null;for(ki={focusedElem:e,selectionRange:t},Wa=!1,$=n;$!==null;)if(n=$,e=n.child,(n.subtreeFlags&1028)!==0&&e!==null)e.return=n,$=e;else for(;$!==null;){n=$;try{var S=n.alternate;if(n.flags&1024)switch(n.tag){case 0:case 11:case 15:break;case 1:if(S!==null){var _=S.memoizedProps,P=S.memoizedState,u=n.stateNode,s=u.getSnapshotBeforeUpdate(n.elementType===n.type?_:Ae(n.type,_),P);u.__reactInternalSnapshotBeforeUpdate=s}break;case 3:var c=n.stateNode.containerInfo;c.nodeType===1?c.textContent="":c.nodeType===9&&c.documentElement&&c.removeChild(c.documentElement);break;case 5:case 6:case 4:case 17:break;default:throw Error(k(163))}}catch(p){G(n,n.return,p)}if(e=n.sibling,e!==null){e.return=n.return,$=e;break}$=n.return}return S=Ul,Ul=!1,S}function It(e,n,t){var a=n.updateQueue;if(a=a!==null?a.lastEffect:null,a!==null){var r=a=a.next;do{if((r.tag&e)===e){var i=r.destroy;r.destroy=void 0,i!==void 0&&Mi(n,t,i)}r=r.next}while(r!==a)}}function gr(e,n){if(n=n.updateQueue,n=n!==null?n.lastEffect:null,n!==null){var t=n=n.next;do{if((t.tag&e)===e){var a=t.create;t.destroy=a()}t=t.next}while(t!==n)}}function Hi(e){var n=e.ref;if(n!==null){var t=e.stateNode;switch(e.tag){case 5:e=t;break;default:e=t}typeof n=="function"?n(e):n.current=e}}function K0(e){var n=e.alternate;n!==null&&(e.alternate=null,K0(n)),e.child=null,e.deletions=null,e.sibling=null,e.tag===5&&(n=e.stateNode,n!==null&&(delete n[Me],delete n[qt],delete n[$i],delete n[du],delete n[uu])),e.stateNode=null,e.return=null,e.dependencies=null,e.memoizedProps=null,e.memoizedState=null,e.pendingProps=null,e.stateNode=null,e.updateQueue=null}function Z0(e){return e.tag===5||e.tag===3||e.tag===4}function Gl(e){e:for(;;){for(;e.sibling===null;){if(e.return===null||Z0(e.return))return null;e=e.return}for(e.sibling.return=e.return,e=e.sibling;e.tag!==5&&e.tag!==6&&e.tag!==18;){if(e.flags&2||e.child===null||e.tag===4)continue e;e.child.return=e,e=e.child}if(!(e.flags&2))return e.stateNode}}function Wi(e,n,t){var a=e.tag;if(a===5||a===6)e=e.stateNode,n?t.nodeType===8?t.parentNode.insertBefore(e,n):t.insertBefore(e,n):(t.nodeType===8?(n=t.parentNode,n.insertBefore(e,t)):(n=t,n.appendChild(e)),t=t._reactRootContainer,t!=null||n.onclick!==null||(n.onclick=Ua));else if(a!==4&&(e=e.child,e!==null))for(Wi(e,n,t),e=e.sibling;e!==null;)Wi(e,n,t),e=e.sibling}function Vi(e,n,t){var a=e.tag;if(a===5||a===6)e=e.stateNode,n?t.insertBefore(e,n):t.appendChild(e);else if(a!==4&&(e=e.child,e!==null))for(Vi(e,n,t),e=e.sibling;e!==null;)Vi(e,n,t),e=e.sibling}var J=null,Be=!1;function an(e,n,t){for(t=t.child;t!==null;)J0(e,n,t),t=t.sibling}function J0(e,n,t){if(He&&typeof He.onCommitFiberUnmount=="function")try{He.onCommitFiberUnmount(sr,t)}catch{}switch(t.tag){case 5:ie||Kn(t,n);case 6:var a=J,r=Be;J=null,an(e,n,t),J=a,Be=r,J!==null&&(Be?(e=J,t=t.stateNode,e.nodeType===8?e.parentNode.removeChild(t):e.removeChild(t)):J.removeChild(t.stateNode));break;case 18:J!==null&&(Be?(e=J,t=t.stateNode,e.nodeType===8?Vr(e.parentNode,t):e.nodeType===1&&Vr(e,t),Vt(e)):Vr(J,t.stateNode));break;case 4:a=J,r=Be,J=t.stateNode.containerInfo,Be=!0,an(e,n,t),J=a,Be=r;break;case 0:case 11:case 14:case 15:if(!ie&&(a=t.updateQueue,a!==null&&(a=a.lastEffect,a!==null))){r=a=a.next;do{var i=r,o=i.destroy;i=i.tag,o!==void 0&&(i&2||i&4)&&Mi(t,n,o),r=r.next}while(r!==a)}an(e,n,t);break;case 1:if(!ie&&(Kn(t,n),a=t.stateNode,typeof a.componentWillUnmount=="function"))try{a.props=t.memoizedProps,a.state=t.memoizedState,a.componentWillUnmount()}catch(l){G(t,n,l)}an(e,n,t);break;case 21:an(e,n,t);break;case 22:t.mode&1?(ie=(a=ie)||t.memoizedState!==null,an(e,n,t),ie=a):an(e,n,t);break;default:an(e,n,t)}}function Ql(e){var n=e.updateQueue;if(n!==null){e.updateQueue=null;var t=e.stateNode;t===null&&(t=e.stateNode=new $u),n.forEach(function(a){var r=Nu.bind(null,e,a);t.has(a)||(t.add(a),a.then(r,r))})}}function Ee(e,n){var t=n.deletions;if(t!==null)for(var a=0;a<t.length;a++){var r=t[a];try{var i=e,o=n,l=o;e:for(;l!==null;){switch(l.tag){case 5:J=l.stateNode,Be=!1;break e;case 3:J=l.stateNode.containerInfo,Be=!0;break e;case 4:J=l.stateNode.containerInfo,Be=!0;break e}l=l.return}if(J===null)throw Error(k(160));J0(i,o,r),J=null,Be=!1;var d=r.alternate;d!==null&&(d.return=null),r.return=null}catch(f){G(r,n,f)}}if(n.subtreeFlags&12854)for(n=n.child;n!==null;)ec(n,e),n=n.sibling}function ec(e,n){var t=e.alternate,a=e.flags;switch(e.tag){case 0:case 11:case 14:case 15:if(Ee(n,e),Oe(e),a&4){try{It(3,e,e.return),gr(3,e)}catch(_){G(e,e.return,_)}try{It(5,e,e.return)}catch(_){G(e,e.return,_)}}break;case 1:Ee(n,e),Oe(e),a&512&&t!==null&&Kn(t,t.return);break;case 5:if(Ee(n,e),Oe(e),a&512&&t!==null&&Kn(t,t.return),e.flags&32){var r=e.stateNode;try{Lt(r,"")}catch(_){G(e,e.return,_)}}if(a&4&&(r=e.stateNode,r!=null)){var i=e.memoizedProps,o=t!==null?t.memoizedProps:i,l=e.type,d=e.updateQueue;if(e.updateQueue=null,d!==null)try{l==="input"&&i.type==="radio"&&i.name!=null&&ws(r,i),fi(l,o);var f=fi(l,i);for(o=0;o<d.length;o+=2){var b=d[o],x=d[o+1];b==="style"?$s(r,x):b==="dangerouslySetInnerHTML"?Fs(r,x):b==="children"?Lt(r,x):ao(r,b,x,f)}switch(l){case"input":si(r,i);break;case"textarea":Ss(r,i);break;case"select":var m=r._wrapperState.wasMultiple;r._wrapperState.wasMultiple=!!i.multiple;var w=i.value;w!=null?Jn(r,!!i.multiple,w,!1):m!==!!i.multiple&&(i.defaultValue!=null?Jn(r,!!i.multiple,i.defaultValue,!0):Jn(r,!!i.multiple,i.multiple?[]:"",!1))}r[qt]=i}catch(_){G(e,e.return,_)}}break;case 6:if(Ee(n,e),Oe(e),a&4){if(e.stateNode===null)throw Error(k(162));r=e.stateNode,i=e.memoizedProps;try{r.nodeValue=i}catch(_){G(e,e.return,_)}}break;case 3:if(Ee(n,e),Oe(e),a&4&&t!==null&&t.memoizedState.isDehydrated)try{Vt(n.containerInfo)}catch(_){G(e,e.return,_)}break;case 4:Ee(n,e),Oe(e);break;case 13:Ee(n,e),Oe(e),r=e.child,r.flags&8192&&(i=r.memoizedState!==null,r.stateNode.isHidden=i,!i||r.alternate!==null&&r.alternate.memoizedState!==null||(No=Q())),a&4&&Ql(e);break;case 22:if(b=t!==null&&t.memoizedState!==null,e.mode&1?(ie=(f=ie)||b,Ee(n,e),ie=f):Ee(n,e),Oe(e),a&8192){if(f=e.memoizedState!==null,(e.stateNode.isHidden=f)&&!b&&e.mode&1)for($=e,b=e.child;b!==null;){for(x=$=b;$!==null;){switch(m=$,w=m.child,m.tag){case 0:case 11:case 14:case 15:It(4,m,m.return);break;case 1:Kn(m,m.return);var S=m.stateNode;if(typeof S.componentWillUnmount=="function"){a=m,t=m.return;try{n=a,S.props=n.memoizedProps,S.state=n.memoizedState,S.componentWillUnmount()}catch(_){G(a,t,_)}}break;case 5:Kn(m,m.return);break;case 22:if(m.memoizedState!==null){Yl(x);continue}}w!==null?(w.return=m,$=w):Yl(x)}b=b.sibling}e:for(b=null,x=e;;){if(x.tag===5){if(b===null){b=x;try{r=x.stateNode,f?(i=r.style,typeof i.setProperty=="function"?i.setProperty("display","none","important"):i.display="none"):(l=x.stateNode,d=x.memoizedProps.style,o=d!=null&&d.hasOwnProperty("display")?d.display:null,l.style.display=Cs("display",o))}catch(_){G(e,e.return,_)}}}else if(x.tag===6){if(b===null)try{x.stateNode.nodeValue=f?"":x.memoizedProps}catch(_){G(e,e.return,_)}}else if((x.tag!==22&&x.tag!==23||x.memoizedState===null||x===e)&&x.child!==null){x.child.return=x,x=x.child;continue}if(x===e)break e;for(;x.sibling===null;){if(x.return===null||x.return===e)break e;b===x&&(b=null),x=x.return}b===x&&(b=null),x.sibling.return=x.return,x=x.sibling}}break;case 19:Ee(n,e),Oe(e),a&4&&Ql(e);break;case 21:break;default:Ee(n,e),Oe(e)}}function Oe(e){var n=e.flags;if(n&2){try{e:{for(var t=e.return;t!==null;){if(Z0(t)){var a=t;break e}t=t.return}throw Error(k(160))}switch(a.tag){case 5:var r=a.stateNode;a.flags&32&&(Lt(r,""),a.flags&=-33);var i=Gl(e);Vi(e,i,r);break;case 3:case 4:var o=a.stateNode.containerInfo,l=Gl(e);Wi(e,l,o);break;default:throw Error(k(161))}}catch(d){G(e,e.return,d)}e.flags&=-3}n&4096&&(e.flags&=-4097)}function Tu(e,n,t){$=e,nc(e)}function nc(e,n,t){for(var a=(e.mode&1)!==0;$!==null;){var r=$,i=r.child;if(r.tag===22&&a){var o=r.memoizedState!==null||_a;if(!o){var l=r.alternate,d=l!==null&&l.memoizedState!==null||ie;l=_a;var f=ie;if(_a=o,(ie=d)&&!f)for($=r;$!==null;)o=$,d=o.child,o.tag===22&&o.memoizedState!==null?Xl(r):d!==null?(d.return=o,$=d):Xl(r);for(;i!==null;)$=i,nc(i),i=i.sibling;$=r,_a=l,ie=f}ql(e)}else r.subtreeFlags&8772&&i!==null?(i.return=r,$=i):ql(e)}}function ql(e){for(;$!==null;){var n=$;if(n.flags&8772){var t=n.alternate;try{if(n.flags&8772)switch(n.tag){case 0:case 11:case 15:ie||gr(5,n);break;case 1:var a=n.stateNode;if(n.flags&4&&!ie)if(t===null)a.componentDidMount();else{var r=n.elementType===n.type?t.memoizedProps:Ae(n.type,t.memoizedProps);a.componentDidUpdate(r,t.memoizedState,a.__reactInternalSnapshotBeforeUpdate)}var i=n.updateQueue;i!==null&&Al(n,i,a);break;case 3:var o=n.updateQueue;if(o!==null){if(t=null,n.child!==null)switch(n.child.tag){case 5:t=n.child.stateNode;break;case 1:t=n.child.stateNode}Al(n,o,t)}break;case 5:var l=n.stateNode;if(t===null&&n.flags&4){t=l;var d=n.memoizedProps;switch(n.type){case"button":case"input":case"select":case"textarea":d.autoFocus&&t.focus();break;case"img":d.src&&(t.src=d.src)}}break;case 6:break;case 4:break;case 12:break;case 13:if(n.memoizedState===null){var f=n.alternate;if(f!==null){var b=f.memoizedState;if(b!==null){var x=b.dehydrated;x!==null&&Vt(x)}}}break;case 19:case 17:case 21:case 22:case 23:case 25:break;default:throw Error(k(163))}ie||n.flags&512&&Hi(n)}catch(m){G(n,n.return,m)}}if(n===e){$=null;break}if(t=n.sibling,t!==null){t.return=n.return,$=t;break}$=n.return}}function Yl(e){for(;$!==null;){var n=$;if(n===e){$=null;break}var t=n.sibling;if(t!==null){t.return=n.return,$=t;break}$=n.return}}function Xl(e){for(;$!==null;){var n=$;try{switch(n.tag){case 0:case 11:case 15:var t=n.return;try{gr(4,n)}catch(d){G(n,t,d)}break;case 1:var a=n.stateNode;if(typeof a.componentDidMount=="function"){var r=n.return;try{a.componentDidMount()}catch(d){G(n,r,d)}}var i=n.return;try{Hi(n)}catch(d){G(n,i,d)}break;case 5:var o=n.return;try{Hi(n)}catch(d){G(n,o,d)}}}catch(d){G(n,n.return,d)}if(n===e){$=null;break}var l=n.sibling;if(l!==null){l.return=n.return,$=l;break}$=n.return}}var Ru=Math.ceil,tr=en.ReactCurrentDispatcher,Io=en.ReactCurrentOwner,Pe=en.ReactCurrentBatchConfig,B=0,Z=null,q=null,ee=0,xe=0,Zn=wn(0),X=0,ea=null,Dn=0,xr=0,zo=0,zt=null,pe=null,No=0,ut=1/0,Ue=null,ar=!1,ji=null,gn=null,wa=!1,dn=null,rr=0,Nt=0,Ui=null,Da=-1,Ia=0;function se(){return B&6?Q():Da!==-1?Da:Da=Q()}function xn(e){return e.mode&1?B&2&&ee!==0?ee&-ee:fu.transition!==null?(Ia===0&&(Ia=Ls()),Ia):(e=N,e!==0||(e=window.event,e=e===void 0?16:Gs(e.type)),e):1}function ze(e,n,t,a){if(50<Nt)throw Nt=0,Ui=null,Error(k(185));ta(e,t,a),(!(B&2)||e!==Z)&&(e===Z&&(!(B&2)&&(xr|=t),X===4&&sn(e,ee)),ge(e,a),t===1&&B===0&&!(n.mode&1)&&(ut=Q()+500,fr&&Sn()))}function ge(e,n){var t=e.callbackNode;fd(e,n);var a=Ha(e,e===Z?ee:0);if(a===0)t!==null&&il(t),e.callbackNode=null,e.callbackPriority=0;else if(n=a&-a,e.callbackPriority!==n){if(t!=null&&il(t),n===1)e.tag===0?pu(Kl.bind(null,e)):u0(Kl.bind(null,e)),su(function(){!(B&6)&&Sn()}),t=null;else{switch(Ms(a)){case 1:t=so;break;case 4:t=Ns;break;case 16:t=Ma;break;case 536870912:t=Os;break;default:t=Ma}t=cc(t,tc.bind(null,e))}e.callbackPriority=n,e.callbackNode=t}}function tc(e,n){if(Da=-1,Ia=0,B&6)throw Error(k(327));var t=e.callbackNode;if(rt()&&e.callbackNode!==t)return null;var a=Ha(e,e===Z?ee:0);if(a===0)return null;if(a&30||a&e.expiredLanes||n)n=ir(e,a);else{n=a;var r=B;B|=2;var i=rc();(Z!==e||ee!==n)&&(Ue=null,ut=Q()+500,Tn(e,n));do try{Bu();break}catch(l){ac(e,l)}while(!0);wo(),tr.current=i,B=r,q!==null?n=0:(Z=null,ee=0,n=X)}if(n!==0){if(n===2&&(r=bi(e),r!==0&&(a=r,n=Gi(e,r))),n===1)throw t=ea,Tn(e,0),sn(e,a),ge(e,Q()),t;if(n===6)sn(e,a);else{if(r=e.current.alternate,!(a&30)&&!Eu(r)&&(n=ir(e,a),n===2&&(i=bi(e),i!==0&&(a=i,n=Gi(e,i))),n===1))throw t=ea,Tn(e,0),sn(e,a),ge(e,Q()),t;switch(e.finishedWork=r,e.finishedLanes=a,n){case 0:case 1:throw Error(k(345));case 2:Fn(e,pe,Ue);break;case 3:if(sn(e,a),(a&130023424)===a&&(n=No+500-Q(),10<n)){if(Ha(e,0)!==0)break;if(r=e.suspendedLanes,(r&a)!==a){se(),e.pingedLanes|=e.suspendedLanes&r;break}e.timeoutHandle=Ci(Fn.bind(null,e,pe,Ue),n);break}Fn(e,pe,Ue);break;case 4:if(sn(e,a),(a&4194240)===a)break;for(n=e.eventTimes,r=-1;0<a;){var o=31-Ie(a);i=1<<o,o=n[o],o>r&&(r=o),a&=~i}if(a=r,a=Q()-a,a=(120>a?120:480>a?480:1080>a?1080:1920>a?1920:3e3>a?3e3:4320>a?4320:1960*Ru(a/1960))-a,10<a){e.timeoutHandle=Ci(Fn.bind(null,e,pe,Ue),a);break}Fn(e,pe,Ue);break;case 5:Fn(e,pe,Ue);break;default:throw Error(k(329))}}}return ge(e,Q()),e.callbackNode===t?tc.bind(null,e):null}function Gi(e,n){var t=zt;return e.current.memoizedState.isDehydrated&&(Tn(e,n).flags|=256),e=ir(e,n),e!==2&&(n=pe,pe=t,n!==null&&Qi(n)),e}function Qi(e){pe===null?pe=e:pe.push.apply(pe,e)}function Eu(e){for(var n=e;;){if(n.flags&16384){var t=n.updateQueue;if(t!==null&&(t=t.stores,t!==null))for(var a=0;a<t.length;a++){var r=t[a],i=r.getSnapshot;r=r.value;try{if(!Ne(i(),r))return!1}catch{return!1}}}if(t=n.child,n.subtreeFlags&16384&&t!==null)t.return=n,n=t;else{if(n===e)break;for(;n.sibling===null;){if(n.return===null||n.return===e)return!0;n=n.return}n.sibling.return=n.return,n=n.sibling}}return!0}function sn(e,n){for(n&=~zo,n&=~xr,e.suspendedLanes|=n,e.pingedLanes&=~n,e=e.expirationTimes;0<n;){var t=31-Ie(n),a=1<<t;e[t]=-1,n&=~a}}function Kl(e){if(B&6)throw Error(k(327));rt();var n=Ha(e,0);if(!(n&1))return ge(e,Q()),null;var t=ir(e,n);if(e.tag!==0&&t===2){var a=bi(e);a!==0&&(n=a,t=Gi(e,a))}if(t===1)throw t=ea,Tn(e,0),sn(e,n),ge(e,Q()),t;if(t===6)throw Error(k(345));return e.finishedWork=e.current.alternate,e.finishedLanes=n,Fn(e,pe,Ue),ge(e,Q()),null}function Oo(e,n){var t=B;B|=1;try{return e(n)}finally{B=t,B===0&&(ut=Q()+500,fr&&Sn())}}function In(e){dn!==null&&dn.tag===0&&!(B&6)&&rt();var n=B;B|=1;var t=Pe.transition,a=N;try{if(Pe.transition=null,N=1,e)return e()}finally{N=a,Pe.transition=t,B=n,!(B&6)&&Sn()}}function Lo(){xe=Zn.current,H(Zn)}function Tn(e,n){e.finishedWork=null,e.finishedLanes=0;var t=e.timeoutHandle;if(t!==-1&&(e.timeoutHandle=-1,lu(t)),q!==null)for(t=q.return;t!==null;){var a=t;switch(vo(a),a.tag){case 1:a=a.type.childContextTypes,a!=null&&Ga();break;case 3:ct(),H(me),H(oe),Po();break;case 5:$o(a);break;case 4:ct();break;case 13:H(V);break;case 19:H(V);break;case 10:So(a.type._context);break;case 22:case 23:Lo()}t=t.return}if(Z=e,q=e=bn(e.current,null),ee=xe=n,X=0,ea=null,zo=xr=Dn=0,pe=zt=null,$n!==null){for(n=0;n<$n.length;n++)if(t=$n[n],a=t.interleaved,a!==null){t.interleaved=null;var r=a.next,i=t.pending;if(i!==null){var o=i.next;i.next=r,a.next=o}t.pending=a}$n=null}return e}function ac(e,n){do{var t=q;try{if(wo(),Ea.current=nr,er){for(var a=j.memoizedState;a!==null;){var r=a.queue;r!==null&&(r.pending=null),a=a.next}er=!1}if(Bn=0,K=Y=j=null,Dt=!1,Kt=0,Io.current=null,t===null||t.return===null){X=1,ea=n,q=null;break}e:{var i=e,o=t.return,l=t,d=n;if(n=ee,l.flags|=32768,d!==null&&typeof d=="object"&&typeof d.then=="function"){var f=d,b=l,x=b.tag;if(!(b.mode&1)&&(x===0||x===11||x===15)){var m=b.alternate;m?(b.updateQueue=m.updateQueue,b.memoizedState=m.memoizedState,b.lanes=m.lanes):(b.updateQueue=null,b.memoizedState=null)}var w=Ol(o);if(w!==null){w.flags&=-257,Ll(w,o,l,i,n),w.mode&1&&Nl(i,f,n),n=w,d=f;var S=n.updateQueue;if(S===null){var _=new Set;_.add(d),n.updateQueue=_}else S.add(d);break e}else{if(!(n&1)){Nl(i,f,n),Mo();break e}d=Error(k(426))}}else if(W&&l.mode&1){var P=Ol(o);if(P!==null){!(P.flags&65536)&&(P.flags|=256),Ll(P,o,l,i,n),yo(dt(d,l));break e}}i=d=dt(d,l),X!==4&&(X=2),zt===null?zt=[i]:zt.push(i),i=o;do{switch(i.tag){case 3:i.flags|=65536,n&=-n,i.lanes|=n;var u=M0(i,d,n);El(i,u);break e;case 1:l=d;var s=i.type,c=i.stateNode;if(!(i.flags&128)&&(typeof s.getDerivedStateFromError=="function"||c!==null&&typeof c.componentDidCatch=="function"&&(gn===null||!gn.has(c)))){i.flags|=65536,n&=-n,i.lanes|=n;var p=H0(i,l,n);El(i,p);break e}}i=i.return}while(i!==null)}oc(t)}catch(h){n=h,q===t&&t!==null&&(q=t=t.return);continue}break}while(!0)}function rc(){var e=tr.current;return tr.current=nr,e===null?nr:e}function Mo(){(X===0||X===3||X===2)&&(X=4),Z===null||!(Dn&268435455)&&!(xr&268435455)||sn(Z,ee)}function ir(e,n){var t=B;B|=2;var a=rc();(Z!==e||ee!==n)&&(Ue=null,Tn(e,n));do try{Au();break}catch(r){ac(e,r)}while(!0);if(wo(),B=t,tr.current=a,q!==null)throw Error(k(261));return Z=null,ee=0,X}function Au(){for(;q!==null;)ic(q)}function Bu(){for(;q!==null&&!rd();)ic(q)}function ic(e){var n=sc(e.alternate,e,xe);e.memoizedProps=e.pendingProps,n===null?oc(e):q=n,Io.current=null}function oc(e){var n=e;do{var t=n.alternate;if(e=n.return,n.flags&32768){if(t=Cu(t,n),t!==null){t.flags&=32767,q=t;return}if(e!==null)e.flags|=32768,e.subtreeFlags=0,e.deletions=null;else{X=6,q=null;return}}else if(t=Fu(t,n,xe),t!==null){q=t;return}if(n=n.sibling,n!==null){q=n;return}q=n=e}while(n!==null);X===0&&(X=5)}function Fn(e,n,t){var a=N,r=Pe.transition;try{Pe.transition=null,N=1,Du(e,n,t,a)}finally{Pe.transition=r,N=a}return null}function Du(e,n,t,a){do rt();while(dn!==null);if(B&6)throw Error(k(327));t=e.finishedWork;var r=e.finishedLanes;if(t===null)return null;if(e.finishedWork=null,e.finishedLanes=0,t===e.current)throw Error(k(177));e.callbackNode=null,e.callbackPriority=0;var i=t.lanes|t.childLanes;if(md(e,i),e===Z&&(q=Z=null,ee=0),!(t.subtreeFlags&2064)&&!(t.flags&2064)||wa||(wa=!0,cc(Ma,function(){return rt(),null})),i=(t.flags&15990)!==0,t.subtreeFlags&15990||i){i=Pe.transition,Pe.transition=null;var o=N;N=1;var l=B;B|=4,Io.current=null,Pu(e,t),ec(t,e),eu(ki),Wa=!!Si,ki=Si=null,e.current=t,Tu(t),id(),B=l,N=o,Pe.transition=i}else e.current=t;if(wa&&(wa=!1,dn=e,rr=r),i=e.pendingLanes,i===0&&(gn=null),sd(t.stateNode),ge(e,Q()),n!==null)for(a=e.onRecoverableError,t=0;t<n.length;t++)r=n[t],a(r.value,{componentStack:r.stack,digest:r.digest});if(ar)throw ar=!1,e=ji,ji=null,e;return rr&1&&e.tag!==0&&rt(),i=e.pendingLanes,i&1?e===Ui?Nt++:(Nt=0,Ui=e):Nt=0,Sn(),null}function rt(){if(dn!==null){var e=Ms(rr),n=Pe.transition,t=N;try{if(Pe.transition=null,N=16>e?16:e,dn===null)var a=!1;else{if(e=dn,dn=null,rr=0,B&6)throw Error(k(331));var r=B;for(B|=4,$=e.current;$!==null;){var i=$,o=i.child;if($.flags&16){var l=i.deletions;if(l!==null){for(var d=0;d<l.length;d++){var f=l[d];for($=f;$!==null;){var b=$;switch(b.tag){case 0:case 11:case 15:It(8,b,i)}var x=b.child;if(x!==null)x.return=b,$=x;else for(;$!==null;){b=$;var m=b.sibling,w=b.return;if(K0(b),b===f){$=null;break}if(m!==null){m.return=w,$=m;break}$=w}}}var S=i.alternate;if(S!==null){var _=S.child;if(_!==null){S.child=null;do{var P=_.sibling;_.sibling=null,_=P}while(_!==null)}}$=i}}if(i.subtreeFlags&2064&&o!==null)o.return=i,$=o;else e:for(;$!==null;){if(i=$,i.flags&2048)switch(i.tag){case 0:case 11:case 15:It(9,i,i.return)}var u=i.sibling;if(u!==null){u.return=i.return,$=u;break e}$=i.return}}var s=e.current;for($=s;$!==null;){o=$;var c=o.child;if(o.subtreeFlags&2064&&c!==null)c.return=o,$=c;else e:for(o=s;$!==null;){if(l=$,l.flags&2048)try{switch(l.tag){case 0:case 11:case 15:gr(9,l)}}catch(h){G(l,l.return,h)}if(l===o){$=null;break e}var p=l.sibling;if(p!==null){p.return=l.return,$=p;break e}$=l.return}}if(B=r,Sn(),He&&typeof He.onPostCommitFiberRoot=="function")try{He.onPostCommitFiberRoot(sr,e)}catch{}a=!0}return a}finally{N=t,Pe.transition=n}}return!1}function Zl(e,n,t){n=dt(t,n),n=M0(e,n,1),e=hn(e,n,1),n=se(),e!==null&&(ta(e,1,n),ge(e,n))}function G(e,n,t){if(e.tag===3)Zl(e,e,t);else for(;n!==null;){if(n.tag===3){Zl(n,e,t);break}else if(n.tag===1){var a=n.stateNode;if(typeof n.type.getDerivedStateFromError=="function"||typeof a.componentDidCatch=="function"&&(gn===null||!gn.has(a))){e=dt(t,e),e=H0(n,e,1),n=hn(n,e,1),e=se(),n!==null&&(ta(n,1,e),ge(n,e));break}}n=n.return}}function Iu(e,n,t){var a=e.pingCache;a!==null&&a.delete(n),n=se(),e.pingedLanes|=e.suspendedLanes&t,Z===e&&(ee&t)===t&&(X===4||X===3&&(ee&130023424)===ee&&500>Q()-No?Tn(e,0):zo|=t),ge(e,n)}function lc(e,n){n===0&&(e.mode&1?(n=pa,pa<<=1,!(pa&130023424)&&(pa=4194304)):n=1);var t=se();e=Ze(e,n),e!==null&&(ta(e,n,t),ge(e,t))}function zu(e){var n=e.memoizedState,t=0;n!==null&&(t=n.retryLane),lc(e,t)}function Nu(e,n){var t=0;switch(e.tag){case 13:var a=e.stateNode,r=e.memoizedState;r!==null&&(t=r.retryLane);break;case 19:a=e.stateNode;break;default:throw Error(k(314))}a!==null&&a.delete(n),lc(e,t)}var sc;sc=function(e,n,t){if(e!==null)if(e.memoizedProps!==n.pendingProps||me.current)fe=!0;else{if(!(e.lanes&t)&&!(n.flags&128))return fe=!1,ku(e,n,t);fe=!!(e.flags&131072)}else fe=!1,W&&n.flags&1048576&&p0(n,Ya,n.index);switch(n.lanes=0,n.tag){case 2:var a=n.type;Ba(e,n),e=n.pendingProps;var r=ot(n,oe.current);at(n,t),r=Ro(null,n,a,e,r,t);var i=Eo();return n.flags|=1,typeof r=="object"&&r!==null&&typeof r.render=="function"&&r.$$typeof===void 0?(n.tag=1,n.memoizedState=null,n.updateQueue=null,he(a)?(i=!0,Qa(n)):i=!1,n.memoizedState=r.state!==null&&r.state!==void 0?r.state:null,Fo(n),r.updater=hr,n.stateNode=r,r._reactInternals=n,Bi(n,a,e,t),n=zi(null,n,a,!0,i,t)):(n.tag=0,W&&i&&bo(n),le(null,n,r,t),n=n.child),n;case 16:a=n.elementType;e:{switch(Ba(e,n),e=n.pendingProps,r=a._init,a=r(a._payload),n.type=a,r=n.tag=Lu(a),e=Ae(a,e),r){case 0:n=Ii(null,n,a,e,t);break e;case 1:n=Wl(null,n,a,e,t);break e;case 11:n=Ml(null,n,a,e,t);break e;case 14:n=Hl(null,n,a,Ae(a.type,e),t);break e}throw Error(k(306,a,""))}return n;case 0:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ii(e,n,a,r,t);case 1:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Wl(e,n,a,r,t);case 3:e:{if(U0(n),e===null)throw Error(k(387));a=n.pendingProps,i=n.memoizedState,r=i.element,b0(e,n),Za(n,a,null,t);var o=n.memoizedState;if(a=o.element,i.isDehydrated)if(i={element:a,isDehydrated:!1,cache:o.cache,pendingSuspenseBoundaries:o.pendingSuspenseBoundaries,transitions:o.transitions},n.updateQueue.baseState=i,n.memoizedState=i,n.flags&256){r=dt(Error(k(423)),n),n=Vl(e,n,a,t,r);break e}else if(a!==r){r=dt(Error(k(424)),n),n=Vl(e,n,a,t,r);break e}else for(ve=mn(n.stateNode.containerInfo.firstChild),ye=n,W=!0,De=null,t=g0(n,null,a,t),n.child=t;t;)t.flags=t.flags&-3|4096,t=t.sibling;else{if(lt(),a===r){n=Je(e,n,t);break e}le(e,n,a,t)}n=n.child}return n;case 5:return v0(n),e===null&&Ri(n),a=n.type,r=n.pendingProps,i=e!==null?e.memoizedProps:null,o=r.children,Fi(a,r)?o=null:i!==null&&Fi(a,i)&&(n.flags|=32),j0(e,n),le(e,n,o,t),n.child;case 6:return e===null&&Ri(n),null;case 13:return G0(e,n,t);case 4:return Co(n,n.stateNode.containerInfo),a=n.pendingProps,e===null?n.child=st(n,null,a,t):le(e,n,a,t),n.child;case 11:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ml(e,n,a,r,t);case 7:return le(e,n,n.pendingProps,t),n.child;case 8:return le(e,n,n.pendingProps.children,t),n.child;case 12:return le(e,n,n.pendingProps.children,t),n.child;case 10:e:{if(a=n.type._context,r=n.pendingProps,i=n.memoizedProps,o=r.value,L(Xa,a._currentValue),a._currentValue=o,i!==null)if(Ne(i.value,o)){if(i.children===r.children&&!me.current){n=Je(e,n,t);break e}}else for(i=n.child,i!==null&&(i.return=n);i!==null;){var l=i.dependencies;if(l!==null){o=i.child;for(var d=l.firstContext;d!==null;){if(d.context===a){if(i.tag===1){d=Ye(-1,t&-t),d.tag=2;var f=i.updateQueue;if(f!==null){f=f.shared;var b=f.pending;b===null?d.next=d:(d.next=b.next,b.next=d),f.pending=d}}i.lanes|=t,d=i.alternate,d!==null&&(d.lanes|=t),Ei(i.return,t,n),l.lanes|=t;break}d=d.next}}else if(i.tag===10)o=i.type===n.type?null:i.child;else if(i.tag===18){if(o=i.return,o===null)throw Error(k(341));o.lanes|=t,l=o.alternate,l!==null&&(l.lanes|=t),Ei(o,t,n),o=i.sibling}else o=i.child;if(o!==null)o.return=i;else for(o=i;o!==null;){if(o===n){o=null;break}if(i=o.sibling,i!==null){i.return=o.return,o=i;break}o=o.return}i=o}le(e,n,r.children,t),n=n.child}return n;case 9:return r=n.type,a=n.pendingProps.children,at(n,t),r=Te(r),a=a(r),n.flags|=1,le(e,n,a,t),n.child;case 14:return a=n.type,r=Ae(a,n.pendingProps),r=Ae(a.type,r),Hl(e,n,a,r,t);case 15:return W0(e,n,n.type,n.pendingProps,t);case 17:return a=n.type,r=n.pendingProps,r=n.elementType===a?r:Ae(a,r),Ba(e,n),n.tag=1,he(a)?(e=!0,Qa(n)):e=!1,at(n,t),L0(n,a,r),Bi(n,a,r,t),zi(null,n,a,!0,e,t);case 19:return Q0(e,n,t);case 22:return V0(e,n,t)}throw Error(k(156,n.tag))};function cc(e,n){return zs(e,n)}function Ou(e,n,t,a){this.tag=e,this.key=t,this.sibling=this.child=this.return=this.stateNode=this.type=this.elementType=null,this.index=0,this.ref=null,this.pendingProps=n,this.dependencies=this.memoizedState=this.updateQueue=this.memoizedProps=null,this.mode=a,this.subtreeFlags=this.flags=0,this.deletions=null,this.childLanes=this.lanes=0,this.alternate=null}function $e(e,n,t,a){return new Ou(e,n,t,a)}function Ho(e){return e=e.prototype,!(!e||!e.isReactComponent)}function Lu(e){if(typeof e=="function")return Ho(e)?1:0;if(e!=null){if(e=e.$$typeof,e===io)return 11;if(e===oo)return 14}return 2}function bn(e,n){var t=e.alternate;return t===null?(t=$e(e.tag,n,e.key,e.mode),t.elementType=e.elementType,t.type=e.type,t.stateNode=e.stateNode,t.alternate=e,e.alternate=t):(t.pendingProps=n,t.type=e.type,t.flags=0,t.subtreeFlags=0,t.deletions=null),t.flags=e.flags&14680064,t.childLanes=e.childLanes,t.lanes=e.lanes,t.child=e.child,t.memoizedProps=e.memoizedProps,t.memoizedState=e.memoizedState,t.updateQueue=e.updateQueue,n=e.dependencies,t.dependencies=n===null?null:{lanes:n.lanes,firstContext:n.firstContext},t.sibling=e.sibling,t.index=e.index,t.ref=e.ref,t}function za(e,n,t,a,r,i){var o=2;if(a=e,typeof e=="function")Ho(e)&&(o=1);else if(typeof e=="string")o=5;else e:switch(e){case Wn:return Rn(t.children,r,i,n);case ro:o=8,r|=8;break;case ai:return e=$e(12,t,n,r|2),e.elementType=ai,e.lanes=i,e;case ri:return e=$e(13,t,n,r),e.elementType=ri,e.lanes=i,e;case ii:return e=$e(19,t,n,r),e.elementType=ii,e.lanes=i,e;case vs:return br(t,r,i,n);default:if(typeof e=="object"&&e!==null)switch(e.$$typeof){case xs:o=10;break e;case bs:o=9;break e;case io:o=11;break e;case oo:o=14;break e;case rn:o=16,a=null;break e}throw Error(k(130,e==null?e:typeof e,""))}return n=$e(o,t,n,r),n.elementType=e,n.type=a,n.lanes=i,n}function Rn(e,n,t,a){return e=$e(7,e,a,n),e.lanes=t,e}function br(e,n,t,a){return e=$e(22,e,a,n),e.elementType=vs,e.lanes=t,e.stateNode={isHidden:!1},e}function Kr(e,n,t){return e=$e(6,e,null,n),e.lanes=t,e}function Zr(e,n,t){return n=$e(4,e.children!==null?e.children:[],e.key,n),n.lanes=t,n.stateNode={containerInfo:e.containerInfo,pendingChildren:null,implementation:e.implementation},n}function Mu(e,n,t,a,r){this.tag=n,this.containerInfo=e,this.finishedWork=this.pingCache=this.current=this.pendingChildren=null,this.timeoutHandle=-1,this.callbackNode=this.pendingContext=this.context=null,this.callbackPriority=0,this.eventTimes=Ar(0),this.expirationTimes=Ar(-1),this.entangledLanes=this.finishedLanes=this.mutableReadLanes=this.expiredLanes=this.pingedLanes=this.suspendedLanes=this.pendingLanes=0,this.entanglements=Ar(0),this.identifierPrefix=a,this.onRecoverableError=r,this.mutableSourceEagerHydrationData=null}function Wo(e,n,t,a,r,i,o,l,d){return e=new Mu(e,n,t,l,d),n===1?(n=1,i===!0&&(n|=8)):n=0,i=$e(3,null,null,n),e.current=i,i.stateNode=e,i.memoizedState={element:a,isDehydrated:t,cache:null,transitions:null,pendingSuspenseBoundaries:null},Fo(i),e}function Hu(e,n,t){var a=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:Hn,key:a==null?null:""+a,children:e,containerInfo:n,implementation:t}}function dc(e){if(!e)return yn;e=e._reactInternals;e:{if(Nn(e)!==e||e.tag!==1)throw Error(k(170));var n=e;do{switch(n.tag){case 3:n=n.stateNode.context;break e;case 1:if(he(n.type)){n=n.stateNode.__reactInternalMemoizedMergedChildContext;break e}}n=n.return}while(n!==null);throw Error(k(171))}if(e.tag===1){var t=e.type;if(he(t))return d0(e,t,n)}return n}function uc(e,n,t,a,r,i,o,l,d){return e=Wo(t,a,!0,e,r,i,o,l,d),e.context=dc(null),t=e.current,a=se(),r=xn(t),i=Ye(a,r),i.callback=n??null,hn(t,i,r),e.current.lanes=r,ta(e,r,a),ge(e,a),e}function vr(e,n,t,a){var r=n.current,i=se(),o=xn(r);return t=dc(t),n.context===null?n.context=t:n.pendingContext=t,n=Ye(i,o),n.payload={element:e},a=a===void 0?null:a,a!==null&&(n.callback=a),e=hn(r,n,o),e!==null&&(ze(e,r,o,i),Ra(e,r,o)),o}function or(e){if(e=e.current,!e.child)return null;switch(e.child.tag){case 5:return e.child.stateNode;default:return e.child.stateNode}}function Jl(e,n){if(e=e.memoizedState,e!==null&&e.dehydrated!==null){var t=e.retryLane;e.retryLane=t!==0&&t<n?t:n}}function Vo(e,n){Jl(e,n),(e=e.alternate)&&Jl(e,n)}function Wu(){return null}var pc=typeof reportError=="function"?reportError:function(e){console.error(e)};function jo(e){this._internalRoot=e}yr.prototype.render=jo.prototype.render=function(e){var n=this._internalRoot;if(n===null)throw Error(k(409));vr(e,n,null,null)};yr.prototype.unmount=jo.prototype.unmount=function(){var e=this._internalRoot;if(e!==null){this._internalRoot=null;var n=e.containerInfo;In(function(){vr(null,e,null,null)}),n[Ke]=null}};function yr(e){this._internalRoot=e}yr.prototype.unstable_scheduleHydration=function(e){if(e){var n=Vs();e={blockedOn:null,target:e,priority:n};for(var t=0;t<ln.length&&n!==0&&n<ln[t].priority;t++);ln.splice(t,0,e),t===0&&Us(e)}};function Uo(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function _r(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11&&(e.nodeType!==8||e.nodeValue!==" react-mount-point-unstable "))}function es(){}function Vu(e,n,t,a,r){if(r){if(typeof a=="function"){var i=a;a=function(){var f=or(o);i.call(f)}}var o=uc(n,a,e,0,null,!1,!1,"",es);return e._reactRootContainer=o,e[Ke]=o.current,Gt(e.nodeType===8?e.parentNode:e),In(),o}for(;r=e.lastChild;)e.removeChild(r);if(typeof a=="function"){var l=a;a=function(){var f=or(d);l.call(f)}}var d=Wo(e,0,!1,null,null,!1,!1,"",es);return e._reactRootContainer=d,e[Ke]=d.current,Gt(e.nodeType===8?e.parentNode:e),In(function(){vr(n,d,t,a)}),d}function wr(e,n,t,a,r){var i=t._reactRootContainer;if(i){var o=i;if(typeof r=="function"){var l=r;r=function(){var d=or(o);l.call(d)}}vr(n,o,e,r)}else o=Vu(t,n,e,r,a);return or(o)}Hs=function(e){switch(e.tag){case 3:var n=e.stateNode;if(n.current.memoizedState.isDehydrated){var t=$t(n.pendingLanes);t!==0&&(co(n,t|1),ge(n,Q()),!(B&6)&&(ut=Q()+500,Sn()))}break;case 13:In(function(){var a=Ze(e,1);if(a!==null){var r=se();ze(a,e,1,r)}}),Vo(e,1)}};uo=function(e){if(e.tag===13){var n=Ze(e,134217728);if(n!==null){var t=se();ze(n,e,134217728,t)}Vo(e,134217728)}};Ws=function(e){if(e.tag===13){var n=xn(e),t=Ze(e,n);if(t!==null){var a=se();ze(t,e,n,a)}Vo(e,n)}};Vs=function(){return N};js=function(e,n){var t=N;try{return N=e,n()}finally{N=t}};hi=function(e,n,t){switch(n){case"input":if(si(e,t),n=t.name,t.type==="radio"&&n!=null){for(t=e;t.parentNode;)t=t.parentNode;for(t=t.querySelectorAll("input[name="+JSON.stringify(""+n)+'][type="radio"]'),n=0;n<t.length;n++){var a=t[n];if(a!==e&&a.form===e.form){var r=pr(a);if(!r)throw Error(k(90));_s(a),si(a,r)}}}break;case"textarea":Ss(e,t);break;case"select":n=t.value,n!=null&&Jn(e,!!t.multiple,n,!1)}};Rs=Oo;Es=In;var ju={usingClientEntryPoint:!1,Events:[ra,Gn,pr,Ps,Ts,Oo]},kt={findFiberByHostInstance:Cn,bundleType:0,version:"18.3.1",rendererPackageName:"react-dom"},Uu={bundleType:kt.bundleType,version:kt.version,rendererPackageName:kt.rendererPackageName,rendererConfig:kt.rendererConfig,overrideHookState:null,overrideHookStateDeletePath:null,overrideHookStateRenamePath:null,overrideProps:null,overridePropsDeletePath:null,overridePropsRenamePath:null,setErrorHandler:null,setSuspenseHandler:null,scheduleUpdate:null,currentDispatcherRef:en.ReactCurrentDispatcher,findHostInstanceByFiber:function(e){return e=Ds(e),e===null?null:e.stateNode},findFiberByHostInstance:kt.findFiberByHostInstance||Wu,findHostInstancesForRefresh:null,scheduleRefresh:null,scheduleRoot:null,setRefreshHandler:null,getCurrentFiber:null,reconcilerVersion:"18.3.1-next-f1338f8080-20240426"};if(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__<"u"){var Sa=__REACT_DEVTOOLS_GLOBAL_HOOK__;if(!Sa.isDisabled&&Sa.supportsFiber)try{sr=Sa.inject(Uu),He=Sa}catch{}}we.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED=ju;we.createPortal=function(e,n){var t=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!Uo(n))throw Error(k(200));return Hu(e,n,null,t)};we.createRoot=function(e,n){if(!Uo(e))throw Error(k(299));var t=!1,a="",r=pc;return n!=null&&(n.unstable_strictMode===!0&&(t=!0),n.identifierPrefix!==void 0&&(a=n.identifierPrefix),n.onRecoverableError!==void 0&&(r=n.onRecoverableError)),n=Wo(e,1,!1,null,null,t,!1,a,r),e[Ke]=n.current,Gt(e.nodeType===8?e.parentNode:e),new jo(n)};we.findDOMNode=function(e){if(e==null)return null;if(e.nodeType===1)return e;var n=e._reactInternals;if(n===void 0)throw typeof e.render=="function"?Error(k(188)):(e=Object.keys(e).join(","),Error(k(268,e)));return e=Ds(n),e=e===null?null:e.stateNode,e};we.flushSync=function(e){return In(e)};we.hydrate=function(e,n,t){if(!_r(n))throw Error(k(200));return wr(null,e,n,!0,t)};we.hydrateRoot=function(e,n,t){if(!Uo(e))throw Error(k(405));var a=t!=null&&t.hydratedSources||null,r=!1,i="",o=pc;if(t!=null&&(t.unstable_strictMode===!0&&(r=!0),t.identifierPrefix!==void 0&&(i=t.identifierPrefix),t.onRecoverableError!==void 0&&(o=t.onRecoverableError)),n=uc(n,null,e,1,t??null,r,!1,i,o),e[Ke]=n.current,Gt(e),a)for(e=0;e<a.length;e++)t=a[e],r=t._getVersion,r=r(t._source),n.mutableSourceEagerHydrationData==null?n.mutableSourceEagerHydrationData=[t,r]:n.mutableSourceEagerHydrationData.push(t,r);return new yr(n)};we.render=function(e,n,t){if(!_r(n))throw Error(k(200));return wr(null,e,n,!1,t)};we.unmountComponentAtNode=function(e){if(!_r(e))throw Error(k(40));return e._reactRootContainer?(In(function(){wr(null,null,e,!1,function(){e._reactRootContainer=null,e[Ke]=null})}),!0):!1};we.unstable_batchedUpdates=Oo;we.unstable_renderSubtreeIntoContainer=function(e,n,t,a){if(!_r(t))throw Error(k(200));if(e==null||e._reactInternals===void 0)throw Error(k(38));return wr(e,n,t,!1,a)};we.version="18.3.1-next-f1338f8080-20240426";function fc(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>"u"||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!="function"))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(fc)}catch(e){console.error(e)}}fc(),fs.exports=we;var Gu=fs.exports,ns=Gu;ni.createRoot=ns.createRoot,ni.hydrateRoot=ns.hydrateRoot;const Qu=`version: 1.0
 
 // Button Styles Builder
 // #main    - Standard button (ui atlas: button-idle/hover/pressed/disabled)
@@ -86,7 +86,7 @@ Error generating stack: `+i.message+`
     bitmap(generated(color($width - 8, $height - 8, $color))): 4, 4
     settings{width:int=>$width, height:int=>$height, color:int=>$color}
 }
-`,qu=`version: 0.5
+`,qu=`version: 1.0
 
 // Checkbox Styles Builder
 // #checkbox - Standard checkbox (ui atlas: CheckBox_off/on_*)
@@ -157,7 +157,7 @@ Error generating stack: `+i.message+`
     @(status=>*, checked=>true, disabled=>false) bitmap(sheet("ui-new", "checkbox_checked"));
     @(disabled=>true) bitmap(sheet("ui-new", "checkbox_disabled"));
 }
-`,Yu=`version: 0.5
+`,Yu=`version: 1.0
 
 #titleBar programmable(title="Demo") {
     ninepatch("ui", "Window_3x3_idle", 1280, 40): 0,0
@@ -218,7 +218,7 @@ Error generating stack: `+i.message+`
     @(status=>pressed) ninepatch("ui", "button-pressed", 26, 22): 0,0
     text(m6x11, $buttonText, #ffffff, center, 26): 0,5
 }
-`,Xu=`version: 0.5
+`,Xu=`version: 1.0
 
 // Conditionals Demo
 // All conditional types demonstrated
@@ -262,7 +262,7 @@ Error generating stack: `+i.message+`
     // Slider label
     text(exo2_14, "Value slider", #888888, left, 200): 0, 420
 }
-`,Ku=`version: 0.5
+`,Ku=`version: 1.0
 
 // Expressions Demo
 // Arithmetic, ternary, and string interpolation
@@ -334,7 +334,7 @@ Error generating stack: `+i.message+`
         settings{size:int=>300}
     }
 }
-`,Zu=`version: 0.5
+`,Zu=`version: 1.0
 
 // Feature Showcase
 // Demonstrates layers, tileGroups, apply blocks, bitmap alignment,
@@ -598,7 +598,7 @@ Error generating stack: `+i.message+`
     text(pixeled6, "pixeled6 font", #ffcc44, left): 0, 44
   }
 }
-`,Ju=`version: 0.5
+`,Ju=`version: 1.0
 
 // Incremental Updates Demo
 // Build once, update live via setParameter() without rebuild
@@ -635,7 +635,7 @@ Error generating stack: `+i.message+`
     // Slider label
     text(exo2_14, "Drag slider to update all elements live", #888888, left, 400): 0, 400
 }
-`,ep=`version: 0.5
+`,ep=`version: 1.0
 
 // Interactives Demo — hit regions, cursors, rich highlights, event filters
 
@@ -822,7 +822,7 @@ Error generating stack: `+i.message+`
     #statusText(updatable) text(m6x11, "Hover or click any interactive region", #888888): 10, 608
     #clickText(updatable) text(m6x11, "No region clicked yet", #7fdbda): 10, 628
 }
-`,np=`version: 0.5
+`,np=`version: 1.0
 
 // Macro Performance Benchmark
 // Compares builder, builder+incremental, and macro creation & update performance.
@@ -922,7 +922,7 @@ Error generating stack: `+i.message+`
     #updateIncrTime(updatable) text(m6x11, "Incr: --", #44aaff): 250, 244
     #updateMacroTime(updatable) text(m6x11, "Macro: --", #44ff88): 420, 244
 }
-`,tp=`version: 0.5
+`,tp=`version: 1.0
 
 // Settings Demo
 // Two use cases: .manim styling configures code | .manim info flows back to code
@@ -1017,7 +1017,7 @@ Error generating stack: `+i.message+`
     // Layout result info
     #logText(updatable) text(exo2_light_14, "Click a variant to see settings drive layout.", #666666): 0, 500
 }
-`,ap=`version: 0.5
+`,ap=`version: 1.0
 
 // Anim Path Demo
 // Circles follow paths with curves for alpha, scale, progress, color & direction
@@ -1180,7 +1180,7 @@ paths {
     // Status
     #statusText(updatable) text(m6x11, "L-click start, R-click end | Path: circuit | Curve: linear | Count: 5", #7fdbda, left, 900): 50, 650
 }
-`,rp=`version: 0.5
+`,rp=`version: 1.0
 
 // Color Picker Dialog
 // Modal dialog with R/G/B sliders, live color preview, hex display, and preset colors.
@@ -1275,7 +1275,7 @@ paths {
         }
     }
 }
-`,ip=`version: 0.5
+`,ip=`version: 1.0
 
 // Curves Demo
 // 1D curve visualization with animated easing demos
@@ -1371,7 +1371,7 @@ curves {
     }
     #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 60): 530, 400
 }
-`,op=`version: 0.5
+`,op=`version: 1.0
 
 // Filters Demo — 9 filters shown simultaneously with interactive controls
 // Each filter defined as a programmable with filter: syntax and $param expressions
@@ -1700,7 +1700,7 @@ curves {
         placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell8")) { pos: $grid.pos(2, 2) }
     }
 }
-`,lp=`version: 0.5
+`,lp=`version: 1.0
 
 // Floating Text Demo
 // AnimatedPath-driven floating text for damage numbers, heal text, status effects, etc.
@@ -1809,314 +1809,314 @@ curves {
 
     #statusText(updatable) text(m6x11, "Active: 0  |  Total spawned: 0", #666666): 0, 520
 }
-`,sp=`version: 0.5\r
-\r
-// Particles Demo — Basics\r
-// Emission modes, lifetime, speed, size, fading\r
-// Uses new angle units, direction constants, aliases, and named emit params\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 160, 280\r
-        point: 400, 80\r
-        point: 680, 280\r
-        point: 940, 280\r
-    }\r
-}\r
-\r
-#fire particles {\r
-    count: 80\r
-    emit: cone(dist: 10, distRand: 5, angle: up, angleSpread: 25deg)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 1.8\r
-    speed: 60\r
-    speedRand: 0.3\r
-    gravity: 40\r
-    gravityAngle: up\r
-    size: 0.6\r
-    sizeRand: 0.3\r
-    fadeOut: 0.7\r
-    fadeIn: 0.1\r
-    colorStops: 0.0 #FF4400, 0.4 #FFAA00, 1.0 #FFFF88\r
-    blendMode: add\r
-}\r
-\r
-#rain particles {\r
-    count: 150\r
-    emit: box(w: 150, h: 5, angle: down + 5deg, angleSpread: 5deg)\r
-    tiles: file("spark.png")\r
-    loop: true\r
-    maxLife: 1.2\r
-    lifeRand: 0.3\r
-    speed: 300\r
-    speedRand: 0.15\r
-    size: 0.3\r
-    sizeRand: 0.1\r
-    fadeIn: 0.05\r
-    fadeOut: 0.9\r
-    colorStops: 0.0 #AACCFF, 1.0 #6688CC\r
-    autoRotate: true\r
-}\r
-\r
-#sparkles particles {\r
-    count: 50\r
-    emit: circle(r: 60, rRand: 30, angle: 0deg, angleSpread: 0deg)\r
-    tiles: file("star.png")\r
-    loop: true\r
-    maxLife: 2.0\r
-    speed: 15\r
-    speedRand: 0.5\r
-    size: 0.4\r
-    sizeRand: 0.3\r
-    fadeIn: 0.2\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #FFFFFF, 0.5 #88DDFF, 1.0 #4488FF\r
-    blendMode: add\r
-    rotSpeed: 45deg\r
-    rotSpeedRand: 0.5\r
-}\r
-\r
-#explosion particles {\r
-    count: 60\r
-    emit: point(dist: 0, distRand: 15)\r
-    tiles: file("circle_hard.png") file("flare.png")\r
-    loop: true\r
-    maxLife: 0.8\r
-    lifeRand: 0.3\r
-    speed: 200\r
-    speedRand: 0.5\r
-    gravity: 150\r
-    gravityAngle: down\r
-    size: 0.5\r
-    sizeRand: 0.4\r
-    fadeIn: 0.0\r
-    fadeOut: 0.4\r
-    colorStops: 0.0 #FFFF88, 0.5 #FF4400, 1.0 #882200\r
-    blendMode: add\r
-    emitSync: 0.9\r
-}\r
-\r
-#basicsUI programmable() {\r
-    text(m6x11, "Fire", #FF6622, center, 120): 120, 20\r
-    text(m3x6, "named emit + colorStops", #888888, center, 180): 120, 36\r
-    text(m6x11, "Rain", #88BBFF, center, 120): 380, 20\r
-    text(m3x6, "box + direction expr", #888888, center, 180): 380, 36\r
-    text(m6x11, "Sparkles", #88DDFF, center, 120): 640, 20\r
-    text(m3x6, "circle + aliases", #888888, center, 180): 640, 36\r
-    text(m6x11, "Explosion", #FF8844, center, 120): 900, 20\r
-    text(m3x6, "direction constants", #888888, center, 180): 900, 36\r
-}\r
-`,cp=`version: 0.5\r
-\r
-// Particles Demo — Bounds & Collision\r
-// New bounds: combined syntax with box() and line()\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 160, 380\r
-        point: 420, 380\r
-        point: 680, 380\r
-        point: 940, 380\r
-    }\r
-}\r
-\r
-// Kill at boundaries — particles disappear at edges\r
-#killBounds particles {\r
-    count: 60\r
-    emit: point(dist: 0, distRand: 30)\r
-    tiles: file("dot.png")\r
-    loop: true\r
-    maxLife: 3.0\r
-    speed: 80\r
-    speedRand: 0.4\r
-    size: 0.7\r
-    sizeRand: 0.2\r
-    fadeIn: 0.1\r
-    fadeOut: 0.95\r
-    colorStops: 0.0 #FF4444, 1.0 #FF8888\r
-    blendMode: add\r
-    bounds: kill, box(x: -80, y: -80, w: 160, h: 160)\r
-}\r
-\r
-// Bounce off walls with damping\r
-#bounceBounds particles {\r
-    count: 40\r
-    emit: point(dist: 0, distRand: 20)\r
-    tiles: file("circle_hard.png")\r
-    loop: true\r
-    maxLife: 4.0\r
-    speed: 100\r
-    speedRand: 0.3\r
-    gravity: 80\r
-    gravityAngle: down\r
-    size: 0.5\r
-    sizeRand: 0.2\r
-    fadeIn: 0.05\r
-    fadeOut: 0.9\r
-    colorStops: 0.0 #44FF44, 1.0 #88FF88\r
-    blendMode: add\r
-    bounds: bounce(0.7), box(x: -80, y: -80, w: 160, h: 160)\r
-}\r
-\r
-// Wrap around — seamless teleportation\r
-#wrapBounds particles {\r
-    count: 50\r
-    emit: cone(dist: 0, distRand: 10, angle: 45deg, angleSpread: 30deg)\r
-    tiles: file("star.png")\r
-    loop: true\r
-    maxLife: 5.0\r
-    speed: 50\r
-    speedRand: 0.3\r
-    size: 0.4\r
-    sizeRand: 0.2\r
-    fadeIn: 0.1\r
-    fadeOut: 0.95\r
-    colorStops: 0.0 #FFFF44, 1.0 #FFAA22\r
-    blendMode: add\r
-    bounds: wrap, box(x: -80, y: -80, w: 160, h: 160)\r
-    rotSpeed: 60deg\r
-}\r
-\r
-// Line bounds — bounce off diagonal walls\r
-#lineBounds particles {\r
-    count: 40\r
-    emit: point(dist: 0, distRand: 15)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 4.0\r
-    speed: 70\r
-    speedRand: 0.3\r
-    gravity: 60\r
-    gravityAngle: down\r
-    size: 0.4\r
-    sizeRand: 0.2\r
-    fadeIn: 0.05\r
-    fadeOut: 0.9\r
-    colorStops: 0.0 #8844FF, 1.0 #CC88FF\r
-    blendMode: add\r
-    bounds: bounce(0.8), line(-80, 80, 80, 80), line(-80, -80, -80, 80), line(80, -80, -80, -80), line(80, 80, 80, -80)\r
-}\r
-\r
-#boundsUI programmable() {\r
-    text(m6x11, "Kill", #FF4444, center, 120): 120, 20\r
-    text(m3x6, "bounds: kill, box()", #888888, center, 160): 120, 36\r
-    text(m6x11, "Bounce", #44FF44, center, 120): 380, 20\r
-    text(m3x6, "bounds: bounce(), box()", #888888, center, 180): 380, 36\r
-    text(m6x11, "Wrap", #FFFF44, center, 120): 640, 20\r
-    text(m3x6, "bounds: wrap, box()", #888888, center, 160): 640, 36\r
-    text(m6x11, "Line Bounds", #8844FF, center, 120): 900, 20\r
-    text(m3x6, "bounds: bounce(), line()", #888888, center, 180): 900, 36\r
-}\r
-`,dp=`version: 0.5\r
-\r
-// Particles Demo — Colors & Curves\r
-// colorStops (new syntax), sizeCurve, velocityCurve with inline easings\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 160, 380\r
-        point: 420, 380\r
-        point: 680, 380\r
-        point: 940, 380\r
-    }\r
-}\r
-\r
-curves {\r
-    #growShrink curve {\r
-        points: [(0, 0.2), (0.3, 1.0), (1.0, 0.1)]\r
-    }\r
-    #pulse curve {\r
-        points: [(0, 0.5), (0.25, 1.2), (0.5, 0.6), (0.75, 1.1), (1.0, 0.3)]\r
-    }\r
-    #slowdown curve {\r
-        points: [(0, 1.0), (0.3, 0.5), (1.0, 0.05)]\r
-    }\r
-}\r
-\r
-// Multi-segment color gradient: red -> yellow -> cyan -> blue\r
-#rainbow particles {\r
-    count: 80\r
-    emit: cone(dist: 5, distRand: 3, angle: up, angleSpread: 20deg)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 2.5\r
-    speed: 50\r
-    speedRand: 0.2\r
-    gravity: 20\r
-    gravityAngle: up\r
-    size: 0.5\r
-    sizeRand: 0.2\r
-    fadeIn: 0.1\r
-    fadeOut: 0.8\r
-    colorStops: 0.0 #FF2200, 0.33 #FFCC00, 0.66 #00FFCC, 1.0 #4444FF\r
-    blendMode: add\r
-}\r
-\r
-// Size curve: grow then shrink using named curve\r
-#sizeCurveDemo particles {\r
-    count: 50\r
-    emit: point(dist: 0, distRand: 10)\r
-    tiles: file("ring.png")\r
-    loop: true\r
-    maxLife: 2.0\r
-    speed: 40\r
-    speedRand: 0.3\r
-    size: 0.3\r
-    sizeRand: 0.1\r
-    fadeIn: 0.1\r
-    fadeOut: 0.7\r
-    colorStops: 0.0 #FFFFFF, 1.0 #FF88FF\r
-    sizeCurve: growShrink\r
-    blendMode: add\r
-}\r
-\r
-// Velocity curve: particles slow down over time\r
-#velocityCurveDemo particles {\r
-    count: 60\r
-    emit: point(dist: 0, distRand: 20)\r
-    tiles: file("dot.png")\r
-    loop: true\r
-    maxLife: 1.5\r
-    speed: 120\r
-    speedRand: 0.3\r
-    size: 0.8\r
-    sizeRand: 0.2\r
-    fadeIn: 0.05\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #88FF88, 1.0 #228822\r
-    velocityCurve: slowdown\r
-}\r
-\r
-// Pulsing size with easing color\r
-#pulseDemo particles {\r
-    count: 40\r
-    emit: circle(r: 30, rRand: 10, angle: 0deg, angleSpread: 0deg)\r
-    tiles: file("glow.png")\r
-    loop: true\r
-    maxLife: 2.0\r
-    speed: 10\r
-    speedRand: 0.5\r
-    size: 0.4\r
-    sizeRand: 0.2\r
-    fadeIn: 0.15\r
-    fadeOut: 0.7\r
-    colorStops: 0.0 #FF00FF easeInQuad, 0.5 #00FFFF easeOutQuad, 1.0 #FFFF00\r
-    sizeCurve: pulse\r
-    blendMode: add\r
-}\r
-\r
-#colorsUI programmable() {\r
-    text(m6x11, "Rainbow", #FFCC00, center, 120): 120, 20\r
-    text(m3x6, "colorStops gradient", #888888, center, 120): 120, 36\r
-    text(m6x11, "Size Curve", #FF88FF, center, 120): 380, 20\r
-    text(m3x6, "grow + shrink", #888888, center, 120): 380, 36\r
-    text(m6x11, "Velocity", #88FF88, center, 120): 640, 20\r
-    text(m3x6, "slowdown curve", #888888, center, 120): 640, 36\r
-    text(m6x11, "Pulse", #FF00FF, center, 120): 900, 20\r
-    text(m3x6, "easing in colorStops", #888888, center, 120): 900, 36\r
-}\r
-`,up=`version: 0.5
+`,sp=`version: 1.0
+
+// Particles Demo — Basics
+// Emission modes, lifetime, speed, size, fading
+// Uses new angle units, direction constants, aliases, and named emit params
+
+layouts {
+    #positions list {
+        point: 160, 280
+        point: 400, 80
+        point: 680, 280
+        point: 940, 280
+    }
+}
+
+#fire particles {
+    count: 80
+    emit: cone(dist: 10, distRand: 5, angle: up, angleSpread: 25deg)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 1.8
+    speed: 60
+    speedRand: 0.3
+    gravity: 40
+    gravityAngle: up
+    size: 0.6
+    sizeRand: 0.3
+    fadeOut: 0.7
+    fadeIn: 0.1
+    colorStops: 0.0 #FF4400, 0.4 #FFAA00, 1.0 #FFFF88
+    blendMode: add
+}
+
+#rain particles {
+    count: 150
+    emit: box(w: 150, h: 5, angle: down + 5deg, angleSpread: 5deg)
+    tiles: file("spark.png")
+    loop: true
+    maxLife: 1.2
+    lifeRand: 0.3
+    speed: 300
+    speedRand: 0.15
+    size: 0.3
+    sizeRand: 0.1
+    fadeIn: 0.05
+    fadeOut: 0.9
+    colorStops: 0.0 #AACCFF, 1.0 #6688CC
+    autoRotate: true
+}
+
+#sparkles particles {
+    count: 50
+    emit: circle(r: 60, rRand: 30, angle: 0deg, angleSpread: 0deg)
+    tiles: file("star.png")
+    loop: true
+    maxLife: 2.0
+    speed: 15
+    speedRand: 0.5
+    size: 0.4
+    sizeRand: 0.3
+    fadeIn: 0.2
+    fadeOut: 0.6
+    colorStops: 0.0 #FFFFFF, 0.5 #88DDFF, 1.0 #4488FF
+    blendMode: add
+    rotSpeed: 45deg
+    rotSpeedRand: 0.5
+}
+
+#explosion particles {
+    count: 60
+    emit: point(dist: 0, distRand: 15)
+    tiles: file("circle_hard.png") file("flare.png")
+    loop: true
+    maxLife: 0.8
+    lifeRand: 0.3
+    speed: 200
+    speedRand: 0.5
+    gravity: 150
+    gravityAngle: down
+    size: 0.5
+    sizeRand: 0.4
+    fadeIn: 0.0
+    fadeOut: 0.4
+    colorStops: 0.0 #FFFF88, 0.5 #FF4400, 1.0 #882200
+    blendMode: add
+    emitSync: 0.9
+}
+
+#basicsUI programmable() {
+    text(m6x11, "Fire", #FF6622, center, 120): 120, 20
+    text(m3x6, "named emit + colorStops", #888888, center, 180): 120, 36
+    text(m6x11, "Rain", #88BBFF, center, 120): 380, 20
+    text(m3x6, "box + direction expr", #888888, center, 180): 380, 36
+    text(m6x11, "Sparkles", #88DDFF, center, 120): 640, 20
+    text(m3x6, "circle + aliases", #888888, center, 180): 640, 36
+    text(m6x11, "Explosion", #FF8844, center, 120): 900, 20
+    text(m3x6, "direction constants", #888888, center, 180): 900, 36
+}
+`,cp=`version: 1.0
+
+// Particles Demo — Bounds & Collision
+// New bounds: combined syntax with box() and line()
+
+layouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+// Kill at boundaries — particles disappear at edges
+#killBounds particles {
+    count: 60
+    emit: point(dist: 0, distRand: 30)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 3.0
+    speed: 80
+    speedRand: 0.4
+    size: 0.7
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.95
+    colorStops: 0.0 #FF4444, 1.0 #FF8888
+    blendMode: add
+    bounds: kill, box(x: -80, y: -80, w: 160, h: 160)
+}
+
+// Bounce off walls with damping
+#bounceBounds particles {
+    count: 40
+    emit: point(dist: 0, distRand: 20)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 4.0
+    speed: 100
+    speedRand: 0.3
+    gravity: 80
+    gravityAngle: down
+    size: 0.5
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.9
+    colorStops: 0.0 #44FF44, 1.0 #88FF88
+    blendMode: add
+    bounds: bounce(0.7), box(x: -80, y: -80, w: 160, h: 160)
+}
+
+// Wrap around — seamless teleportation
+#wrapBounds particles {
+    count: 50
+    emit: cone(dist: 0, distRand: 10, angle: 45deg, angleSpread: 30deg)
+    tiles: file("star.png")
+    loop: true
+    maxLife: 5.0
+    speed: 50
+    speedRand: 0.3
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.95
+    colorStops: 0.0 #FFFF44, 1.0 #FFAA22
+    blendMode: add
+    bounds: wrap, box(x: -80, y: -80, w: 160, h: 160)
+    rotSpeed: 60deg
+}
+
+// Line bounds — bounce off diagonal walls
+#lineBounds particles {
+    count: 40
+    emit: point(dist: 0, distRand: 15)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 4.0
+    speed: 70
+    speedRand: 0.3
+    gravity: 60
+    gravityAngle: down
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.9
+    colorStops: 0.0 #8844FF, 1.0 #CC88FF
+    blendMode: add
+    bounds: bounce(0.8), line(-80, 80, 80, 80), line(-80, -80, -80, 80), line(80, -80, -80, -80), line(80, 80, 80, -80)
+}
+
+#boundsUI programmable() {
+    text(m6x11, "Kill", #FF4444, center, 120): 120, 20
+    text(m3x6, "bounds: kill, box()", #888888, center, 160): 120, 36
+    text(m6x11, "Bounce", #44FF44, center, 120): 380, 20
+    text(m3x6, "bounds: bounce(), box()", #888888, center, 180): 380, 36
+    text(m6x11, "Wrap", #FFFF44, center, 120): 640, 20
+    text(m3x6, "bounds: wrap, box()", #888888, center, 160): 640, 36
+    text(m6x11, "Line Bounds", #8844FF, center, 120): 900, 20
+    text(m3x6, "bounds: bounce(), line()", #888888, center, 180): 900, 36
+}
+`,dp=`version: 1.0
+
+// Particles Demo — Colors & Curves
+// colorStops (new syntax), sizeCurve, velocityCurve with inline easings
+
+layouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+curves {
+    #growShrink curve {
+        points: [(0, 0.2), (0.3, 1.0), (1.0, 0.1)]
+    }
+    #pulse curve {
+        points: [(0, 0.5), (0.25, 1.2), (0.5, 0.6), (0.75, 1.1), (1.0, 0.3)]
+    }
+    #slowdown curve {
+        points: [(0, 1.0), (0.3, 0.5), (1.0, 0.05)]
+    }
+}
+
+// Multi-segment color gradient: red -> yellow -> cyan -> blue
+#rainbow particles {
+    count: 80
+    emit: cone(dist: 5, distRand: 3, angle: up, angleSpread: 20deg)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 50
+    speedRand: 0.2
+    gravity: 20
+    gravityAngle: up
+    size: 0.5
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.8
+    colorStops: 0.0 #FF2200, 0.33 #FFCC00, 0.66 #00FFCC, 1.0 #4444FF
+    blendMode: add
+}
+
+// Size curve: grow then shrink using named curve
+#sizeCurveDemo particles {
+    count: 50
+    emit: point(dist: 0, distRand: 10)
+    tiles: file("ring.png")
+    loop: true
+    maxLife: 2.0
+    speed: 40
+    speedRand: 0.3
+    size: 0.3
+    sizeRand: 0.1
+    fadeIn: 0.1
+    fadeOut: 0.7
+    colorStops: 0.0 #FFFFFF, 1.0 #FF88FF
+    sizeCurve: growShrink
+    blendMode: add
+}
+
+// Velocity curve: particles slow down over time
+#velocityCurveDemo particles {
+    count: 60
+    emit: point(dist: 0, distRand: 20)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 1.5
+    speed: 120
+    speedRand: 0.3
+    size: 0.8
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.6
+    colorStops: 0.0 #88FF88, 1.0 #228822
+    velocityCurve: slowdown
+}
+
+// Pulsing size with easing color
+#pulseDemo particles {
+    count: 40
+    emit: circle(r: 30, rRand: 10, angle: 0deg, angleSpread: 0deg)
+    tiles: file("glow.png")
+    loop: true
+    maxLife: 2.0
+    speed: 10
+    speedRand: 0.5
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.15
+    fadeOut: 0.7
+    colorStops: 0.0 #FF00FF easeInQuad, 0.5 #00FFFF easeOutQuad, 1.0 #FFFF00
+    sizeCurve: pulse
+    blendMode: add
+}
+
+#colorsUI programmable() {
+    text(m6x11, "Rainbow", #FFCC00, center, 120): 120, 20
+    text(m3x6, "colorStops gradient", #888888, center, 120): 120, 36
+    text(m6x11, "Size Curve", #FF88FF, center, 120): 380, 20
+    text(m3x6, "grow + shrink", #888888, center, 120): 380, 36
+    text(m6x11, "Velocity", #88FF88, center, 120): 640, 20
+    text(m3x6, "slowdown curve", #888888, center, 120): 640, 36
+    text(m6x11, "Pulse", #FF00FF, center, 120): 900, 20
+    text(m3x6, "easing in colorStops", #888888, center, 120): 900, 36
+}
+`,up=`version: 1.0
 
 // Particles Demo — Full-screen tabs for particle feature exploration
 
@@ -2130,324 +2130,324 @@ curves {\r
 
     #description(updatable) text(exo2_light_14, "", #aaaaaa, left, 1200): 20, 40
 }
-`,pp=`version: 0.5\r
-\r
-// Particles Demo — Motion & Force Fields\r
-// Direction constants, angle units, force fields\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 160, 380\r
-        point: 420, 380\r
-        point: 680, 380\r
-        point: 940, 380\r
-    }\r
-}\r
-\r
-// Central vortex swirl\r
-#vortex particles {\r
-    count: 100\r
-    emit: circle(r: 80, rRand: 20, angle: 0deg, angleSpread: 0deg)\r
-    tiles: file("dot.png")\r
-    loop: true\r
-    maxLife: 3.0\r
-    speed: 5\r
-    speedRand: 0.5\r
-    size: 0.6\r
-    sizeRand: 0.3\r
-    fadeIn: 0.15\r
-    fadeOut: 0.7\r
-    colorStops: 0.0 #4488FF, 0.5 #FF44FF, 1.0 #44FFFF\r
-    blendMode: add\r
-    forceFields: [vortex(0, 0, 150, 200), attractor(0, 0, 30, 180)]\r
-}\r
-\r
-// Turbulence — chaotic swirling motion\r
-#turbulence particles {\r
-    count: 100\r
-    emit: box(w: 160, h: 160, center: true, angle: 0deg, angleSpread: 0.5turn)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 2.5\r
-    speed: 10\r
-    speedRand: 0.5\r
-    size: 0.4\r
-    sizeRand: 0.3\r
-    fadeIn: 0.1\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #FF8844, 0.5 #FFCC44, 1.0 #FF4488\r
-    blendMode: add\r
-    forceFields: [turbulence(120, 0.01, 2.0)]\r
-}\r
-\r
-// Attractor + repulsor battle\r
-#pushPull particles {\r
-    count: 80\r
-    emit: box(w: 200, h: 200, center: true, angle: 0deg, angleSpread: 0.5turn)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 2.5\r
-    speed: 30\r
-    speedRand: 0.4\r
-    size: 0.3\r
-    sizeRand: 0.2\r
-    fadeIn: 0.1\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #FF8844, 1.0 #44FF88\r
-    blendMode: add\r
-    forceFields: [attractor(-50, 0, 120, 200), repulsor(50, 0, 120, 200)]\r
-}\r
-\r
-// Heavy gravity fountain\r
-#fountain particles {\r
-    count: 60\r
-    emit: cone(dist: 0, distRand: 5, angle: up, angleSpread: 15deg)\r
-    tiles: file("circle_hard.png")\r
-    loop: true\r
-    maxLife: 2.0\r
-    lifeRand: 0.2\r
-    speed: 150\r
-    speedRand: 0.2\r
-    gravity: 200\r
-    gravityAngle: down\r
-    size: 0.4\r
-    sizeRand: 0.2\r
-    fadeIn: 0.05\r
-    fadeOut: 0.8\r
-    colorStops: 0.0 #4488FF, 0.5 #88CCFF, 1.0 #224488\r
-    blendMode: add\r
-}\r
-\r
-#motionUI programmable() {\r
-    text(m6x11, "Vortex", #8888FF, center, 120): 120, 20\r
-    text(m3x6, "vortex + attractor", #888888, center, 120): 120, 36\r
-    text(m6x11, "Turbulence", #999999, center, 120): 380, 20\r
-    text(m3x6, "box(center: true)", #888888, center, 120): 380, 36\r
-    text(m6x11, "Push/Pull", #FF8844, center, 120): 640, 20\r
-    text(m3x6, "attractor + repulsor", #888888, center, 120): 640, 36\r
-    text(m6x11, "Fountain", #4488FF, center, 120): 900, 20\r
-    text(m3x6, "angle: up/down", #888888, center, 120): 900, 36\r
-}\r
-`,fp=`version: 0.5\r
-\r
-// Particles Demo — Path Emission & PathGuide\r
-// emit: path(), pathguide force field\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 160, 380\r
-        point: 420, 380\r
-        point: 680, 380\r
-        point: 940, 380\r
-    }\r
-}\r
-\r
-paths {\r
-    #orbit path {\r
-        arc(80, 360)\r
-        close\r
-    }\r
-    #figure8 path {\r
-        bezier(relative, 80, -60, 20, -80, 80, -20)\r
-        bezier(relative, -80, 60, -20, 80, -80, 20)\r
-        close\r
-    }\r
-    #wave path {\r
-        wave(40, 80, 3)\r
-    }\r
-}\r
-\r
-// Emit along circular path\r
-#pathEmit particles {\r
-    count: 60\r
-    emit: path(orbit)\r
-    tiles: file("dot.png")\r
-    loop: true\r
-    maxLife: 1.5\r
-    speed: 15\r
-    speedRand: 0.5\r
-    size: 0.6\r
-    sizeRand: 0.3\r
-    fadeIn: 0.1\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #44FFFF, 1.0 #4444FF\r
-    blendMode: add\r
-}\r
-\r
-// Emit along circle with tangent velocity — particles fly away fast\r
-#pathTangent particles {\r
-    count: 60\r
-    emit: path(orbit, tangent)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 0.6\r
-    speed: 180\r
-    speedRand: 0.3\r
-    size: 0.5\r
-    sizeRand: 0.2\r
-    fadeIn: 0.05\r
-    fadeOut: 0.4\r
-    colorStops: 0.0 #FF88FF, 1.0 #FF44AA\r
-    blendMode: add\r
-    autoRotate: true\r
-}\r
-\r
-// PathGuide force field — particles attracted to and flowing along circle\r
-#pathGuideDemo particles {\r
-    count: 100\r
-    emit: cone(dist: 100, distRand: 5, angle: up, angleSpread: 25deg)\r
-    tiles: file("circle_soft.png")\r
-    loop: true\r
-    maxLife: 3.0\r
-    speed: 1\r
-    speedRand: 0.5\r
-    size: 0.35\r
-    sizeRand: 0.2\r
-    fadeIn: 0.15\r
-    fadeOut: 0.7\r
-    colorStops: 0.0 #88FF44, 0.5 #FFFF44, 1.0 #FF8844\r
-    blendMode: add\r
-    forceFields: [pathguide(orbit, 1000, 200, 650)]\r
-}\r
-\r
-// Emit along wave + flow along it\r
-#waveStream particles {\r
-    count: 70\r
-    emit: path(wave, tangent)\r
-    tiles: file("flare.png")\r
-    loop: true\r
-    maxLife: 2.0\r
-    speed: 40\r
-    speedRand: 0.3\r
-    size: 0.2\r
-    sizeRand: 0.15\r
-    fadeIn: 0.1\r
-    fadeOut: 0.6\r
-    colorStops: 0.0 #FFFFFF, 0.5 #88AAFF, 1.0 #4466CC\r
-    blendMode: add\r
-    autoRotate: true\r
-    forceFields: [pathguide(wave, 40, 30, 80)]\r
-}\r
-\r
-#pathsUI programmable() {\r
-    text(m6x11, "Path Emit", #44FFFF, center, 120): 120, 20\r
-    text(m3x6, "circle path", #888888, center, 120): 120, 36\r
-    text(m6x11, "Tangent", #FF88FF, center, 120): 380, 20\r
-    text(m3x6, "circle + tangent", #888888, center, 120): 380, 36\r
-    text(m6x11, "PathGuide", #88FF44, center, 120): 640, 20\r
-    text(m3x6, "attract to circle", #888888, center, 120): 640, 36\r
-    text(m6x11, "Wave Stream", #88AAFF, center, 120): 900, 20\r
-    text(m3x6, "emit + guide", #888888, center, 120): 900, 36\r
-}\r
-`,mp=`version: 0.5\r
-\r
-// Particles Demo — Sub-Emitters\r
-// onBirth, onDeath, onCollision triggers with spawning\r
-\r
-layouts {\r
-    #positions list {\r
-        point: 320, 380\r
-        point: 700, 380\r
-    }\r
-}\r
-\r
-// Main firework — launches upward, spawns sparks on death\r
-#fireworkMain particles {\r
-    count: 8\r
-    emit: cone(dist: 0, distRand: 5, angle: up, angleSpread: 10deg)\r
-    tiles: file("circle_hard.png")\r
-    loop: true\r
-    maxLife: 1.0\r
-    lifeRand: 0.2\r
-    speed: 120\r
-    speedRand: 0.2\r
-    gravity: 100\r
-    gravityAngle: down\r
-    size: 0.4\r
-    fadeIn: 0.0\r
-    fadeOut: 0.8\r
-    colorStops: 0.0 #FFFFFF, 1.0 #FFFF88\r
-    blendMode: add\r
-    emitSync: 0.1\r
-    subEmitters: [{\r
-        groupId: "fireworkBurst"\r
-        trigger: ondeath\r
-        probability: 1.0\r
-        burstCount: 20\r
-    }]\r
-}\r
-\r
-// Burst of sparks on firework death\r
-#fireworkBurst particles {\r
-    count: 0\r
-    emit: point(dist: 0, distRand: 25)\r
-    tiles: file("star.png") file("dot.png")\r
-    loop: false\r
-    maxLife: 1.2\r
-    lifeRand: 0.3\r
-    speed: 80\r
-    speedRand: 0.5\r
-    gravity: 60\r
-    gravityAngle: down\r
-    size: 0.3\r
-    sizeRand: 0.3\r
-    fadeIn: 0.0\r
-    fadeOut: 0.5\r
-    colorStops: 0.0 #FFFF44, 0.5 #FF4400, 1.0 #880000\r
-    blendMode: add\r
-}\r
-\r
-// Bouncing ball that spawns sparks on collision\r
-#bounceBall particles {\r
-    count: 5\r
-    emit: point(dist: 0, distRand: 10)\r
-    tiles: file("circle_hard.png")\r
-    loop: true\r
-    maxLife: 5.0\r
-    speed: 80\r
-    speedRand: 0.3\r
-    gravity: 120\r
-    gravityAngle: down\r
-    size: 0.6\r
-    fadeIn: 0.0\r
-    fadeOut: 0.95\r
-    colorStops: 0.0 #44CCFF, 1.0 #44CCFF\r
-    blendMode: add\r
-    bounds: bounce(0.85), box(x: -120, y: -100, w: 240, h: 200)\r
-    subEmitters: [{\r
-        groupId: "bounceSparks"\r
-        trigger: oncollision\r
-        probability: 1.0\r
-        burstCount: 5\r
-    }]\r
-}\r
-\r
-// Sparks on bounce\r
-#bounceSparks particles {\r
-    count: 0\r
-    emit: point(dist: 0, distRand: 8)\r
-    tiles: file("dot.png")\r
-    loop: false\r
-    maxLife: 0.5\r
-    speed: 40\r
-    speedRand: 0.5\r
-    gravity: 30\r
-    gravityAngle: down\r
-    size: 0.5\r
-    sizeRand: 0.3\r
-    fadeIn: 0.0\r
-    fadeOut: 0.3\r
-    colorStops: 0.0 #FFFFFF, 1.0 #44CCFF\r
-    blendMode: add\r
-}\r
-\r
-#subEmittersUI programmable() {\r
-    text(m6x11, "Fireworks", #FFFF44, center, 140): 280, 20\r
-    text(m3x6, "onDeath spawns burst", #888888, center, 140): 280, 36\r
-    text(m6x11, "Bounce Sparks", #44CCFF, center, 140): 660, 20\r
-    text(m3x6, "onCollision spawns sparks", #888888, center, 160): 660, 36\r
-}\r
-`,hp=`version: 0.5
+`,pp=`version: 1.0
+
+// Particles Demo — Motion & Force Fields
+// Direction constants, angle units, force fields
+
+layouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+// Central vortex swirl
+#vortex particles {
+    count: 100
+    emit: circle(r: 80, rRand: 20, angle: 0deg, angleSpread: 0deg)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 3.0
+    speed: 5
+    speedRand: 0.5
+    size: 0.6
+    sizeRand: 0.3
+    fadeIn: 0.15
+    fadeOut: 0.7
+    colorStops: 0.0 #4488FF, 0.5 #FF44FF, 1.0 #44FFFF
+    blendMode: add
+    forceFields: [vortex(0, 0, 150, 200), attractor(0, 0, 30, 180)]
+}
+
+// Turbulence — chaotic swirling motion
+#turbulence particles {
+    count: 100
+    emit: box(w: 160, h: 160, center: true, angle: 0deg, angleSpread: 0.5turn)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 10
+    speedRand: 0.5
+    size: 0.4
+    sizeRand: 0.3
+    fadeIn: 0.1
+    fadeOut: 0.6
+    colorStops: 0.0 #FF8844, 0.5 #FFCC44, 1.0 #FF4488
+    blendMode: add
+    forceFields: [turbulence(120, 0.01, 2.0)]
+}
+
+// Attractor + repulsor battle
+#pushPull particles {
+    count: 80
+    emit: box(w: 200, h: 200, center: true, angle: 0deg, angleSpread: 0.5turn)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 2.5
+    speed: 30
+    speedRand: 0.4
+    size: 0.3
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.6
+    colorStops: 0.0 #FF8844, 1.0 #44FF88
+    blendMode: add
+    forceFields: [attractor(-50, 0, 120, 200), repulsor(50, 0, 120, 200)]
+}
+
+// Heavy gravity fountain
+#fountain particles {
+    count: 60
+    emit: cone(dist: 0, distRand: 5, angle: up, angleSpread: 15deg)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 2.0
+    lifeRand: 0.2
+    speed: 150
+    speedRand: 0.2
+    gravity: 200
+    gravityAngle: down
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.8
+    colorStops: 0.0 #4488FF, 0.5 #88CCFF, 1.0 #224488
+    blendMode: add
+}
+
+#motionUI programmable() {
+    text(m6x11, "Vortex", #8888FF, center, 120): 120, 20
+    text(m3x6, "vortex + attractor", #888888, center, 120): 120, 36
+    text(m6x11, "Turbulence", #999999, center, 120): 380, 20
+    text(m3x6, "box(center: true)", #888888, center, 120): 380, 36
+    text(m6x11, "Push/Pull", #FF8844, center, 120): 640, 20
+    text(m3x6, "attractor + repulsor", #888888, center, 120): 640, 36
+    text(m6x11, "Fountain", #4488FF, center, 120): 900, 20
+    text(m3x6, "angle: up/down", #888888, center, 120): 900, 36
+}
+`,fp=`version: 1.0
+
+// Particles Demo — Path Emission & PathGuide
+// emit: path(), pathguide force field
+
+layouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+paths {
+    #orbit path {
+        arc(80, 360)
+        close
+    }
+    #figure8 path {
+        bezier(relative, 80, -60, 20, -80, 80, -20)
+        bezier(relative, -80, 60, -20, 80, -80, 20)
+        close
+    }
+    #wave path {
+        wave(40, 80, 3)
+    }
+}
+
+// Emit along circular path
+#pathEmit particles {
+    count: 60
+    emit: path(orbit)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 1.5
+    speed: 15
+    speedRand: 0.5
+    size: 0.6
+    sizeRand: 0.3
+    fadeIn: 0.1
+    fadeOut: 0.6
+    colorStops: 0.0 #44FFFF, 1.0 #4444FF
+    blendMode: add
+}
+
+// Emit along circle with tangent velocity — particles fly away fast
+#pathTangent particles {
+    count: 60
+    emit: path(orbit, tangent)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 0.6
+    speed: 180
+    speedRand: 0.3
+    size: 0.5
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.4
+    colorStops: 0.0 #FF88FF, 1.0 #FF44AA
+    blendMode: add
+    autoRotate: true
+}
+
+// PathGuide force field — particles attracted to and flowing along circle
+#pathGuideDemo particles {
+    count: 100
+    emit: cone(dist: 100, distRand: 5, angle: up, angleSpread: 25deg)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 3.0
+    speed: 1
+    speedRand: 0.5
+    size: 0.35
+    sizeRand: 0.2
+    fadeIn: 0.15
+    fadeOut: 0.7
+    colorStops: 0.0 #88FF44, 0.5 #FFFF44, 1.0 #FF8844
+    blendMode: add
+    forceFields: [pathguide(orbit, 1000, 200, 650)]
+}
+
+// Emit along wave + flow along it
+#waveStream particles {
+    count: 70
+    emit: path(wave, tangent)
+    tiles: file("flare.png")
+    loop: true
+    maxLife: 2.0
+    speed: 40
+    speedRand: 0.3
+    size: 0.2
+    sizeRand: 0.15
+    fadeIn: 0.1
+    fadeOut: 0.6
+    colorStops: 0.0 #FFFFFF, 0.5 #88AAFF, 1.0 #4466CC
+    blendMode: add
+    autoRotate: true
+    forceFields: [pathguide(wave, 40, 30, 80)]
+}
+
+#pathsUI programmable() {
+    text(m6x11, "Path Emit", #44FFFF, center, 120): 120, 20
+    text(m3x6, "circle path", #888888, center, 120): 120, 36
+    text(m6x11, "Tangent", #FF88FF, center, 120): 380, 20
+    text(m3x6, "circle + tangent", #888888, center, 120): 380, 36
+    text(m6x11, "PathGuide", #88FF44, center, 120): 640, 20
+    text(m3x6, "attract to circle", #888888, center, 120): 640, 36
+    text(m6x11, "Wave Stream", #88AAFF, center, 120): 900, 20
+    text(m3x6, "emit + guide", #888888, center, 120): 900, 36
+}
+`,mp=`version: 1.0
+
+// Particles Demo — Sub-Emitters
+// onBirth, onDeath, onCollision triggers with spawning
+
+layouts {
+    #positions list {
+        point: 320, 380
+        point: 700, 380
+    }
+}
+
+// Main firework — launches upward, spawns sparks on death
+#fireworkMain particles {
+    count: 8
+    emit: cone(dist: 0, distRand: 5, angle: up, angleSpread: 10deg)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 1.0
+    lifeRand: 0.2
+    speed: 120
+    speedRand: 0.2
+    gravity: 100
+    gravityAngle: down
+    size: 0.4
+    fadeIn: 0.0
+    fadeOut: 0.8
+    colorStops: 0.0 #FFFFFF, 1.0 #FFFF88
+    blendMode: add
+    emitSync: 0.1
+    subEmitters: [{
+        groupId: "fireworkBurst"
+        trigger: ondeath
+        probability: 1.0
+        burstCount: 20
+    }]
+}
+
+// Burst of sparks on firework death
+#fireworkBurst particles {
+    count: 0
+    emit: point(dist: 0, distRand: 25)
+    tiles: file("star.png") file("dot.png")
+    loop: false
+    maxLife: 1.2
+    lifeRand: 0.3
+    speed: 80
+    speedRand: 0.5
+    gravity: 60
+    gravityAngle: down
+    size: 0.3
+    sizeRand: 0.3
+    fadeIn: 0.0
+    fadeOut: 0.5
+    colorStops: 0.0 #FFFF44, 0.5 #FF4400, 1.0 #880000
+    blendMode: add
+}
+
+// Bouncing ball that spawns sparks on collision
+#bounceBall particles {
+    count: 5
+    emit: point(dist: 0, distRand: 10)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 5.0
+    speed: 80
+    speedRand: 0.3
+    gravity: 120
+    gravityAngle: down
+    size: 0.6
+    fadeIn: 0.0
+    fadeOut: 0.95
+    colorStops: 0.0 #44CCFF, 1.0 #44CCFF
+    blendMode: add
+    bounds: bounce(0.85), box(x: -120, y: -100, w: 240, h: 200)
+    subEmitters: [{
+        groupId: "bounceSparks"
+        trigger: oncollision
+        probability: 1.0
+        burstCount: 5
+    }]
+}
+
+// Sparks on bounce
+#bounceSparks particles {
+    count: 0
+    emit: point(dist: 0, distRand: 8)
+    tiles: file("dot.png")
+    loop: false
+    maxLife: 0.5
+    speed: 40
+    speedRand: 0.5
+    gravity: 30
+    gravityAngle: down
+    size: 0.5
+    sizeRand: 0.3
+    fadeIn: 0.0
+    fadeOut: 0.3
+    colorStops: 0.0 #FFFFFF, 1.0 #44CCFF
+    blendMode: add
+}
+
+#subEmittersUI programmable() {
+    text(m6x11, "Fireworks", #FFFF44, center, 140): 280, 20
+    text(m3x6, "onDeath spawns burst", #888888, center, 140): 280, 36
+    text(m6x11, "Bounce Sparks", #44CCFF, center, 140): 660, 20
+    text(m3x6, "onCollision spawns sparks", #888888, center, 160): 660, 36
+}
+`,hp=`version: 1.0
 
 // Particles Demo
 // Multiple particle effect presets: fire, sparkles, smoke
@@ -2526,7 +2526,7 @@ layouts {\r
         pos: 290, 660
     }
 }
-`,gp=`version: 0.5
+`,gp=`version: 1.0
 
 // Paths Demo
 // Object follows defined paths using paths{} definitions
@@ -2631,7 +2631,7 @@ paths {
     0.0: event("start")
     1.0: event("end")
 }
-`,xp=`version: 0.5
+`,xp=`version: 1.0
 
 // Tab 4: Filters — Showcasing all .anim filter types applied to state animations
 
@@ -2730,7 +2730,7 @@ paths {
     text(m6x11, "    }", #aaaaaa): 10, 617
     text(m6x11, "}", #aaaaaa): 10, 629
 }
-`,bp=`version: 0.5
+`,bp=`version: 1.0
 
 // Tab 1: State Animation Gallery
 // Shows all animations organized by .anim file, highlighting the state selector concept
@@ -2880,7 +2880,7 @@ paths {
     text(m6x11, "dir5", #888888): 410, 488
     stateanim("arrows.anim", "dir5"): 442, 548
 }
-`,vp=`version: 0.5
+`,vp=`version: 1.0
 
 // Tab 2: Interactive — Externally driven animation control
 
@@ -2957,7 +2957,7 @@ paths {
     text(m6x11, "Finished:", #aaaaaa): 275, 525
     #infoFinished(updatable) text(m6x11, "-", #7fdbda, left, 240): 380, 525
 }
-`,yp=`version: 0.5
+`,yp=`version: 1.0
 
 // Tab 3: Points & Events — Extra point visualization and animation event log
 
@@ -3012,7 +3012,7 @@ paths {
     #eventLog6(updatable) text(m6x11, "", #4caf50, left, 340): 275, 530
     #eventLog7(updatable) text(m6x11, "", #4caf50, left, 340): 275, 550
 }
-`,_p=`version: 0.5
+`,_p=`version: 1.0
 
 // State Animation Demo — Interactive tab-based exploration of .anim state machines
 
@@ -3026,158 +3026,158 @@ paths {
 
     #description(updatable) text(exo2_light_14, "", #aaaaaa, left, 1200): 20, 40
 }
-`,wp=`version: 0.5\r
-\r
-// Transition Declarations Demo\r
-// Animate parameter changes with transition {} blocks in programmables.\r
-// When a parameter with a declared transition changes, visibility animates\r
-// via TweenManager instead of snapping instantly.\r
-\r
-// ─── Layout shell ───────────────────────────────────────\r
-\r
-#transitionsDemo programmable() {\r
-    pos: 40, 70\r
-\r
-    text(exo2_16, "Crossfade vs Instant", #7fdbda): 0, 0\r
-    text(exo2_light_14, "Both boxes switch between 3 color states. Left uses crossfade, right snaps instantly.", #aaaaaa, left, 700): 0, 22\r
-\r
-    placeholder(generated(cross(140, 100, white)), builderParameter("crossfadeBox")): 0, 55\r
-    text(m6x11, "crossfade(0.2)", #888888): 0, 160\r
-\r
-    placeholder(generated(cross(140, 100, white)), builderParameter("instantBox")): 160, 55\r
-    text(m6x11, "instant (no transition)", #888888): 160, 160\r
-\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnNormal")): 320, 55\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnHover")): 320, 90\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnPressed")): 320, 125\r
-\r
-    // ─── FlipX ──────────────────────────────────────────\r
-\r
-    text(exo2_16, "FlipX", #7fdbda): 0, 190\r
-    text(exo2_light_14, "Flip animation on bool toggle.", #aaaaaa, left, 300): 0, 210\r
-\r
-    placeholder(generated(cross(80, 80, white)), builderParameter("flipBox")): 0, 235\r
-    text(m6x11, "flipX(0.15)", #888888): 0, 320\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlip")): 0, 340\r
-\r
-    // ─── Fade ───────────────────────────────────────────\r
-\r
-    text(exo2_16, "Fade", #7fdbda): 0, 385\r
-    text(exo2_light_14, "Alpha fade in/out on toggle.", #aaaaaa, left, 300): 0, 405\r
-\r
-    placeholder(generated(cross(120, 60, white)), builderParameter("fadeBox")): 0, 430\r
-    text(m6x11, "fade(0.3)", #888888): 0, 495\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnFade")): 0, 515\r
-\r
-    // ─── Slide ──────────────────────────────────────────\r
-\r
-    text(exo2_16, "Slide", #7fdbda): 350, 190\r
-    text(exo2_light_14, "Slide with different directions and distances.", #aaaaaa, left, 400): 350, 210\r
-\r
-    placeholder(generated(cross(60, 40, white)), builderParameter("slideLeft")): 350, 240\r
-    text(m6x11, "left 20px", #888888): 350, 285\r
-    placeholder(generated(cross(60, 40, white)), builderParameter("slideRight")): 430, 240\r
-    text(m6x11, "right 50px", #888888): 430, 285\r
-    placeholder(generated(cross(60, 40, white)), builderParameter("slideUp")): 510, 240\r
-    text(m6x11, "up 80px", #888888): 510, 285\r
-    placeholder(generated(cross(60, 40, white)), builderParameter("slideDown")): 590, 240\r
-    text(m6x11, "down 120px", #888888): 590, 285\r
-\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnSlide")): 350, 310\r
-\r
-    // ─── FlipY ──────────────────────────────────────────\r
-\r
-    text(exo2_16, "FlipY", #7fdbda): 350, 350\r
-    text(exo2_light_14, "Vertical flip on bool toggle.", #aaaaaa, left, 400): 350, 370\r
-\r
-    placeholder(generated(cross(80, 80, white)), builderParameter("flipYBox")): 350, 395\r
-    text(m6x11, "flipY(0.2)", #888888): 350, 480\r
-    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlipY")): 350, 500\r
-\r
-    // ─── Status ─────────────────────────────────────────\r
-\r
-    #statusText text(exo2_light_14, "Click buttons to trigger transitions", #666666, left, 700): 0, 560\r
-}\r
-\r
-// ─── Crossfade demo ─────────────────────────────────────\r
-\r
-#crossfadeBox programmable(status:[normal,hover,pressed]=normal) {\r
-    transition {\r
-        status: crossfade(0.2, easeOutQuad)\r
-    }\r
-    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0\r
-    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42\r
-    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0\r
-    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42\r
-    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0\r
-    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42\r
-}\r
-\r
-#instantBox programmable(status:[normal,hover,pressed]=normal) {\r
-    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0\r
-    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42\r
-    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0\r
-    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42\r
-    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0\r
-    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42\r
-}\r
-\r
-// ─── FlipX demo ─────────────────────────────────────────\r
-\r
-#flipBox programmable(checked:bool=false) {\r
-    transition {\r
-        checked: flipX(0.15, easeOutQuad)\r
-    }\r
-    @(checked => false) bitmap(generated(color(80, 80, #666666))): 0, 0\r
-    @(checked => false) text(m6x11, "OFF", #cccccc): 28, 34\r
-    @(checked => true) bitmap(generated(color(80, 80, #44cc44))): 0, 0\r
-    @(checked => true) text(m6x11, "ON", #ffffff): 30, 34\r
-}\r
-\r
-// ─── Fade demo ──────────────────────────────────────────\r
-\r
-#fadeBox programmable(show:bool=true) {\r
-    transition {\r
-        show: fade(0.3, easeOutCubic)\r
-    }\r
-    @(show => true) bitmap(generated(color(120, 60, #cc8844))): 0, 0\r
-    @(show => true) text(m6x11, "Visible", #ffffff): 38, 22\r
-}\r
-\r
-// ─── Slide demos ────────────────────────────────────────\r
-\r
-#slideLeftBox programmable(show:bool=true) {\r
-    transition { show: slide(left, 0.25, 20, easeOutCubic) }\r
-    @(show => true) bitmap(generated(color(60, 40, #8844aa))): 0, 0\r
-}\r
-\r
-#slideRightBox programmable(show:bool=true) {\r
-    transition { show: slide(right, 0.25, easeOutCubic) }\r
-    @(show => true) bitmap(generated(color(60, 40, #4488aa))): 0, 0\r
-}\r
-\r
-#slideUpBox programmable(show:bool=true) {\r
-    transition { show: slide(up, 0.3, 80, easeOutCubic) }\r
-    @(show => true) bitmap(generated(color(60, 40, #44aa88))): 0, 0\r
-}\r
-\r
-#slideDownBox programmable(show:bool=true) {\r
-    transition { show: slide(down, 0.4, 120, easeOutBack) }\r
-    @(show => true) bitmap(generated(color(60, 40, #aa8844))): 0, 0\r
-}\r
-\r
-// ─── FlipY demo ─────────────────────────────────────────\r
-\r
-#flipYBox programmable(checked:bool=false) {\r
-    transition {\r
-        checked: flipY(0.2, easeOutQuad)\r
-    }\r
-    @(checked => false) bitmap(generated(color(80, 80, #555577))): 0, 0\r
-    @(checked => false) text(m6x11, "A", #cccccc): 34, 34\r
-    @(checked => true) bitmap(generated(color(80, 80, #7755aa))): 0, 0\r
-    @(checked => true) text(m6x11, "B", #ffffff): 34, 34\r
-}\r
-`,Sp=`version: 0.5
+`,wp=`version: 1.0
+
+// Transition Declarations Demo
+// Animate parameter changes with transition {} blocks in programmables.
+// When a parameter with a declared transition changes, visibility animates
+// via TweenManager instead of snapping instantly.
+
+// ─── Layout shell ───────────────────────────────────────
+
+#transitionsDemo programmable() {
+    pos: 40, 70
+
+    text(exo2_16, "Crossfade vs Instant", #7fdbda): 0, 0
+    text(exo2_light_14, "Both boxes switch between 3 color states. Left uses crossfade, right snaps instantly.", #aaaaaa, left, 700): 0, 22
+
+    placeholder(generated(cross(140, 100, white)), builderParameter("crossfadeBox")): 0, 55
+    text(m6x11, "crossfade(0.2)", #888888): 0, 160
+
+    placeholder(generated(cross(140, 100, white)), builderParameter("instantBox")): 160, 55
+    text(m6x11, "instant (no transition)", #888888): 160, 160
+
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnNormal")): 320, 55
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnHover")): 320, 90
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnPressed")): 320, 125
+
+    // ─── FlipX ──────────────────────────────────────────
+
+    text(exo2_16, "FlipX", #7fdbda): 0, 190
+    text(exo2_light_14, "Flip animation on bool toggle.", #aaaaaa, left, 300): 0, 210
+
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipBox")): 0, 235
+    text(m6x11, "flipX(0.15)", #888888): 0, 320
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlip")): 0, 340
+
+    // ─── Fade ───────────────────────────────────────────
+
+    text(exo2_16, "Fade", #7fdbda): 0, 385
+    text(exo2_light_14, "Alpha fade in/out on toggle.", #aaaaaa, left, 300): 0, 405
+
+    placeholder(generated(cross(120, 60, white)), builderParameter("fadeBox")): 0, 430
+    text(m6x11, "fade(0.3)", #888888): 0, 495
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFade")): 0, 515
+
+    // ─── Slide ──────────────────────────────────────────
+
+    text(exo2_16, "Slide", #7fdbda): 350, 190
+    text(exo2_light_14, "Slide with different directions and distances.", #aaaaaa, left, 400): 350, 210
+
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideLeft")): 350, 240
+    text(m6x11, "left 20px", #888888): 350, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideRight")): 430, 240
+    text(m6x11, "right 50px", #888888): 430, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideUp")): 510, 240
+    text(m6x11, "up 80px", #888888): 510, 285
+    placeholder(generated(cross(60, 40, white)), builderParameter("slideDown")): 590, 240
+    text(m6x11, "down 120px", #888888): 590, 285
+
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnSlide")): 350, 310
+
+    // ─── FlipY ──────────────────────────────────────────
+
+    text(exo2_16, "FlipY", #7fdbda): 350, 350
+    text(exo2_light_14, "Vertical flip on bool toggle.", #aaaaaa, left, 400): 350, 370
+
+    placeholder(generated(cross(80, 80, white)), builderParameter("flipYBox")): 350, 395
+    text(m6x11, "flipY(0.2)", #888888): 350, 480
+    placeholder(generated(cross(100, 30, white)), builderParameter("btnFlipY")): 350, 500
+
+    // ─── Status ─────────────────────────────────────────
+
+    #statusText text(exo2_light_14, "Click buttons to trigger transitions", #666666, left, 700): 0, 560
+}
+
+// ─── Crossfade demo ─────────────────────────────────────
+
+#crossfadeBox programmable(status:[normal,hover,pressed]=normal) {
+    transition {
+        status: crossfade(0.2, easeOutQuad)
+    }
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42
+}
+
+#instantBox programmable(status:[normal,hover,pressed]=normal) {
+    @(status => normal) bitmap(generated(color(140, 100, #4466aa))): 0, 0
+    @(status => normal) text(m6x11, "Normal", #ffffff): 50, 42
+    @(status => hover) bitmap(generated(color(140, 100, #66aa44))): 0, 0
+    @(status => hover) text(m6x11, "Hover", #ffffff): 52, 42
+    @(status => pressed) bitmap(generated(color(140, 100, #aa4444))): 0, 0
+    @(status => pressed) text(m6x11, "Pressed", #ffffff): 46, 42
+}
+
+// ─── FlipX demo ─────────────────────────────────────────
+
+#flipBox programmable(checked:bool=false) {
+    transition {
+        checked: flipX(0.15, easeOutQuad)
+    }
+    @(checked => false) bitmap(generated(color(80, 80, #666666))): 0, 0
+    @(checked => false) text(m6x11, "OFF", #cccccc): 28, 34
+    @(checked => true) bitmap(generated(color(80, 80, #44cc44))): 0, 0
+    @(checked => true) text(m6x11, "ON", #ffffff): 30, 34
+}
+
+// ─── Fade demo ──────────────────────────────────────────
+
+#fadeBox programmable(show:bool=true) {
+    transition {
+        show: fade(0.3, easeOutCubic)
+    }
+    @(show => true) bitmap(generated(color(120, 60, #cc8844))): 0, 0
+    @(show => true) text(m6x11, "Visible", #ffffff): 38, 22
+}
+
+// ─── Slide demos ────────────────────────────────────────
+
+#slideLeftBox programmable(show:bool=true) {
+    transition { show: slide(left, 0.25, 20, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #8844aa))): 0, 0
+}
+
+#slideRightBox programmable(show:bool=true) {
+    transition { show: slide(right, 0.25, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #4488aa))): 0, 0
+}
+
+#slideUpBox programmable(show:bool=true) {
+    transition { show: slide(up, 0.3, 80, easeOutCubic) }
+    @(show => true) bitmap(generated(color(60, 40, #44aa88))): 0, 0
+}
+
+#slideDownBox programmable(show:bool=true) {
+    transition { show: slide(down, 0.4, 120, easeOutBack) }
+    @(show => true) bitmap(generated(color(60, 40, #aa8844))): 0, 0
+}
+
+// ─── FlipY demo ─────────────────────────────────────────
+
+#flipYBox programmable(checked:bool=false) {
+    transition {
+        checked: flipY(0.2, easeOutQuad)
+    }
+    @(checked => false) bitmap(generated(color(80, 80, #555577))): 0, 0
+    @(checked => false) text(m6x11, "A", #cccccc): 34, 34
+    @(checked => true) bitmap(generated(color(80, 80, #7755aa))): 0, 0
+    @(checked => true) text(m6x11, "B", #ffffff): 34, 34
+}
+`,Sp=`version: 1.0
 
 // Battle HUD — 3 visual styles, same parameter interface
 // Demonstrates that UI can change considerably without changing the driving code
@@ -3402,7 +3402,7 @@ paths {
         settings { }
     }
 }
-`,kp=`version: 0.5
+`,kp=`version: 1.0
 
 // Blob47 Autotile Demo
 // Interactive 2D terrain painter. Select tile type then click/drag to paint.
@@ -3480,7 +3480,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Left click to paint | Drag to paint | Select tile type above", #666666): 0, 525
 }
-`,Fp=`version: 0.5
+`,Fp=`version: 1.0
 
 // ===== Curves =====
 
@@ -4447,7 +4447,7 @@ paths {
     interactive(80, 14, "hlpC2CScale", events: [hover]): 800, 396
     interactive(50, 14, "hlpC2CSpread", events: [hover]): 920, 396
 }
-`,Cp=`version: 0.5
+`,Cp=`version: 1.0
 
 // ===== Tooltip for state descriptions =====
 
@@ -4489,7 +4489,7 @@ paths {
     // Status
     #statusText text(m5x7, "Hover a card to see state description", #888888): 20, 660
 }
-`,$p=`version: 0.5
+`,$p=`version: 1.0
 
 // Cards Demo — tabbed view: Card States + Card Hand
 
@@ -4503,7 +4503,7 @@ paths {
         settings{tabButtonBuildName=>tab, tabPanel.width=>1280, tabPanel.height=>720, tabPanel.contentRoot=>contentArea}
     }
 }
-`,Pp=`version: 0.5
+`,Pp=`version: 1.0
 
 // Character Sheet Demo - Dynamic References
 // Reusable child programmables embedded via dynamicRef for automatic parameter-driven updates.
@@ -4597,7 +4597,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Click Level Up to gain XP and increase stats.", #666666): 0, 490
 }
-`,Tp=`version: 0.5
+`,Tp=`version: 1.0
 
 // Dialogue Demo
 // Dialogue panel with speaker name, typewriter text, and branching choices.
@@ -4649,7 +4649,7 @@ paths {
     // Instructions
     text(exo2_light_14, "Text appears character by character. Choose responses to branch the story.", #666666): 0, 405
 }
-`,Rp=`version: 0.5
+`,Rp=`version: 1.0
 
 // Inventory Demo — Shop, Player Inventory (3x4), Equipment (head, 2 arms, armor, legs)
 
@@ -4835,7 +4835,7 @@ layouts {
     // ===== LOG =====
     #logText(updatable) text(exo2_light_14, "Drag items from shop to inventory or equip them.", #666666): 0, 375
 }
-`,Ep=`version: 0.5
+`,Ep=`version: 1.0
 
 // Equipment Tree Demo
 // 4 tiers x 3 paths using roguelike item icons.
@@ -5071,7 +5071,7 @@ layouts {
 
     } // end point (10px down offset)
 }
-`,Ap=`version: 0.5
+`,Ap=`version: 1.0
 
 // Status Bar Demo
 // Horizontal flow layout with dynamic buff/debuff cards, progress bars, particles,
@@ -5278,7 +5278,7 @@ layouts {
     text(exo2_light_14, "Hover over an effect card to see details. Effects expire when their timer runs out.", #666666): 0, 295
     text(exo2_light_14, "Features: flow layout, slots, incremental updates, particles, hover tooltips, glow", #555555): 0, 315
 }
-`,Bp=`version: 0.5
+`,Bp=`version: 1.0
 
 #bitmapsAtlasShowcase programmable() {
   // Section 1: Generated color bitmaps
@@ -5417,7 +5417,7 @@ layouts {
   text(m6x11, "3x", #888888): 80, 960
   text(m6x11, "4x", #888888): 150, 960
 }
-`,Dp=`version: 0.5
+`,Dp=`version: 1.0
 
 paths {
     #straightLine path {
@@ -5490,7 +5490,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
     #sizeText(updatable) text(m6x11, "210 x 150", #ffffff, left, 200): 10, 10
 }
-`,Ip=`version: 0.5
+`,Ip=`version: 1.0
 
 #pixelsGraphicsShowcase programmable() {
   // Section 1: Pixels primitives
@@ -5684,7 +5684,7 @@ paths {
     text(m6x11, "Arrow", #888888, center, 80): -40, 40
   }
 }
-`,zp=`version: 0.5
+`,zp=`version: 1.0
 
 #richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, quest:[accepted,progress,complete]=accepted, equip:[sword,shield,empty]=sword) {
 
@@ -5814,7 +5814,7 @@ paths {
       styles: {hl: color(cyan)}): 648, 784
   text(m6x11, '[link:id]...[/] fires callback on click', #666666): 640, 812
 }
-`,Np=`version: 0.5
+`,Np=`version: 1.0
 
 #textFontsShowcase programmable() {
   // Section 1: Bitmap fonts
@@ -5922,7 +5922,7 @@ paths {
   bitmap(generated(color(300, 28, #002200))): 0, 1060
   @scale(2) text(pixellari, "Pixellari green glow", #88ff88, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #00ff44, dropShadowAlpha: 0.9): 4, 1064
 }
-`,Op=`version: 0.5
+`,Op=`version: 1.0
 
 // Combo States Demo
 // Shows @if, @else, @default conditional patterns
@@ -5985,7 +5985,7 @@ paths {
     pos: 350, 234
   }
 }
-`,Lp=`version: 0.5
+`,Lp=`version: 1.0
 
 // A health bar that changes color based on value
 #healthBar programmable(value:uint=50, label:string="HP") {
@@ -6039,7 +6039,7 @@ paths {
   dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
   dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
 }
-`,Mp=`version: 0.5
+`,Mp=`version: 1.0
 
 // Colored box for flow items
 #flowItem programmable(w:uint=40, h:uint=20, color:color=#448, num:uint=0) {
@@ -6200,7 +6200,7 @@ paths {
     }
   }
 }
-`,Hp=`version: 0.5
+`,Hp=`version: 1.0
 
 #repeatableControls programmable() {
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
@@ -6283,7 +6283,7 @@ paths {
     }
   }
 }
-`,Wp=`version: 0.5
+`,Wp=`version: 1.0
 
 // Item that goes into a slot - uses same icons as inventory demo
 #slotItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
@@ -6495,7 +6495,7 @@ paths {
   #comboStatusText(updatable) text(exo2_light_14, "Click an enabled slot to add/remove an item.", #666666, left, 500): 0, 575
   #comboInfoText(updatable) text(exo2_light_14, "", #aaaaaa, left, 500): 0, 593
 }
-`,Vp=`version: 0.5
+`,Vp=`version: 1.0
 
 // Child programmable: a colored card with configurable size and color
 #colorCard programmable(w:uint=60, h:uint=40, cardColor:color=#4488cc, label:string="Card") {
@@ -6560,7 +6560,7 @@ paths {
     }
   }
 }
-`,jp=`version: 0.5
+`,jp=`version: 1.0
 
 // Buttons Demo
 // Shows all button styles from buttons.manim builder: Normal, Warning, Small
@@ -6704,7 +6704,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 852
 }
-`,Up=`version: 0.5
+`,Up=`version: 1.0
 
 // Checkboxes Demo
 // Shows checkbox, tickbox, toggle, radio, and simple variants with selected count.
@@ -6793,7 +6793,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 482
 }
-`,Gp=`version: 0.5
+`,Gp=`version: 1.0
 
 // Dialogs Demo
 // Shows modal dialogs with different overlay configurations.
@@ -6959,7 +6959,7 @@ paths {
     #historyText4(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 415
     #historyText5(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 435
 }
-`,Qp=`version: 0.5
+`,Qp=`version: 1.0
 
 // Draggable Demo
 // All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight.
@@ -7062,7 +7062,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all draggables", #aaaaaa): 380, 352
 }
-`,qp=`version: 0.5
+`,qp=`version: 1.0
 
 // Dropdowns Demo
 // Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).
@@ -7163,7 +7163,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all dropdowns", #aaaaaa): 30, 1012
 }
-`,Yp=`version: 0.5
+`,Yp=`version: 1.0
 
 // Progress Bar Demo
 // Shows progress bars at various values with auto-animation.
@@ -7271,7 +7271,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 510
     #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 518
 }
-`,Xp=`version: 0.5
+`,Xp=`version: 1.0
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with selection feedback.
@@ -7314,7 +7314,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", 300, 40): 250, 410
     #radio2Text(updatable) text(exo2_16, "Selected: Easy", #ffffff, left, 280): 265, 420
 }
-`,Kp=`version: 0.5
+`,Kp=`version: 1.0
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with different styles, selection feedback, and disabled state.
@@ -7378,7 +7378,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 772
 }
-`,Zp=`version: 0.5
+`,Zp=`version: 1.0
 
 // Scrollable List Demo
 // Shows a scrollable list with 20+ items and selected item display.
@@ -7425,7 +7425,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable scrollable list", #aaaaaa): 30, 412
 }
-`,Jp=`version: 0.5
+`,Jp=`version: 1.0
 
 // Sliders Demo
 // Shows sliders of different sizes, scales, and min/max/step combinations.
@@ -7535,7 +7535,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all sliders", #aaaaaa): 30, 752
 }
-`,ef=`version: 0.5
+`,ef=`version: 1.0
 
 // Tabs Demo
 // Shows tab bars with content switching, disabled tabs, and custom sizes.
@@ -7585,7 +7585,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disable all tabs", #aaaaaa): 60, 792
 }
-`,nf=`version: 0.5
+`,nf=`version: 1.0
 
 // Text Input Demo
 // Shows text input variants, input filters, and tab navigation between fields.
@@ -7689,7 +7689,7 @@ paths {
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 447
     #eventLog(updatable) text(exo2_light_14, "Interact with inputs to see events here...", #ffffff, left, 580): 0, 460
 }
-`,tf=`version: 0.5
+`,tf=`version: 1.0
 
 // Tooltips & Panels Demo
 // Hover tooltips (UITooltipHelper), click panels (UIPanelHelper),
@@ -8023,7 +8023,7 @@ paths {
 
     #statusFade(updatable) text(m6x11, "Click to compare instant vs fading panels", #666666): 0, 810
 }
-`,af=`version: 0.5
+`,af=`version: 1.0
 
 // NavScreen Carousel — 7 feature highlight slides
 // Controlled by currentSlide parameter, switched via setParameter() in NavScreen.hx
@@ -8282,7 +8282,7 @@ paths {
   @(currentSlide => 5) bitmap(generated(color(10, 10, #7fdbda))): 188, 250
   @(currentSlide => 6) bitmap(generated(color(10, 10, #7fdbda))): 206, 250
 }
-`,rf=`version: 0.5
+`,rf=`version: 1.0
 
 // NavScreen layout — positions, info panel, control buttons
 // Carousel visual and particles are built separately, positioned via layouts
@@ -8381,7 +8381,7 @@ layouts {
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("playBtn")): 70, 286
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("nextBtn")): 100, 286
 }
-`,of=`version: 0.5
+`,of=`version: 1.0
 
 // Radio Button Styles Builder
 // #radio    - Small radio button (ui atlas: RadioButton_off/on_*)
@@ -8423,7 +8423,7 @@ layouts {
         text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
     }
 }
-`,lf=`version: 0.5
+`,lf=`version: 1.0
 
       #main palette {
       0x1a1a1a  0x2c5f7c  0x4a90a4  0x7fdbda  0xff7f50  0xff4444  0x4caf50  0xffeb3b  0xffffff  0x666666  0xb0b0b0  0x000000
@@ -9127,4 +9127,4 @@ animation destroyed {
  * @public
  */var t=function(a){var r=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,i=0,o={},l={manual:a.Prism&&a.Prism.manual,disableWorkerMessageHandler:a.Prism&&a.Prism.disableWorkerMessageHandler,util:{encode:function s(c){return c instanceof d?new d(c.type,s(c.content),c.alias):Array.isArray(c)?c.map(s):c.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++i}),s.__id},clone:function s(c,p){p=p||{};var h,g;switch(l.util.type(c)){case"Object":if(g=l.util.objId(c),p[g])return p[g];h={},p[g]=h;for(var v in c)c.hasOwnProperty(v)&&(h[v]=s(c[v],p));return h;case"Array":return g=l.util.objId(c),p[g]?p[g]:(h=[],p[g]=h,c.forEach(function(y,C){h[C]=s(y,p)}),h);default:return c}},getLanguage:function(s){for(;s;){var c=r.exec(s.className);if(c)return c[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,c){s.className=s.className.replace(RegExp(r,"gi"),""),s.classList.add("language-"+c)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var c=document.getElementsByTagName("script");for(var p in c)if(c[p].src==s)return c[p]}return null}},isActive:function(s,c,p){for(var h="no-"+c;s;){var g=s.classList;if(g.contains(c))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!p}},languages:{plain:o,plaintext:o,text:o,txt:o,extend:function(s,c){var p=l.util.clone(l.languages[s]);for(var h in c)p[h]=c[h];return p},insertBefore:function(s,c,p,h){h=h||l.languages;var g=h[s],v={};for(var y in g)if(g.hasOwnProperty(y)){if(y==c)for(var C in p)p.hasOwnProperty(C)&&(v[C]=p[C]);p.hasOwnProperty(y)||(v[y]=g[y])}var T=h[s];return h[s]=v,l.languages.DFS(l.languages,function(I,ue){ue===T&&I!=s&&(this[I]=v)}),v},DFS:function s(c,p,h,g){g=g||{};var v=l.util.objId;for(var y in c)if(c.hasOwnProperty(y)){p.call(c,y,c[y],h||y);var C=c[y],T=l.util.type(C);T==="Object"&&!g[v(C)]?(g[v(C)]=!0,s(C,p,null,g)):T==="Array"&&!g[v(C)]&&(g[v(C)]=!0,s(C,p,y,g))}}},plugins:{},highlightAll:function(s,c){l.highlightAllUnder(document,s,c)},highlightAllUnder:function(s,c,p){var h={callback:p,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};l.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),l.hooks.run("before-all-elements-highlight",h);for(var g=0,v;v=h.elements[g++];)l.highlightElement(v,c===!0,h.callback)},highlightElement:function(s,c,p){var h=l.util.getLanguage(s),g=l.languages[h];l.util.setLanguage(s,h);var v=s.parentElement;v&&v.nodeName.toLowerCase()==="pre"&&l.util.setLanguage(v,h);var y=s.textContent,C={element:s,language:h,grammar:g,code:y};function T(ue){C.highlightedCode=ue,l.hooks.run("before-insert",C),C.element.innerHTML=C.highlightedCode,l.hooks.run("after-highlight",C),l.hooks.run("complete",C),p&&p.call(C.element)}if(l.hooks.run("before-sanity-check",C),v=C.element.parentElement,v&&v.nodeName.toLowerCase()==="pre"&&!v.hasAttribute("tabindex")&&v.setAttribute("tabindex","0"),!C.code){l.hooks.run("complete",C),p&&p.call(C.element);return}if(l.hooks.run("before-highlight",C),!C.grammar){T(l.util.encode(C.code));return}if(c&&a.Worker){var I=new Worker(l.filename);I.onmessage=function(ue){T(ue.data)},I.postMessage(JSON.stringify({language:C.language,code:C.code,immediateClose:!0}))}else T(l.highlight(C.code,C.grammar,C.language))},highlight:function(s,c,p){var h={code:s,grammar:c,language:p};if(l.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=l.tokenize(h.code,h.grammar),l.hooks.run("after-tokenize",h),d.stringify(l.util.encode(h.tokens),h.language)},tokenize:function(s,c){var p=c.rest;if(p){for(var h in p)c[h]=p[h];delete c.rest}var g=new x;return m(g,g.head,s),b(s,g,c,g.head,0),S(g)},hooks:{all:{},add:function(s,c){var p=l.hooks.all;p[s]=p[s]||[],p[s].push(c)},run:function(s,c){var p=l.hooks.all[s];if(!(!p||!p.length))for(var h=0,g;g=p[h++];)g(c)}},Token:d};a.Prism=l;function d(s,c,p,h){this.type=s,this.content=c,this.alias=p,this.length=(h||"").length|0}d.stringify=function s(c,p){if(typeof c=="string")return c;if(Array.isArray(c)){var h="";return c.forEach(function(T){h+=s(T,p)}),h}var g={type:c.type,content:s(c.content,p),tag:"span",classes:["token",c.type],attributes:{},language:p},v=c.alias;v&&(Array.isArray(v)?Array.prototype.push.apply(g.classes,v):g.classes.push(v)),l.hooks.run("wrap",g);var y="";for(var C in g.attributes)y+=" "+C+'="'+(g.attributes[C]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function f(s,c,p,h){s.lastIndex=c;var g=s.exec(p);if(g&&h&&g[1]){var v=g[1].length;g.index+=v,g[0]=g[0].slice(v)}return g}function b(s,c,p,h,g,v){for(var y in p)if(!(!p.hasOwnProperty(y)||!p[y])){var C=p[y];C=Array.isArray(C)?C:[C];for(var T=0;T<C.length;++T){if(v&&v.cause==y+","+T)return;var I=C[T],ue=I.inside,nn=!!I.lookbehind,ht=!!I.greedy,Sr=I.alias;if(ht&&!I.pattern.global){var gt=I.pattern.toString().match(/[imsuy]*$/)[0];I.pattern=RegExp(I.pattern.source,gt+"g")}for(var On=I.pattern||I,F=h.next,R=g;F!==c.tail&&!(v&&R>=v.reach);R+=F.value.length,F=F.next){var E=F.value;if(c.length>s.length)return;if(!(E instanceof d)){var O=1,z;if(ht){if(z=f(On,R,s,nn),!z||z.index>=s.length)break;var ke=z.index,Ln=z.index+z[0].length,te=R;for(te+=F.value.length;ke>=te;)F=F.next,te+=F.value.length;if(te-=F.value.length,R=te,F.value instanceof d)continue;for(var Ve=F;Ve!==c.tail&&(te<Ln||typeof Ve.value=="string");Ve=Ve.next)O++,te+=Ve.value.length;O--,E=s.slice(R,te),z.index-=R}else if(z=f(On,0,E,nn),!z)continue;var ke=z.index,je=z[0],kr=E.slice(0,ke),Go=E.slice(ke+je.length),Fr=R+E.length;v&&Fr>v.reach&&(v.reach=Fr);var oa=F.prev;kr&&(oa=m(c,oa,kr),R+=kr.length),w(c,oa,O);var xc=new d(y,ue?l.tokenize(je,ue):je,Sr,je);if(F=m(c,oa,xc),Go&&m(c,F,Go),O>1){var Cr={cause:y+","+T,reach:Fr};b(s,c,p,F.prev,R,Cr),v&&Cr.reach>v.reach&&(v.reach=Cr.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},c={value:null,prev:s,next:null};s.next=c,this.head=s,this.tail=c,this.length=0}function m(s,c,p){var h=c.next,g={value:p,prev:c,next:h};return c.next=g,h.prev=g,s.length++,g}function w(s,c,p){for(var h=c.next,g=0;g<p&&h!==s.tail;g++)h=h.next;c.next=h,h.prev=c,s.length-=g}function S(s){for(var c=[],p=s.head.next;p!==s.tail;)c.push(p.value),p=p.next;return c}if(!a.document)return a.addEventListener&&(l.disableWorkerMessageHandler||a.addEventListener("message",function(s){var c=JSON.parse(s.data),p=c.language,h=c.code,g=c.immediateClose;a.postMessage(l.highlight(h,l.languages[p],p)),g&&a.close()},!1)),l;var _=l.util.currentScript();_&&(l.filename=_.src,_.hasAttribute("data-manual")&&(l.manual=!0));function P(){l.manual||l.highlightAll()}if(!l.manual){var u=document.readyState;u==="loading"||u==="interactive"&&_&&_.defer?document.addEventListener("DOMContentLoaded",P):window.requestAnimationFrame?window.requestAnimationFrame(P):window.setTimeout(P,16)}return l}(n);e.exports&&(e.exports=t),typeof ei<"u"&&(ei.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(a){a.type==="entity"&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(r,i){var o={};o["language-"+i]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[i]},o.cdata=/^<!\[CDATA\[|\]\]>$/i;var l={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:o}};l["language-"+i]={pattern:/[\s\S]+/,inside:t.languages[i]};var d={};d[r]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return r}),"i"),lookbehind:!0,greedy:!0,inside:l},t.languages.insertBefore("markup","cdata",d)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(a,r){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+a+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[r,"language-"+r],inside:t.languages[r]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(a){var r=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;a.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+r.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+r.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+r.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+r.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:r,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},a.languages.css.atrule.inside.rest=a.languages.css;var i=a.languages.markup;i&&(i.tag.addInlined("style","css"),i.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var a="Loading…",r=function(_,P){return"✖ Error "+_+" while fetching file: "+P},i="✖ Error: File does not exist or is empty",o={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},l="data-src-status",d="loading",f="loaded",b="failed",x="pre[data-src]:not(["+l+'="'+f+'"]):not(['+l+'="'+d+'"])';function m(_,P,u){var s=new XMLHttpRequest;s.open("GET",_,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?P(s.responseText):s.status>=400?u(r(s.status,s.statusText)):u(i))},s.send(null)}function w(_){var P=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(_||"");if(P){var u=Number(P[1]),s=P[2],c=P[3];return s?c?[u,Number(c)]:[u,void 0]:[u,u]}}t.hooks.add("before-highlightall",function(_){_.selector+=", "+x}),t.hooks.add("before-sanity-check",function(_){var P=_.element;if(P.matches(x)){_.code="",P.setAttribute(l,d);var u=P.appendChild(document.createElement("CODE"));u.textContent=a;var s=P.getAttribute("data-src"),c=_.language;if(c==="none"){var p=(/\.(\w+)$/.exec(s)||[,"none"])[1];c=o[p]||p}t.util.setLanguage(u,c),t.util.setLanguage(P,c);var h=t.plugins.autoloader;h&&h.loadLanguages(c),m(s,function(g){P.setAttribute(l,f);var v=w(P.getAttribute("data-range"));if(v){var y=g.split(/\r\n?|\n/g),C=v[0],T=v[1]==null?y.length:v[1];C<0&&(C+=y.length),C=Math.max(0,Math.min(C-1,y.length)),T<0&&(T+=y.length),T=Math.max(0,Math.min(T,y.length)),g=y.slice(C,T).join(`
 `),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,c;c=u[s++];)t.highlightElement(c)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(mc);var bf=mc.exports;const Yi=Xi(bf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function vf({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function yf(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[d]=be.useState(()=>new gf);be.useEffect(()=>{window.playgroundLoader=d;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{d.dispose()}},[d]),be.useEffect(()=>{const x=()=>{const w=window.location.hash.match(/screen=(\w+)/);if(w){const S=w[1];n(S),d.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[d]);const f=x=>{n(x),window.location.hash=`screen=${x}`,d.switchScreen(x);const m=d.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=d.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx(xf,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(vf,{source:o,visible:r})})]})]})]})}var hc={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,w){m=m.push?m:[m];var S=[],_=m.length,P=_,u,s,c,p;for(u=function(h,g){g.length&&S.push(h),P--,P||w(S)};_--;){if(s=m[_],c=r[s],c){u(s,c);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,w){if(m){var S=i[m];if(r[m]=w,!!S)for(;S.length;)S[0](m,w),S.splice(0,1)}}function d(m,w){m.call&&(m={success:m}),w.length?(m.error||t)(w):(m.success||t)(m)}function f(m,w,S,_){var P=document,u=S.async,s=(S.numRetries||0)+1,c=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(_=_||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return w(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return w(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(_+=1,_<s)return f(m,w,S,_)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";w(m,T,C.defaultPrevented)},c(m,y)!==!1&&P.head.appendChild(y)}function b(m,w,S){m=m.push?m:[m];var _=m.length,P=_,u=[],s,c;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;_--,_||w(u)},c=0;c<P;c++)f(m[c],s,S)}function x(m,w,S){var _,P;if(w&&w.trim&&(_=w),P=(_?S:w)||{},_){if(_ in a)throw"LoadJS";a[_]=!0}function u(s,c){b(m,function(p){d(P,p),s&&d({success:s,error:c},p),l(_,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(w,S){return o(w,function(_){d(S,_)}),x},x.done=function(w){l(w,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(w){return w in a},x})})(hc);var _f=hc.exports;const wf=Xi(_f);class Sf{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);wf("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gc=new Sf({maxRetries:5,retryDelay:2e3,timeout:1e4});gc.start();window.haxeLoader=gc;ni.createRoot(document.getElementById("root")).render(D.jsx(Ic.StrictMode,{children:D.jsx(yf,{})}));
-//# sourceMappingURL=index-Bpy3Dgch.js.map
+//# sourceMappingURL=index-8qezKfS2.js.map

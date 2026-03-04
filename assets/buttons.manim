@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Button Styles Builder
 // #main    - Standard button (ui atlas: button-idle/hover/pressed/disabled)

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 #richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, quest:[accepted,progress,complete]=accepted, equip:[sword,shield,empty]=sword) {
 

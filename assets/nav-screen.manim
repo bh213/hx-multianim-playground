@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // NavScreen layout — positions, info panel, control buttons
 // Carousel visual and particles are built separately, positioned via layouts

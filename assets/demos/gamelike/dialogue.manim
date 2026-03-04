@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Dialogue Demo
 // Dialogue panel with speaker name, typewriter text, and branching choices.

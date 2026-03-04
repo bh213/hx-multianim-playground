@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // A health bar that changes color based on value
 #healthBar programmable(value:uint=50, label:string="HP") {

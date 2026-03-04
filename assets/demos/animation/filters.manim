@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Filters Demo — 9 filters shown simultaneously with interactive controls
 // Each filter defined as a programmable with filter: syntax and $param expressions

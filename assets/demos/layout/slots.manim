@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Item that goes into a slot - uses same icons as inventory demo
 #slotItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {

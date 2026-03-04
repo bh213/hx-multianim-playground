@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Child programmable: a colored card with configurable size and color
 #colorCard programmable(w:uint=60, h:uint=40, cardColor:color=#4488cc, label:string="Card") {

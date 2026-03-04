@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Particles Demo — Colors & Curves
 // colorStops (new syntax), sizeCurve, velocityCurve with inline easings

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // NavScreen Carousel — 7 feature highlight slides
 // Controlled by currentSlide parameter, switched via setParameter() in NavScreen.hx

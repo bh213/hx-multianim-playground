@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Macro Performance Benchmark
 // Compares builder, builder+incremental, and macro creation & update performance.

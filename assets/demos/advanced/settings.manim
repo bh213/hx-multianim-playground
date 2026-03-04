@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Settings Demo
 // Two use cases: .manim styling configures code | .manim info flows back to code

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Blob47 Autotile Demo
 // Interactive 2D terrain painter. Select tile type then click/drag to paint.

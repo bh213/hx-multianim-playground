@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Progress Bar Demo
 // Shows progress bars at various values with auto-animation.

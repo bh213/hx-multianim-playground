@@ -1498,7 +1498,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		var fromIdx = Main.SCREEN_ORDER.indexOf(this.currentScreenName);
 		var toIdx = Main.SCREEN_ORDER.indexOf(screenName);
 		var goingDown = toIdx > fromIdx;
-		var transition = goingDown ? bh_ui_screens_ScreenTransition.SlideDown(0.25,bh_multianim_EasingType.EaseOutCubic) : bh_ui_screens_ScreenTransition.SlideUp(0.25,bh_multianim_EasingType.EaseOutCubic);
+		var transition = goingDown ? bh_ui_screens_ScreenTransition.SlideUp(0.25,bh_multianim_EasingType.EaseOutCubic) : bh_ui_screens_ScreenTransition.SlideDown(0.25,bh_multianim_EasingType.EaseOutCubic);
 		this.currentScreenName = screenName;
 		if(screenName == "nav") {
 			this.screenManager.switchTo(this.screenManager.getScreen(screenName),transition);
@@ -12604,6 +12604,43 @@ bh_multianim_MacroManimParser.prototype = {
 																																							this.error("duplicate transition for parameter \"" + paramName + "\"");
 																																						}
 																																						parent.transitions.h[paramName] = transType;
+																																						if(transType._hx_index == 5) {
+																																							var _g = transType.direction;
+																																							var _g2 = transType.duration;
+																																							var _g3 = transType.distance;
+																																							var _g4 = transType.easing;
+																																							var p = parent.parent;
+																																							while(p != null) {
+																																								var _g5 = p.type;
+																																								if(_g5._hx_index == 0) {
+																																									var _g6 = _g5.maxWidth;
+																																									var _g7 = _g5.maxHeight;
+																																									var _g8 = _g5.minWidth;
+																																									var _g9 = _g5.minHeight;
+																																									var _g10 = _g5.lineHeight;
+																																									var _g11 = _g5.colWidth;
+																																									var _g12 = _g5.layout;
+																																									var _g13 = _g5.paddingTop;
+																																									var _g14 = _g5.paddingBottom;
+																																									var _g15 = _g5.paddingLeft;
+																																									var _g16 = _g5.paddingRight;
+																																									var _g17 = _g5.horizontalSpacing;
+																																									var _g18 = _g5.verticalSpacing;
+																																									var _g19 = _g5.debug;
+																																									var _g20 = _g5.multiline;
+																																									var _g21 = _g5.bgSheet;
+																																									var _g22 = _g5.bgTile;
+																																									var _g23 = _g5.overflow;
+																																									var _g24 = _g5.fillWidth;
+																																									var _g25 = _g5.fillHeight;
+																																									var _g26 = _g5.reverse;
+																																									var _g27 = _g5.hAlign;
+																																									var _g28 = _g5.vAlign;
+																																									break;
+																																								}
+																																								p = p.parent;
+																																							}
+																																						}
 																																						this.eatComma();
 																																					}
 																																					return null;
@@ -13020,9 +13057,6 @@ bh_multianim_MacroManimParser.prototype = {
 			case "bounds":
 				this.parseBoundsCombined(p);
 				break;
-			case "boundsline":case "boundsmaxx":case "boundsmaxy":case "boundsminx":case "boundsminy":case "boundsmode":
-				this.error("legacy \"" + name + "\" syntax removed — use combined \"bounds: kill, box(x: 0, y: 0, w: 800, h: 600)\" instead");
-				break;
 			case "colorstops":
 				p.colorStops = this.parseColorStops();
 				break;
@@ -13144,8 +13178,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseParticleRateAction: function(atRate,p) {
 		var actionName = this.expectIdentifierOrString();
-		switch(actionName.toLowerCase()) {
-		case "anim":
+		if(actionName.toLowerCase() == "anim") {
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 			var animName = this.expectIdentifierOrString();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
@@ -13153,11 +13186,7 @@ bh_multianim_MacroManimParser.prototype = {
 				p.animStates = [];
 			}
 			p.animStates.push({ atRate : atRate, animName : animName});
-			break;
-		case "colorcurve":
-			this.error("legacy \"N.N: colorCurve:\" syntax removed — use \"colorStops: 0.0 #FF0000, 0.5 #00FF00 easeInQuad, 1.0 #0000FF\" instead");
-			break;
-		default:
+		} else {
 			this.error("unknown particle rate action: " + actionName);
 		}
 	}
@@ -13332,36 +13361,24 @@ bh_multianim_MacroManimParser.prototype = {
 			if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-				if(!this.isNamedParamNext()) {
-					return this.error("positional emit syntax removed — use named params: point(dist: 0, distRand: 0)");
-				}
 				return this.parseEmitModeNamed("point");
 			} else {
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"cone")) {
 					this.advance();
 					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-					if(!this.isNamedParamNext()) {
-						return this.error("positional emit syntax removed — use named params: cone(dist: 0, distRand: 0, angle: 0, angleSpread: 0)");
-					}
 					return this.parseEmitModeNamed("cone");
 				} else {
 					var s = _g1;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"box")) {
 						this.advance();
 						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-						if(!this.isNamedParamNext()) {
-							return this.error("positional emit syntax removed — use named params: box(w: 0, h: 0, angle: 0, angleSpread: 0)");
-						}
 						return this.parseEmitModeNamed("box");
 					} else {
 						var s = _g1;
 						if(bh_multianim_MacroManimParser.isKeyword(s,"circle")) {
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-							if(!this.isNamedParamNext()) {
-								return this.error("positional emit syntax removed — use named params: circle(r: 0, rRand: 0, angle: 0, angleSpread: 0)");
-							}
 							return this.parseEmitModeNamed("circle");
 						} else {
 							var s = _g1;
@@ -13788,7 +13805,12 @@ bh_multianim_MacroManimParser.prototype = {
 				if(bh_multianim_MacroManimParser.isKeyword(name,"events")) {
 					metadata.push(this.parseInteractiveEventsMetadata());
 				} else {
-					metadata.push(this.parseMetadataValue(bh_multianim_ReferenceableValue.RVString(name)));
+					var key = name;
+					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
+						var suffix = this.expectIdentifierOrString();
+						key = key + "." + suffix;
+					}
+					metadata.push(this.parseMetadataValue(bh_multianim_ReferenceableValue.RVString(key)));
 				}
 				this.eatComma();
 				break;
@@ -14411,25 +14433,25 @@ bh_multianim_MacroManimParser.prototype = {
 				case 28:
 					var v = _g.s;
 					this.advance();
-					if(v != "0") {
-						this.error("version 0.5 expected, got " + v);
+					if(v != "1") {
+						this.error("version 1.0 expected, got " + v);
 					}
 					break;
 				case 29:
 					var v = _g.s;
 					this.advance();
-					if(v != "0.5") {
-						this.error("version 0.5 expected, got " + v);
+					if(v != "1.0") {
+						this.error("version 1.0 expected, got " + v);
 					}
 					break;
 				default:
 					this.error("expected version number");
 				}
 			} else {
-				this.error("Missing version declaration. Files must start with 'version: 0.5'");
+				this.error("Missing version declaration. Files must start with 'version: 1.0'");
 			}
 		} else {
-			this.error("Missing version declaration. Files must start with 'version: 0.5'");
+			this.error("Missing version declaration. Files must start with 'version: 1.0'");
 		}
 		this.parseNodes(null,new haxe_ds_StringMap());
 		if(this.tokens[this.tpos].type._hx_index != 0) {
@@ -16716,7 +16738,26 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		entry.applied = false;
 	}
 	,setParameter: function(name,value) {
-		if(typeof(value) == "number" && ((value | 0) === value)) {
+		var paramDef = this.getParamDefinition(name);
+		var tmp;
+		if(paramDef != null) {
+			var _g = paramDef.type;
+			if(_g._hx_index == 2) {
+				var _g1 = _g.bits;
+				tmp = true;
+			} else {
+				tmp = false;
+			}
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			var this1 = this.indexedParams;
+			var value1 = bh_multianim_MultiAnimParser.dynamicValueToIndex(name,paramDef.type,value,function(s) {
+				throw haxe_Exception.thrown(s);
+			});
+			this1.h[name] = value1;
+		} else if(typeof(value) == "number" && ((value | 0) === value)) {
 			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.Value(value);
 		} else if(typeof(value) == "number") {
 			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.ValueF(value);
@@ -16724,6 +16765,10 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.StringValue(value);
 		} else if(typeof(value) == "boolean") {
 			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.Value(js_Boot.__cast(value , Bool) ? 1 : 0);
+		} else if(js_Boot.__instanceof(value,bh_multianim_ResolvedIndexParameters)) {
+			this.indexedParams.h[name] = value;
+		} else if(((value) instanceof h2d_Tile)) {
+			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSTile(value));
 		}
 		this.changedParams.h[name] = true;
 		if(!this.batchMode) {
@@ -16740,6 +16785,17 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			this.applyUpdates();
 		}
 		this.changedParams = new haxe_ds_StringMap();
+	}
+	,getParamDefinition: function(name) {
+		var _g = this.rootNode.type;
+		if(_g._hx_index == 9) {
+			var _g1 = _g.isTileGroup;
+			var _g1 = _g.paramOrder;
+			var defs = _g.parameters;
+			return defs.h[name];
+		} else {
+			return null;
+		}
 	}
 	,setTweenManager: function(tm) {
 		this.tweenManager = tm;
@@ -17808,6 +17864,73 @@ bh_multianim_MultiAnimBuilder.collectGraphicsStyleParamRefs = function(style,res
 	case 1:
 		var lw = style.width;
 		bh_multianim_MultiAnimBuilder.collectParamRefs(lw,result);
+		break;
+	}
+};
+bh_multianim_MultiAnimBuilder.collectTileSourceParamRefs = function(tileSource,result) {
+	switch(tileSource._hx_index) {
+	case 0:
+		var filename = tileSource.filename;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(filename,result);
+		break;
+	case 1:
+		var sheet = tileSource.sheet;
+		var name = tileSource.name;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(sheet,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(name,result);
+		break;
+	case 2:
+		var sheet = tileSource.sheet;
+		var name = tileSource.name;
+		var index = tileSource.index;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(sheet,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(name,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(index,result);
+		break;
+	case 3:
+		var type = tileSource.type;
+		switch(type._hx_index) {
+		case 0:
+			var w = type.width;
+			var h = type.height;
+			var color = type.color;
+			var thickness = type.thickness;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(w,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(h,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(thickness,result);
+			break;
+		case 1:
+			var w = type.width;
+			var h = type.height;
+			var color = type.color;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(w,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(h,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+			break;
+		case 2:
+			var w = type.width;
+			var h = type.height;
+			var color = type.color;
+			var text = type.text;
+			var textColor = type.textColor;
+			var font = type.font;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(w,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(h,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(color,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(text,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(textColor,result);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(font,result);
+			break;
+		default:
+		}
+		break;
+	case 4:
+		var _g = tileSource.tile;
+		break;
+	case 5:
+		var varName = tileSource.varName;
+		result.push(varName);
 		break;
 	}
 };
@@ -19363,9 +19486,15 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var varName = tileSource.varName;
 			var param = this.indexedParams.h[varName];
 			if(param == null) {
-				throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" not found in indexed params" + "");
-			}
-			if(param == null) {
+				if(this.incrementalMode) {
+					if(bh_multianim_MultiAnimBuilder.incrementalFallbackTile == null) {
+						bh_multianim_MultiAnimBuilder.incrementalFallbackTile = h2d_Tile.fromColor(0,1,1,0.0);
+					}
+					tile = bh_multianim_MultiAnimBuilder.incrementalFallbackTile.clone();
+				} else {
+					throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" not found in indexed params" + "");
+				}
+			} else if(param == null) {
 				throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" is not a TileSourceValue, got: " + Std.string(param) + "");
 			} else if(param._hx_index == 6) {
 				var ts = param.tileSource;
@@ -19646,35 +19775,97 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var _g = node.type;
 		switch(_g._hx_index) {
 		case 2:
-			var _g1 = _g.hAlign;
-			var _g1 = _g.vAlign;
 			var tileSource = _g.tileSource;
-			if(tileSource._hx_index == 3) {
-				var type = tileSource.type;
-				if(type._hx_index == 1) {
-					var w = type.width;
-					var h = type.height;
-					var color = type.color;
-					var bmpRefs = [];
-					bh_multianim_MultiAnimBuilder.collectParamRefs(w,bmpRefs);
-					bh_multianim_MultiAnimBuilder.collectParamRefs(h,bmpRefs);
-					bh_multianim_MultiAnimBuilder.collectParamRefs(color,bmpRefs);
-					if(bmpRefs.length > 0) {
-						var bmp;
-						if(builtObject._hx_index == 3) {
-							var bmp1 = builtObject.b;
-							bmp = bmp1;
-						} else {
-							bmp = null;
-						}
-						if(bmp != null) {
+			var hAlign = _g.hAlign;
+			var vAlign = _g.vAlign;
+			var bmpRefs = [];
+			bh_multianim_MultiAnimBuilder.collectTileSourceParamRefs(tileSource,bmpRefs);
+			if(bmpRefs.length > 0) {
+				var bmp;
+				if(builtObject._hx_index == 3) {
+					var bmp1 = builtObject.b;
+					bmp = bmp1;
+				} else {
+					bmp = null;
+				}
+				if(bmp != null) {
+					if(tileSource._hx_index == 3) {
+						var _g1 = tileSource.type;
+						if(_g1._hx_index == 1) {
+							var w = _g1.width;
+							var h = _g1.height;
+							var color = _g1.color;
 							var wCapture = w;
 							var hCapture = h;
 							var colorCapture = color;
 							ctx.trackExpression(function() {
 								bmp.set_tile(h2d_Tile.fromColor(_gthis.resolveAsColorInteger(colorCapture),_gthis.resolveAsInteger(wCapture),_gthis.resolveAsInteger(hCapture)));
 							},bmpRefs);
+						} else {
+							var tileSourceCapture = tileSource;
+							var hAlignCapture = hAlign;
+							var vAlignCapture = vAlign;
+							ctx.trackExpression(function() {
+								var tile = _gthis.loadTileSource(tileSourceCapture);
+								var dh;
+								switch(vAlignCapture._hx_index) {
+								case 0:
+									dh = 0.;
+									break;
+								case 1:
+									dh = -(tile.height * .5);
+									break;
+								case 2:
+									dh = -tile.height;
+									break;
+								}
+								var wh;
+								switch(hAlignCapture._hx_index) {
+								case 0:
+									wh = 0.;
+									break;
+								case 1:
+									wh = -tile.width;
+									break;
+								case 2:
+									wh = -(tile.width * .5);
+									break;
+								}
+								bmp.set_tile(tile.sub(0,0,tile.width,tile.height,wh,dh));
+							},bmpRefs);
 						}
+					} else {
+						var tileSourceCapture1 = tileSource;
+						var hAlignCapture1 = hAlign;
+						var vAlignCapture1 = vAlign;
+						ctx.trackExpression(function() {
+							var tile = _gthis.loadTileSource(tileSourceCapture1);
+							var dh;
+							switch(vAlignCapture1._hx_index) {
+							case 0:
+								dh = 0.;
+								break;
+							case 1:
+								dh = -(tile.height * .5);
+								break;
+							case 2:
+								dh = -tile.height;
+								break;
+							}
+							var wh;
+							switch(hAlignCapture1._hx_index) {
+							case 0:
+								wh = 0.;
+								break;
+							case 1:
+								wh = -tile.width;
+								break;
+							case 2:
+								wh = -(tile.width * .5);
+								break;
+							}
+							bmp.set_tile(tile.sub(0,0,tile.width,tile.height,wh,dh));
+						},bmpRefs);
 					}
 				}
 			}
@@ -22201,9 +22392,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						switch(param._hx_index) {
 						case 0:
 							var obj = param.obj;
-							if(settings != null) {
-								haxe_Log.trace("Warning: PVObject placeholder \"" + this.resolveAsString(callbackName) + "\" ignores .manim settings — use PVFactory instead to receive settings",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 3525, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
-							}
 							callbackResultH2dObject = obj;
 							break;
 						case 1:
@@ -24452,7 +24640,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
 			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
-			haxe_Log.trace(error,{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5576, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithParameters"});
 			this.popBuilderState();
 			throw haxe_Exception.thrown(error);
 		}
@@ -24483,178 +24670,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,hasNode: function(name) {
 		var tmp = this.multiParserResult.nodes;
 		return (tmp != null ? tmp.h[name] : null) != null;
-	}
-	,buildWithComboParameters: function(name,inputParameters,allCombos,builderParams) {
-		this.pushBuilderState();
-		try {
-			if(builderParams == null) {
-				builderParams = { callback : $bind(this,this.defaultCallback)};
-			} else if(builderParams.callback == null) {
-				builderParams.callback = $bind(this,this.defaultCallback);
-			}
-			var node = this.multiParserResult.nodes.h[name];
-			if(node == null) {
-				throw haxe_Exception.thrown("buildWithComboParameters " + Std.string(allCombos) + ": could not build " + name + " with parameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + " and builderParameters " + Std.string(builderParams) + "");
-			}
-			if(bh_base_MapTools.count(inputParameters) + allCombos.length == 0) {
-				throw haxe_Exception.thrown("parameters are required for buildWithComboParameters " + name + "");
-			}
-			var definitions = this.getProgrammableParameterDefinitions(node,true);
-			var allOptions_h = Object.create(null);
-			var totalStates = 1;
-			var comboCounts = [];
-			var comboNames = [];
-			var _g = 0;
-			while(_g < allCombos.length) {
-				var prop = allCombos[_g];
-				++_g;
-				if(!Object.prototype.hasOwnProperty.call(definitions.h,prop)) {
-					throw haxe_Exception.thrown("definition for \"" + prop + "\" does not exist" + "");
-				}
-				if(Object.prototype.hasOwnProperty.call(inputParameters.h,prop)) {
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" set both as parameter and combo" + "");
-				}
-				if(Object.prototype.hasOwnProperty.call(allOptions_h,prop)) {
-					throw haxe_Exception.thrown("Duplicate combo \"" + prop + "\"" + "");
-				}
-				var def = definitions.h[prop];
-				if(def == null) {
-					throw haxe_Exception.thrown("definition for \"" + prop + "\" not found" + "");
-				}
-				var allValues;
-				var _g1 = def.type;
-				switch(_g1._hx_index) {
-				case 0:
-					var _g2 = [];
-					_g2.push("" + 0 + "}");
-					_g2.push("" + 1 + "}");
-					_g2.push("" + 2 + "}");
-					_g2.push("" + 3 + "}");
-					_g2.push("" + 4 + "}");
-					_g2.push("" + 5 + "}");
-					allValues = _g2;
-					break;
-				case 1:
-					var _g3 = [];
-					_g3.push("" + 0 + "}");
-					_g3.push("" + 1 + "}");
-					_g3.push("" + 2 + "}");
-					_g3.push("" + 3 + "}");
-					_g3.push("" + 4 + "}");
-					_g3.push("" + 5 + "}");
-					_g3.push("" + 6 + "}");
-					_g3.push("" + 7 + "}");
-					allValues = _g3;
-					break;
-				case 2:
-					var bits = _g1.bits;
-					var _g4 = [];
-					var _g5 = 0;
-					var _g6 = bits;
-					while(_g5 < _g6) {
-						var i = _g5++;
-						_g4.push("" + i + "}");
-					}
-					allValues = _g4;
-					break;
-				case 3:
-					var values = _g1.values;
-					allValues = values;
-					break;
-				case 4:
-					var from = _g1.from;
-					var to = _g1.to;
-					if(Math.abs(from - to) > 50) {
-						haxe_Log.trace("WARNING: range " + from + ".." + to + " is very large",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5803, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
-					}
-					var _g7 = [];
-					var _g8 = from;
-					var _g9 = to;
-					while(_g8 < _g9) {
-						var i1 = _g8++;
-						_g7.push("" + i1 + "}");
-					}
-					allValues = _g7;
-					break;
-				case 5:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is int and cannot be used as combo" + "");
-				case 6:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is float and cannot be used as combo" + "");
-				case 7:
-					allValues = ["0","1"];
-					break;
-				case 8:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is uint and cannot be used as combo" + "");
-				case 9:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is string and cannot be used as combo" + "");
-				case 10:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is color and cannot be used as combo" + "");
-				case 11:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is array and cannot be used as combo" + "");
-				case 12:
-					throw haxe_Exception.thrown("Prop \"" + prop + "\" is tile and cannot be used as combo" + "");
-				}
-				allOptions_h[prop] = allValues;
-				totalStates *= allValues.length;
-				comboNames.push(prop);
-				comboCounts.push(allValues.length);
-				if(totalStates > 32) {
-					haxe_Log.trace("more than 100 combination for build all",{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 5819, className : "bh.multianim.MultiAnimBuilder", methodName : "buildWithComboParameters"});
-				} else if(totalStates > 1000) {
-					throw haxe_Exception.thrown("more than 1000 combinations for buildAll");
-				}
-			}
-			var gridCoordinateSystem = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
-			var hexCoordinateSystem = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
-			var result = new bh_multianim_MultiAnimMultiResult(name,allCombos);
-			var _g = 0;
-			var _g1 = totalStates;
-			while(_g < _g1) {
-				var i = _g++;
-				var comboParams = new haxe_ds_StringMap();
-				var ci = i;
-				var _g2 = 0;
-				var _g3 = comboNames.length;
-				while(_g2 < _g3) {
-					var ki = _g2++;
-					var vi = ci % comboCounts[ki];
-					ci = ci / comboCounts[ki] | 0;
-					var key = comboNames[ki];
-					var opts = allOptions_h[key];
-					if(opts == null) {
-						throw haxe_Exception.thrown("combo options for \"" + key + "\" not found");
-					}
-					comboParams.h[key] = bh_multianim_ResolvedIndexParameters.StringValue(opts[vi]);
-				}
-				this.updateIndexedParamsFromDynamicMap(node,inputParameters,definitions,comboParams,true);
-				this.builderParams = builderParams;
-				var c = this.startBuild(name,node,gridCoordinateSystem,hexCoordinateSystem,builderParams);
-				var _g4 = [];
-				var _g5 = 0;
-				while(_g5 < allCombos.length) {
-					var combo = allCombos[_g5];
-					++_g5;
-					var _g6 = comboParams.h[combo];
-					var tmp;
-					if(_g6 == null) {
-						throw haxe_Exception.thrown("comboParams [" + combo + "] is not string" + "");
-					} else if(_g6._hx_index == 4) {
-						var s = _g6.s;
-						tmp = s;
-					} else {
-						throw haxe_Exception.thrown("comboParams [" + combo + "] is not string" + "");
-					}
-					_g4.push(tmp);
-				}
-				result.addResult(c,_g4);
-			}
-			this.popBuilderState();
-			return result;
-		} catch( _g ) {
-			var e = haxe_Exception.caught(_g);
-			this.popBuilderState();
-			throw haxe_Exception.thrown(e);
-		}
 	}
 	,loadTileImpl: function(sheetName,tilename,index) {
 		var sheet = this.getOrLoadSheet(sheetName);
@@ -24774,75 +24789,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 	}
 	,__class__: bh_multianim_MultiAnimBuilder
-};
-var bh_multianim_MultiAnimMultiResult = function(name,allCombos) {
-	this.results = new haxe_ds_StringMap();
-	this.name = name;
-	this.allCombos = allCombos;
-};
-$hxClasses["bh.multianim.MultiAnimMultiResult"] = bh_multianim_MultiAnimMultiResult;
-bh_multianim_MultiAnimMultiResult.__name__ = "bh.multianim.MultiAnimMultiResult";
-bh_multianim_MultiAnimMultiResult.prototype = {
-	addResult: function(result,param) {
-		var this1 = this.results;
-		var key = this.toMultiKey(param);
-		this1.h[key] = result;
-	}
-	,keyToString: function(value) {
-		if(typeof(value) == "string") {
-			return value;
-		} else if(typeof(value) == "number" && ((value | 0) === value) || typeof(value) == "number" || typeof(value) == "boolean") {
-			if(value == null) {
-				return "null";
-			} else {
-				return Std.string(value);
-			}
-		} else {
-			throw haxe_Exception.thrown("unknown parameter type " + (value == null ? "null" : Std.string(value)));
-		}
-	}
-	,toMultiKey: function(values) {
-		var f = $bind(this,this.keyToString);
-		var result = new Array(values.length);
-		var _g = 0;
-		var _g1 = values.length;
-		while(_g < _g1) {
-			var i = _g++;
-			result[i] = f(values[i]);
-		}
-		return result.join("||");
-	}
-	,updateAllText: function(name,newText) {
-		var h = this.results.h;
-		var _g_h = h;
-		var _g_keys = Object.keys(h);
-		var _g_length = _g_keys.length;
-		var _g_current = 0;
-		while(_g_current < _g_length) {
-			var key = _g_keys[_g_current++];
-			var _g_key = key;
-			var _g_value = _g_h[key];
-			var key1 = _g_key;
-			var value = _g_value;
-			value.getUpdatable(name).updateText(newText);
-		}
-	}
-	,findResultByCombo: function() {
-		var $l=arguments.length;
-		var values = new Array($l>0?$l-0:0);
-		for(var $i=0;$i<$l;++$i){values[$i-0]=arguments[$i];}
-		if(values.length != this.allCombos.length) {
-			throw haxe_Exception.thrown("invalid number of params, expected " + this.allCombos.length + " got " + values.length);
-		}
-		var multiKey = this.toMultiKey(values.slice());
-		var retVal = this.results.h[multiKey];
-		if(retVal == null) {
-			throw haxe_Exception.thrown("could not find result for name " + this.name + " with combo " + (values == null ? "null" : "[" + values.toString() + "]") + ", all combos: " + Std.string(this.allCombos));
-		} else {
-			return retVal;
-		}
-	}
-	,__class__: bh_multianim_MultiAnimMultiResult
 };
 var bh_multianim_OptionalParametersParsing = $hxEnums["bh.multianim.OptionalParametersParsing"] = { __ename__:true,__constructs__:null
 	,ParseInteger: ($_=function(name) { return {_hx_index:0,name:name,__enum__:"bh.multianim.OptionalParametersParsing",toString:$estr}; },$_._hx_name="ParseInteger",$_.__params__ = ["name"],$_)
@@ -28201,7 +28147,6 @@ bh_stateanim_AnimParser.parseString = function(content,sourceName,resourceLoader
 		return p;
 	} catch( _g ) {
 		var e = haxe_Exception.caught(_g);
-		haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 663, className : "bh.stateanim.AnimParser", methodName : "parseString"});
 		throw haxe_Exception.thrown(e);
 	}
 };
@@ -28505,13 +28450,11 @@ bh_stateanim_AnimParser.prototype = {
 	,syntaxError: function(error,pos) {
 		var p = pos != null ? pos : this.curPos();
 		var err = new bh_stateanim_InvalidSyntax(error,p);
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 634, className : "bh.stateanim.AnimParser", methodName : "syntaxError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,unexpectedError: function(message) {
 		var tmp = message;
 		var err = new bh_stateanim_AnimUnexpected(this.tokens[this.tpos].type,this.curPos(),tmp != null ? tmp : "unexpected");
-		haxe_Log.trace(err,{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 640, className : "bh.stateanim.AnimParser", methodName : "unexpectedError"});
 		throw haxe_Exception.thrown(err);
 	}
 	,parse: function() {
@@ -28744,9 +28687,6 @@ bh_stateanim_AnimParser.prototype = {
 			this.definedStatesIndexes.push(key1);
 		}
 		var allStates = this.createAllStates(this.definedStates);
-		if(allStates.length > 50) {
-			haxe_Log.trace("Warning: large number of states in AnimParser: " + allStates.length + "}",{ fileName : "../hx-multianim/src/bh/stateanim/AnimParser.hx", lineNumber : 789, className : "bh.stateanim.AnimParser", methodName : "parse"});
-		}
 		var _g = 0;
 		while(_g < allStates.length) {
 			var state = allStates[_g];
@@ -29883,15 +29823,6 @@ bh_stateanim_AnimParser.prototype = {
 		}
 	}
 	,validateSheetName: function(name,pos) {
-		var i = 0;
-		while(i < name.length - 1) {
-			if(name.charAt(i) == "$" && name.charAt(i + 1) == "$") {
-				var closeIdx = name.indexOf("$",i + 2);
-				var oldStateName = closeIdx >= 0 ? name.substring(i + 2,closeIdx) : "state";
-				this.syntaxError("Sheet name \"" + name + "\" uses old $" + "state$" + " syntax. Use " + (" + oldStateName + " + " instead."),pos);
-			}
-			++i;
-		}
 		var j = 0;
 		while(j < name.length) if(name.charAt(j) == "$" && j + 1 < name.length && name.charAt(j + 1) == "{") {
 			var end = name.indexOf("}",j + 2);
@@ -32736,6 +32667,9 @@ bh_ui_UIElementBuilder.prototype = {
 		_g.h["itemWidth"] = itemWidth;
 		_g.h["index"] = index;
 		_g.h["title"] = item.name;
+		_g.h["status"] = "normal";
+		_g.h["selected"] = "false";
+		_g.h["disabled"] = item.disabled == true ? "true" : "false";
 		var params = _g;
 		var tileSource = null;
 		if(item.tileRef != null) {
@@ -32796,7 +32730,7 @@ bh_ui_UIElementBuilder.prototype = {
 				params.h[key1] = value;
 			}
 		}
-		return this.builder.buildWithComboParameters(this.name,params,["status","selected","disabled"],this.builderParams);
+		return this.builder.buildWithParameters(this.name,params,this.builderParams,null,true);
 	}
 	,__class__: bh_ui_UIElementBuilder
 };
@@ -33727,6 +33661,8 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 	if(initialIndex == null) {
 		initialIndex = 0;
 	}
+	this.panelLayer = null;
+	this.panelScreen = null;
 	this.closeOnOutsideClick = true;
 	this.autoCloseOnLeave = true;
 	this.autoOpen = true;
@@ -33734,17 +33670,18 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 	this.items = [];
 	this.disabled = false;
 	this.transitionTimerOverride = null;
-	this.transitionTimer = 1.0;
-	this.requestRedraw = true;
+	this.transitionTimerBase = 1.0;
 	this.timerTotal = 0;
 	this.timer = 0;
 	this.panelStatus = bh_ui__$UIMultiAnimDropdown_AnimState.Closed;
-	this.currentMainPart = null;
 	this.status = bh_ui_StandardUIElementStates.SUINormal;
 	this.builder = builder;
 	this.root = new h2d_Object();
 	this.items = items;
-	var inputParams = new haxe_ds_StringMap();
+	var _g = new haxe_ds_StringMap();
+	_g.h["status"] = "normal";
+	_g.h["panel"] = "closed";
+	var inputParams = _g;
 	if(builder.extraParams != null) {
 		var h = builder.extraParams.h;
 		var _g_h = h;
@@ -33760,20 +33697,21 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 			inputParams.h[key1] = value;
 		}
 	}
-	this.mainPartImages = this.builder.builder.buildWithComboParameters(builder.name,inputParams,["status","panel"],{ callback : $bind(this,this.callback)});
-	if(this.mainPartImages == null) {
-		throw haxe_Exception.thrown("could not build combo #" + builder.name);
-	}
+	this.result = this.builder.builder.buildWithParameters(builder.name,inputParams,{ callback : $bind(this,this.callback)},null,true);
+	this.transitionTimerBase = this.result.rootSettings.getFloatOrDefault("transitionTimer",1.0);
+	this.root.addChild(this.result.object);
+	var updatable = this.result.getUpdatable("panelPoint");
 	this.panelStatus = bh_ui__$UIMultiAnimDropdown_AnimState.Closed;
 	this.panel = builtPanel;
 	this.panelObject = this.panel.getObject();
 	this.panelObject.set_visible(false);
+	updatable.setObject(new bh_base_PositionLinkObject(this.panelObject));
 	this.panel.onItemChanged = $bind(this,this.onPanelItemChanged);
 	this.set_currentItemIndex(initialIndex);
 };
 $hxClasses["bh.ui.UIStandardMultiAnimDropdown"] = bh_ui_UIStandardMultiAnimDropdown;
 bh_ui_UIStandardMultiAnimDropdown.__name__ = "bh.ui.UIStandardMultiAnimDropdown";
-bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimDropdown.createWithPrebuiltPanel = function(builder,panel,items,initialIndex) {
 	if(initialIndex == null) {
 		initialIndex = 0;
@@ -33783,7 +33721,8 @@ bh_ui_UIStandardMultiAnimDropdown.createWithPrebuiltPanel = function(builder,pan
 bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	clear: function() {
 		this.items = [];
-		this.currentMainPart = null;
+		this.panelScreen = null;
+		this.panelLayer = null;
 	}
 	,getCursor: function() {
 		if(this.disabled) {
@@ -33797,15 +33736,14 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		}
 		if(this.currentItemIndex != value) {
 			this.currentItemIndex = value;
-			this.requestRedraw = true;
-			this.mainPartImages.updateAllText("selectedName",this.items[this.currentItemIndex].name);
+			this.result.getUpdatable("selectedName").updateText(this.items[this.currentItemIndex].name);
 		}
 		return value;
 	}
 	,set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
-			this.requestRedraw = true;
+			this.result.setParameter("status",value ? "disabled" : bh_ui_UIElement_standardUIElementStatusToString(this.status));
 		}
 		return value;
 	}
@@ -33944,44 +33882,12 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 			break;
 		}
 	}
-	,doRedraw: function() {
-		this.requestRedraw = false;
-		if(this.currentMainPart != null) {
-			var _this = this.currentMainPart;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		var pStatus;
-		switch(this.panelStatus._hx_index) {
-		case 0:
-			pStatus = "open";
-			break;
-		case 1:
-			pStatus = "closed";
-			break;
-		case 2:
-			pStatus = "open";
-			break;
-		case 3:
-			pStatus = "closed";
-			break;
-		}
-		var statusStr = this.disabled ? "disabled" : bh_ui_UIElement_standardUIElementStatusToString(this.status);
-		var currentResult = this.mainPartImages.findResultByCombo(statusStr,pStatus);
-		var updatable = currentResult.getUpdatable("panelPoint");
-		var tmp = this.transitionTimerOverride;
-		this.transitionTimer = tmp != null ? tmp : currentResult.rootSettings.getFloatOrDefault("transitionTimer",1.0);
-		this.currentMainPart = currentResult.object;
-		this.root.addChild(this.currentMainPart);
-		if(this.panelObject != null) {
-			updatable.setObject(new bh_base_PositionLinkObject(this.panelObject));
-		}
-	}
 	,set_status: function(value) {
 		if(this.status != value) {
 			this.status = value;
-			this.requestRedraw = true;
+			if(!this.disabled) {
+				this.result.setParameter("status",bh_ui_UIElement_standardUIElementStatusToString(value));
+			}
 		}
 		return value;
 	}
@@ -33992,20 +33898,26 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		this.panel.set_currentHoverIndex(-1);
 		this.panel.set_currentItemIndex(this.currentItemIndex);
 		this.panel.set_currentPressedIndex(-1);
+		var tmp = this.transitionTimerOverride;
+		var effectiveTimer = tmp != null ? tmp : this.transitionTimerBase;
 		this.panelObject.set_visible(true);
 		this.panelObject.alpha = 0;
 		this.panelStatus = bh_ui__$UIMultiAnimDropdown_AnimState.Opening;
-		this.timer = this.transitionTimer;
+		this.timer = effectiveTimer;
 		this.timerTotal = this.timer;
+		this.result.setParameter("panel","open");
 	}
 	,startClose: function() {
 		if(this.panelObject == null) {
 			return;
 		}
+		var tmp = this.transitionTimerOverride;
+		var effectiveTimer = tmp != null ? tmp : this.transitionTimerBase;
 		this.panelObject.alpha = 1.0;
 		this.panelStatus = bh_ui__$UIMultiAnimDropdown_AnimState.Closing;
-		this.timer = this.transitionTimer;
+		this.timer = effectiveTimer;
 		this.timerTotal = this.timer;
+		this.result.setParameter("panel","closed");
 	}
 	,update: function(dt) {
 		this.panel.update(dt);
@@ -34084,6 +33996,8 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		if(!updateMode && this.root.parent == null) {
 			screen.addObjectToLayer(this.root,requestedLayer);
 		}
+		this.panelScreen = screen;
+		this.panelLayer = requestedLayer;
 		var higherLayer = screen.getHigherLayer(requestedLayer);
 		screen.addObjectToLayer(this.panel.getObject(),higherLayer);
 		return bh_ui_UIElementCustomAddToLayerResult.Added;
@@ -34320,9 +34234,6 @@ var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollba
 	this.lastClickIndex = -1;
 	this.lastClick = 0.;
 	this.hoverMode = false;
-	this.pressedItem = null;
-	this.hoverItem = null;
-	this.selectedItem = null;
 	this.currentPressedIndex = -1;
 	this.currentHoverIndex = -1;
 	this.currentItemIndex = 0;
@@ -34337,7 +34248,6 @@ var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollba
 	this.keyScrollingDown = false;
 	this.keyScrollingUp = false;
 	this.disabled = false;
-	this.requestRedraw = true;
 	this.interactives = [];
 	this.scrollbarResult = null;
 	this.scrollbar = null;
@@ -34364,7 +34274,7 @@ var bh_ui_UIMultiAnimScrollableList = function(panelBuilder,itemBuilder,scrollba
 };
 $hxClasses["bh.ui.UIMultiAnimScrollableList"] = bh_ui_UIMultiAnimScrollableList;
 bh_ui_UIMultiAnimScrollableList.__name__ = "bh.ui.UIMultiAnimScrollableList";
-bh_ui_UIMultiAnimScrollableList.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementListValue,bh_ui_UIElementUpdatable,bh_ui_UIElementSyncRedraw,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIMultiAnimScrollableList.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementListValue,bh_ui_UIElementUpdatable,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIMultiAnimScrollableList.create = function(builder,itemBuilder,scrollbarBuilder,scrollbarInPanelName,width,height,items,topClearance,initialIndex,panelSizeMode) {
 	return new bh_ui_UIMultiAnimScrollableList(builder,itemBuilder,scrollbarBuilder,scrollbarInPanelName,width,height,items,topClearance,initialIndex,panelSizeMode);
 };
@@ -34373,10 +34283,9 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		if(items.length == 0) {
 			return 0;
 		}
-		var sampleItem = this.itemBuilder.buildItem(0,items[0],this.width,this.maxHeight);
-		var result = this.getBuiltItem(sampleItem,"normal",false,items[0].disabled == true);
-		var singleHeight = result.rootSettings.getFloatOrException("height");
-		var _this = result.object;
+		var sampleResult = this.itemBuilder.buildItem(0,items[0],this.width,this.maxHeight);
+		var singleHeight = sampleResult.rootSettings.getFloatOrException("height");
+		var _this = sampleResult.object;
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
 		}
@@ -34385,9 +34294,6 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		return (totalItemsHeight > b ? b : totalItemsHeight) | 0;
 	}
 	,clear: function() {
-		this.selectedItem = null;
-		this.hoverItem = null;
-		this.pressedItem = null;
 		this.scrollbar = null;
 		this.scrollbarResult = null;
 		this.interactives = [];
@@ -34419,7 +34325,6 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		this.mask.set_scrollY(0);
 		this.buildItems();
 		this.set_currentItemIndex(newItems.length > 0 ? selectedIndex : -1);
-		this.requestRedraw = true;
 	}
 	,buildPanel: function() {
 		var builtPanel = this.panelBuilder.builder;
@@ -34435,9 +34340,6 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		this.root.addChild(builtPanel2.object);
 		return builtPanel2;
 	}
-	,getBuiltItem: function(multi,state,selected,disabled) {
-		return multi.findResultByCombo(state,selected,disabled);
-	}
 	,buildItems: function() {
 		this.mask.removeChildren();
 		this.displayItems.h = { };
@@ -34450,10 +34352,9 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			var _g_key = _g_current++;
 			var index = _g_key;
 			var value = _g_value;
-			var builtMultiItem = this.itemBuilder.buildItem(index,value,this.width,this.height);
-			var result = this.getBuiltItem(builtMultiItem,"normal",false,value.disabled == true);
-			var height = result.rootSettings.getFloatOrException("height");
-			this.displayItems.h[index] = builtMultiItem;
+			var result = this.itemBuilder.buildItem(index,value,this.width,this.height);
+			var itemHeight = result.rootSettings.getFloatOrException("height");
+			this.displayItems.h[index] = result;
 			this.itemYPositions.h[index] = y;
 			this.mask.addChild(result.object);
 			var _this = result.object;
@@ -34461,7 +34362,7 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			_this.x = 0;
 			_this.posChanged = true;
 			_this.y = y;
-			y += height;
+			y += itemHeight;
 			this.interactives = this.interactives.concat(result.interactives);
 		}
 		this.totalHeight = y;
@@ -34554,71 +34455,16 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			throw haxe_Exception.thrown("Draggable objects are not supported in scrollable lists");
 		}
 	}
-	,doRedraw: function() {
-		this.requestRedraw = false;
-		if(this.hoverItem != null) {
-			var _this = this.hoverItem;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
+	,setItemStatus: function(index,status) {
+		var item = this.displayItems.h[index];
+		if(item != null) {
+			item.setParameter("status",status);
 		}
-		if(this.selectedItem != null) {
-			var _this = this.selectedItem;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		if(this.pressedItem != null) {
-			var _this = this.pressedItem;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		if(this.disabled) {
-			if(this.currentItemIndex != -1) {
-				var builtMultiItem = this.displayItems.h[this.currentItemIndex];
-				this.selectedItem = this.getBuiltItem(builtMultiItem,"normal",true,true).object;
-				this.mask.addChild(this.selectedItem);
-				var _this = this.selectedItem;
-				var v = this.itemYPositions.h[this.currentItemIndex];
-				_this.posChanged = true;
-				_this.y = v;
-			}
-			return;
-		}
-		var stateName = "normal";
-		if(this.currentHoverIndex == this.currentItemIndex) {
-			stateName = "hover";
-		}
-		if(this.currentPressedIndex == this.currentItemIndex) {
-			stateName = "pressed";
-		}
-		var builtMultiItem = this.displayItems.h[this.currentItemIndex];
-		if(this.currentItemIndex != -1) {
-			this.selectedItem = this.getBuiltItem(builtMultiItem,stateName,true,false).object;
-			this.mask.addChild(this.selectedItem);
-			var _this = this.selectedItem;
-			var v = this.itemYPositions.h[this.currentItemIndex];
-			_this.posChanged = true;
-			_this.y = v;
-		}
-		if(this.currentHoverIndex != -1) {
-			var builtMultiItem = this.displayItems.h[this.currentHoverIndex];
-			this.hoverItem = this.getBuiltItem(builtMultiItem,"hover",false,false).object;
-			this.mask.addChild(this.hoverItem);
-			var _this = this.hoverItem;
-			var v = this.itemYPositions.h[this.currentHoverIndex];
-			_this.posChanged = true;
-			_this.y = v;
-		}
-		if(this.currentPressedIndex != -1) {
-			var builtMultiItem = this.displayItems.h[this.currentPressedIndex];
-			this.pressedItem = this.getBuiltItem(builtMultiItem,"pressed",false,false).object;
-			this.mask.addChild(this.pressedItem);
-			var _this = this.pressedItem;
-			var v = this.itemYPositions.h[this.currentPressedIndex];
-			_this.posChanged = true;
-			_this.y = v;
+	}
+	,setItemSelected: function(index,selected) {
+		var item = this.displayItems.h[index];
+		if(item != null) {
+			item.setParameter("selected",selected ? "true" : "false");
 		}
 	}
 	,set_disabled: function(value) {
@@ -34631,7 +34477,6 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			} else {
 				this.root.alpha = 1.0;
 			}
-			this.requestRedraw = true;
 		}
 		return value;
 	}
@@ -34655,7 +34500,6 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 						wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIDoubleClickItem(newIndex,this.items),this);
 					}
 					this.hoverMode = false;
-					this.requestRedraw = true;
 					this.set_currentPressedIndex(newIndex);
 				}
 			}
@@ -34725,8 +34569,13 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			throw haxe_Exception.thrown("currentPressedIndex " + value + " is out of bounds [-1.." + this.items.length + "].");
 		}
 		if(this.currentPressedIndex != value) {
+			if(this.currentPressedIndex != -1) {
+				this.setItemStatus(this.currentPressedIndex,"normal");
+			}
 			this.currentPressedIndex = value;
-			this.requestRedraw = true;
+			if(value != -1) {
+				this.setItemStatus(value,"pressed");
+			}
 		}
 		return value;
 	}
@@ -34735,8 +34584,13 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			throw haxe_Exception.thrown("currentHoverIndex " + value + " is out of bounds [-1.." + this.items.length + "].");
 		}
 		if(this.currentHoverIndex != value) {
+			if(this.currentHoverIndex != -1) {
+				this.setItemStatus(this.currentHoverIndex,"normal");
+			}
 			this.currentHoverIndex = value;
-			this.requestRedraw = true;
+			if(value != -1) {
+				this.setItemStatus(value,"hover");
+			}
 		}
 		return value;
 	}
@@ -34745,8 +34599,13 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			throw haxe_Exception.thrown("currentItemIndex " + value + " is out of bounds [0.." + this.items.length + "].");
 		}
 		if(this.currentItemIndex != value) {
+			if(this.currentItemIndex != -1) {
+				this.setItemSelected(this.currentItemIndex,false);
+			}
 			this.currentItemIndex = value;
-			this.requestRedraw = true;
+			if(value != -1) {
+				this.setItemSelected(value,true);
+			}
 		}
 		return value;
 	}
@@ -36811,7 +36670,6 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
-			haxe_Log.trace(e,{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 262, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 			this.loader.clearCache();
 			this.builders = oldBuilders;
 			if(throwOnError) {
@@ -36852,7 +36710,6 @@ bh_ui_screens_ScreenManager.prototype = {
 				var this1 = this.failedScreens;
 				var v = e.toString();
 				this1.h[name] = v;
-				haxe_Log.trace("Failed to reload screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 320, className : "bh.ui.screens.ScreenManager", methodName : "reload"});
 				return { success : false, error : e.toString(), file : null, line : null, col : null};
 			}
 			reloadedScreenNames.push(name);
@@ -36876,7 +36733,6 @@ bh_ui_screens_ScreenManager.prototype = {
 			var this1 = this.failedScreens;
 			var v = e.toString();
 			this1.h[name] = v;
-			haxe_Log.trace("Failed to load screen " + name + ": " + Std.string(e),{ fileName : "../hx-multianim/src/bh/ui/screens/ScreenManager.hx", lineNumber : 362, className : "bh.ui.screens.ScreenManager", methodName : "addScreen"});
 		}
 		return screen;
 	}
@@ -106898,7 +106754,19 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 	,_updateExpressions: function() {
 		this._e1.set_text(this._name);
 		this._e2.set_text(Std.string("Lv." + this._level));
+		var c = -48060;
+		if(c >>> 24 == 0) {
+			c |= -16777216;
+		}
+		var tile = h2d_Tile.fromColor(c,this._hp * 100 / this._maxHp | 0 | 0,6);
+		this._e4.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e5.set_text(Std.string(this._hp + "/" + this._maxHp));
+		var c = -12285748;
+		if(c >>> 24 == 0) {
+			c |= -16777216;
+		}
+		var tile = h2d_Tile.fromColor(c,this._mp * 100 / this._maxMp | 0 | 0,6);
+		this._e7.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e8.set_text(Std.string(this._mp + "/" + this._maxMp));
 	}
 	,setHp: function(v) {
@@ -107073,6 +106941,12 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 	_applyVisibility: function() {
 	}
 	,_updateExpressions: function() {
+		var c = this._color;
+		if(c >>> 24 == 0) {
+			c |= -16777216;
+		}
+		var tile = h2d_Tile.fromColor(c,30,12);
+		this._e0.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e1.set_text(Std.string(this._value));
 	}
 	,setValue: function(v) {
@@ -107083,6 +106957,7 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 	,setColor: function(v) {
 		this._color = v;
 		this._applyVisibility();
+		this._updateExpressions();
 	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfSimpleInstance
 });

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Floating Text Demo
 // AnimatedPath-driven floating text for damage numbers, heal text, status effects, etc.

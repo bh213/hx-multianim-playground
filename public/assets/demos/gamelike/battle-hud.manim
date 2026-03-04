@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Battle HUD — 3 visual styles, same parameter interface
 // Demonstrates that UI can change considerably without changing the driving code

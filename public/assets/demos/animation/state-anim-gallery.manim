@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Tab 1: State Animation Gallery
 // Shows all animations organized by .anim file, highlighting the state selector concept

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Transition Declarations Demo
 // Animate parameter changes with transition {} blocks in programmables.

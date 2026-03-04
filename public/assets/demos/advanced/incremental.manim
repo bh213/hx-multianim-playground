@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Incremental Updates Demo
 // Build once, update live via setParameter() without rebuild

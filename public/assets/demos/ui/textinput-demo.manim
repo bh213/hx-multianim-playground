@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Text Input Demo
 // Shows text input variants, input filters, and tab navigation between fields.

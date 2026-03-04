@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Color Picker Dialog
 // Modal dialog with R/G/B sliders, live color preview, hex display, and preset colors.

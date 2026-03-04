@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 #repeatableControls programmable() {
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0

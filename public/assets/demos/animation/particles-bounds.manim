@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Particles Demo — Bounds & Collision
 // New bounds: combined syntax with box() and line()

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 #titleBar programmable(title="Demo") {
     ninepatch("ui", "Window_3x3_idle", 1280, 40): 0,0

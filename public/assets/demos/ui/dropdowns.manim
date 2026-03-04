@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Dropdowns Demo
 // Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).

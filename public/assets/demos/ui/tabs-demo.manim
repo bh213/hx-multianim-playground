@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Tabs Demo
 // Shows tab bars with content switching, disabled tabs, and custom sizes.

@@ -1,4 +1,4 @@
-version: 0.5
+version: 1.0
 
 // Combo States Demo
 // Shows @if, @else, @default conditional patterns

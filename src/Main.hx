@@ -93,9 +93,9 @@ class Main extends hxd.App {
 		final toIdx = SCREEN_ORDER.indexOf(screenName);
 		final goingDown = toIdx > fromIdx;
 		final transition = if (goingDown)
-			bh.ui.screens.ScreenTransition.SlideDown(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic)
+			bh.ui.screens.ScreenTransition.SlideUp(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic)
 		else
-			bh.ui.screens.ScreenTransition.SlideUp(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic);
+			bh.ui.screens.ScreenTransition.SlideDown(0.25, bh.multianim.MultiAnimParser.EasingType.EaseOutCubic);
 
 		currentScreenName = screenName;
 

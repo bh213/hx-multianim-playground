@@ -1504,6 +1504,11 @@ Main.prototype = $extend(hxd_App.prototype,{
 			this.screenManager.switchTo(this.screenManager.getScreen(screenName),transition);
 		} else {
 			var targetScreen = this.screenManager.getScreen(screenName);
+			targetScreen.clear();
+			if(((targetScreen) instanceof DemoScreenBase)) {
+				var demo = targetScreen;
+				demo.load();
+			}
 			var masterScreen = js_Boot.__cast(this.screenManager.getScreen("demoMaster") , DemoMasterScreen);
 			if(((targetScreen) instanceof DemoScreenBase)) {
 				var demo = targetScreen;
@@ -1604,6 +1609,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("dialogue",new screens_gamelike_DialogueDemoScreen(this.screenManager));
 		this.screenManager.addScreen("statusEffects",new screens_gamelike_StatusEffectsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("cards",new screens_gamelike_CardsDemoScreen(this.screenManager));
+		this.screenManager.addScreen("gridComponent",new screens_gamelike_GridDemoScreen(this.screenManager));
 		this.screenManager.addScreen("incremental",new screens_advanced_IncrementalDemoScreen(this.screenManager));
 		this.screenManager.addScreen("interactives",new screens_advanced_InteractivesDemoScreen(this.screenManager));
 		this.screenManager.addScreen("conditionals",new screens_advanced_ConditionalsDemoScreen(this.screenManager));
@@ -1638,7 +1644,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 415, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 422, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -3360,8 +3366,55 @@ var bh_base_Hex = function(q,r,s) {
 };
 $hxClasses["bh.base.Hex"] = bh_base_Hex;
 bh_base_Hex.__name__ = "bh.base.Hex";
+bh_base_Hex.cubeRing = function(radius,direction) {
+	var results = [];
+	var a = bh_base_GridDirection.directions[direction];
+	var cube = new bh_base_Hex(a.q * radius,a.r * radius,a.s * radius);
+	var _g = 0;
+	var _g1 = bh_base_GridDirection.allDirections();
+	while(_g < _g1.length) {
+		var i = _g1[_g];
+		++_g;
+		var _g2 = 0;
+		var _g3 = radius;
+		while(_g2 < _g3) {
+			var j = _g2++;
+			results.push(bh_base_RelativeHex.fromRelativeHex(cube));
+			var b = bh_base_GridDirection.directions[i];
+			cube = new bh_base_Hex(cube.q + b.q,cube.r + b.r,cube.s + b.s);
+		}
+	}
+	return results;
+};
+bh_base_Hex.createRange = function(range) {
+	var hexes = [bh_base_RelativeHex.fromRelativeHex(new bh_base_Hex(0,0,0))];
+	var _g = 1;
+	var _g1 = range + 1;
+	while(_g < _g1) {
+		var i = _g++;
+		hexes = hexes.concat(bh_base_Hex.cubeRing(i,4));
+	}
+	return hexes;
+};
+bh_base_Hex.$length = function(hex) {
+	return (Math.abs(hex.q) + Math.abs(hex.r) + Math.abs(hex.s)) / 2 | 0;
+};
+bh_base_Hex.distance = function(a,b) {
+	return bh_base_Hex.$length(new bh_base_Hex(a.q - b.q,a.r - b.r,a.s - b.s));
+};
 bh_base_Hex.prototype = {
 	__class__: bh_base_Hex
+};
+var bh_base_GridDirection = {};
+bh_base_GridDirection.allDirections = function() {
+	return bh_base_GridDirection.allEnumDirections;
+};
+var bh_base_RelativeHex = {};
+bh_base_RelativeHex.fromRelativeHex = function(hex) {
+	return hex;
+};
+bh_base_RelativeHex.toHex = function(this1,origin) {
+	return new bh_base_Hex(origin.q + this1.q,origin.r + this1.r,origin.s + this1.s);
 };
 var bh_base_FractionalHex = function(q,r,s) {
 	this.q = q;
@@ -6005,10 +6058,10 @@ bh_base_CachingResourceLoader.__name__ = "bh.base.CachingResourceLoader";
 bh_base_CachingResourceLoader.__interfaces__ = [bh_base_ResourceLoader];
 bh_base_CachingResourceLoader.prototype = {
 	loadSheet2Impl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 56, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 70, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
 	}
 	,loadSheetImpl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 60, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 74, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
 	}
 	,loadTileImpl: function(filename) {
 		var res = this.loadHXDResourceImpl(filename);
@@ -6018,16 +6071,16 @@ bh_base_CachingResourceLoader.prototype = {
 		return res.toTile();
 	}
 	,loadMultiAnimImpl: function(name) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 70, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 84, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
 	}
 	,loadHXDResourceImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 74, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 88, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
 	}
 	,loadFontImpl: function(font) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 78, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 92, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
 	}
 	,loadAnimSMImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 82, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 96, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
 	}
 	,cachedGet: function(cache,cacheKey,get) {
 		var value = cache.get(cacheKey);
@@ -16739,11 +16792,13 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	}
 	,setParameter: function(name,value) {
 		var paramDef = this.getParamDefinition(name);
+		var paramType = paramDef != null ? paramDef.type : null;
 		var tmp;
-		if(paramDef != null) {
-			var _g = paramDef.type;
-			if(_g._hx_index == 2) {
-				var _g1 = _g.bits;
+		if(paramType != null) {
+			if(paramType == null) {
+				tmp = false;
+			} else if(paramType._hx_index == 2) {
+				var _g = paramType.bits;
 				tmp = true;
 			} else {
 				tmp = false;
@@ -16753,7 +16808,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		}
 		if(tmp) {
 			var this1 = this.indexedParams;
-			var value1 = bh_multianim_MultiAnimParser.dynamicValueToIndex(name,paramDef.type,value,function(s) {
+			var value1 = bh_multianim_MultiAnimParser.dynamicValueToIndex(name,paramType,value,function(s) {
 				throw haxe_Exception.thrown(s);
 			});
 			this1.h[name] = value1;
@@ -19422,7 +19477,19 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		switch(tileSource._hx_index) {
 		case 0:
 			var filename = tileSource.filename;
-			tile = this.resourceLoader.loadTile(this.resolveAsString(filename));
+			var resolved = this.resolveAsString(filename);
+			if(resolved == null || resolved.length == 0) {
+				if(this.incrementalMode) {
+					if(bh_multianim_MultiAnimBuilder.incrementalFallbackTile == null) {
+						bh_multianim_MultiAnimBuilder.incrementalFallbackTile = h2d_Tile.fromColor(0,1,1,0.0);
+					}
+					tile = bh_multianim_MultiAnimBuilder.incrementalFallbackTile.clone();
+				} else {
+					throw haxe_Exception.thrown("TSFile: empty filename");
+				}
+			} else {
+				tile = this.resourceLoader.loadTile(resolved);
+			}
 			break;
 		case 1:
 			var sheet = tileSource.sheet;
@@ -31101,11 +31168,20 @@ bh_ui_UICardHandHelper.prototype = {
 	,getCardCount: function() {
 		return this.cards.length;
 	}
+	,registerTargetInteractive: function(wrapper) {
+		this.targeting.registerTarget(wrapper);
+	}
 	,registerTargetInteractives: function(wrappers) {
 		this.targeting.registerTargets(wrappers);
 	}
+	,unregisterTargetInteractive: function(id) {
+		this.targeting.unregisterTarget(id);
+	}
 	,setTargetHighlightCallback: function(cb) {
 		this.targeting.onTargetHighlight = cb;
+	}
+	,setTargetAcceptsFilter: function(cb) {
+		this.targeting.acceptsFilter = cb;
 	}
 	,setArrowVisible: function(visible) {
 		this.targeting.arrowEnabled = visible;
@@ -32161,6 +32237,16 @@ bh_ui_UICardHandTargeting.prototype = {
 			var w = wrappers[_g];
 			++_g;
 			this.registerTarget(w);
+		}
+	}
+	,unregisterTarget: function(id) {
+		var i = 0;
+		while(i < this.targets.length) {
+			if(this.targets[i].id == id) {
+				this.targets.splice(i,1);
+				return;
+			}
+			++i;
 		}
 	}
 	,clearTargets: function() {
@@ -33265,10 +33351,31 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 					this.addDropZoneFromSlot(baseName + "_" + index,entry.handle,accepts);
 				}
 				break;
+			case 2:
+				var name2 = _g2.name;
+				var indexX = _g2.indexX;
+				var indexY = _g2.indexY;
+				if(name2 == baseName) {
+					this.addDropZoneFromSlot("" + baseName + "_" + indexX + "_" + indexY,entry.handle,accepts);
+				}
+				break;
 			default:
 			}
 		}
 		return this;
+	}
+	,removeDropZone: function(id) {
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.dropZones;
+		while(_g1 < _g2.length) {
+			var v = _g2[_g1];
+			++_g1;
+			if(v.id != id) {
+				_g.push(v);
+			}
+		}
+		this.dropZones = _g;
 	}
 	,setReturnAnimPath: function(builder,name) {
 		this.returnPathFactory = function(from,to) {
@@ -34004,6 +34111,809 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	}
 	,__class__: bh_ui_UIStandardMultiAnimDropdown
 };
+var bh_ui__$UIMultiAnimGrid_CellEntry = function(coord,result,data,buildName) {
+	this.coord = coord;
+	this.result = result;
+	this.data = data;
+	this.buildName = buildName;
+};
+$hxClasses["bh.ui._UIMultiAnimGrid.CellEntry"] = bh_ui__$UIMultiAnimGrid_CellEntry;
+bh_ui__$UIMultiAnimGrid_CellEntry.__name__ = "bh.ui._UIMultiAnimGrid.CellEntry";
+bh_ui__$UIMultiAnimGrid_CellEntry.prototype = {
+	__class__: bh_ui__$UIMultiAnimGrid_CellEntry
+};
+var bh_ui_UIMultiAnimGrid = function(builder,config) {
+	this.onCellBuilt = null;
+	this.onGridEvent = null;
+	this.cardTargetWrappers = new haxe_ds_StringMap();
+	this.cardTargetInteractives = new haxe_ds_StringMap();
+	this.registeredCardHands = [];
+	this.activeHighlightedCells = [];
+	this.registeredDraggables = [];
+	this.hoveredCell = null;
+	this.cells = new haxe_ds_StringMap();
+	this.builder = builder;
+	this.gridType = config.gridType;
+	this.defaultBuildName = config.cellBuildName;
+	this.cellBuildDelegate = config.cellBuildDelegate;
+	this.highlightParam = config.highlightParam != null ? config.highlightParam : "highlight";
+	this.statusParam = config.statusParam != null ? config.statusParam : "status";
+	this.snapPathName = config.snapPathName;
+	this.returnPathName = config.returnPathName;
+	this.root = new h2d_Object();
+	var _this = this.root;
+	_this.posChanged = true;
+	_this.x = config.originX != null ? config.originX : 0;
+	_this.posChanged = true;
+	_this.y = config.originY != null ? config.originY : 0;
+	this.instanceId = bh_ui_UIMultiAnimGrid.instanceCounter++;
+	var _g = this.gridType;
+	switch(_g._hx_index) {
+	case 0:
+		var w = _g.cellWidth;
+		var h = _g.cellHeight;
+		var gap = _g.gap;
+		this.rectCellW = w;
+		this.rectCellH = h;
+		this.rectGap = gap != null ? gap : 0;
+		this.hexLayout = null;
+		break;
+	case 1:
+		var orientation = _g.orientation;
+		var sx = _g.sizeX;
+		var sy = _g.sizeY;
+		this.hexLayout = bh_base_HexLayout.createFromFloats(orientation,sx,sy);
+		this.rectCellW = 0;
+		this.rectCellH = 0;
+		this.rectGap = 0;
+		break;
+	}
+};
+$hxClasses["bh.ui.UIMultiAnimGrid"] = bh_ui_UIMultiAnimGrid;
+bh_ui_UIMultiAnimGrid.__name__ = "bh.ui.UIMultiAnimGrid";
+bh_ui_UIMultiAnimGrid.cellCoordsEqual = function(a,b) {
+	if(a == null && b == null) {
+		return true;
+	}
+	if(a == null || b == null) {
+		return false;
+	}
+	if(a.col == b.col) {
+		return a.row == b.row;
+	} else {
+		return false;
+	}
+};
+bh_ui_UIMultiAnimGrid.prototype = {
+	addCell: function(col,row,data,params) {
+		var key = "" + col + "_" + row;
+		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
+			return;
+		}
+		var coord = new bh_ui_CellCoord(col,row);
+		var entry = this.buildCell(coord,data,params);
+		this.cells.h[key] = entry;
+		this.root.addChild(entry.result.object);
+		this.positionCell(entry);
+		if(this.onCellBuilt != null) {
+			this.onCellBuilt(coord,entry.result);
+		}
+		this.refreshAllDraggableZones();
+		this.refreshAllCardTargets();
+	}
+	,removeCell: function(col,row) {
+		var key = "" + col + "_" + row;
+		var entry = this.cells.h[key];
+		if(entry == null) {
+			return;
+		}
+		var _this = entry.result.object;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		var _this = this.cells;
+		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
+			delete(_this.h[key]);
+		}
+		if(this.hoveredCell != null && this.hoveredCell.col == col && this.hoveredCell.row == row) {
+			this.hoveredCell = null;
+		}
+		this.refreshAllDraggableZones();
+		this.refreshAllCardTargets();
+	}
+	,addRectRegion: function(cols,rows) {
+		var _g = 0;
+		var _g1 = rows;
+		while(_g < _g1) {
+			var row = _g++;
+			var _g2 = 0;
+			var _g3 = cols;
+			while(_g2 < _g3) {
+				var col = _g2++;
+				if(!Object.prototype.hasOwnProperty.call(this.cells.h,"" + col + "_" + row)) {
+					this.addCellInternal(col,row,null,null);
+				}
+			}
+		}
+		this.refreshAllDraggableZones();
+		this.refreshAllCardTargets();
+	}
+	,addHexRegion: function(centerCol,centerRow,radius) {
+		var centerHex = new bh_base_Hex(centerCol,centerRow,-centerCol - centerRow);
+		var range = bh_base_Hex.createRange(radius);
+		var _g = 0;
+		while(_g < range.length) {
+			var relHex = range[_g];
+			++_g;
+			var absHex = bh_base_RelativeHex.toHex(relHex,centerHex);
+			if(!Object.prototype.hasOwnProperty.call(this.cells.h,"" + absHex.q + "_" + absHex.r)) {
+				this.addCellInternal(absHex.q,absHex.r,null,null);
+			}
+		}
+		this.refreshAllDraggableZones();
+		this.refreshAllCardTargets();
+	}
+	,set: function(col,row,data,params) {
+		var entry = this.getEntry(col,row);
+		var oldData = entry.data;
+		entry.data = data;
+		if(params != null) {
+			entry.result.beginUpdate();
+			var h = params.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				entry.result.setParameter(key1,value);
+			}
+			entry.result.endUpdate();
+		}
+		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,data));
+	}
+	,clear: function(col,row) {
+		var entry = this.getEntry(col,row);
+		var oldData = entry.data;
+		entry.data = null;
+		entry.result.beginUpdate();
+		entry.result.setParameter(this.highlightParam,false);
+		entry.result.setParameter(this.statusParam,"normal");
+		entry.result.endUpdate();
+		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,null));
+	}
+	,isOccupied: function(col,row) {
+		var entry = this.cells.h["" + col + "_" + row];
+		if(entry != null) {
+			return entry.data != null;
+		} else {
+			return false;
+		}
+	}
+	,forEach: function(fn) {
+		var h = this.cells.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			fn(entry.coord.col,entry.coord.row,entry.data);
+		}
+	}
+	,getCellResult: function(col,row) {
+		var entry = this.cells.h["" + col + "_" + row];
+		if(entry != null) {
+			return entry.result;
+		} else {
+			return null;
+		}
+	}
+	,cellAtPoint: function(sceneX,sceneY) {
+		var x = sceneX;
+		var y = sceneY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var local = this.root.globalToLocal(new h2d_col_PointImpl(x,y));
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.cellWidth;
+			var _g1 = _g.cellHeight;
+			var _g1 = _g.gap;
+			return this.hitTestRect(local.x,local.y);
+		case 1:
+			var _g1 = _g.orientation;
+			var _g1 = _g.sizeX;
+			var _g1 = _g.sizeY;
+			return this.hitTestHex(local.x,local.y);
+		}
+	}
+	,cellPosition: function(col,row) {
+		var local = this.getCellLocalPosition(new bh_ui_CellCoord(col,row));
+		var x = local.x;
+		var y = local.y;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var global = this.root.localToGlobal(new h2d_col_PointImpl(x,y));
+		return new bh_base_FPoint(global.x,global.y);
+	}
+	,distance: function(c1,r1,c2,r2) {
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.cellWidth;
+			var _g1 = _g.cellHeight;
+			var _g1 = _g.gap;
+			var v = c2 - c1;
+			var v1 = r2 - r1;
+			return (v < 0 ? -v : v) + (v1 < 0 ? -v1 : v1);
+		case 1:
+			var _g1 = _g.orientation;
+			var _g1 = _g.sizeX;
+			var _g1 = _g.sizeY;
+			return bh_base_Hex.distance(new bh_base_Hex(c1,r1,-c1 - r1),new bh_base_Hex(c2,r2,-c2 - r2));
+		}
+	}
+	,onMouseMove: function(sceneX,sceneY) {
+		var hit = this.cellAtPoint(sceneX,sceneY);
+		if(!bh_ui_UIMultiAnimGrid.cellCoordsEqual(hit,this.hoveredCell)) {
+			if(this.hoveredCell != null) {
+				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
+				if(entry != null) {
+					entry.result.setParameter(this.statusParam,"normal");
+				}
+				this.emitEvent(bh_ui_GridEvent.CellHoverLeave(this.hoveredCell));
+			}
+			this.hoveredCell = hit;
+			if(this.hoveredCell != null) {
+				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
+				if(entry != null) {
+					entry.result.setParameter(this.statusParam,"hover");
+				}
+				this.emitEvent(bh_ui_GridEvent.CellHoverEnter(this.hoveredCell));
+			}
+		}
+		return this.hoveredCell != null;
+	}
+	,onMouseClick: function(sceneX,sceneY,button) {
+		var hit = this.cellAtPoint(sceneX,sceneY);
+		if(hit != null) {
+			this.emitEvent(bh_ui_GridEvent.CellClick(hit,button));
+			return true;
+		}
+		return false;
+	}
+	,acceptDrops: function(draggable,accepts) {
+		var binding = { draggable : draggable, accepts : accepts, zonePrefix : "grid" + this.instanceId};
+		this.registeredDraggables.push(binding);
+		this.createDropZonesForDraggable(binding);
+		this.wireHighlightCallbacks(binding);
+	}
+	,registerAsCardTarget: function(cardHand,accepts) {
+		var binding = { cardHand : cardHand, accepts : accepts};
+		this.registeredCardHands.push(binding);
+		this.createCardTargetsForBinding(binding);
+	}
+	,getObject: function() {
+		return this.root;
+	}
+	,dispose: function() {
+		var _g = 0;
+		var _g1 = this.registeredDraggables;
+		while(_g < _g1.length) {
+			var binding = _g1[_g];
+			++_g;
+			this.clearZonesForBinding(binding);
+		}
+		this.registeredDraggables.length = 0;
+		var _g = 0;
+		var _g1 = this.registeredCardHands;
+		while(_g < _g1.length) {
+			var binding = _g1[_g];
+			++_g;
+			this.clearCardTargetsForBinding(binding);
+		}
+		this.registeredCardHands.length = 0;
+		var _this = this.root;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
+		}
+		this.cells.h = Object.create(null);
+		this.hoveredCell = null;
+	}
+	,getEntry: function(col,row) {
+		var entry = this.cells.h["" + col + "_" + row];
+		if(entry == null) {
+			throw haxe_Exception.thrown("Cell (" + col + ", " + row + ") does not exist");
+		}
+		return entry;
+	}
+	,buildCell: function(coord,data,extraParams) {
+		var buildName = this.defaultBuildName;
+		var delegateParams = null;
+		if(this.cellBuildDelegate != null) {
+			var info = this.cellBuildDelegate(coord.col,coord.row,data);
+			if(info != null) {
+				if(info.buildName != null) {
+					buildName = info.buildName;
+				}
+				delegateParams = info.params;
+			}
+		}
+		var params = new haxe_ds_StringMap();
+		params.h["col"] = coord.col;
+		params.h["row"] = coord.row;
+		params.h[this.highlightParam] = false;
+		params.h[this.statusParam] = "normal";
+		if(delegateParams != null) {
+			var h = delegateParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				params.h[key1] = value;
+			}
+		}
+		if(extraParams != null) {
+			var h = extraParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				params.h[key1] = value;
+			}
+		}
+		var result = this.builder.buildWithParameters(buildName,params,null,null,true);
+		return new bh_ui__$UIMultiAnimGrid_CellEntry(coord,result,data,buildName);
+	}
+	,positionCell: function(entry) {
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var w = _g.cellWidth;
+			var h = _g.cellHeight;
+			var gap = _g.gap;
+			var g = gap != null ? gap : 0.0;
+			var _this = entry.result.object;
+			_this.posChanged = true;
+			_this.x = entry.coord.col * (w + g);
+			_this.posChanged = true;
+			_this.y = entry.coord.row * (h + g);
+			break;
+		case 1:
+			var _g1 = _g.orientation;
+			var _g1 = _g.sizeX;
+			var _g1 = _g.sizeY;
+			var col = entry.coord.col;
+			var row = entry.coord.row;
+			var hex = new bh_base_Hex(col,row,-col - row);
+			var p = this.hexLayout.hexToPixel(hex);
+			var _this = entry.result.object;
+			_this.posChanged = true;
+			_this.x = p.x;
+			_this.posChanged = true;
+			_this.y = p.y;
+			break;
+		}
+	}
+	,getCellLocalPosition: function(coord) {
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var w = _g.cellWidth;
+			var h = _g.cellHeight;
+			var gap = _g.gap;
+			var g = gap != null ? gap : 0.0;
+			return new bh_base_FPoint(coord.col * (w + g),coord.row * (h + g));
+		case 1:
+			var _g1 = _g.orientation;
+			var _g1 = _g.sizeX;
+			var _g1 = _g.sizeY;
+			var col = coord.col;
+			var row = coord.row;
+			var hex = new bh_base_Hex(col,row,-col - row);
+			var p = this.hexLayout.hexToPixel(hex);
+			return new bh_base_FPoint(p.x,p.y);
+		}
+	}
+	,addCellInternal: function(col,row,data,params) {
+		var key = "" + col + "_" + row;
+		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
+			return;
+		}
+		var coord = new bh_ui_CellCoord(col,row);
+		var entry = this.buildCell(coord,data,params);
+		this.cells.h[key] = entry;
+		this.root.addChild(entry.result.object);
+		this.positionCell(entry);
+		if(this.onCellBuilt != null) {
+			this.onCellBuilt(coord,entry.result);
+		}
+	}
+	,hitTestRect: function(localX,localY) {
+		var stride = this.rectCellW + this.rectGap;
+		var strideY = this.rectCellH + this.rectGap;
+		if(localX < 0 || localY < 0) {
+			return null;
+		}
+		var col = Math.floor(localX / stride);
+		var row = Math.floor(localY / strideY);
+		var cellLocalX = localX - col * stride;
+		var cellLocalY = localY - row * stride;
+		if(cellLocalX > this.rectCellW || cellLocalY > this.rectCellH) {
+			return null;
+		}
+		var key = "" + col + "_" + row;
+		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
+			return new bh_ui_CellCoord(col,row);
+		} else {
+			return null;
+		}
+	}
+	,hitTestHex: function(localX,localY) {
+		var x = localX;
+		var y = localY;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var fractional = this.hexLayout.pixelToHex(new h2d_col_PointImpl(x,y));
+		var hex = fractional.round();
+		var coord = new bh_ui_CellCoord(hex.q,hex.r);
+		var key = "" + coord.col + "_" + coord.row;
+		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
+			return coord;
+		} else {
+			return null;
+		}
+	}
+	,createDropZonesForDraggable: function(binding) {
+		var _gthis = this;
+		var h = this.cells.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			var coord = entry.coord;
+			var zoneId = "" + binding.zonePrefix + "_" + coord.col + "_" + coord.row;
+			var cellBounds = this.computeCellBounds(coord);
+			var snapPos = this.cellPosition(coord.col,coord.row);
+			var capturedCoord = [new bh_ui_CellCoord(coord.col,coord.row)];
+			binding.draggable.addDropZone(new bh_ui_DropZone(zoneId,cellBounds,null,snapPos.x,snapPos.y,binding.accepts != null ? (function(capturedCoord) {
+				return function(drag,zone) {
+					return binding.accepts(capturedCoord[0],drag);
+				};
+			})(capturedCoord) : null,null,(function(capturedCoord) {
+				return function() {
+					return _gthis.computeCellBounds(capturedCoord[0]);
+				};
+			})(capturedCoord),(function(capturedCoord) {
+				return function() {
+					var p = _gthis.cellPosition(capturedCoord[0].col,capturedCoord[0].row);
+					var x = p.x;
+					var y = p.y;
+					if(y == null) {
+						y = 0.;
+					}
+					if(x == null) {
+						x = 0.;
+					}
+					return new h2d_col_PointImpl(x,y);
+				};
+			})(capturedCoord),(function(capturedCoord) {
+				return function(zone,highlight) {
+					var e = _gthis.cells.h["" + capturedCoord[0].col + "_" + capturedCoord[0].row];
+					if(e != null) {
+						e.result.setParameter(_gthis.highlightParam,highlight);
+					}
+				};
+			})(capturedCoord)));
+		}
+	}
+	,wireHighlightCallbacks: function(binding) {
+		var _gthis = this;
+		var prevStart = binding.draggable.onDragStartHighlightZones;
+		binding.draggable.onDragStartHighlightZones = function(zones) {
+			if(prevStart != null) {
+				prevStart(zones);
+			}
+			var h = _gthis.cells.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var _ = _g_key;
+				var entry = _g_value;
+				var accepts = binding.accepts == null || binding.accepts(entry.coord,binding.draggable);
+				if(accepts) {
+					entry.result.setParameter(_gthis.highlightParam,true);
+					_gthis.activeHighlightedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
+				}
+			}
+		};
+		var prevEnd = binding.draggable.onDragEndHighlightZones;
+		binding.draggable.onDragEndHighlightZones = function(zones) {
+			if(prevEnd != null) {
+				prevEnd(zones);
+			}
+			var _g = 0;
+			var _g1 = _gthis.activeHighlightedCells;
+			while(_g < _g1.length) {
+				var cell = _g1[_g];
+				++_g;
+				var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
+				if(e != null) {
+					e.result.setParameter(_gthis.highlightParam,false);
+				}
+			}
+			_gthis.activeHighlightedCells = [];
+		};
+		var prevDrop = binding.draggable.onDragDrop;
+		binding.draggable.onDragDrop = function(result,wrapper) {
+			if(prevDrop != null && prevDrop(result,wrapper)) {
+				return true;
+			}
+			if(result.zone != null) {
+				var coord = _gthis.parseZoneId(result.zone.id,binding.zonePrefix);
+				if(coord != null) {
+					_gthis.emitEvent(bh_ui_GridEvent.CellDrop(coord,binding.draggable,null,null));
+					return true;
+				}
+			}
+			return false;
+		};
+	}
+	,clearZonesForBinding: function(binding) {
+		var prefix = binding.zonePrefix;
+		var h = this.cells.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			var zoneId = "" + prefix + "_" + entry.coord.col + "_" + entry.coord.row;
+			binding.draggable.removeDropZone(zoneId);
+		}
+	}
+	,refreshAllDraggableZones: function() {
+		var _g = 0;
+		var _g1 = this.registeredDraggables;
+		while(_g < _g1.length) {
+			var binding = _g1[_g];
+			++_g;
+			this.clearZonesForBinding(binding);
+			this.createDropZonesForDraggable(binding);
+		}
+	}
+	,computeCellBounds: function(coord) {
+		var local = this.getCellLocalPosition(coord);
+		var x = local.x;
+		var y = local.y;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var global = this.root.localToGlobal(new h2d_col_PointImpl(x,y));
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.gap;
+			var w = _g.cellWidth;
+			var h = _g.cellHeight;
+			var x0 = global.x;
+			var y0 = global.y;
+			var b = new h2d_col_Bounds();
+			b.xMin = x0;
+			b.yMin = y0;
+			b.xMax = x0 + w;
+			b.yMax = y0 + h;
+			return b;
+		case 1:
+			var _g1 = _g.orientation;
+			var sx = _g.sizeX;
+			var sy = _g.sizeY;
+			var x0 = global.x - sx;
+			var y0 = global.y - sy;
+			var b = new h2d_col_Bounds();
+			b.xMin = x0;
+			b.yMin = y0;
+			b.xMax = x0 + sx * 2;
+			b.yMax = y0 + sy * 2;
+			return b;
+		}
+	}
+	,parseZoneId: function(zoneId,prefix) {
+		if(!StringTools.startsWith(zoneId,prefix + "_")) {
+			return null;
+		}
+		var rest = HxOverrides.substr(zoneId,prefix.length + 1,null);
+		var parts = rest.split("_");
+		if(parts.length != 2) {
+			return null;
+		}
+		var col = Std.parseInt(parts[0]);
+		var row = Std.parseInt(parts[1]);
+		if(col == null || row == null) {
+			return null;
+		}
+		return new bh_ui_CellCoord(col,row);
+	}
+	,createCardTargetsForBinding: function(binding) {
+		var _gthis = this;
+		var h = this.cells.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			var coord = entry.coord;
+			var targetId = "grid" + this.instanceId + "_" + coord.col + "_" + coord.row;
+			var cellSize = this.getCellBoundingSize();
+			var interactive = new bh_base_MAObject(bh_base_MultiAnimObjectData.MAInteractive(Math.ceil(cellSize.x),Math.ceil(cellSize.y),targetId,null),false);
+			var localPos = this.getCellLocalPosition(coord);
+			interactive.posChanged = true;
+			interactive.x = localPos.x - cellSize.x / 2;
+			interactive.posChanged = true;
+			interactive.y = localPos.y - cellSize.y / 2;
+			this.root.addChild(interactive);
+			var wrapper = new bh_ui_UIInteractiveWrapper(interactive,null);
+			this.cardTargetInteractives.h[targetId] = interactive;
+			this.cardTargetWrappers.h[targetId] = wrapper;
+			binding.cardHand.registerTargetInteractive(wrapper);
+		}
+		if(binding.accepts != null) {
+			var accepts = binding.accepts;
+			binding.cardHand.setTargetAcceptsFilter(function(cardId,targetId,meta) {
+				var coord = _gthis.parseCardTargetId(targetId);
+				if(coord == null) {
+					return true;
+				}
+				return accepts(coord,cardId);
+			});
+		}
+		binding.cardHand.setTargetHighlightCallback(function(targetId,highlight,meta) {
+			var coord = _gthis.parseCardTargetId(targetId);
+			if(coord != null) {
+				var e = _gthis.cells.h["" + coord.col + "_" + coord.row];
+				if(e != null) {
+					e.result.setParameter(_gthis.highlightParam,highlight);
+				}
+			}
+		});
+	}
+	,clearCardTargetsForBinding: function(binding) {
+		var h = this.cardTargetInteractives.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var targetId = _g_key;
+			var interactive = _g_value;
+			binding.cardHand.unregisterTargetInteractive(targetId);
+			if(interactive != null && interactive.parent != null) {
+				interactive.parent.removeChild(interactive);
+			}
+		}
+		this.cardTargetInteractives.h = Object.create(null);
+		this.cardTargetWrappers.h = Object.create(null);
+	}
+	,refreshAllCardTargets: function() {
+		var _g = 0;
+		var _g1 = this.registeredCardHands;
+		while(_g < _g1.length) {
+			var binding = _g1[_g];
+			++_g;
+			this.clearCardTargetsForBinding(binding);
+			this.createCardTargetsForBinding(binding);
+		}
+	}
+	,getCellBoundingSize: function() {
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.gap;
+			var w = _g.cellWidth;
+			var h = _g.cellHeight;
+			return new bh_base_FPoint(w,h);
+		case 1:
+			var _g1 = _g.orientation;
+			var sx = _g.sizeX;
+			var sy = _g.sizeY;
+			return new bh_base_FPoint(sx * 2,sy * 2);
+		}
+	}
+	,parseCardTargetId: function(targetId) {
+		return this.parseZoneId(targetId,"grid" + this.instanceId);
+	}
+	,emitEvent: function(event) {
+		if(this.onGridEvent != null) {
+			this.onGridEvent(event);
+		}
+	}
+	,__class__: bh_ui_UIMultiAnimGrid
+};
+var bh_ui_CellCoord = function(col,row) {
+	this.col = col;
+	this.row = row;
+};
+$hxClasses["bh.ui.CellCoord"] = bh_ui_CellCoord;
+bh_ui_CellCoord.__name__ = "bh.ui.CellCoord";
+bh_ui_CellCoord.prototype = {
+	__class__: bh_ui_CellCoord
+};
+var bh_ui_GridType = $hxEnums["bh.ui.GridType"] = { __ename__:true,__constructs__:null
+	,Rect: ($_=function(cellWidth,cellHeight,gap) { return {_hx_index:0,cellWidth:cellWidth,cellHeight:cellHeight,gap:gap,__enum__:"bh.ui.GridType",toString:$estr}; },$_._hx_name="Rect",$_.__params__ = ["cellWidth","cellHeight","gap"],$_)
+	,Hex: ($_=function(orientation,sizeX,sizeY) { return {_hx_index:1,orientation:orientation,sizeX:sizeX,sizeY:sizeY,__enum__:"bh.ui.GridType",toString:$estr}; },$_._hx_name="Hex",$_.__params__ = ["orientation","sizeX","sizeY"],$_)
+};
+bh_ui_GridType.__constructs__ = [bh_ui_GridType.Rect,bh_ui_GridType.Hex];
+bh_ui_GridType.__empty_constructs__ = [];
+var bh_ui_GridEvent = $hxEnums["bh.ui.GridEvent"] = { __ename__:true,__constructs__:null
+	,CellClick: ($_=function(cell,button) { return {_hx_index:0,cell:cell,button:button,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellClick",$_.__params__ = ["cell","button"],$_)
+	,CellHoverEnter: ($_=function(cell) { return {_hx_index:1,cell:cell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellHoverEnter",$_.__params__ = ["cell"],$_)
+	,CellHoverLeave: ($_=function(cell) { return {_hx_index:2,cell:cell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellHoverLeave",$_.__params__ = ["cell"],$_)
+	,CellDrop: ($_=function(cell,draggable,sourceGrid,sourceCell) { return {_hx_index:3,cell:cell,draggable:draggable,sourceGrid:sourceGrid,sourceCell:sourceCell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDrop",$_.__params__ = ["cell","draggable","sourceGrid","sourceCell"],$_)
+	,CellCardPlayed: ($_=function(cell,cardId) { return {_hx_index:4,cell:cell,cardId:cardId,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellCardPlayed",$_.__params__ = ["cell","cardId"],$_)
+	,CellDataChanged: ($_=function(cell,oldData,newData) { return {_hx_index:5,cell:cell,oldData:oldData,newData:newData,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDataChanged",$_.__params__ = ["cell","oldData","newData"],$_)
+};
+bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellHoverEnter,bh_ui_GridEvent.CellHoverLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
+bh_ui_GridEvent.__empty_constructs__ = [];
 var bh_ui_UIMultiAnimProgressBar = function(builder,name,initialValue,extraParams) {
 	this.requestRedraw = true;
 	this.currentResult = null;
@@ -112249,6 +113159,917 @@ screens_gamelike_DialogueDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	}
 	,__class__: screens_gamelike_DialogueDemoScreen
 });
+var screens_gamelike_GridDemoScreen = function(screenManager,layers) {
+	this.loadoutRows = 2;
+	this.loadoutCols = 3;
+	this.storageRows = 2;
+	this.storageCols = 4;
+	this.hexRadius = 2;
+	this.rectRows = 4;
+	this.rectCols = 5;
+	this.g2gDraggables = [];
+	this.handCardIds = [];
+	this.nextCardId = 0;
+	this.rectDraggables = [];
+	DemoScreenBase.call(this,screenManager,layers);
+};
+$hxClasses["screens.gamelike.GridDemoScreen"] = screens_gamelike_GridDemoScreen;
+screens_gamelike_GridDemoScreen.__name__ = "screens.gamelike.GridDemoScreen";
+screens_gamelike_GridDemoScreen.__super__ = DemoScreenBase;
+screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Grid Component","Rect drag-drop, hex + cards, grid-to-grid transfers");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim",false);
+		var generatedByMacroBuildWithParametersload3343Builder = function() {
+			var resetBtn;
+			var remStorBtn;
+			var remRowBtn;
+			var remRingBtn;
+			var remLoadBtn;
+			var drawBtn;
+			var addStorBtn;
+			var addRowBtn;
+			var addRingBtn;
+			var addLoadBtn;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"Reset");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				resetBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["resetBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"-Stor");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				remStorBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["remStorBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"-Row");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				remRowBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["remRowBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"-Ring");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				remRingBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["remRingBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"-Load");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				remLoadBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["remLoadBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"Draw");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				drawBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["drawBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"+Stor");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				addStorBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["addStorBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"+Row");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				addRowBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["addRowBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"+Ring");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				addRingBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["addRingBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"+Load");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				addLoadBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["addLoadBtn"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("gridDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { resetBtn : resetBtn, remStorBtn : remStorBtn, remRowBtn : remRowBtn, remRingBtn : remRingBtn, remLoadBtn : remLoadBtn, drawBtn : drawBtn, addStorBtn : addStorBtn, addRowBtn : addRowBtn, addRingBtn : addRingBtn, addLoadBtn : addLoadBtn, builderResults : builderResults1};
+			if(retVal.resetBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "resetBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.remStorBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "remStorBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.remRowBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "remRowBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.remRingBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "remRingBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.remLoadBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "remLoadBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.drawBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "drawBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.addStorBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "addStorBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.addRowBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "addRowBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.addRingBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "addRingBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.addLoadBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "addLoadBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload3343Builder();
+		this.demoResult = ui.builderResults;
+		this.resetButton = ui.resetBtn;
+		this.drawButton = ui.drawBtn;
+		this.addRowBtn = ui.addRowBtn;
+		this.remRowBtn = ui.remRowBtn;
+		this.addRingBtn = ui.addRingBtn;
+		this.remRingBtn = ui.remRingBtn;
+		this.addStorBtn = ui.addStorBtn;
+		this.remStorBtn = ui.remStorBtn;
+		this.addLoadBtn = ui.addLoadBtn;
+		this.remLoadBtn = ui.remLoadBtn;
+		this.addBuilderResult(this.demoResult);
+		this.setupRectGrid();
+		this.setupHexGrid();
+		this.setupGridToGrid();
+		this.updateButtonStates();
+	}
+	,setupRectGrid: function() {
+		this.rectGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim"});
+		this.rectGrid.addRectRegion(5,4);
+		this.rectGrid.set(0,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[0]});
+		this.rectGrid.set(1,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[1]});
+		this.rectGrid.set(2,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[2]});
+		this.rectGrid.set(3,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[3]});
+		this.rectGrid.set(4,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[4]});
+		this.rectGrid.onGridEvent = $bind(this,this.onRectEvent);
+		var _this = this.rectGrid.getObject();
+		_this.posChanged = true;
+		_this.x = 10.0;
+		_this.posChanged = true;
+		_this.y = 120.;
+		this.addObjectToLayer(this.rectGrid.getObject(),bh_ui_screens_LayersEnum.DefaultLayer);
+		this.rebuildRectDraggables();
+	}
+	,rebuildRectDraggables: function() {
+		var _gthis = this;
+		var _g = 0;
+		var _g1 = this.rectDraggables;
+		while(_g < _g1.length) {
+			var d = _g1[_g];
+			++_g;
+			this.removeElement(d);
+		}
+		this.rectDraggables = [];
+		if(this.rectGrid == null) {
+			return;
+		}
+		this.rectGrid.forEach(function(col,row,data) {
+			if(data == null) {
+				return;
+			}
+			var itemObj = _gthis.buildItemBlock(data.color);
+			var drag = bh_ui_UIMultiAnimDraggable.create(itemObj);
+			drag.setReturnAnimPath(_gthis.demoBuilder,"returnAnim");
+			drag.setSnapAnimPath(_gthis.demoBuilder,"snapAnim");
+			drag.dragAlpha = 0.7;
+			drag.returnToOrigin = true;
+			drag.dragLayer = bh_ui_screens_LayersEnum.ModalLayer;
+			var srcCol = col;
+			var srcRow = row;
+			var srcData = data;
+			drag.onDragEvent = function(event,pos,wrapper) {
+				switch(event._hx_index) {
+				case 0:
+					_gthis.dragSourceGrid = _gthis.rectGrid;
+					_gthis.dragSourceCell = new bh_ui_CellCoord(srcCol,srcRow);
+					_gthis.dragSourceData = srcData;
+					_gthis.rectGrid.clear(srcCol,srcRow);
+					break;
+				case 3:
+					_gthis.rectGrid.set(srcCol,srcRow,srcData);
+					break;
+				default:
+				}
+			};
+			_gthis.rectGrid.acceptDrops(drag,function(cell,_) {
+				return !_gthis.rectGrid.isOccupied(cell.col,cell.row);
+			});
+			var pos = _gthis.rectGrid.cellPosition(col,row);
+			_gthis.rectDraggables.push(drag);
+			_gthis.addElementWithPos(drag,pos.x,pos.y,bh_ui_screens_LayersEnum.DefaultLayer);
+		});
+	}
+	,onRectEvent: function(event) {
+		switch(event._hx_index) {
+		case 0:
+			var cell = event.cell;
+			var button = event.button;
+			this.setRectLog("Clicked (" + cell.col + ", " + cell.row + ")");
+			break;
+		case 3:
+			var _g = event.draggable;
+			var _g = event.sourceGrid;
+			var _g = event.sourceCell;
+			var cell = event.cell;
+			if(this.dragSourceGrid == this.rectGrid && this.dragSourceCell != null) {
+				this.rectGrid.set(cell.col,cell.row,this.dragSourceData);
+				this.setRectLog("(" + this.dragSourceCell.col + "," + this.dragSourceCell.row + ") -> (" + cell.col + "," + cell.row + ")");
+				this.dragSourceGrid = null;
+				this.dragSourceCell = null;
+				this.dragSourceData = null;
+				this.rebuildRectDraggables();
+			}
+			break;
+		default:
+		}
+	}
+	,resetRectGrid: function() {
+		var _gthis = this;
+		if(this.rectGrid == null) {
+			return;
+		}
+		var toRemove = [];
+		this.rectGrid.forEach(function(col,row,data) {
+			if(data != null) {
+				_gthis.rectGrid.clear(col,row);
+			}
+			toRemove.push(new bh_ui_CellCoord(col,row));
+		});
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var c = toRemove[_g];
+			++_g;
+			this.rectGrid.removeCell(c.col,c.row);
+		}
+		this.rectRows = 4;
+		this.rectGrid.addRectRegion(this.rectCols,this.rectRows);
+		this.rectGrid.set(0,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[0]});
+		this.rectGrid.set(1,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[1]});
+		this.rectGrid.set(2,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[2]});
+		this.rectGrid.set(3,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[3]});
+		this.rectGrid.set(4,0,{ color : screens_gamelike_GridDemoScreen.RECT_COLORS[4]});
+		this.rebuildRectDraggables();
+		this.updateButtonStates();
+		this.setRectLog("Reset!");
+	}
+	,addRectRow: function() {
+		if(this.rectGrid == null || this.rectRows >= 8) {
+			return;
+		}
+		var _g = 0;
+		var _g1 = this.rectCols;
+		while(_g < _g1) {
+			var col = _g++;
+			this.rectGrid.addCell(col,this.rectRows);
+		}
+		this.rectRows++;
+		this.rebuildRectDraggables();
+		this.updateButtonStates();
+		this.setRectLog("" + this.rectCols + "x" + this.rectRows);
+	}
+	,removeRectRow: function() {
+		if(this.rectGrid == null || this.rectRows <= 1) {
+			return;
+		}
+		this.rectRows--;
+		var _g = 0;
+		var _g1 = this.rectCols;
+		while(_g < _g1) {
+			var col = _g++;
+			this.rectGrid.removeCell(col,this.rectRows);
+		}
+		this.rebuildRectDraggables();
+		this.updateButtonStates();
+		this.setRectLog("" + this.rectCols + "x" + this.rectRows);
+	}
+	,setRectLog: function(text) {
+		if(this.demoResult != null) {
+			this.demoResult.getUpdatable("rectLog").updateText(text);
+		}
+	}
+	,setupHexGrid: function() {
+		var _gthis = this;
+		this.hexGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellBuildName : "hexCell"});
+		this.hexGrid.addHexRegion(0,0,2);
+		this.hexGrid.onGridEvent = $bind(this,this.onHexEvent);
+		var _this = this.hexGrid.getObject();
+		_this.posChanged = true;
+		_this.x = 510.;
+		_this.posChanged = true;
+		_this.y = 280.;
+		this.addObjectToLayer(this.hexGrid.getObject(),bh_ui_screens_LayersEnum.DefaultLayer);
+		this.cardHand = new bh_ui_UICardHandHelper(this,this.demoBuilder,{ layoutMode : bh_ui_HandLayoutMode.Fan, anchorX : 540., anchorY : 410., cardWidth : 100.0, cardHeight : 140.0, fanRadius : 400.0, fanMaxAngle : 25.0, hoverPopDistance : 20.0, hoverScale : 1.1, targetingThresholdY : 60.0, drawPilePosition : new bh_base_FPoint(390.,410.), discardPilePosition : new bh_base_FPoint(710.,410.), drawPathName : "drawAnim", discardPathName : "discardAnim", returnPathName : "returnCardAnim", rearrangePathName : "rearrangeAnim", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve"});
+		this.cardHand.onCardEvent = $bind(this,this.onCardEvent);
+		this.cardHand.canPlayCard = function(cardId,result) {
+			if(result._hx_index == 0) {
+				var _g = result.targetId;
+				return true;
+			} else {
+				return false;
+			}
+		};
+		this.hexGrid.registerAsCardTarget(this.cardHand,function(cell,cardId) {
+			return !_gthis.hexGrid.isOccupied(cell.col,cell.row);
+		});
+		this.drawHexCard();
+		this.drawHexCard();
+		this.drawHexCard();
+	}
+	,drawHexCard: function() {
+		if(this.cardHand == null) {
+			return;
+		}
+		var def = screens_gamelike_GridDemoScreen.CARD_DEFS[this.nextCardId % screens_gamelike_GridDemoScreen.CARD_DEFS.length];
+		var id = "card_" + this.nextCardId;
+		this.nextCardId++;
+		this.handCardIds.push(id);
+		var tmp = this.cardHand;
+		var _g = new haxe_ds_StringMap();
+		_g.h["cardName"] = def.name;
+		_g.h["cardColor"] = def.color;
+		tmp.drawCard({ id : id, buildName : "gridCard", params : _g, canTarget : true});
+	}
+	,onCardEvent: function(event) {
+		switch(event._hx_index) {
+		case 0:
+			var _g = event.target;
+			if(_g._hx_index == 0) {
+				var targetId = _g.targetId;
+				var cardId = event.cardId;
+				HxOverrides.remove(this.handCardIds,cardId);
+				var cardIdx = Std.parseInt(cardId.split("_").pop());
+				if(cardIdx != null) {
+					var def = screens_gamelike_GridDemoScreen.CARD_DEFS[cardIdx % screens_gamelike_GridDemoScreen.CARD_DEFS.length];
+					var parts = targetId.split("_");
+					if(parts.length >= 3) {
+						var col = Std.parseInt(parts[parts.length - 2]);
+						var row = Std.parseInt(parts[parts.length - 1]);
+						if(col != null && row != null && this.hexGrid != null) {
+							var tmp = this.hexGrid;
+							var tmp1 = { color : def.color};
+							var _g = new haxe_ds_StringMap();
+							_g.h["occupied"] = true;
+							_g.h["cellColor"] = def.color;
+							tmp.set(col,row,tmp1,_g);
+							this.setHexLog("" + def.name + " -> (" + col + "," + row + ")");
+						}
+					}
+				}
+			}
+			break;
+		case 6:
+			var cardId = event.cardId;
+			this.setHexLog("Drew " + cardId);
+			break;
+		default:
+		}
+	}
+	,onHexEvent: function(event) {
+		if(event._hx_index == 0) {
+			var _g = event.button;
+			var cell = event.cell;
+			if(this.hexGrid != null && this.hexGrid.isOccupied(cell.col,cell.row)) {
+				this.hexGrid.clear(cell.col,cell.row);
+				this.hexGrid.getCellResult(cell.col,cell.row).setParameter("occupied",false);
+				this.setHexLog("Cleared (" + cell.col + "," + cell.row + ")");
+			}
+		}
+	}
+	,resetHexGrid: function() {
+		var _gthis = this;
+		if(this.hexGrid == null || this.cardHand == null) {
+			return;
+		}
+		var toRemove = [];
+		this.hexGrid.forEach(function(col,row,data) {
+			if(data != null) {
+				_gthis.hexGrid.clear(col,row);
+				_gthis.hexGrid.getCellResult(col,row).setParameter("occupied",false);
+			}
+			toRemove.push(new bh_ui_CellCoord(col,row));
+		});
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var c = toRemove[_g];
+			++_g;
+			this.hexGrid.removeCell(c.col,c.row);
+		}
+		this.hexRadius = 2;
+		this.hexGrid.addHexRegion(0,0,this.hexRadius);
+		this.cardHand.setHand([]);
+		this.handCardIds = [];
+		this.nextCardId = 0;
+		this.drawHexCard();
+		this.drawHexCard();
+		this.drawHexCard();
+		this.updateButtonStates();
+		this.setHexLog("Reset!");
+	}
+	,addHexRing: function() {
+		if(this.hexGrid == null || this.hexRadius >= 4) {
+			return;
+		}
+		this.hexRadius++;
+		this.hexGrid.addHexRegion(0,0,this.hexRadius);
+		this.updateButtonStates();
+		this.setHexLog("radius " + this.hexRadius);
+	}
+	,removeHexRing: function() {
+		var _gthis = this;
+		if(this.hexGrid == null || this.hexRadius <= 0) {
+			return;
+		}
+		var toRemove = [];
+		this.hexGrid.forEach(function(col,row,_) {
+			if(_gthis.hexGrid.distance(0,0,col,row) == _gthis.hexRadius) {
+				toRemove.push(new bh_ui_CellCoord(col,row));
+			}
+		});
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var c = toRemove[_g];
+			++_g;
+			if(this.hexGrid.isOccupied(c.col,c.row)) {
+				this.hexGrid.clear(c.col,c.row);
+				this.hexGrid.getCellResult(c.col,c.row).setParameter("occupied",false);
+			}
+			this.hexGrid.removeCell(c.col,c.row);
+		}
+		this.hexRadius--;
+		this.updateButtonStates();
+		this.setHexLog("radius " + this.hexRadius);
+	}
+	,setHexLog: function(text) {
+		if(this.demoResult != null) {
+			this.demoResult.getUpdatable("hexLog").updateText(text);
+		}
+	}
+	,setupGridToGrid: function() {
+		var _gthis = this;
+		this.g2gContainer = new h2d_Object();
+		var _this = this.g2gContainer;
+		_this.posChanged = true;
+		_this.x = 780.;
+		_this.posChanged = true;
+		_this.y = 126.;
+		this.addObjectToLayer(this.g2gContainer,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.storageGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim"});
+		this.storageGrid.addRectRegion(this.storageCols,this.storageRows);
+		var col = 0 % this.storageCols;
+		var row = 0 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[0]});
+		var col = 1 % this.storageCols;
+		var row = 1 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[1]});
+		var col = 2 % this.storageCols;
+		var row = 2 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[2]});
+		var col = 3 % this.storageCols;
+		var row = 3 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[3]});
+		var col = 4 % this.storageCols;
+		var row = 4 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[4]});
+		this.storageGrid.onGridEvent = function(e) {
+			_gthis.onG2GEvent(_gthis.storageGrid,e);
+		};
+		this.g2gContainer.addChild(this.storageGrid.getObject());
+		this.loadoutGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim"});
+		this.loadoutGrid.addRectRegion(this.loadoutCols,this.loadoutRows);
+		this.loadoutGrid.onGridEvent = function(e) {
+			_gthis.onG2GEvent(_gthis.loadoutGrid,e);
+		};
+		this.g2gContainer.addChild(this.loadoutGrid.getObject());
+		this.repositionG2GLoadout();
+		this.rebuildG2GDraggables();
+		this.updateG2GCounts();
+	}
+	,repositionG2GLoadout: function() {
+		if(this.loadoutGrid == null) {
+			return;
+		}
+		var storageH = this.storageRows * 56 - 4;
+		var _this = this.loadoutGrid.getObject();
+		_this.posChanged = true;
+		_this.y = storageH + 20;
+	}
+	,rebuildG2GDraggables: function() {
+		var _g = 0;
+		var _g1 = this.g2gDraggables;
+		while(_g < _g1.length) {
+			var d = _g1[_g];
+			++_g;
+			this.removeElement(d);
+		}
+		this.g2gDraggables = [];
+		if(this.storageGrid == null || this.loadoutGrid == null) {
+			return;
+		}
+		this.setupG2GDragsForGrid(this.storageGrid);
+		this.setupG2GDragsForGrid(this.loadoutGrid);
+	}
+	,setupG2GDragsForGrid: function(grid) {
+		var _gthis = this;
+		grid.forEach(function(col,row,data) {
+			if(data == null) {
+				return;
+			}
+			var itemObj = _gthis.buildItemBlock(data.color);
+			var drag = bh_ui_UIMultiAnimDraggable.create(itemObj);
+			drag.setReturnAnimPath(_gthis.demoBuilder,"returnAnim");
+			drag.setSnapAnimPath(_gthis.demoBuilder,"snapAnim");
+			drag.dragAlpha = 0.7;
+			drag.returnToOrigin = true;
+			drag.dragLayer = bh_ui_screens_LayersEnum.ModalLayer;
+			var srcGrid = grid;
+			var srcCol = col;
+			var srcRow = row;
+			drag.onDragEvent = function(event,pos,wrapper) {
+				switch(event._hx_index) {
+				case 0:
+					_gthis.dragSourceGrid = srcGrid;
+					_gthis.dragSourceCell = new bh_ui_CellCoord(srcCol,srcRow);
+					_gthis.dragSourceData = data;
+					srcGrid.clear(srcCol,srcRow);
+					break;
+				case 3:
+					srcGrid.set(srcCol,srcRow,data);
+					break;
+				default:
+				}
+			};
+			_gthis.storageGrid.acceptDrops(drag,function(cell,_) {
+				return !_gthis.storageGrid.isOccupied(cell.col,cell.row);
+			});
+			_gthis.loadoutGrid.acceptDrops(drag,function(cell,_) {
+				return !_gthis.loadoutGrid.isOccupied(cell.col,cell.row);
+			});
+			var pos = grid.cellPosition(col,row);
+			_gthis.g2gDraggables.push(drag);
+			_gthis.addElementWithPos(drag,pos.x,pos.y,bh_ui_screens_LayersEnum.DefaultLayer);
+		});
+	}
+	,onG2GEvent: function(targetGrid,event) {
+		switch(event._hx_index) {
+		case 0:
+			var _g = event.button;
+			var cell = event.cell;
+			var name = targetGrid == this.storageGrid ? "Storage" : "Loadout";
+			this.setG2GLog("" + name + " (" + cell.col + "," + cell.row + ")");
+			break;
+		case 3:
+			var _g = event.draggable;
+			var _g = event.sourceGrid;
+			var _g = event.sourceCell;
+			var cell = event.cell;
+			if(this.dragSourceGrid != null && this.dragSourceCell != null && this.dragSourceData != null) {
+				targetGrid.set(cell.col,cell.row,this.dragSourceData);
+				var srcName = this.dragSourceGrid == this.storageGrid ? "Stor" : "Load";
+				var tgtName = targetGrid == this.storageGrid ? "Stor" : "Load";
+				this.setG2GLog("" + srcName + " -> " + tgtName + " (" + cell.col + "," + cell.row + ")");
+				this.dragSourceGrid = null;
+				this.dragSourceCell = null;
+				this.dragSourceData = null;
+				this.rebuildG2GDraggables();
+				this.updateG2GCounts();
+			}
+			break;
+		default:
+		}
+	}
+	,resetG2G: function() {
+		if(this.storageGrid == null || this.loadoutGrid == null) {
+			return;
+		}
+		this.removeAllG2GCells(this.storageGrid,this.storageCols,this.storageRows);
+		this.removeAllG2GCells(this.loadoutGrid,this.loadoutCols,this.loadoutRows);
+		this.storageRows = 2;
+		this.loadoutRows = 2;
+		this.storageGrid.addRectRegion(this.storageCols,this.storageRows);
+		var col = 0 % this.storageCols;
+		var row = 0 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[0]});
+		var col = 1 % this.storageCols;
+		var row = 1 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[1]});
+		var col = 2 % this.storageCols;
+		var row = 2 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[2]});
+		var col = 3 % this.storageCols;
+		var row = 3 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[3]});
+		var col = 4 % this.storageCols;
+		var row = 4 / this.storageCols | 0;
+		this.storageGrid.set(col,row,{ color : screens_gamelike_GridDemoScreen.G2G_COLORS[4]});
+		this.loadoutGrid.addRectRegion(this.loadoutCols,this.loadoutRows);
+		this.repositionG2GLoadout();
+		this.rebuildG2GDraggables();
+		this.updateG2GCounts();
+		this.updateButtonStates();
+		this.setG2GLog("Reset!");
+	}
+	,removeAllG2GCells: function(grid,cols,rows) {
+		if(grid == null) {
+			return;
+		}
+		var toRemove = [];
+		grid.forEach(function(col,row,data) {
+			if(data != null) {
+				grid.clear(col,row);
+			}
+			toRemove.push(new bh_ui_CellCoord(col,row));
+		});
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var c = toRemove[_g];
+			++_g;
+			grid.removeCell(c.col,c.row);
+		}
+	}
+	,addG2GRow: function(grid,cols) {
+		if(grid == null) {
+			return;
+		}
+		var maxRow = -1;
+		grid.forEach(function(_,row,_1) {
+			if(row > maxRow) {
+				maxRow = row;
+			}
+		});
+		var newRow = maxRow + 1;
+		var _g = 0;
+		var _g1 = cols;
+		while(_g < _g1) {
+			var col = _g++;
+			grid.addCell(col,newRow);
+		}
+	}
+	,removeG2GRow: function(grid,cols,rows) {
+		if(grid == null || rows <= 1) {
+			return;
+		}
+		var lastRow = rows - 1;
+		var _g = 0;
+		var _g1 = cols;
+		while(_g < _g1) {
+			var col = _g++;
+			if(grid.isOccupied(col,lastRow)) {
+				grid.clear(col,lastRow);
+			}
+			grid.removeCell(col,lastRow);
+		}
+	}
+	,updateG2GCounts: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		var sc = 0;
+		var lc = 0;
+		if(this.storageGrid != null) {
+			this.storageGrid.forEach(function(_,_1,data) {
+				if(data != null) {
+					sc += 1;
+				}
+			});
+		}
+		if(this.loadoutGrid != null) {
+			this.loadoutGrid.forEach(function(_,_1,data) {
+				if(data != null) {
+					lc += 1;
+				}
+			});
+		}
+		this.demoResult.getUpdatable("storageCount").updateText("Storage: " + sc);
+		this.demoResult.getUpdatable("loadoutCount").updateText("Loadout: " + lc);
+	}
+	,setG2GLog: function(text) {
+		if(this.demoResult != null) {
+			this.demoResult.getUpdatable("g2gLog").updateText(text);
+		}
+	}
+	,updateButtonStates: function() {
+		if(this.addRowBtn != null) {
+			this.addRowBtn.set_disabled(this.rectRows >= 8);
+		}
+		if(this.remRowBtn != null) {
+			this.remRowBtn.set_disabled(this.rectRows <= 1);
+		}
+		if(this.addRingBtn != null) {
+			this.addRingBtn.set_disabled(this.hexRadius >= 4);
+		}
+		if(this.remRingBtn != null) {
+			this.remRingBtn.set_disabled(this.hexRadius <= 0);
+		}
+		if(this.addStorBtn != null) {
+			this.addStorBtn.set_disabled(this.storageRows >= 5);
+		}
+		if(this.remStorBtn != null) {
+			this.remStorBtn.set_disabled(this.storageRows <= 1);
+		}
+		if(this.addLoadBtn != null) {
+			this.addLoadBtn.set_disabled(this.loadoutRows >= 5);
+		}
+		if(this.remLoadBtn != null) {
+			this.remLoadBtn.set_disabled(this.loadoutRows <= 1);
+		}
+	}
+	,buildItemBlock: function(color) {
+		var parent = new h2d_Object();
+		var tile = h2d_Tile.fromColor(color,44,44);
+		var bmp = new h2d_Bitmap(tile,parent);
+		bmp.posChanged = true;
+		bmp.x = 4;
+		bmp.posChanged = true;
+		bmp.y = 4;
+		return parent;
+	}
+	,onScreenEvent: function(event,source) {
+		if(this.cardHand != null && this.cardHand.handleScreenEvent(event)) {
+			return;
+		}
+		if(event._hx_index == 0) {
+			if(source == this.resetButton) {
+				this.resetRectGrid();
+				this.resetHexGrid();
+				this.resetG2G();
+			} else if(source == this.drawButton) {
+				this.drawHexCard();
+			} else if(source == this.addRowBtn) {
+				this.addRectRow();
+			} else if(source == this.remRowBtn) {
+				this.removeRectRow();
+			} else if(source == this.addRingBtn) {
+				this.addHexRing();
+			} else if(source == this.remRingBtn) {
+				this.removeHexRing();
+			} else if(source == this.addStorBtn) {
+				if(this.storageRows < 5) {
+					this.addG2GRow(this.storageGrid,this.storageCols);
+					this.storageRows++;
+					this.repositionG2GLoadout();
+					this.rebuildG2GDraggables();
+					this.updateG2GCounts();
+					this.updateButtonStates();
+					this.setG2GLog("Stor " + this.storageCols + "x" + this.storageRows);
+				}
+			} else if(source == this.remStorBtn) {
+				if(this.storageRows > 1) {
+					this.removeG2GRow(this.storageGrid,this.storageCols,this.storageRows);
+					this.storageRows--;
+					this.repositionG2GLoadout();
+					this.rebuildG2GDraggables();
+					this.updateG2GCounts();
+					this.updateButtonStates();
+					this.setG2GLog("Stor " + this.storageCols + "x" + this.storageRows);
+				}
+			} else if(source == this.addLoadBtn) {
+				if(this.loadoutRows < 5) {
+					this.addG2GRow(this.loadoutGrid,this.loadoutCols);
+					this.loadoutRows++;
+					this.rebuildG2GDraggables();
+					this.updateG2GCounts();
+					this.updateButtonStates();
+					this.setG2GLog("Load " + this.loadoutCols + "x" + this.loadoutRows);
+				}
+			} else if(source == this.remLoadBtn) {
+				if(this.loadoutRows > 1) {
+					this.removeG2GRow(this.loadoutGrid,this.loadoutCols,this.loadoutRows);
+					this.loadoutRows--;
+					this.rebuildG2GDraggables();
+					this.updateG2GCounts();
+					this.updateButtonStates();
+					this.setG2GLog("Load " + this.loadoutCols + "x" + this.loadoutRows);
+				}
+			}
+		}
+		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
+	}
+	,onMouseMove: function(pos) {
+		if(this.cardHand != null && this.cardHand.onMouseMove(pos.x,pos.y)) {
+			return false;
+		}
+		if(this.rectGrid != null) {
+			this.rectGrid.onMouseMove(pos.x,pos.y);
+		}
+		if(this.hexGrid != null) {
+			this.hexGrid.onMouseMove(pos.x,pos.y);
+		}
+		if(this.storageGrid != null) {
+			this.storageGrid.onMouseMove(pos.x,pos.y);
+		}
+		if(this.loadoutGrid != null) {
+			this.loadoutGrid.onMouseMove(pos.x,pos.y);
+		}
+		return DemoScreenBase.prototype.onMouseMove.call(this,pos);
+	}
+	,onMouseClick: function(pos,button,release) {
+		if(release && this.cardHand != null && this.cardHand.onMouseRelease(pos.x,pos.y)) {
+			return false;
+		}
+		if(release) {
+			if(this.rectGrid != null) {
+				this.rectGrid.onMouseClick(pos.x,pos.y,button);
+			}
+			if(this.hexGrid != null) {
+				this.hexGrid.onMouseClick(pos.x,pos.y,button);
+			}
+			if(this.storageGrid != null) {
+				this.storageGrid.onMouseClick(pos.x,pos.y,button);
+			}
+			if(this.loadoutGrid != null) {
+				this.loadoutGrid.onMouseClick(pos.x,pos.y,button);
+			}
+		}
+		return DemoScreenBase.prototype.onMouseClick.call(this,pos,button,release);
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.cardHand != null) {
+			this.cardHand.update(dt);
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		if(this.rectGrid != null) {
+			this.rectGrid.dispose();
+			this.rectGrid = null;
+		}
+		if(this.hexGrid != null) {
+			this.hexGrid.dispose();
+			this.hexGrid = null;
+		}
+		if(this.cardHand != null) {
+			this.cardHand.dispose();
+			this.cardHand = null;
+		}
+		if(this.storageGrid != null) {
+			this.storageGrid.dispose();
+			this.storageGrid = null;
+		}
+		if(this.loadoutGrid != null) {
+			this.loadoutGrid.dispose();
+			this.loadoutGrid = null;
+		}
+		this.rectDraggables = [];
+		this.g2gDraggables = [];
+		this.handCardIds = [];
+		this.demoBuilder = null;
+		this.demoResult = null;
+		if(this.g2gContainer != null) {
+			var _this = this.g2gContainer;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.g2gContainer = null;
+		}
+		this.resetButton = null;
+		this.drawButton = null;
+		this.addRowBtn = null;
+		this.remRowBtn = null;
+		this.addRingBtn = null;
+		this.remRingBtn = null;
+		this.addStorBtn = null;
+		this.remStorBtn = null;
+		this.addLoadBtn = null;
+		this.remLoadBtn = null;
+		this.dragSourceGrid = null;
+		this.dragSourceCell = null;
+		this.dragSourceData = null;
+		this.nextCardId = 0;
+		this.rectCols = 5;
+		this.rectRows = 4;
+		this.hexRadius = 2;
+		this.storageCols = 4;
+		this.storageRows = 2;
+		this.loadoutCols = 3;
+		this.loadoutRows = 2;
+	}
+	,__class__: screens_gamelike_GridDemoScreen
+});
 var screens_gamelike_InventoryDemoScreen = function(screenManager,layers) {
 	this.gold = 600;
 	this.draggables = [];
@@ -117370,7 +119191,7 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards"];
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
 NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
@@ -117388,6 +119209,8 @@ bh_base_CursorManager.defaultCursor = hxd_Cursor.Default;
 bh_base_CursorManager.defaultInteractiveCursor = hxd_Cursor.Button;
 bh_base_CursorManager.initialized = false;
 bh_base_FontManager.fontRegistry = new haxe_ds_StringMap();
+bh_base_GridDirection.directions = [new bh_base_Hex(1,0,-1),new bh_base_Hex(1,-1,0),new bh_base_Hex(0,-1,1),new bh_base_Hex(-1,0,1),new bh_base_Hex(-1,1,0),new bh_base_Hex(0,1,-1)];
+bh_base_GridDirection.allEnumDirections = [0,1,2,3,4,5];
 bh_base_OffsetCoord.EVEN = 1;
 bh_base_OffsetCoord.ODD = -1;
 bh_base_HexLayout.pointy = new bh_base_HexOrientationData(Math.sqrt(3.0),Math.sqrt(3.0) / 2.0,0.0,1.5,Math.sqrt(3.0) / 3.0,-0.333333333333333315,0.0,0.66666666666666663,0.5);
@@ -117439,6 +119262,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	return $r;
 }(this));
 bh_ui_UIInteractiveWrapper.VALID_CURSOR_SUFFIXES = ["hover","disabled"];
+bh_ui_UIMultiAnimGrid.instanceCounter = 0;
 h2d_Flow.PADDING_IGNORE_PARENT = -2147483444;
 h2d_HtmlText.REG_SPACES = new EReg("[\r\n\t ]+","g");
 h3d_impl_RenderContext.STRICT = true;
@@ -117813,6 +119637,9 @@ screens_gamelike_CardsDemoScreen.HAND_PATHS = [{ name : "handCurve"},{ name : "h
 screens_gamelike_CardsDemoScreen.PATH_DISTS = [{ name : "EvenArcLength"},{ name : "EvenRate"}];
 screens_gamelike_CardsDemoScreen.PATH_ORIENTS = [{ name : "Tangent"},{ name : "Straight"}];
 screens_gamelike_CardsDemoScreen.LAYOUT_MODES = [{ name : "Fan"},{ name : "Linear"},{ name : "Path"}];
+screens_gamelike_GridDemoScreen.RECT_COLORS = [13386786,2254540,2280516,13421602,10044620];
+screens_gamelike_GridDemoScreen.CARD_DEFS = [{ name : "Fire", color : 13386786},{ name : "Ice", color : 2254540},{ name : "Nature", color : 2280516},{ name : "Light", color : 13421602},{ name : "Shadow", color : 10044620},{ name : "Storm", color : 2280652}];
+screens_gamelike_GridDemoScreen.G2G_COLORS = [13395490,2263244,4508740,13412898,8930508];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];
 screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS = ["head","arm","armor","arm","legs"];
 screens_gamelike_SkillTreeDemoScreen.COSTS = [1,2,3,5,1,2,3,5,1,2,3,5];

@@ -1,0 +1,144 @@
+version: 1.0
+
+// Grid Component Demo — Rect drag-drop, Hex + cards, Grid-to-grid transfers
+
+curves {
+    #elasticBounce curve { easing: easeoutelastic }
+    #easeOut curve { easing: easeoutcubic }
+}
+
+paths {
+    #straightLine path { lineTo(100, 0) }
+    #cardArc path { bezier(100, 0, 50, -40) }
+    #arrowCurve path { bezier(100, 0, 50, -30) }
+}
+
+// Drag-drop animated paths
+#returnAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.4
+    0.0: progressCurve: elasticBounce
+}
+
+#snapAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.12
+    0.0: progressCurve: easeOut
+}
+
+// Card hand animated paths
+#drawAnim animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.3
+    easing: easeOutBack
+}
+
+#discardAnim animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    easing: easeInQuad
+}
+
+#returnCardAnim animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.2
+    easing: easeOutCubic
+}
+
+#rearrangeAnim animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.15
+    easing: easeInOutCubic
+}
+
+// ===== Cell programmables =====
+
+#rectCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal, highlight:bool=false) {
+    @(highlight=>true)  bitmap(generated(color(52, 52, #2a3a2a))): 0, 0
+    @(highlight=>false)  bitmap(generated(color(52, 52, #1a1a2e))): 0, 0
+    @(status=>hover) apply { filter: glow(#FFFF00, 0.3, 4) }
+    graphics(rect(#333355, 1.0, 52, 52)): 0, 0
+}
+
+#hexCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal, highlight:bool=false,
+                      occupied:bool=false, cellColor:color=#222244) {
+    @(highlight=>true)  graphics(polygon(#2a3a2a, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
+    @(highlight=>false) graphics(polygon(#1a1a2e, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
+    @(occupied=>true)   graphics(polygon($cellColor, filled, 24, 6, 39, 15, 39, 33, 24, 42, 9, 33, 9, 15)): -24, -24
+    @(status=>hover) apply { filter: glow(#44FFFF, 0.3, 4) }
+    graphics(polygon(#334466, 1.0, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
+}
+
+// ===== Card programmables =====
+
+#gridCard programmable(status:[normal,hover,pressed,disabled]=normal, cardName:string="Spell", cardColor:color=#3366AA) {
+    interactive(100, 140, "card", bind => "status", events: [hover, click, push]): 0, 0
+    bitmap(generated(color(100, 140, #16162a))): 0, 0
+    bitmap(generated(color(96, 4, $cardColor))): 2, 2
+    text(m5x7, $cardName, #ffffff, center, 100): 0, 110
+    @(status=>hover)    graphics(rect(#FFDD44, 2.0, 98, 138)): 1, 1
+    @(status=>pressed)  graphics(rect(#FFFFFF, 2.0, 98, 138)): 1, 1
+    @(status=>disabled) apply { filter: group(grayscale(0.9), brightness(0.5)) }
+    @(status=>normal)   graphics(rect(#334466, 1.0, 100, 140)): 0, 0
+}
+
+#arrowSegment programmable(valid:bool=false) {
+    @(valid=>false) graphics(line(#FF4444, 2.0, -4, -4, 4, 0); line(#FF4444, 2.0, -4, 4, 4, 0)): 0, 0
+    @(valid=>true)  graphics(line(#44FF88, 2.0, -4, -4, 4, 0); line(#44FF88, 2.0, -4, 4, 4, 0)): 0, 0
+}
+
+#arrowHead programmable(valid:bool=false) {
+    @(valid=>false) graphics(polygon(#FF4444, filled, 10, 0, -6, -6, -6, 6)): 0, 0
+    @(valid=>true)  graphics(polygon(#44FF88, filled, 10, 0, -6, -6, -6, 6)): 0, 0
+}
+
+// ===== Small button =====
+
+#smallBtn programmable(status:[normal,hover,pressed]=normal, disabled:bool=false, buttonText:string="Btn") {
+    interactive(50, 18, "btn", bind => "status", events: [hover, click, push]): 0, 0
+    @(status=>normal)  bitmap(generated(color(50, 18, #333355))): 0, 0
+    @(status=>hover)   bitmap(generated(color(50, 18, #444477))): 0, 0
+    @(status=>pressed) bitmap(generated(color(50, 18, #555599))): 0, 0
+    @(disabled=>true)  apply { filter: group(grayscale(0.8), brightness(0.5)) }
+    text(m5x7, $buttonText, #aaaacc, center, 50): 0, 4
+    graphics(rect(#555577, 1.0, 50, 18)): 0, 0
+}
+
+// ===== Main layout =====
+
+#gridDemo programmable() {
+    pos: 10, 70
+
+    // === LEFT: Rect Grid Drag-Drop ===
+    text(m5x7, "Rect Grid + Drag", #7fdbda): 0, -4
+    text(m5x7, "Drag items between cells", #555555): 0, 8
+    #rectLog(updatable) text(m5x7, "Click or drag items", #888888): 0, 22
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("resetBtn")):138, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRowBtn")):194, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRowBtn")):250, 2
+
+    // === CENTER: Hex Grid + Cards ===
+    text(m5x7, "Hex Grid + Cards", #cc9966): 370, -4
+    text(m5x7, "Play cards on hex cells", #555555): 370, 8
+    #hexLog(updatable) text(m5x7, "Draw and play cards", #888888): 370, 22
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("drawBtn")):500, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRingBtn")):556, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRingBtn")):612, 2
+
+    // === RIGHT: Grid-to-Grid ===
+    text(m5x7, "Grid to Grid", #66cc99): 770, -4
+    text(m5x7, "Drag between grids", #555555): 770, 8
+    #g2gLog(updatable) text(m5x7, "Move items between grids", #888888): 770, 22
+    #storageCount(updatable) text(m5x7, "Storage: 5", #7799aa): 770, 36
+    #loadoutCount(updatable) text(m5x7, "Loadout: 0", #7799aa): 870, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addStorBtn")):905, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remStorBtn")):961, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addLoadBtn")):1017, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remLoadBtn")):1073, 2
+}

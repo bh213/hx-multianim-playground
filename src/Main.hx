@@ -34,7 +34,7 @@ class Main extends hxd.App {
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "pixelsGraphics",
 		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "transitions",
-		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards",
+		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent",
 	];
 
 	function getFont() {
@@ -83,7 +83,7 @@ class Main extends hxd.App {
 		}
 	}
 
-	/** Lightweight screen navigation with slide transitions (no reload). */
+	/** Screen navigation with slide transitions. Reloads target screen to avoid stale Graphics tiles. */
 	public function navigateTo(screenName:String) {
 		if (screenName == currentScreenName)
 			return;
@@ -103,6 +103,12 @@ class Main extends hxd.App {
 			screenManager.switchTo(screenManager.getScreen(screenName), transition);
 		} else {
 			final targetScreen = screenManager.getScreen(screenName);
+			// Reload screen to avoid stale h2d.Graphics tiles on JS/WebGL
+			targetScreen.clear();
+			if (Std.isOfType(targetScreen, DemoScreenBase)) {
+				final demo:DemoScreenBase = cast targetScreen;
+				demo.load();
+			}
 			final masterScreen:DemoMasterScreen = cast(screenManager.getScreen("demoMaster"), DemoMasterScreen);
 			if (Std.isOfType(targetScreen, DemoScreenBase)) {
 				final demo:DemoScreenBase = cast targetScreen;
@@ -223,6 +229,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));
 		screenManager.addScreen("statusEffects", new StatusEffectsDemoScreen(screenManager));
 		screenManager.addScreen("cards", new CardsDemoScreen(screenManager));
+		screenManager.addScreen("gridComponent", new GridDemoScreen(screenManager));
 
 		// Advanced demos
 		screenManager.addScreen("incremental", new IncrementalDemoScreen(screenManager));

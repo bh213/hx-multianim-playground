@@ -76,6 +76,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },
             { name: 'statusEffects', displayName: 'Status Effects', category: 'Game-Like Demos', manimFile: 'demos/gamelike/status-effects.manim' },
             { name: 'cards', displayName: 'Cards', category: 'Game-Like Demos', manimFile: 'demos/gamelike/cards-demo.manim' },
+            { name: 'gridComponent', displayName: 'Grid Component', category: 'Game-Like Demos', manimFile: 'demos/gamelike/grid-demo.manim' },
         ]
     }
 ];

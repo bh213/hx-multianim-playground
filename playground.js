@@ -30964,6 +30964,7 @@ bh_ui_FloatingTextHelper.prototype = {
 	,__class__: bh_ui_FloatingTextHelper
 };
 var bh_ui__$UICardHandHelper_CardEntry = function(descriptor,result,container,interactiveId) {
+	this.enableAfterAnimation = false;
 	this.state = bh_ui_CardState.InHand;
 	this.descriptor = descriptor;
 	this.result = result;
@@ -30989,6 +30990,7 @@ bh_ui__$UICardHandHelper_ActiveAnimation.prototype = {
 	__class__: bh_ui__$UICardHandHelper_ActiveAnimation
 };
 var bh_ui_UICardHandHelper = function(screen,builder,config) {
+	this.chainedListeners = [];
 	this.canDragCard = null;
 	this.canPlayCard = null;
 	this.onCardEvent = null;
@@ -31099,9 +31101,7 @@ bh_ui_UICardHandHelper.prototype = {
 			var targetPos = positions[targetIdx];
 			entry.layoutPos = targetPos;
 			this.animateCardTo(entry,new bh_base_FPoint(this.drawPilePosition.x,this.drawPilePosition.y),new bh_base_FPoint(targetPos.x,targetPos.y),0,targetPos.rotation,this.drawPathName,function() {
-				if(entry.state == bh_ui_CardState.Animating) {
-					entry.state = bh_ui_CardState.InHand;
-				}
+				_gthis.resolveAnimationComplete(entry);
 				var _this = entry.container;
 				var v = targetPos.scale;
 				_this.posChanged = true;
@@ -31159,9 +31159,15 @@ bh_ui_UICardHandHelper.prototype = {
 		if(entry.state == bh_ui_CardState.Animating) {
 			if(!enabled) {
 				entry.state = bh_ui_CardState.Disabled;
+				entry.enableAfterAnimation = false;
+			} else {
+				entry.enableAfterAnimation = false;
 			}
+		} else if(entry.state == bh_ui_CardState.Disabled && this.isAnimatingEntry(entry)) {
+			entry.enableAfterAnimation = enabled;
 		} else {
 			entry.state = enabled ? bh_ui_CardState.InHand : bh_ui_CardState.Disabled;
+			entry.enableAfterAnimation = false;
 		}
 		this.interactiveHelper.setDisabled(entry.interactiveId,!enabled);
 	}
@@ -31416,6 +31422,7 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 	}
 	,rearrangeCards: function(positions,skipIndex) {
+		var _gthis = this;
 		var _g = 0;
 		var _g1 = this.cards.length;
 		while(_g < _g1) {
@@ -31431,9 +31438,7 @@ bh_ui_UICardHandHelper.prototype = {
 			entry[0].layoutPos = pos[0];
 			this.animateCardTo(entry[0],new bh_base_FPoint(entry[0].container.x,entry[0].container.y),new bh_base_FPoint(pos[0].x,pos[0].y),entry[0].container.rotation,pos[0].rotation,this.rearrangePathName,(function(pos,entry) {
 				return function() {
-					if(entry[0].state == bh_ui_CardState.Animating) {
-						entry[0].state = bh_ui_CardState.InHand;
-					}
+					_gthis.resolveAnimationComplete(entry[0]);
 					var _this = entry[0].container;
 					var v = pos[0].scale;
 					_this.posChanged = true;
@@ -31759,9 +31764,7 @@ bh_ui_UICardHandHelper.prototype = {
 			}
 			var targetPos = entry.layoutPos;
 			this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(targetPos.x,targetPos.y),entry.container.rotation,targetPos.rotation,this.returnPathName,function() {
-				if(entry.state == bh_ui_CardState.Animating) {
-					entry.state = bh_ui_CardState.InHand;
-				}
+				_gthis.resolveAnimationComplete(entry);
 				var _this = entry.container;
 				var v = targetPos.scale;
 				_this.posChanged = true;
@@ -31897,9 +31900,37 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 	}
 	,emitEvent: function(event) {
+		var _g = 0;
+		var _g1 = this.chainedListeners;
+		while(_g < _g1.length) {
+			var listener = _g1[_g];
+			++_g;
+			listener(event);
+		}
 		if(this.onCardEvent != null) {
 			this.onCardEvent(event);
 		}
+	}
+	,resolveAnimationComplete: function(entry) {
+		if(entry.state == bh_ui_CardState.Animating) {
+			entry.state = bh_ui_CardState.InHand;
+		} else if(entry.state == bh_ui_CardState.Disabled && entry.enableAfterAnimation) {
+			entry.state = bh_ui_CardState.InHand;
+			entry.enableAfterAnimation = false;
+			this.interactiveHelper.setDisabled(entry.interactiveId,false);
+		}
+	}
+	,isAnimatingEntry: function(entry) {
+		var _g = 0;
+		var _g1 = this.activeAnimations;
+		while(_g < _g1.length) {
+			var anim = _g1[_g];
+			++_g;
+			if(anim.entry == entry) {
+				return true;
+			}
+		}
+		return false;
 	}
 	,addToHandLayer: function(entry) {
 		this.handContainer.add(entry.container,this.cards.indexOf(entry));
@@ -32520,10 +32551,9 @@ bh_ui_CardLayoutPosition.prototype = {
 };
 var bh_ui_TargetingResult = $hxEnums["bh.ui.TargetingResult"] = { __ename__:true,__constructs__:null
 	,TargetZone: ($_=function(targetId) { return {_hx_index:0,targetId:targetId,__enum__:"bh.ui.TargetingResult",toString:$estr}; },$_._hx_name="TargetZone",$_.__params__ = ["targetId"],$_)
-	,TargetCard: ($_=function(targetCardId) { return {_hx_index:1,targetCardId:targetCardId,__enum__:"bh.ui.TargetingResult",toString:$estr}; },$_._hx_name="TargetCard",$_.__params__ = ["targetCardId"],$_)
-	,NoTarget: {_hx_name:"NoTarget",_hx_index:2,__enum__:"bh.ui.TargetingResult",toString:$estr}
+	,NoTarget: {_hx_name:"NoTarget",_hx_index:1,__enum__:"bh.ui.TargetingResult",toString:$estr}
 };
-bh_ui_TargetingResult.__constructs__ = [bh_ui_TargetingResult.TargetZone,bh_ui_TargetingResult.TargetCard,bh_ui_TargetingResult.NoTarget];
+bh_ui_TargetingResult.__constructs__ = [bh_ui_TargetingResult.TargetZone,bh_ui_TargetingResult.NoTarget];
 bh_ui_TargetingResult.__empty_constructs__ = [bh_ui_TargetingResult.NoTarget];
 var bh_ui_CardHandEvent = $hxEnums["bh.ui.CardHandEvent"] = { __ename__:true,__constructs__:null
 	,CardPlayed: ($_=function(cardId,target) { return {_hx_index:0,cardId:cardId,target:target,__enum__:"bh.ui.CardHandEvent",toString:$estr}; },$_._hx_name="CardPlayed",$_.__params__ = ["cardId","target"],$_)
@@ -33115,7 +33145,10 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 	,set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
+			this.result.beginUpdate();
+			this.result.setParameter("status",value ? "disabled" : "normal");
 			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			this.result.endUpdate();
 		}
 		return value;
 	}
@@ -33269,6 +33302,7 @@ bh_ui_DraggableState.__empty_constructs__ = [bh_ui_DraggableState.Idle,bh_ui_Dra
 var bh_ui_UIMultiAnimDraggable = function(target) {
 	this.savedAlpha = 1.0;
 	this.swapMode = false;
+	this.sourceData = null;
 	this.sourceSlot = null;
 	this.animApplyRotation = false;
 	this.animApplyAlpha = false;
@@ -33531,12 +33565,19 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			}
 		}
 		this.state = bh_ui_DraggableState.Idle;
+		this.enabled = false;
 		if(this.target != null) {
 			var _this = this.target;
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
 			this.target = null;
+		}
+		this.sourceSlot = null;
+		this.sourceData = null;
+		var _this = this.root;
+		if(_this != null && _this.parent != null) {
+			_this.parent.removeChild(_this);
 		}
 	}
 	,customAddToLayer: function(requestedLayer,screen,updateMode) {
@@ -33665,7 +33706,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 								var displacedData = zone.slot.data;
 								zone.slot.clear();
 								zone.slot.setContent(_gthis.target);
-								zone.slot.data = _gthis.sourceSlot.data;
+								zone.slot.data = _gthis.sourceData;
 								_gthis.sourceSlot.setContent(displaced);
 								_gthis.sourceSlot.data = displacedData;
 							} else {
@@ -33673,6 +33714,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 							}
 						}
 						_gthis.sourceSlot = null;
+						_gthis.sourceData = null;
 					});
 				} else {
 					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UICustomEvent("dragCancel",null),this);
@@ -33694,7 +33736,9 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 							_gthis.restoreLayer();
 							if(_gthis.sourceSlot != null) {
 								_gthis.sourceSlot.setContent(_gthis.target);
+								_gthis.sourceSlot.data = _gthis.sourceData;
 								_gthis.sourceSlot = null;
+								_gthis.sourceData = null;
 							}
 						});
 					} else {
@@ -34125,6 +34169,7 @@ bh_ui__$UIMultiAnimGrid_CellEntry.prototype = {
 var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.onCellBuilt = null;
 	this.onGridEvent = null;
+	this.cardHandBindingCounter = 0;
 	this.cardTargetWrappers = new haxe_ds_StringMap();
 	this.cardTargetInteractives = new haxe_ds_StringMap();
 	this.registeredCardHands = [];
@@ -34401,13 +34446,22 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		return false;
 	}
 	,acceptDrops: function(draggable,accepts) {
+		var _g = 0;
+		var _g1 = this.registeredDraggables;
+		while(_g < _g1.length) {
+			var existing = _g1[_g];
+			++_g;
+			if(existing.draggable == draggable) {
+				return;
+			}
+		}
 		var binding = { draggable : draggable, accepts : accepts, zonePrefix : "grid" + this.instanceId};
 		this.registeredDraggables.push(binding);
 		this.createDropZonesForDraggable(binding);
 		this.wireHighlightCallbacks(binding);
 	}
 	,registerAsCardTarget: function(cardHand,accepts) {
-		var binding = { cardHand : cardHand, accepts : accepts};
+		var binding = { cardHand : cardHand, accepts : accepts, targetPrefix : "grid" + this.instanceId + "ch" + this.cardHandBindingCounter++, eventListener : null};
 		this.registeredCardHands.push(binding);
 		this.createCardTargetsForBinding(binding);
 	}
@@ -34562,13 +34616,10 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	,hitTestRect: function(localX,localY) {
 		var stride = this.rectCellW + this.rectGap;
 		var strideY = this.rectCellH + this.rectGap;
-		if(localX < 0 || localY < 0) {
-			return null;
-		}
 		var col = Math.floor(localX / stride);
 		var row = Math.floor(localY / strideY);
 		var cellLocalX = localX - col * stride;
-		var cellLocalY = localY - row * stride;
+		var cellLocalY = localY - row * strideY;
 		if(cellLocalX > this.rectCellW || cellLocalY > this.rectCellH) {
 			return null;
 		}
@@ -34788,6 +34839,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	}
 	,createCardTargetsForBinding: function(binding) {
 		var _gthis = this;
+		var prefix = binding.targetPrefix;
 		var h = this.cells.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -34800,7 +34852,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _ = _g_key;
 			var entry = _g_value;
 			var coord = entry.coord;
-			var targetId = "grid" + this.instanceId + "_" + coord.col + "_" + coord.row;
+			var targetId = "" + prefix + "_" + coord.col + "_" + coord.row;
 			var cellSize = this.getCellBoundingSize();
 			var interactive = new bh_base_MAObject(bh_base_MultiAnimObjectData.MAInteractive(Math.ceil(cellSize.x),Math.ceil(cellSize.y),targetId,null),false);
 			var localPos = this.getCellLocalPosition(coord);
@@ -34833,8 +34885,25 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				}
 			}
 		});
+		var listener = function(event) {
+			if(event._hx_index == 0) {
+				var cardId = event.cardId;
+				var target = event.target;
+				if(target._hx_index == 0) {
+					var targetId = target.targetId;
+					var coord = _gthis.parseCardTargetId(targetId);
+					if(coord != null) {
+						_gthis.emitEvent(bh_ui_GridEvent.CellCardPlayed(coord,cardId));
+					}
+				}
+			}
+		};
+		binding.cardHand.chainedListeners.push(listener);
+		binding.eventListener = listener;
 	}
 	,clearCardTargetsForBinding: function(binding) {
+		var prefix = binding.targetPrefix + "_";
+		var toRemove = [];
 		var h = this.cardTargetInteractives.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -34845,14 +34914,35 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _g_key = key;
 			var _g_value = _g_h[key];
 			var targetId = _g_key;
-			var interactive = _g_value;
-			binding.cardHand.unregisterTargetInteractive(targetId);
-			if(interactive != null && interactive.parent != null) {
-				interactive.parent.removeChild(interactive);
+			var _ = _g_value;
+			if(StringTools.startsWith(targetId,prefix)) {
+				toRemove.push(targetId);
 			}
 		}
-		this.cardTargetInteractives.h = Object.create(null);
-		this.cardTargetWrappers.h = Object.create(null);
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var targetId = toRemove[_g];
+			++_g;
+			var interactive = this.cardTargetInteractives.h[targetId];
+			if(interactive != null) {
+				if(interactive != null && interactive.parent != null) {
+					interactive.parent.removeChild(interactive);
+				}
+			}
+			binding.cardHand.unregisterTargetInteractive(targetId);
+			var _this = this.cardTargetInteractives;
+			if(Object.prototype.hasOwnProperty.call(_this.h,targetId)) {
+				delete(_this.h[targetId]);
+			}
+			var _this1 = this.cardTargetWrappers;
+			if(Object.prototype.hasOwnProperty.call(_this1.h,targetId)) {
+				delete(_this1.h[targetId]);
+			}
+		}
+		if(binding.eventListener != null) {
+			HxOverrides.remove(binding.cardHand.chainedListeners,binding.eventListener);
+			binding.eventListener = null;
+		}
 	}
 	,refreshAllCardTargets: function() {
 		var _g = 0;
@@ -34880,7 +34970,20 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,parseCardTargetId: function(targetId) {
-		return this.parseZoneId(targetId,"grid" + this.instanceId);
+		var gridPrefix = "grid" + this.instanceId + "ch";
+		if(!StringTools.startsWith(targetId,gridPrefix)) {
+			return null;
+		}
+		var parts = targetId.split("_");
+		if(parts.length < 2) {
+			return null;
+		}
+		var row = Std.parseInt(parts[parts.length - 1]);
+		var col = Std.parseInt(parts[parts.length - 2]);
+		if(col == null || row == null) {
+			return null;
+		}
+		return new bh_ui_CellCoord(col,row);
 	}
 	,emitEvent: function(event) {
 		if(this.onGridEvent != null) {
@@ -35852,7 +35955,10 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 	set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
+			this.result.beginUpdate();
+			this.result.setParameter("status",value ? "disabled" : "normal");
 			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			this.result.endUpdate();
 		}
 		return value;
 	}
@@ -36663,6 +36769,10 @@ bh_ui_UIPanelHelper.prototype = {
 		if(panel == null) {
 			return;
 		}
+		if(panel.fadeInTween != null) {
+			panel.fadeInTween.cancel();
+			panel.fadeInTween = null;
+		}
 		this.screen.removeInteractives(panel.prefix);
 		var _this = this.namedPanels;
 		if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
@@ -36973,8 +37083,9 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 			binding.currentState = bh_ui_InteractiveState.Disabled;
 			binding.result.setParameter(binding.stateParam,"disabled");
 		} else {
-			binding.currentState = bh_ui_InteractiveState.Normal;
-			binding.result.setParameter(binding.stateParam,"normal");
+			var isHovered = wrapper != null && wrapper.hovered;
+			binding.currentState = isHovered ? bh_ui_InteractiveState.Hover : bh_ui_InteractiveState.Normal;
+			binding.result.setParameter(binding.stateParam,isHovered ? "hover" : "normal");
 		}
 	}
 	,handleEvent: function(event) {
@@ -37185,7 +37296,7 @@ $hxClasses["bh.ui.UITooltipHelper"] = bh_ui_UITooltipHelper;
 bh_ui_UITooltipHelper.__name__ = "bh.ui.UITooltipHelper";
 bh_ui_UITooltipHelper.prototype = {
 	startHover: function(interactiveId,buildName,params) {
-		if(this.activeTooltipId == interactiveId) {
+		if(this.activeTooltipId == interactiveId && this.activeBuildName == buildName) {
 			return;
 		}
 		this.hide();
@@ -112291,7 +112402,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.cardHand.rearrangeDuration = tmp / 100.0;
 		this.cardHand.onCardEvent = $bind(this,this.onCardEvent);
 		this.cardHand.canPlayCard = function(cardId,target) {
-			return true;
+			return target != bh_ui_TargetingResult.NoTarget;
 		};
 		this.cardHand.setArrowVisible(this.arrowToggle != null ? this.arrowToggle.selected : true);
 		this.registerTargets();
@@ -112451,13 +112562,6 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.setHandEvent("Play -> " + targetId);
 				break;
 			case 1:
-				var targetCardId = _g1.targetCardId;
-				var cardId = _g;
-				HxOverrides.remove(this.handCardIds,cardId);
-				this.setHandStatus("Played " + cardId + " on card " + targetCardId);
-				this.setHandEvent("Play -> card");
-				break;
-			case 2:
 				var cardId = _g;
 				HxOverrides.remove(this.handCardIds,cardId);
 				this.setHandStatus("Played " + cardId + " (no target)");

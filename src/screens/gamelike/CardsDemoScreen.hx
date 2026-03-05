@@ -491,7 +491,7 @@ class CardsDemoScreen extends DemoScreenBase {
 		cardHand.rearrangeDuration = getSliderVal(rearrangeSlider, 15) / 100.0;
 
 		cardHand.onCardEvent = onCardEvent;
-		cardHand.canPlayCard = (cardId, target) -> true;
+		cardHand.canPlayCard = (cardId, target) -> target != NoTarget;
 		cardHand.setArrowVisible(if (arrowToggle != null) arrowToggle.selected else true);
 
 		registerTargets();
@@ -612,10 +612,6 @@ class CardsDemoScreen extends DemoScreenBase {
 				handCardIds.remove(cardId);
 				setHandStatus('Played $cardId on $targetId');
 				setHandEvent('Play -> $targetId');
-			case CardPlayed(cardId, TargetCard(targetCardId)):
-				handCardIds.remove(cardId);
-				setHandStatus('Played $cardId on card $targetCardId');
-				setHandEvent('Play -> card');
 			case CardPlayed(cardId, NoTarget):
 				handCardIds.remove(cardId);
 				setHandStatus('Played $cardId (no target)');

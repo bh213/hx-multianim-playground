@@ -359,8 +359,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			ap.addCurveSegment(Progress, 0.0, activeCurve);
 		}
 		if (applyColor && activeCurve != null) {
-			ap.setColorRange(getStartColor(), getEndColor());
-			ap.addCurveSegment(Color, 0.0, activeCurve);
+			ap.addColorCurveSegment(0.0, activeCurve, getStartColor(), getEndColor());
 		}
 
 		ap.addEvent(1.0, "pathEnd");

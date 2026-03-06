@@ -14,7 +14,9 @@ import bh.ui.UIMultiAnimGridTypes.GridEvent;
 import bh.ui.UIMultiAnimGridTypes.CellCoord;
 import bh.base.Hex.HexOrientation;
 import bh.base.MacroUtils;
+import bh.base.TweenManager.TweenProperty;
 import bh.multianim.MultiAnimBuilder;
+import bh.multianim.MultiAnimParser.EasingType;
 import h2d.col.Point;
 
 class GridDemoScreen extends DemoScreenBase {
@@ -75,8 +77,14 @@ class GridDemoScreen extends DemoScreenBase {
 	static inline var BASE_X = 10.0;
 	static inline var BASE_Y = 70.0;
 
-	// Item colors for rect grid
-	static final RECT_COLORS:Array<Int> = [0xCC4422, 0x2266CC, 0x22CC44, 0xCCCC22, 0x9944CC];
+	// Item definitions for rect grid: color + type
+	static final RECT_ITEMS:Array<{color:Int, type:String}> = [
+		{color: 0xCC4422, type: "weapon"},
+		{color: 0x2266CC, type: "weapon"},
+		{color: 0x22CC44, type: "potion"},
+		{color: 0xCCCC22, type: "weapon"},
+		{color: 0x9944CC, type: "potion"},
+	];
 
 	// Card definitions for hex grid
 	static final CARD_DEFS:Array<{name:String, color:Int}> = [
@@ -88,11 +96,19 @@ class GridDemoScreen extends DemoScreenBase {
 		{name: "Storm", color: 0x22CCCC},
 	];
 
-	// G2G item colors
-	static final G2G_COLORS:Array<Int> = [0xCC6622, 0x2288CC, 0x44CC44, 0xCCAA22, 0x8844CC];
+	// G2G item definitions: weapons (storage) and potions (loadout)
+	static final G2G_WEAPONS:Array<{color:Int, type:String}> = [
+		{color: 0xCC6622, type: "weapon"},
+		{color: 0x8844CC, type: "weapon"},
+		{color: 0xCCAA22, type: "weapon"},
+	];
+	static final G2G_POTIONS:Array<{color:Int, type:String}> = [
+		{color: 0x2288CC, type: "potion"},
+		{color: 0x44CC44, type: "potion"},
+	];
 
 	override public function load():Void {
-		setupDemo("Grid Component", "Rect drag-drop, hex + cards, grid-to-grid transfers");
+		setupDemo("Grid Component", "Typed items, reject zones, source tracking, animations");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim", false);
 
@@ -135,12 +151,18 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			rejectHighlightParam: "rejectHighlight",
+			tweenManager: screenManager.tweens,
 		});
 		rectGrid.addRectRegion(5, 4);
 
-		// Pre-fill top row
-		for (i in 0...5)
-			rectGrid.set(i, 0, {color: RECT_COLORS[i]});
+		// Pre-fill: top row has weapons (cols 0-1) and potions (cols 2-4)
+		// Row 1: weapon-only zone. Row 2: potion-only zone. Row 3: accepts anything.
+		for (i in 0...5) {
+			final item = RECT_ITEMS[i];
+			rectGrid.set(i, 0, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
+		}
 
 		rectGrid.onGridEvent = onRectEvent;
 		rectGrid.getObject().setPosition(BASE_X, BASE_Y + 50);
@@ -163,29 +185,37 @@ class GridDemoScreen extends DemoScreenBase {
 			drag.dragAlpha = 0.7;
 			drag.returnToOrigin = true;
 			drag.dragLayer = ModalLayer;
+			drag.payload = data;
 
 			final srcCol = col;
 			final srcRow = row;
 			final srcData = data;
 
-			// Set callbacks BEFORE acceptDrops (grid chains onDragDrop)
 			drag.onDragEvent = (event, pos, wrapper) -> {
 				switch event {
 					case DragStart:
 						dragSourceGrid = rectGrid;
 						dragSourceCell = {col: srcCol, row: srcRow};
 						dragSourceData = srcData;
-						// Clear source immediately so isOccupied returns false
 						rectGrid.clear(srcCol, srcRow);
+						rectGrid.setCellParameter(srcCol, srcRow, "itemType", "none");
 					case DragCancel:
-						// Restore data on cancel (return to origin)
-						rectGrid.set(srcCol, srcRow, srcData);
+						rectGrid.set(srcCol, srcRow, srcData,
+							["itemType" => (srcData.type : Dynamic)]);
 					default:
 				}
 			};
 
-			// acceptDrops AFTER setting callbacks (grid chains onDragDrop internally)
-			rectGrid.acceptDrops(drag, (cell, _) -> !rectGrid.isOccupied(cell.col, cell.row));
+			// Row-based type filtering: row 1 = weapons only, row 2 = potions only, row 3 = any
+			rectGrid.acceptDrops(drag, (cell, d) -> {
+				if (rectGrid.isOccupied(cell.col, cell.row)) return false;
+				final itemType:String = d.payload != null ? d.payload.type : "";
+				return switch cell.row {
+					case 1: itemType == "weapon";
+					case 2: itemType == "potion";
+					default: true;
+				};
+			});
 
 			final pos = rectGrid.cellPosition(col, row);
 			rectDraggables.push(drag);
@@ -196,12 +226,18 @@ class GridDemoScreen extends DemoScreenBase {
 	function onRectEvent(event:GridEvent):Void {
 		switch event {
 			case CellClick(cell, button):
-				setRectLog('Clicked (${cell.col}, ${cell.row})');
-			case CellDrop(cell, _, _, _):
-				if (dragSourceGrid == rectGrid && dragSourceCell != null) {
-					// Source already cleared on DragStart
-					rectGrid.set(cell.col, cell.row, dragSourceData);
-					setRectLog('(${dragSourceCell.col},${dragSourceCell.row}) -> (${cell.col},${cell.row})');
+				final rowLabel = switch cell.row {
+					case 1: " [weapons]";
+					case 2: " [potions]";
+					default: "";
+				};
+				setRectLog('(${cell.col},${cell.row})$rowLabel');
+			case CellDrop(cell, draggable, srcGrid, srcCell):
+				if (dragSourceData != null) {
+					rectGrid.set(cell.col, cell.row, dragSourceData,
+						["itemType" => (dragSourceData.type : Dynamic)]);
+					final src = srcCell != null ? '(${srcCell.col},${srcCell.row})' : "?";
+					setRectLog('$src -> (${cell.col},${cell.row}) [${dragSourceData.type}]');
 					dragSourceGrid = null;
 					dragSourceCell = null;
 					dragSourceData = null;
@@ -223,8 +259,11 @@ class GridDemoScreen extends DemoScreenBase {
 			rectGrid.removeCell(c.col, c.row);
 		rectRows = 4;
 		rectGrid.addRectRegion(rectCols, rectRows);
-		for (i in 0...5)
-			rectGrid.set(i, 0, {color: RECT_COLORS[i]});
+		for (i in 0...5) {
+			final item = RECT_ITEMS[i];
+			rectGrid.set(i, 0, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
+		}
 		rebuildRectDraggables();
 		updateButtonStates();
 		setRectLog("Reset!");
@@ -261,6 +300,7 @@ class GridDemoScreen extends DemoScreenBase {
 		hexGrid = new UIMultiAnimGrid(demoBuilder, {
 			gridType: Hex(POINTY, 30, 30),
 			cellBuildName: "hexCell",
+			tweenManager: screenManager.tweens,
 		});
 		hexGrid.addHexRegion(0, 0, 2);
 		hexGrid.onGridEvent = onHexEvent;
@@ -329,8 +369,11 @@ class GridDemoScreen extends DemoScreenBase {
 						final col = Std.parseInt(parts[parts.length - 2]);
 						final row = Std.parseInt(parts[parts.length - 1]);
 						if (col != null && row != null && hexGrid != null) {
-							hexGrid.set(col, row, {color: def.color},
-								["occupied" => (true : Dynamic), "cellColor" => (def.color : Dynamic)]);
+							// Remove empty cell first, then add with entrance animation
+							hexGrid.removeCell(col, row);
+							hexGrid.addCellAnimated(col, row, {color: def.color},
+								["occupied" => (true : Dynamic), "cellColor" => (def.color : Dynamic)],
+								0.3, [Scale(0.0), Alpha(0.0)], EaseOutBack);
 							setHexLog('${def.name} -> (${col},${row})');
 						}
 					}
@@ -345,9 +388,16 @@ class GridDemoScreen extends DemoScreenBase {
 		switch event {
 			case CellClick(cell, _):
 				if (hexGrid != null && hexGrid.isOccupied(cell.col, cell.row)) {
-					hexGrid.clear(cell.col, cell.row);
-					hexGrid.getCellResult(cell.col, cell.row).setParameter("occupied", false);
-					setHexLog('Cleared (${cell.col},${cell.row})');
+					// Animated removal: shrink + fade out, then re-add empty cell
+					final col = cell.col;
+					final row = cell.row;
+					hexGrid.removeCellAnimated(col, row, 0.25,
+						[Scale(0.0), Alpha(0.0)], EaseInBack, () -> {
+							if (hexGrid != null)
+								hexGrid.addCellAnimated(col, row, null, null, 0.2,
+									[Scale(0.0)], EaseOutQuad);
+						});
+					setHexLog('Cleared (${col},${row})');
 				}
 			default:
 		}
@@ -358,10 +408,8 @@ class GridDemoScreen extends DemoScreenBase {
 		// Remove all cells and rebuild at default radius
 		var toRemove:Array<CellCoord> = [];
 		hexGrid.forEach((col, row, data) -> {
-			if (data != null) {
+			if (data != null)
 				hexGrid.clear(col, row);
-				hexGrid.getCellResult(col, row).setParameter("occupied", false);
-			}
 			toRemove.push({col: col, row: row});
 		});
 		for (c in toRemove)
@@ -416,33 +464,44 @@ class GridDemoScreen extends DemoScreenBase {
 	function setupGridToGrid():Void {
 		// Container for both grids — manually repositioned on row changes
 		g2gContainer = new h2d.Object();
-		g2gContainer.setPosition(BASE_X + 770, BASE_Y + 56);
+		g2gContainer.setPosition(BASE_X + 770, BASE_Y + 62);
 		addObjectToLayer(g2gContainer, DefaultLayer);
 
-		// Storage grid at top of container
+		// Storage grid (weapons only) at top of container
 		storageGrid = new UIMultiAnimGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			rejectHighlightParam: "rejectHighlight",
+			tweenManager: screenManager.tweens,
 		});
 		storageGrid.addRectRegion(storageCols, storageRows);
-		for (i in 0...5) {
+		for (i in 0...G2G_WEAPONS.length) {
+			final item = G2G_WEAPONS[i];
 			final col = i % storageCols;
 			final row = Std.int(i / storageCols);
-			storageGrid.set(col, row, {color: G2G_COLORS[i]});
+			storageGrid.set(col, row, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
 		}
 		storageGrid.onGridEvent = (e) -> onG2GEvent(storageGrid, e);
 		g2gContainer.addChild(storageGrid.getObject());
 
-		// Loadout grid below storage
+		// Loadout grid (potions only) below storage
 		loadoutGrid = new UIMultiAnimGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			rejectHighlightParam: "rejectHighlight",
+			tweenManager: screenManager.tweens,
 		});
 		loadoutGrid.addRectRegion(loadoutCols, loadoutRows);
+		for (i in 0...G2G_POTIONS.length) {
+			final item = G2G_POTIONS[i];
+			loadoutGrid.set(i, 0, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
+		}
 		loadoutGrid.onGridEvent = (e) -> onG2GEvent(loadoutGrid, e);
 		g2gContainer.addChild(loadoutGrid.getObject());
 
@@ -478,12 +537,14 @@ class GridDemoScreen extends DemoScreenBase {
 			drag.dragAlpha = 0.7;
 			drag.returnToOrigin = true;
 			drag.dragLayer = ModalLayer;
+			drag.payload = data;
+			drag.sourceGrid = grid;
+			drag.sourceCellCoord = ({col: col, row: row} : CellCoord);
 
 			final srcGrid = grid;
 			final srcCol = col;
 			final srcRow = row;
 
-			// Set callbacks BEFORE acceptDrops (grid chains onDragDrop internally)
 			drag.onDragEvent = (event, pos, wrapper) -> {
 				switch event {
 					case DragStart:
@@ -491,15 +552,23 @@ class GridDemoScreen extends DemoScreenBase {
 						dragSourceCell = {col: srcCol, row: srcRow};
 						dragSourceData = data;
 						srcGrid.clear(srcCol, srcRow);
+						srcGrid.setCellParameter(srcCol, srcRow, "itemType", "none");
 					case DragCancel:
-						srcGrid.set(srcCol, srcRow, data);
+						srcGrid.set(srcCol, srcRow, data,
+							["itemType" => (data.type : Dynamic)]);
 					default:
 				}
 			};
 
-			// Accept on both grids (empty cells only)
-			storageGrid.acceptDrops(drag, (cell, _) -> !storageGrid.isOccupied(cell.col, cell.row));
-			loadoutGrid.acceptDrops(drag, (cell, _) -> !loadoutGrid.isOccupied(cell.col, cell.row));
+			// Storage accepts weapons only, loadout accepts potions only
+			storageGrid.acceptDrops(drag, (cell, d) -> {
+				if (storageGrid.isOccupied(cell.col, cell.row)) return false;
+				return d.payload != null && d.payload.type == "weapon";
+			});
+			loadoutGrid.acceptDrops(drag, (cell, d) -> {
+				if (loadoutGrid.isOccupied(cell.col, cell.row)) return false;
+				return d.payload != null && d.payload.type == "potion";
+			});
 
 			final pos = grid.cellPosition(col, row);
 			g2gDraggables.push(drag);
@@ -509,14 +578,15 @@ class GridDemoScreen extends DemoScreenBase {
 
 	function onG2GEvent(targetGrid:UIMultiAnimGrid, event:GridEvent):Void {
 		switch event {
-			case CellDrop(cell, _, _, _):
-				if (dragSourceGrid != null && dragSourceCell != null && dragSourceData != null) {
-					// Source already cleared on DragStart
-					targetGrid.set(cell.col, cell.row, dragSourceData);
+			case CellDrop(cell, draggable, srcGrid, srcCell):
+				if (dragSourceData != null) {
+					targetGrid.set(cell.col, cell.row, dragSourceData,
+						["itemType" => (dragSourceData.type : Dynamic)]);
 
-					final srcName = if (dragSourceGrid == storageGrid) "Stor" else "Load";
-					final tgtName = if (targetGrid == storageGrid) "Stor" else "Load";
-					setG2GLog('$srcName -> $tgtName (${cell.col},${cell.row})');
+					final srcName = if (srcGrid == storageGrid) "Weap" else if (srcGrid == loadoutGrid) "Pot" else "?";
+					final tgtName = if (targetGrid == storageGrid) "Weap" else "Pot";
+					final src = srcCell != null ? '(${srcCell.col},${srcCell.row})' : "?";
+					setG2GLog('$srcName $src -> $tgtName (${cell.col},${cell.row})');
 
 					dragSourceGrid = null;
 					dragSourceCell = null;
@@ -525,8 +595,9 @@ class GridDemoScreen extends DemoScreenBase {
 					updateG2GCounts();
 				}
 			case CellClick(cell, _):
-				final name = if (targetGrid == storageGrid) "Storage" else "Loadout";
-				setG2GLog('$name (${cell.col},${cell.row})');
+				final name = if (targetGrid == storageGrid) "Weapons" else "Potions";
+				final occ = if (targetGrid.isOccupied(cell.col, cell.row)) " [full]" else " [empty]";
+				setG2GLog('$name (${cell.col},${cell.row})$occ');
 			default:
 		}
 	}
@@ -540,13 +611,20 @@ class GridDemoScreen extends DemoScreenBase {
 		loadoutRows = 2;
 
 		storageGrid.addRectRegion(storageCols, storageRows);
-		for (i in 0...5) {
+		for (i in 0...G2G_WEAPONS.length) {
+			final item = G2G_WEAPONS[i];
 			final col = i % storageCols;
 			final row = Std.int(i / storageCols);
-			storageGrid.set(col, row, {color: G2G_COLORS[i]});
+			storageGrid.set(col, row, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
 		}
 
 		loadoutGrid.addRectRegion(loadoutCols, loadoutRows);
+		for (i in 0...G2G_POTIONS.length) {
+			final item = G2G_POTIONS[i];
+			loadoutGrid.set(i, 0, {color: item.color, type: item.type},
+				["itemType" => (item.type : Dynamic)]);
+		}
 
 		repositionG2GLoadout();
 		rebuildG2GDraggables();

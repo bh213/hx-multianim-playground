@@ -59,10 +59,18 @@ paths {
 
 // ===== Cell programmables =====
 
-#rectCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal, highlight:bool=false) {
-    @(highlight=>true)  bitmap(generated(color(52, 52, #2a3a2a))): 0, 0
-    @(highlight=>false)  bitmap(generated(color(52, 52, #1a1a2e))): 0, 0
-    @(status=>hover) apply { filter: glow(#FFFF00, 0.3, 4) }
+#rectCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal,
+                       highlight:bool=false, rejectHighlight:bool=false,
+                       itemType:[none,weapon,potion]=none) {
+    bitmap(generated(color(52, 52, #1a1a2e))): 0, 0
+    @(highlight=>true)       bitmap(generated(color(52, 52, #2a3a2a))): 0, 0
+    @(rejectHighlight=>true) bitmap(generated(color(52, 52, #3a2020))): 0, 0
+    @(highlight=>true)       apply { filter: glow(#44FF44, 0.4, 6) }
+    @(rejectHighlight=>true) apply { filter: glow(#FF4444, 0.4, 6) }
+    @(status=>hover)         apply { filter: glow(#FFFF00, 0.3, 4) }
+    // Item type icons
+    @(itemType=>weapon)  graphics(polygon(#AAAACC, filled, 26, 4, 30, 18, 26, 48, 22, 18)): 0, 0
+    @(itemType=>potion)  graphics(polygon(#77AAFF, filled, 26, 8, 38, 26, 26, 44, 14, 26)): 0, 0
     graphics(rect(#333355, 1.0, 52, 52)): 0, 0
 }
 
@@ -117,26 +125,28 @@ paths {
 
     // === LEFT: Rect Grid Drag-Drop ===
     text(m5x7, "Rect Grid + Drag", #7fdbda): 0, -4
-    text(m5x7, "Drag items between cells", #555555): 0, 8
-    #rectLog(updatable) text(m5x7, "Click or drag items", #888888): 0, 22
+    text(m5x7, "Row 1: weapons, Row 2: potions, Row 3: any", #555555): 0, 8
+    #rectLog(updatable) text(m5x7, "Drag typed items — red = rejected", #888888): 0, 22
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("resetBtn")):138, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRowBtn")):194, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRowBtn")):250, 2
 
     // === CENTER: Hex Grid + Cards ===
     text(m5x7, "Hex Grid + Cards", #cc9966): 370, -4
-    text(m5x7, "Play cards on hex cells", #555555): 370, 8
-    #hexLog(updatable) text(m5x7, "Draw and play cards", #888888): 370, 22
+    text(m5x7, "Animated cell add/remove", #555555): 370, 8
+    #hexLog(updatable) text(m5x7, "Play cards, click to clear", #888888): 370, 22
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("drawBtn")):500, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRingBtn")):556, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRingBtn")):612, 2
 
     // === RIGHT: Grid-to-Grid ===
     text(m5x7, "Grid to Grid", #66cc99): 770, -4
-    text(m5x7, "Drag between grids", #555555): 770, 8
+    text(m5x7, "Typed items + source tracking", #555555): 770, 8
     #g2gLog(updatable) text(m5x7, "Move items between grids", #888888): 770, 22
     #storageCount(updatable) text(m5x7, "Storage: 5", #7799aa): 770, 36
     #loadoutCount(updatable) text(m5x7, "Loadout: 0", #7799aa): 870, 36
+    text(m5x7, "Weapons", #8888aa): 770, 48
+    text(m5x7, "Potions", #7799bb): 890, 48
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addStorBtn")):905, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remStorBtn")):961, 2
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addLoadBtn")):1017, 2

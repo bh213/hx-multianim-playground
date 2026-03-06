@@ -15,7 +15,7 @@ class InteractivesDemoScreen extends DemoScreenBase {
 	var cardsDisabled:Bool = false;
 
 	override public function load():Void {
-		setupDemo("Interactives", "Hit regions with typed metadata, cursors, rich highlights, and event filters");
+		setupDemo("Interactives", "Hit regions with typed metadata, cursors, rich highlights, event filters, and autoStatus auto-wiring");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/advanced/interactives.manim", false);
 
@@ -68,7 +68,7 @@ class InteractivesDemoScreen extends DemoScreenBase {
 		var parts:Array<String> = [];
 		@:nullSafety(Off) for (key in metadata.keys()) {
 			// Skip internal keys (bind, events, cursor.*)
-			if (key == "bind" || key == "events" || StringTools.startsWith(key, "cursor"))
+			if (key == "bind" || key == "autoStatus" || key == "events" || StringTools.startsWith(key, "cursor"))
 				continue;
 			parts.push('$key=${metadata.getStringOrDefault(key, "?")}');
 		}

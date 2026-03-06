@@ -16,6 +16,7 @@ import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
 import bh.base.FPoint;
 import h2d.col.Point;
+import h2d.Graphics;
 
 class CardHandDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -61,6 +62,7 @@ class CardHandDemoScreen extends DemoScreenBase {
 
 	// Target zone visuals
 	var targetResults:Array<BuilderResult> = [];
+	var thresholdGraphics:Null<Graphics>;
 
 	var nextCardId:Int = 0;
 	var handCardIds:Array<String> = [];
@@ -258,6 +260,7 @@ class CardHandDemoScreen extends DemoScreenBase {
 		var c2cScale = if (c2cHoverScaleToggle != null) c2cHoverScaleToggle.selected else false;
 		var c2cSpread = if (c2cSpreadToggle != null) c2cSpreadToggle.selected else false;
 
+		var zoneH = 620.0 - threshold;
 		cardHand = new UICardHandHelper(this, demoBuilder, {
 			layoutMode: currentLayoutMode,
 			anchorX: ax,
@@ -269,7 +272,7 @@ class CardHandDemoScreen extends DemoScreenBase {
 			hoverPopDistance: hPop,
 			hoverScale: hScale,
 			hoverNeighborSpread: nSpread,
-			targetingThresholdY: threshold,
+			targetingZones: [{id: "play_area", x: 0.0, y: 0.0, w: 670.0, h: zoneH}],
 			drawPilePosition: new FPoint(45.0, 615.0),
 			discardPilePosition: new FPoint(1210.0, 615.0),
 			drawPathName: "draw_easeOutBack",
@@ -298,6 +301,24 @@ class CardHandDemoScreen extends DemoScreenBase {
 		cardHand.setArrowVisible(if (arrowToggle != null) arrowToggle.selected else true);
 
 		registerTargets();
+		drawThresholdRect();
+	}
+
+	function drawThresholdRect():Void {
+		var threshold = getSliderVal(thresholdSlider, 240) * 1.0;
+		var rectH = 620.0 - threshold;
+		if (thresholdGraphics == null) {
+			thresholdGraphics = new Graphics();
+			addObjectToLayer(thresholdGraphics, DefaultLayer);
+		}
+		thresholdGraphics.clear();
+		if (rectH > 0) {
+			thresholdGraphics.beginFill(0xFFDD44, 0.04);
+			thresholdGraphics.drawRect(0, 0, 670, rectH);
+			thresholdGraphics.endFill();
+			thresholdGraphics.lineStyle(1.0, 0xFFDD44, 0.2);
+			thresholdGraphics.drawRect(0, 0, 670, rectH);
+		}
 	}
 
 	function switchLayoutMode(mode:HandLayoutMode):Void {
@@ -681,6 +702,10 @@ class CardHandDemoScreen extends DemoScreenBase {
 		pathDistDropdown = null;
 		pathOrientDropdown = null;
 		targetResults = [];
+		if (thresholdGraphics != null) {
+			thresholdGraphics.remove();
+			thresholdGraphics = null;
+		}
 		handCardIds = [];
 		nextCardId = 0;
 		disabledCardIndex = -1;

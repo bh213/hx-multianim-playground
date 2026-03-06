@@ -30,6 +30,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.modalOverlayConfig = null;
 	this.tabAutoWired = false;
 	this.tabGroup = null;
+	this.autoStatusHelper = null;
 	this.interactiveMap = new haxe_ds_StringMap();
 	this.interactiveWrappers = [];
 	this.postCustomAddToLayer = new haxe_ds_ObjectMap();
@@ -57,7 +58,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 		}
 		this.layers = layers;
 	}
-	this.controllersStack = [new bh_ui_DefaultUIController(this)];
+	this.controllersStack = [new bh_ui_controllers_UIDefaultController(this)];
 };
 $hxClasses["bh.ui.screens.UIScreenBase"] = bh_ui_screens_UIScreenBase;
 bh_ui_screens_UIScreenBase.__name__ = "bh.ui.screens.UIScreenBase";
@@ -88,6 +89,10 @@ bh_ui_screens_UIScreenBase.prototype = {
 		this.subElementProviders = [];
 		this.interactiveWrappers = [];
 		this.interactiveMap.h = Object.create(null);
+		if(this.autoStatusHelper != null) {
+			this.autoStatusHelper.unbindAll();
+		}
+		this.autoStatusHelper = null;
 		this.postCustomAddToLayer.h = { __keys__ : { }};
 		this.contentTarget = null;
 		this.contentTargetOwnership.h = { __keys__ : { }};
@@ -104,6 +109,12 @@ bh_ui_screens_UIScreenBase.prototype = {
 		this.onClear();
 	}
 	,onClear: function() {
+	}
+	,dispatchScreenEvent: function(event,source) {
+		if(this.autoStatusHelper != null) {
+			this.autoStatusHelper.handleEvent(event);
+		}
+		this.onScreenEvent(event,source);
 	}
 	,onMouseMove: function(pos) {
 		return true;
@@ -748,6 +759,33 @@ bh_ui_screens_UIScreenBase.prototype = {
 			++_g;
 			wrappers.push(this.addInteractive(obj,prefix));
 		}
+		var hasAutoStatus = false;
+		var _g = 0;
+		var _g1 = r.interactives;
+		while(_g < _g1.length) {
+			var obj = _g1[_g];
+			++_g;
+			var _g2 = obj.multiAnimType;
+			if(_g2._hx_index == 0) {
+				var _g3 = _g2.width;
+				var _g4 = _g2.height;
+				var _g5 = _g2.identifier;
+				var meta = _g2.metadata;
+				if(meta != null) {
+					var brs = new bh_multianim_BuilderResolvedSettings(meta);
+					if(brs.getStringOrDefault("autoStatus","") != "") {
+						hasAutoStatus = true;
+						break;
+					}
+				}
+			}
+		}
+		if(hasAutoStatus) {
+			if(this.autoStatusHelper == null) {
+				this.autoStatusHelper = new bh_ui_UIRichInteractiveHelper(this);
+			}
+			this.autoStatusHelper.registerAutoStatus(r,prefix);
+		}
 		return wrappers;
 	}
 	,removeInteractives: function(prefix) {
@@ -773,9 +811,19 @@ bh_ui_screens_UIScreenBase.prototype = {
 			}
 			this.removeElement(w);
 		}
+		if(this.autoStatusHelper != null) {
+			if(prefix != null) {
+				this.autoStatusHelper.unregisterByPrefix(prefix);
+			} else {
+				this.autoStatusHelper.unbindAll();
+			}
+		}
 	}
 	,getInteractive: function(id) {
 		return this.interactiveMap.h[id];
+	}
+	,getAutoInteractiveHelper: function() {
+		return this.autoStatusHelper;
 	}
 	,addElement: function(element,layer) {
 		if(this.contentTarget != null) {
@@ -30670,193 +30718,6 @@ bh_ui_ControllerEventHandler.prototype = {
 	}
 	,__class__: bh_ui_ControllerEventHandler
 };
-var bh_ui_controllers_UIController = function() { };
-$hxClasses["bh.ui.controllers.UIController"] = bh_ui_controllers_UIController;
-bh_ui_controllers_UIController.__name__ = "bh.ui.controllers.UIController";
-bh_ui_controllers_UIController.__isInterface__ = true;
-bh_ui_controllers_UIController.prototype = {
-	__class__: bh_ui_controllers_UIController
-};
-var bh_ui_controllers_UIControllerBase = function(integration) {
-	this.exitResponse = null;
-	this.currentOver = null;
-	this.integration = integration;
-	this.controllable = new bh_ui_controllers__$UIControllerBase_ControllableImpl(this);
-};
-$hxClasses["bh.ui.controllers.UIControllerBase"] = bh_ui_controllers_UIControllerBase;
-bh_ui_controllers_UIControllerBase.__name__ = "bh.ui.controllers.UIControllerBase";
-bh_ui_controllers_UIControllerBase.__interfaces__ = [bh_ui_controllers_UIController];
-bh_ui_controllers_UIControllerBase.prototype = {
-	handleEvent: function(element,event,eventPos) {
-		if(element == null) {
-			return;
-		}
-		if(js_Boot.__implements(element,bh_ui_StandardUIElementEvents)) {
-			var wrapper = { event : event, eventPos : eventPos, control : this.controllable};
-			var captureEvents = this.controllable.captureEvents;
-			(js_Boot.__cast(element , bh_ui_StandardUIElementEvents)).onEvent(wrapper);
-			switch(event._hx_index) {
-			case 0:
-				var _g = event.button;
-				this.controllable.outsideClick.handle(element);
-				break;
-			case 1:
-				var _g = event.button;
-				this.controllable.outsideClick.handle(element);
-				break;
-			case 3:
-				var _g = event.button;
-				this.controllable.outsideClick.handle(element);
-				break;
-			default:
-			}
-			if(captureEvents.start == false && captureEvents.stop == false) {
-				return;
-			}
-			if(captureEvents.start && captureEvents.target == null) {
-				captureEvents.target = element;
-			}
-			if(captureEvents.stop && captureEvents.target != null) {
-				captureEvents.target = null;
-			}
-			captureEvents.reset();
-		}
-	}
-	,handleClick: function(mousePoint,button,release,eventWrapper) {
-		var element = this.getEventElement(mousePoint);
-		if(this.integration.onMouseClick(mousePoint,button,release) == false) {
-			return;
-		}
-		if(release) {
-			var triggeredElements = this.controllable.outsideClick.triggerOutsideEvents(element);
-			var _g = 0;
-			while(_g < triggeredElements.length) {
-				var value = triggeredElements[_g];
-				++_g;
-				this.handleEvent(value,bh_ui_UIElementEvents.OnReleaseOutside(button),mousePoint);
-			}
-		}
-		if(element == null) {
-			return;
-		}
-		this.handleEvent(element,release ? bh_ui_UIElementEvents.OnRelease(button) : bh_ui_UIElementEvents.OnPush(button),mousePoint);
-	}
-	,handleMouseWheel: function(mousePoint,wheelDelta,eventWrapper) {
-		if(this.integration.onMouseWheel(mousePoint,wheelDelta) == false) {
-			return;
-		}
-		var element = this.getEventElement(mousePoint);
-		if(element == null) {
-			return;
-		}
-		this.handleEvent(element,bh_ui_UIElementEvents.OnWheel(wheelDelta),mousePoint);
-	}
-	,handleMove: function(mousePoint,eventWrapper) {
-		if(this.integration.onMouseMove(mousePoint) == false) {
-			return;
-		}
-		var element = this.getEventElement(mousePoint);
-		if(element != null) {
-			this.handleEvent(element,bh_ui_UIElementEvents.OnMouseMove,mousePoint);
-		}
-		if(element == this.currentOver) {
-			return;
-		} else if(element == null && this.currentOver != null) {
-			this.handleEvent(this.currentOver,bh_ui_UIElementEvents.OnLeave,mousePoint);
-			this.currentOver = null;
-		} else if(element != null) {
-			if(this.currentOver != null) {
-				this.handleEvent(this.currentOver,bh_ui_UIElementEvents.OnLeave,mousePoint);
-			}
-			this.handleEvent(element,bh_ui_UIElementEvents.OnEnter,mousePoint);
-			this.currentOver = element;
-		}
-		this.updateCursor();
-	}
-	,updateCursor: function() {
-		if(this.currentOver != null && js_Boot.__implements(this.currentOver,bh_ui_UIElementCursor)) {
-			var tmp = (js_Boot.__cast(this.currentOver , bh_ui_UIElementCursor)).getCursor();
-			hxd_System.setCursor(tmp);
-		} else {
-			var tmp = bh_base_CursorManager.getDefaultCursor();
-			hxd_System.setCursor(tmp);
-		}
-	}
-	,redrawAndUpdate: function(element,dt) {
-		if(js_Boot.__implements(element,bh_ui_UIElementUpdatable)) {
-			(js_Boot.__cast(element , bh_ui_UIElementUpdatable)).update(dt);
-		}
-		if(js_Boot.__implements(element,bh_ui_UIElementSyncRedraw)) {
-			var redrawable = js_Boot.__cast(element , bh_ui_UIElementSyncRedraw);
-			if(redrawable.requestRedraw) {
-				redrawable.doRedraw();
-			}
-		}
-	}
-	,update: function(dt) {
-		var _g = 0;
-		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveUpdates);
-		while(_g < _g1.length) {
-			var element = _g1[_g];
-			++_g;
-			this.redrawAndUpdate(element,dt);
-		}
-		if(this.exitResponse != null) {
-			var retVal = this.exitResponse;
-			this.exitResponse = null;
-			return bh_ui_controllers_UIControllerResult.UIControllerFinished(retVal);
-		}
-		return bh_ui_controllers_UIControllerResult.UIControllerRunning;
-	}
-	,clearState: function() {
-		this.currentOver = null;
-		this.controllable.captureEvents.target = null;
-		this.controllable.captureEvents.reset();
-	}
-	,lifecycleEvent: function(event) {
-	}
-	,handleKey: function(keyCode,release,mousePoint,eventWrapper) {
-		if(this.integration.onKey(keyCode,release) == false) {
-			return;
-		}
-		var element = this.getEventElement(mousePoint);
-		this.onScreenEvent(bh_ui_UIScreenEvent.UIKeyPress(keyCode,release),null);
-		if(element == null) {
-			return;
-		}
-		this.handleEvent(element,bh_ui_UIElementEvents.OnKey(keyCode,release),mousePoint);
-	}
-	,otherEvent: function(sourceEvent) {
-	}
-	,onScreenEvent: function(event,source) {
-		this.integration.onScreenEvent(event,source);
-	}
-	,__class__: bh_ui_controllers_UIControllerBase
-};
-var bh_ui_DefaultUIController = function(integration) {
-	bh_ui_controllers_UIControllerBase.call(this,integration);
-};
-$hxClasses["bh.ui.DefaultUIController"] = bh_ui_DefaultUIController;
-bh_ui_DefaultUIController.__name__ = "bh.ui.DefaultUIController";
-bh_ui_DefaultUIController.__super__ = bh_ui_controllers_UIControllerBase;
-bh_ui_DefaultUIController.prototype = $extend(bh_ui_controllers_UIControllerBase.prototype,{
-	getEventElement: function(pos) {
-		if(this.controllable.captureEvents.target != null) {
-			return this.controllable.captureEvents.target;
-		}
-		var _g = 0;
-		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveEvents);
-		while(_g < _g1.length) {
-			var element = _g1[_g];
-			++_g;
-			if(element.containsPoint(pos)) {
-				return element;
-			}
-		}
-		return null;
-	}
-	,__class__: bh_ui_DefaultUIController
-});
 var bh_ui_FloatingTextInstance = function(object,animPath,startX,startY,absolutePosition) {
 	this.object = object;
 	this.animPath = animPath;
@@ -31030,6 +30891,11 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.hoverScale = config != null && config.hoverScale != null ? config.hoverScale : 1.15;
 	this.hoverNeighborSpread = config != null && config.hoverNeighborSpread != null ? config.hoverNeighborSpread : 20.0;
 	this.targetingThresholdY = config != null && config.targetingThresholdY != null ? config.targetingThresholdY : 100.0;
+	if(config != null && config.targetingZones != null) {
+		this.targetingZones = config.targetingZones.slice();
+	} else {
+		this.targetingZones = [];
+	}
 	this.allowCardToCard = config != null && config.allowCardToCard != null && config.allowCardToCard;
 	this.cardToCardHighlightScale = config != null && config.cardToCardHighlightScale != null ? config.cardToCardHighlightScale : 1.1;
 	this.cardToCardHoverPop = config != null && config.cardToCardHoverPop != null && config.cardToCardHoverPop;
@@ -31648,7 +31514,7 @@ bh_ui_UICardHandHelper.prototype = {
 				return;
 			}
 		}
-		if(this.targeting.arrowEnabled && this.cursorY < this.anchorY - this.targetingThresholdY) {
+		if(this.targeting.arrowEnabled && this.isInTargetingZone(this.cursorX,this.cursorY)) {
 			if(!this.isTargeting) {
 				this.enterTargetingMode(entry);
 			}
@@ -31931,6 +31797,21 @@ bh_ui_UICardHandHelper.prototype = {
 			}
 		}
 		return false;
+	}
+	,isInTargetingZone: function(x,y) {
+		if(this.targetingZones.length > 0) {
+			var _g = 0;
+			var _g1 = this.targetingZones;
+			while(_g < _g1.length) {
+				var zone = _g1[_g];
+				++_g;
+				if(x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h) {
+					return true;
+				}
+			}
+			return this.targeting.hitTestTargets(this.sceneCursorX,this.sceneCursorY,this.draggedEntry != null ? this.draggedEntry.descriptor.id : "") != null;
+		}
+		return y < this.anchorY - this.targetingThresholdY;
 	}
 	,addToHandLayer: function(entry) {
 		this.handContainer.add(entry.container,this.cards.indexOf(entry));
@@ -33433,7 +33314,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			var i = _g++;
 			var zone = this.dropZones[i];
 			var b = zone.boundsProvider != null ? zone.boundsProvider() : zone.bounds;
-			if(pos.x >= b.xMin && pos.x < b.xMax && pos.y >= b.yMin && pos.y < b.yMax) {
+			if(b.contains(pos)) {
 				if(zone.accepts == null || zone.accepts(this,zone)) {
 					if(zone.priority > bestPriority || zone.priority == bestPriority && i > bestIndex) {
 						best = zone;
@@ -34856,10 +34737,27 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var cellSize = this.getCellBoundingSize();
 			var interactive = new bh_base_MAObject(bh_base_MultiAnimObjectData.MAInteractive(Math.ceil(cellSize.x),Math.ceil(cellSize.y),targetId,null),false);
 			var localPos = this.getCellLocalPosition(coord);
-			interactive.posChanged = true;
-			interactive.x = localPos.x - cellSize.x / 2;
-			interactive.posChanged = true;
-			interactive.y = localPos.y - cellSize.y / 2;
+			var _g = this.gridType;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.cellWidth;
+				var _g2 = _g.cellHeight;
+				var _g3 = _g.gap;
+				interactive.posChanged = true;
+				interactive.x = localPos.x;
+				interactive.posChanged = true;
+				interactive.y = localPos.y;
+				break;
+			case 1:
+				var _g4 = _g.orientation;
+				var _g5 = _g.sizeX;
+				var _g6 = _g.sizeY;
+				interactive.posChanged = true;
+				interactive.x = localPos.x - cellSize.x / 2;
+				interactive.posChanged = true;
+				interactive.y = localPos.y - cellSize.y / 2;
+				break;
+			}
 			this.root.addChild(interactive);
 			var wrapper = new bh_ui_UIInteractiveWrapper(interactive,null);
 			this.cardTargetInteractives.h[targetId] = interactive;
@@ -36989,7 +36887,19 @@ var bh_ui_UIRichInteractiveHelper = function(screen) {
 $hxClasses["bh.ui.UIRichInteractiveHelper"] = bh_ui_UIRichInteractiveHelper;
 bh_ui_UIRichInteractiveHelper.__name__ = "bh.ui.UIRichInteractiveHelper";
 bh_ui_UIRichInteractiveHelper.prototype = {
-	register: function(result,prefix) {
+	register: function(result,prefix,metadataKey) {
+		if(metadataKey == null) {
+			metadataKey = "bind";
+		}
+		if(metadataKey == "autoStatus") {
+			throw haxe_Exception.thrown("\"" + "autoStatus" + "\" is reserved for screen auto-wiring — use \"bind\" or a custom key");
+		}
+		this.registerInternal(result,prefix,metadataKey);
+	}
+	,registerAutoStatus: function(result,prefix) {
+		this.registerInternal(result,prefix,"autoStatus");
+	}
+	,registerInternal: function(result,prefix,metadataKey) {
 		var _g = 0;
 		var _g1 = result.interactives;
 		while(_g < _g1.length) {
@@ -37003,10 +36913,16 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 				var meta = _g2.metadata;
 				if(meta != null) {
 					var brs = new bh_multianim_BuilderResolvedSettings(meta);
-					var bindParam = brs.getStringOrDefault("bind","");
-					if(bindParam != "") {
+					var paramName = brs.getStringOrDefault(metadataKey,"");
+					if(paramName != "") {
 						var fullId = prefix != null ? "" + prefix + "." + identifier : identifier;
-						this.bind(fullId,result,bindParam);
+						if(metadataKey != "autoStatus") {
+							var autoHelper = this.screen.getAutoInteractiveHelper();
+							if(autoHelper != null && autoHelper.hasBinding(fullId)) {
+								throw haxe_Exception.thrown("interactive \"" + fullId + "\" is already managed by screen auto-wiring (" + "autoStatus" + ") — cannot also register with \"" + metadataKey + "\"");
+							}
+						}
+						this.bind(fullId,result,paramName);
 					}
 				}
 			}
@@ -37038,6 +36954,33 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 				delete(_this.h[id]);
 			}
 		}
+	}
+	,unregisterByPrefix: function(prefix) {
+		var dotPrefix = "" + prefix + ".";
+		var toRemove = [];
+		var h = this.bindings.h;
+		var id_h = h;
+		var id_keys = Object.keys(h);
+		var id_length = id_keys.length;
+		var id_current = 0;
+		while(id_current < id_length) {
+			var id = id_keys[id_current++];
+			if(StringTools.startsWith(id,dotPrefix)) {
+				toRemove.push(id);
+			}
+		}
+		var _g = 0;
+		while(_g < toRemove.length) {
+			var id = toRemove[_g];
+			++_g;
+			var _this = this.bindings;
+			if(Object.prototype.hasOwnProperty.call(_this.h,id)) {
+				delete(_this.h[id]);
+			}
+		}
+	}
+	,hasBinding: function(interactiveId) {
+		return Object.prototype.hasOwnProperty.call(this.bindings.h,interactiveId);
 	}
 	,bind: function(interactiveId,result,stateParam) {
 		if(stateParam == null) {
@@ -37454,14 +37397,21 @@ var bh_ui_controllers_UIControllerResult = $hxEnums["bh.ui.controllers.UIControl
 };
 bh_ui_controllers_UIControllerResult.__constructs__ = [bh_ui_controllers_UIControllerResult.UIControllerRunning,bh_ui_controllers_UIControllerResult.UIControllerFinished];
 bh_ui_controllers_UIControllerResult.__empty_constructs__ = [bh_ui_controllers_UIControllerResult.UIControllerRunning];
-var bh_ui_controllers__$UIControllerBase_CaptureEventsImpl = function() {
+var bh_ui_controllers_UIController = function() { };
+$hxClasses["bh.ui.controllers.UIController"] = bh_ui_controllers_UIController;
+bh_ui_controllers_UIController.__name__ = "bh.ui.controllers.UIController";
+bh_ui_controllers_UIController.__isInterface__ = true;
+bh_ui_controllers_UIController.prototype = {
+	__class__: bh_ui_controllers_UIController
+};
+var bh_ui_controllers__$UIDefaultController_CaptureEventsImpl = function() {
 	this.stop = false;
 	this.start = false;
 };
-$hxClasses["bh.ui.controllers._UIControllerBase.CaptureEventsImpl"] = bh_ui_controllers__$UIControllerBase_CaptureEventsImpl;
-bh_ui_controllers__$UIControllerBase_CaptureEventsImpl.__name__ = "bh.ui.controllers._UIControllerBase.CaptureEventsImpl";
-bh_ui_controllers__$UIControllerBase_CaptureEventsImpl.__interfaces__ = [bh_ui_CaptureEventsControl];
-bh_ui_controllers__$UIControllerBase_CaptureEventsImpl.prototype = {
+$hxClasses["bh.ui.controllers._UIDefaultController.CaptureEventsImpl"] = bh_ui_controllers__$UIDefaultController_CaptureEventsImpl;
+bh_ui_controllers__$UIDefaultController_CaptureEventsImpl.__name__ = "bh.ui.controllers._UIDefaultController.CaptureEventsImpl";
+bh_ui_controllers__$UIDefaultController_CaptureEventsImpl.__interfaces__ = [bh_ui_CaptureEventsControl];
+bh_ui_controllers__$UIDefaultController_CaptureEventsImpl.prototype = {
 	startCapture: function() {
 		this.start = true;
 	}
@@ -37475,16 +37425,16 @@ bh_ui_controllers__$UIControllerBase_CaptureEventsImpl.prototype = {
 	,isCapturing: function() {
 		return this.target != null;
 	}
-	,__class__: bh_ui_controllers__$UIControllerBase_CaptureEventsImpl
+	,__class__: bh_ui_controllers__$UIDefaultController_CaptureEventsImpl
 };
-var bh_ui_controllers__$UIControllerBase_OutsideClickImpl = function() {
+var bh_ui_controllers__$UIDefaultController_OutsideClickImpl = function() {
 	this.enabledChanged = null;
 	this.trackOutsideClickSubscribers = [];
 };
-$hxClasses["bh.ui.controllers._UIControllerBase.OutsideClickImpl"] = bh_ui_controllers__$UIControllerBase_OutsideClickImpl;
-bh_ui_controllers__$UIControllerBase_OutsideClickImpl.__name__ = "bh.ui.controllers._UIControllerBase.OutsideClickImpl";
-bh_ui_controllers__$UIControllerBase_OutsideClickImpl.__interfaces__ = [bh_ui_OutsideClickControl];
-bh_ui_controllers__$UIControllerBase_OutsideClickImpl.prototype = {
+$hxClasses["bh.ui.controllers._UIDefaultController.OutsideClickImpl"] = bh_ui_controllers__$UIDefaultController_OutsideClickImpl;
+bh_ui_controllers__$UIDefaultController_OutsideClickImpl.__name__ = "bh.ui.controllers._UIDefaultController.OutsideClickImpl";
+bh_ui_controllers__$UIDefaultController_OutsideClickImpl.__interfaces__ = [bh_ui_OutsideClickControl];
+bh_ui_controllers__$UIDefaultController_OutsideClickImpl.prototype = {
 	trackOutsideClick: function(enabled) {
 		this.enabledChanged = enabled;
 	}
@@ -37513,21 +37463,192 @@ bh_ui_controllers__$UIControllerBase_OutsideClickImpl.prototype = {
 			return ret;
 		}
 	}
-	,__class__: bh_ui_controllers__$UIControllerBase_OutsideClickImpl
+	,__class__: bh_ui_controllers__$UIDefaultController_OutsideClickImpl
 };
-var bh_ui_controllers__$UIControllerBase_ControllableImpl = function(controller) {
+var bh_ui_controllers__$UIDefaultController_ControllableImpl = function(controller) {
 	this.controller = controller;
-	this.captureEvents = new bh_ui_controllers__$UIControllerBase_CaptureEventsImpl();
-	this.outsideClick = new bh_ui_controllers__$UIControllerBase_OutsideClickImpl();
+	this.captureEvents = new bh_ui_controllers__$UIDefaultController_CaptureEventsImpl();
+	this.outsideClick = new bh_ui_controllers__$UIDefaultController_OutsideClickImpl();
 };
-$hxClasses["bh.ui.controllers._UIControllerBase.ControllableImpl"] = bh_ui_controllers__$UIControllerBase_ControllableImpl;
-bh_ui_controllers__$UIControllerBase_ControllableImpl.__name__ = "bh.ui.controllers._UIControllerBase.ControllableImpl";
-bh_ui_controllers__$UIControllerBase_ControllableImpl.__interfaces__ = [bh_ui_Controllable];
-bh_ui_controllers__$UIControllerBase_ControllableImpl.prototype = {
+$hxClasses["bh.ui.controllers._UIDefaultController.ControllableImpl"] = bh_ui_controllers__$UIDefaultController_ControllableImpl;
+bh_ui_controllers__$UIDefaultController_ControllableImpl.__name__ = "bh.ui.controllers._UIDefaultController.ControllableImpl";
+bh_ui_controllers__$UIDefaultController_ControllableImpl.__interfaces__ = [bh_ui_Controllable];
+bh_ui_controllers__$UIDefaultController_ControllableImpl.prototype = {
 	pushEvent: function(event,source) {
 		this.controller.onScreenEvent(event,source);
 	}
-	,__class__: bh_ui_controllers__$UIControllerBase_ControllableImpl
+	,__class__: bh_ui_controllers__$UIDefaultController_ControllableImpl
+};
+var bh_ui_controllers_UIDefaultController = function(integration) {
+	this.exitResponse = null;
+	this.currentOver = null;
+	this.integration = integration;
+	this.controllable = new bh_ui_controllers__$UIDefaultController_ControllableImpl(this);
+};
+$hxClasses["bh.ui.controllers.UIDefaultController"] = bh_ui_controllers_UIDefaultController;
+bh_ui_controllers_UIDefaultController.__name__ = "bh.ui.controllers.UIDefaultController";
+bh_ui_controllers_UIDefaultController.__interfaces__ = [bh_ui_controllers_UIController];
+bh_ui_controllers_UIDefaultController.prototype = {
+	handleEvent: function(element,event,eventPos) {
+		if(element == null) {
+			return;
+		}
+		if(js_Boot.__implements(element,bh_ui_StandardUIElementEvents)) {
+			var wrapper = { event : event, eventPos : eventPos, control : this.controllable};
+			var captureEvents = this.controllable.captureEvents;
+			(js_Boot.__cast(element , bh_ui_StandardUIElementEvents)).onEvent(wrapper);
+			switch(event._hx_index) {
+			case 0:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			case 1:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			case 3:
+				var _g = event.button;
+				this.controllable.outsideClick.handle(element);
+				break;
+			default:
+			}
+			if(captureEvents.start == false && captureEvents.stop == false) {
+				return;
+			}
+			if(captureEvents.start && captureEvents.target == null) {
+				captureEvents.target = element;
+			}
+			if(captureEvents.stop && captureEvents.target != null) {
+				captureEvents.target = null;
+			}
+			captureEvents.reset();
+		}
+	}
+	,handleClick: function(mousePoint,button,release,eventWrapper) {
+		var element = this.getEventElement(mousePoint);
+		if(this.integration.onMouseClick(mousePoint,button,release) == false) {
+			return;
+		}
+		if(release) {
+			var triggeredElements = this.controllable.outsideClick.triggerOutsideEvents(element);
+			var _g = 0;
+			while(_g < triggeredElements.length) {
+				var value = triggeredElements[_g];
+				++_g;
+				this.handleEvent(value,bh_ui_UIElementEvents.OnReleaseOutside(button),mousePoint);
+			}
+		}
+		if(element == null) {
+			return;
+		}
+		this.handleEvent(element,release ? bh_ui_UIElementEvents.OnRelease(button) : bh_ui_UIElementEvents.OnPush(button),mousePoint);
+	}
+	,handleMouseWheel: function(mousePoint,wheelDelta,eventWrapper) {
+		if(this.integration.onMouseWheel(mousePoint,wheelDelta) == false) {
+			return;
+		}
+		var element = this.getEventElement(mousePoint);
+		if(element == null) {
+			return;
+		}
+		this.handleEvent(element,bh_ui_UIElementEvents.OnWheel(wheelDelta),mousePoint);
+	}
+	,getEventElement: function(pos) {
+		if(this.controllable.captureEvents.target != null) {
+			return this.controllable.captureEvents.target;
+		}
+		var _g = 0;
+		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveEvents);
+		while(_g < _g1.length) {
+			var element = _g1[_g];
+			++_g;
+			if(element.containsPoint(pos)) {
+				return element;
+			}
+		}
+		return null;
+	}
+	,handleMove: function(mousePoint,eventWrapper) {
+		if(this.integration.onMouseMove(mousePoint) == false) {
+			return;
+		}
+		var element = this.getEventElement(mousePoint);
+		if(element != null) {
+			this.handleEvent(element,bh_ui_UIElementEvents.OnMouseMove,mousePoint);
+		}
+		if(element == this.currentOver) {
+			return;
+		} else if(element == null && this.currentOver != null) {
+			this.handleEvent(this.currentOver,bh_ui_UIElementEvents.OnLeave,mousePoint);
+			this.currentOver = null;
+		} else if(element != null) {
+			if(this.currentOver != null) {
+				this.handleEvent(this.currentOver,bh_ui_UIElementEvents.OnLeave,mousePoint);
+			}
+			this.handleEvent(element,bh_ui_UIElementEvents.OnEnter,mousePoint);
+			this.currentOver = element;
+		}
+		this.updateCursor();
+	}
+	,updateCursor: function() {
+		if(this.currentOver != null && js_Boot.__implements(this.currentOver,bh_ui_UIElementCursor)) {
+			var tmp = (js_Boot.__cast(this.currentOver , bh_ui_UIElementCursor)).getCursor();
+			hxd_System.setCursor(tmp);
+		} else {
+			var tmp = bh_base_CursorManager.getDefaultCursor();
+			hxd_System.setCursor(tmp);
+		}
+	}
+	,redrawAndUpdate: function(element,dt) {
+		if(js_Boot.__implements(element,bh_ui_UIElementUpdatable)) {
+			(js_Boot.__cast(element , bh_ui_UIElementUpdatable)).update(dt);
+		}
+		if(js_Boot.__implements(element,bh_ui_UIElementSyncRedraw)) {
+			var redrawable = js_Boot.__cast(element , bh_ui_UIElementSyncRedraw);
+			if(redrawable.requestRedraw) {
+				redrawable.doRedraw();
+			}
+		}
+	}
+	,update: function(dt) {
+		var _g = 0;
+		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveUpdates);
+		while(_g < _g1.length) {
+			var element = _g1[_g];
+			++_g;
+			this.redrawAndUpdate(element,dt);
+		}
+		if(this.exitResponse != null) {
+			var retVal = this.exitResponse;
+			this.exitResponse = null;
+			return bh_ui_controllers_UIControllerResult.UIControllerFinished(retVal);
+		}
+		return bh_ui_controllers_UIControllerResult.UIControllerRunning;
+	}
+	,clearState: function() {
+		this.currentOver = null;
+		this.controllable.captureEvents.target = null;
+		this.controllable.captureEvents.reset();
+	}
+	,lifecycleEvent: function(event) {
+	}
+	,handleKey: function(keyCode,release,mousePoint,eventWrapper) {
+		if(this.integration.onKey(keyCode,release) == false) {
+			return;
+		}
+		var element = this.getEventElement(mousePoint);
+		this.onScreenEvent(bh_ui_UIScreenEvent.UIKeyPress(keyCode,release),null);
+		if(element == null) {
+			return;
+		}
+		this.handleEvent(element,bh_ui_UIElementEvents.OnKey(keyCode,release),mousePoint);
+	}
+	,otherEvent: function(sourceEvent) {
+	}
+	,onScreenEvent: function(event,source) {
+		this.integration.dispatchScreenEvent(event,source);
+	}
+	,__class__: bh_ui_controllers_UIDefaultController
 };
 var bh_ui_screens__$ScreenManager_ScreenManagerMode = $hxEnums["bh.ui.screens._ScreenManager.ScreenManagerMode"] = { __ename__:true,__constructs__:null
 	,None: {_hx_name:"None",_hx_index:0,__enum__:"bh.ui.screens._ScreenManager.ScreenManagerMode",toString:$estr}
@@ -106882,7 +107003,7 @@ screens_advanced_InteractivesDemoScreen.__name__ = "screens.advanced.Interactive
 screens_advanced_InteractivesDemoScreen.__super__ = DemoScreenBase;
 screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
-		this.setupDemo("Interactives","Hit regions with typed metadata, cursors, rich highlights, and event filters");
+		this.setupDemo("Interactives","Hit regions with typed metadata, cursors, rich highlights, event filters, and autoStatus auto-wiring");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/advanced/interactives.manim",false);
 		this.demoResult = this.demoBuilder.buildWithParameters("interactivesDemo",new haxe_ds_StringMap(),null,null,true);
 		var _this = this.demoResult.object;
@@ -106941,7 +107062,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 		var key = metadata.keys();
 		while(key.hasNext()) {
 			var key1 = key.next();
-			if(key1 == "bind" || key1 == "events" || StringTools.startsWith(key1,"cursor")) {
+			if(key1 == "bind" || key1 == "autoStatus" || key1 == "events" || StringTools.startsWith(key1,"cursor")) {
 				continue;
 			}
 			parts.push("" + key1 + "=" + metadata.getStringOrDefault(key1,"?"));
@@ -111761,7 +111882,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/cards-demo.manim",false);
 		this.cardBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-hand.manim",false);
 		this.statesBuilder = this.screenManager.buildFromResourceName("demos/gamelike/card-states.manim",false);
-		var generatedByMacroBuildWithParametersload7309Builder = function() {
+		var generatedByMacroBuildWithParametersload7369Builder = function() {
 			var cardTabs;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -111780,7 +111901,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload7309Builder();
+		var ui = generatedByMacroBuildWithParametersload7369Builder();
 		this.demoResult = ui.builderResults;
 		this.tabs = ui.cardTabs;
 		this.addBuilderResult(this.demoResult);
@@ -112007,7 +112128,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	,loadCardHandTab: function() {
 		var _gthis = this;
 		this.tabs.beginTab(1);
-		var generatedByMacroBuildWithParametersloadCardHandTab14122Builder = function() {
+		var generatedByMacroBuildWithParametersloadCardHandTab14182Builder = function() {
 			var thresholdSlider;
 			var spreadSlider;
 			var returnSlider;
@@ -112312,7 +112433,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersloadCardHandTab14122Builder();
+		var ui = generatedByMacroBuildWithParametersloadCardHandTab14182Builder();
 		this.handResult = ui.builderResults;
 		this.drawButton = ui.drawBtn;
 		this.discardButton = ui.discardBtn;
@@ -112391,7 +112512,11 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var c2cPop = this.c2cHoverPopToggle != null && this.c2cHoverPopToggle.selected;
 		var c2cScale = this.c2cHoverScaleToggle != null && this.c2cHoverScaleToggle.selected;
 		var c2cSpr = this.c2cSpreadToggle != null && this.c2cSpreadToggle.selected;
-		this.cardHand = new bh_ui_UICardHandHelper(this,this.cardBuilder,{ layoutMode : this.currentLayoutMode, anchorX : ax, anchorY : 620.0, cardWidth : 140.0, cardHeight : 200.0, fanRadius : fRadius, fanMaxAngle : fAngle, hoverPopDistance : hPop, hoverScale : hScale, hoverNeighborSpread : nSpread, targetingThresholdY : threshold, drawPilePosition : new bh_base_FPoint(45.0,615.0), discardPilePosition : new bh_base_FPoint(1210.0,615.0), drawPathName : "draw_easeOutBack", discardPathName : "discard_easeInQuad", returnPathName : "return_easeOutCubic", rearrangePathName : "rearrange_easeInOutCubic", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve", allowCardToCard : c2c, cardToCardHoverPop : c2cPop, cardToCardHoverScale : c2cScale, cardToCardSpread : c2cSpr, layoutPathName : this.currentHandPath, pathDistribution : this.currentPathDist, pathOrientation : this.currentPathOrient});
+		var zoneH = 620.0 - threshold;
+		var tmp = this.cardBuilder;
+		var tmp1 = this.currentLayoutMode;
+		var tmp2 = new bh_base_FPoint(45.0,615.0);
+		this.cardHand = new bh_ui_UICardHandHelper(this,tmp,{ layoutMode : tmp1, anchorX : ax, anchorY : 620.0, cardWidth : 140.0, cardHeight : 200.0, fanRadius : fRadius, fanMaxAngle : fAngle, hoverPopDistance : hPop, hoverScale : hScale, hoverNeighborSpread : nSpread, targetingZones : [{ id : "play_area", x : 0.0, y : 0.0, w : 670.0, h : zoneH}], drawPilePosition : tmp2, discardPilePosition : new bh_base_FPoint(1210.0,615.0), drawPathName : "draw_easeOutBack", discardPathName : "discard_easeInQuad", returnPathName : "return_easeOutCubic", rearrangePathName : "rearrange_easeInOutCubic", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve", allowCardToCard : c2c, cardToCardHoverPop : c2cPop, cardToCardHoverScale : c2cScale, cardToCardSpread : c2cSpr, layoutPathName : this.currentHandPath, pathDistribution : this.currentPathDist, pathOrientation : this.currentPathOrient});
 		var tmp = this.getSliderVal(this.drawSlider,100);
 		this.cardHand.drawDuration = tmp / 100.0;
 		var tmp = this.getSliderVal(this.discardSlider,100);
@@ -112406,6 +112531,23 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		};
 		this.cardHand.setArrowVisible(this.arrowToggle != null ? this.arrowToggle.selected : true);
 		this.registerTargets();
+		this.drawThresholdRect();
+	}
+	,drawThresholdRect: function() {
+		var threshold = this.getSliderVal(this.thresholdSlider,240) * 1.0;
+		var rectH = 620.0 - threshold;
+		if(this.thresholdGraphics == null) {
+			this.thresholdGraphics = new h2d_Graphics();
+			this.addObjectToLayer(this.thresholdGraphics,bh_ui_screens_LayersEnum.DefaultLayer);
+		}
+		this.thresholdGraphics.clear();
+		if(rectH > 0) {
+			this.thresholdGraphics.beginFill(16768324,0.04);
+			this.thresholdGraphics.drawRect(0,0,670,rectH);
+			this.thresholdGraphics.endFill();
+			this.thresholdGraphics.lineStyle(1.0,16768324,0.2);
+			this.thresholdGraphics.drawRect(0,0,670,rectH);
+		}
 	}
 	,switchLayoutMode: function(mode) {
 		if(mode == this.currentLayoutMode) {
@@ -113000,6 +113142,13 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.pathDistDropdown = null;
 		this.pathOrientDropdown = null;
 		this.targetResults = [];
+		if(this.thresholdGraphics != null) {
+			var _this = this.thresholdGraphics;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.thresholdGraphics = null;
+		}
 		this.handCardIds = [];
 		this.nextCardId = 0;
 		this.disabledCardIndex = -1;

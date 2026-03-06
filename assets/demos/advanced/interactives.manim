@@ -2,7 +2,7 @@ version: 1.0
 
 // Interactives Demo — hit regions, cursors, rich highlights, event filters
 
-#interactivesDemo programmable(card1S:[normal,hover,pressed,disabled]=normal, card2S:[normal,hover,pressed,disabled]=normal, card3S:[normal,hover,pressed,disabled]=normal, toggleS:[normal,hover,pressed]=normal, hoverOnlyS:[normal,hover]=normal, allEventsS:[normal,hover,pressed]=normal) {
+#interactivesDemo programmable(card1S:[normal,hover,pressed,disabled]=normal, card2S:[normal,hover,pressed,disabled]=normal, card3S:[normal,hover,pressed,disabled]=normal, toggleS:[normal,hover,pressed]=normal, hoverOnlyS:[normal,hover]=normal, allEventsS:[normal,hover,pressed]=normal, auto1S:[normal,hover,pressed]=normal, auto2S:[normal,hover,pressed]=normal, auto3S:[normal,hover,pressed]=normal) {
     text(exo2_16, "Interactive Regions", #7fdbda, left, 600): 0, 0
     text(exo2_light_14, "Hit regions with typed metadata, cursors, highlights, and event filters.", #aaaaaa, left, 700): 0, 30
 
@@ -180,8 +180,45 @@ version: 1.0
         interactive(200, 45, "allEvents", bind => "allEventsS"): 0, 0
     }
 
+    // ── Section 5: Auto-Wired (autoStatus) ───────────────────
+    text(exo2_16, "Auto-Wired (autoStatus)", #66ff99): 0, 605
+    bitmap(generated(color(700, 1, #66ff9933))): 0, 627
+    text(exo2_light_14, "autoStatus=> auto-wires state machine via addInteractives() — no manual UIRichInteractiveHelper needed.", #aaaaaa, left, 700): 0, 635
+
+    // Auto-wired button 1 — color shift
+    point {
+        pos: 0, 665
+        @(auto1S => normal)  bitmap(generated(color(200, 50, #2a4a2a))): 0, 0
+        @(auto1S => hover)   bitmap(generated(color(200, 50, #3a6a3a))): 0, 0
+        @(auto1S => pressed) bitmap(generated(color(200, 50, #1a3a1a))): 0, 0
+        @(auto1S => normal)  text(m6x11, "Auto 1 - normal", #66ff99, left, 180): 10, 18
+        @(auto1S => hover)   text(m6x11, "Auto 1 - HOVER", #99ffbb, left, 180): 10, 18
+        @(auto1S => pressed) text(m6x11, "Auto 1 - PRESSED", #44cc77, left, 180): 10, 18
+        interactive(200, 50, "auto1", autoStatus => "auto1S"): 0, 0
+    }
+
+    // Auto-wired button 2 — border glow
+    point {
+        pos: 220, 665
+        ninepatch("ui", "Window_3x3_idle", 200, 50): 0, 0
+        @(auto2S => hover) graphics(line(#66ff99, 1, 0, 0, 199, 0); line(#66ff99, 1, 199, 0, 199, 49); line(#66ff99, 1, 199, 49, 0, 49); line(#66ff99, 1, 0, 49, 0, 0);): 0, 0
+        @(auto2S => pressed) graphics(line(#44cc77, 1, 0, 0, 199, 0); line(#44cc77, 1, 199, 0, 199, 49); line(#44cc77, 1, 199, 49, 0, 49); line(#44cc77, 1, 0, 49, 0, 0);): 0, 0
+        text(m6x11, "Auto 2 - border", #66ff99, left, 180): 10, 18
+        interactive(200, 50, "auto2", autoStatus => "auto2S"): 0, 0
+    }
+
+    // Auto-wired button 3 — with metadata
+    point {
+        pos: 440, 665
+        @(auto3S => normal)  bitmap(generated(color(200, 50, #3a3a2a))): 0, 0
+        @(auto3S => hover)   bitmap(generated(color(200, 50, #5a5a3a))): 0, 0
+        @(auto3S => pressed) bitmap(generated(color(200, 50, #2a2a1a))): 0, 0
+        text(m6x11, "Auto 3 - with meta", #ccff66, left, 180): 10, 18
+        interactive(200, 50, "auto3", autoStatus => "auto3S", action => "autoAction", tier => "epic"): 0, 0
+    }
+
     // ── Status display ───────────────────────────────────────
-    bitmap(generated(color(700, 45, #1a1a2e))): 0, 600
-    #statusText(updatable) text(m6x11, "Hover or click any interactive region", #888888): 10, 608
-    #clickText(updatable) text(m6x11, "No region clicked yet", #7fdbda): 10, 628
+    bitmap(generated(color(700, 45, #1a1a2e))): 0, 735
+    #statusText(updatable) text(m6x11, "Hover or click any interactive region", #888888): 10, 743
+    #clickText(updatable) text(m6x11, "No region clicked yet", #7fdbda): 10, 763
 }

@@ -769,9 +769,7 @@ paths {
     text(m5x7, "DISCARD", #888888, center, 80): 1170, 555
     graphics(rect(#553344, 1.0, 60, 80)): 1180, 575
 
-    // Targeting threshold line (stops before panel)
-    graphics(line(#FFDD4433, 1.0, 0, 0, 670, 0)): 0, 380
-    text(m5x7, "--- targeting threshold ---", #FFDD4444): 250, 368
+    // Targeting threshold rect drawn dynamically from Haxe
 
     // ===== Right Panel =====
     // Panel background (588 x 450, starts at X=677)

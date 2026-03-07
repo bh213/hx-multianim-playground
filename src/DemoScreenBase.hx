@@ -2,9 +2,10 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.multianim.MultiAnimBuilder;
 import bh.ui.screens.UIScreen;
+import bh.ui.screens.UIScrollableScreen;
 import bh.ui.screens.ScreenManager;
 
-class DemoScreenBase extends UIScreenBase {
+class DemoScreenBase extends UIScrollableScreen {
 	var stdBuilder:Null<MultiAnimBuilder>;
 	var commonBuilder:Null<MultiAnimBuilder>;
 	public var demoTitle:String = "";
@@ -24,6 +25,7 @@ class DemoScreenBase extends UIScreenBase {
 	public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {}
 
 	public override function onClear():Void {
+		super.onClear();
 		stdBuilder = null;
 		commonBuilder = null;
 	}

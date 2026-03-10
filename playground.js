@@ -1170,11 +1170,15 @@ bh_ui_screens_UIScrollableScreen.prototype = $extend(bh_ui_screens_UIScreenBase.
 		_this.y = -this.scrollY;
 	}
 	,onClear: function() {
+		this.scrollContent.removeChildren();
 		this.root.addChild(this.scrollContent);
 		this.scrollY = 0;
 		this.targetScrollY = 0;
 		this.scrollContentHeight = 0;
 		this.scrollAutoMeasure = true;
+		var _this = this.scrollContent;
+		_this.posChanged = true;
+		_this.y = 0;
 	}
 	,__class__: bh_ui_screens_UIScrollableScreen
 });
@@ -32685,7 +32689,7 @@ var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__c
 	,UIClickItem: ($_=function(index,items) { return {_hx_index:8,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
 	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:9,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
 	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:10,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
-	,UIEntering: {_hx_name:"UIEntering",_hx_index:11,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIEntering: ($_=function(data) { return {_hx_index:11,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIEntering",$_.__params__ = ["data"],$_)
 	,UILeaving: {_hx_name:"UILeaving",_hx_index:12,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UIClickOutside: {_hx_name:"UIClickOutside",_hx_index:13,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UIInteractiveEvent: ($_=function(event,id,metadata) { return {_hx_index:14,event:event,id:id,metadata:metadata,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIInteractiveEvent",$_.__params__ = ["event","id","metadata"],$_)
@@ -32694,7 +32698,7 @@ var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__c
 	,UIFocusChange: ($_=function(focused) { return {_hx_index:17,focused:focused,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIFocusChange",$_.__params__ = ["focused"],$_)
 };
 bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent,bh_ui_UIScreenEvent.UITextChange,bh_ui_UIScreenEvent.UITextSubmit,bh_ui_UIScreenEvent.UIFocusChange];
-bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
+bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
 bh_ui_UIElementIdentifiable.__name__ = "bh.ui.UIElementIdentifiable";
@@ -32988,7 +32992,7 @@ bh_ui_UIInteractiveWrapper.prototype = {
 		case 4:
 			if((this.eventFlags & 1) != 0) {
 				this.hovered = true;
-				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIEntering,this.id,this.metadata),this);
+				wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIInteractiveEvent(bh_ui_UIScreenEvent.UIEntering(),this.id,this.metadata),this);
 			}
 			break;
 		case 5:
@@ -33004,6 +33008,7 @@ bh_ui_UIInteractiveWrapper.prototype = {
 };
 var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraParams) {
 	this.disabled = false;
+	this.buttonText = buttonText;
 	var _g = new haxe_ds_StringMap();
 	_g.h["buttonText"] = buttonText;
 	_g.h["status"] = "normal";
@@ -33028,7 +33033,7 @@ var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraPara
 };
 $hxClasses["bh.ui.UIStandardMultiAnimButton"] = bh_ui_UIStandardMultiAnimButton;
 bh_ui_UIStandardMultiAnimButton.__name__ = "bh.ui.UIStandardMultiAnimButton";
-bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementText,bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimButton.create = function(builder,name,buttonText,extraParams) {
 	return new bh_ui_UIStandardMultiAnimButton(builder,name,buttonText,extraParams);
 };
@@ -37425,6 +37430,7 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 				}
 				break;
 			case 11:
+				var _g = innerEvent.data;
 				if(binding.currentState == bh_ui_InteractiveState.Normal) {
 					binding.currentState = bh_ui_InteractiveState.Hover;
 					binding.result.setParameter(binding.stateParam,"hover");
@@ -38289,7 +38295,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 		}
 	}
-	,modalDialog: function(dialog,caller,dialogName) {
+	,modalDialog: function(dialog,caller,dialogName,data) {
 		dialog.load();
 		var overlayConfig = this.readOverlayConfig(dialog);
 		if(overlayConfig != null) {
@@ -38299,9 +38305,9 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 			this.modalOverlay.alpha = this.modalOverlayTargetAlpha;
 		}
-		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName));
+		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),data);
 	}
-	,updateScreenMode: function(newScreenMode) {
+	,updateScreenMode: function(newScreenMode,data) {
 		var _gthis = this;
 		switch(newScreenMode._hx_index) {
 		case 0:
@@ -38533,7 +38539,7 @@ bh_ui_screens_ScreenManager.prototype = {
 				var layerIndex = _g_value;
 				var controller = screen.getController();
 				addScreen(screen,layerIndex);
-				screen.onScreenEvent(bh_ui_UIScreenEvent.UIEntering,null);
+				screen.onScreenEvent(bh_ui_UIScreenEvent.UIEntering(data),null);
 				screen.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Entering),null);
 				controller.lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerStarted);
 				if(overrideActiveScreenControllers == null) {
@@ -38562,11 +38568,11 @@ bh_ui_screens_ScreenManager.prototype = {
 			cleanup();
 		}
 	}
-	,switchScreen: function(newScreenMode,transition) {
+	,switchScreen: function(newScreenMode,transition,data) {
 		var _gthis = this;
 		if(transition == null || (transition == null ? false : transition._hx_index == 0)) {
 			this.finalizeTransition();
-			this.updateScreenMode(newScreenMode);
+			this.updateScreenMode(newScreenMode,data);
 			return;
 		}
 		this.finalizeTransition();
@@ -38620,7 +38626,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			var layerIndex = _g_value;
 			this.app.s2d.add(screen.getSceneRoot(),layerIndex);
 			this.activeScreens.push(screen);
-			screen.onScreenEvent(bh_ui_UIScreenEvent.UIEntering,null);
+			screen.onScreenEvent(bh_ui_UIScreenEvent.UIEntering(data),null);
 			screen.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Entering),null);
 			screen.getController().lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerStarted);
 			this.activeScreenControllers.push(screen);
@@ -38666,10 +38672,10 @@ bh_ui_screens_ScreenManager.prototype = {
 		this.mode = newScreenMode;
 		this.executeTransition(transition,screensToRemove,screensToAdd);
 	}
-	,switchTo: function(screen,transition) {
-		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(screen),transition);
+	,switchTo: function(screen,data,transition) {
+		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Single(screen),transition,data);
 	}
-	,modalDialogWithTransition: function(dialog,caller,dialogName,transition) {
+	,modalDialogWithTransition: function(dialog,caller,dialogName,data,transition) {
 		dialog.load();
 		var overlayConfig = this.readOverlayConfig(dialog);
 		if(overlayConfig != null) {
@@ -38679,7 +38685,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			}
 			this.tweenOverlayIn(overlayConfig,transition);
 		}
-		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),transition);
+		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),transition,data);
 	}
 	,closeDialogWithTransition: function(transition) {
 		var _gthis = this;
@@ -107387,17 +107393,19 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 			this.richHelper.handleEvent(event);
 		}
 		if(event._hx_index == 14) {
-			var _g = event.id;
-			var _g1 = event.metadata;
-			switch(event.event._hx_index) {
+			var _g = event.event;
+			var _g1 = event.id;
+			var _g2 = event.metadata;
+			switch(_g._hx_index) {
 			case 0:
-				var id = _g;
-				var metadata = _g1;
+				var id = _g1;
+				var metadata = _g2;
 				this.handleClick(id,metadata);
 				break;
 			case 11:
-				var id = _g;
-				var metadata = _g1;
+				var _g3 = _g.data;
+				var id = _g1;
+				var metadata = _g2;
 				this.updateStatus("statusText","Hovering: " + id + " " + this.formatMeta(metadata));
 				break;
 			case 12:
@@ -113267,11 +113275,13 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 		if(this.activeTab == 0) {
 			if(event._hx_index == 14) {
-				var _g = event.id;
-				var _g1 = event.metadata;
-				switch(event.event._hx_index) {
+				var _g = event.event;
+				var _g1 = event.id;
+				var _g2 = event.metadata;
+				switch(_g._hx_index) {
 				case 11:
-					var id = _g;
+					var _g2 = _g.data;
+					var id = _g1;
 					var data = this.getTooltipData(id);
 					if(data != null && this.tooltipHelper != null) {
 						var params = new haxe_ds_StringMap();
@@ -113285,7 +113295,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					}
 					break;
 				case 12:
-					var id = _g;
+					var id = _g1;
 					if(this.tooltipHelper != null) {
 						this.tooltipHelper.cancelHover(id);
 					}
@@ -113413,11 +113423,13 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 				break;
 			case 14:
-				var _g = event.id;
-				var _g1 = event.metadata;
-				switch(event.event._hx_index) {
+				var _g = event.event;
+				var _g1 = event.id;
+				var _g2 = event.metadata;
+				switch(_g._hx_index) {
 				case 11:
-					var id = _g;
+					var _g2 = _g.data;
+					var id = _g1;
 					var desc = this.getHelpText(id);
 					if(desc != null && this.handTooltipHelper != null) {
 						var params = new haxe_ds_StringMap();
@@ -113426,7 +113438,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					}
 					break;
 				case 12:
-					var id = _g;
+					var id = _g1;
 					if(this.handTooltipHelper != null) {
 						this.handTooltipHelper.cancelHover(id);
 					}
@@ -115728,18 +115740,20 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			break;
 		case 14:
-			var _g = event.id;
-			var _g1 = event.metadata;
-			switch(event.event._hx_index) {
+			var _g = event.event;
+			var _g1 = event.id;
+			var _g2 = event.metadata;
+			switch(_g._hx_index) {
 			case 0:
-				var id = _g;
+				var id = _g1;
 				var nodeIdx = Std.parseInt(id);
 				if(nodeIdx != null) {
 					this.onNodeClick(nodeIdx);
 				}
 				break;
 			case 11:
-				var id = _g;
+				var _g2 = _g.data;
+				var id = _g1;
 				var nodeIdx = Std.parseInt(id);
 				if(nodeIdx != null) {
 					this.onNodeHover(nodeIdx);
@@ -119643,21 +119657,23 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 		}
 		if(event._hx_index == 14) {
-			var _g = event.id;
-			var _g1 = event.metadata;
-			switch(event.event._hx_index) {
+			var _g = event.event;
+			var _g1 = event.id;
+			var _g2 = event.metadata;
+			switch(_g._hx_index) {
 			case 0:
-				var id = _g;
-				var metadata = _g1;
+				var id = _g1;
+				var metadata = _g2;
 				this.handleClick(id,metadata);
 				break;
 			case 11:
-				var id = _g;
-				var metadata = _g1;
+				var _g3 = _g.data;
+				var id = _g1;
+				var metadata = _g2;
 				this.handleEnter(id,metadata);
 				break;
 			case 12:
-				var id = _g;
+				var id = _g1;
 				this.handleLeave(id);
 				break;
 			default:

@@ -40,7 +40,7 @@ class InteractivesDemoScreen extends DemoScreenBase {
 		switch event {
 			case UIInteractiveEvent(UIClick, id, metadata):
 				handleClick(id, metadata);
-			case UIInteractiveEvent(UIEntering, id, metadata):
+			case UIInteractiveEvent(UIEntering(_), id, metadata):
 				updateStatus("statusText", 'Hovering: $id ${formatMeta(metadata)}');
 			case UIInteractiveEvent(UILeaving, _, _):
 				updateStatus("statusText", "Hover or click any interactive region");

@@ -786,7 +786,7 @@ class CardsDemoScreen extends DemoScreenBase {
 		// Tab 0: Card States events
 		if (activeTab == 0) {
 			switch event {
-				case UIInteractiveEvent(UIEntering, id, _):
+				case UIInteractiveEvent(UIEntering(_), id, _):
 					var data = getTooltipData(id);
 					if (data != null && tooltipHelper != null) {
 						var params = new Map<String, Dynamic>();
@@ -906,7 +906,7 @@ class CardsDemoScreen extends DemoScreenBase {
 							updateLabel("fanRadiusLabel", '$value');
 						}
 					}
-				case UIInteractiveEvent(UIEntering, id, _):
+				case UIInteractiveEvent(UIEntering(_), id, _):
 					var desc = getHelpText(id);
 					if (desc != null && handTooltipHelper != null) {
 						var params = new Map<String, Dynamic>();

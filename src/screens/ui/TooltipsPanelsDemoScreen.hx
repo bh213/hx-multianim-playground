@@ -104,7 +104,7 @@ class TooltipsPanelsDemoScreen extends DemoScreenBase {
 		}
 
 		switch event {
-			case UIInteractiveEvent(UIEntering, id, metadata):
+			case UIInteractiveEvent(UIEntering(_), id, metadata):
 				handleEnter(id, metadata);
 			case UIInteractiveEvent(UILeaving, id, _):
 				handleLeave(id);

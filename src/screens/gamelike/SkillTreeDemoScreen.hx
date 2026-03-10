@@ -197,7 +197,7 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 			case UIInteractiveEvent(UIClick, id, _):
 				final nodeIdx = Std.parseInt(id);
 				if (nodeIdx != null) onNodeClick(nodeIdx);
-			case UIInteractiveEvent(UIEntering, id, _):
+			case UIInteractiveEvent(UIEntering(_), id, _):
 				final nodeIdx = Std.parseInt(id);
 				if (nodeIdx != null) onNodeHover(nodeIdx);
 			case UIInteractiveEvent(UILeaving, _, _):

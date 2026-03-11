@@ -7,6 +7,13 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
+var bh_ui_UIComponentHost = function() { };
+$hxClasses["bh.ui.UIComponentHost"] = bh_ui_UIComponentHost;
+bh_ui_UIComponentHost.__name__ = "bh.ui.UIComponentHost";
+bh_ui_UIComponentHost.__isInterface__ = true;
+bh_ui_UIComponentHost.prototype = {
+	__class__: bh_ui_UIComponentHost
+};
 var bh_ui_controllers_UIControllerScreenIntegration = function() { };
 $hxClasses["bh.ui.controllers.UIControllerScreenIntegration"] = bh_ui_controllers_UIControllerScreenIntegration;
 bh_ui_controllers_UIControllerScreenIntegration.__name__ = "bh.ui.controllers.UIControllerScreenIntegration";
@@ -30,6 +37,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.modalOverlayConfig = null;
 	this.tabAutoWired = false;
 	this.tabGroup = null;
+	this.higherOrderComponents = [];
 	this.panelHelpers = [];
 	this.autoStatusHelper = null;
 	this.interactiveMap = new haxe_ds_StringMap();
@@ -63,7 +71,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 };
 $hxClasses["bh.ui.screens.UIScreenBase"] = bh_ui_screens_UIScreenBase;
 bh_ui_screens_UIScreenBase.__name__ = "bh.ui.screens.UIScreenBase";
-bh_ui_screens_UIScreenBase.__interfaces__ = [bh_ui_controllers_UIControllerScreenIntegration,bh_ui_screens_UIScreen];
+bh_ui_screens_UIScreenBase.__interfaces__ = [bh_ui_UIComponentHost,bh_ui_controllers_UIControllerScreenIntegration,bh_ui_screens_UIScreen];
 bh_ui_screens_UIScreenBase.prototype = {
 	set_autoSyncInitialState: function(value) {
 		if(this.initialSyncDone) {
@@ -95,6 +103,14 @@ bh_ui_screens_UIScreenBase.prototype = {
 		}
 		this.autoStatusHelper = null;
 		this.panelHelpers = [];
+		var _g = 0;
+		var _g1 = this.higherOrderComponents;
+		while(_g < _g1.length) {
+			var comp = _g1[_g];
+			++_g;
+			comp.dispose();
+		}
+		this.higherOrderComponents = [];
 		this.postCustomAddToLayer.h = { __keys__ : { }};
 		this.contentTarget = null;
 		this.contentTargetOwnership.h = { __keys__ : { }};
@@ -123,7 +139,58 @@ bh_ui_screens_UIScreenBase.prototype = {
 			++_g;
 			helper.handleOutsideClick(event);
 		}
-		this.onScreenEvent(event,source);
+		var consumed = false;
+		var _g = 0;
+		var _g1 = this.higherOrderComponents;
+		while(_g < _g1.length) {
+			var comp = _g1[_g];
+			++_g;
+			if(comp.handleScreenEvent(event)) {
+				consumed = true;
+				break;
+			}
+		}
+		if(!consumed) {
+			this.onScreenEvent(event,source);
+		}
+	}
+	,dispatchMouseMove: function(pos) {
+		var consumed = false;
+		var _g = 0;
+		var _g1 = this.higherOrderComponents;
+		while(_g < _g1.length) {
+			var comp = _g1[_g];
+			++_g;
+			if(comp.onMouseMove(pos.x,pos.y)) {
+				consumed = true;
+			}
+		}
+		if(!consumed) {
+			return this.onMouseMove(pos);
+		}
+		return true;
+	}
+	,dispatchMouseClick: function(pos,button,release) {
+		if(release) {
+			var _g = 0;
+			var _g1 = this.higherOrderComponents;
+			while(_g < _g1.length) {
+				var comp = _g1[_g];
+				++_g;
+				if(comp.onMouseRelease(pos.x,pos.y)) {
+					return false;
+				}
+			}
+		} else {
+			var _g = 0;
+			var _g1 = this.higherOrderComponents;
+			while(_g < _g1.length) {
+				var comp = _g1[_g];
+				++_g;
+				comp.onMouseClick(pos.x,pos.y,button);
+			}
+		}
+		return this.onMouseClick(pos,button,release);
 	}
 	,onMouseMove: function(pos) {
 		return true;
@@ -165,6 +232,13 @@ bh_ui_screens_UIScreenBase.prototype = {
 			var helper = _g1[_g];
 			++_g;
 			helper.checkPendingClose();
+		}
+		var _g = 0;
+		var _g1 = this.higherOrderComponents;
+		while(_g < _g1.length) {
+			var comp = _g1[_g];
+			++_g;
+			comp.update(dt);
 		}
 		var map = this.postCustomAddToLayer;
 		var _g_map = map;
@@ -596,6 +670,126 @@ bh_ui_screens_UIScreenBase.prototype = {
 			extraParams.h["tabButtonHeight"] = tabHeight;
 		}
 		return new bh_ui_UIMultiAnimTabs(providedBuilder,tabBarBuildName,tabButtonBuildName,items,selectedIndex,this,extraParams,tabButtonParams,contentRootName,this.layers);
+	}
+	,createGrid: function(builder,config,settings) {
+		this.applyGridSettings(config,settings);
+		var grid = new bh_ui_UIMultiAnimGrid(builder,config);
+		this.registerComponent(grid);
+		return grid;
+	}
+	,addGrid: function(builder,config,layer,settings) {
+		var grid = this.createGrid(builder,config,settings);
+		this.addObjectToLayer(grid.getObject(),layer);
+		return grid;
+	}
+	,addCardHand: function(builder,config,settings) {
+		if(config == null) {
+			config = { };
+		}
+		this.applyCardHandSettings(config,settings);
+		if(config.handLayer == null) {
+			var cardHandLayer = bh_ui_screens_LayersEnum.NamedLayer("cardHand");
+			if(!this.layers.exists(cardHandLayer)) {
+				this.layers.set(cardHandLayer,4);
+			}
+			config.handLayer = cardHandLayer;
+		}
+		var hand = new bh_ui_UICardHandHelper(this,builder,config);
+		this.registerComponent(hand);
+		return hand;
+	}
+	,applyGridSettings: function(config,settings) {
+		if(settings == null) {
+			return;
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"originX")) {
+			config.originX = this.getFloatSettings(settings,"originX",0);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"originY")) {
+			config.originY = this.getFloatSettings(settings,"originY",0);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"cellBuildName")) {
+			config.cellBuildName = this.getSettings(settings,"cellBuildName",config.cellBuildName);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"highlightParam")) {
+			config.highlightParam = this.getSettings(settings,"highlightParam","highlight");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"statusParam")) {
+			config.statusParam = this.getSettings(settings,"statusParam","status");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"rejectHighlightParam")) {
+			config.rejectHighlightParam = this.getSettings(settings,"rejectHighlightParam","");
+		}
+	}
+	,applyCardHandSettings: function(config,settings) {
+		if(settings == null) {
+			return;
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"anchorX")) {
+			config.anchorX = this.getFloatSettings(settings,"anchorX",640);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"anchorY")) {
+			config.anchorY = this.getFloatSettings(settings,"anchorY",680);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"cardWidth")) {
+			config.cardWidth = this.getFloatSettings(settings,"cardWidth",80);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"cardHeight")) {
+			config.cardHeight = this.getFloatSettings(settings,"cardHeight",110);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"fanRadius")) {
+			config.fanRadius = this.getFloatSettings(settings,"fanRadius",800);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"fanMaxAngle")) {
+			config.fanMaxAngle = this.getFloatSettings(settings,"fanMaxAngle",40);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"hoverPopDistance")) {
+			config.hoverPopDistance = this.getFloatSettings(settings,"hoverPopDistance",30);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"hoverScale")) {
+			config.hoverScale = this.getFloatSettings(settings,"hoverScale",1.15);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"hoverNeighborSpread")) {
+			config.hoverNeighborSpread = this.getFloatSettings(settings,"hoverNeighborSpread",20);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"linearSpacing")) {
+			config.linearSpacing = this.getFloatSettings(settings,"linearSpacing",8);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"linearMaxWidth")) {
+			config.linearMaxWidth = this.getFloatSettings(settings,"linearMaxWidth",600);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"targetingThresholdY")) {
+			config.targetingThresholdY = this.getFloatSettings(settings,"targetingThresholdY",100);
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"interactivePrefix")) {
+			config.interactivePrefix = this.getSettings(settings,"interactivePrefix","card");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"drawPathName")) {
+			config.drawPathName = this.getSettings(settings,"drawPathName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"discardPathName")) {
+			config.discardPathName = this.getSettings(settings,"discardPathName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"returnPathName")) {
+			config.returnPathName = this.getSettings(settings,"returnPathName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"rearrangePathName")) {
+			config.rearrangePathName = this.getSettings(settings,"rearrangePathName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"arrowSegmentName")) {
+			config.arrowSegmentName = this.getSettings(settings,"arrowSegmentName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"arrowHeadName")) {
+			config.arrowHeadName = this.getSettings(settings,"arrowHeadName","");
+		}
+		if(Object.prototype.hasOwnProperty.call(settings.h,"arrowPathName")) {
+			config.arrowPathName = this.getSettings(settings,"arrowPathName","");
+		}
+	}
+	,registerComponent: function(component) {
+		if(this.higherOrderComponents.indexOf(component) == -1) {
+			this.higherOrderComponents.push(component);
+		}
 	}
 	,addScrollableListWithSingleBuilder: function(builder,panelBuilderName,itemBuilderName,scrollbarBuilderName,scrollbarInPanelName,items,settings,initialIndex,width,height) {
 		if(height == null) {
@@ -17757,8 +17951,9 @@ bh_multianim_CallbackResult.__empty_constructs__ = [bh_multianim_CallbackResult.
 var bh_multianim_PlaceholderValues = $hxEnums["bh.multianim.PlaceholderValues"] = { __ename__:true,__constructs__:null
 	,PVObject: ($_=function(obj) { return {_hx_index:0,obj:obj,__enum__:"bh.multianim.PlaceholderValues",toString:$estr}; },$_._hx_name="PVObject",$_.__params__ = ["obj"],$_)
 	,PVFactory: ($_=function(factoryMethod) { return {_hx_index:1,factoryMethod:factoryMethod,__enum__:"bh.multianim.PlaceholderValues",toString:$estr}; },$_._hx_name="PVFactory",$_.__params__ = ["factoryMethod"],$_)
+	,PVComponent: ($_=function(factoryMethod,component) { return {_hx_index:2,factoryMethod:factoryMethod,component:component,__enum__:"bh.multianim.PlaceholderValues",toString:$estr}; },$_._hx_name="PVComponent",$_.__params__ = ["factoryMethod","component"],$_)
 };
-bh_multianim_PlaceholderValues.__constructs__ = [bh_multianim_PlaceholderValues.PVObject,bh_multianim_PlaceholderValues.PVFactory];
+bh_multianim_PlaceholderValues.__constructs__ = [bh_multianim_PlaceholderValues.PVObject,bh_multianim_PlaceholderValues.PVFactory,bh_multianim_PlaceholderValues.PVComponent];
 bh_multianim_PlaceholderValues.__empty_constructs__ = [];
 var bh_multianim__$MultiAnimBuilder_InternalBuildMode = $hxEnums["bh.multianim._MultiAnimBuilder.InternalBuildMode"] = { __ename__:true,__constructs__:null
 	,RootMode: {_hx_name:"RootMode",_hx_index:0,__enum__:"bh.multianim._MultiAnimBuilder.InternalBuildMode",toString:$estr}
@@ -22669,6 +22864,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							var factoryMethod = param.factoryMethod;
 							var res = factoryMethod(settings);
 							callbackResultH2dObject = res;
+							break;
+						case 2:
+							var _g1 = param.component;
+							var factoryMethod = param.factoryMethod;
+							callbackResultH2dObject = factoryMethod(settings);
 							break;
 						}
 					}
@@ -30999,6 +31199,13 @@ bh_ui__$UICardHandHelper_ActiveAnimation.__name__ = "bh.ui._UICardHandHelper.Act
 bh_ui__$UICardHandHelper_ActiveAnimation.prototype = {
 	__class__: bh_ui__$UICardHandHelper_ActiveAnimation
 };
+var bh_ui_UIHigherOrderComponent = function() { };
+$hxClasses["bh.ui.UIHigherOrderComponent"] = bh_ui_UIHigherOrderComponent;
+bh_ui_UIHigherOrderComponent.__name__ = "bh.ui.UIHigherOrderComponent";
+bh_ui_UIHigherOrderComponent.__isInterface__ = true;
+bh_ui_UIHigherOrderComponent.prototype = {
+	__class__: bh_ui_UIHigherOrderComponent
+};
 var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.chainedListeners = [];
 	this.canDragCard = null;
@@ -31077,6 +31284,7 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 };
 $hxClasses["bh.ui.UICardHandHelper"] = bh_ui_UICardHandHelper;
 bh_ui_UICardHandHelper.__name__ = "bh.ui.UICardHandHelper";
+bh_ui_UICardHandHelper.__interfaces__ = [bh_ui_UIHigherOrderComponent];
 bh_ui_UICardHandHelper.prototype = {
 	setHand: function(descriptors) {
 		this.clearHand();
@@ -31278,6 +31486,9 @@ bh_ui_UICardHandHelper.prototype = {
 		if(this.isDragging) {
 			return this.endDrag();
 		}
+		return false;
+	}
+	,onMouseClick: function(sceneX,sceneY,button) {
 		return false;
 	}
 	,update: function(dt) {
@@ -34384,6 +34595,7 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 };
 $hxClasses["bh.ui.UIMultiAnimGrid"] = bh_ui_UIMultiAnimGrid;
 bh_ui_UIMultiAnimGrid.__name__ = "bh.ui.UIMultiAnimGrid";
+bh_ui_UIMultiAnimGrid.__interfaces__ = [bh_ui_UIHigherOrderComponent];
 bh_ui_UIMultiAnimGrid.cellCoordsEqual = function(a,b) {
 	if(a == null && b == null) {
 		return true;
@@ -34704,7 +34916,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			}
 		}
 		var buildParams = params != null ? params : new haxe_ds_StringMap();
-		var result = this.builder.buildWithParameters(config.buildName,buildParams);
+		var result = this.builder.buildWithParameters(config.buildName,buildParams,null,null,true);
 		var obj = result.object;
 		var localPos = this.getCellLocalPosition(new bh_ui_CellCoord(col,row));
 		obj.posChanged = true;
@@ -34950,6 +35162,12 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 		return false;
 	}
+	,onMouseRelease: function(sceneX,sceneY) {
+		return false;
+	}
+	,handleScreenEvent: function(event) {
+		return false;
+	}
 	,acceptDrops: function(draggable,accepts) {
 		var _g = 0;
 		var _g1 = this.registeredDraggables;
@@ -34972,6 +35190,8 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	}
 	,getObject: function() {
 		return this.root;
+	}
+	,update: function(dt) {
 	}
 	,dispose: function() {
 		var _g = 0;
@@ -35669,6 +35889,11 @@ bh_ui_DropContext.prototype = {
 	accept: function() {
 		this._handled = true;
 		this._accepted = true;
+	}
+	,acceptWithPath: function(pathName) {
+		this._handled = true;
+		this._accepted = true;
+		this._pathName = pathName;
 	}
 	,onComplete: function(cb) {
 		this._onComplete = cb;
@@ -38282,7 +38507,16 @@ bh_ui_controllers_UIDefaultController.prototype = {
 	}
 	,handleClick: function(mousePoint,button,release,eventWrapper) {
 		var element = this.getEventElement(mousePoint);
-		if(this.integration.onMouseClick(mousePoint,button,release) == false) {
+		if(this.integration.dispatchMouseClick(mousePoint,button,release) == false) {
+			if(release) {
+				var triggeredElements = this.controllable.triggerOutsideEvents(element);
+				var _g = 0;
+				while(_g < triggeredElements.length) {
+					var value = triggeredElements[_g];
+					++_g;
+					this.handleEvent(value,bh_ui_UIElementEvents.OnReleaseOutside(button),mousePoint);
+				}
+			}
 			return;
 		}
 		if(release) {
@@ -38325,7 +38559,7 @@ bh_ui_controllers_UIDefaultController.prototype = {
 		return null;
 	}
 	,handleMove: function(mousePoint,eventWrapper) {
-		if(this.integration.onMouseMove(mousePoint) == false) {
+		if(this.integration.dispatchMouseMove(mousePoint) == false) {
 			return;
 		}
 		var element = this.getEventElement(mousePoint);
@@ -114186,6 +114420,7 @@ var screens_gamelike_GridDemoScreen = function(screenManager,scrollConfig,layers
 	this.rectRows = 4;
 	this.rectCols = 5;
 	this.g2gDraggables = [];
+	this.savedSplashCells = [];
 	this.splashCells = [];
 	this.hexTooltipResult = null;
 	this.hexTooltip = null;
@@ -114202,7 +114437,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Grid Component","Layers, DropContext, typed items, source tracking, animations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim",false);
-		var generatedByMacroBuildWithParametersload4701Builder = function() {
+		var generatedByMacroBuildWithParametersload4794Builder = function() {
 			var snapChk;
 			var resetBtn;
 			var remStorBtn;
@@ -114331,7 +114566,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4701Builder();
+		var ui = generatedByMacroBuildWithParametersload4794Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.drawButton = ui.drawBtn;
@@ -114363,7 +114598,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		return "accept";
 	}
 	,setupRectGrid: function() {
-		this.rectGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", highlightDelegate : $bind(this,this.rectHighlightDelegate), tweenManager : this.screenManager.tweens});
+		this.rectGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", highlightDelegate : $bind(this,this.rectHighlightDelegate), tweenManager : this.screenManager.tweens});
 		this.rectGrid.addRectRegion(5,4);
 		var item = screens_gamelike_GridDemoScreen.RECT_ITEMS[0];
 		var tmp = this.rectGrid;
@@ -114498,7 +114733,11 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var srcCell = event.sourceCell;
 			var ctx = event.ctx;
 			if(this.dragSourceData != null) {
-				ctx.accept();
+				if(cell.row == 3) {
+					ctx.acceptWithPath("expensiveSnap");
+				} else {
+					ctx.accept();
+				}
 				var tmp = this.rectGrid;
 				var cell1 = cell.col;
 				var cell2 = cell.row;
@@ -114611,7 +114850,17 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,setupHexGrid: function() {
 		var _gthis = this;
-		this.hexGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellBuildName : "hexCell", tweenManager : this.screenManager.tweens});
+		this.cardHand = this.addCardHand(this.demoBuilder,{ layoutMode : bh_ui_HandLayoutMode.Fan, anchorX : 540., anchorY : 410., cardWidth : 100.0, cardHeight : 140.0, fanRadius : 400.0, fanMaxAngle : 25.0, hoverPopDistance : 20.0, hoverScale : 1.1, targetingThresholdY : 60.0, drawPilePosition : new bh_base_FPoint(390.,410.), discardPilePosition : new bh_base_FPoint(710.,410.), drawPathName : "drawAnim", discardPathName : "discardAnim", returnPathName : "returnCardAnim", rearrangePathName : "rearrangeAnim", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve"});
+		this.cardHand.onCardEvent = $bind(this,this.onCardEvent);
+		this.cardHand.canPlayCard = function(cardId,result) {
+			if(result._hx_index == 0) {
+				var _g = result.targetId;
+				return true;
+			} else {
+				return false;
+			}
+		};
+		this.hexGrid = this.addGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellBuildName : "hexCell", tweenManager : this.screenManager.tweens});
 		this.hexGrid.addHexRegion(0,0,2);
 		this.hexGrid.addLayer("damage",{ buildName : "dmgOverlay", zOrder : 10});
 		this.hexGrid.addLayer("splash",{ buildName : "splashOverlay", zOrder : 5});
@@ -114622,17 +114871,6 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.x = 510.;
 		_this.posChanged = true;
 		_this.y = 280.;
-		this.addObjectToLayer(this.hexGrid.getObject(),bh_ui_screens_LayersEnum.DefaultLayer);
-		this.cardHand = new bh_ui_UICardHandHelper(this,this.demoBuilder,{ layoutMode : bh_ui_HandLayoutMode.Fan, anchorX : 540., anchorY : 410., cardWidth : 100.0, cardHeight : 140.0, fanRadius : 400.0, fanMaxAngle : 25.0, hoverPopDistance : 20.0, hoverScale : 1.1, targetingThresholdY : 60.0, drawPilePosition : new bh_base_FPoint(390.,410.), discardPilePosition : new bh_base_FPoint(710.,410.), drawPathName : "drawAnim", discardPathName : "discardAnim", returnPathName : "returnCardAnim", rearrangePathName : "rearrangeAnim", arrowSegmentName : "arrowSegment", arrowHeadName : "arrowHead", arrowPathName : "arrowCurve"});
-		this.cardHand.onCardEvent = $bind(this,this.onCardEvent);
-		this.cardHand.canPlayCard = function(cardId,result) {
-			if(result._hx_index == 0) {
-				var _g = result.targetId;
-				return true;
-			} else {
-				return false;
-			}
-		};
 		this.hexGrid.registerAsCardTarget(this.cardHand,function(cell,cardId) {
 			return !_gthis.hexGrid.isOccupied(cell.col,cell.row);
 		});
@@ -114674,14 +114912,16 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						var col = Std.parseInt(parts[parts.length - 2]);
 						var row = Std.parseInt(parts[parts.length - 1]);
 						if(col != null && row != null && this.hexGrid != null) {
-							this.hexGrid.removeCell(col,row);
-							var tmp = this.hexGrid;
-							var tmp1 = { color : def.color};
-							var _g = new haxe_ds_StringMap();
-							_g.h["occupied"] = true;
-							_g.h["cellColor"] = def.color;
-							tmp.addCellAnimated(col,row,tmp1,_g,0.3,[bh_base_TweenProperty.Scale(0.0),bh_base_TweenProperty.Alpha(0.0)],bh_multianim_EasingType.EaseOutBack);
-							this.setHexLog("" + def.name + " -> (" + col + "," + row + ")");
+							var affected = this.savedSplashCells.slice();
+							this.savedSplashCells = [];
+							this.fillHexCell(col,row,def.color,0.3);
+							var _g = 0;
+							while(_g < affected.length) {
+								var sc = affected[_g];
+								++_g;
+								this.fillHexCell(sc.col,sc.row,def.color,0.3);
+							}
+							this.setHexLog("" + def.name + " -> (" + col + "," + row + ") [" + (1 + affected.length) + " cells]");
 						}
 					}
 				}
@@ -114693,6 +114933,20 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			break;
 		default:
 		}
+	}
+	,fillHexCell: function(col,row,color,duration) {
+		if(this.hexGrid == null || !Object.prototype.hasOwnProperty.call(this.hexGrid.cells.h,"" + col + "_" + row)) {
+			return;
+		}
+		if(this.hexGrid.isOccupied(col,row)) {
+			return;
+		}
+		this.hexGrid.removeCell(col,row);
+		var tmp = this.hexGrid;
+		var _g = new haxe_ds_StringMap();
+		_g.h["occupied"] = true;
+		_g.h["cellColor"] = color;
+		tmp.addCellAnimated(col,row,{ color : color},_g,duration,[bh_base_TweenProperty.Scale(0.0),bh_base_TweenProperty.Alpha(0.0)],bh_multianim_EasingType.EaseOutBack);
 	}
 	,getCardDef: function(cardId) {
 		var cardIdx = Std.parseInt(cardId.split("_").pop());
@@ -114751,7 +115005,14 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						var n = _g1[_g];
 						++_g;
 						if(!this.hexGrid.isOccupied(n.col,n.row)) {
+							var splashDmg = dmg / 2 | 0;
 							this.hexGrid.setLayer(n.col,n.row,"splash");
+							var tmp = this.hexGrid;
+							var n1 = n.col;
+							var n2 = n.row;
+							var _g2 = new haxe_ds_StringMap();
+							_g2.h["dmg"] = "" + splashDmg;
+							tmp.setLayer(n1,n2,"damage",_g2);
 							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
 							break;
 						}
@@ -114766,14 +115027,23 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					_g.h["dmg"] = "" + dmg;
 					tmp.setLayer(cell1,cell2,"damage",_g);
 					this.hexGrid.setLayer(cell.col,cell.row,"target");
+					var adjIdx = 0;
 					var _g = 0;
 					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
 					while(_g < _g1.length) {
 						var n = _g1[_g];
 						++_g;
 						if(!this.hexGrid.isOccupied(n.col,n.row)) {
+							var splashDmg = (dmg * 0.6 | 0) - adjIdx;
 							this.hexGrid.setLayer(n.col,n.row,"splash");
+							var tmp = this.hexGrid;
+							var n1 = n.col;
+							var n2 = n.row;
+							var _g2 = new haxe_ds_StringMap();
+							_g2.h["dmg"] = "" + splashDmg;
+							tmp.setLayer(n1,n2,"damage",_g2);
 							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
+							++adjIdx;
 						}
 					}
 					this.setHexLog("" + def.name + " [AoE] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
@@ -114814,6 +115084,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					this.hexGrid.setLayer(cell.col,cell.row,"target");
 					this.setHexLog("" + def.name + " [x1] -> (" + cell.col + "," + cell.row + ") dmg:" + dmg);
 				}
+				this.savedSplashCells = this.splashCells.slice();
 				break;
 			default:
 			}
@@ -114964,7 +115235,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.posChanged = true;
 		_this.y = 152.;
 		this.addObjectToLayer(this.g2gContainer,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.storageGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
+		this.storageGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
 		this.storageGrid.addRectRegion(this.storageCols,this.storageRows);
 		var _g = 0;
 		var _g1 = screens_gamelike_GridDemoScreen.G2G_WEAPONS.length;
@@ -114983,7 +115254,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			_gthis.onG2GEvent(_gthis.storageGrid,e);
 		};
 		this.g2gContainer.addChild(this.storageGrid.getObject());
-		this.loadoutGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
+		this.loadoutGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
 		this.loadoutGrid.addRectRegion(this.loadoutCols,this.loadoutRows);
 		var _g = 0;
 		var _g1 = screens_gamelike_GridDemoScreen.G2G_POTIONS.length;
@@ -115289,9 +115560,6 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		return parent;
 	}
 	,onScreenEvent: function(event,source) {
-		if(this.cardHand != null && this.cardHand.handleScreenEvent(event)) {
-			return;
-		}
 		switch(event._hx_index) {
 		case 0:
 			if(source == this.resetButton) {
@@ -115358,74 +115626,16 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
-	,onMouseMove: function(pos) {
-		if(this.cardHand != null && this.cardHand.onMouseMove(pos.x,pos.y)) {
-			return false;
-		}
-		if(this.rectGrid != null) {
-			this.rectGrid.onMouseMove(pos.x,pos.y);
-		}
-		if(this.hexGrid != null) {
-			this.hexGrid.onMouseMove(pos.x,pos.y);
-		}
-		if(this.storageGrid != null) {
-			this.storageGrid.onMouseMove(pos.x,pos.y);
-		}
-		if(this.loadoutGrid != null) {
-			this.loadoutGrid.onMouseMove(pos.x,pos.y);
-		}
-		return DemoScreenBase.prototype.onMouseMove.call(this,pos);
-	}
-	,onMouseClick: function(pos,button,release) {
-		if(release && this.cardHand != null && this.cardHand.onMouseRelease(pos.x,pos.y)) {
-			return false;
-		}
-		if(release) {
-			if(this.rectGrid != null) {
-				this.rectGrid.onMouseClick(pos.x,pos.y,button);
-			}
-			if(this.hexGrid != null) {
-				this.hexGrid.onMouseClick(pos.x,pos.y,button);
-			}
-			if(this.storageGrid != null) {
-				this.storageGrid.onMouseClick(pos.x,pos.y,button);
-			}
-			if(this.loadoutGrid != null) {
-				this.loadoutGrid.onMouseClick(pos.x,pos.y,button);
-			}
-		}
-		return DemoScreenBase.prototype.onMouseClick.call(this,pos,button,release);
-	}
-	,update: function(dt) {
-		DemoScreenBase.prototype.update.call(this,dt);
-		if(this.cardHand != null) {
-			this.cardHand.update(dt);
-		}
-	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
-		if(this.rectGrid != null) {
-			this.rectGrid.dispose();
-			this.rectGrid = null;
-		}
-		if(this.hexGrid != null) {
-			this.hexGrid.dispose();
-			this.hexGrid = null;
-		}
-		if(this.cardHand != null) {
-			this.cardHand.dispose();
-			this.cardHand = null;
-		}
+		this.rectGrid = null;
+		this.hexGrid = null;
+		this.cardHand = null;
 		this.hideHexTooltip();
 		this.splashCells = [];
-		if(this.storageGrid != null) {
-			this.storageGrid.dispose();
-			this.storageGrid = null;
-		}
-		if(this.loadoutGrid != null) {
-			this.loadoutGrid.dispose();
-			this.loadoutGrid = null;
-		}
+		this.savedSplashCells = [];
+		this.storageGrid = null;
+		this.loadoutGrid = null;
 		this.rectDraggables = [];
 		this.g2gDraggables = [];
 		this.handCardIds = [];

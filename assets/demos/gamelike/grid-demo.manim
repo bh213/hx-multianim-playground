@@ -28,6 +28,14 @@ paths {
     0.0: progressCurve: easeOut
 }
 
+#expensiveSnap animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.5
+    0.0: progressCurve: elasticBounce
+    0.0: scaleCurve: elasticBounce
+}
+
 // Card hand animated paths
 #drawAnim animatedPath {
     path: cardArc

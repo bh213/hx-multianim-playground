@@ -14,12 +14,14 @@ import bh.ui.UIMultiAnimGridTypes;
 import bh.ui.UIMultiAnimGridTypes.GridEvent;
 import bh.ui.UIMultiAnimGridTypes.CellCoord;
 import bh.ui.UIMultiAnimGridTypes.CellTargetSource;
+import bh.ui.UIMultiAnimGridTypes.DropContext;
 import bh.base.Hex.HexOrientation;
 import bh.base.MacroUtils;
 import bh.base.TweenManager.TweenProperty;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimParser.EasingType;
 import h2d.col.Point;
+import bh.base.FPoint;
 
 class GridDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
@@ -95,12 +97,13 @@ class GridDemoScreen extends DemoScreenBase {
 
 	// Card definitions for hex grid — targeting: single (1 cell), double (2 cells), range (AoE)
 	static final CARD_DEFS:Array<{name:String, color:Int, targeting:String, info:String}> = [
-		{name: "Fire", color: 0xCC4422, targeting: "single", info: "x1"},
-		{name: "Ice", color: 0x2266CC, targeting: "double", info: "x2"},
-		{name: "Nature", color: 0x22CC44, targeting: "range", info: "AoE"},
-		{name: "Light", color: 0xCCCC22, targeting: "single", info: "x1"},
-		{name: "Shadow", color: 0x9944CC, targeting: "double", info: "x2"},
-		{name: "Storm", color: 0x22CCCC, targeting: "range", info: "AoE"},
+		{name: "Fire", color: 0xCC4422, targeting: "single", info: "1 cell"},
+		{name: "Ice", color: 0x2266CC, targeting: "double", info: "cell + 1 adj"},
+		{name: "Nature", color: 0x22CC44, targeting: "range", info: "cell + all adj"},
+		{name: "Light", color: 0xCCCC22, targeting: "single", info: "1 cell"},
+		{name: "Shadow", color: 0x9944CC, targeting: "double", info: "cell + 1 adj"},
+		{name: "Storm", color: 0x22CCCC, targeting: "range", info: "cell + all adj"},
+		{name: "Meteor", color: 0xFF6600, targeting: "splash_dmg", info: "10+1 AoE"},
 	];
 
 	// G2G item definitions: weapons (storage) and potions (loadout)
@@ -115,7 +118,7 @@ class GridDemoScreen extends DemoScreenBase {
 	];
 
 	override public function load():Void {
-		setupDemo("Grid Component", "Typed items, reject zones, source tracking, animations");
+		setupDemo("Grid Component", "Layers, DropContext, typed items, source tracking, animations");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim", false);
 
@@ -185,7 +188,7 @@ class GridDemoScreen extends DemoScreenBase {
 		}
 
 		rectGrid.onGridEvent = onRectEvent;
-		rectGrid.getObject().setPosition(BASE_X, BASE_Y + 50);
+		rectGrid.getObject().setPosition(BASE_X, BASE_Y + 60);
 		addObjectToLayer(rectGrid.getObject(), DefaultLayer);
 		rebuildRectDraggables();
 	}
@@ -252,16 +255,20 @@ class GridDemoScreen extends DemoScreenBase {
 					default: "";
 				};
 				setRectLog('(${cell.col},${cell.row})$rowLabel');
-			case CellDrop(cell, draggable, srcGrid, srcCell):
+			case CellDrop(cell, draggable, srcGrid, srcCell, ctx):
 				if (dragSourceData != null) {
+					// Demo DropContext: accept drops, row 3 logs as "expensive"
+					ctx.accept();
 					rectGrid.set(cell.col, cell.row, dragSourceData,
 						["itemType" => (dragSourceData.type : Dynamic)]);
 					final src = srcCell != null ? '(${srcCell.col},${srcCell.row})' : "?";
-					setRectLog('$src -> (${cell.col},${cell.row}) [${dragSourceData.type}]');
+					final suffix = if (cell.row == 3) " [$$]" else "";
+					setRectLog('$src -> (${cell.col},${cell.row}) [${dragSourceData.type}]$suffix');
 					dragSourceGrid = null;
 					dragSourceCell = null;
 					dragSourceData = null;
-					rebuildRectDraggables();
+					// Defer rebuild until snap animation completes
+					ctx.onComplete(() -> rebuildRectDraggables());
 				}
 			default:
 		}
@@ -323,6 +330,10 @@ class GridDemoScreen extends DemoScreenBase {
 			tweenManager: screenManager.tweens,
 		});
 		hexGrid.addHexRegion(0, 0, 2);
+		// Register grid layers for damage preview and splash area
+		hexGrid.addLayer("damage", {buildName: "dmgOverlay", zOrder: 10});
+		hexGrid.addLayer("splash", {buildName: "splashOverlay", zOrder: 5});
+		hexGrid.addLayer("target", {buildName: "targetOverlay", zOrder: 7});
 		hexGrid.onGridEvent = onHexEvent;
 		// Center the hex grid in the center section (close to card hand for targeting)
 		hexGrid.getObject().setPosition(BASE_X + 500, BASE_Y + 210);
@@ -356,6 +367,8 @@ class GridDemoScreen extends DemoScreenBase {
 
 		// Register hex grid cells as card targets
 		hexGrid.registerAsCardTarget(cardHand, (cell, cardId) -> !hexGrid.isOccupied(cell.col, cell.row));
+		// Arrow snaps to ~15% inside from a bottom side of the hex (interactive is 60x60, center at 30,30)
+		cardHand.setArrowSnapPointProvider((_) -> new FPoint(22, 48));
 
 		// Initial hand
 		for (_ in 0...3)
@@ -429,41 +442,60 @@ class GridDemoScreen extends DemoScreenBase {
 				if (hexGrid == null) return;
 				final def = getCardDef(cardId);
 				final dmg = 5 + (cell.col + cell.row + 3) % 8;
-				hexGrid.setCellParameter(cell.col, cell.row, "dmgText", '$dmg');
-				hexGrid.setCellParameter(cell.col, cell.row, "showDmg", true);
 				// Targeting pattern based on card type
 				switch def.targeting {
 					case "double":
-						// Target current + 1 adjacent non-occupied cell
+						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ('$dmg' : Dynamic)]);
+						hexGrid.setLayer(cell.col, cell.row, "target");
+						// + 1 adjacent non-occupied cell
 						for (n in hexGrid.neighbors(cell.col, cell.row)) {
 							if (!hexGrid.isOccupied(n.col, n.row)) {
-								hexGrid.setCellParameter(n.col, n.row, "highlight", "splash");
+								hexGrid.setLayer(n.col, n.row, "splash");
 								splashCells.push({col: n.col, row: n.row});
 								break;
 							}
 						}
 						setHexLog('${def.name} [x2] -> (${cell.col},${cell.row}) +${splashCells.length}');
 					case "range":
-						// Target current + all non-occupied neighbors
+						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ('$dmg' : Dynamic)]);
+						hexGrid.setLayer(cell.col, cell.row, "target");
+						// + all non-occupied neighbors
 						for (n in hexGrid.neighbors(cell.col, cell.row)) {
 							if (!hexGrid.isOccupied(n.col, n.row)) {
-								hexGrid.setCellParameter(n.col, n.row, "highlight", "splash");
+								hexGrid.setLayer(n.col, n.row, "splash");
 								splashCells.push({col: n.col, row: n.row});
 							}
 						}
 						setHexLog('${def.name} [AoE] -> (${cell.col},${cell.row}) +${splashCells.length}');
+					case "splash_dmg":
+						// Primary target: 10 dmg on center
+						hexGrid.setLayer(cell.col, cell.row, "target");
+						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ("10" : Dynamic)]);
+						// 1 dmg on all non-occupied neighbors
+						for (n in hexGrid.neighbors(cell.col, cell.row)) {
+							if (!hexGrid.isOccupied(n.col, n.row)) {
+								hexGrid.setLayer(n.col, n.row, "splash");
+								hexGrid.setLayer(n.col, n.row, "damage", ["dmg" => ("1" : Dynamic)]);
+								splashCells.push({col: n.col, row: n.row});
+							}
+						}
+						setHexLog('${def.name} [10+1] -> (${cell.col},${cell.row}) +${splashCells.length}');
 					default:
-						// Single target — no splash
+						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ('$dmg' : Dynamic)]);
+						hexGrid.setLayer(cell.col, cell.row, "target");
 						setHexLog('${def.name} [x1] -> (${cell.col},${cell.row}) dmg:$dmg');
 				}
 			case CellTargetLeave(cell, Card(_)):
 				if (hexGrid == null) return;
-				hexGrid.setCellParameter(cell.col, cell.row, "showDmg", false);
-				for (c in splashCells)
-					hexGrid.setCellParameter(c.col, c.row, "highlight", "accept");
+				// Clear layers instead of cell parameters
+				hexGrid.clearLayer(cell.col, cell.row, "damage");
+				hexGrid.clearLayer(cell.col, cell.row, "target");
+				for (sc in splashCells)
+					hexGrid.clearLayer(sc.col, sc.row, "damage");
+				hexGrid.clearLayerAll("splash");
 				splashCells = [];
 			case CellTargetEnter(cell, Mouse):
-				// 3. Tooltip on mouse hover for occupied cells
+				// Tooltip on mouse hover for occupied cells
 				if (hexGrid != null && hexGrid.isOccupied(cell.col, cell.row))
 					showHexTooltip(cell);
 			case CellTargetLeave(_, Mouse):
@@ -560,7 +592,7 @@ class GridDemoScreen extends DemoScreenBase {
 	function setupGridToGrid():Void {
 		// Container for both grids — manually repositioned on row changes
 		g2gContainer = new h2d.Object();
-		g2gContainer.setPosition(BASE_X + 770, BASE_Y + 62);
+		g2gContainer.setPosition(BASE_X + 770, BASE_Y + 82);
 		addObjectToLayer(g2gContainer, DefaultLayer);
 
 		// Storage grid (weapons only) at top of container
@@ -569,7 +601,6 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
-
 			tweenManager: screenManager.tweens,
 		});
 		storageGrid.addRectRegion(storageCols, storageRows);
@@ -589,7 +620,6 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
-
 			tweenManager: screenManager.tweens,
 		});
 		loadoutGrid.addRectRegion(loadoutCols, loadoutRows);
@@ -674,8 +704,9 @@ class GridDemoScreen extends DemoScreenBase {
 
 	function onG2GEvent(targetGrid:UIMultiAnimGrid, event:GridEvent):Void {
 		switch event {
-			case CellDrop(cell, draggable, srcGrid, srcCell):
+			case CellDrop(cell, draggable, srcGrid, srcCell, ctx):
 				if (dragSourceData != null) {
+					ctx.accept();
 					targetGrid.set(cell.col, cell.row, dragSourceData,
 						["itemType" => (dragSourceData.type : Dynamic)]);
 
@@ -687,8 +718,9 @@ class GridDemoScreen extends DemoScreenBase {
 					dragSourceGrid = null;
 					dragSourceCell = null;
 					dragSourceData = null;
-					rebuildG2GDraggables();
 					updateG2GCounts();
+					// Defer rebuild until snap animation completes
+					ctx.onComplete(() -> rebuildG2GDraggables());
 				}
 			case CellClick(cell, _):
 				final name = if (targetGrid == storageGrid) "Weapons" else "Potions";
@@ -794,7 +826,7 @@ class GridDemoScreen extends DemoScreenBase {
 
 	function buildItemBlock(color:Int):h2d.Object {
 		final parent = new h2d.Object();
-		// 4px inset within 52×52 cell
+		// 4px inset within 52x52 cell
 		final tile = h2d.Tile.fromColor(color, 44, 44);
 		final bmp = new h2d.Bitmap(tile, parent);
 		bmp.x = 4;

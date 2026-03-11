@@ -36,6 +36,7 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 	static inline final DEMO_Y = 70;
 
 	static final STYLE_ITEMS:Array<UIElementListItem> = [
+		{name: "Random"},
 		{name: "Damage (-N)"},
 		{name: "Heal (+N)"},
 		{name: "Crit (N!)"},
@@ -57,7 +58,7 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "floatingTextDemo", [], [
 			styleDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
 				STYLE_ITEMS, 0),
-			chkAutoSpawn => addCheckbox(stdBuilder, false),
+			chkAutoSpawn => addCheckbox(stdBuilder, true),
 			btnClear => addButtonWithSingleBuilder(commonBuilder, "backButton", "Clear"),
 		]);
 
@@ -84,10 +85,12 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 	function spawnAt(localX:Float, localY:Float):Void {
 		if (demoBuilder == null || floatingText == null)
 			return;
-		var animPath = demoBuilder.createAnimatedPath(ANIM_NAMES[currentStyle]);
-		var text = generateText(currentStyle);
-		var color = COLORS[currentStyle];
-		var font = FontManager.getFontByName(FONTS[currentStyle]);
+		// currentStyle 0 = Random, 1..N = specific styles (offset by 1 from arrays)
+		var style = if (currentStyle == 0) Std.random(ANIM_NAMES.length) else currentStyle - 1;
+		var animPath = demoBuilder.createAnimatedPath(ANIM_NAMES[style]);
+		var text = generateText(style);
+		var color = COLORS[style];
+		var font = FontManager.getFontByName(FONTS[style]);
 		floatingText.spawn(text, font, localX, localY, animPath, color);
 		totalSpawned++;
 		updateStatusText();
@@ -126,8 +129,8 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 		final autoChk = chkAutoSpawn;
 		if (autoChk != null && autoChk.selected) {
 			autoSpawnTimer += dt;
-			while (autoSpawnTimer >= 0.3) {
-				autoSpawnTimer -= 0.3;
+			while (autoSpawnTimer >= 0.2) {
+				autoSpawnTimer -= 0.2;
 				// Random position within spawn area
 				final rx = 50.0 + Std.random(Std.int(AREA_W - 100));
 				final ry = 50.0 + Std.random(Std.int(AREA_H - 100));
@@ -147,7 +150,7 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 					updateStatusText();
 				}
 			case UIChangeItem(index, items):
-				if (source == styleDropdown && index >= 0 && index < ANIM_NAMES.length)
+				if (source == styleDropdown && index >= 0 && index < STYLE_ITEMS.length)
 					currentStyle = index;
 			default:
 		}

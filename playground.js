@@ -1869,7 +1869,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload6048Builder = function() {
+		var generatedByMacroBuildWithParametersload6100Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -1932,7 +1932,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6048Builder();
+		var ui = generatedByMacroBuildWithParametersload6100Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -3560,6 +3560,10 @@ var bh_base_Hex = function(q,r,s) {
 };
 $hxClasses["bh.base.Hex"] = bh_base_Hex;
 bh_base_Hex.__name__ = "bh.base.Hex";
+bh_base_Hex.neighbor = function(hex,direction) {
+	var b = bh_base_GridDirection.hexDirection(direction,direction);
+	return new bh_base_Hex(hex.q + b.q,hex.r + b.r,hex.s + b.s);
+};
 bh_base_Hex.cubeRing = function(radius,direction) {
 	var results = [];
 	var a = bh_base_GridDirection.directions[direction];
@@ -3600,6 +3604,12 @@ bh_base_Hex.prototype = {
 	__class__: bh_base_Hex
 };
 var bh_base_GridDirection = {};
+bh_base_GridDirection.hexDirection = function(this1,direction) {
+	return bh_base_GridDirection.directions[bh_base_GridDirection.toInt(direction)];
+};
+bh_base_GridDirection.toInt = function(this1) {
+	return this1;
+};
 bh_base_GridDirection.allDirections = function() {
 	return bh_base_GridDirection.allEnumDirections;
 };
@@ -31009,6 +31019,7 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.isTargeting = false;
 	this.isDragging = false;
 	this.cards = [];
+	this.hideCursorWhileTargeting = false;
 	this.rearrangeDuration = 0;
 	this.returnDuration = 0;
 	this.discardDuration = 0;
@@ -31197,6 +31208,9 @@ bh_ui_UICardHandHelper.prototype = {
 	,setArrowVisible: function(visible) {
 		this.targeting.arrowEnabled = visible;
 	}
+	,setArrowSnap: function(snap) {
+		this.targeting.snapToTarget = snap;
+	}
 	,setVisible: function(visible) {
 		this.handContainer.set_visible(visible);
 		this.targeting.getObject().set_visible(visible);
@@ -31264,9 +31278,16 @@ bh_ui_UICardHandHelper.prototype = {
 		return false;
 	}
 	,update: function(dt) {
+		if(this.activeAnimations.length == 0) {
+			return;
+		}
 		var i = this.activeAnimations.length - 1;
 		while(i >= 0) {
 			var anim = this.activeAnimations[i];
+			if(anim == null) {
+				--i;
+				continue;
+			}
 			var state = anim.anim.update(dt);
 			var _this = anim.entry.container;
 			_this.posChanged = true;
@@ -31653,7 +31674,8 @@ bh_ui_UICardHandHelper.prototype = {
 				return;
 			}
 		}
-		if(this.targeting.arrowEnabled && this.isInTargetingZone(this.cursorX,this.cursorY)) {
+		var cardCanTarget = entry.descriptor.canTarget != null ? entry.descriptor.canTarget : true;
+		if(this.targeting.arrowEnabled && cardCanTarget && this.isInTargetingZone(this.cursorX,this.cursorY)) {
 			if(!this.isTargeting) {
 				this.enterTargetingMode(entry);
 			}
@@ -31671,7 +31693,7 @@ bh_ui_UICardHandHelper.prototype = {
 				this.exitTargetingMode(entry);
 				this.currentTargetId = null;
 			}
-			if(!this.targeting.arrowEnabled) {
+			if(!this.targeting.arrowEnabled || !cardCanTarget) {
 				this.currentTargetId = this.targeting.updateHighlight(this.sceneCursorX,this.sceneCursorY,entry.descriptor.id);
 			}
 		}
@@ -31694,6 +31716,9 @@ bh_ui_UICardHandHelper.prototype = {
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.scaleY = this.hoverScale;
+		if(this.hideCursorWhileTargeting) {
+			hxd_System.setCursor(hxd_Cursor.Hide);
+		}
 	}
 	,exitTargetingMode: function(entry) {
 		this.isTargeting = false;
@@ -31702,6 +31727,9 @@ bh_ui_UICardHandHelper.prototype = {
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.rotation = 0;
+		if(this.hideCursorWhileTargeting) {
+			hxd_System.setCursor(hxd_Cursor.Default);
+		}
 	}
 	,endDrag: function() {
 		var _gthis = this;
@@ -31713,6 +31741,9 @@ bh_ui_UICardHandHelper.prototype = {
 		var wasTargeting = this.isTargeting;
 		this.targeting.clearLine();
 		entry.container.alpha = 1.0;
+		if(wasTargeting && this.hideCursorWhileTargeting) {
+			hxd_System.setCursor(hxd_Cursor.Default);
+		}
 		this.restoreCardToCardEffects();
 		var result = bh_ui_TargetingResult.NoTarget;
 		var cardPlayed = false;
@@ -31733,6 +31764,12 @@ bh_ui_UICardHandHelper.prototype = {
 			var dropTarget = this.targeting.hitTestTargets(this.sceneCursorX,this.sceneCursorY,cardId);
 			if(dropTarget != null) {
 				result = bh_ui_TargetingResult.TargetZone(dropTarget);
+				if(this.canPlayCard == null || this.canPlayCard(cardId,result)) {
+					this.emitEvent(bh_ui_CardHandEvent.CardPlayed(cardId,result));
+					cardPlayed = true;
+				}
+			} else if(this.isInTargetingZone(this.cursorX,this.cursorY)) {
+				result = bh_ui_TargetingResult.NoTarget;
 				if(this.canPlayCard == null || this.canPlayCard(cardId,result)) {
 					this.emitEvent(bh_ui_CardHandEvent.CardPlayed(cardId,result));
 					cardPlayed = true;
@@ -31789,6 +31826,9 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 		var entry = this.draggedEntry;
 		this.targeting.clearLine();
+		if(this.isTargeting && this.hideCursorWhileTargeting) {
+			hxd_System.setCursor(hxd_Cursor.Default);
+		}
 		this.restoreCardToCardEffects();
 		this.cardToCardTarget = null;
 		this.currentTargetId = null;
@@ -32219,6 +32259,7 @@ var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,s
 	}
 	this.acceptsFilter = null;
 	this.onTargetHighlight = null;
+	this.snapToTarget = true;
 	this.arrowEnabled = true;
 	this.currentValid = false;
 	this.activeTargetId = null;
@@ -32409,10 +32450,33 @@ bh_ui_UICardHandTargeting.prototype = {
 			}
 		}
 		var valid = hoveredWrapper != null;
+		var endX = cursorX;
+		var endY = cursorY;
+		if(this.snapToTarget && valid && hoveredWrapper != null) {
+			var _g = hoveredWrapper.interactive.multiAnimType;
+			if(_g._hx_index == 0) {
+				var _g1 = _g.identifier;
+				var _g1 = _g.metadata;
+				var width = _g.width;
+				var height = _g.height;
+				var x = width * 0.5;
+				var y = height * 0.5;
+				if(y == null) {
+					y = 0.;
+				}
+				if(x == null) {
+					x = 0.;
+				}
+				var centerScene = hoveredWrapper.interactive.localToGlobal(new h2d_col_PointImpl(x,y));
+				var centerLocal = this.arrowContainer.globalToLocal(centerScene);
+				endX = centerLocal.x;
+				endY = centerLocal.y;
+			}
+		}
 		if(this.hasArrowVisual && this.arrowEnabled && this.arrowPathName != null) {
 			var paths = this.builder.getPaths();
 			var origin = new bh_base_FPoint(originX,originY);
-			var cursor = new bh_base_FPoint(cursorX,cursorY);
+			var cursor = new bh_base_FPoint(endX,endY);
 			var path = paths.getPath(this.arrowPathName,bh_paths_PathNormalization.Stretch(origin,cursor));
 			var totalLen = path.totalLength;
 			var count = Math.floor(totalLen / this.segmentSpacing);
@@ -34243,11 +34307,11 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.onCellBuilt = null;
 	this.onGridEvent = null;
 	this.cardHandBindingCounter = 0;
+	this.activeCardDragId = null;
 	this.cardTargetWrappers = new haxe_ds_StringMap();
 	this.cardTargetInteractives = new haxe_ds_StringMap();
 	this.registeredCardHands = [];
-	this.activeRejectedCells = [];
-	this.activeHighlightedCells = [];
+	this.activeDragHighlightedCells = [];
 	this.registeredDraggables = [];
 	this.hoveredCell = null;
 	this.cells = new haxe_ds_StringMap();
@@ -34256,7 +34320,8 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.defaultBuildName = config.cellBuildName;
 	this.cellBuildDelegate = config.cellBuildDelegate;
 	this.highlightParam = config.highlightParam != null ? config.highlightParam : "highlight";
-	this.rejectHighlightParam = config.rejectHighlightParam;
+	this.highlightDefault = "none";
+	this.highlightDelegate = config.highlightDelegate;
 	this.statusParam = config.statusParam != null ? config.statusParam : "status";
 	this.snapPathName = config.snapPathName;
 	this.returnPathName = config.returnPathName;
@@ -34306,7 +34371,29 @@ bh_ui_UIMultiAnimGrid.cellCoordsEqual = function(a,b) {
 	}
 };
 bh_ui_UIMultiAnimGrid.prototype = {
-	addCell: function(col,row,data,params) {
+	isCellDragHighlighted: function(col,row) {
+		var _g = 0;
+		var _g1 = this.activeDragHighlightedCells;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			if(c.col == col && c.row == row) {
+				return true;
+			}
+		}
+		return false;
+	}
+	,resolveHighlightValue: function(cell,accepts) {
+		if(this.highlightDelegate != null) {
+			return this.highlightDelegate(cell,accepts);
+		}
+		if(accepts) {
+			return "accept";
+		} else {
+			return "reject";
+		}
+	}
+	,addCell: function(col,row,data,params) {
 		var key = "" + col + "_" + row;
 		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
 			return;
@@ -34397,12 +34484,20 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,data));
 	}
+	,get: function(col,row) {
+		var entry = this.cells.h["" + col + "_" + row];
+		if(entry != null) {
+			return entry.data;
+		} else {
+			return null;
+		}
+	}
 	,clear: function(col,row) {
 		var entry = this.getEntry(col,row);
 		var oldData = entry.data;
 		entry.data = null;
 		entry.result.beginUpdate();
-		entry.result.setParameter(this.highlightParam,false);
+		entry.result.setParameter(this.highlightParam,this.highlightDefault);
 		entry.result.setParameter(this.statusParam,"normal");
 		entry.result.endUpdate();
 		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,null));
@@ -34587,6 +34682,63 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var global = this.root.localToGlobal(new h2d_col_PointImpl(x,y));
 		return new bh_base_FPoint(global.x,global.y);
 	}
+	,neighbors: function(col,row) {
+		var result = [];
+		var _g = this.gridType;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.cellWidth;
+			var _g1 = _g.cellHeight;
+			var _g1 = _g.gap;
+			var d_dc = 1;
+			var d_dr = 0;
+			var nc = col + d_dc;
+			var nr = row + d_dr;
+			if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc + "_" + nr)) {
+				result.push(new bh_ui_CellCoord(nc,nr));
+			}
+			var d_dc = -1;
+			var d_dr = 0;
+			var nc = col + d_dc;
+			var nr = row + d_dr;
+			if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc + "_" + nr)) {
+				result.push(new bh_ui_CellCoord(nc,nr));
+			}
+			var d_dc = 0;
+			var d_dr = 1;
+			var nc = col + d_dc;
+			var nr = row + d_dr;
+			if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc + "_" + nr)) {
+				result.push(new bh_ui_CellCoord(nc,nr));
+			}
+			var d_dc = 0;
+			var d_dr = -1;
+			var nc = col + d_dc;
+			var nr = row + d_dr;
+			if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc + "_" + nr)) {
+				result.push(new bh_ui_CellCoord(nc,nr));
+			}
+			break;
+		case 1:
+			var _g1 = _g.orientation;
+			var _g1 = _g.sizeX;
+			var _g1 = _g.sizeY;
+			var hex = new bh_base_Hex(col,row,-col - row);
+			var _g = 0;
+			var _g1 = bh_base_GridDirection.allDirections();
+			while(_g < _g1.length) {
+				var dir = _g1[_g];
+				++_g;
+				var neighbor = bh_base_Hex.neighbor(hex,dir);
+				var nc = new bh_ui_CellCoord(neighbor.q,neighbor.r);
+				if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc.col + "_" + nc.row)) {
+					result.push(nc);
+				}
+			}
+			break;
+		}
+		return result;
+	}
 	,distance: function(c1,r1,c2,r2) {
 		var _g = this.gridType;
 		switch(_g._hx_index) {
@@ -34612,7 +34764,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				if(entry != null) {
 					entry.result.setParameter(this.statusParam,"normal");
 				}
-				this.emitEvent(bh_ui_GridEvent.CellHoverLeave(this.hoveredCell));
+				this.emitEvent(bh_ui_GridEvent.CellTargetLeave(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
 			}
 			this.hoveredCell = hit;
 			if(this.hoveredCell != null) {
@@ -34620,7 +34772,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				if(entry != null) {
 					entry.result.setParameter(this.statusParam,"hover");
 				}
-				this.emitEvent(bh_ui_GridEvent.CellHoverEnter(this.hoveredCell));
+				this.emitEvent(bh_ui_GridEvent.CellTargetEnter(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
 			}
 		}
 		return this.hoveredCell != null;
@@ -34702,7 +34854,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var params = new haxe_ds_StringMap();
 		params.h["col"] = coord.col;
 		params.h["row"] = coord.row;
-		params.h[this.highlightParam] = false;
+		params.h[this.highlightParam] = this.highlightDefault;
 		params.h[this.statusParam] = "normal";
 		if(delegateParams != null) {
 			var h = delegateParams.h;
@@ -34881,34 +35033,26 @@ bh_ui_UIMultiAnimGrid.prototype = {
 					var e = _gthis.cells.h["" + capturedCoord[0].col + "_" + capturedCoord[0].row];
 					if(e != null) {
 						e.result.setParameter(_gthis.statusParam,highlight ? "hover" : "normal");
-						if(highlight) {
-							e.result.setParameter(_gthis.highlightParam,true);
-						} else {
-							var keepHighlight = false;
-							var _g = 0;
-							var _g1 = _gthis.activeHighlightedCells;
-							while(_g < _g1.length) {
-								var c = _g1[_g];
-								++_g;
-								if(c.col == capturedCoord[0].col && c.row == capturedCoord[0].row) {
-									keepHighlight = true;
-									break;
-								}
-							}
-							if(!keepHighlight) {
-								e.result.setParameter(_gthis.highlightParam,false);
+						if(!highlight) {
+							if(!_gthis.isCellDragHighlighted(capturedCoord[0].col,capturedCoord[0].row)) {
+								e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
 							}
 						}
 					}
+					if(highlight) {
+						_gthis.emitEvent(bh_ui_GridEvent.CellTargetEnter(capturedCoord[0],bh_ui_CellTargetSource.Drag(binding.draggable)));
+					} else {
+						_gthis.emitEvent(bh_ui_GridEvent.CellTargetLeave(capturedCoord[0],bh_ui_CellTargetSource.Drag(binding.draggable)));
+					}
 				};
-			})(capturedCoord),this.rejectHighlightParam != null ? (function(capturedCoord) {
+			})(capturedCoord),(function(capturedCoord) {
 				return function(zone,reject) {
 					var e = _gthis.cells.h["" + capturedCoord[0].col + "_" + capturedCoord[0].row];
 					if(e != null) {
 						e.result.setParameter(_gthis.statusParam,reject ? "hover" : "normal");
 					}
 				};
-			})(capturedCoord) : null));
+			})(capturedCoord)));
 		}
 	}
 	,wireHighlightCallbacks: function(binding) {
@@ -34930,67 +35074,29 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				var _ = _g_key;
 				var entry = _g_value;
 				var accepts = binding.accepts == null || binding.accepts(entry.coord,binding.draggable);
-				if(accepts) {
-					entry.result.setParameter(_gthis.highlightParam,true);
-					_gthis.activeHighlightedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
+				var value = _gthis.resolveHighlightValue(entry.coord,accepts);
+				if(value != _gthis.highlightDefault) {
+					entry.result.setParameter(_gthis.highlightParam,value);
+					_gthis.activeDragHighlightedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
 				}
 			}
 		};
-		if(this.rejectHighlightParam != null) {
-			var rejectParam = this.rejectHighlightParam;
-			var prevRejectStart = binding.draggable.onDragStartRejectZones;
-			binding.draggable.onDragStartRejectZones = function(zones) {
-				if(prevRejectStart != null) {
-					prevRejectStart(zones);
-				}
-				var h = _gthis.cells.h;
-				var _g_h = h;
-				var _g_keys = Object.keys(h);
-				var _g_length = _g_keys.length;
-				var _g_current = 0;
-				while(_g_current < _g_length) {
-					var key = _g_keys[_g_current++];
-					var _g_key = key;
-					var _g_value = _g_h[key];
-					var _ = _g_key;
-					var entry = _g_value;
-					var accepts = binding.accepts == null || binding.accepts(entry.coord,binding.draggable);
-					if(!accepts) {
-						entry.result.setParameter(rejectParam,true);
-						_gthis.activeRejectedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
-					}
-				}
-			};
-		}
 		var prevEnd = binding.draggable.onDragEndHighlightZones;
 		binding.draggable.onDragEndHighlightZones = function(zones) {
 			if(prevEnd != null) {
 				prevEnd(zones);
 			}
 			var _g = 0;
-			var _g1 = _gthis.activeHighlightedCells;
+			var _g1 = _gthis.activeDragHighlightedCells;
 			while(_g < _g1.length) {
 				var cell = _g1[_g];
 				++_g;
 				var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
 				if(e != null) {
-					e.result.setParameter(_gthis.highlightParam,false);
+					e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
 				}
 			}
-			_gthis.activeHighlightedCells = [];
-			if(_gthis.rejectHighlightParam != null) {
-				var _g = 0;
-				var _g1 = _gthis.activeRejectedCells;
-				while(_g < _g1.length) {
-					var cell = _g1[_g];
-					++_g;
-					var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
-					if(e != null) {
-						e.result.setParameter(_gthis.rejectHighlightParam,false);
-					}
-				}
-				_gthis.activeRejectedCells = [];
-			}
+			_gthis.activeDragHighlightedCells = [];
 		};
 		var prevDrop = binding.draggable.onDragDrop;
 		binding.draggable.onDragDrop = function(result,wrapper) {
@@ -35152,12 +35258,24 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			if(coord != null) {
 				var e = _gthis.cells.h["" + coord.col + "_" + coord.row];
 				if(e != null) {
-					e.result.setParameter(_gthis.highlightParam,highlight);
+					e.result.setParameter(_gthis.statusParam,highlight ? "hover" : "normal");
+					if(!highlight) {
+						if(!_gthis.isCellDragHighlighted(coord.col,coord.row)) {
+							e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
+						}
+					}
+				}
+				var cardId = _gthis.activeCardDragId != null ? _gthis.activeCardDragId : "";
+				if(highlight) {
+					_gthis.emitEvent(bh_ui_GridEvent.CellTargetEnter(coord,bh_ui_CellTargetSource.Card(cardId)));
+				} else {
+					_gthis.emitEvent(bh_ui_GridEvent.CellTargetLeave(coord,bh_ui_CellTargetSource.Card(cardId)));
 				}
 			}
 		});
 		var listener = function(event) {
-			if(event._hx_index == 0) {
+			switch(event._hx_index) {
+			case 0:
 				var cardId = event.cardId;
 				var target = event.target;
 				if(target._hx_index == 0) {
@@ -35167,6 +35285,46 @@ bh_ui_UIMultiAnimGrid.prototype = {
 						_gthis.emitEvent(bh_ui_GridEvent.CellCardPlayed(coord,cardId));
 					}
 				}
+				break;
+			case 4:
+				var cardId = event.cardId;
+				_gthis.activeCardDragId = cardId;
+				var h = _gthis.cells.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var _ = _g_key;
+					var entry = _g_value;
+					var coord = entry.coord;
+					var accepts = binding.accepts == null || binding.accepts(coord,cardId);
+					var value = _gthis.resolveHighlightValue(coord,accepts);
+					if(value != _gthis.highlightDefault) {
+						entry.result.setParameter(_gthis.highlightParam,value);
+						_gthis.activeDragHighlightedCells.push(new bh_ui_CellCoord(coord.col,coord.row));
+					}
+				}
+				break;
+			case 5:
+				var _g = event.cardId;
+				var _g = 0;
+				var _g1 = _gthis.activeDragHighlightedCells;
+				while(_g < _g1.length) {
+					var cell = _g1[_g];
+					++_g;
+					var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
+					if(e != null) {
+						e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
+					}
+				}
+				_gthis.activeDragHighlightedCells = [];
+				_gthis.activeCardDragId = null;
+				break;
+			default:
 			}
 		};
 		binding.cardHand.chainedListeners.push(listener);
@@ -35278,15 +35436,22 @@ var bh_ui_GridType = $hxEnums["bh.ui.GridType"] = { __ename__:true,__constructs_
 };
 bh_ui_GridType.__constructs__ = [bh_ui_GridType.Rect,bh_ui_GridType.Hex];
 bh_ui_GridType.__empty_constructs__ = [];
+var bh_ui_CellTargetSource = $hxEnums["bh.ui.CellTargetSource"] = { __ename__:true,__constructs__:null
+	,Mouse: {_hx_name:"Mouse",_hx_index:0,__enum__:"bh.ui.CellTargetSource",toString:$estr}
+	,Drag: ($_=function(draggable) { return {_hx_index:1,draggable:draggable,__enum__:"bh.ui.CellTargetSource",toString:$estr}; },$_._hx_name="Drag",$_.__params__ = ["draggable"],$_)
+	,Card: ($_=function(cardId) { return {_hx_index:2,cardId:cardId,__enum__:"bh.ui.CellTargetSource",toString:$estr}; },$_._hx_name="Card",$_.__params__ = ["cardId"],$_)
+};
+bh_ui_CellTargetSource.__constructs__ = [bh_ui_CellTargetSource.Mouse,bh_ui_CellTargetSource.Drag,bh_ui_CellTargetSource.Card];
+bh_ui_CellTargetSource.__empty_constructs__ = [bh_ui_CellTargetSource.Mouse];
 var bh_ui_GridEvent = $hxEnums["bh.ui.GridEvent"] = { __ename__:true,__constructs__:null
 	,CellClick: ($_=function(cell,button) { return {_hx_index:0,cell:cell,button:button,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellClick",$_.__params__ = ["cell","button"],$_)
-	,CellHoverEnter: ($_=function(cell) { return {_hx_index:1,cell:cell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellHoverEnter",$_.__params__ = ["cell"],$_)
-	,CellHoverLeave: ($_=function(cell) { return {_hx_index:2,cell:cell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellHoverLeave",$_.__params__ = ["cell"],$_)
+	,CellTargetEnter: ($_=function(cell,source) { return {_hx_index:1,cell:cell,source:source,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellTargetEnter",$_.__params__ = ["cell","source"],$_)
+	,CellTargetLeave: ($_=function(cell,source) { return {_hx_index:2,cell:cell,source:source,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellTargetLeave",$_.__params__ = ["cell","source"],$_)
 	,CellDrop: ($_=function(cell,draggable,sourceGrid,sourceCell) { return {_hx_index:3,cell:cell,draggable:draggable,sourceGrid:sourceGrid,sourceCell:sourceCell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDrop",$_.__params__ = ["cell","draggable","sourceGrid","sourceCell"],$_)
 	,CellCardPlayed: ($_=function(cell,cardId) { return {_hx_index:4,cell:cell,cardId:cardId,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellCardPlayed",$_.__params__ = ["cell","cardId"],$_)
 	,CellDataChanged: ($_=function(cell,oldData,newData) { return {_hx_index:5,cell:cell,oldData:oldData,newData:newData,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDataChanged",$_.__params__ = ["cell","oldData","newData"],$_)
 };
-bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellHoverEnter,bh_ui_GridEvent.CellHoverLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
+bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellTargetEnter,bh_ui_GridEvent.CellTargetLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
 bh_ui_GridEvent.__empty_constructs__ = [];
 var bh_ui_UIMultiAnimProgressBar = function(builder,name,initialValue,extraParams) {
 	this.requestRedraw = true;
@@ -113798,6 +113963,9 @@ var screens_gamelike_GridDemoScreen = function(screenManager,scrollConfig,layers
 	this.rectRows = 4;
 	this.rectCols = 5;
 	this.g2gDraggables = [];
+	this.splashCells = [];
+	this.hexTooltipResult = null;
+	this.hexTooltip = null;
 	this.handCardIds = [];
 	this.nextCardId = 0;
 	this.rectDraggables = [];
@@ -113811,7 +113979,8 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Grid Component","Typed items, reject zones, source tracking, animations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim",false);
-		var generatedByMacroBuildWithParametersload3904Builder = function() {
+		var generatedByMacroBuildWithParametersload4491Builder = function() {
+			var snapChk;
 			var resetBtn;
 			var remStorBtn;
 			var remRowBtn;
@@ -113825,6 +113994,13 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				snapChk = _el;
+				return _el.getObject();
+			});
+			_g.h["snapChk"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addButtonWithSingleBuilder(_gthis.demoBuilder,"smallBtn",settings,"Reset");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -113896,7 +114072,10 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["addLoadBtn"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("gridDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { resetBtn : resetBtn, remStorBtn : remStorBtn, remRowBtn : remRowBtn, remRingBtn : remRingBtn, remLoadBtn : remLoadBtn, drawBtn : drawBtn, addStorBtn : addStorBtn, addRowBtn : addRowBtn, addRingBtn : addRingBtn, addLoadBtn : addLoadBtn, builderResults : builderResults1};
+			var retVal = { snapChk : snapChk, resetBtn : resetBtn, remStorBtn : remStorBtn, remRowBtn : remRowBtn, remRingBtn : remRingBtn, remLoadBtn : remLoadBtn, drawBtn : drawBtn, addStorBtn : addStorBtn, addRowBtn : addRowBtn, addRingBtn : addRingBtn, addLoadBtn : addLoadBtn, builderResults : builderResults1};
+			if(retVal.snapChk == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "snapChk" + " is null (check if placeholder object is named correctly)");
+			}
 			if(retVal.resetBtn == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "resetBtn" + " is null (check if placeholder object is named correctly)");
 			}
@@ -113929,10 +114108,11 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload3904Builder();
+		var ui = generatedByMacroBuildWithParametersload4491Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.drawButton = ui.drawBtn;
+		this.snapCheckbox = ui.snapChk;
 		this.addRowBtn = ui.addRowBtn;
 		this.remRowBtn = ui.remRowBtn;
 		this.addRingBtn = ui.addRingBtn;
@@ -113947,8 +114127,20 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.setupGridToGrid();
 		this.updateButtonStates();
 	}
+	,rectHighlightDelegate: function(cell,accepts) {
+		if(this.rectGrid != null && this.rectGrid.isOccupied(cell.col,cell.row)) {
+			return "locked";
+		}
+		if(!accepts) {
+			return "reject";
+		}
+		if(cell.row == 3) {
+			return "expensive";
+		}
+		return "accept";
+	}
 	,setupRectGrid: function() {
-		this.rectGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", rejectHighlightParam : "rejectHighlight", tweenManager : this.screenManager.tweens});
+		this.rectGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", highlightDelegate : $bind(this,this.rectHighlightDelegate), tweenManager : this.screenManager.tweens});
 		this.rectGrid.addRectRegion(5,4);
 		var item = screens_gamelike_GridDemoScreen.RECT_ITEMS[0];
 		var tmp = this.rectGrid;
@@ -114228,6 +114420,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _g = new haxe_ds_StringMap();
 		_g.h["cardName"] = def.name;
 		_g.h["cardColor"] = def.color;
+		_g.h["targetInfo"] = def.info;
 		tmp.drawCard({ id : id, buildName : "gridCard", params : _g, canTarget : true});
 	}
 	,onCardEvent: function(event) {
@@ -114266,9 +114459,17 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		default:
 		}
 	}
+	,getCardDef: function(cardId) {
+		var cardIdx = Std.parseInt(cardId.split("_").pop());
+		if(cardIdx != null) {
+			return screens_gamelike_GridDemoScreen.CARD_DEFS[cardIdx % screens_gamelike_GridDemoScreen.CARD_DEFS.length];
+		}
+		return screens_gamelike_GridDemoScreen.CARD_DEFS[0];
+	}
 	,onHexEvent: function(event) {
 		var _gthis = this;
-		if(event._hx_index == 0) {
+		switch(event._hx_index) {
+		case 0:
 			var _g = event.button;
 			var cell = event.cell;
 			if(this.hexGrid != null && this.hexGrid.isOccupied(cell.col,cell.row)) {
@@ -114281,6 +114482,119 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				});
 				this.setHexLog("Cleared (" + col + "," + row + ")");
 			}
+			break;
+		case 1:
+			var _g = event.cell;
+			var _g1 = event.source;
+			switch(_g1._hx_index) {
+			case 0:
+				var cell = _g;
+				if(this.hexGrid != null && this.hexGrid.isOccupied(cell.col,cell.row)) {
+					this.showHexTooltip(cell);
+				}
+				break;
+			case 2:
+				var cardId = _g1.cardId;
+				var cell = _g;
+				if(this.hexGrid == null) {
+					return;
+				}
+				var def = this.getCardDef(cardId);
+				var dmg = 5 + (cell.col + cell.row + 3) % 8;
+				this.hexGrid.setCellParameter(cell.col,cell.row,"dmgText","" + dmg);
+				this.hexGrid.setCellParameter(cell.col,cell.row,"showDmg",true);
+				switch(def.targeting) {
+				case "double":
+					var _g = 0;
+					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
+					while(_g < _g1.length) {
+						var n = _g1[_g];
+						++_g;
+						if(!this.hexGrid.isOccupied(n.col,n.row)) {
+							this.hexGrid.setCellParameter(n.col,n.row,"highlight","splash");
+							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
+							break;
+						}
+					}
+					this.setHexLog("" + def.name + " [x2] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
+					break;
+				case "range":
+					var _g = 0;
+					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
+					while(_g < _g1.length) {
+						var n = _g1[_g];
+						++_g;
+						if(!this.hexGrid.isOccupied(n.col,n.row)) {
+							this.hexGrid.setCellParameter(n.col,n.row,"highlight","splash");
+							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
+						}
+					}
+					this.setHexLog("" + def.name + " [AoE] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
+					break;
+				default:
+					this.setHexLog("" + def.name + " [x1] -> (" + cell.col + "," + cell.row + ") dmg:" + dmg);
+				}
+				break;
+			default:
+			}
+			break;
+		case 2:
+			var _g = event.cell;
+			var _g1 = event.source;
+			switch(_g1._hx_index) {
+			case 0:
+				this.hideHexTooltip();
+				break;
+			case 2:
+				var _g2 = _g1.cardId;
+				var cell = _g;
+				if(this.hexGrid == null) {
+					return;
+				}
+				this.hexGrid.setCellParameter(cell.col,cell.row,"showDmg",false);
+				var _g = 0;
+				var _g1 = this.splashCells;
+				while(_g < _g1.length) {
+					var c = _g1[_g];
+					++_g;
+					this.hexGrid.setCellParameter(c.col,c.row,"highlight","accept");
+				}
+				this.splashCells = [];
+				break;
+			default:
+			}
+			break;
+		default:
+		}
+	}
+	,showHexTooltip: function(cell) {
+		if(this.hexGrid == null || this.demoBuilder == null) {
+			return;
+		}
+		this.hideHexTooltip();
+		var data = this.hexGrid.get(cell.col,cell.row);
+		var info = data != null && data.color != null ? "Occupied (" + cell.col + "," + cell.row + ")" : "Cell (" + cell.col + "," + cell.row + ")";
+		var tmp = this.demoBuilder;
+		var _g = new haxe_ds_StringMap();
+		_g.h["infoText"] = info;
+		this.hexTooltipResult = tmp.buildWithParameters("hexTooltip",_g);
+		this.hexTooltip = this.hexTooltipResult.object;
+		var pos = this.hexGrid.cellPosition(cell.col,cell.row);
+		var _this = this.hexTooltip;
+		_this.posChanged = true;
+		_this.x = pos.x - 60;
+		_this.posChanged = true;
+		_this.y = pos.y - 50;
+		this.addObjectToLayer(this.hexTooltip,bh_ui_screens_LayersEnum.ModalLayer);
+	}
+	,hideHexTooltip: function() {
+		if(this.hexTooltip != null) {
+			var _this = this.hexTooltip;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.hexTooltip = null;
+			this.hexTooltipResult = null;
 		}
 	}
 	,resetHexGrid: function() {
@@ -114346,6 +114660,14 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.updateButtonStates();
 		this.setHexLog("radius " + this.hexRadius);
 	}
+	,setArrowSnap: function(snap) {
+		if(this.cardHand == null) {
+			return;
+		}
+		this.cardHand.setArrowSnap(snap);
+		this.cardHand.hideCursorWhileTargeting = !snap;
+		this.setHexLog(snap ? "Snap: on" : "Snap: off");
+	}
 	,setHexLog: function(text) {
 		if(this.demoResult != null) {
 			this.demoResult.getUpdatable("hexLog").updateText(text);
@@ -114360,7 +114682,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.posChanged = true;
 		_this.y = 132.;
 		this.addObjectToLayer(this.g2gContainer,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.storageGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", rejectHighlightParam : "rejectHighlight", tweenManager : this.screenManager.tweens});
+		this.storageGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
 		this.storageGrid.addRectRegion(this.storageCols,this.storageRows);
 		var _g = 0;
 		var _g1 = screens_gamelike_GridDemoScreen.G2G_WEAPONS.length;
@@ -114379,7 +114701,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			_gthis.onG2GEvent(_gthis.storageGrid,e);
 		};
 		this.g2gContainer.addChild(this.storageGrid.getObject());
-		this.loadoutGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", rejectHighlightParam : "rejectHighlight", tweenManager : this.screenManager.tweens});
+		this.loadoutGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
 		this.loadoutGrid.addRectRegion(this.loadoutCols,this.loadoutRows);
 		var _g = 0;
 		var _g1 = screens_gamelike_GridDemoScreen.G2G_POTIONS.length;
@@ -114683,7 +115005,8 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.cardHand != null && this.cardHand.handleScreenEvent(event)) {
 			return;
 		}
-		if(event._hx_index == 0) {
+		switch(event._hx_index) {
+		case 0:
 			if(source == this.resetButton) {
 				this.resetRectGrid();
 				this.resetHexGrid();
@@ -114737,6 +115060,14 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					this.setG2GLog("Load " + this.loadoutCols + "x" + this.loadoutRows);
 				}
 			}
+			break;
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.snapCheckbox) {
+				this.setArrowSnap(pressed);
+			}
+			break;
+		default:
 		}
 		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
 	}
@@ -114798,6 +115129,8 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			this.cardHand.dispose();
 			this.cardHand = null;
 		}
+		this.hideHexTooltip();
+		this.splashCells = [];
 		if(this.storageGrid != null) {
 			this.storageGrid.dispose();
 			this.storageGrid = null;
@@ -114820,6 +115153,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 		this.resetButton = null;
 		this.drawButton = null;
+		this.snapCheckbox = null;
 		this.addRowBtn = null;
 		this.remRowBtn = null;
 		this.addRingBtn = null;
@@ -119969,7 +120303,7 @@ js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -120414,7 +120748,7 @@ screens_gamelike_CardsDemoScreen.PATH_DISTS = [{ name : "EvenArcLength"},{ name 
 screens_gamelike_CardsDemoScreen.PATH_ORIENTS = [{ name : "Tangent"},{ name : "Straight"}];
 screens_gamelike_CardsDemoScreen.LAYOUT_MODES = [{ name : "Fan"},{ name : "Linear"},{ name : "Path"}];
 screens_gamelike_GridDemoScreen.RECT_ITEMS = [{ color : 13386786, type : "weapon"},{ color : 2254540, type : "weapon"},{ color : 2280516, type : "potion"},{ color : 13421602, type : "weapon"},{ color : 10044620, type : "potion"}];
-screens_gamelike_GridDemoScreen.CARD_DEFS = [{ name : "Fire", color : 13386786},{ name : "Ice", color : 2254540},{ name : "Nature", color : 2280516},{ name : "Light", color : 13421602},{ name : "Shadow", color : 10044620},{ name : "Storm", color : 2280652}];
+screens_gamelike_GridDemoScreen.CARD_DEFS = [{ name : "Fire", color : 13386786, targeting : "single", info : "x1"},{ name : "Ice", color : 2254540, targeting : "double", info : "x2"},{ name : "Nature", color : 2280516, targeting : "range", info : "AoE"},{ name : "Light", color : 13421602, targeting : "single", info : "x1"},{ name : "Shadow", color : 10044620, targeting : "double", info : "x2"},{ name : "Storm", color : 2280652, targeting : "range", info : "AoE"}];
 screens_gamelike_GridDemoScreen.G2G_WEAPONS = [{ color : 13395490, type : "weapon"},{ color : 8930508, type : "weapon"},{ color : 13412898, type : "weapon"}];
 screens_gamelike_GridDemoScreen.G2G_POTIONS = [{ color : 2263244, type : "potion"},{ color : 4508740, type : "potion"}];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];

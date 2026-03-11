@@ -3,6 +3,7 @@ package screens.gamelike;
 import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
+import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.ui.UIMultiAnimDraggable;
 import bh.ui.UIMultiAnimDraggable.DragEvent;
 import bh.ui.UICardHandHelper;
@@ -12,6 +13,7 @@ import bh.ui.UIMultiAnimGrid;
 import bh.ui.UIMultiAnimGridTypes;
 import bh.ui.UIMultiAnimGridTypes.GridEvent;
 import bh.ui.UIMultiAnimGridTypes.CellCoord;
+import bh.ui.UIMultiAnimGridTypes.CellTargetSource;
 import bh.base.Hex.HexOrientation;
 import bh.base.MacroUtils;
 import bh.base.TweenManager.TweenProperty;
@@ -32,6 +34,9 @@ class GridDemoScreen extends DemoScreenBase {
 	var cardHand:Null<UICardHandHelper>;
 	var nextCardId:Int = 0;
 	var handCardIds:Array<String> = [];
+	var hexTooltip:Null<h2d.Object> = null;
+	var hexTooltipResult:Null<BuilderResult> = null;
+	var splashCells:Array<CellCoord> = [];
 
 	// === Right: Grid-to-Grid ===
 	var storageGrid:Null<UIMultiAnimGrid>;
@@ -44,6 +49,7 @@ class GridDemoScreen extends DemoScreenBase {
 	// Buttons
 	var resetButton:Null<UIStandardMultiAnimButton>;
 	var drawButton:Null<UIStandardMultiAnimButton>;
+	var snapCheckbox:Null<UIStandardMultiCheckbox>;
 	var addRowBtn:Null<UIStandardMultiAnimButton>;
 	var remRowBtn:Null<UIStandardMultiAnimButton>;
 	var addRingBtn:Null<UIStandardMultiAnimButton>;
@@ -52,6 +58,7 @@ class GridDemoScreen extends DemoScreenBase {
 	var remStorBtn:Null<UIStandardMultiAnimButton>;
 	var addLoadBtn:Null<UIStandardMultiAnimButton>;
 	var remLoadBtn:Null<UIStandardMultiAnimButton>;
+
 
 	// G2G container
 	var g2gContainer:Null<h2d.Object>;
@@ -86,14 +93,14 @@ class GridDemoScreen extends DemoScreenBase {
 		{color: 0x9944CC, type: "potion"},
 	];
 
-	// Card definitions for hex grid
-	static final CARD_DEFS:Array<{name:String, color:Int}> = [
-		{name: "Fire", color: 0xCC4422},
-		{name: "Ice", color: 0x2266CC},
-		{name: "Nature", color: 0x22CC44},
-		{name: "Light", color: 0xCCCC22},
-		{name: "Shadow", color: 0x9944CC},
-		{name: "Storm", color: 0x22CCCC},
+	// Card definitions for hex grid — targeting: single (1 cell), double (2 cells), range (AoE)
+	static final CARD_DEFS:Array<{name:String, color:Int, targeting:String, info:String}> = [
+		{name: "Fire", color: 0xCC4422, targeting: "single", info: "x1"},
+		{name: "Ice", color: 0x2266CC, targeting: "double", info: "x2"},
+		{name: "Nature", color: 0x22CC44, targeting: "range", info: "AoE"},
+		{name: "Light", color: 0xCCCC22, targeting: "single", info: "x1"},
+		{name: "Shadow", color: 0x9944CC, targeting: "double", info: "x2"},
+		{name: "Storm", color: 0x22CCCC, targeting: "range", info: "AoE"},
 	];
 
 	// G2G item definitions: weapons (storage) and potions (loadout)
@@ -117,6 +124,7 @@ class GridDemoScreen extends DemoScreenBase {
 			addRowBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "+Row"),
 			remRowBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "-Row"),
 			drawBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "Draw"),
+			snapChk => addCheckbox(stdBuilder, true),
 			addRingBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "+Ring"),
 			remRingBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "-Ring"),
 			addStorBtn => addButtonWithSingleBuilder(demoBuilder, "smallBtn", "+Stor"),
@@ -127,6 +135,7 @@ class GridDemoScreen extends DemoScreenBase {
 		demoResult = ui.builderResults;
 		resetButton = ui.resetBtn;
 		drawButton = ui.drawBtn;
+		snapCheckbox = ui.snapChk;
 		addRowBtn = ui.addRowBtn;
 		remRowBtn = ui.remRowBtn;
 		addRingBtn = ui.addRingBtn;
@@ -145,13 +154,24 @@ class GridDemoScreen extends DemoScreenBase {
 
 	// ========== Left: Rect Grid + Internal Drag ==========
 
+	function rectHighlightDelegate(cell:CellCoord, accepts:Bool):String {
+		if (rectGrid != null && rectGrid.isOccupied(cell.col, cell.row))
+			return "locked";
+		if (!accepts)
+			return "reject";
+		// Row 3 is the "premium" row — accepts anything but costs extra
+		if (cell.row == 3)
+			return "expensive";
+		return "accept";
+	}
+
 	function setupRectGrid():Void {
 		rectGrid = new UIMultiAnimGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
-			rejectHighlightParam: "rejectHighlight",
+			highlightDelegate: rectHighlightDelegate,
 			tweenManager: screenManager.tweens,
 		});
 		rectGrid.addRectRegion(5, 4);
@@ -351,7 +371,7 @@ class GridDemoScreen extends DemoScreenBase {
 		cardHand.drawCard({
 			id: id,
 			buildName: "gridCard",
-			params: ["cardName" => (def.name : Dynamic), "cardColor" => (def.color : Dynamic)],
+			params: ["cardName" => (def.name : Dynamic), "cardColor" => (def.color : Dynamic), "targetInfo" => (def.info : Dynamic)],
 			canTarget: true,
 		});
 	}
@@ -384,11 +404,17 @@ class GridDemoScreen extends DemoScreenBase {
 		}
 	}
 
+	function getCardDef(cardId:String):{name:String, color:Int, targeting:String, info:String} {
+		final cardIdx = Std.parseInt(cardId.split("_").pop());
+		if (cardIdx != null)
+			return CARD_DEFS[cardIdx % CARD_DEFS.length];
+		return CARD_DEFS[0];
+	}
+
 	function onHexEvent(event:GridEvent):Void {
 		switch event {
 			case CellClick(cell, _):
 				if (hexGrid != null && hexGrid.isOccupied(cell.col, cell.row)) {
-					// Animated removal: shrink + fade out, then re-add empty cell
 					final col = cell.col;
 					final row = cell.row;
 					hexGrid.removeCellAnimated(col, row, 0.25,
@@ -399,7 +425,70 @@ class GridDemoScreen extends DemoScreenBase {
 						});
 					setHexLog('Cleared (${col},${row})');
 				}
+			case CellTargetEnter(cell, Card(cardId)):
+				if (hexGrid == null) return;
+				final def = getCardDef(cardId);
+				final dmg = 5 + (cell.col + cell.row + 3) % 8;
+				hexGrid.setCellParameter(cell.col, cell.row, "dmgText", '$dmg');
+				hexGrid.setCellParameter(cell.col, cell.row, "showDmg", true);
+				// Targeting pattern based on card type
+				switch def.targeting {
+					case "double":
+						// Target current + 1 adjacent non-occupied cell
+						for (n in hexGrid.neighbors(cell.col, cell.row)) {
+							if (!hexGrid.isOccupied(n.col, n.row)) {
+								hexGrid.setCellParameter(n.col, n.row, "highlight", "splash");
+								splashCells.push({col: n.col, row: n.row});
+								break;
+							}
+						}
+						setHexLog('${def.name} [x2] -> (${cell.col},${cell.row}) +${splashCells.length}');
+					case "range":
+						// Target current + all non-occupied neighbors
+						for (n in hexGrid.neighbors(cell.col, cell.row)) {
+							if (!hexGrid.isOccupied(n.col, n.row)) {
+								hexGrid.setCellParameter(n.col, n.row, "highlight", "splash");
+								splashCells.push({col: n.col, row: n.row});
+							}
+						}
+						setHexLog('${def.name} [AoE] -> (${cell.col},${cell.row}) +${splashCells.length}');
+					default:
+						// Single target — no splash
+						setHexLog('${def.name} [x1] -> (${cell.col},${cell.row}) dmg:$dmg');
+				}
+			case CellTargetLeave(cell, Card(_)):
+				if (hexGrid == null) return;
+				hexGrid.setCellParameter(cell.col, cell.row, "showDmg", false);
+				for (c in splashCells)
+					hexGrid.setCellParameter(c.col, c.row, "highlight", "accept");
+				splashCells = [];
+			case CellTargetEnter(cell, Mouse):
+				// 3. Tooltip on mouse hover for occupied cells
+				if (hexGrid != null && hexGrid.isOccupied(cell.col, cell.row))
+					showHexTooltip(cell);
+			case CellTargetLeave(_, Mouse):
+				hideHexTooltip();
 			default:
+		}
+	}
+
+	function showHexTooltip(cell:CellCoord):Void {
+		if (hexGrid == null || demoBuilder == null) return;
+		hideHexTooltip();
+		final data = hexGrid.get(cell.col, cell.row);
+		final info = if (data != null && data.color != null) 'Occupied (${cell.col},${cell.row})' else 'Cell (${cell.col},${cell.row})';
+		hexTooltipResult = demoBuilder.buildWithParameters("hexTooltip", ["infoText" => (info : Dynamic)]);
+		hexTooltip = hexTooltipResult.object;
+		final pos = hexGrid.cellPosition(cell.col, cell.row);
+		hexTooltip.setPosition(pos.x - 60, pos.y - 50);
+		addObjectToLayer(hexTooltip, ModalLayer);
+	}
+
+	function hideHexTooltip():Void {
+		if (hexTooltip != null) {
+			hexTooltip.remove();
+			hexTooltip = null;
+			hexTooltipResult = null;
 		}
 	}
 
@@ -454,6 +543,13 @@ class GridDemoScreen extends DemoScreenBase {
 		setHexLog('radius ${hexRadius}');
 	}
 
+	function setArrowSnap(snap:Bool):Void {
+		if (cardHand == null) return;
+		cardHand.setArrowSnap(snap);
+		cardHand.hideCursorWhileTargeting = !snap;
+		setHexLog(snap ? "Snap: on" : "Snap: off");
+	}
+
 	function setHexLog(text:String):Void {
 		if (demoResult != null)
 			demoResult.getUpdatable("hexLog").updateText(text);
@@ -473,7 +569,7 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
-			rejectHighlightParam: "rejectHighlight",
+
 			tweenManager: screenManager.tweens,
 		});
 		storageGrid.addRectRegion(storageCols, storageRows);
@@ -493,7 +589,7 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
-			rejectHighlightParam: "rejectHighlight",
+
 			tweenManager: screenManager.tweens,
 		});
 		loadoutGrid.addRectRegion(loadoutCols, loadoutRows);
@@ -767,6 +863,9 @@ class GridDemoScreen extends DemoScreenBase {
 						setG2GLog('Load ${loadoutCols}x${loadoutRows}');
 					}
 				}
+			case UIToggle(pressed):
+				if (source == snapCheckbox)
+					setArrowSnap(pressed);
 			default:
 		}
 		super.onScreenEvent(event, source);
@@ -817,6 +916,8 @@ class GridDemoScreen extends DemoScreenBase {
 		if (rectGrid != null) { rectGrid.dispose(); rectGrid = null; }
 		if (hexGrid != null) { hexGrid.dispose(); hexGrid = null; }
 		if (cardHand != null) { cardHand.dispose(); cardHand = null; }
+		hideHexTooltip();
+		splashCells = [];
 		if (storageGrid != null) { storageGrid.dispose(); storageGrid = null; }
 		if (loadoutGrid != null) { loadoutGrid.dispose(); loadoutGrid = null; }
 		rectDraggables = [];
@@ -827,6 +928,7 @@ class GridDemoScreen extends DemoScreenBase {
 		if (g2gContainer != null) { g2gContainer.remove(); g2gContainer = null; }
 		resetButton = null;
 		drawButton = null;
+		snapCheckbox = null;
 		addRowBtn = null;
 		remRowBtn = null;
 		addRingBtn = null;

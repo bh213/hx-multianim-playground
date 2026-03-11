@@ -158,6 +158,7 @@ class NavScreen extends UIScreenBase {
 				{id: "dialogue", title: "Dialogue Box"},
 				{id: "statusEffects", title: "Status Effects"},
 			{id: "cards", title: "Cards"},
+				{id: "gridComponent", title: "Grid Component"},
 			]
 		}
 	];

@@ -31211,6 +31211,9 @@ bh_ui_UICardHandHelper.prototype = {
 	,setArrowSnap: function(snap) {
 		this.targeting.snapToTarget = snap;
 	}
+	,setArrowSnapPointProvider: function(provider) {
+		this.targeting.arrowSnapPointProvider = provider;
+	}
 	,setVisible: function(visible) {
 		this.handContainer.set_visible(visible);
 		this.targeting.getObject().set_visible(visible);
@@ -32259,6 +32262,7 @@ var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,s
 	}
 	this.acceptsFilter = null;
 	this.onTargetHighlight = null;
+	this.arrowSnapPointProvider = null;
 	this.snapToTarget = true;
 	this.arrowEnabled = true;
 	this.currentValid = false;
@@ -32453,21 +32457,38 @@ bh_ui_UICardHandTargeting.prototype = {
 		var endX = cursorX;
 		var endY = cursorY;
 		if(this.snapToTarget && valid && hoveredWrapper != null) {
-			var _g = hoveredWrapper.interactive.multiAnimType;
-			if(_g._hx_index == 0) {
-				var _g1 = _g.identifier;
-				var _g1 = _g.metadata;
-				var width = _g.width;
-				var height = _g.height;
-				var x = width * 0.5;
-				var y = height * 0.5;
+			var localPoint = null;
+			if(this.arrowSnapPointProvider != null) {
+				var fp = this.arrowSnapPointProvider(hoveredWrapper);
+				var x = fp.x;
+				var y = fp.y;
 				if(y == null) {
 					y = 0.;
 				}
 				if(x == null) {
 					x = 0.;
 				}
-				var centerScene = hoveredWrapper.interactive.localToGlobal(new h2d_col_PointImpl(x,y));
+				localPoint = new h2d_col_PointImpl(x,y);
+			} else {
+				var _g = hoveredWrapper.interactive.multiAnimType;
+				if(_g._hx_index == 0) {
+					var _g1 = _g.identifier;
+					var _g1 = _g.metadata;
+					var width = _g.width;
+					var height = _g.height;
+					var x = width * 0.5;
+					var y = height * 0.5;
+					if(y == null) {
+						y = 0.;
+					}
+					if(x == null) {
+						x = 0.;
+					}
+					localPoint = new h2d_col_PointImpl(x,y);
+				}
+			}
+			if(localPoint != null) {
+				var centerScene = hoveredWrapper.interactive.localToGlobal(localPoint);
 				var centerLocal = this.arrowContainer.globalToLocal(centerScene);
 				endX = centerLocal.x;
 				endY = centerLocal.y;
@@ -33314,14 +33335,15 @@ var bh_ui_DragEvent = $hxEnums["bh.ui.DragEvent"] = { __ename__:true,__construct
 	,DragStart: {_hx_name:"DragStart",_hx_index:0,__enum__:"bh.ui.DragEvent",toString:$estr}
 	,DragMove: {_hx_name:"DragMove",_hx_index:1,__enum__:"bh.ui.DragEvent",toString:$estr}
 	,DragEnd: {_hx_name:"DragEnd",_hx_index:2,__enum__:"bh.ui.DragEvent",toString:$estr}
-	,DragCancel: {_hx_name:"DragCancel",_hx_index:3,__enum__:"bh.ui.DragEvent",toString:$estr}
-	,ZoneEnter: ($_=function(zone) { return {_hx_index:4,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneEnter",$_.__params__ = ["zone"],$_)
-	,ZoneLeave: ($_=function(zone) { return {_hx_index:5,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneLeave",$_.__params__ = ["zone"],$_)
-	,ZoneRejectEnter: ($_=function(zone) { return {_hx_index:6,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneRejectEnter",$_.__params__ = ["zone"],$_)
-	,ZoneRejectLeave: ($_=function(zone) { return {_hx_index:7,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneRejectLeave",$_.__params__ = ["zone"],$_)
+	,DragSnapComplete: {_hx_name:"DragSnapComplete",_hx_index:3,__enum__:"bh.ui.DragEvent",toString:$estr}
+	,DragCancel: {_hx_name:"DragCancel",_hx_index:4,__enum__:"bh.ui.DragEvent",toString:$estr}
+	,ZoneEnter: ($_=function(zone) { return {_hx_index:5,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneEnter",$_.__params__ = ["zone"],$_)
+	,ZoneLeave: ($_=function(zone) { return {_hx_index:6,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneLeave",$_.__params__ = ["zone"],$_)
+	,ZoneRejectEnter: ($_=function(zone) { return {_hx_index:7,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneRejectEnter",$_.__params__ = ["zone"],$_)
+	,ZoneRejectLeave: ($_=function(zone) { return {_hx_index:8,zone:zone,__enum__:"bh.ui.DragEvent",toString:$estr}; },$_._hx_name="ZoneRejectLeave",$_.__params__ = ["zone"],$_)
 };
-bh_ui_DragEvent.__constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragCancel,bh_ui_DragEvent.ZoneEnter,bh_ui_DragEvent.ZoneLeave,bh_ui_DragEvent.ZoneRejectEnter,bh_ui_DragEvent.ZoneRejectLeave];
-bh_ui_DragEvent.__empty_constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragCancel];
+bh_ui_DragEvent.__constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragSnapComplete,bh_ui_DragEvent.DragCancel,bh_ui_DragEvent.ZoneEnter,bh_ui_DragEvent.ZoneLeave,bh_ui_DragEvent.ZoneRejectEnter,bh_ui_DragEvent.ZoneRejectLeave];
+bh_ui_DragEvent.__empty_constructs__ = [bh_ui_DragEvent.DragStart,bh_ui_DragEvent.DragMove,bh_ui_DragEvent.DragEnd,bh_ui_DragEvent.DragSnapComplete,bh_ui_DragEvent.DragCancel];
 var bh_ui_DropZone = function(id,bounds,slot,snapX,snapY,accepts,priority,boundsProvider,snapProvider,onZoneHighlight,onZoneReject) {
 	this.onZoneReject = null;
 	this.onZoneHighlight = null;
@@ -33831,6 +33853,9 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 						}
 						_gthis.sourceSlot = null;
 						_gthis.sourceData = null;
+						if(_gthis.onDragEvent != null) {
+							_gthis.onDragEvent(bh_ui_DragEvent.DragSnapComplete,wrapper.eventPos,wrapper);
+						}
 					});
 				} else {
 					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UICustomEvent("dragCancel",null),this);
@@ -34314,6 +34339,8 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.activeDragHighlightedCells = [];
 	this.registeredDraggables = [];
 	this.hoveredCell = null;
+	this.layerEntries = new haxe_ds_StringMap();
+	this.layerConfigs = new haxe_ds_StringMap();
 	this.cells = new haxe_ds_StringMap();
 	this.builder = builder;
 	this.gridType = config.gridType;
@@ -34326,7 +34353,7 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.snapPathName = config.snapPathName;
 	this.returnPathName = config.returnPathName;
 	this.tweenManager = config.tweenManager;
-	this.root = new h2d_Object();
+	this.root = new h2d_Layers();
 	var _this = this.root;
 	_this.posChanged = true;
 	_this.x = config.originX != null ? config.originX : 0;
@@ -34401,7 +34428,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var coord = new bh_ui_CellCoord(col,row);
 		var entry = this.buildCell(coord,data,params);
 		this.cells.h[key] = entry;
-		this.root.addChild(entry.result.object);
+		this.root.add(entry.result.object,0);
 		this.positionCell(entry);
 		if(this.onCellBuilt != null) {
 			this.onCellBuilt(coord,entry.result);
@@ -34423,6 +34450,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
 			delete(_this.h[key]);
 		}
+		this.clearAllLayersOnCell(col,row);
 		if(this.hoveredCell != null && this.hoveredCell.col == col && this.hoveredCell.row == row) {
 			this.hoveredCell = null;
 		}
@@ -34547,6 +34575,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
 			delete(_this.h[key]);
 		}
+		this.clearAllLayersOnCell(col,row);
 		if(this.hoveredCell != null && this.hoveredCell.col == col && this.hoveredCell.row == row) {
 			this.hoveredCell = null;
 		}
@@ -34643,6 +34672,142 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				}
 			}
 			this.tweenManager.tween(obj,duration,tweenProps,easing);
+		}
+	}
+	,addLayer: function(name,config) {
+		if(Object.prototype.hasOwnProperty.call(this.layerConfigs.h,name)) {
+			throw haxe_Exception.thrown("Grid layer \"" + name + "\" already registered");
+		}
+		this.layerConfigs.h[name] = config;
+		var this1 = this.layerEntries;
+		var value = new haxe_ds_StringMap();
+		this1.h[name] = value;
+	}
+	,setLayer: function(col,row,layerName,params) {
+		var config = this.layerConfigs.h[layerName];
+		if(config == null) {
+			throw haxe_Exception.thrown("Grid layer \"" + layerName + "\" not registered");
+		}
+		if(!Object.prototype.hasOwnProperty.call(this.cells.h,"" + col + "_" + row)) {
+			throw haxe_Exception.thrown("Cell (" + col + ", " + row + ") does not exist");
+		}
+		var entries = this.layerEntries.h[layerName];
+		var key = "" + col + "_" + row;
+		var existing = entries.h[key];
+		if(existing != null) {
+			var _this = existing.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			if(Object.prototype.hasOwnProperty.call(entries.h,key)) {
+				delete(entries.h[key]);
+			}
+		}
+		var buildParams = params != null ? params : new haxe_ds_StringMap();
+		var result = this.builder.buildWithParameters(config.buildName,buildParams);
+		var obj = result.object;
+		var localPos = this.getCellLocalPosition(new bh_ui_CellCoord(col,row));
+		obj.posChanged = true;
+		obj.x = localPos.x;
+		obj.posChanged = true;
+		obj.y = localPos.y;
+		this.root.add(obj,config.zOrder);
+		entries.h[key] = { result : result, object : obj};
+	}
+	,clearLayer: function(col,row,layerName) {
+		var entries = this.layerEntries.h[layerName];
+		if(entries == null) {
+			return;
+		}
+		var key = "" + col + "_" + row;
+		var entry = entries.h[key];
+		if(entry != null) {
+			var _this = entry.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			if(Object.prototype.hasOwnProperty.call(entries.h,key)) {
+				delete(entries.h[key]);
+			}
+		}
+	}
+	,clearLayerAll: function(layerName) {
+		var entries = this.layerEntries.h[layerName];
+		if(entries == null) {
+			return;
+		}
+		var h = entries.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			var _this = entry.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
+		entries.h = Object.create(null);
+	}
+	,clearAllLayers: function() {
+		var h = this.layerEntries.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entries = _g_value;
+			var h = entries.h;
+			var _g_h1 = h;
+			var _g_keys1 = Object.keys(h);
+			var _g_length1 = _g_keys1.length;
+			var _g_current1 = 0;
+			while(_g_current1 < _g_length1) {
+				var key1 = _g_keys1[_g_current1++];
+				var _g_key1 = key1;
+				var _g_value1 = _g_h1[key1];
+				var _1 = _g_key1;
+				var entry = _g_value1;
+				var _this = entry.object;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+			}
+			entries.h = Object.create(null);
+		}
+	}
+	,clearAllLayersOnCell: function(col,row) {
+		var key = "" + col + "_" + row;
+		var h = this.layerEntries.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key1 = _g_keys[_g_current++];
+			var _g_key = key1;
+			var _g_value = _g_h[key1];
+			var _ = _g_key;
+			var entries = _g_value;
+			var entry = entries.h[key];
+			if(entry != null) {
+				var _this = entry.object;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+				if(Object.prototype.hasOwnProperty.call(entries.h,key)) {
+					delete(entries.h[key]);
+				}
+			}
 		}
 	}
 	,cellAtPoint: function(sceneX,sceneY) {
@@ -34825,6 +34990,8 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			this.clearCardTargetsForBinding(binding);
 		}
 		this.registeredCardHands.length = 0;
+		this.clearAllLayers();
+		this.layerConfigs.h = Object.create(null);
 		var _this = this.root;
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
@@ -34947,7 +35114,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var coord = new bh_ui_CellCoord(col,row);
 		var entry = this.buildCell(coord,data,params);
 		this.cells.h[key] = entry;
-		this.root.addChild(entry.result.object);
+		this.root.add(entry.result.object,0);
 		this.positionCell(entry);
 		if(this.onCellBuilt != null) {
 			this.onCellBuilt(coord,entry.result);
@@ -35108,7 +35275,44 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				if(coord != null) {
 					var srcGrid = ((binding.draggable.sourceGrid) instanceof bh_ui_UIMultiAnimGrid) ? binding.draggable.sourceGrid : null;
 					var srcCell = binding.draggable.sourceCellCoord;
-					_gthis.emitEvent(bh_ui_GridEvent.CellDrop(coord,binding.draggable,srcGrid,srcCell));
+					var ctx = new bh_ui_DropContext();
+					_gthis.emitEvent(bh_ui_GridEvent.CellDrop(coord,binding.draggable,srcGrid,srcCell,ctx));
+					if(ctx._handled && !ctx._accepted) {
+						if(ctx._pathName != null) {
+							binding.draggable.setReturnAnimPath(_gthis.builder,ctx._pathName);
+						}
+						if(ctx._onComplete != null) {
+							var onComplete = ctx._onComplete;
+							var prevCancel = binding.draggable.onDragCancel;
+							binding.draggable.onDragCancel = function(pos,w) {
+								binding.draggable.onDragCancel = prevCancel;
+								if(prevCancel != null) {
+									prevCancel(pos,w);
+								}
+								onComplete();
+							};
+						}
+						return false;
+					}
+					if(ctx._handled && ctx._pathName != null) {
+						binding.draggable.setSnapAnimPath(_gthis.builder,ctx._pathName);
+					}
+					if(ctx._onComplete != null) {
+						var onComplete1 = ctx._onComplete;
+						var prevEvent = binding.draggable.onDragEvent;
+						binding.draggable.onDragEvent = function(event,pos,w) {
+							if(prevEvent != null) {
+								prevEvent(event,pos,w);
+							}
+							switch(event._hx_index) {
+							case 3:case 4:
+								binding.draggable.onDragEvent = prevEvent;
+								onComplete1();
+								break;
+							default:
+							}
+						};
+					}
 					return true;
 				}
 			}
@@ -35237,7 +35441,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				interactive.y = localPos.y - cellSize.y / 2;
 				break;
 			}
-			this.root.addChild(interactive);
+			this.root.add(interactive,1000);
 			var wrapper = new bh_ui_UIInteractiveWrapper(interactive,null);
 			this.cardTargetInteractives.h[targetId] = interactive;
 			this.cardTargetWrappers.h[targetId] = wrapper;
@@ -35447,12 +35651,30 @@ var bh_ui_GridEvent = $hxEnums["bh.ui.GridEvent"] = { __ename__:true,__construct
 	,CellClick: ($_=function(cell,button) { return {_hx_index:0,cell:cell,button:button,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellClick",$_.__params__ = ["cell","button"],$_)
 	,CellTargetEnter: ($_=function(cell,source) { return {_hx_index:1,cell:cell,source:source,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellTargetEnter",$_.__params__ = ["cell","source"],$_)
 	,CellTargetLeave: ($_=function(cell,source) { return {_hx_index:2,cell:cell,source:source,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellTargetLeave",$_.__params__ = ["cell","source"],$_)
-	,CellDrop: ($_=function(cell,draggable,sourceGrid,sourceCell) { return {_hx_index:3,cell:cell,draggable:draggable,sourceGrid:sourceGrid,sourceCell:sourceCell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDrop",$_.__params__ = ["cell","draggable","sourceGrid","sourceCell"],$_)
+	,CellDrop: ($_=function(cell,draggable,sourceGrid,sourceCell,ctx) { return {_hx_index:3,cell:cell,draggable:draggable,sourceGrid:sourceGrid,sourceCell:sourceCell,ctx:ctx,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDrop",$_.__params__ = ["cell","draggable","sourceGrid","sourceCell","ctx"],$_)
 	,CellCardPlayed: ($_=function(cell,cardId) { return {_hx_index:4,cell:cell,cardId:cardId,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellCardPlayed",$_.__params__ = ["cell","cardId"],$_)
 	,CellDataChanged: ($_=function(cell,oldData,newData) { return {_hx_index:5,cell:cell,oldData:oldData,newData:newData,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDataChanged",$_.__params__ = ["cell","oldData","newData"],$_)
 };
 bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellTargetEnter,bh_ui_GridEvent.CellTargetLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
 bh_ui_GridEvent.__empty_constructs__ = [];
+var bh_ui_DropContext = function() {
+	this._onComplete = null;
+	this._pathName = null;
+	this._accepted = true;
+	this._handled = false;
+};
+$hxClasses["bh.ui.DropContext"] = bh_ui_DropContext;
+bh_ui_DropContext.__name__ = "bh.ui.DropContext";
+bh_ui_DropContext.prototype = {
+	accept: function() {
+		this._handled = true;
+		this._accepted = true;
+	}
+	,onComplete: function(cb) {
+		this._onComplete = cb;
+	}
+	,__class__: bh_ui_DropContext
+};
 var bh_ui_UIMultiAnimProgressBar = function(builder,name,initialValue,extraParams) {
 	this.requestRedraw = true;
 	this.currentResult = null;
@@ -110318,7 +110540,7 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var _gthis = this;
 		this.setupDemo("Floating Text","AnimatedPath-driven floating text for damage numbers, heals, crits, and XP");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/animation/floating-text.manim",false);
-		var generatedByMacroBuildWithParametersload2049Builder = function() {
+		var generatedByMacroBuildWithParametersload2069Builder = function() {
 			var styleDropdown;
 			var chkAutoSpawn;
 			var btnClear;
@@ -110333,7 +110555,7 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 			});
 			_g.h["styleDropdown"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				chkAutoSpawn = _el;
 				return _el.getObject();
@@ -110359,7 +110581,7 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload2049Builder();
+		var ui = generatedByMacroBuildWithParametersload2069Builder();
 		this.demoResult = ui.builderResults;
 		this.addBuilderResult(this.demoResult);
 		this.styleDropdown = ui.styleDropdown;
@@ -110382,10 +110604,11 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 		if(this.demoBuilder == null || this.floatingText == null) {
 			return;
 		}
-		var animPath = this.demoBuilder.createAnimatedPath(screens_animation_FloatingTextDemoScreen.ANIM_NAMES[this.currentStyle]);
-		var text = this.generateText(this.currentStyle);
-		var color = screens_animation_FloatingTextDemoScreen.COLORS[this.currentStyle];
-		var font = bh_base_FontManager.getFontByName(screens_animation_FloatingTextDemoScreen.FONTS[this.currentStyle]);
+		var style = this.currentStyle == 0 ? Std.random(screens_animation_FloatingTextDemoScreen.ANIM_NAMES.length) : this.currentStyle - 1;
+		var animPath = this.demoBuilder.createAnimatedPath(screens_animation_FloatingTextDemoScreen.ANIM_NAMES[style]);
+		var text = this.generateText(style);
+		var color = screens_animation_FloatingTextDemoScreen.COLORS[style];
+		var font = bh_base_FontManager.getFontByName(screens_animation_FloatingTextDemoScreen.FONTS[style]);
 		this.floatingText.spawn(text,font,localX,localY,animPath,color);
 		this.totalSpawned++;
 		this.updateStatusText();
@@ -110429,8 +110652,8 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var autoChk = this.chkAutoSpawn;
 		if(autoChk != null && autoChk.selected) {
 			this.autoSpawnTimer += dt;
-			while(this.autoSpawnTimer >= 0.3) {
-				this.autoSpawnTimer -= 0.3;
+			while(this.autoSpawnTimer >= 0.2) {
+				this.autoSpawnTimer -= 0.2;
 				var rx = 50.0 + Std.random(600);
 				var ry = 50.0 + Std.random(300);
 				this.spawnAt(rx,ry);
@@ -110452,7 +110675,7 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 		case 6:
 			var index = event.index;
 			var items = event.items;
-			if(source == this.styleDropdown && index >= 0 && index < screens_animation_FloatingTextDemoScreen.ANIM_NAMES.length) {
+			if(source == this.styleDropdown && index >= 0 && index < screens_animation_FloatingTextDemoScreen.STYLE_ITEMS.length) {
 				this.currentStyle = index;
 			}
 			break;
@@ -113977,9 +114200,9 @@ screens_gamelike_GridDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Grid Component","Typed items, reject zones, source tracking, animations");
+		this.setupDemo("Grid Component","Layers, DropContext, typed items, source tracking, animations");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim",false);
-		var generatedByMacroBuildWithParametersload4491Builder = function() {
+		var generatedByMacroBuildWithParametersload4701Builder = function() {
 			var snapChk;
 			var resetBtn;
 			var remStorBtn;
@@ -114108,7 +114331,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4491Builder();
+		var ui = generatedByMacroBuildWithParametersload4701Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.drawButton = ui.drawBtn;
@@ -114177,7 +114400,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.posChanged = true;
 		_this.x = 10.0;
 		_this.posChanged = true;
-		_this.y = 120.;
+		_this.y = 130.;
 		this.addObjectToLayer(this.rectGrid.getObject(),bh_ui_screens_LayersEnum.DefaultLayer);
 		this.rebuildRectDraggables();
 	}
@@ -114218,7 +114441,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					_gthis.rectGrid.clear(srcCol,srcRow);
 					_gthis.rectGrid.setCellParameter(srcCol,srcRow,"itemType","none");
 					break;
-				case 3:
+				case 4:
 					var _gthis1 = _gthis.rectGrid;
 					var srcCol1 = srcCol;
 					var srcRow1 = srcRow;
@@ -114250,6 +114473,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		});
 	}
 	,onRectEvent: function(event) {
+		var _gthis = this;
 		switch(event._hx_index) {
 		case 0:
 			var cell = event.cell;
@@ -114272,7 +114496,9 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var draggable = event.draggable;
 			var srcGrid = event.sourceGrid;
 			var srcCell = event.sourceCell;
+			var ctx = event.ctx;
 			if(this.dragSourceData != null) {
+				ctx.accept();
 				var tmp = this.rectGrid;
 				var cell1 = cell.col;
 				var cell2 = cell.row;
@@ -114281,11 +114507,14 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				_g.h["itemType"] = this.dragSourceData.type;
 				tmp.set(cell1,cell2,tmp1,_g);
 				var src = srcCell != null ? "(" + srcCell.col + "," + srcCell.row + ")" : "?";
-				this.setRectLog("" + src + " -> (" + cell.col + "," + cell.row + ") [" + Std.string(this.dragSourceData.type) + "]");
+				var suffix = cell.row == 3 ? " [$$]" : "";
+				this.setRectLog("" + src + " -> (" + cell.col + "," + cell.row + ") [" + Std.string(this.dragSourceData.type) + "]" + suffix);
 				this.dragSourceGrid = null;
 				this.dragSourceCell = null;
 				this.dragSourceData = null;
-				this.rebuildRectDraggables();
+				ctx.onComplete(function() {
+					_gthis.rebuildRectDraggables();
+				});
 			}
 			break;
 		default:
@@ -114384,6 +114613,9 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.hexGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellBuildName : "hexCell", tweenManager : this.screenManager.tweens});
 		this.hexGrid.addHexRegion(0,0,2);
+		this.hexGrid.addLayer("damage",{ buildName : "dmgOverlay", zOrder : 10});
+		this.hexGrid.addLayer("splash",{ buildName : "splashOverlay", zOrder : 5});
+		this.hexGrid.addLayer("target",{ buildName : "targetOverlay", zOrder : 7});
 		this.hexGrid.onGridEvent = $bind(this,this.onHexEvent);
 		var _this = this.hexGrid.getObject();
 		_this.posChanged = true;
@@ -114403,6 +114635,9 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		};
 		this.hexGrid.registerAsCardTarget(this.cardHand,function(cell,cardId) {
 			return !_gthis.hexGrid.isOccupied(cell.col,cell.row);
+		});
+		this.cardHand.setArrowSnapPointProvider(function(_) {
+			return new bh_base_FPoint(22,48);
 		});
 		this.drawHexCard();
 		this.drawHexCard();
@@ -114501,17 +114736,22 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 				var def = this.getCardDef(cardId);
 				var dmg = 5 + (cell.col + cell.row + 3) % 8;
-				this.hexGrid.setCellParameter(cell.col,cell.row,"dmgText","" + dmg);
-				this.hexGrid.setCellParameter(cell.col,cell.row,"showDmg",true);
 				switch(def.targeting) {
 				case "double":
+					var tmp = this.hexGrid;
+					var cell1 = cell.col;
+					var cell2 = cell.row;
+					var _g = new haxe_ds_StringMap();
+					_g.h["dmg"] = "" + dmg;
+					tmp.setLayer(cell1,cell2,"damage",_g);
+					this.hexGrid.setLayer(cell.col,cell.row,"target");
 					var _g = 0;
 					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
 					while(_g < _g1.length) {
 						var n = _g1[_g];
 						++_g;
 						if(!this.hexGrid.isOccupied(n.col,n.row)) {
-							this.hexGrid.setCellParameter(n.col,n.row,"highlight","splash");
+							this.hexGrid.setLayer(n.col,n.row,"splash");
 							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
 							break;
 						}
@@ -114519,19 +114759,59 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					this.setHexLog("" + def.name + " [x2] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
 					break;
 				case "range":
+					var tmp = this.hexGrid;
+					var cell1 = cell.col;
+					var cell2 = cell.row;
+					var _g = new haxe_ds_StringMap();
+					_g.h["dmg"] = "" + dmg;
+					tmp.setLayer(cell1,cell2,"damage",_g);
+					this.hexGrid.setLayer(cell.col,cell.row,"target");
 					var _g = 0;
 					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
 					while(_g < _g1.length) {
 						var n = _g1[_g];
 						++_g;
 						if(!this.hexGrid.isOccupied(n.col,n.row)) {
-							this.hexGrid.setCellParameter(n.col,n.row,"highlight","splash");
+							this.hexGrid.setLayer(n.col,n.row,"splash");
 							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
 						}
 					}
 					this.setHexLog("" + def.name + " [AoE] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
 					break;
+				case "splash_dmg":
+					this.hexGrid.setLayer(cell.col,cell.row,"target");
+					var tmp = this.hexGrid;
+					var cell1 = cell.col;
+					var cell2 = cell.row;
+					var _g = new haxe_ds_StringMap();
+					_g.h["dmg"] = "10";
+					tmp.setLayer(cell1,cell2,"damage",_g);
+					var _g = 0;
+					var _g1 = this.hexGrid.neighbors(cell.col,cell.row);
+					while(_g < _g1.length) {
+						var n = _g1[_g];
+						++_g;
+						if(!this.hexGrid.isOccupied(n.col,n.row)) {
+							this.hexGrid.setLayer(n.col,n.row,"splash");
+							var tmp = this.hexGrid;
+							var n1 = n.col;
+							var n2 = n.row;
+							var _g2 = new haxe_ds_StringMap();
+							_g2.h["dmg"] = "1";
+							tmp.setLayer(n1,n2,"damage",_g2);
+							this.splashCells.push(new bh_ui_CellCoord(n.col,n.row));
+						}
+					}
+					this.setHexLog("" + def.name + " [10+1] -> (" + cell.col + "," + cell.row + ") +" + this.splashCells.length);
+					break;
 				default:
+					var tmp = this.hexGrid;
+					var cell1 = cell.col;
+					var cell2 = cell.row;
+					var _g = new haxe_ds_StringMap();
+					_g.h["dmg"] = "" + dmg;
+					tmp.setLayer(cell1,cell2,"damage",_g);
+					this.hexGrid.setLayer(cell.col,cell.row,"target");
 					this.setHexLog("" + def.name + " [x1] -> (" + cell.col + "," + cell.row + ") dmg:" + dmg);
 				}
 				break;
@@ -114551,14 +114831,16 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				if(this.hexGrid == null) {
 					return;
 				}
-				this.hexGrid.setCellParameter(cell.col,cell.row,"showDmg",false);
+				this.hexGrid.clearLayer(cell.col,cell.row,"damage");
+				this.hexGrid.clearLayer(cell.col,cell.row,"target");
 				var _g = 0;
 				var _g1 = this.splashCells;
 				while(_g < _g1.length) {
-					var c = _g1[_g];
+					var sc = _g1[_g];
 					++_g;
-					this.hexGrid.setCellParameter(c.col,c.row,"highlight","accept");
+					this.hexGrid.clearLayer(sc.col,sc.row,"damage");
 				}
+				this.hexGrid.clearLayerAll("splash");
 				this.splashCells = [];
 				break;
 			default:
@@ -114680,7 +114962,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.posChanged = true;
 		_this.x = 780.;
 		_this.posChanged = true;
-		_this.y = 132.;
+		_this.y = 152.;
 		this.addObjectToLayer(this.g2gContainer,bh_ui_screens_LayersEnum.DefaultLayer);
 		this.storageGrid = new bh_ui_UIMultiAnimGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", tweenManager : this.screenManager.tweens});
 		this.storageGrid.addRectRegion(this.storageCols,this.storageRows);
@@ -114774,7 +115056,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					srcGrid.clear(srcCol,srcRow);
 					srcGrid.setCellParameter(srcCol,srcRow,"itemType","none");
 					break;
-				case 3:
+				case 4:
 					var srcGrid1 = srcGrid;
 					var srcCol1 = srcCol;
 					var srcRow1 = srcRow;
@@ -114812,6 +115094,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		});
 	}
 	,onG2GEvent: function(targetGrid,event) {
+		var _gthis = this;
 		switch(event._hx_index) {
 		case 0:
 			var _g = event.button;
@@ -114825,7 +115108,9 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			var draggable = event.draggable;
 			var srcGrid = event.sourceGrid;
 			var srcCell = event.sourceCell;
+			var ctx = event.ctx;
 			if(this.dragSourceData != null) {
+				ctx.accept();
 				var cell1 = cell.col;
 				var cell2 = cell.row;
 				var tmp = this.dragSourceData;
@@ -114839,8 +115124,10 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.dragSourceGrid = null;
 				this.dragSourceCell = null;
 				this.dragSourceData = null;
-				this.rebuildG2GDraggables();
 				this.updateG2GCounts();
+				ctx.onComplete(function() {
+					_gthis.rebuildG2GDraggables();
+				});
 			}
 			break;
 		default:
@@ -118519,14 +118806,14 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			case 2:
 				_gthis.updateEventText("DragEnd (snapped)");
 				break;
-			case 3:
+			case 4:
 				_gthis.updateEventText("DragCancel (elastic return)");
 				break;
-			case 4:
+			case 5:
 				var zone = event.zone;
 				_gthis.updateEventText("ZoneEnter: " + zone.id);
 				break;
-			case 5:
+			case 6:
 				var zone = event.zone;
 				_gthis.updateEventText("ZoneLeave: " + zone.id);
 				break;
@@ -118587,11 +118874,11 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			case 2:
 				_gthis.updateEventText("Priority: dropped");
 				break;
-			case 4:
+			case 5:
 				var zone = event.zone;
 				_gthis.updateEventText("Priority enter: " + zone.id);
 				break;
-			case 5:
+			case 6:
 				var zone = event.zone;
 				_gthis.updateEventText("Priority leave: " + zone.id);
 				break;
@@ -118612,7 +118899,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			case 0:
 				_gthis.updateEventText("Layer: behind (BackgroundLayer)");
 				break;
-			case 3:
+			case 4:
 				_gthis.updateEventText("Layer: back to DefaultLayer");
 				break;
 			default:
@@ -120700,7 +120987,7 @@ screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[0.
 screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES = [0,1,5,8];
 screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowColor","dsColor","poColor"];
 screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [16711680,16755200,0,255];
-screens_animation_FloatingTextDemoScreen.STYLE_ITEMS = [{ name : "Damage (-N)"},{ name : "Heal (+N)"},{ name : "Crit (N!)"},{ name : "XP (+N xp)"},{ name : "Wind Drift"},{ name : "Splatter"},{ name : "Wobble"}];
+screens_animation_FloatingTextDemoScreen.STYLE_ITEMS = [{ name : "Random"},{ name : "Damage (-N)"},{ name : "Heal (+N)"},{ name : "Crit (N!)"},{ name : "XP (+N xp)"},{ name : "Wind Drift"},{ name : "Splatter"},{ name : "Wobble"}];
 screens_animation_FloatingTextDemoScreen.ANIM_NAMES = ["dmgAnim","healAnim","critAnim","xpAnim","windAnim","splatterAnim","wobbleAnim"];
 screens_animation_FloatingTextDemoScreen.COLORS = [16729156,4521796,16766720,4491519,12303291,16737826,16746751];
 screens_animation_FloatingTextDemoScreen.FONTS = ["exo2_black_16","exo2_16","exo2_black_20","exo2_light_14","exo2_light_14","exo2_black_16","exo2_black_16"];
@@ -120748,7 +121035,7 @@ screens_gamelike_CardsDemoScreen.PATH_DISTS = [{ name : "EvenArcLength"},{ name 
 screens_gamelike_CardsDemoScreen.PATH_ORIENTS = [{ name : "Tangent"},{ name : "Straight"}];
 screens_gamelike_CardsDemoScreen.LAYOUT_MODES = [{ name : "Fan"},{ name : "Linear"},{ name : "Path"}];
 screens_gamelike_GridDemoScreen.RECT_ITEMS = [{ color : 13386786, type : "weapon"},{ color : 2254540, type : "weapon"},{ color : 2280516, type : "potion"},{ color : 13421602, type : "weapon"},{ color : 10044620, type : "potion"}];
-screens_gamelike_GridDemoScreen.CARD_DEFS = [{ name : "Fire", color : 13386786, targeting : "single", info : "x1"},{ name : "Ice", color : 2254540, targeting : "double", info : "x2"},{ name : "Nature", color : 2280516, targeting : "range", info : "AoE"},{ name : "Light", color : 13421602, targeting : "single", info : "x1"},{ name : "Shadow", color : 10044620, targeting : "double", info : "x2"},{ name : "Storm", color : 2280652, targeting : "range", info : "AoE"}];
+screens_gamelike_GridDemoScreen.CARD_DEFS = [{ name : "Fire", color : 13386786, targeting : "single", info : "1 cell"},{ name : "Ice", color : 2254540, targeting : "double", info : "cell + 1 adj"},{ name : "Nature", color : 2280516, targeting : "range", info : "cell + all adj"},{ name : "Light", color : 13421602, targeting : "single", info : "1 cell"},{ name : "Shadow", color : 10044620, targeting : "double", info : "cell + 1 adj"},{ name : "Storm", color : 2280652, targeting : "range", info : "cell + all adj"},{ name : "Meteor", color : 16737792, targeting : "splash_dmg", info : "10+1 AoE"}];
 screens_gamelike_GridDemoScreen.G2G_WEAPONS = [{ color : 13395490, type : "weapon"},{ color : 8930508, type : "weapon"},{ color : 13412898, type : "weapon"}];
 screens_gamelike_GridDemoScreen.G2G_POTIONS = [{ color : 2263244, type : "potion"},{ color : 4508740, type : "potion"}];
 screens_gamelike_InventoryDemoScreen.ITEMS = [{ key : "hpot", name : "H.Pot", cost : 25, weight : 3, equip : ""},{ key : "mpot", name : "M.Pot", cost : 20, weight : 3, equip : ""},{ key : "lsword", name : "L.Sword", cost : 180, weight : 18, equip : "arm"},{ key : "ssword", name : "S.Sword", cost : 80, weight : 8, equip : "arm"},{ key : "shield", name : "Shield", cost : 100, weight : 18, equip : "arm"},{ key : "ring", name : "Ring", cost : 200, weight : 2, equip : ""},{ key : "boots", name : "Boots", cost : 80, weight : 8, equip : "legs"},{ key : "scroll", name : "Scroll", cost : 50, weight : 5, equip : ""},{ key : "helm", name : "Helm", cost : 90, weight : 12, equip : "head"},{ key : "armor", name : "Armor", cost : 150, weight : 20, equip : "armor"}];

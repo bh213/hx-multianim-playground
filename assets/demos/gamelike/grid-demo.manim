@@ -84,25 +84,38 @@ paths {
 }
 
 #hexCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal,
-                      highlight:[none,accept,reject,expensive,locked,splash]=none,
-                      occupied:bool=false, cellColor:color=#222244,
-                      dmgText:string="", showDmg:bool=false) {
+                      highlight:[none,accept,reject,expensive,locked]=none,
+                      occupied:bool=false, cellColor:color=#222244) {
     @(highlight=>accept)    graphics(polygon(#2a3a2a, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
     @(highlight=>none)      graphics(polygon(#1a1a2e, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
     @(highlight=>reject)    graphics(polygon(#3a2020, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
     @(highlight=>expensive) graphics(polygon(#3a3a1a, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
     @(highlight=>locked)    graphics(polygon(#1a1a1a, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
-    @(highlight=>splash)    graphics(polygon(#2a2a3a, filled, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
     @(highlight=>accept)    apply { filter: glow(#44FF44, 0.3, 4) }
     @(highlight=>reject)    apply { filter: glow(#FF4444, 0.3, 4) }
     @(highlight=>expensive) apply { filter: glow(#CCAA22, 0.3, 4) }
     @(highlight=>locked)    apply { filter: group(grayscale(0.6), brightness(0.6)) }
-    @(highlight=>splash)    apply { filter: glow(#8888FF, 0.3, 4) }
     @(occupied=>true)   graphics(polygon($cellColor, filled, 24, 6, 39, 15, 39, 33, 24, 42, 9, 33, 9, 15)): -24, -24
-    // Damage text overlay — centered on hex origin (0,0)
-    @(showDmg=>true) text(m5x7, $dmgText, #FF4444, center, 42): -21, -6
     @(status=>hover) apply { filter: glow(#44FFFF, 0.3, 4) }
     graphics(polygon(#334466, 1.0, 24, 0, 45, 12, 45, 36, 24, 48, 3, 36, 3, 12)): -24, -24
+}
+
+// Grid layer: damage preview overlay (positioned at cell center)
+#dmgOverlay programmable(dmg:string="0") {
+    text(m6x11, $dmg, #FF4444, center, 48): -24, -12
+    apply { filter: outline(1, #000000) }
+}
+
+// Grid layer: splash area indicator (hex-shaped translucent overlay)
+#splashOverlay programmable() {
+    graphics(polygon(#6666CC, filled, 24, 6, 39, 15, 39, 33, 24, 42, 9, 33, 9, 15)): -24, -24
+    apply { filter: glow(#8888FF, 0.4, 6) }
+}
+
+// Grid layer: primary target indicator (brighter, distinct from splash)
+#targetOverlay programmable() {
+    graphics(polygon(#CC6644, filled, 24, 6, 39, 15, 39, 33, 24, 42, 9, 33, 9, 15)): -24, -24
+    apply { filter: glow(#FF8844, 0.5, 8) }
 }
 
 // Tooltip for hex cell info
@@ -155,32 +168,32 @@ paths {
 
     // === LEFT: Rect Grid Drag-Drop ===
     text(m5x7, "Rect Grid + Drag", #7fdbda): 0, -4
-    text(m5x7, "Row1:weapons Row2:potions Row3:premium", #555555): 0, 8
-    #rectLog(updatable) text(m5x7, "Drag items — 4 highlight states", #888888): 0, 22
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("resetBtn")):138, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRowBtn")):194, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRowBtn")):250, 2
+    text(m5x7, "R1:weapons R2:potions R3:premium", #555555): 0, 8
+    #rectLog(updatable) text(m5x7, "Drag items between rows", #888888): 0, 22
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("resetBtn")): 0, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRowBtn")): 56, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRowBtn")): 112, 36
 
     // === CENTER: Hex Grid + Cards ===
     text(m5x7, "Hex Grid + Cards", #cc9966): 370, -4
-    text(m5x7, "Dmg preview, splash, tooltip", #555555): 370, 8
+    text(m5x7, "Layers: dmg preview + splash", #555555): 370, 8
     #hexLog(updatable) text(m5x7, "Play cards, click to clear", #888888): 370, 22
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("drawBtn")):500, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("snapChk")):556, 4
-    text(m5x7, "Snap", #aaaacc): 574, 6
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRingBtn")):612, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRingBtn")):668, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("drawBtn")): 370, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addRingBtn")): 426, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remRingBtn")): 482, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("snapChk")): 544, 38
+    text(m5x7, "Snap", #aaaacc): 562, 40
 
     // === RIGHT: Grid-to-Grid ===
     text(m5x7, "Grid to Grid", #66cc99): 770, -4
-    text(m5x7, "Typed items + source tracking", #555555): 770, 8
+    text(m5x7, "Source tracking + typed items", #555555): 770, 8
     #g2gLog(updatable) text(m5x7, "Move items between grids", #888888): 770, 22
-    #storageCount(updatable) text(m5x7, "Storage: 5", #7799aa): 770, 36
-    #loadoutCount(updatable) text(m5x7, "Loadout: 0", #7799aa): 870, 36
-    text(m5x7, "Weapons", #8888aa): 770, 48
-    text(m5x7, "Potions", #7799bb): 890, 48
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addStorBtn")):905, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remStorBtn")):961, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addLoadBtn")):1017, 2
-    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remLoadBtn")):1073, 2
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addStorBtn")): 770, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remStorBtn")): 826, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addLoadBtn")): 882, 36
+    placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remLoadBtn")): 938, 36
+    #storageCount(updatable) text(m5x7, "Storage: 5", #7799aa): 770, 56
+    #loadoutCount(updatable) text(m5x7, "Loadout: 0", #7799aa): 870, 56
+    text(m5x7, "Weapons", #8888aa): 770, 68
+    text(m5x7, "Potions", #7799bb): 870, 68
 }

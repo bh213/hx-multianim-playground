@@ -20,7 +20,6 @@ import bh.base.MacroUtils;
 import bh.base.TweenManager.TweenProperty;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimParser.EasingType;
-import h2d.col.Point;
 import bh.base.FPoint;
 
 class GridDemoScreen extends DemoScreenBase {
@@ -39,6 +38,7 @@ class GridDemoScreen extends DemoScreenBase {
 	var hexTooltip:Null<h2d.Object> = null;
 	var hexTooltipResult:Null<BuilderResult> = null;
 	var splashCells:Array<CellCoord> = [];
+	var savedSplashCells:Array<CellCoord> = []; // snapshot for CardPlayed (CellTargetLeave clears splashCells first)
 
 	// === Right: Grid-to-Grid ===
 	var storageGrid:Null<UIMultiAnimGrid>;
@@ -169,7 +169,7 @@ class GridDemoScreen extends DemoScreenBase {
 	}
 
 	function setupRectGrid():Void {
-		rectGrid = new UIMultiAnimGrid(demoBuilder, {
+		rectGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
@@ -257,8 +257,11 @@ class GridDemoScreen extends DemoScreenBase {
 				setRectLog('(${cell.col},${cell.row})$rowLabel');
 			case CellDrop(cell, draggable, srcGrid, srcCell, ctx):
 				if (dragSourceData != null) {
-					// Demo DropContext: accept drops, row 3 logs as "expensive"
-					ctx.accept();
+					// Row 3 "premium" — aggressive elastic snap animation
+					if (cell.row == 3)
+						ctx.acceptWithPath("expensiveSnap");
+					else
+						ctx.accept();
 					rectGrid.set(cell.col, cell.row, dragSourceData,
 						["itemType" => (dragSourceData.type : Dynamic)]);
 					final src = srcCell != null ? '(${srcCell.col},${srcCell.row})' : "?";
@@ -267,7 +270,6 @@ class GridDemoScreen extends DemoScreenBase {
 					dragSourceGrid = null;
 					dragSourceCell = null;
 					dragSourceData = null;
-					// Defer rebuild until snap animation completes
 					ctx.onComplete(() -> rebuildRectDraggables());
 				}
 			default:
@@ -324,23 +326,7 @@ class GridDemoScreen extends DemoScreenBase {
 	// ========== Center: Hex Grid + Cards ==========
 
 	function setupHexGrid():Void {
-		hexGrid = new UIMultiAnimGrid(demoBuilder, {
-			gridType: Hex(POINTY, 30, 30),
-			cellBuildName: "hexCell",
-			tweenManager: screenManager.tweens,
-		});
-		hexGrid.addHexRegion(0, 0, 2);
-		// Register grid layers for damage preview and splash area
-		hexGrid.addLayer("damage", {buildName: "dmgOverlay", zOrder: 10});
-		hexGrid.addLayer("splash", {buildName: "splashOverlay", zOrder: 5});
-		hexGrid.addLayer("target", {buildName: "targetOverlay", zOrder: 7});
-		hexGrid.onGridEvent = onHexEvent;
-		// Center the hex grid in the center section (close to card hand for targeting)
-		hexGrid.getObject().setPosition(BASE_X + 500, BASE_Y + 210);
-		addObjectToLayer(hexGrid.getObject(), DefaultLayer);
-
-		// Card hand
-		cardHand = new UICardHandHelper(this, demoBuilder, {
+		cardHand = addCardHand(demoBuilder, {
 			layoutMode: Fan,
 			anchorX: BASE_X + 530,
 			anchorY: BASE_Y + 340,
@@ -364,6 +350,19 @@ class GridDemoScreen extends DemoScreenBase {
 		cardHand.onCardEvent = onCardEvent;
 		// Only allow playing cards on valid targets — return to hand otherwise
 		cardHand.canPlayCard = (cardId, result) -> result.match(TargetZone(_));
+
+		hexGrid = addGrid(demoBuilder, {
+			gridType: Hex(POINTY, 30, 30),
+			cellBuildName: "hexCell",
+			tweenManager: screenManager.tweens,
+		});
+		hexGrid.addHexRegion(0, 0, 2);
+		// Register grid layers for damage preview and splash area
+		hexGrid.addLayer("damage", {buildName: "dmgOverlay", zOrder: 10});
+		hexGrid.addLayer("splash", {buildName: "splashOverlay", zOrder: 5});
+		hexGrid.addLayer("target", {buildName: "targetOverlay", zOrder: 7});
+		hexGrid.onGridEvent = onHexEvent;
+		hexGrid.getObject().setPosition(BASE_X + 500, BASE_Y + 210);
 
 		// Register hex grid cells as card targets
 		hexGrid.registerAsCardTarget(cardHand, (cell, cardId) -> !hexGrid.isOccupied(cell.col, cell.row));
@@ -396,18 +395,21 @@ class GridDemoScreen extends DemoScreenBase {
 				final cardIdx = Std.parseInt(cardId.split("_").pop());
 				if (cardIdx != null) {
 					final def = CARD_DEFS[cardIdx % CARD_DEFS.length];
-					// targetId: "gridN_col_row"
 					final parts = targetId.split("_");
 					if (parts.length >= 3) {
 						final col = Std.parseInt(parts[parts.length - 2]);
 						final row = Std.parseInt(parts[parts.length - 1]);
 						if (col != null && row != null && hexGrid != null) {
-							// Remove empty cell first, then add with entrance animation
-							hexGrid.removeCell(col, row);
-							hexGrid.addCellAnimated(col, row, {color: def.color},
-								["occupied" => (true : Dynamic), "cellColor" => (def.color : Dynamic)],
-								0.3, [Scale(0.0), Alpha(0.0)], EaseOutBack);
-							setHexLog('${def.name} -> (${col},${row})');
+							// Collect affected cells from targeting preview
+							// (savedSplash captured before CellTargetLeave clears splashCells)
+							final affected = savedSplashCells.copy();
+							savedSplashCells = [];
+							// Fill center cell
+							fillHexCell(col, row, def.color, 0.3);
+							// Fill splash cells too
+							for (sc in affected)
+								fillHexCell(sc.col, sc.row, def.color, 0.3);
+							setHexLog('${def.name} -> (${col},${row}) [${1 + affected.length} cells]');
 						}
 					}
 				}
@@ -415,6 +417,15 @@ class GridDemoScreen extends DemoScreenBase {
 				setHexLog('Drew $cardId');
 			default:
 		}
+	}
+
+	function fillHexCell(col:Int, row:Int, color:Int, duration:Float):Void {
+		if (hexGrid == null || !hexGrid.hasCell(col, row)) return;
+		if (hexGrid.isOccupied(col, row)) return;
+		hexGrid.removeCell(col, row);
+		hexGrid.addCellAnimated(col, row, {color: color},
+			["occupied" => (true : Dynamic), "cellColor" => (color : Dynamic)],
+			duration, [Scale(0.0), Alpha(0.0)], EaseOutBack);
 	}
 
 	function getCardDef(cardId:String):{name:String, color:Int, targeting:String, info:String} {
@@ -447,10 +458,12 @@ class GridDemoScreen extends DemoScreenBase {
 					case "double":
 						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ('$dmg' : Dynamic)]);
 						hexGrid.setLayer(cell.col, cell.row, "target");
-						// + 1 adjacent non-occupied cell
+						// + 1 adjacent non-occupied cell with half damage
 						for (n in hexGrid.neighbors(cell.col, cell.row)) {
 							if (!hexGrid.isOccupied(n.col, n.row)) {
+								final splashDmg = Std.int(dmg / 2);
 								hexGrid.setLayer(n.col, n.row, "splash");
+								hexGrid.setLayer(n.col, n.row, "damage", ["dmg" => ('$splashDmg' : Dynamic)]);
 								splashCells.push({col: n.col, row: n.row});
 								break;
 							}
@@ -459,11 +472,15 @@ class GridDemoScreen extends DemoScreenBase {
 					case "range":
 						hexGrid.setLayer(cell.col, cell.row, "damage", ["dmg" => ('$dmg' : Dynamic)]);
 						hexGrid.setLayer(cell.col, cell.row, "target");
-						// + all non-occupied neighbors
+						// + all non-occupied neighbors with diminishing damage
+						var adjIdx = 0;
 						for (n in hexGrid.neighbors(cell.col, cell.row)) {
 							if (!hexGrid.isOccupied(n.col, n.row)) {
+								final splashDmg = Std.int(dmg * 0.6) - adjIdx;
 								hexGrid.setLayer(n.col, n.row, "splash");
+								hexGrid.setLayer(n.col, n.row, "damage", ["dmg" => ('$splashDmg' : Dynamic)]);
 								splashCells.push({col: n.col, row: n.row});
+								adjIdx++;
 							}
 						}
 						setHexLog('${def.name} [AoE] -> (${cell.col},${cell.row}) +${splashCells.length}');
@@ -485,6 +502,8 @@ class GridDemoScreen extends DemoScreenBase {
 						hexGrid.setLayer(cell.col, cell.row, "target");
 						setHexLog('${def.name} [x1] -> (${cell.col},${cell.row}) dmg:$dmg');
 				}
+				// Save for CardPlayed — CellTargetLeave fires before CardPlayed and clears splashCells
+				savedSplashCells = splashCells.copy();
 			case CellTargetLeave(cell, Card(_)):
 				if (hexGrid == null) return;
 				// Clear layers instead of cell parameters
@@ -596,7 +615,7 @@ class GridDemoScreen extends DemoScreenBase {
 		addObjectToLayer(g2gContainer, DefaultLayer);
 
 		// Storage grid (weapons only) at top of container
-		storageGrid = new UIMultiAnimGrid(demoBuilder, {
+		storageGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
@@ -615,7 +634,7 @@ class GridDemoScreen extends DemoScreenBase {
 		g2gContainer.addChild(storageGrid.getObject());
 
 		// Loadout grid (potions only) below storage
-		loadoutGrid = new UIMultiAnimGrid(demoBuilder, {
+		loadoutGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
@@ -837,9 +856,6 @@ class GridDemoScreen extends DemoScreenBase {
 	// ========== Events ==========
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
-		if (cardHand != null && cardHand.handleScreenEvent(event))
-			return;
-
 		switch event {
 			case UIClick:
 				if (source == resetButton) {
@@ -903,55 +919,20 @@ class GridDemoScreen extends DemoScreenBase {
 		super.onScreenEvent(event, source);
 	}
 
-	override public function onMouseMove(pos:Point):Bool {
-		// Card hand consumes mouse during drag/targeting — skip grid hover
-		if (cardHand != null && cardHand.onMouseMove(pos.x, pos.y))
-			return false;
-		// cellAtPoint uses globalToLocal, so pass scene coordinates directly
-		if (rectGrid != null)
-			rectGrid.onMouseMove(pos.x, pos.y);
-		if (hexGrid != null)
-			hexGrid.onMouseMove(pos.x, pos.y);
-		if (storageGrid != null)
-			storageGrid.onMouseMove(pos.x, pos.y);
-		if (loadoutGrid != null)
-			loadoutGrid.onMouseMove(pos.x, pos.y);
-		return super.onMouseMove(pos);
-	}
-
-	override public function onMouseClick(pos:Point, button:Int, release:Bool):Bool {
-		// Card hand consumes release during drag — skip grid clicks
-		if (release && cardHand != null && cardHand.onMouseRelease(pos.x, pos.y))
-			return false;
-		if (release) {
-			if (rectGrid != null)
-				rectGrid.onMouseClick(pos.x, pos.y, button);
-			if (hexGrid != null)
-				hexGrid.onMouseClick(pos.x, pos.y, button);
-			if (storageGrid != null)
-				storageGrid.onMouseClick(pos.x, pos.y, button);
-			if (loadoutGrid != null)
-				loadoutGrid.onMouseClick(pos.x, pos.y, button);
-		}
-		return super.onMouseClick(pos, button, release);
-	}
-
-	override public function update(dt:Float):Void {
-		super.update(dt);
-		if (cardHand != null) cardHand.update(dt);
-	}
+	// Mouse routing, update, and cleanup auto-wired via createGrid/addGrid/addCardHand.
 
 	// ========== Cleanup ==========
 
 	override public function onClear():Void {
-		super.onClear();
-		if (rectGrid != null) { rectGrid.dispose(); rectGrid = null; }
-		if (hexGrid != null) { hexGrid.dispose(); hexGrid = null; }
-		if (cardHand != null) { cardHand.dispose(); cardHand = null; }
+		super.onClear(); // auto-disposes registered components (grids, card hand)
+		rectGrid = null;
+		hexGrid = null;
+		cardHand = null;
 		hideHexTooltip();
 		splashCells = [];
-		if (storageGrid != null) { storageGrid.dispose(); storageGrid = null; }
-		if (loadoutGrid != null) { loadoutGrid.dispose(); loadoutGrid = null; }
+		savedSplashCells = [];
+		storageGrid = null;
+		loadoutGrid = null;
 		rectDraggables = [];
 		g2gDraggables = [];
 		handCardIds = [];

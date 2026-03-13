@@ -1980,6 +1980,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("ninepatch",new screens_graphics_NinepatchDemoScreen(this.screenManager));
 		this.screenManager.addScreen("textFonts",new screens_graphics_TextFontsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("richText",new screens_graphics_RichTextDemoScreen(this.screenManager));
+		this.screenManager.addScreen("richTextAutofit",new screens_graphics_RichTextAutofitDemoScreen(this.screenManager));
 		this.screenManager.addScreen("pixelsGraphics",new screens_graphics_PixelsGraphicsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("stateAnim",new screens_animation_StateAnimDemoScreen(this.screenManager));
 		this.screenManager.addScreen("particles",new screens_animation_ParticlesDemoScreen(this.screenManager));
@@ -2032,7 +2033,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 422, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 423, className : "Main", methodName : "update"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 		}
@@ -12096,6 +12097,8 @@ bh_multianim_MacroManimParser.prototype = {
 						var dropShadowXY = null;
 						var dropShadowColor = 0;
 						var dropShadowAlpha = 0.5;
+						var autoFitFonts = null;
+						var autoFitMode = null;
 						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 							halign = this.parseHAlign();
 							if(halign != null && this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
@@ -12136,6 +12139,11 @@ bh_multianim_MacroManimParser.prototype = {
 								var pname = this.expectIdentifierOrString();
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 								switch(pname.toLowerCase()) {
+								case "autofit":
+									var af = this.parseAutoFit();
+									autoFitFonts = af.fonts;
+									autoFitMode = af.mode;
+									break;
 								case "condensewhite":case "images":case "styles":
 									this.error("text() does not support rich text features. Use richText() instead.");
 									break;
@@ -12172,7 +12180,19 @@ bh_multianim_MacroManimParser.prototype = {
 								break;
 							}
 						}
-						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : null, images : null, condenseWhite : null, hasMarkup : false};
+						if(autoFitFonts != null) {
+							if(autoFitMode != null) {
+								switch(autoFitMode._hx_index) {
+								case 0:case 2:
+									if(textAlignWidth == bh_multianim_TextAlignWidth.TAWAuto) {
+										this.error("autoFit: width mode requires maxWidth to be set");
+									}
+									break;
+								default:
+								}
+							}
+						}
+						var textDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : null, images : null, condenseWhite : null, hasMarkup : false, autoFitFonts : autoFitFonts, autoFitMode : autoFitMode};
 						node = this.createNode(bh_multianim_NodeType.TEXT(textDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 					} else {
 						var s = _g1;
@@ -12195,6 +12215,8 @@ bh_multianim_MacroManimParser.prototype = {
 							var dropShadowXY = null;
 							var dropShadowColor = 0;
 							var dropShadowAlpha = 0.5;
+							var autoFitFonts = null;
+							var autoFitMode = null;
 							if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 								halign = this.parseHAlign();
 								if(halign != null && this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
@@ -12235,6 +12257,11 @@ bh_multianim_MacroManimParser.prototype = {
 									var pname = this.expectIdentifierOrString();
 									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 									switch(pname.toLowerCase()) {
+									case "autofit":
+										var af = this.parseAutoFit();
+										autoFitFonts = af.fonts;
+										autoFitMode = af.mode;
+										break;
 									case "condensewhite":
 										condenseWhite = this.parseBool();
 										break;
@@ -12277,6 +12304,18 @@ bh_multianim_MacroManimParser.prototype = {
 									break;
 								}
 							}
+							if(autoFitFonts != null) {
+								if(autoFitMode != null) {
+									switch(autoFitMode._hx_index) {
+									case 0:case 2:
+										if(textAlignWidth == bh_multianim_TextAlignWidth.TAWAuto) {
+											this.error("autoFit: width mode requires maxWidth to be set");
+										}
+										break;
+									default:
+									}
+								}
+							}
 							var hasMarkup = false;
 							if(text._hx_index == 1) {
 								var s = text.s;
@@ -12304,7 +12343,7 @@ bh_multianim_MacroManimParser.prototype = {
 									}
 								}
 							}
-							var richTextDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : styles, images : images, condenseWhite : condenseWhite, hasMarkup : hasMarkup};
+							var richTextDef = { fontName : fontname, text : text, color : color, halign : halign, textAlignWidth : textAlignWidth, letterSpacing : letterSpacing, lineSpacing : lineSpacing, lineBreak : lineBreak, dropShadowXY : dropShadowXY, dropShadowColor : dropShadowColor, dropShadowAlpha : dropShadowAlpha, styles : styles, images : images, condenseWhite : condenseWhite, hasMarkup : hasMarkup, autoFitFonts : autoFitFonts, autoFitMode : autoFitMode};
 							node = this.createNode(bh_multianim_NodeType.RICHTEXT(richTextDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 						} else {
 							var s = _g1;
@@ -13757,6 +13796,61 @@ bh_multianim_MacroManimParser.prototype = {
 			images.push({ name : name, tileSource : ts, valign : valign, spacing : spacing});
 		}
 		return images;
+	}
+	,parseAutoFit: function() {
+		var fill = false;
+		var mode = bh_multianim_AutoFitMode.AFWidth;
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 31) {
+			var s = _g.s;
+			if(bh_multianim_MacroManimParser.isKeyword(s,"fill")) {
+				this.advance();
+				fill = true;
+			}
+		}
+		var _g = this.tokens[this.tpos].type;
+		if(_g._hx_index == 31) {
+			var _g1 = _g.s;
+			var s = _g1;
+			if(bh_multianim_MacroManimParser.isKeyword(s,"width")) {
+				this.advance();
+				mode = fill ? bh_multianim_AutoFitMode.AFFillWidth : bh_multianim_AutoFitMode.AFWidth;
+			} else {
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"box")) {
+					this.advance();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+					var w = this.parseIntegerOrReference();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					var h = this.parseIntegerOrReference();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+					mode = fill ? bh_multianim_AutoFitMode.AFFillBox(w,h) : bh_multianim_AutoFitMode.AFBox(w,h);
+				} else if(fill) {
+					mode = bh_multianim_AutoFitMode.AFFillWidth;
+				} else {
+					this.error("autoFit: expected \"width\", \"box(w, h)\", or \"fill\"");
+				}
+			}
+		} else if(fill) {
+			mode = bh_multianim_AutoFitMode.AFFillWidth;
+		} else {
+			this.error("autoFit: expected \"width\", \"box(w, h)\", or \"fill\"");
+		}
+		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+		var fonts = [];
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+			if(fonts.length > 0) {
+				this.eatComma();
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
+					break;
+				}
+			}
+			fonts.push(this.parseStringOrReference());
+		}
+		if(fonts.length == 0) {
+			this.error("autoFit: font list must not be empty");
+		}
+		return { fonts : fonts, mode : mode};
 	}
 	,parseColorStops: function() {
 		var stops = [];
@@ -17997,6 +18091,15 @@ bh_multianim_MultiAnimBuilder.cleanupFinalVars = function(children,indexedParams
 		}
 	}
 };
+bh_multianim_MultiAnimBuilder.textFits = function(t,fitWidth,fitHeight) {
+	if(fitWidth != null && t.get_textWidth() > fitWidth) {
+		return false;
+	}
+	if(fitHeight != null && t.get_textHeight() > fitHeight) {
+		return false;
+	}
+	return true;
+};
 bh_multianim_MultiAnimBuilder.collectParamRefs = function(rv,result) {
 	if(rv == null) {
 		return;
@@ -19983,6 +20086,88 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		};
 		return t;
 	}
+	,applyAutoFit: function(t,textDef,node) {
+		var autoFitFonts = textDef.autoFitFonts;
+		var autoFitMode = textDef.autoFitMode;
+		if(autoFitFonts == null || autoFitMode == null) {
+			return;
+		}
+		var scaleAdjust = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
+		var fitWidth = null;
+		var fitHeight = null;
+		switch(autoFitMode._hx_index) {
+		case 1:
+			var w = autoFitMode.w;
+			var h = autoFitMode.h;
+			fitWidth = this.resolveAsNumber(w) / scaleAdjust;
+			fitHeight = this.resolveAsNumber(h) / scaleAdjust;
+			break;
+		case 0:case 2:
+			fitWidth = t.maxWidth != null ? t.maxWidth : null;
+			break;
+		case 3:
+			var w = autoFitMode.w;
+			var h = autoFitMode.h;
+			fitWidth = this.resolveAsNumber(w) / scaleAdjust;
+			fitHeight = this.resolveAsNumber(h) / scaleAdjust;
+			break;
+		}
+		if(fitWidth == null) {
+			return;
+		}
+		var isFill;
+		if(autoFitMode == null) {
+			isFill = false;
+		} else {
+			switch(autoFitMode._hx_index) {
+			case 2:
+				isFill = true;
+				break;
+			case 3:
+				var _g = autoFitMode.w;
+				var _g = autoFitMode.h;
+				isFill = true;
+				break;
+			default:
+				isFill = false;
+			}
+		}
+		var allFonts = [];
+		allFonts.push(t.font);
+		var _g = 0;
+		while(_g < autoFitFonts.length) {
+			var fontRef = autoFitFonts[_g];
+			++_g;
+			allFonts.push(this.resourceLoader.loadFont(this.resolveAsString(fontRef)));
+		}
+		if(isFill) {
+			var bestFont = null;
+			var bestWidth = -1;
+			var _g = 0;
+			while(_g < allFonts.length) {
+				var font = allFonts[_g];
+				++_g;
+				t.set_font(font);
+				if(bh_multianim_MultiAnimBuilder.textFits(t,fitWidth,fitHeight)) {
+					if(t.get_textWidth() > bestWidth) {
+						bestWidth = t.get_textWidth();
+						bestFont = font;
+					}
+				}
+			}
+			t.set_font(bestFont != null ? bestFont : allFonts[allFonts.length - 1]);
+		} else if(!bh_multianim_MultiAnimBuilder.textFits(t,fitWidth,fitHeight)) {
+			var _g = 0;
+			while(_g < autoFitFonts.length) {
+				var fontRef = autoFitFonts[_g];
+				++_g;
+				t.set_font(this.resourceLoader.loadFont(this.resolveAsString(fontRef)));
+				if(bh_multianim_MultiAnimBuilder.textFits(t,fitWidth,fitHeight)) {
+					break;
+				}
+			}
+		}
+	}
 	,matchSingleCondition: function(condValue,currentValue) {
 		switch(condValue._hx_index) {
 		case 0:
@@ -20385,9 +20570,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				if(t != null) {
 					var textDefCapture = textDef;
+					var nodeCapture = node;
 					ctx.trackExpression(function() {
 						t.set_text(_gthis.resolveAsString(textDefCapture.text));
 						t.set_textColor(_gthis.resolveAsColorInteger(textDefCapture.color));
+						if(textDefCapture.autoFitFonts != null) {
+							_gthis.applyAutoFit(t,textDefCapture,nodeCapture);
+						}
 					},textRefs);
 				}
 			}
@@ -20436,6 +20625,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				if(t1 != null) {
 					var textDefCapture1 = textDef;
+					var nodeCapture1 = node;
 					ctx.trackExpression(function() {
 						var rawText = _gthis.resolveAsString(textDefCapture1.text);
 						t1.set_text(bh_multianim_TextMarkupConverter.convert(rawText));
@@ -20468,6 +20658,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 								return imageMap_h[url];
 							};
 							ht.set_text(ht.text);
+						}
+						if(textDefCapture1.autoFitFonts != null) {
+							_gthis.applyAutoFit(t1,textDefCapture1,nodeCapture1);
 						}
 					},textRefs);
 				}
@@ -22017,6 +22210,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			t.set_textColor(this.resolveAsColorInteger(textDef.color));
 			t.set_text(this.resolveAsString(textDef.text));
+			if(textDef.autoFitFonts != null) {
+				this.applyAutoFit(t,textDef,node);
+			}
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsText(t);
 			break;
 		case 8:
@@ -22112,6 +22308,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			ht.set_textColor(this.resolveAsColorInteger(textDef.color));
 			var rawText = this.resolveAsString(textDef.text);
 			ht.set_text(bh_multianim_TextMarkupConverter.convert(rawText));
+			if(textDef.autoFitFonts != null) {
+				this.applyAutoFit(ht,textDef,node);
+			}
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsText(ht);
 			break;
 		case 9:
@@ -25456,6 +25655,14 @@ var bh_multianim_TextAlignWidth = $hxEnums["bh.multianim.TextAlignWidth"] = { __
 };
 bh_multianim_TextAlignWidth.__constructs__ = [bh_multianim_TextAlignWidth.TAWAuto,bh_multianim_TextAlignWidth.TAWValue,bh_multianim_TextAlignWidth.TAWGrid];
 bh_multianim_TextAlignWidth.__empty_constructs__ = [bh_multianim_TextAlignWidth.TAWAuto,bh_multianim_TextAlignWidth.TAWGrid];
+var bh_multianim_AutoFitMode = $hxEnums["bh.multianim.AutoFitMode"] = { __ename__:true,__constructs__:null
+	,AFWidth: {_hx_name:"AFWidth",_hx_index:0,__enum__:"bh.multianim.AutoFitMode",toString:$estr}
+	,AFBox: ($_=function(w,h) { return {_hx_index:1,w:w,h:h,__enum__:"bh.multianim.AutoFitMode",toString:$estr}; },$_._hx_name="AFBox",$_.__params__ = ["w","h"],$_)
+	,AFFillWidth: {_hx_name:"AFFillWidth",_hx_index:2,__enum__:"bh.multianim.AutoFitMode",toString:$estr}
+	,AFFillBox: ($_=function(w,h) { return {_hx_index:3,w:w,h:h,__enum__:"bh.multianim.AutoFitMode",toString:$estr}; },$_._hx_name="AFFillBox",$_.__params__ = ["w","h"],$_)
+};
+bh_multianim_AutoFitMode.__constructs__ = [bh_multianim_AutoFitMode.AFWidth,bh_multianim_AutoFitMode.AFBox,bh_multianim_AutoFitMode.AFFillWidth,bh_multianim_AutoFitMode.AFFillBox];
+bh_multianim_AutoFitMode.__empty_constructs__ = [bh_multianim_AutoFitMode.AFWidth,bh_multianim_AutoFitMode.AFFillWidth];
 var bh_multianim_HorizontalAlign = $hxEnums["bh.multianim.HorizontalAlign"] = { __ename__:true,__constructs__:null
 	,Left: {_hx_name:"Left",_hx_index:0,__enum__:"bh.multianim.HorizontalAlign",toString:$estr}
 	,Right: {_hx_name:"Right",_hx_index:1,__enum__:"bh.multianim.HorizontalAlign",toString:$estr}
@@ -26025,6 +26232,42 @@ var bh_multianim_ProgrammableBuilder = function(resourceLoader) {
 };
 $hxClasses["bh.multianim.ProgrammableBuilder"] = bh_multianim_ProgrammableBuilder;
 bh_multianim_ProgrammableBuilder.__name__ = "bh.multianim.ProgrammableBuilder";
+bh_multianim_ProgrammableBuilder.autoFitFirstFit = function(t,fonts,fitWidth,fitHeight) {
+	if(fitWidth != null && t.get_textWidth() <= fitWidth && (fitHeight == null || t.get_textHeight() <= fitHeight)) {
+		return;
+	}
+	var _g = 0;
+	while(_g < fonts.length) {
+		var font = fonts[_g];
+		++_g;
+		t.set_font(font);
+		if((fitWidth == null || t.get_textWidth() <= fitWidth) && (fitHeight == null || t.get_textHeight() <= fitHeight)) {
+			return;
+		}
+	}
+};
+bh_multianim_ProgrammableBuilder.autoFitFill = function(t,fonts,fitWidth,fitHeight) {
+	var bestFont = null;
+	var bestWidth = -1;
+	var origFont = t.font;
+	if((fitWidth == null || t.get_textWidth() <= fitWidth) && (fitHeight == null || t.get_textHeight() <= fitHeight)) {
+		bestFont = origFont;
+		bestWidth = t.get_textWidth();
+	}
+	var _g = 0;
+	while(_g < fonts.length) {
+		var font = fonts[_g];
+		++_g;
+		t.set_font(font);
+		if((fitWidth == null || t.get_textWidth() <= fitWidth) && (fitHeight == null || t.get_textHeight() <= fitHeight)) {
+			if(t.get_textWidth() > bestWidth) {
+				bestWidth = t.get_textWidth();
+				bestFont = font;
+			}
+		}
+	}
+	t.set_font(bestFont != null ? bestFont : fonts[fonts.length - 1]);
+};
 bh_multianim_ProgrammableBuilder.prototype = {
 	loadFont: function(name) {
 		return this.resourceLoader.loadFont(name);
@@ -32471,6 +32714,7 @@ var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,s
 	if(spacing == null) {
 		spacing = 25.0;
 	}
+	this.forceValid = null;
 	this.acceptsFilter = null;
 	this.onTargetHighlight = null;
 	this.arrowSnapPointProvider = null;
@@ -32664,7 +32908,7 @@ bh_ui_UICardHandTargeting.prototype = {
 				this.onTargetHighlight(this.activeTargetId,true,hoveredWrapper.metadata);
 			}
 		}
-		var valid = hoveredWrapper != null;
+		var valid = this.forceValid != null ? this.forceValid : hoveredWrapper != null;
 		var endX = cursorX;
 		var endY = cursorY;
 		if(this.snapToTarget && valid && hoveredWrapper != null) {
@@ -117282,6 +117526,428 @@ screens_graphics_PixelsGraphicsDemoScreen.prototype = $extend(DemoScreenBase.pro
 	}
 	,__class__: screens_graphics_PixelsGraphicsDemoScreen
 });
+var screens_graphics_RichTextAutofitDemoScreen = function(screenManager,scrollConfig,layers) {
+	this.needsRebuild = true;
+	this.currentTextStr = "Deal 50 fire damage";
+	this.currentMode = 0;
+	this.selectedFontName = "";
+	DemoScreenBase.call(this,screenManager,scrollConfig,layers);
+};
+$hxClasses["screens.graphics.RichTextAutofitDemoScreen"] = screens_graphics_RichTextAutofitDemoScreen;
+screens_graphics_RichTextAutofitDemoScreen.__name__ = "screens.graphics.RichTextAutofitDemoScreen";
+screens_graphics_RichTextAutofitDemoScreen.__super__ = DemoScreenBase;
+screens_graphics_RichTextAutofitDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Rich Text AutoFit","Interactive autoFit explorer: choose bounds, fill mode, fonts, and text");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/graphics/rich-text-autofit.manim",false);
+		var generatedByMacroBuildWithParametersload2014Builder = function() {
+			var widthSlider;
+			var textInput;
+			var modeDropdown;
+			var heightSlider;
+			var chkRichText;
+			var chkPixellari;
+			var chkM6x11;
+			var chkM5x7;
+			var chkM3x6;
+			var chkF7x5;
+			var chkDd;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,200);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				widthSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["widthSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addTextInput(_gthis.stdBuilder,settings,"Deal 50 fire damage");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				textInput = _el;
+				return _el.getObject();
+			});
+			_g.h["textInput"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_graphics_RichTextAutofitDemoScreen.MODE_ITEMS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				modeDropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["modeDropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,40);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				heightSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["heightSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkRichText = _el;
+				return _el.getObject();
+			});
+			_g.h["chkRichText"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkPixellari = _el;
+				return _el.getObject();
+			});
+			_g.h["chkPixellari"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkM6x11 = _el;
+				return _el.getObject();
+			});
+			_g.h["chkM6x11"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkM5x7 = _el;
+				return _el.getObject();
+			});
+			_g.h["chkM5x7"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkM3x6 = _el;
+				return _el.getObject();
+			});
+			_g.h["chkM3x6"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkF7x5 = _el;
+				return _el.getObject();
+			});
+			_g.h["chkF7x5"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,true);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				chkDd = _el;
+				return _el.getObject();
+			});
+			_g.h["chkDd"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("richTextAutofitDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { widthSlider : widthSlider, textInput : textInput, modeDropdown : modeDropdown, heightSlider : heightSlider, chkRichText : chkRichText, chkPixellari : chkPixellari, chkM6x11 : chkM6x11, chkM5x7 : chkM5x7, chkM3x6 : chkM3x6, chkF7x5 : chkF7x5, chkDd : chkDd, builderResults : builderResults1};
+			if(retVal.widthSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "widthSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.textInput == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "textInput" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.modeDropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "modeDropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.heightSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "heightSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkRichText == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkRichText" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkPixellari == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkPixellari" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkM6x11 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkM6x11" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkM5x7 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkM5x7" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkM3x6 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkM3x6" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkF7x5 == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkF7x5" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.chkDd == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "chkDd" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload2014Builder();
+		this.demoResult = ui.builderResults;
+		this.addBuilderResult(this.demoResult);
+		this.modeDropdown = ui.modeDropdown;
+		this.widthSlider = ui.widthSlider;
+		this.heightSlider = ui.heightSlider;
+		this.chkPixellari = ui.chkPixellari;
+		this.chkDd = ui.chkDd;
+		this.chkM6x11 = ui.chkM6x11;
+		this.chkM5x7 = ui.chkM5x7;
+		this.chkM3x6 = ui.chkM3x6;
+		this.chkF7x5 = ui.chkF7x5;
+		this.chkRichText = ui.chkRichText;
+		this.textInput = ui.textInput;
+		this.displayContainer = new h2d_Object();
+		var _this = this.displayContainer;
+		_this.posChanged = true;
+		_this.x = 40;
+		_this.posChanged = true;
+		_this.y = 245;
+		this.addObjectToLayer(this.displayContainer,bh_ui_screens_LayersEnum.DefaultLayer);
+		this.boundsGraphics = new h2d_Graphics(this.displayContainer);
+		this.needsRebuild = true;
+	}
+	,getSelectedFonts: function() {
+		var fonts = [];
+		var checks = [this.chkPixellari,this.chkDd,this.chkM6x11,this.chkM5x7,this.chkM3x6,this.chkF7x5];
+		var _g = 0;
+		var _g1 = screens_graphics_RichTextAutofitDemoScreen.FONT_NAMES.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(checks[i] != null && checks[i].selected) {
+				var f = bh_base_FontManager.getFontByName(screens_graphics_RichTextAutofitDemoScreen.FONT_NAMES[i]);
+				if(f != null) {
+					fonts.push(f);
+				}
+			}
+		}
+		return fonts;
+	}
+	,getSelectedFontNames: function() {
+		var names = [];
+		var checks = [this.chkPixellari,this.chkDd,this.chkM6x11,this.chkM5x7,this.chkM3x6,this.chkF7x5];
+		var _g = 0;
+		var _g1 = screens_graphics_RichTextAutofitDemoScreen.FONT_NAMES.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(checks[i] != null && checks[i].selected) {
+				names.push(screens_graphics_RichTextAutofitDemoScreen.FONT_NAMES[i]);
+			}
+		}
+		return names;
+	}
+	,rebuildText: function() {
+		this.needsRebuild = false;
+		if(this.currentText != null) {
+			var _this = this.currentText;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.currentText = null;
+		}
+		this.selectedFontName = "";
+		var fonts = this.getSelectedFonts();
+		if(fonts.length == 0) {
+			this.updateStatus("No fonts selected");
+			this.drawBounds();
+			return;
+		}
+		var fitW = this.widthSlider != null ? this.widthSlider.getIntValue() : 200;
+		var fitH = this.heightSlider != null ? this.heightSlider.getIntValue() : 40;
+		var isRich = this.chkRichText != null && this.chkRichText.selected;
+		var primaryFont = fonts[0];
+		var t;
+		if(isRich) {
+			var ht = new h2d_HtmlText(primaryFont,this.displayContainer);
+			ht.set_text(this.currentTextStr);
+			ht.set_maxWidth(fitW);
+			t = ht;
+		} else {
+			t = new h2d_Text(primaryFont,this.displayContainer);
+			t.set_text(this.currentTextStr);
+			t.set_maxWidth(fitW);
+		}
+		var fitWidth = fitW;
+		var fitHeight = null;
+		var isFill = false;
+		switch(this.currentMode) {
+		case 0:
+			fitHeight = null;
+			isFill = false;
+			break;
+		case 1:
+			fitHeight = fitH;
+			isFill = false;
+			break;
+		case 2:
+			fitHeight = null;
+			isFill = true;
+			break;
+		case 3:
+			fitHeight = fitH;
+			isFill = true;
+			break;
+		default:
+		}
+		if(isFill) {
+			bh_multianim_ProgrammableBuilder.autoFitFill(t,fonts,fitWidth,fitHeight);
+		} else {
+			bh_multianim_ProgrammableBuilder.autoFitFirstFit(t,fonts,fitWidth,fitHeight);
+		}
+		this.currentText = t;
+		this.selectedFontName = this.identifyFont(t.font,fonts);
+		this.drawBounds();
+		this.updateStatus(null);
+	}
+	,identifyFont: function(font,fonts) {
+		var fontNames = this.getSelectedFontNames();
+		var _g = 0;
+		var _g1 = fonts.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(fonts[i] == font) {
+				return fontNames[i];
+			}
+		}
+		return "?";
+	}
+	,drawBounds: function() {
+		if(this.boundsGraphics == null) {
+			return;
+		}
+		this.boundsGraphics.clear();
+		var w = this.widthSlider != null ? this.widthSlider.getIntValue() : 200;
+		var h = this.heightSlider != null ? this.heightSlider.getIntValue() : 40;
+		var showHeight = this.currentMode == 1 || this.currentMode == 3;
+		this.boundsGraphics.beginFill(2236992,1.0);
+		if(showHeight) {
+			this.boundsGraphics.drawRect(0,0,w,h);
+		} else {
+			this.boundsGraphics.drawRect(0,0,w,80);
+		}
+		this.boundsGraphics.endFill();
+		this.boundsGraphics.lineStyle(1,5592456);
+		if(showHeight) {
+			this.boundsGraphics.drawRect(0,0,w,h);
+		} else {
+			this.boundsGraphics.drawRect(0,0,w,80);
+		}
+		this.boundsGraphics.lineStyle();
+	}
+	,updateStatus: function(msg) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable("statusText");
+		if(updatable == null) {
+			return;
+		}
+		if(msg != null) {
+			updatable.updateText(msg);
+			return;
+		}
+		var modeName = screens_graphics_RichTextAutofitDemoScreen.MODE_ITEMS[this.currentMode].name;
+		var w = this.widthSlider != null ? this.widthSlider.getIntValue() : 200;
+		var h = this.heightSlider != null ? this.heightSlider.getIntValue() : 40;
+		var fontNames = this.getSelectedFontNames();
+		var fontsStr = fontNames.join(", ");
+		var boundsStr = this.currentMode == 1 || this.currentMode == 3 ? "" + w + "x" + h : "" + w;
+		var richStr = this.chkRichText != null && this.chkRichText.selected ? " | Rich: ON" : "";
+		updatable.updateText("Mode: " + modeName + " | Bounds: " + boundsStr + " | Fonts: " + fontsStr + " | Selected: " + this.selectedFontName + richStr);
+	}
+	,updateWidthLabel: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		var u = this.demoResult.getUpdatable("widthValue");
+		if(u != null) {
+			u.updateText("" + (this.widthSlider != null ? this.widthSlider.getIntValue() : 200));
+		}
+	}
+	,updateHeightLabel: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		var u = this.demoResult.getUpdatable("heightValue");
+		if(u != null) {
+			u.updateText("" + (this.heightSlider != null ? this.heightSlider.getIntValue() : 40));
+		}
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.needsRebuild) {
+			this.rebuildText();
+		}
+	}
+	,onScreenEvent: function(event,source) {
+		switch(event._hx_index) {
+		case 3:
+			var pressed = event.pressed;
+			if(source == this.chkPixellari || source == this.chkDd || source == this.chkM6x11 || source == this.chkM5x7 || source == this.chkM3x6 || source == this.chkF7x5 || source == this.chkRichText) {
+				this.needsRebuild = true;
+			}
+			break;
+		case 4:
+			var value = event.value;
+			if(source == this.widthSlider || source == this.heightSlider) {
+				this.updateWidthLabel();
+				this.updateHeightLabel();
+				this.needsRebuild = true;
+			}
+			break;
+		case 5:
+			var value = event.value;
+			if(source == this.widthSlider || source == this.heightSlider) {
+				this.updateWidthLabel();
+				this.updateHeightLabel();
+				this.needsRebuild = true;
+			}
+			break;
+		case 6:
+			var index = event.index;
+			var items = event.items;
+			if(source == this.modeDropdown && index >= 0 && index < screens_graphics_RichTextAutofitDemoScreen.MODE_ITEMS.length) {
+				this.currentMode = index;
+				this.needsRebuild = true;
+			}
+			break;
+		case 15:
+			var text = event.text;
+			if(source == this.textInput) {
+				this.currentTextStr = text;
+				this.needsRebuild = true;
+			}
+			break;
+		case 16:
+			var text = event.text;
+			if(source == this.textInput) {
+				this.currentTextStr = text;
+				this.needsRebuild = true;
+			}
+			break;
+		default:
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		if(this.currentText != null) {
+			var _this = this.currentText;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.currentText = null;
+		}
+		if(this.displayContainer != null) {
+			var _this = this.displayContainer;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.displayContainer = null;
+		}
+		this.boundsGraphics = null;
+		this.demoBuilder = null;
+		this.demoResult = null;
+		this.modeDropdown = null;
+		this.widthSlider = null;
+		this.heightSlider = null;
+		this.chkPixellari = null;
+		this.chkDd = null;
+		this.chkM6x11 = null;
+		this.chkM5x7 = null;
+		this.chkM3x6 = null;
+		this.chkF7x5 = null;
+		this.chkRichText = null;
+		this.textInput = null;
+	}
+	,__class__: screens_graphics_RichTextAutofitDemoScreen
+});
 var screens_graphics_RichTextDemoScreen = function(screenManager,scrollConfig,layers) {
 	this.popupTimer = 0;
 	this.popupText = null;
@@ -120798,7 +121464,7 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent"];
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
 NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
@@ -121271,6 +121937,8 @@ screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP = (function($this) {
 }(this));
 screens_gamelike_StatusEffectsDemoScreen.BUFF_DEFS = [{ name : "Regeneration", desc : "Restores 5 HP/sec", color : "#4CAF50", duration : 8.0},{ name : "Strength Up", desc : "ATK +20%", color : "#FF7F50", duration : 10.0},{ name : "Shield", desc : "DEF +15", color : "#4A90A4", duration : 6.0},{ name : "Haste", desc : "Speed +30%", color : "#CCBB33", duration : 5.0}];
 screens_gamelike_StatusEffectsDemoScreen.DEBUFF_DEFS = [{ name : "Poison", desc : "Lose 3 HP/sec", color : "#8B00FF", duration : 7.0},{ name : "Slow", desc : "Speed -25%", color : "#666666", duration : 6.0},{ name : "Weakness", desc : "ATK -15%", color : "#FF4444", duration : 8.0},{ name : "Curse", desc : "All stats -10%", color : "#440044", duration : 12.0}];
+screens_graphics_RichTextAutofitDemoScreen.MODE_ITEMS = [{ name : "Width"},{ name : "Box"},{ name : "Fill"},{ name : "Fill Box"}];
+screens_graphics_RichTextAutofitDemoScreen.FONT_NAMES = ["pixellari","dd","m6x11","m5x7","m3x6","f7x5"];
 screens_layout_ComboStatesDemoScreen.MODES = ["idle","active","warning","error"];
 screens_layout_ComboStatesDemoScreen.LEVELS = ["low","medium","high","critical"];
 screens_layout_ComboStatesDemoScreen.DEVICE_STATES = ["on","off","standby","unknown"];

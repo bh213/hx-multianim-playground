@@ -32,7 +32,7 @@ class Main extends hxd.App {
 		"featureShowcase", "incremental", "interactives", "conditionals", "expressions", "settings", "macroPerformance",
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
-		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "pixelsGraphics",
+		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
 		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "transitions",
 		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent",
 	];
@@ -208,6 +208,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("ninepatch", new NinepatchDemoScreen(screenManager));
 		screenManager.addScreen("textFonts", new TextFontsDemoScreen(screenManager));
 		screenManager.addScreen("richText", new RichTextDemoScreen(screenManager));
+		screenManager.addScreen("richTextAutofit", new RichTextAutofitDemoScreen(screenManager));
 		screenManager.addScreen("pixelsGraphics", new PixelsGraphicsDemoScreen(screenManager));
 
 		// Animation demos

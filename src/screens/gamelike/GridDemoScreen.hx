@@ -15,6 +15,8 @@ import bh.ui.UIMultiAnimGridTypes.GridEvent;
 import bh.ui.UIMultiAnimGridTypes.CellCoord;
 import bh.ui.UIMultiAnimGridTypes.CellTargetSource;
 import bh.ui.UIMultiAnimGridTypes.DropContext;
+import bh.ui.UIMultiAnimGridTypes.SwapContext;
+import bh.ui.UIMultiAnimGridTypes.CellBuildInfo;
 import bh.base.Hex.HexOrientation;
 import bh.base.MacroUtils;
 import bh.base.TweenManager.TweenProperty;
@@ -118,7 +120,7 @@ class GridDemoScreen extends DemoScreenBase {
 	];
 
 	override public function load():Void {
-		setupDemo("Grid Component", "Layers, DropContext, typed items, source tracking, animations");
+		setupDemo("Grid Component", "Swap, DropContext, layers, typed items, source tracking");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim", false);
 
@@ -159,7 +161,7 @@ class GridDemoScreen extends DemoScreenBase {
 
 	function rectHighlightDelegate(cell:CellCoord, accepts:Bool):String {
 		if (rectGrid != null && rectGrid.isOccupied(cell.col, cell.row))
-			return "locked";
+			return if (accepts) "swap" else "reject";
 		if (!accepts)
 			return "reject";
 		// Row 3 is the "premium" row — accepts anything but costs extra
@@ -168,14 +170,29 @@ class GridDemoScreen extends DemoScreenBase {
 		return "accept";
 	}
 
+	function rectCellBuildDelegate(col:Int, row:Int, data:Dynamic):Null<CellBuildInfo> {
+		if (data == null) return null;
+		final type:String = Std.string(data.type);
+		var p = new Map<String, Dynamic>();
+		p.set("itemType", type);
+		return {params: p};
+	}
+
 	function setupRectGrid():Void {
 		rectGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			swapPathName: "swapAnim",
+			swapEnabled: true,
 			highlightDelegate: rectHighlightDelegate,
+			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
+			swapVisualProvider: (cell, data) -> {
+				if (data != null && data.color != null) return buildItemBlock(data.color);
+				return null;
+			},
 		});
 		rectGrid.addRectRegion(5, 4);
 
@@ -209,6 +226,8 @@ class GridDemoScreen extends DemoScreenBase {
 			drag.returnToOrigin = true;
 			drag.dragLayer = ModalLayer;
 			drag.payload = data;
+			drag.sourceGrid = rectGrid;
+			drag.sourceCellCoord = ({col: col, row: row} : CellCoord);
 
 			final srcCol = col;
 			final srcRow = row;
@@ -220,18 +239,16 @@ class GridDemoScreen extends DemoScreenBase {
 						dragSourceGrid = rectGrid;
 						dragSourceCell = {col: srcCol, row: srcRow};
 						dragSourceData = srcData;
-						rectGrid.clear(srcCol, srcRow);
+						// Keep data for swap detection, just hide icon
 						rectGrid.setCellParameter(srcCol, srcRow, "itemType", "none");
 					case DragCancel:
-						rectGrid.set(srcCol, srcRow, srcData,
-							["itemType" => (srcData.type : Dynamic)]);
+						rectGrid.setCellParameter(srcCol, srcRow, "itemType", srcData.type);
 					default:
 				}
 			};
 
 			// Row-based type filtering: row 1 = weapons only, row 2 = potions only, row 3 = any
 			rectGrid.acceptDrops(drag, (cell, d) -> {
-				if (rectGrid.isOccupied(cell.col, cell.row)) return false;
 				final itemType:String = d.payload != null ? d.payload.type : "";
 				return switch cell.row {
 					case 1: itemType == "weapon";
@@ -262,6 +279,9 @@ class GridDemoScreen extends DemoScreenBase {
 						ctx.acceptWithPath("expensiveSnap");
 					else
 						ctx.accept();
+					// Clear source cell (data preserved for swap detection)
+					if (srcCell != null && rectGrid != null)
+						rectGrid.clear(srcCell.col, srcCell.row);
 					rectGrid.set(cell.col, cell.row, dragSourceData,
 						["itemType" => (dragSourceData.type : Dynamic)]);
 					final src = srcCell != null ? '(${srcCell.col},${srcCell.row})' : "?";
@@ -272,6 +292,31 @@ class GridDemoScreen extends DemoScreenBase {
 					dragSourceData = null;
 					ctx.onComplete(() -> rebuildRectDraggables());
 				}
+			case CellSwap(source, target, draggable, ctx):
+				ctx.accept();
+				setRectLog('(${source.col},${source.row}) <-> (${target.col},${target.row}) [swap]');
+				dragSourceGrid = null;
+				dragSourceCell = null;
+				dragSourceData = null;
+				// Hide the target draggable overlay — swapVisualProvider handles its animation.
+				for (d in rectDraggables) {
+					if (d.sourceCellCoord != null && d.sourceCellCoord.col == target.col && d.sourceCellCoord.row == target.row) {
+						d.getObject().visible = false;
+					}
+				}
+				// When snap lands, rebuild draggables but hide the one at the swap
+				// destination (source cell) — the displaced animation is still in flight there.
+				final swapDest = source;
+				ctx.onSnapComplete(() -> {
+					rebuildRectDraggables();
+					for (d in rectDraggables) {
+						if (d.sourceCellCoord != null && d.sourceCellCoord.col == swapDest.col && d.sourceCellCoord.row == swapDest.row) {
+							d.getObject().visible = false;
+						}
+					}
+				});
+				// Full rebuild when displaced animation completes.
+				ctx.onComplete(() -> rebuildRectDraggables());
 			default:
 		}
 	}
@@ -620,7 +665,14 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			swapPathName: "swapAnim",
+			swapEnabled: true,
+			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
+			swapVisualProvider: (cell, data) -> {
+				if (data != null && data.color != null) return buildItemBlock(data.color);
+				return null;
+			},
 		});
 		storageGrid.addRectRegion(storageCols, storageRows);
 		for (i in 0...G2G_WEAPONS.length) {
@@ -639,7 +691,14 @@ class GridDemoScreen extends DemoScreenBase {
 			cellBuildName: "rectCell",
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
+			swapPathName: "swapAnim",
+			swapEnabled: true,
+			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
+			swapVisualProvider: (cell, data) -> {
+				if (data != null && data.color != null) return buildItemBlock(data.color);
+				return null;
+			},
 		});
 		loadoutGrid.addRectRegion(loadoutCols, loadoutRows);
 		for (i in 0...G2G_POTIONS.length) {
@@ -696,22 +755,19 @@ class GridDemoScreen extends DemoScreenBase {
 						dragSourceGrid = srcGrid;
 						dragSourceCell = {col: srcCol, row: srcRow};
 						dragSourceData = data;
-						srcGrid.clear(srcCol, srcRow);
+						// Keep data for swap detection, just hide icon
 						srcGrid.setCellParameter(srcCol, srcRow, "itemType", "none");
 					case DragCancel:
-						srcGrid.set(srcCol, srcRow, data,
-							["itemType" => (data.type : Dynamic)]);
+						srcGrid.setCellParameter(srcCol, srcRow, "itemType", data.type);
 					default:
 				}
 			};
 
 			// Storage accepts weapons only, loadout accepts potions only
 			storageGrid.acceptDrops(drag, (cell, d) -> {
-				if (storageGrid.isOccupied(cell.col, cell.row)) return false;
 				return d.payload != null && d.payload.type == "weapon";
 			});
 			loadoutGrid.acceptDrops(drag, (cell, d) -> {
-				if (loadoutGrid.isOccupied(cell.col, cell.row)) return false;
 				return d.payload != null && d.payload.type == "potion";
 			});
 
@@ -726,6 +782,9 @@ class GridDemoScreen extends DemoScreenBase {
 			case CellDrop(cell, draggable, srcGrid, srcCell, ctx):
 				if (dragSourceData != null) {
 					ctx.accept();
+					// Clear source cell (data preserved for swap detection)
+					if (srcCell != null && dragSourceGrid != null)
+						dragSourceGrid.clear(srcCell.col, srcCell.row);
 					targetGrid.set(cell.col, cell.row, dragSourceData,
 						["itemType" => (dragSourceData.type : Dynamic)]);
 
@@ -738,9 +797,17 @@ class GridDemoScreen extends DemoScreenBase {
 					dragSourceCell = null;
 					dragSourceData = null;
 					updateG2GCounts();
-					// Defer rebuild until snap animation completes
 					ctx.onComplete(() -> rebuildG2GDraggables());
 				}
+			case CellSwap(source, target, draggable, ctx):
+				ctx.accept();
+				final tgtName = if (targetGrid == storageGrid) "Weap" else "Pot";
+				setG2GLog('$tgtName (${source.col},${source.row}) <-> (${target.col},${target.row}) [swap]');
+				dragSourceGrid = null;
+				dragSourceCell = null;
+				dragSourceData = null;
+				updateG2GCounts();
+				ctx.onComplete(() -> rebuildG2GDraggables());
 			case CellClick(cell, _):
 				final name = if (targetGrid == storageGrid) "Weapons" else "Potions";
 				final occ = if (targetGrid.isOccupied(cell.col, cell.row)) " [full]" else " [empty]";

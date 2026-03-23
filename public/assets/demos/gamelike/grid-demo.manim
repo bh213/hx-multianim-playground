@@ -28,6 +28,13 @@ paths {
     0.0: progressCurve: easeOut
 }
 
+#swapAnim animatedPath {
+    path: cardArc
+    type: time
+    duration: 3.0
+    0.0: progressCurve: easeOut
+}
+
 #expensiveSnap animatedPath {
     path: straightLine
     type: time
@@ -68,7 +75,7 @@ paths {
 // ===== Cell programmables =====
 
 #rectCell programmable(col:int=0, row:int=0, status:[normal,hover]=normal,
-                       highlight:[none,accept,reject,expensive,locked]=none,
+                       highlight:[none,accept,reject,expensive,locked,swap]=none,
                        itemType:[none,weapon,potion]=none) {
     bitmap(generated(color(52, 52, #1a1a2e))): 0, 0
     @(highlight=>accept)     bitmap(generated(color(52, 52, #2a3a2a))): 0, 0
@@ -79,11 +86,14 @@ paths {
     @(highlight=>reject)     apply { filter: glow(#FF4444, 0.4, 6) }
     @(highlight=>expensive)  apply { filter: glow(#CCAA22, 0.3, 5) }
     @(highlight=>locked)     apply { filter: group(grayscale(0.6), brightness(0.6)) }
+    @(highlight=>swap)       bitmap(generated(color(52, 52, #1a2a3e))): 0, 0
+    @(highlight=>swap)       apply { filter: glow(#44AAFF, 0.4, 6) }
     // Highlight icons
     @(highlight=>expensive)  graphics(polygon(#CCAA22, filled, 26, 16, 32, 26, 26, 36, 20, 26)): 0, 0
     @(highlight=>expensive)  text(m3x6, "$", #CCAA22, center, 52): 0, 36
     @(highlight=>locked)     graphics(rect(#666666, 1.0, 12, 10); rect(#666666, filled, 16, 12)): 20, 14
     @(highlight=>locked)     text(m3x6, "X", #666666, center, 52): 0, 36
+    @(highlight=>swap)       text(m3x6, "<>", #44AAFF, center, 52): 0, 36
     @(status=>hover)         apply { filter: glow(#FFFF00, 0.3, 4) }
     // Item type icons
     @(itemType=>weapon)  graphics(polygon(#AAAACC, filled, 26, 4, 30, 18, 26, 48, 22, 18)): 0, 0
@@ -175,7 +185,7 @@ paths {
     pos: 10, 70
 
     // === LEFT: Rect Grid Drag-Drop ===
-    text(m5x7, "Rect Grid + Drag", #7fdbda): 0, -4
+    text(m5x7, "Rect Grid + Swap", #7fdbda): 0, -4
     text(m5x7, "R1:weapons R2:potions R3:premium", #555555): 0, 8
     #rectLog(updatable) text(m5x7, "Drag items between rows", #888888): 0, 22
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("resetBtn")): 0, 36
@@ -193,8 +203,8 @@ paths {
     text(m5x7, "Snap", #aaaacc): 562, 40
 
     // === RIGHT: Grid-to-Grid ===
-    text(m5x7, "Grid to Grid", #66cc99): 770, -4
-    text(m5x7, "Source tracking + typed items", #555555): 770, 8
+    text(m5x7, "Grid to Grid + Swap", #66cc99): 770, -4
+    text(m5x7, "Source tracking + swap + typed items", #555555): 770, 8
     #g2gLog(updatable) text(m5x7, "Move items between grids", #888888): 770, 22
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("addStorBtn")): 770, 36
     placeholder(generated(cross(10, 10, #FF0000)), builderParameter("remStorBtn")): 826, 36

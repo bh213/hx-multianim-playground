@@ -17,6 +17,7 @@ import bh.ui.UIMultiAnimGridTypes.CellTargetSource;
 import bh.ui.UIMultiAnimGridTypes.DropContext;
 import bh.ui.UIMultiAnimGridTypes.SwapContext;
 import bh.ui.UIMultiAnimGridTypes.CellBuildInfo;
+import bh.ui.UIMultiAnimGridTypes.DefaultCellVisualFactory;
 import bh.base.Hex.HexOrientation;
 import bh.base.MacroUtils;
 import bh.base.TweenManager.TweenProperty;
@@ -29,11 +30,11 @@ class GridDemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 
 	// === Left: Rect Grid Drag-Drop ===
-	var rectGrid:Null<UIMultiAnimGrid>;
+	var rectGrid:Null<UIMultiAnimGrid<Dynamic>>;
 	var rectDraggables:Array<UIMultiAnimDraggable> = [];
 
 	// === Center: Hex Grid + Cards ===
-	var hexGrid:Null<UIMultiAnimGrid>;
+	var hexGrid:Null<UIMultiAnimGrid<Dynamic>>;
 	var cardHand:Null<UICardHandHelper>;
 	var nextCardId:Int = 0;
 	var handCardIds:Array<String> = [];
@@ -43,10 +44,10 @@ class GridDemoScreen extends DemoScreenBase {
 	var savedSplashCells:Array<CellCoord> = []; // snapshot for CardPlayed (CellTargetLeave clears splashCells first)
 
 	// === Right: Grid-to-Grid ===
-	var storageGrid:Null<UIMultiAnimGrid>;
-	var loadoutGrid:Null<UIMultiAnimGrid>;
+	var storageGrid:Null<UIMultiAnimGrid<Dynamic>>;
+	var loadoutGrid:Null<UIMultiAnimGrid<Dynamic>>;
 	var g2gDraggables:Array<UIMultiAnimDraggable> = [];
-	var dragSourceGrid:Null<UIMultiAnimGrid>;
+	var dragSourceGrid:Null<UIMultiAnimGrid<Dynamic>>;
 	var dragSourceCell:Null<CellCoord>;
 	var dragSourceData:Dynamic;
 
@@ -181,13 +182,15 @@ class GridDemoScreen extends DemoScreenBase {
 	function setupRectGrid():Void {
 		rectGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
-			cellBuildName: "rectCell",
+			cellVisualFactory: new DefaultCellVisualFactory(demoBuilder, {
+				cellBuildName: "rectCell",
+				highlightDelegate: rectHighlightDelegate,
+				cellBuildDelegate: rectCellBuildDelegate,
+			}),
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
 			swapPathName: "swapAnim",
 			swapEnabled: true,
-			highlightDelegate: rectHighlightDelegate,
-			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
 			swapVisualProvider: (cell, data) -> {
 				if (data != null && data.color != null) return buildItemBlock(data.color);
@@ -263,7 +266,7 @@ class GridDemoScreen extends DemoScreenBase {
 		});
 	}
 
-	function onRectEvent(event:GridEvent):Void {
+	function onRectEvent(event:GridEvent<Dynamic>):Void {
 		switch event {
 			case CellClick(cell, button):
 				final rowLabel = switch cell.row {
@@ -398,7 +401,7 @@ class GridDemoScreen extends DemoScreenBase {
 
 		hexGrid = addGrid(demoBuilder, {
 			gridType: Hex(POINTY, 30, 30),
-			cellBuildName: "hexCell",
+			cellVisualFactory: new DefaultCellVisualFactory(demoBuilder, {cellBuildName: "hexCell"}),
 			tweenManager: screenManager.tweens,
 		});
 		hexGrid.addHexRegion(0, 0, 2);
@@ -480,7 +483,7 @@ class GridDemoScreen extends DemoScreenBase {
 		return CARD_DEFS[0];
 	}
 
-	function onHexEvent(event:GridEvent):Void {
+	function onHexEvent(event:GridEvent<Dynamic>):Void {
 		switch event {
 			case CellClick(cell, _):
 				if (hexGrid != null && hexGrid.isOccupied(cell.col, cell.row)) {
@@ -629,7 +632,7 @@ class GridDemoScreen extends DemoScreenBase {
 		for (c in toRemove) {
 			if (hexGrid.isOccupied(c.col, c.row)) {
 				hexGrid.clear(c.col, c.row);
-				hexGrid.getCellResult(c.col, c.row).setParameter("occupied", false);
+				hexGrid.setCellParameter(c.col, c.row, "occupied", false);
 			}
 			// removeCell auto-refreshes card targets
 			hexGrid.removeCell(c.col, c.row);
@@ -662,12 +665,14 @@ class GridDemoScreen extends DemoScreenBase {
 		// Storage grid (weapons only) at top of container
 		storageGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
-			cellBuildName: "rectCell",
+			cellVisualFactory: new DefaultCellVisualFactory(demoBuilder, {
+				cellBuildName: "rectCell",
+				cellBuildDelegate: rectCellBuildDelegate,
+			}),
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
 			swapPathName: "swapAnim",
 			swapEnabled: true,
-			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
 			swapVisualProvider: (cell, data) -> {
 				if (data != null && data.color != null) return buildItemBlock(data.color);
@@ -688,12 +693,14 @@ class GridDemoScreen extends DemoScreenBase {
 		// Loadout grid (potions only) below storage
 		loadoutGrid = createGrid(demoBuilder, {
 			gridType: Rect(52, 52, 4),
-			cellBuildName: "rectCell",
+			cellVisualFactory: new DefaultCellVisualFactory(demoBuilder, {
+				cellBuildName: "rectCell",
+				cellBuildDelegate: rectCellBuildDelegate,
+			}),
 			snapPathName: "snapAnim",
 			returnPathName: "returnAnim",
 			swapPathName: "swapAnim",
 			swapEnabled: true,
-			cellBuildDelegate: rectCellBuildDelegate,
 			tweenManager: screenManager.tweens,
 			swapVisualProvider: (cell, data) -> {
 				if (data != null && data.color != null) return buildItemBlock(data.color);
@@ -731,7 +738,7 @@ class GridDemoScreen extends DemoScreenBase {
 		setupG2GDragsForGrid(loadoutGrid);
 	}
 
-	function setupG2GDragsForGrid(grid:UIMultiAnimGrid):Void {
+	function setupG2GDragsForGrid(grid:UIMultiAnimGrid<Dynamic>):Void {
 		grid.forEach((col, row, data) -> {
 			if (data == null) return;
 			final itemObj = buildItemBlock(data.color);
@@ -777,7 +784,7 @@ class GridDemoScreen extends DemoScreenBase {
 		});
 	}
 
-	function onG2GEvent(targetGrid:UIMultiAnimGrid, event:GridEvent):Void {
+	function onG2GEvent(targetGrid:UIMultiAnimGrid<Dynamic>, event:GridEvent<Dynamic>):Void {
 		switch event {
 			case CellDrop(cell, draggable, srcGrid, srcCell, ctx):
 				if (dragSourceData != null) {
@@ -847,7 +854,7 @@ class GridDemoScreen extends DemoScreenBase {
 		setG2GLog("Reset!");
 	}
 
-	function removeAllG2GCells(grid:Null<UIMultiAnimGrid>, cols:Int, rows:Int):Void {
+	function removeAllG2GCells(grid:Null<UIMultiAnimGrid<Dynamic>>, cols:Int, rows:Int):Void {
 		if (grid == null) return;
 		var toRemove:Array<CellCoord> = [];
 		grid.forEach((col, row, data) -> {
@@ -858,7 +865,7 @@ class GridDemoScreen extends DemoScreenBase {
 			grid.removeCell(c.col, c.row);
 	}
 
-	function addG2GRow(grid:Null<UIMultiAnimGrid>, cols:Int):Void {
+	function addG2GRow(grid:Null<UIMultiAnimGrid<Dynamic>>, cols:Int):Void {
 		if (grid == null) return;
 		// Find the current max row
 		var maxRow = -1;
@@ -868,7 +875,7 @@ class GridDemoScreen extends DemoScreenBase {
 			grid.addCell(col, newRow);
 	}
 
-	function removeG2GRow(grid:Null<UIMultiAnimGrid>, cols:Int, rows:Int):Void {
+	function removeG2GRow(grid:Null<UIMultiAnimGrid<Dynamic>>, cols:Int, rows:Int):Void {
 		if (grid == null || rows <= 1) return;
 		final lastRow = rows - 1;
 		for (col in 0...cols) {

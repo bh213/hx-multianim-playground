@@ -4,6 +4,8 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimDraggable;
 import bh.ui.UIMultiAnimDraggable.DragEvent;
+import bh.ui.UIMultiAnimDraggable.DropZoneId;
+import bh.ui.UIMultiAnimDraggable.DropZoneIdTools;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
@@ -50,13 +52,13 @@ class DraggableDemoScreen extends DemoScreenBase {
 		drag.zoneHighlightAlpha = 1.0;
 
 		drag.addDropZone({
-			id: "zone1",
+			id: Named("zone1"),
 			bounds: Bounds.fromValues(BX + 0, BY + 60, 120, 120),
 			snapX: BX + 40,
 			snapY: BY + 100,
 		});
 		drag.addDropZone({
-			id: "zone2",
+			id: Named("zone2"),
 			bounds: Bounds.fromValues(BX + 150, BY + 60, 120, 120),
 			snapX: BX + 190,
 			snapY: BY + 100,
@@ -65,9 +67,9 @@ class DraggableDemoScreen extends DemoScreenBase {
 		drag.onDragEvent = (event, pos, wrapper) -> {
 			switch event {
 				case ZoneEnter(zone):
-					updateEventText('ZoneEnter: ${zone.id}');
+					updateEventText('ZoneEnter: ${DropZoneIdTools.format(zone.id)}');
 				case ZoneLeave(zone):
-					updateEventText('ZoneLeave: ${zone.id}');
+					updateEventText('ZoneLeave: ${DropZoneIdTools.format(zone.id)}');
 				case DragStart:
 					updateEventText('DragStart (alpha=0.6)');
 				case DragEnd:
@@ -114,7 +116,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 		// Outer zone, lower priority
 		drag.addDropZone({
-			id: "outer-low",
+			id: Named("outer-low"),
 			bounds: Bounds.fromValues(BX + 0, BY + 370, 180, 120),
 			snapX: BX + 140,
 			snapY: BY + 420,
@@ -122,7 +124,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 		});
 		// Inner zone, higher priority (overlaps outer)
 		drag.addDropZone({
-			id: "inner-high",
+			id: Named("inner-high"),
 			bounds: Bounds.fromValues(BX + 50, BY + 390, 80, 80),
 			snapX: BX + 70,
 			snapY: BY + 410,
@@ -134,9 +136,9 @@ class DraggableDemoScreen extends DemoScreenBase {
 				case DragEnd:
 					updateEventText('Priority: dropped');
 				case ZoneEnter(zone):
-					updateEventText('Priority enter: ${zone.id}');
+					updateEventText('Priority enter: ${DropZoneIdTools.format(zone.id)}');
 				case ZoneLeave(zone):
-					updateEventText('Priority leave: ${zone.id}');
+					updateEventText('Priority leave: ${DropZoneIdTools.format(zone.id)}');
 				default:
 			}
 		};

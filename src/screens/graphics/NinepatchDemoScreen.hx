@@ -2,6 +2,7 @@ package screens.graphics;
 
 import bh.ui.*;
 import bh.ui.UIMultiAnimDraggable;
+import bh.ui.UIMultiAnimDraggable.DropZoneId;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.FontManager;
 import h2d.col.Point;
@@ -50,7 +51,7 @@ class NinepatchDemoScreen extends DemoScreenBase {
 			return new Point(x, y);
 		};
 		handleDraggable.addDropZone({
-			id: "resize",
+			id: Named("resize"),
 			bounds: Bounds.fromValues(0, 0, 2000, 2000),
 			snapProvider: () -> {
 				final snappedW = Std.int(panelWidth / SNAP + 0.5) * SNAP;

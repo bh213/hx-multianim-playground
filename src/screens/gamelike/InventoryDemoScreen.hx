@@ -5,6 +5,7 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.ui.UIMultiAnimDraggable;
 import bh.ui.UIMultiAnimDraggable.DropZone;
+import bh.ui.UIMultiAnimDraggable.DropZoneId;
 import bh.ui.UIMultiAnimDraggable.DragEvent;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimBuilder.SlotHandle;
@@ -169,12 +170,16 @@ class InventoryDemoScreen extends DemoScreenBase {
 		return slot.container.localToGlobal(new Point(0, 0));
 	}
 
-	function isEquipZone(zoneId:String):Bool {
-		return StringTools.startsWith(zoneId, "equip_");
+	function isEquipZone(zoneId:DropZoneId):Bool {
+		return switch zoneId { case SlotZone("equip", _): true; default: false; };
 	}
 
-	function zoneIdx(zoneId:String):Int {
-		return Std.parseInt(zoneId.split("_").pop());
+	function zoneIdx(zoneId:DropZoneId):Int {
+		return switch zoneId {
+			case SlotZone(_, idx): idx != null ? idx : 0;
+			case SlotZone2D(_, x, _): x;
+			default: 0;
+		};
 	}
 
 	// ----- Draggable setup -----
@@ -392,7 +397,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 		addDropZones(drag, itemKey);
 		setupZoneHighlighting(drag, itemKey);
 
-		final srcZoneId = 'equip_$eqIdx';
+		final srcZoneId = SlotZone("equip", eqIdx);
 		final srcAccepts = EQUIP_ACCEPTS[eqIdx];
 
 		drag.onDragDrop = (result, wrapper) -> {
@@ -405,7 +410,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 
 			if (isEquipZone(result.zone.id)) {
 				// Equipment → Equipment (e.g. L.Arm ↔ R.Arm)
-				if (result.zone.id == srcZoneId) return false;
+				if (Type.enumEq(result.zone.id, srcZoneId)) return false;
 
 				if (tgtSlot.isOccupied()) {
 					final otherKey:String = tgtSlot.data;

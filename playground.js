@@ -721,18 +721,6 @@ bh_ui_screens_UIScreenBase.prototype = {
 		if(Object.prototype.hasOwnProperty.call(settings.h,"originY")) {
 			config.originY = this.getFloatSettings(settings,"originY",0);
 		}
-		if(Object.prototype.hasOwnProperty.call(settings.h,"cellBuildName")) {
-			config.cellBuildName = this.getSettings(settings,"cellBuildName",config.cellBuildName);
-		}
-		if(Object.prototype.hasOwnProperty.call(settings.h,"highlightParam")) {
-			config.highlightParam = this.getSettings(settings,"highlightParam","highlight");
-		}
-		if(Object.prototype.hasOwnProperty.call(settings.h,"statusParam")) {
-			config.statusParam = this.getSettings(settings,"statusParam","status");
-		}
-		if(Object.prototype.hasOwnProperty.call(settings.h,"rejectHighlightParam")) {
-			config.rejectHighlightParam = this.getSettings(settings,"rejectHighlightParam","");
-		}
 		if(Object.prototype.hasOwnProperty.call(settings.h,"swapPathName")) {
 			config.swapPathName = this.getSettings(settings,"swapPathName","");
 		}
@@ -31869,6 +31857,9 @@ bh_ui_UICardHandHelper.prototype = {
 	,setArrowSnapPointProvider: function(provider) {
 		this.targeting.arrowSnapPointProvider = provider;
 	}
+	,getTargeting: function() {
+		return this.targeting;
+	}
 	,setVisible: function(visible) {
 		this.handContainer.set_visible(visible);
 		this.targeting.getObject().set_visible(visible);
@@ -34003,6 +33994,43 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 	}
 	,__class__: bh_ui_UIStandardMultiCheckbox
 };
+var bh_ui_DropZoneId = $hxEnums["bh.ui.DropZoneId"] = { __ename__:true,__constructs__:null
+	,GridCell: ($_=function(grid,col,row) { return {_hx_index:0,grid:grid,col:col,row:row,__enum__:"bh.ui.DropZoneId",toString:$estr}; },$_._hx_name="GridCell",$_.__params__ = ["grid","col","row"],$_)
+	,SlotZone: ($_=function(baseName,index) { return {_hx_index:1,baseName:baseName,index:index,__enum__:"bh.ui.DropZoneId",toString:$estr}; },$_._hx_name="SlotZone",$_.__params__ = ["baseName","index"],$_)
+	,SlotZone2D: ($_=function(baseName,indexX,indexY) { return {_hx_index:2,baseName:baseName,indexX:indexX,indexY:indexY,__enum__:"bh.ui.DropZoneId",toString:$estr}; },$_._hx_name="SlotZone2D",$_.__params__ = ["baseName","indexX","indexY"],$_)
+	,Named: ($_=function(name) { return {_hx_index:3,name:name,__enum__:"bh.ui.DropZoneId",toString:$estr}; },$_._hx_name="Named",$_.__params__ = ["name"],$_)
+};
+bh_ui_DropZoneId.__constructs__ = [bh_ui_DropZoneId.GridCell,bh_ui_DropZoneId.SlotZone,bh_ui_DropZoneId.SlotZone2D,bh_ui_DropZoneId.Named];
+bh_ui_DropZoneId.__empty_constructs__ = [];
+var bh_ui_DropZoneIdTools = function() { };
+$hxClasses["bh.ui.DropZoneIdTools"] = bh_ui_DropZoneIdTools;
+bh_ui_DropZoneIdTools.__name__ = "bh.ui.DropZoneIdTools";
+bh_ui_DropZoneIdTools.format = function(id) {
+	switch(id._hx_index) {
+	case 0:
+		var _g = id.grid;
+		var col = id.col;
+		var row = id.row;
+		return "grid(" + col + "," + row + ")";
+	case 1:
+		var name = id.baseName;
+		var idx = id.index;
+		if(idx != null) {
+			return "" + name + "_" + idx;
+		} else {
+			return name;
+		}
+		break;
+	case 2:
+		var name = id.baseName;
+		var x = id.indexX;
+		var y = id.indexY;
+		return "" + name + "_" + x + "_" + y;
+	case 3:
+		var name = id.name;
+		return name;
+	}
+};
 var bh_ui_DragEvent = $hxEnums["bh.ui.DragEvent"] = { __ename__:true,__constructs__:null
 	,DragStart: {_hx_name:"DragStart",_hx_index:0,__enum__:"bh.ui.DragEvent",toString:$estr}
 	,DragMove: {_hx_name:"DragMove",_hx_index:1,__enum__:"bh.ui.DragEvent",toString:$estr}
@@ -34159,14 +34187,14 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			case 0:
 				var name = _g2.name;
 				if(name == baseName) {
-					this.addDropZoneFromSlot(baseName,entry.handle,accepts);
+					this.addDropZoneFromSlot(bh_ui_DropZoneId.SlotZone(baseName),entry.handle,accepts);
 				}
 				break;
 			case 1:
 				var name1 = _g2.name;
 				var index = _g2.index;
 				if(name1 == baseName) {
-					this.addDropZoneFromSlot(baseName + "_" + index,entry.handle,accepts);
+					this.addDropZoneFromSlot(bh_ui_DropZoneId.SlotZone(baseName,index),entry.handle,accepts);
 				}
 				break;
 			case 2:
@@ -34174,7 +34202,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				var indexX = _g2.indexX;
 				var indexY = _g2.indexY;
 				if(name2 == baseName) {
-					this.addDropZoneFromSlot("" + baseName + "_" + indexX + "_" + indexY,entry.handle,accepts);
+					this.addDropZoneFromSlot(bh_ui_DropZoneId.SlotZone2D(baseName,indexX,indexY),entry.handle,accepts);
 				}
 				break;
 			default:
@@ -34189,7 +34217,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 		while(_g1 < _g2.length) {
 			var v = _g2[_g1];
 			++_g1;
-			if(v.id != id) {
+			if(!Type.enumEq(v.id,id)) {
 				_g.push(v);
 			}
 		}
@@ -34494,7 +34522,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				}
 				if(accepted && zone != null) {
 					var snap = this.getSnapPosition(zone,dropPos);
-					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UICustomEvent("dragDrop",{ zone : zone.id}),this);
+					wrapper.control.pushEvent(bh_ui_UIScreenEvent.UICustomEvent("dragDrop",{ zone : zone}),this);
 					if(this.onDragEvent != null) {
 						this.onDragEvent(bh_ui_DragEvent.DragEnd,wrapper.eventPos,wrapper);
 					}
@@ -34986,16 +35014,45 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	}
 	,__class__: bh_ui_UIStandardMultiAnimDropdown
 };
-var bh_ui__$UIMultiAnimGrid_CellEntry = function(coord,result,data,buildName) {
+var bh_ui__$UIMultiAnimGrid_CellEntry = function(coord,visual,data) {
 	this.coord = coord;
-	this.result = result;
+	this.visual = visual;
 	this.data = data;
-	this.buildName = buildName;
 };
 $hxClasses["bh.ui._UIMultiAnimGrid.CellEntry"] = bh_ui__$UIMultiAnimGrid_CellEntry;
 bh_ui__$UIMultiAnimGrid_CellEntry.__name__ = "bh.ui._UIMultiAnimGrid.CellEntry";
 bh_ui__$UIMultiAnimGrid_CellEntry.prototype = {
 	__class__: bh_ui__$UIMultiAnimGrid_CellEntry
+};
+var bh_ui_CellVisual = function() { };
+$hxClasses["bh.ui.CellVisual"] = bh_ui_CellVisual;
+bh_ui_CellVisual.__name__ = "bh.ui.CellVisual";
+bh_ui_CellVisual.__isInterface__ = true;
+bh_ui_CellVisual.prototype = {
+	__class__: bh_ui_CellVisual
+};
+var bh_ui__$UIMultiAnimGrid_DummyCellVisual = function() {
+	this._object = new h2d_Object();
+};
+$hxClasses["bh.ui._UIMultiAnimGrid.DummyCellVisual"] = bh_ui__$UIMultiAnimGrid_DummyCellVisual;
+bh_ui__$UIMultiAnimGrid_DummyCellVisual.__name__ = "bh.ui._UIMultiAnimGrid.DummyCellVisual";
+bh_ui__$UIMultiAnimGrid_DummyCellVisual.__interfaces__ = [bh_ui_CellVisual];
+bh_ui__$UIMultiAnimGrid_DummyCellVisual.prototype = {
+	get_object: function() {
+		return this._object;
+	}
+	,setHighlight: function(value) {
+	}
+	,setStatus: function(value) {
+	}
+	,beginUpdate: function(data) {
+	}
+	,endUpdate: function() {
+	}
+	,getResult: function() {
+		return null;
+	}
+	,__class__: bh_ui__$UIMultiAnimGrid_DummyCellVisual
 };
 var bh_ui__$UIMultiAnimGrid_SwapAnimEntry = function(animPath,object,targetCoord,onComplete) {
 	this.animPath = animPath;
@@ -35022,19 +35079,16 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.hoveredCell = null;
 	this.layerEntries = new haxe_ds_StringMap();
 	this.layerConfigs = new haxe_ds_StringMap();
+	this._cellCount = 0;
 	this.cells = new haxe_ds_StringMap();
 	this.builder = builder;
 	this.gridType = config.gridType;
-	this.defaultBuildName = config.cellBuildName;
-	this.cellBuildDelegate = config.cellBuildDelegate;
-	this.highlightParam = config.highlightParam != null ? config.highlightParam : "highlight";
-	this.highlightDefault = "none";
-	this.highlightDelegate = config.highlightDelegate;
-	this.statusParam = config.statusParam != null ? config.statusParam : "status";
+	this.cellFactory = config.cellVisualFactory;
 	this.snapPathName = config.snapPathName;
 	this.returnPathName = config.returnPathName;
 	this.swapPathName = config.swapPathName;
 	this.swapEnabled = config.swapEnabled != null && config.swapEnabled;
+	this.swapAccepts = config.swapAccepts;
 	this.swapAnimContainer = config.swapAnimContainer;
 	this.swapVisualProvider = config.swapVisualProvider;
 	this.tweenManager = config.tweenManager;
@@ -35044,7 +35098,7 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	_this.x = config.originX != null ? config.originX : 0;
 	_this.posChanged = true;
 	_this.y = config.originY != null ? config.originY : 0;
-	this.instanceId = bh_ui_UIMultiAnimGrid.instanceCounter++;
+	this.cardTargetId = bh_ui_UIMultiAnimGrid.cardTargetCounter++;
 	var _g = this.gridType;
 	switch(_g._hx_index) {
 	case 0:
@@ -35097,13 +35151,55 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		return false;
 	}
 	,resolveHighlightValue: function(cell,accepts) {
-		if(this.highlightDelegate != null) {
-			return this.highlightDelegate(cell,accepts);
+		return this.cellFactory.resolveHighlightValue(cell,accepts);
+	}
+	,applyDragHighlights: function(acceptsFn) {
+		var h = this.cells.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var entry = _g_value;
+			var accepts = acceptsFn(entry.coord);
+			var value = this.resolveHighlightValue(entry.coord,accepts);
+			if(value != this.cellFactory.get_highlightDefault()) {
+				entry.visual.setHighlight(value);
+				this.activeDragHighlightedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
+			}
 		}
-		if(accepts) {
-			return "accept";
+	}
+	,clearDragHighlights: function() {
+		var _g = 0;
+		var _g1 = this.activeDragHighlightedCells;
+		while(_g < _g1.length) {
+			var cell = _g1[_g];
+			++_g;
+			var e = this.cells.h["" + cell.col + "_" + cell.row];
+			if(e != null) {
+				e.visual.setHighlight(this.cellFactory.get_highlightDefault());
+			}
+		}
+		this.activeDragHighlightedCells = [];
+	}
+	,applyCellTargetFeedback: function(coord,highlight,source) {
+		var e = this.cells.h["" + coord.col + "_" + coord.row];
+		if(e != null) {
+			e.visual.beginUpdate();
+			e.visual.setStatus(highlight ? "hover" : "normal");
+			if(!highlight && !this.isCellDragHighlighted(coord.col,coord.row)) {
+				e.visual.setHighlight(this.cellFactory.get_highlightDefault());
+			}
+			e.visual.endUpdate();
+		}
+		if(highlight) {
+			this.emitEvent(bh_ui_GridEvent.CellTargetEnter(coord,source));
 		} else {
-			return "reject";
+			this.emitEvent(bh_ui_GridEvent.CellTargetLeave(coord,source));
 		}
 	}
 	,addCell: function(col,row,data,params) {
@@ -35114,10 +35210,11 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var coord = new bh_ui_CellCoord(col,row);
 		var entry = this.buildCell(coord,data,params);
 		this.cells.h[key] = entry;
-		this.root.add(entry.result.object,0);
+		this._cellCount++;
+		this.root.add(entry.visual.get_object(),0);
 		this.positionCell(entry);
 		if(this.onCellBuilt != null) {
-			this.onCellBuilt(coord,entry.result);
+			this.onCellBuilt(coord,entry.visual);
 		}
 		this.refreshAllDraggableZones();
 		this.refreshAllCardTargets();
@@ -35128,7 +35225,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(entry == null) {
 			return;
 		}
-		var _this = entry.result.object;
+		var _this = entry.visual.get_object();
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
 		}
@@ -35136,6 +35233,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
 			delete(_this.h[key]);
 		}
+		this._cellCount--;
 		this.clearAllLayersOnCell(col,row);
 		if(this.hoveredCell != null && this.hoveredCell.col == col && this.hoveredCell.row == row) {
 			this.hoveredCell = null;
@@ -35179,8 +35277,9 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var entry = this.getEntry(col,row);
 		var oldData = entry.data;
 		entry.data = data;
-		if(params != null) {
-			entry.result.beginUpdate();
+		entry.visual.beginUpdate(data);
+		var result = entry.visual.getResult();
+		if(result != null && params != null) {
 			var h = params.h;
 			var _g_h = h;
 			var _g_keys = Object.keys(h);
@@ -35192,10 +35291,10 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				var _g_value = _g_h[key];
 				var key1 = _g_key;
 				var value = _g_value;
-				entry.result.setParameter(key1,value);
+				result.setParameter(key1,value);
 			}
-			entry.result.endUpdate();
 		}
+		entry.visual.endUpdate();
 		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,data));
 	}
 	,get: function(col,row) {
@@ -35210,11 +35309,51 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var entry = this.getEntry(col,row);
 		var oldData = entry.data;
 		entry.data = null;
-		entry.result.beginUpdate();
-		entry.result.setParameter(this.highlightParam,this.highlightDefault);
-		entry.result.setParameter(this.statusParam,"normal");
-		entry.result.endUpdate();
+		entry.visual.beginUpdate(null);
+		entry.visual.setHighlight(this.cellFactory.get_highlightDefault());
+		entry.visual.setStatus("normal");
+		entry.visual.endUpdate();
 		this.emitEvent(bh_ui_GridEvent.CellDataChanged(entry.coord,oldData,null));
+	}
+	,animateSwapVisual: function(detached,sourceCoord,toScenePos,pathName,onDone) {
+		var animObj;
+		if(this.swapVisualProvider != null) {
+			var custom = this.swapVisualProvider(sourceCoord,detached.data);
+			if(custom != null) {
+				var _this = detached.object;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+				animObj = custom;
+			} else {
+				animObj = detached.object;
+			}
+		} else {
+			animObj = detached.object;
+		}
+		var dx = toScenePos.x - detached.sceneX;
+		var dy = toScenePos.y - detached.sceneY;
+		if(dx * dx + dy * dy < 0.25) {
+			if(animObj != null && animObj.parent != null) {
+				animObj.parent.removeChild(animObj);
+			}
+			onDone();
+			return;
+		}
+		var animParent = this.reparentForSwapAnim(animObj);
+		var localFrom = this.sceneToLocal(animParent,detached.sceneX,detached.sceneY);
+		var localTo = this.sceneToLocal(animParent,toScenePos.x,toScenePos.y);
+		animObj.posChanged = true;
+		animObj.x = localFrom.x;
+		animObj.posChanged = true;
+		animObj.y = localFrom.y;
+		var animPath = this.builder.createAnimatedPath(pathName,bh_paths_PathNormalization.Stretch(localFrom,localTo));
+		this.activeSwapAnims.push(new bh_ui__$UIMultiAnimGrid_SwapAnimEntry(animPath,animObj,sourceCoord,function() {
+			if(animObj != null && animObj.parent != null) {
+				animObj.parent.removeChild(animObj);
+			}
+			onDone();
+		}));
 	}
 	,isOccupied: function(col,row) {
 		var entry = this.cells.h["" + col + "_" + row];
@@ -35240,15 +35379,9 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,setCellParameter: function(col,row,param,value) {
-		var entry = this.getEntry(col,row);
-		entry.result.setParameter(param,value);
-	}
-	,getCellResult: function(col,row) {
-		var entry = this.cells.h["" + col + "_" + row];
-		if(entry != null) {
-			return entry.result;
-		} else {
-			return null;
+		var result = this.getEntry(col,row).visual.getResult();
+		if(result != null) {
+			result.setParameter(param,value);
 		}
 	}
 	,rebuildCell: function(col,row) {
@@ -35257,19 +35390,17 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(oldEntry == null) {
 			throw haxe_Exception.thrown("Cell (" + col + ", " + row + ") does not exist");
 		}
-		var _this = oldEntry.result.object;
+		var _this = oldEntry.visual.get_object();
 		if(_this != null && _this.parent != null) {
 			_this.parent.removeChild(_this);
 		}
 		var newEntry = this.buildCell(oldEntry.coord,oldEntry.data,null);
 		this.cells.h[key] = newEntry;
-		this.root.add(newEntry.result.object,0);
+		this.root.add(newEntry.visual.get_object(),0);
 		this.positionCell(newEntry);
 		if(this.onCellBuilt != null) {
-			this.onCellBuilt(newEntry.coord,newEntry.result);
+			this.onCellBuilt(newEntry.coord,newEntry.visual);
 		}
-		this.refreshAllDraggableZones();
-		this.refreshAllCardTargets();
 	}
 	,removeCellAnimated: function(col,row,duration,properties,easing,onComplete) {
 		var key = "" + col + "_" + row;
@@ -35281,6 +35412,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
 			delete(_this.h[key]);
 		}
+		this._cellCount--;
 		this.clearAllLayersOnCell(col,row);
 		if(this.hoveredCell != null && this.hoveredCell.col == col && this.hoveredCell.row == row) {
 			this.hoveredCell = null;
@@ -35288,7 +35420,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		this.refreshAllDraggableZones();
 		this.refreshAllCardTargets();
 		if(this.tweenManager != null && duration > 0) {
-			var obj = entry.result.object;
+			var obj = entry.visual.get_object();
 			var tween = this.tweenManager.tween(obj,duration,properties,easing);
 			tween.onComplete = function() {
 				if(obj != null && obj.parent != null) {
@@ -35299,7 +35431,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				}
 			};
 		} else {
-			var _this = entry.result.object;
+			var _this = entry.visual.get_object();
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
@@ -35318,7 +35450,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			if(entry == null) {
 				return;
 			}
-			var obj = entry.result.object;
+			var obj = entry.visual.get_object();
 			var tweenProps = [];
 			var _g = 0;
 			while(_g < initProperties.length) {
@@ -35401,7 +35533,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var key = "" + col + "_" + row;
 		var existing = entries.h[key];
 		if(existing != null) {
-			var _this = existing.object;
+			var _this = existing.get_object();
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
@@ -35411,14 +35543,15 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 		var buildParams = params != null ? params : new haxe_ds_StringMap();
 		var result = this.builder.buildWithParameters(config.buildName,buildParams,null,null,true);
-		var obj = result.object;
+		var visual = new bh_ui_DefaultCellVisual(result,"","");
 		var localPos = this.getCellLocalPosition(new bh_ui_CellCoord(col,row));
-		obj.posChanged = true;
-		obj.x = localPos.x;
-		obj.posChanged = true;
-		obj.y = localPos.y;
-		this.root.add(obj,config.zOrder);
-		entries.h[key] = { result : result, object : obj};
+		var _this = visual.result.object;
+		_this.posChanged = true;
+		_this.x = localPos.x;
+		_this.posChanged = true;
+		_this.y = localPos.y;
+		this.root.add(visual.result.object,config.zOrder);
+		entries.h[key] = visual;
 	}
 	,clearLayer: function(col,row,layerName) {
 		var entries = this.layerEntries.h[layerName];
@@ -35426,9 +35559,9 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			return;
 		}
 		var key = "" + col + "_" + row;
-		var entry = entries.h[key];
-		if(entry != null) {
-			var _this = entry.object;
+		var visual = entries.h[key];
+		if(visual != null) {
+			var _this = visual.get_object();
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
@@ -35452,8 +35585,8 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _g_key = key;
 			var _g_value = _g_h[key];
 			var _ = _g_key;
-			var entry = _g_value;
-			var _this = entry.object;
+			var visual = _g_value;
+			var _this = visual.get_object();
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
@@ -35482,8 +35615,8 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				var _g_key1 = key1;
 				var _g_value1 = _g_h1[key1];
 				var _1 = _g_key1;
-				var entry = _g_value1;
-				var _this = entry.object;
+				var visual = _g_value1;
+				var _this = visual.get_object();
 				if(_this != null && _this.parent != null) {
 					_this.parent.removeChild(_this);
 				}
@@ -35506,7 +35639,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var entries = _g_value;
 			var entry = entries.h[key];
 			if(entry != null) {
-				var _this = entry.object;
+				var _this = entry.get_object();
 				if(_this != null && _this.parent != null) {
 					_this.parent.removeChild(_this);
 				}
@@ -35522,11 +35655,11 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(entry == null) {
 			return null;
 		}
-		var obj = entry.result.object;
+		var obj = entry.visual.get_object();
 		var pos = this.cellPosition(col,row);
 		var data = entry.data;
 		bh_base_HeapsUtils_safeDetach(obj);
-		entry.result.object = new h2d_Object();
+		entry.visual = new bh_ui__$UIMultiAnimGrid_DummyCellVisual();
 		return { object : obj, data : data, sceneX : pos.x, sceneY : pos.y};
 	}
 	,cellAtPoint: function(sceneX,sceneY) {
@@ -35646,7 +35779,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			if(this.hoveredCell != null) {
 				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
 				if(entry != null) {
-					entry.result.setParameter(this.statusParam,"normal");
+					entry.visual.setStatus("normal");
 				}
 				this.emitEvent(bh_ui_GridEvent.CellTargetLeave(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
 			}
@@ -35654,7 +35787,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			if(this.hoveredCell != null) {
 				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
 				if(entry != null) {
-					entry.result.setParameter(this.statusParam,"hover");
+					entry.visual.setStatus("hover");
 				}
 				this.emitEvent(bh_ui_GridEvent.CellTargetEnter(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
 			}
@@ -35685,13 +35818,13 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				return;
 			}
 		}
-		var binding = { draggable : draggable, accepts : accepts, zonePrefix : "grid" + this.instanceId};
+		var binding = { draggable : draggable, accepts : accepts};
 		this.registeredDraggables.push(binding);
 		this.createDropZonesForDraggable(binding);
 		this.wireHighlightCallbacks(binding);
 	}
 	,registerAsCardTarget: function(cardHand,accepts) {
-		var binding = { cardHand : cardHand, accepts : accepts, targetPrefix : "grid" + this.instanceId + "ch" + this.cardHandBindingCounter++, eventListener : null};
+		var binding = { cardHand : cardHand, accepts : accepts, targetPrefix : "grid" + this.cardTargetId + "ch" + this.cardHandBindingCounter++, eventListener : null};
 		this.registeredCardHands.push(binding);
 		this.createCardTargetsForBinding(binding);
 	}
@@ -35755,6 +35888,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			_this.parent.removeChild(_this);
 		}
 		this.cells.h = Object.create(null);
+		this._cellCount = 0;
 		this.hoveredCell = null;
 	}
 	,getEntry: function(col,row) {
@@ -35765,84 +35899,16 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		return entry;
 	}
 	,buildCell: function(coord,data,extraParams) {
-		var buildName = this.defaultBuildName;
-		var delegateParams = null;
-		if(this.cellBuildDelegate != null) {
-			var info = this.cellBuildDelegate(coord.col,coord.row,data);
-			if(info != null) {
-				if(info.buildName != null) {
-					buildName = info.buildName;
-				}
-				delegateParams = info.params;
-			}
-		}
-		var params = new haxe_ds_StringMap();
-		params.h["col"] = coord.col;
-		params.h["row"] = coord.row;
-		params.h[this.highlightParam] = this.highlightDefault;
-		params.h[this.statusParam] = "normal";
-		if(delegateParams != null) {
-			var h = delegateParams.h;
-			var _g_h = h;
-			var _g_keys = Object.keys(h);
-			var _g_length = _g_keys.length;
-			var _g_current = 0;
-			while(_g_current < _g_length) {
-				var key = _g_keys[_g_current++];
-				var _g_key = key;
-				var _g_value = _g_h[key];
-				var key1 = _g_key;
-				var value = _g_value;
-				params.h[key1] = value;
-			}
-		}
-		if(extraParams != null) {
-			var h = extraParams.h;
-			var _g_h = h;
-			var _g_keys = Object.keys(h);
-			var _g_length = _g_keys.length;
-			var _g_current = 0;
-			while(_g_current < _g_length) {
-				var key = _g_keys[_g_current++];
-				var _g_key = key;
-				var _g_value = _g_h[key];
-				var key1 = _g_key;
-				var value = _g_value;
-				params.h[key1] = value;
-			}
-		}
-		var result = this.builder.buildWithParameters(buildName,params,null,null,true);
-		return new bh_ui__$UIMultiAnimGrid_CellEntry(coord,result,data,buildName);
+		var visual = this.cellFactory.buildCell(coord,data,extraParams);
+		return new bh_ui__$UIMultiAnimGrid_CellEntry(coord,visual,data);
 	}
 	,positionCell: function(entry) {
-		var _g = this.gridType;
-		switch(_g._hx_index) {
-		case 0:
-			var w = _g.cellWidth;
-			var h = _g.cellHeight;
-			var gap = _g.gap;
-			var g = gap != null ? gap : 0.0;
-			var _this = entry.result.object;
-			_this.posChanged = true;
-			_this.x = entry.coord.col * (w + g);
-			_this.posChanged = true;
-			_this.y = entry.coord.row * (h + g);
-			break;
-		case 1:
-			var _g1 = _g.orientation;
-			var _g1 = _g.sizeX;
-			var _g1 = _g.sizeY;
-			var col = entry.coord.col;
-			var row = entry.coord.row;
-			var hex = new bh_base_Hex(col,row,-col - row);
-			var p = this.hexLayout.hexToPixel(hex);
-			var _this = entry.result.object;
-			_this.posChanged = true;
-			_this.x = p.x;
-			_this.posChanged = true;
-			_this.y = p.y;
-			break;
-		}
+		var p = this.getCellLocalPosition(entry.coord);
+		var _this = entry.visual.get_object();
+		_this.posChanged = true;
+		_this.x = p.x;
+		_this.posChanged = true;
+		_this.y = p.y;
 	}
 	,getCellLocalPosition: function(coord) {
 		var _g = this.gridType;
@@ -35872,10 +35938,11 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var coord = new bh_ui_CellCoord(col,row);
 		var entry = this.buildCell(coord,data,params);
 		this.cells.h[key] = entry;
-		this.root.add(entry.result.object,0);
+		this._cellCount++;
+		this.root.add(entry.visual.get_object(),0);
 		this.positionCell(entry);
 		if(this.onCellBuilt != null) {
-			this.onCellBuilt(coord,entry.result);
+			this.onCellBuilt(coord,entry.visual);
 		}
 	}
 	,hitTestRect: function(localX,localY) {
@@ -35928,7 +35995,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _ = _g_key;
 			var entry = _g_value;
 			var coord = entry.coord;
-			var zoneId = "" + binding.zonePrefix + "_" + coord.col + "_" + coord.row;
+			var zoneId = bh_ui_DropZoneId.GridCell(this,coord.col,coord.row);
 			var cellBounds = this.computeCellBounds(coord);
 			var snapPos = this.cellPosition(coord.col,coord.row);
 			var capturedCoord = [new bh_ui_CellCoord(coord.col,coord.row)];
@@ -35955,26 +36022,13 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				};
 			})(capturedCoord),(function(capturedCoord) {
 				return function(zone,highlight) {
-					var e = _gthis.cells.h["" + capturedCoord[0].col + "_" + capturedCoord[0].row];
-					if(e != null) {
-						e.result.setParameter(_gthis.statusParam,highlight ? "hover" : "normal");
-						if(!highlight) {
-							if(!_gthis.isCellDragHighlighted(capturedCoord[0].col,capturedCoord[0].row)) {
-								e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
-							}
-						}
-					}
-					if(highlight) {
-						_gthis.emitEvent(bh_ui_GridEvent.CellTargetEnter(capturedCoord[0],bh_ui_CellTargetSource.Drag(binding.draggable)));
-					} else {
-						_gthis.emitEvent(bh_ui_GridEvent.CellTargetLeave(capturedCoord[0],bh_ui_CellTargetSource.Drag(binding.draggable)));
-					}
+					_gthis.applyCellTargetFeedback(capturedCoord[0],highlight,bh_ui_CellTargetSource.Drag(binding.draggable));
 				};
 			})(capturedCoord),(function(capturedCoord) {
 				return function(zone,reject) {
 					var e = _gthis.cells.h["" + capturedCoord[0].col + "_" + capturedCoord[0].row];
 					if(e != null) {
-						e.result.setParameter(_gthis.statusParam,reject ? "hover" : "normal");
+						e.visual.setStatus(reject ? "hover" : "normal");
 					}
 				};
 			})(capturedCoord)));
@@ -35987,41 +36041,20 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			if(prevStart != null) {
 				prevStart(zones);
 			}
-			var h = _gthis.cells.h;
-			var _g_h = h;
-			var _g_keys = Object.keys(h);
-			var _g_length = _g_keys.length;
-			var _g_current = 0;
-			while(_g_current < _g_length) {
-				var key = _g_keys[_g_current++];
-				var _g_key = key;
-				var _g_value = _g_h[key];
-				var _ = _g_key;
-				var entry = _g_value;
-				var accepts = binding.accepts == null || binding.accepts(entry.coord,binding.draggable);
-				var value = _gthis.resolveHighlightValue(entry.coord,accepts);
-				if(value != _gthis.highlightDefault) {
-					entry.result.setParameter(_gthis.highlightParam,value);
-					_gthis.activeDragHighlightedCells.push(new bh_ui_CellCoord(entry.coord.col,entry.coord.row));
+			_gthis.applyDragHighlights(function(coord) {
+				if(binding.accepts != null) {
+					return binding.accepts(coord,binding.draggable);
+				} else {
+					return true;
 				}
-			}
+			});
 		};
 		var prevEnd = binding.draggable.onDragEndHighlightZones;
 		binding.draggable.onDragEndHighlightZones = function(zones) {
 			if(prevEnd != null) {
 				prevEnd(zones);
 			}
-			var _g = 0;
-			var _g1 = _gthis.activeDragHighlightedCells;
-			while(_g < _g1.length) {
-				var cell = _g1[_g];
-				++_g;
-				var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
-				if(e != null) {
-					e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
-				}
-			}
-			_gthis.activeDragHighlightedCells = [];
+			_gthis.clearDragHighlights();
 		};
 		var prevDrop = binding.draggable.onDragDrop;
 		binding.draggable.onDragDrop = function(result,wrapper) {
@@ -36029,11 +36062,20 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				return true;
 			}
 			if(result.zone != null) {
-				var coord = _gthis.parseZoneId(result.zone.id,binding.zonePrefix);
+				var coord;
+				var _g = result.zone.id;
+				if(_g._hx_index == 0) {
+					var g = _g.grid;
+					var col = _g.col;
+					var row = _g.row;
+					coord = g == _gthis ? new bh_ui_CellCoord(col,row) : null;
+				} else {
+					coord = null;
+				}
 				if(coord != null) {
 					var srcGrid = ((binding.draggable.sourceGrid) instanceof bh_ui_UIMultiAnimGrid) ? binding.draggable.sourceGrid : null;
 					var srcCell = binding.draggable.sourceCellCoord;
-					if(_gthis.swapEnabled && _gthis.isOccupied(coord.col,coord.row) && srcCell != null) {
+					if(_gthis.swapEnabled && (_gthis.swapAccepts != null ? _gthis.swapAccepts(coord,binding.draggable) : _gthis.isOccupied(coord.col,coord.row))) {
 						return _gthis.handleSwapDrop(binding,coord,srcGrid,srcCell);
 					}
 					var ctx = new bh_ui_DropContext();
@@ -36110,48 +36152,12 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			}
 		};
 		if(detached != null && resolvedSwapPath != null) {
-			var animObj;
-			if(this.swapVisualProvider != null) {
-				var custom = this.swapVisualProvider(targetCoord,displacedData);
-				if(custom != null) {
-					var _this = detached.object;
-					if(_this != null && _this.parent != null) {
-						_this.parent.removeChild(_this);
-					}
-					animObj = custom;
-				} else {
-					animObj = detached.object;
-				}
-			} else {
-				animObj = detached.object;
-			}
 			var sourceScenePos = sourceGrid.cellPosition(srcCell.col,srcCell.row);
-			var dx = sourceScenePos.x - detached.sceneX;
-			var dy = sourceScenePos.y - detached.sceneY;
-			if(dx * dx + dy * dy < 0.25) {
-				if(animObj != null && animObj.parent != null) {
-					animObj.parent.removeChild(animObj);
-				}
+			this.animateSwapVisual(detached,targetCoord,sourceScenePos,resolvedSwapPath,function() {
 				sourceGrid.rebuildCell(srcCell.col,srcCell.row);
 				displacedDone = true;
-			} else {
-				var animParent = this.reparentForSwapAnim(animObj);
-				var localFrom = this.sceneToLocal(animParent,detached.sceneX,detached.sceneY);
-				var localTo = this.sceneToLocal(animParent,sourceScenePos.x,sourceScenePos.y);
-				animObj.posChanged = true;
-				animObj.x = localFrom.x;
-				animObj.posChanged = true;
-				animObj.y = localFrom.y;
-				var animPath = this.builder.createAnimatedPath(resolvedSwapPath,bh_paths_PathNormalization.Stretch(localFrom,localTo));
-				this.activeSwapAnims.push(new bh_ui__$UIMultiAnimGrid_SwapAnimEntry(animPath,animObj,srcCell,function() {
-					if(animObj != null && animObj.parent != null) {
-						animObj.parent.removeChild(animObj);
-					}
-					sourceGrid.rebuildCell(srcCell.col,srcCell.row);
-					displacedDone = true;
-					onBothDone();
-				}));
-			}
+				onBothDone();
+			});
 		} else {
 			if(detached != null) {
 				var _this = detached.object;
@@ -36191,7 +36197,6 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		return true;
 	}
 	,clearZonesForBinding: function(binding) {
-		var prefix = binding.zonePrefix;
 		var h = this.cells.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -36203,8 +36208,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _g_value = _g_h[key];
 			var _ = _g_key;
 			var entry = _g_value;
-			var zoneId = "" + prefix + "_" + entry.coord.col + "_" + entry.coord.row;
-			binding.draggable.removeDropZone(zoneId);
+			binding.draggable.removeDropZone(bh_ui_DropZoneId.GridCell(this,entry.coord.col,entry.coord.row));
 		}
 	}
 	,refreshAllDraggableZones: function() {
@@ -36256,22 +36260,6 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			return b;
 		}
 	}
-	,parseZoneId: function(zoneId,prefix) {
-		if(!StringTools.startsWith(zoneId,prefix + "_")) {
-			return null;
-		}
-		var rest = HxOverrides.substr(zoneId,prefix.length + 1,null);
-		var parts = rest.split("_");
-		if(parts.length != 2) {
-			return null;
-		}
-		var col = Std.parseInt(parts[0]);
-		var row = Std.parseInt(parts[1]);
-		if(col == null || row == null) {
-			return null;
-		}
-		return new bh_ui_CellCoord(col,row);
-	}
 	,createCardTargetsForBinding: function(binding) {
 		var _gthis = this;
 		var prefix = binding.targetPrefix;
@@ -36320,32 +36308,27 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 		if(binding.accepts != null) {
 			var accepts = binding.accepts;
+			var prevAccepts = binding.cardHand.getTargeting().acceptsFilter;
 			binding.cardHand.setTargetAcceptsFilter(function(cardId,targetId,meta) {
 				var coord = _gthis.parseCardTargetId(targetId);
-				if(coord == null) {
+				if(coord != null) {
+					return accepts(coord,cardId);
+				}
+				if(prevAccepts != null) {
+					return prevAccepts(cardId,targetId,meta);
+				} else {
 					return true;
 				}
-				return accepts(coord,cardId);
 			});
 		}
+		var prevHighlight = binding.cardHand.getTargeting().onTargetHighlight;
 		binding.cardHand.setTargetHighlightCallback(function(targetId,highlight,meta) {
+			if(prevHighlight != null) {
+				prevHighlight(targetId,highlight,meta);
+			}
 			var coord = _gthis.parseCardTargetId(targetId);
 			if(coord != null) {
-				var e = _gthis.cells.h["" + coord.col + "_" + coord.row];
-				if(e != null) {
-					e.result.setParameter(_gthis.statusParam,highlight ? "hover" : "normal");
-					if(!highlight) {
-						if(!_gthis.isCellDragHighlighted(coord.col,coord.row)) {
-							e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
-						}
-					}
-				}
-				var cardId = _gthis.activeCardDragId != null ? _gthis.activeCardDragId : "";
-				if(highlight) {
-					_gthis.emitEvent(bh_ui_GridEvent.CellTargetEnter(coord,bh_ui_CellTargetSource.Card(cardId)));
-				} else {
-					_gthis.emitEvent(bh_ui_GridEvent.CellTargetLeave(coord,bh_ui_CellTargetSource.Card(cardId)));
-				}
+				_gthis.applyCellTargetFeedback(coord,highlight,bh_ui_CellTargetSource.Card(_gthis.activeCardDragId != null ? _gthis.activeCardDragId : ""));
 			}
 		});
 		var listener = function(event) {
@@ -36364,39 +36347,17 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			case 4:
 				var cardId = event.cardId;
 				_gthis.activeCardDragId = cardId;
-				var h = _gthis.cells.h;
-				var _g_h = h;
-				var _g_keys = Object.keys(h);
-				var _g_length = _g_keys.length;
-				var _g_current = 0;
-				while(_g_current < _g_length) {
-					var key = _g_keys[_g_current++];
-					var _g_key = key;
-					var _g_value = _g_h[key];
-					var _ = _g_key;
-					var entry = _g_value;
-					var coord = entry.coord;
-					var accepts = binding.accepts == null || binding.accepts(coord,cardId);
-					var value = _gthis.resolveHighlightValue(coord,accepts);
-					if(value != _gthis.highlightDefault) {
-						entry.result.setParameter(_gthis.highlightParam,value);
-						_gthis.activeDragHighlightedCells.push(new bh_ui_CellCoord(coord.col,coord.row));
+				_gthis.applyDragHighlights(function(coord) {
+					if(binding.accepts != null) {
+						return binding.accepts(coord,cardId);
+					} else {
+						return true;
 					}
-				}
+				});
 				break;
 			case 5:
 				var _g = event.cardId;
-				var _g = 0;
-				var _g1 = _gthis.activeDragHighlightedCells;
-				while(_g < _g1.length) {
-					var cell = _g1[_g];
-					++_g;
-					var e = _gthis.cells.h["" + cell.col + "_" + cell.row];
-					if(e != null) {
-						e.result.setParameter(_gthis.highlightParam,_gthis.highlightDefault);
-					}
-				}
-				_gthis.activeDragHighlightedCells = [];
+				_gthis.clearDragHighlights();
 				_gthis.activeCardDragId = null;
 				break;
 			default:
@@ -36474,7 +36435,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,parseCardTargetId: function(targetId) {
-		var gridPrefix = "grid" + this.instanceId + "ch";
+		var gridPrefix = "grid" + this.cardTargetId + "ch";
 		if(!StringTools.startsWith(targetId,gridPrefix)) {
 			return null;
 		}
@@ -36550,6 +36511,120 @@ var bh_ui_GridEvent = $hxEnums["bh.ui.GridEvent"] = { __ename__:true,__construct
 };
 bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellTargetEnter,bh_ui_GridEvent.CellTargetLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellSwap,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
 bh_ui_GridEvent.__empty_constructs__ = [];
+var bh_ui_DefaultCellVisual = function(result,highlightParam,statusParam) {
+	this.result = result;
+	this.highlightParam = highlightParam;
+	this.statusParam = statusParam;
+};
+$hxClasses["bh.ui.DefaultCellVisual"] = bh_ui_DefaultCellVisual;
+bh_ui_DefaultCellVisual.__name__ = "bh.ui.DefaultCellVisual";
+bh_ui_DefaultCellVisual.__interfaces__ = [bh_ui_CellVisual];
+bh_ui_DefaultCellVisual.prototype = {
+	get_object: function() {
+		return this.result.object;
+	}
+	,setHighlight: function(value) {
+		this.result.setParameter(this.highlightParam,value);
+	}
+	,setStatus: function(value) {
+		this.result.setParameter(this.statusParam,value);
+	}
+	,beginUpdate: function(data) {
+		this.result.beginUpdate();
+	}
+	,endUpdate: function() {
+		this.result.endUpdate();
+	}
+	,getResult: function() {
+		return this.result;
+	}
+	,__class__: bh_ui_DefaultCellVisual
+};
+var bh_ui_CellVisualFactory = function() { };
+$hxClasses["bh.ui.CellVisualFactory"] = bh_ui_CellVisualFactory;
+bh_ui_CellVisualFactory.__name__ = "bh.ui.CellVisualFactory";
+bh_ui_CellVisualFactory.__isInterface__ = true;
+bh_ui_CellVisualFactory.prototype = {
+	__class__: bh_ui_CellVisualFactory
+};
+var bh_ui_DefaultCellVisualFactory = function(builder,config) {
+	this.builder = builder;
+	this.defaultBuildName = config.cellBuildName;
+	this.cellBuildDelegate = config.cellBuildDelegate;
+	this._highlightParam = config.highlightParam != null ? config.highlightParam : "highlight";
+	this._highlightDefault = "none";
+	this._statusParam = config.statusParam != null ? config.statusParam : "status";
+	this.highlightDelegate = config.highlightDelegate;
+};
+$hxClasses["bh.ui.DefaultCellVisualFactory"] = bh_ui_DefaultCellVisualFactory;
+bh_ui_DefaultCellVisualFactory.__name__ = "bh.ui.DefaultCellVisualFactory";
+bh_ui_DefaultCellVisualFactory.__interfaces__ = [bh_ui_CellVisualFactory];
+bh_ui_DefaultCellVisualFactory.prototype = {
+	get_highlightDefault: function() {
+		return this._highlightDefault;
+	}
+	,buildCell: function(coord,data,extraParams) {
+		var buildName = this.defaultBuildName;
+		var delegateParams = null;
+		if(this.cellBuildDelegate != null) {
+			var info = this.cellBuildDelegate(coord.col,coord.row,data);
+			if(info != null) {
+				if(info.buildName != null) {
+					buildName = info.buildName;
+				}
+				delegateParams = info.params;
+			}
+		}
+		var params = new haxe_ds_StringMap();
+		params.h["col"] = coord.col;
+		params.h["row"] = coord.row;
+		params.h[this._highlightParam] = this._highlightDefault;
+		params.h[this._statusParam] = "normal";
+		if(delegateParams != null) {
+			var h = delegateParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				params.h[key1] = value;
+			}
+		}
+		if(extraParams != null) {
+			var h = extraParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var key1 = _g_key;
+				var value = _g_value;
+				params.h[key1] = value;
+			}
+		}
+		var result = this.builder.buildWithParameters(buildName,params,null,null,true);
+		return new bh_ui_DefaultCellVisual(result,this._highlightParam,this._statusParam);
+	}
+	,resolveHighlightValue: function(coord,accepts) {
+		if(this.highlightDelegate != null) {
+			return this.highlightDelegate(coord,accepts);
+		}
+		if(accepts) {
+			return "accept";
+		} else {
+			return "reject";
+		}
+	}
+	,__class__: bh_ui_DefaultCellVisualFactory
+};
 var bh_ui_DropContext = function() {
 	this.completeCb = null;
 	this.pathName = null;
@@ -115212,7 +115287,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Grid Component","Swap, DropContext, layers, typed items, source tracking");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/grid-demo.manim",false);
-		var generatedByMacroBuildWithParametersload4886Builder = function() {
+		var generatedByMacroBuildWithParametersload4992Builder = function() {
 			var snapChk;
 			var resetBtn;
 			var remStorBtn;
@@ -115341,7 +115416,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload4886Builder();
+		var ui = generatedByMacroBuildWithParametersload4992Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.drawButton = ui.drawBtn;
@@ -115387,7 +115462,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,setupRectGrid: function() {
 		var _gthis = this;
-		this.rectGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, highlightDelegate : $bind(this,this.rectHighlightDelegate), cellBuildDelegate : $bind(this,this.rectCellBuildDelegate), tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
+		this.rectGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellVisualFactory : new bh_ui_DefaultCellVisualFactory(this.demoBuilder,{ cellBuildName : "rectCell", highlightDelegate : $bind(this,this.rectHighlightDelegate), cellBuildDelegate : $bind(this,this.rectCellBuildDelegate)}), snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
 			if(data != null && data.color != null) {
 				return _gthis.buildItemBlock(data.color);
 			}
@@ -115685,7 +115760,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return false;
 			}
 		};
-		this.hexGrid = this.addGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellBuildName : "hexCell", tweenManager : this.screenManager.tweens});
+		this.hexGrid = this.addGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Hex(bh_base_HexOrientation.POINTY,30,30), cellVisualFactory : new bh_ui_DefaultCellVisualFactory(this.demoBuilder,{ cellBuildName : "hexCell"}), tweenManager : this.screenManager.tweens});
 		this.hexGrid.addHexRegion(0,0,2);
 		this.hexGrid.addLayer("damage",{ buildName : "dmgOverlay", zOrder : 10});
 		this.hexGrid.addLayer("splash",{ buildName : "splashOverlay", zOrder : 5});
@@ -116030,7 +116105,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			++_g;
 			if(this.hexGrid.isOccupied(c.col,c.row)) {
 				this.hexGrid.clear(c.col,c.row);
-				this.hexGrid.getCellResult(c.col,c.row).setParameter("occupied",false);
+				this.hexGrid.setCellParameter(c.col,c.row,"occupied",false);
 			}
 			this.hexGrid.removeCell(c.col,c.row);
 		}
@@ -116060,7 +116135,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		_this.posChanged = true;
 		_this.y = 152.;
 		this.addObjectToLayer(this.g2gContainer,bh_ui_screens_LayersEnum.DefaultLayer);
-		this.storageGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, cellBuildDelegate : $bind(this,this.rectCellBuildDelegate), tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
+		this.storageGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellVisualFactory : new bh_ui_DefaultCellVisualFactory(this.demoBuilder,{ cellBuildName : "rectCell", cellBuildDelegate : $bind(this,this.rectCellBuildDelegate)}), snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
 			if(data != null && data.color != null) {
 				return _gthis.buildItemBlock(data.color);
 			}
@@ -116084,7 +116159,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			_gthis.onG2GEvent(_gthis.storageGrid,e);
 		};
 		this.g2gContainer.addChild(this.storageGrid.getObject());
-		this.loadoutGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellBuildName : "rectCell", snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, cellBuildDelegate : $bind(this,this.rectCellBuildDelegate), tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
+		this.loadoutGrid = this.createGrid(this.demoBuilder,{ gridType : bh_ui_GridType.Rect(52,52,4), cellVisualFactory : new bh_ui_DefaultCellVisualFactory(this.demoBuilder,{ cellBuildName : "rectCell", cellBuildDelegate : $bind(this,this.rectCellBuildDelegate)}), snapPathName : "snapAnim", returnPathName : "returnAnim", swapPathName : "swapAnim", swapEnabled : true, tweenManager : this.screenManager.tweens, swapVisualProvider : function(cell,data) {
 			if(data != null && data.color != null) {
 				return _gthis.buildItemBlock(data.color);
 			}
@@ -116527,7 +116602,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		var _gthis = this;
 		this.setupDemo("Inventory Grid","Shop, inventory & equipment with drag-drop, gold & weight");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/inventory.manim",false);
-		var generatedByMacroBuildWithParametersload2163Builder = function() {
+		var generatedByMacroBuildWithParametersload2209Builder = function() {
 			var resetBtn;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -116546,7 +116621,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload2163Builder();
+		var ui = generatedByMacroBuildWithParametersload2209Builder();
 		this.demoResult = ui.builderResults;
 		this.resetButton = ui.resetBtn;
 		this.addBuilderResult(this.demoResult);
@@ -116762,10 +116837,36 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		return slot.container.localToGlobal(new h2d_col_PointImpl(x,y));
 	}
 	,isEquipZone: function(zoneId) {
-		return StringTools.startsWith(zoneId,"equip_");
+		if(zoneId._hx_index == 1) {
+			var _g = zoneId.index;
+			if(zoneId.baseName == "equip") {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 	,zoneIdx: function(zoneId) {
-		return Std.parseInt(zoneId.split("_").pop());
+		switch(zoneId._hx_index) {
+		case 1:
+			var _g = zoneId.baseName;
+			var idx = zoneId.index;
+			if(idx != null) {
+				return idx;
+			} else {
+				return 0;
+			}
+			break;
+		case 2:
+			var _g = zoneId.baseName;
+			var _g = zoneId.indexY;
+			var x = zoneId.indexX;
+			return x;
+		default:
+			return 0;
+		}
 	}
 	,rebuildAllDraggables: function() {
 		var _g = 0;
@@ -117029,7 +117130,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		var drag = this.makeDraggable(content);
 		this.addDropZones(drag,itemKey);
 		this.setupZoneHighlighting(drag,itemKey);
-		var srcZoneId = "equip_" + eqIdx;
+		var srcZoneId = bh_ui_DropZoneId.SlotZone("equip",eqIdx);
 		var srcAccepts = screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS[eqIdx];
 		drag.onDragDrop = function(result,wrapper) {
 			if(result.zone == null) {
@@ -117044,7 +117145,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return false;
 			}
 			if(_gthis.isEquipZone(result.zone.id)) {
-				if(result.zone.id == srcZoneId) {
+				if(Type.enumEq(result.zone.id,srcZoneId)) {
 					return false;
 				}
 				if(tgtSlot.isOccupied()) {
@@ -118057,7 +118158,7 @@ screens_graphics_NinepatchDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		b.yMin = 0;
 		b.xMax = 2000;
 		b.yMax = 2000;
-		tmp.addDropZone(new bh_ui_DropZone("resize",b,null,null,null,null,null,null,function() {
+		tmp.addDropZone(new bh_ui_DropZone(bh_ui_DropZoneId.Named("resize"),b,null,null,null,null,null,null,function() {
 			var snappedW = (_gthis.panelWidth / 30 + 0.5 | 0) * 30;
 			var snappedH = (_gthis.panelHeight / 30 + 0.5 | 0) * 30;
 			var x = 500 + snappedW - 12;
@@ -120224,7 +120325,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var _gthis = this;
 		this.setupDemo("Draggable","All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/ui/draggable.manim",false);
-		var generatedByMacroBuildWithParametersload1009Builder = function() {
+		var generatedByMacroBuildWithParametersload1106Builder = function() {
 			var disableCheckbox;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -120243,7 +120344,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1009Builder();
+		var ui = generatedByMacroBuildWithParametersload1106Builder();
 		this.demoResult = ui.builderResults;
 		this.disableCheckbox = ui.disableCheckbox;
 		this.addBuilderResult(this.demoResult);
@@ -120264,13 +120365,13 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		b.yMin = 140;
 		b.xMax = 170;
 		b.yMax = 260;
-		drag.addDropZone(new bh_ui_DropZone("zone1",b,null,90,180,null,null,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone(bh_ui_DropZoneId.Named("zone1"),b,null,90,180,null,null,null,null,null,null));
 		var b = new h2d_col_Bounds();
 		b.xMin = 200;
 		b.yMin = 140;
 		b.xMax = 320;
 		b.yMax = 260;
-		drag.addDropZone(new bh_ui_DropZone("zone2",b,null,240,180,null,null,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone(bh_ui_DropZoneId.Named("zone2"),b,null,240,180,null,null,null,null,null,null));
 		drag.onDragEvent = function(event,pos,wrapper) {
 			switch(event._hx_index) {
 			case 0:
@@ -120284,11 +120385,11 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				break;
 			case 5:
 				var zone = event.zone;
-				_gthis.updateEventText("ZoneEnter: " + zone.id);
+				_gthis.updateEventText("ZoneEnter: " + bh_ui_DropZoneIdTools.format(zone.id));
 				break;
 			case 6:
 				var zone = event.zone;
-				_gthis.updateEventText("ZoneLeave: " + zone.id);
+				_gthis.updateEventText("ZoneLeave: " + bh_ui_DropZoneIdTools.format(zone.id));
 				break;
 			default:
 			}
@@ -120335,13 +120436,13 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		b.yMin = 450;
 		b.xMax = 230;
 		b.yMax = 570;
-		drag.addDropZone(new bh_ui_DropZone("outer-low",b,null,190,500,null,0,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone(bh_ui_DropZoneId.Named("outer-low"),b,null,190,500,null,0,null,null,null,null));
 		var b = new h2d_col_Bounds();
 		b.xMin = 100;
 		b.yMin = 470;
 		b.xMax = 180;
 		b.yMax = 550;
-		drag.addDropZone(new bh_ui_DropZone("inner-high",b,null,120,490,null,10,null,null,null,null));
+		drag.addDropZone(new bh_ui_DropZone(bh_ui_DropZoneId.Named("inner-high"),b,null,120,490,null,10,null,null,null,null));
 		drag.onDragEvent = function(event,pos,wrapper) {
 			switch(event._hx_index) {
 			case 2:
@@ -120349,11 +120450,11 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				break;
 			case 5:
 				var zone = event.zone;
-				_gthis.updateEventText("Priority enter: " + zone.id);
+				_gthis.updateEventText("Priority enter: " + bh_ui_DropZoneIdTools.format(zone.id));
 				break;
 			case 6:
 				var zone = event.zone;
-				_gthis.updateEventText("Priority leave: " + zone.id);
+				_gthis.updateEventText("Priority leave: " + bh_ui_DropZoneIdTools.format(zone.id));
 				break;
 			default:
 			}
@@ -122132,7 +122233,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	return $r;
 }(this));
 bh_ui_UIInteractiveWrapper.VALID_CURSOR_SUFFIXES = ["hover","disabled"];
-bh_ui_UIMultiAnimGrid.instanceCounter = 0;
+bh_ui_UIMultiAnimGrid.cardTargetCounter = 0;
 h2d_Flow.PADDING_IGNORE_PARENT = -2147483444;
 h2d_HtmlText.REG_SPACES = new EReg("[\r\n\t ]+","g");
 h3d_impl_RenderContext.STRICT = true;

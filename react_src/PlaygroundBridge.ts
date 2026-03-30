@@ -78,6 +78,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'statusEffects', displayName: 'Status Effects', category: 'Game-Like Demos', manimFile: 'demos/gamelike/status-effects.manim' },
             { name: 'cards', displayName: 'Cards', category: 'Game-Like Demos', manimFile: 'demos/gamelike/cards-demo.manim' },
             { name: 'gridComponent', displayName: 'Grid Component', category: 'Game-Like Demos', manimFile: 'demos/gamelike/grid-demo.manim' },
+            { name: 'projectList', displayName: 'Project List', category: 'Game-Like Demos', manimFile: 'demos/gamelike/project-list.manim' },
         ]
     }
 ];

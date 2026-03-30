@@ -1,0 +1,124 @@
+version: 1.0
+
+// Project List Demo
+// Demonstrates scrollable list with custom multi-field items, multiple base states,
+// per-item params, dynamic updates via setItems(), and scrollToIndex().
+
+// Custom item template: 60px tall with title, description, cost, duration, effect
+#project-list-item programmable(status:[normal, hover, pressed, active, completed, disabled]=normal, selected:[true, false]=false, disabled:[true, false]=false, baseState:[normal, active, completed, disabled]=normal, showEffect:[true, false]=false, showDone:[true, false]=false, images:[none, tile]=none, tile:tile, itemWidth:uint=280, index:uint=0, title="Project", description="No description", cost="0g", duration="1 yr", effect="") {
+
+    // Backgrounds: use baseState (not status) so hover/pressed don't change the background
+    @(baseState=>disabled) ninepatch("ui", "droppanel-mid-disabled", $itemWidth+4, 60): -2, 0
+    @else(baseState=>active) bitmap(generated(color($itemWidth+4, 60, #1a2a4e))): -2, 0
+    @else(baseState=>completed) bitmap(generated(color($itemWidth+4, 60, #1a3e1a))): -2, 0
+    @else ninepatch("ui", "droppanel-mid-idle", $itemWidth+4, 60): -2, 0
+
+    // Hover: non-filled box outline (1px border)
+    @(status=>hover) bitmap(generated(color($itemWidth, 1, #FFFFFF))): 0, 0
+    @(status=>hover) bitmap(generated(color($itemWidth, 1, #FFFFFF))): 0, 59
+    @(status=>hover) bitmap(generated(color(1, 60, #FFFFFF))): 0, 0
+    @(status=>hover) bitmap(generated(color(1, 60, #FFFFFF))): $itemWidth - 1, 0
+
+    // Pressed: non-filled box outline (1px border, dimmer)
+    @(status=>pressed) bitmap(generated(color($itemWidth, 1, #888888))): 0, 0
+    @(status=>pressed) bitmap(generated(color($itemWidth, 1, #888888))): 0, 59
+    @(status=>pressed) bitmap(generated(color(1, 60, #888888))): 0, 0
+    @(status=>pressed) bitmap(generated(color(1, 60, #888888))): $itemWidth - 1, 0
+
+    // Status indicator bar (left edge): use baseState
+    @(baseState=>active) bitmap(generated(color(3, 56, #4488FF))): 0, 2
+    @else(baseState=>completed) bitmap(generated(color(3, 56, #44CC44))): 0, 2
+    @else(baseState=>disabled) bitmap(generated(color(3, 56, #444444))): 0, 2
+    @else bitmap(generated(color(3, 56, #666666))): 0, 2
+
+    // Selected: white 25% alpha overlay in front of everything + ">" indicator
+    @(selected=>true) bitmap(generated(color($itemWidth, 60, #FFFFFF))) { pos: 0, 0; alpha: 0.25 }
+    @(selected=>true) text(m6x11, ">", #FFFFFF): 5, 24
+
+    // Icon
+    @(images=>tile) bitmap($tile): 6, 6
+
+    // Title (top-left)
+    text(m6x11, $title, #FFFFFF, left, $itemWidth - 80): 24, 5
+
+    // Cost + Duration (top-right)
+    text(m5x7, $cost, #FFD700, right, 50): $itemWidth - 55, 5
+    text(m5x7, $duration, #AAAAAA, right, 50): $itemWidth - 55, 16
+
+    // Description (middle)
+    text(m5x7, $description, #888888, left, $itemWidth - 30): 24, 22
+
+    // Effect (bottom, shown for active/completed - decoupled from status so hover doesn't hide it)
+    @(showEffect=>true) text(m5x7, $effect, #4488FF, left, $itemWidth - 30): 24, 40
+
+    // Completed indicator
+    @(showDone=>true) text(m5x7, "[DONE]", #44CC44, right, 50): $itemWidth - 55, 46
+
+    interactive($itemWidth, 60, $index);
+    settings{height:float=>60}
+}
+
+// Demo layout
+#projectListDemo programmable() {
+    pos: 50, 80
+
+    text(exo2_16, "Project List Demo", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Custom items with base states, params, and dynamic updates", #aaaaaa): 0, 28
+
+    // Scrollable list
+    placeholder(generated(cross(280, 360, #FF0000)), builderParameter("scrollableList")) {
+        pos: 0, 55
+        settings{panelBuildName=>list-panel, height:int=>360, width:int=>280, clickMode=>single}
+    }
+
+    // Detail panel
+    text(exo2_16, "Project Details", #7fdbda): 310, 55
+    bitmap(generated(color(380, 1, #7fdbda33))): 310, 77
+    ninepatch("ui", "Window_3x3_idle", 380, 200): 310, 85
+
+    #detailTitle(updatable) text(exo2_20, "Select a project", #ffffff, left, 360): 325, 100
+    #detailStatus(updatable) text(exo2_light_14, "Status: --", #aaaaaa, left, 360): 325, 125
+    #detailCost(updatable) text(exo2_light_14, "Cost: --", #FFD700, left, 170): 325, 145
+    #detailDuration(updatable) text(exo2_light_14, "Duration: --", #aaaaaa, left, 170): 505, 145
+    #detailDesc(updatable) text(exo2_light_14, "...", #cccccc, left, 350): 325, 170
+    #detailEffect(updatable) text(exo2_light_14, "", #4488FF, left, 350): 325, 195
+
+    // Action buttons
+    text(exo2_16, "Actions", #7fdbda): 310, 300
+    bitmap(generated(color(380, 1, #7fdbda33))): 310, 322
+
+    placeholder(generated(cross(150, 30, #FF0000)), builderParameter("startBtn")) {
+        pos: 310, 340
+        settings{width:int=>150, height:int=>30}
+    }
+
+    placeholder(generated(cross(150, 30, #FF0000)), builderParameter("completeBtn")) {
+        pos: 490, 340
+        settings{width:int=>150, height:int=>30}
+    }
+
+    placeholder(generated(cross(150, 30, #FF0000)), builderParameter("resetBtn")) {
+        pos: 310, 370
+        settings{width:int=>150, height:int=>30}
+    }
+
+    placeholder(generated(cross(150, 30, #FF0000)), builderParameter("scrollToBtn")) {
+        pos: 490, 370
+        settings{width:int=>150, height:int=>30}
+    }
+
+    // Log
+    #logText(updatable) text(exo2_light_14, "Click a project to view details.", #666666): 0, 430
+
+    // Legend
+    text(m5x7, "Legend:", #888888): 0, 450
+    bitmap(generated(color(3, 10, #666666))): 50, 451
+    text(m5x7, "Normal", #888888): 58, 450
+    bitmap(generated(color(3, 10, #4488FF))): 105, 451
+    text(m5x7, "Active", #4488FF): 113, 450
+    bitmap(generated(color(3, 10, #44CC44))): 155, 451
+    text(m5x7, "Complete", #44CC44): 163, 450
+    bitmap(generated(color(3, 10, #444444))): 215, 451
+    text(m5x7, "Disabled", #888888): 223, 450
+}

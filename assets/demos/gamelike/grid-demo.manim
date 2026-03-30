@@ -93,7 +93,7 @@ paths {
     @(highlight=>expensive)  text(m3x6, "$", #CCAA22, center, 52): 0, 36
     @(highlight=>locked)     graphics(rect(#666666, 1.0, 12, 10); rect(#666666, filled, 16, 12)): 20, 14
     @(highlight=>locked)     text(m3x6, "X", #666666, center, 52): 0, 36
-    @(highlight=>swap)       text(m3x6, "<>", #44AAFF, center, 52): 0, 36
+    @(highlight=>swap)       text(m3x6, "<swap>", #44AAFF, center, 52): 0, 36
     @(status=>hover)         apply { filter: glow(#FFFF00, 0.3, 4) }
     // Item type icons
     @(itemType=>weapon)  graphics(polygon(#AAAACC, filled, 26, 4, 30, 18, 26, 48, 22, 18)): 0, 0

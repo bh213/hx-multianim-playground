@@ -6734,6 +6734,19 @@ bh_base_Tween.prototype = {
 		}
 		return this.elapsed >= this.duration;
 	}
+	,finish: function() {
+		if(!this.initialized) {
+			this.init();
+		}
+		var _g = 0;
+		var _g1 = this.entries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			this.setPropertyValue(entry.kind,entry.to);
+		}
+		this.elapsed = this.duration;
+	}
 	,getPropertyValue: function(kind) {
 		switch(kind._hx_index) {
 		case 0:
@@ -11831,6 +11844,7 @@ bh_multianim_MacroManimParser.prototype = {
 			this.activeDefs = null;
 			this.scopeVars = null;
 			this.namedElements = null;
+			this.namedCoordSystems = null;
 		}
 		var layerIndex = -1;
 		var alpha = null;
@@ -28781,7 +28795,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 3 < b ? b : 3;
 			var _g1 = [];
 			var _g2 = 0;
-			var _g3 = steps;
+			var _g3 = steps + 1;
 			while(_g2 < _g3) {
 				var i = _g2++;
 				_g1.push(this.getPoint(1.0 * i / steps));
@@ -28795,7 +28809,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 8 < b ? b : 8;
 			var _g1 = [];
 			var _g2 = 0;
-			var _g3 = steps;
+			var _g3 = steps + 1;
 			while(_g2 < _g3) {
 				var i = _g2++;
 				_g1.push(this.getPoint(1.0 * i / steps));
@@ -28810,7 +28824,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 12 < b ? b : 12;
 			var _g1 = [];
 			var _g2 = 0;
-			var _g3 = steps;
+			var _g3 = steps + 1;
 			while(_g2 < _g3) {
 				var i = _g2++;
 				_g1.push(this.getPoint(1.0 * i / steps));
@@ -28826,7 +28840,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 8 < b ? b : 8;
 			var _g1 = [];
 			var _g2 = 0;
-			var _g3 = steps;
+			var _g3 = steps + 1;
 			while(_g2 < _g3) {
 				var i = _g2++;
 				_g1.push(this.getPoint(1.0 * i / steps));
@@ -28841,7 +28855,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 12 < b ? b : 12;
 			var _g = [];
 			var _g1 = 0;
-			var _g2 = steps;
+			var _g2 = steps + 1;
 			while(_g1 < _g2) {
 				var i = _g1++;
 				_g.push(this.getPoint(1.0 * i / steps));
@@ -28852,7 +28866,7 @@ bh_paths_SinglePath.prototype = {
 			var steps = 2 < b ? b : 2;
 			var _g = [];
 			var _g1 = 0;
-			var _g2 = steps;
+			var _g2 = steps + 1;
 			while(_g1 < _g2) {
 				var i = _g1++;
 				_g.push(this.getPoint(1.0 * i / steps));
@@ -32540,6 +32554,9 @@ bh_ui_UICardHandHelper.prototype = {
 		return entry;
 	}
 	,clearHand: function() {
+		if(this.isTargeting && this.hideCursorWhileTargeting) {
+			hxd_System.setCursor(hxd_Cursor.Default);
+		}
 		var _g = 0;
 		var _g1 = this.cards;
 		while(_g < _g1.length) {
@@ -35690,6 +35707,15 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.cardTargetWrappers = new haxe_ds_StringMap();
 	this.cardTargetInteractives = new haxe_ds_StringMap();
 	this.registeredCardHands = [];
+	this.linkedGrids = [];
+	this.cellDragHoverCoord = null;
+	this.cellDragHoverGrid = null;
+	this.cellDragSourceData = null;
+	this.cellDragSourceCoord = null;
+	this.cellDragOffsetY = 0;
+	this.cellDragOffsetX = 0;
+	this.cellDragParent = null;
+	this.cellDragObj = null;
 	this.activeDragHighlightedCells = [];
 	this.registeredDraggables = [];
 	this.hoveredCell = null;
@@ -35708,6 +35734,10 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.swapAnimContainer = config.swapAnimContainer;
 	this.swapVisualProvider = config.swapVisualProvider;
 	this.tweenManager = config.tweenManager;
+	this.cellDragEnabled = config.cellDragEnabled != null && config.cellDragEnabled;
+	this.cellDragFilter = config.cellDragFilter;
+	this.cellDragContainer = config.cellDragContainer;
+	this.rectOrigin = config.rectOrigin != null ? config.rectOrigin : bh_ui_RectOrigin.TopLeft;
 	this.root = new h2d_Layers();
 	var _this = this.root;
 	_this.posChanged = true;
@@ -36265,6 +36295,22 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			}
 		}
 	}
+	,detachCellVisual: function(col,row) {
+		var key = "" + col + "_" + row;
+		var entry = this.cells.h[key];
+		if(entry == null) {
+			return null;
+		}
+		var obj = entry.visual.get_object();
+		var pos = this.cellPosition(col,row);
+		var data = entry.data;
+		bh_base_HeapsUtils_safeDetach(obj);
+		var freshEntry = this.buildCell(entry.coord,entry.data,null);
+		this.cells.h[key] = freshEntry;
+		this.root.add(freshEntry.visual.get_object(),0);
+		this.positionCell(freshEntry);
+		return { object : obj, data : data, sceneX : pos.x, sceneY : pos.y};
+	}
 	,detachCellVisualRaw: function(col,row) {
 		var key = "" + col + "_" + row;
 		var entry = this.cells.h[key];
@@ -36390,6 +36436,10 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,onMouseMove: function(sceneX,sceneY) {
+		if(this.cellDragObj != null) {
+			this.cellDragUpdateMove(sceneX,sceneY);
+			return true;
+		}
 		var hit = this.cellAtPoint(sceneX,sceneY);
 		if(!bh_ui_UIMultiAnimGrid.cellCoordsEqual(hit,this.hoveredCell)) {
 			if(this.hoveredCell != null) {
@@ -36413,16 +36463,317 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	,onMouseClick: function(sceneX,sceneY,button) {
 		var hit = this.cellAtPoint(sceneX,sceneY);
 		if(hit != null) {
+			if(this.cellDragEnabled && button == 0 && this.cellDragObj == null) {
+				var entry = this.cells.h["" + hit.col + "_" + hit.row];
+				if(entry != null && entry.data != null) {
+					var canDrag = this.cellDragFilter == null || this.cellDragFilter(hit.col,hit.row,entry.data);
+					if(canDrag) {
+						this.cellDragStart(hit,sceneX,sceneY);
+						return true;
+					}
+				}
+			}
 			this.emitEvent(bh_ui_GridEvent.CellClick(hit,button));
 			return true;
 		}
 		return false;
 	}
 	,onMouseRelease: function(sceneX,sceneY) {
+		if(this.cellDragObj != null) {
+			this.cellDragRelease(sceneX,sceneY);
+			return true;
+		}
 		return false;
 	}
 	,handleScreenEvent: function(event) {
 		return false;
+	}
+	,cellDragStart: function(coord,sceneX,sceneY) {
+		var entry = this.getEntry(coord.col,coord.row);
+		var detached = this.detachCellVisual(coord.col,coord.row);
+		if(detached == null) {
+			return;
+		}
+		this.cellDragSourceCoord = new bh_ui_CellCoord(coord.col,coord.row);
+		this.cellDragSourceData = entry.data;
+		this.cellDragObj = detached.object;
+		this.cellDragParent = this.cellDragContainer != null ? this.cellDragContainer : this.root;
+		if(this.cellDragContainer != null) {
+			this.cellDragContainer.addChild(this.cellDragObj);
+		} else {
+			this.root.add(this.cellDragObj,999);
+		}
+		var parentPos = this.sceneToLocal(this.cellDragParent,detached.sceneX,detached.sceneY);
+		var _this = this.cellDragObj;
+		_this.posChanged = true;
+		_this.x = parentPos.x;
+		_this.posChanged = true;
+		_this.y = parentPos.y;
+		var cursorLocal = this.sceneToLocal(this.cellDragParent,sceneX,sceneY);
+		this.cellDragOffsetX = parentPos.x - cursorLocal.x;
+		this.cellDragOffsetY = parentPos.y - cursorLocal.y;
+		this.applyDragHighlights(function(c) {
+			return !(c.col == coord.col && c.row == coord.row);
+		});
+		var _g = 0;
+		var _g1 = this.linkedGrids;
+		while(_g < _g1.length) {
+			var link = [_g1[_g]];
+			++_g;
+			link[0].target.applyDragHighlights((function(link) {
+				return function(c) {
+					if(link[0].accepts != null) {
+						return link[0].accepts(c,coord,entry.data);
+					}
+					return true;
+				};
+			})(link));
+		}
+		var carrier = this.cellDragMakeCarrier();
+		this.emitEvent(bh_ui_GridEvent.CellDragStart(coord,carrier));
+	}
+	,cellDragUpdateMove: function(sceneX,sceneY) {
+		if(this.cellDragObj == null || this.cellDragParent == null) {
+			return;
+		}
+		var cursorLocal = this.sceneToLocal(this.cellDragParent,sceneX,sceneY);
+		var _this = this.cellDragObj;
+		_this.posChanged = true;
+		_this.x = cursorLocal.x + this.cellDragOffsetX;
+		_this.posChanged = true;
+		_this.y = cursorLocal.y + this.cellDragOffsetY;
+		var hit = this.cellDragFindTarget(sceneX,sceneY);
+		var hitGrid = hit != null ? hit.grid : null;
+		var hitCoord = hit != null ? hit.coord : null;
+		if(!bh_ui_UIMultiAnimGrid.cellCoordsEqual(hitCoord,this.cellDragHoverCoord) || hitGrid != this.cellDragHoverGrid) {
+			if(this.cellDragHoverCoord != null && this.cellDragHoverGrid != null) {
+				var g = this.cellDragHoverGrid;
+				var e = g.cells.h["" + this.cellDragHoverCoord.col + "_" + this.cellDragHoverCoord.row];
+				if(e != null) {
+					e.visual.setStatus("normal");
+				}
+			}
+			this.cellDragHoverGrid = hitGrid;
+			this.cellDragHoverCoord = hitCoord;
+			if(this.cellDragHoverCoord != null && this.cellDragHoverGrid != null) {
+				var g = this.cellDragHoverGrid;
+				var e = g.cells.h["" + this.cellDragHoverCoord.col + "_" + this.cellDragHoverCoord.row];
+				if(e != null) {
+					e.visual.setStatus("hover");
+				}
+			}
+		}
+	}
+	,cellDragFindTarget: function(sceneX,sceneY) {
+		var selfHit = this.cellAtPoint(sceneX,sceneY);
+		if(selfHit != null && this.cellDragSourceCoord != null && !(selfHit.col == this.cellDragSourceCoord.col && selfHit.row == this.cellDragSourceCoord.row)) {
+			return { grid : this, coord : selfHit};
+		}
+		var _g = 0;
+		var _g1 = this.linkedGrids;
+		while(_g < _g1.length) {
+			var link = _g1[_g];
+			++_g;
+			var hit = link.target.cellAtPoint(sceneX,sceneY);
+			if(hit != null) {
+				if(link.accepts != null && !link.accepts(hit,this.cellDragSourceCoord,this.cellDragSourceData)) {
+					continue;
+				}
+				return { grid : link.target, coord : hit};
+			}
+		}
+		return null;
+	}
+	,cellDragRelease: function(sceneX,sceneY) {
+		if(this.cellDragObj == null) {
+			return;
+		}
+		if(this.cellDragHoverCoord != null && this.cellDragHoverGrid != null) {
+			var g = this.cellDragHoverGrid;
+			var e = g.cells.h["" + this.cellDragHoverCoord.col + "_" + this.cellDragHoverCoord.row];
+			if(e != null) {
+				e.visual.setStatus("normal");
+			}
+		}
+		this.clearDragHighlights();
+		var _g = 0;
+		var _g1 = this.linkedGrids;
+		while(_g < _g1.length) {
+			var link = _g1[_g];
+			++_g;
+			link.target.clearDragHighlights();
+		}
+		var hit = this.cellDragFindTarget(sceneX,sceneY);
+		if(hit != null) {
+			var targetGrid = hit.grid;
+			var targetCoord = hit.coord;
+			var srcCoord = this.cellDragSourceCoord;
+			if(targetGrid.swapEnabled && targetGrid.isOccupied(targetCoord.col,targetCoord.row)) {
+				this.cellDragHandleSwap(targetGrid,targetCoord);
+				return;
+			}
+			this.cellDragHandleDrop(targetGrid,targetCoord);
+		} else {
+			this.cellDragReturnToSource();
+		}
+	}
+	,cellDragHandleDrop: function(targetGrid,targetCoord) {
+		var _gthis = this;
+		var carrier = this.cellDragMakeCarrier();
+		var ctx = new bh_ui_DropContext();
+		targetGrid.emitEvent(bh_ui_GridEvent.CellDrop(targetCoord,carrier,this,this.cellDragSourceCoord,ctx));
+		if(ctx.handled && !ctx.accepted) {
+			this.cellDragReturnToSource(ctx.pathName,ctx.completeCb);
+			return;
+		}
+		var resolvedPath = ctx.handled && ctx.pathName != null ? ctx.pathName : this.snapPathName;
+		var targetScenePos = targetGrid.cellPosition(targetCoord.col,targetCoord.row);
+		this.cellDragSnapTo(targetScenePos,resolvedPath,function() {
+			_gthis.cellDragRemoveObj();
+			if(ctx.completeCb != null) {
+				ctx.completeCb();
+			}
+			_gthis.cellDragFinish();
+		});
+	}
+	,cellDragHandleSwap: function(targetGrid,targetCoord) {
+		var _gthis = this;
+		var srcCoord = this.cellDragSourceCoord;
+		if(srcCoord == null) {
+			return;
+		}
+		var ctx = new bh_ui_SwapContext(false);
+		targetGrid.emitEvent(bh_ui_GridEvent.CellSwap(srcCoord,targetCoord,null,ctx));
+		if(ctx.handled && !ctx.accepted) {
+			this.cellDragReturnToSource();
+			return;
+		}
+		var resolvedSnapPath = ctx.snapPath != null ? ctx.snapPath : this.snapPathName;
+		var resolvedSwapPath = ctx.swapPath != null ? ctx.swapPath : targetGrid.swapPathName != null ? targetGrid.swapPathName : targetGrid.returnPathName;
+		var displacedData = targetGrid.get(targetCoord.col,targetCoord.row);
+		var dragPayload = this.cellDragSourceData;
+		var detached = targetGrid.detachCellVisualRaw(targetCoord.col,targetCoord.row);
+		targetGrid.set(targetCoord.col,targetCoord.row,dragPayload);
+		this.set(srcCoord.col,srcCoord.row,displacedData);
+		targetGrid.rebuildCell(targetCoord.col,targetCoord.row);
+		var displacedDone = false;
+		var snapDone = false;
+		var onBothDone = function() {
+			if(displacedDone && snapDone && ctx.completeCb != null) {
+				ctx.completeCb();
+			}
+		};
+		if(detached != null && resolvedSwapPath != null) {
+			var sourceScenePos = this.cellPosition(srcCoord.col,srcCoord.row);
+			targetGrid.animateSwapVisual(detached,targetCoord,sourceScenePos,resolvedSwapPath,function() {
+				_gthis.rebuildCell(srcCoord.col,srcCoord.row);
+				displacedDone = true;
+				onBothDone();
+			});
+		} else {
+			if(detached != null) {
+				var _this = detached.object;
+				if(_this != null && _this.parent != null) {
+					_this.parent.removeChild(_this);
+				}
+			}
+			this.rebuildCell(srcCoord.col,srcCoord.row);
+			displacedDone = true;
+		}
+		var targetScenePos = targetGrid.cellPosition(targetCoord.col,targetCoord.row);
+		this.cellDragSnapTo(targetScenePos,resolvedSnapPath,function() {
+			_gthis.cellDragRemoveObj();
+			if(ctx.snapCompleteCb != null) {
+				ctx.snapCompleteCb();
+			}
+			snapDone = true;
+			onBothDone();
+			_gthis.cellDragFinish();
+		});
+	}
+	,cellDragSnapTo: function(targetScenePos,pathName,onDone) {
+		if(this.cellDragObj == null || this.cellDragParent == null) {
+			onDone();
+			return;
+		}
+		if(pathName == null) {
+			var localTo = this.sceneToLocal(this.cellDragParent,targetScenePos.x,targetScenePos.y);
+			var _this = this.cellDragObj;
+			_this.posChanged = true;
+			_this.x = localTo.x;
+			_this.posChanged = true;
+			_this.y = localTo.y;
+			onDone();
+			return;
+		}
+		var localFrom = new bh_base_FPoint(this.cellDragObj.x,this.cellDragObj.y);
+		var localTo = this.sceneToLocal(this.cellDragParent,targetScenePos.x,targetScenePos.y);
+		var dx = localTo.x - localFrom.x;
+		var dy = localTo.y - localFrom.y;
+		if(dx * dx + dy * dy < 0.25) {
+			var _this = this.cellDragObj;
+			_this.posChanged = true;
+			_this.x = localTo.x;
+			_this.posChanged = true;
+			_this.y = localTo.y;
+			onDone();
+			return;
+		}
+		var animPath = this.builder.createAnimatedPath(pathName,bh_paths_PathNormalization.Stretch(localFrom,localTo));
+		this.activeSwapAnims.push(new bh_ui__$UIMultiAnimGrid_SwapAnimEntry(animPath,this.cellDragObj,this.cellDragSourceCoord,onDone));
+	}
+	,cellDragReturnToSource: function(customPath,onComplete) {
+		var _gthis = this;
+		if(this.cellDragObj == null || this.cellDragSourceCoord == null) {
+			this.cellDragRebuildSourceAndFinish();
+			if(onComplete != null) {
+				onComplete();
+			}
+			return;
+		}
+		var resolvedPath = customPath != null ? customPath : this.returnPathName;
+		var sourceScenePos = this.cellPosition(this.cellDragSourceCoord.col,this.cellDragSourceCoord.row);
+		this.cellDragSnapTo(sourceScenePos,resolvedPath,function() {
+			_gthis.cellDragRemoveObj();
+			_gthis.cellDragRebuildSourceAndFinish();
+			if(onComplete != null) {
+				onComplete();
+			}
+		});
+	}
+	,cellDragRemoveObj: function() {
+		if(this.cellDragObj != null) {
+			var _this = this.cellDragObj;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.cellDragObj = null;
+		}
+	}
+	,cellDragRebuildSourceAndFinish: function() {
+		if(this.cellDragSourceCoord != null) {
+			this.rebuildCell(this.cellDragSourceCoord.col,this.cellDragSourceCoord.row);
+		}
+		this.cellDragFinish();
+	}
+	,cellDragFinish: function() {
+		var sourceCoord = this.cellDragSourceCoord;
+		this.cellDragRemoveObj();
+		this.cellDragParent = null;
+		this.cellDragSourceCoord = null;
+		this.cellDragSourceData = null;
+		this.cellDragHoverGrid = null;
+		this.cellDragHoverCoord = null;
+		if(sourceCoord != null) {
+			this.emitEvent(bh_ui_GridEvent.CellDragEnd(sourceCoord));
+		}
+	}
+	,cellDragMakeCarrier: function() {
+		var carrier = new bh_ui_UIMultiAnimDraggable(new h2d_Object());
+		carrier.sourceGrid = this;
+		carrier.sourceCellCoord = this.cellDragSourceCoord;
+		carrier.payload = this.cellDragSourceData;
+		return carrier;
 	}
 	,acceptDrops: function(draggable,accepts) {
 		var _g = 0;
@@ -36470,6 +36821,22 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,dispose: function() {
+		if(this.cellDragObj != null) {
+			this.cellDragRemoveObj();
+			this.clearDragHighlights();
+			var _g = 0;
+			var _g1 = this.linkedGrids;
+			while(_g < _g1.length) {
+				var link = _g1[_g];
+				++_g;
+				link.target.clearDragHighlights();
+			}
+			this.cellDragParent = null;
+			this.cellDragSourceCoord = null;
+			this.cellDragSourceData = null;
+			this.cellDragHoverGrid = null;
+			this.cellDragHoverCoord = null;
+		}
 		var _g = 0;
 		var _g1 = this.activeSwapAnims;
 		while(_g < _g1.length) {
@@ -36492,6 +36859,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			this.clearZonesForBinding(binding);
 		}
 		this.registeredDraggables.length = 0;
+		this.linkedGrids.length = 0;
 		var _g = 0;
 		var _g1 = this.registeredCardHands;
 		while(_g < _g1.length) {
@@ -36567,10 +36935,28 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	,hitTestRect: function(localX,localY) {
 		var stride = this.rectCellW + this.rectGap;
 		var strideY = this.rectCellH + this.rectGap;
-		var col = Math.floor(localX / stride);
-		var row = Math.floor(localY / strideY);
-		var cellLocalX = localX - col * stride;
-		var cellLocalY = localY - row * strideY;
+		var testX;
+		switch(this.rectOrigin._hx_index) {
+		case 0:
+			testX = localX;
+			break;
+		case 1:
+			testX = localX + this.rectCellW * 0.5;
+			break;
+		}
+		var testY;
+		switch(this.rectOrigin._hx_index) {
+		case 0:
+			testY = localY;
+			break;
+		case 1:
+			testY = localY + this.rectCellH * 0.5;
+			break;
+		}
+		var col = Math.floor(testX / stride);
+		var row = Math.floor(testY / strideY);
+		var cellLocalX = testX - col * stride;
+		var cellLocalY = testY - row * strideY;
 		if(cellLocalX > this.rectCellW || cellLocalY > this.rectCellH) {
 			return null;
 		}
@@ -36857,14 +37243,27 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _g1 = _g.gap;
 			var w = _g.cellWidth;
 			var h = _g.cellHeight;
-			var x0 = global.x;
-			var y0 = global.y;
-			var b = new h2d_col_Bounds();
-			b.xMin = x0;
-			b.yMin = y0;
-			b.xMax = x0 + w;
-			b.yMax = y0 + h;
-			return b;
+			switch(this.rectOrigin._hx_index) {
+			case 0:
+				var x0 = global.x;
+				var y0 = global.y;
+				var b = new h2d_col_Bounds();
+				b.xMin = x0;
+				b.yMin = y0;
+				b.xMax = x0 + w;
+				b.yMax = y0 + h;
+				return b;
+			case 1:
+				var x0 = global.x - w * 0.5;
+				var y0 = global.y - h * 0.5;
+				var b = new h2d_col_Bounds();
+				b.xMin = x0;
+				b.yMin = y0;
+				b.xMax = x0 + w;
+				b.yMax = y0 + h;
+				return b;
+			}
+			break;
 		case 1:
 			var _g1 = _g.orientation;
 			var sx = _g.sizeX;
@@ -37112,6 +37511,12 @@ var bh_ui_GridType = $hxEnums["bh.ui.GridType"] = { __ename__:true,__constructs_
 };
 bh_ui_GridType.__constructs__ = [bh_ui_GridType.Rect,bh_ui_GridType.Hex];
 bh_ui_GridType.__empty_constructs__ = [];
+var bh_ui_RectOrigin = $hxEnums["bh.ui.RectOrigin"] = { __ename__:true,__constructs__:null
+	,TopLeft: {_hx_name:"TopLeft",_hx_index:0,__enum__:"bh.ui.RectOrigin",toString:$estr}
+	,Centered: {_hx_name:"Centered",_hx_index:1,__enum__:"bh.ui.RectOrigin",toString:$estr}
+};
+bh_ui_RectOrigin.__constructs__ = [bh_ui_RectOrigin.TopLeft,bh_ui_RectOrigin.Centered];
+bh_ui_RectOrigin.__empty_constructs__ = [bh_ui_RectOrigin.TopLeft,bh_ui_RectOrigin.Centered];
 var bh_ui_CellTargetSource = $hxEnums["bh.ui.CellTargetSource"] = { __ename__:true,__constructs__:null
 	,Mouse: {_hx_name:"Mouse",_hx_index:0,__enum__:"bh.ui.CellTargetSource",toString:$estr}
 	,Drag: ($_=function(draggable) { return {_hx_index:1,draggable:draggable,__enum__:"bh.ui.CellTargetSource",toString:$estr}; },$_._hx_name="Drag",$_.__params__ = ["draggable"],$_)
@@ -37126,9 +37531,11 @@ var bh_ui_GridEvent = $hxEnums["bh.ui.GridEvent"] = { __ename__:true,__construct
 	,CellDrop: ($_=function(cell,draggable,sourceGrid,sourceCell,ctx) { return {_hx_index:3,cell:cell,draggable:draggable,sourceGrid:sourceGrid,sourceCell:sourceCell,ctx:ctx,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDrop",$_.__params__ = ["cell","draggable","sourceGrid","sourceCell","ctx"],$_)
 	,CellSwap: ($_=function(source,target,draggable,ctx) { return {_hx_index:4,source:source,target:target,draggable:draggable,ctx:ctx,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellSwap",$_.__params__ = ["source","target","draggable","ctx"],$_)
 	,CellCardPlayed: ($_=function(cell,cardId) { return {_hx_index:5,cell:cell,cardId:cardId,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellCardPlayed",$_.__params__ = ["cell","cardId"],$_)
-	,CellDataChanged: ($_=function(cell,oldData,newData) { return {_hx_index:6,cell:cell,oldData:oldData,newData:newData,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDataChanged",$_.__params__ = ["cell","oldData","newData"],$_)
+	,CellDragStart: ($_=function(cell,draggable) { return {_hx_index:6,cell:cell,draggable:draggable,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDragStart",$_.__params__ = ["cell","draggable"],$_)
+	,CellDragEnd: ($_=function(cell) { return {_hx_index:7,cell:cell,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDragEnd",$_.__params__ = ["cell"],$_)
+	,CellDataChanged: ($_=function(cell,oldData,newData) { return {_hx_index:8,cell:cell,oldData:oldData,newData:newData,__enum__:"bh.ui.GridEvent",toString:$estr}; },$_._hx_name="CellDataChanged",$_.__params__ = ["cell","oldData","newData"],$_)
 };
-bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellTargetEnter,bh_ui_GridEvent.CellTargetLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellSwap,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDataChanged];
+bh_ui_GridEvent.__constructs__ = [bh_ui_GridEvent.CellClick,bh_ui_GridEvent.CellTargetEnter,bh_ui_GridEvent.CellTargetLeave,bh_ui_GridEvent.CellDrop,bh_ui_GridEvent.CellSwap,bh_ui_GridEvent.CellCardPlayed,bh_ui_GridEvent.CellDragStart,bh_ui_GridEvent.CellDragEnd,bh_ui_GridEvent.CellDataChanged];
 bh_ui_GridEvent.__empty_constructs__ = [];
 var bh_ui_DefaultCellVisual = function(result,highlightParam,statusParam) {
 	this.result = result;
@@ -37930,7 +38337,7 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 	}
 	,set_currentItemIndex: function(value) {
 		if(value < -1 || value >= this.items.length) {
-			throw haxe_Exception.thrown("currentItemIndex " + value + " is out of bounds [0.." + this.items.length + "].");
+			throw haxe_Exception.thrown("currentItemIndex " + value + " is out of bounds [-1.." + (this.items.length - 1) + "].");
 		}
 		if(this.currentItemIndex != value) {
 			if(this.currentItemIndex != -1) {
@@ -38954,6 +39361,7 @@ bh_ui_PanelCloseMode.__constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_P
 bh_ui_PanelCloseMode.__empty_constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_PanelCloseMode.Manual];
 var bh_ui_UIPanelHelper = function(screen,builder,defaults,tweens) {
 	this._pendingClose = false;
+	this.namedFadeOutTweens = new haxe_ds_StringMap();
 	this.namedPanels = new haxe_ds_StringMap();
 	this.activeFadeOutTween = null;
 	this.fadingOutObj = null;
@@ -39086,6 +39494,15 @@ bh_ui_UIPanelHelper.prototype = {
 		return false;
 	}
 	,closeNamed: function(slot) {
+		var _gthis = this;
+		var prevFadeOut = this.namedFadeOutTweens.h[slot];
+		if(prevFadeOut != null) {
+			prevFadeOut.finish();
+			var _this = this.namedFadeOutTweens;
+			if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
+				delete(_this.h[slot]);
+			}
+		}
 		var panel = this.namedPanels.h[slot];
 		if(panel == null) {
 			return;
@@ -39106,9 +39523,15 @@ bh_ui_UIPanelHelper.prototype = {
 		this.screen.onScreenEvent(bh_ui_UIScreenEvent.UICustomEvent("panelClose",panel.interactiveId),null);
 		var obj = panel.result.object;
 		if(this.defaultFadeOut > 0 && this.tweens != null) {
-			this.tweens.tween(obj,this.defaultFadeOut,[bh_base_TweenProperty.Alpha(0.0)]).setOnComplete(function() {
+			var fadeOut = this.tweens.tween(obj,this.defaultFadeOut,[bh_base_TweenProperty.Alpha(0.0)]);
+			this.namedFadeOutTweens.h[slot] = fadeOut;
+			fadeOut.setOnComplete(function() {
 				if(obj != null && obj.parent != null) {
 					obj.parent.removeChild(obj);
+				}
+				var _this = _gthis.namedFadeOutTweens;
+				if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
+					delete(_this.h[slot]);
 				}
 			});
 		} else if(obj != null && obj.parent != null) {
@@ -118231,12 +118654,16 @@ screens_gamelike_ProjectListDemoScreen.prototype = $extend(DemoScreenBase.protot
 				this.updateButtons(index);
 			}
 			break;
-		case 8:
+		case 7:
 			var _g = event.items;
 			var index = event.index;
 			if(source == this.scrollableList) {
-				this.updateDetailPanel(index);
-				this.updateButtons(index);
+				var status = this.projectStatuses[index];
+				if(status == "normal") {
+					this.startSelectedProject();
+				} else if(status == "active") {
+					this.completeSelectedProject();
+				}
 			}
 			break;
 		default:

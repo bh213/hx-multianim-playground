@@ -36295,22 +36295,6 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			}
 		}
 	}
-	,detachCellVisual: function(col,row) {
-		var key = "" + col + "_" + row;
-		var entry = this.cells.h[key];
-		if(entry == null) {
-			return null;
-		}
-		var obj = entry.visual.get_object();
-		var pos = this.cellPosition(col,row);
-		var data = entry.data;
-		bh_base_HeapsUtils_safeDetach(obj);
-		var freshEntry = this.buildCell(entry.coord,entry.data,null);
-		this.cells.h[key] = freshEntry;
-		this.root.add(freshEntry.visual.get_object(),0);
-		this.positionCell(freshEntry);
-		return { object : obj, data : data, sceneX : pos.x, sceneY : pos.y};
-	}
 	,detachCellVisualRaw: function(col,row) {
 		var key = "" + col + "_" + row;
 		var entry = this.cells.h[key];
@@ -36490,12 +36474,15 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	}
 	,cellDragStart: function(coord,sceneX,sceneY) {
 		var entry = this.getEntry(coord.col,coord.row);
-		var detached = this.detachCellVisual(coord.col,coord.row);
+		var detached = this.detachCellVisualRaw(coord.col,coord.row);
 		if(detached == null) {
 			return;
 		}
 		this.cellDragSourceCoord = new bh_ui_CellCoord(coord.col,coord.row);
 		this.cellDragSourceData = entry.data;
+		this.set(coord.col,coord.row,null);
+		this.rebuildCell(coord.col,coord.row);
+		this.set(coord.col,coord.row,this.cellDragSourceData);
 		this.cellDragObj = detached.object;
 		this.cellDragParent = this.cellDragContainer != null ? this.cellDragContainer : this.root;
 		if(this.cellDragContainer != null) {
@@ -36655,7 +36642,6 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var detached = targetGrid.detachCellVisualRaw(targetCoord.col,targetCoord.row);
 		targetGrid.set(targetCoord.col,targetCoord.row,dragPayload);
 		this.set(srcCoord.col,srcCoord.row,displacedData);
-		targetGrid.rebuildCell(targetCoord.col,targetCoord.row);
 		var displacedDone = false;
 		var snapDone = false;
 		var onBothDone = function() {
@@ -36683,6 +36669,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var targetScenePos = targetGrid.cellPosition(targetCoord.col,targetCoord.row);
 		this.cellDragSnapTo(targetScenePos,resolvedSnapPath,function() {
 			_gthis.cellDragRemoveObj();
+			targetGrid.rebuildCell(targetCoord.col,targetCoord.row);
 			if(ctx.snapCompleteCb != null) {
 				ctx.snapCompleteCb();
 			}
@@ -36752,6 +36739,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 	}
 	,cellDragRebuildSourceAndFinish: function() {
 		if(this.cellDragSourceCoord != null) {
+			this.set(this.cellDragSourceCoord.col,this.cellDragSourceCoord.row,this.cellDragSourceData);
 			this.rebuildCell(this.cellDragSourceCoord.col,this.cellDragSourceCoord.row);
 		}
 		this.cellDragFinish();
@@ -38001,12 +37989,16 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 		}
 		return bh_base_CursorManager.getDefaultInteractiveCursor();
 	}
-	,setItems: function(newItems,selectedIndex) {
+	,setItems: function(newItems,selectedIndex,preserveScroll) {
+		if(preserveScroll == null) {
+			preserveScroll = false;
+		}
 		if(selectedIndex == null) {
 			selectedIndex = 0;
 		}
 		this.set_currentHoverIndex(-1);
 		this.set_currentPressedIndex(-1);
+		var savedScrollY = this.mask.scrollY;
 		this.items.length = 0;
 		var _g = 0;
 		while(_g < newItems.length) {
@@ -38019,8 +38011,13 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 			this.mask.height = this.height;
 			this.panelResults = this.buildPanel();
 		}
-		this.mask.set_scrollY(0);
 		this.buildItems();
+		if(preserveScroll) {
+			this.mask.set_scrollY(savedScrollY);
+			this.repositionScrollbar();
+		} else {
+			this.mask.set_scrollY(0);
+		}
 		var idx = newItems.length > 0 ? selectedIndex : -1;
 		this.set_currentItemIndex(-1);
 		this.set_currentItemIndex(idx);
@@ -118674,7 +118671,7 @@ screens_gamelike_ProjectListDemoScreen.prototype = $extend(DemoScreenBase.protot
 		if(this.scrollableList == null) {
 			return;
 		}
-		this.scrollableList.setItems(this.buildProjectItems(),selectedIdx);
+		this.scrollableList.setItems(this.buildProjectItems(),selectedIdx,true);
 	}
 	,startSelectedProject: function() {
 		if(this.scrollableList == null) {

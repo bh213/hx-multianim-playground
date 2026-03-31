@@ -87,15 +87,18 @@ class ProjectListDemoScreen extends DemoScreenBase {
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
-			case UIClickItem(index, _):
-				if (source == scrollableList) {
-					updateDetailPanel(index);
-					updateButtons(index);
-				}
 			case UIChangeItem(index, _):
 				if (source == scrollableList) {
 					updateDetailPanel(index);
 					updateButtons(index);
+				}
+			case UIDoubleClickItem(index, _):
+				if (source == scrollableList) {
+					final status = projectStatuses[index];
+					if (status == "normal")
+						startSelectedProject();
+					else if (status == "active")
+						completeSelectedProject();
 				}
 			case UIClick:
 				if (source == startBtn)

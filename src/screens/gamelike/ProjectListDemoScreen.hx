@@ -122,7 +122,7 @@ class ProjectListDemoScreen extends DemoScreenBase {
 
 	function refreshList(selectedIdx:Int):Void {
 		if (scrollableList == null) return;
-		scrollableList.setItems(buildProjectItems(), selectedIdx);
+		scrollableList.setItems(buildProjectItems(), selectedIdx, true);
 	}
 
 	function startSelectedProject():Void {

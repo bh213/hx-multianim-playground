@@ -10,7 +10,7 @@ if (!(Prism.languages as any).manim) {
     'attr-name': /\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,
     boolean: /\b(true|false)\b/,
     number: /\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,
-    operator: /=>|@\(|@if|@else|@default|@ifstrict|@\)|!=|>=|<=|>|</,
+    operator: /=>|@\(|@if|@any|@all|@else|@default|@\)|!=|>=|<=|>|</,
     punctuation: /[{}():,;]/,
     variable: /\$\w+/,
     'class-name': /#\w+/,

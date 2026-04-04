@@ -133,6 +133,8 @@ class NavScreen extends UIScreenBase {
 				{id: "bitmapsAtlas", title: "Bitmaps & Atlas"},
 				{id: "ninepatch", title: "Ninepatch"},
 				{id: "textFonts", title: "Text & Fonts"},
+				{id: "richText", title: "Rich Text"},
+				{id: "richTextAutofit", title: "Rich Text Autofit"},
 				{id: "pixelsGraphics", title: "Pixels & Graphics"},
 			]
 		},
@@ -145,6 +147,8 @@ class NavScreen extends UIScreenBase {
 				{id: "curves", title: "Curves"},
 				{id: "animPath", title: "Anim Paths"},
 				{id: "filters", title: "Filters"},
+				{id: "floatingText", title: "Floating Text"},
+				{id: "transitions", title: "Transitions"},
 			]
 		},
 		{
@@ -159,6 +163,7 @@ class NavScreen extends UIScreenBase {
 				{id: "statusEffects", title: "Status Effects"},
 			{id: "cards", title: "Cards"},
 				{id: "gridComponent", title: "Grid Component"},
+				{id: "projectList", title: "Project List"},
 			]
 		}
 	];

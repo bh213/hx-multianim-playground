@@ -17,7 +17,7 @@ layouts {
         point: 40, 458
         point: 40, 516
         point: 40, 574
-        point: 40, 632
+        point: 40, 664
     }
 
     // All nav card positions (colWidth=155, spacingX=5, 7 per row)
@@ -50,28 +50,33 @@ layouts {
         point: 520, 478
         point: 680, 478
         point: 840, 478
-        // Graphics & Rendering (4)
+        // Graphics & Rendering (6)
         point: 40, 536
         point: 200, 536
         point: 360, 536
         point: 520, 536
-        // Animation & Effects (6)
+        point: 680, 536
+        point: 840, 536
+        // Animation & Effects (8, wraps to 2 rows)
         point: 40, 594
         point: 200, 594
         point: 360, 594
         point: 520, 594
         point: 680, 594
         point: 840, 594
-        // Game-Like Demos (9, wraps to 2 rows)
-        point: 40, 652
-        point: 200, 652
-        point: 360, 652
-        point: 520, 652
-        point: 680, 652
-        point: 840, 652
-        point: 1000, 652
+        point: 1000, 594
+        point: 40, 626
+        // Game-Like Demos (10, wraps to 2 rows)
         point: 40, 684
         point: 200, 684
+        point: 360, 684
+        point: 520, 684
+        point: 680, 684
+        point: 840, 684
+        point: 1000, 684
+        point: 40, 716
+        point: 200, 716
+        point: 360, 716
     }
 }
 

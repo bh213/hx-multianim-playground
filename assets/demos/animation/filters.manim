@@ -36,22 +36,26 @@ version: 1.0
 #glowPreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
     glowAlpha:float=0.8, glowRadius:float=8, glowSmooth:uint=1, glowKnockout:uint=0, glowColor:int=0xffaa00) {
-    // 4 combinations of smooth x knockout (bool literals required by filter syntax)
-    @(glowSmooth > 0) @(glowKnockout > 0) point {
-        filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true, knockout: true)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    // 4 combinations of smooth x knockout (nested conditionals for AND logic)
+    @(glowSmooth > 0) point {
+        @(glowKnockout > 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true, knockout: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+        @(glowKnockout <= 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
     }
-    @(glowSmooth > 0) @(glowKnockout <= 0) point {
-        filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
-    }
-    @(glowSmooth <= 0) @(glowKnockout > 0) point {
-        filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, knockout: true)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
-    }
-    @(glowSmooth <= 0) @(glowKnockout <= 0) point {
-        filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    @(glowSmooth <= 0) point {
+        @(glowKnockout > 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, knockout: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+        @(glowKnockout <= 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
     }
 }
 

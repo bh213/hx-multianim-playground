@@ -2078,7 +2078,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload6100Builder = function() {
+		var generatedByMacroBuildWithParametersload6344Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -2141,7 +2141,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6100Builder();
+		var ui = generatedByMacroBuildWithParametersload6344Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -3956,60 +3956,19 @@ bh_base_HexLayout.createFromFloats = function(orientation,sizeX,sizeY,originX,or
 	if(originX == null) {
 		originX = 0;
 	}
-	var x = sizeX;
-	var y = sizeY;
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	var this1 = new h2d_col_PointImpl(x,y);
-	var x = originX;
-	var y = originY;
-	if(y == null) {
-		y = 0.;
-	}
-	if(x == null) {
-		x = 0.;
-	}
-	return new bh_base_HexLayout(orientation,this1,new h2d_col_PointImpl(x,y));
+	return new bh_base_HexLayout(orientation,new bh_base_FPoint(sizeX,sizeY),new bh_base_FPoint(originX,originY));
 };
 bh_base_HexLayout.prototype = {
 	hexToPixel: function(h) {
 		var x = (this.orientationData.f0 * h.q + this.orientationData.f1 * h.r) * this.size.x;
 		var y = (this.orientationData.f2 * h.q + this.orientationData.f3 * h.r) * this.size.y;
-		var x1 = x + this.origin.x;
-		var y1 = y + this.origin.y;
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		return new h2d_col_PointImpl(x1,y1);
+		return new bh_base_FPoint(x + this.origin.x,y + this.origin.y);
 	}
 	,pixelToHex: function(p) {
-		var x = (p.x - this.origin.x) / this.size.x;
-		var y = (p.y - this.origin.y) / this.size.y;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var pt_x = x1;
-		var pt_y = y1;
-		var q = this.orientationData.b0 * pt_x + this.orientationData.b1 * pt_y;
-		var r = this.orientationData.b2 * pt_x + this.orientationData.b3 * pt_y;
+		var ptX = (p.x - this.origin.x) / this.size.x;
+		var ptY = (p.y - this.origin.y) / this.size.y;
+		var q = this.orientationData.b0 * ptX + this.orientationData.b1 * ptY;
+		var r = this.orientationData.b2 * ptX + this.orientationData.b3 * ptY;
 		return new bh_base_FractionalHex(q,r,-q - r);
 	}
 	,hexCornerOffset: function(corner,towardsCenter) {
@@ -4017,15 +3976,7 @@ bh_base_HexLayout.prototype = {
 			towardsCenter = 1.0;
 		}
 		var angle = 2.0 * Math.PI * (this.orientationData.start_angle - corner) / 6.0;
-		var x = this.size.x * Math.cos(angle) * towardsCenter;
-		var y = this.size.y * Math.sin(angle) * towardsCenter;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		return new h2d_col_PointImpl(x,y);
+		return new bh_base_FPoint(this.size.x * Math.cos(angle) * towardsCenter,this.size.y * Math.sin(angle) * towardsCenter);
 	}
 	,polygonCorner: function(h,corner,towardCenter) {
 		if(towardCenter == null) {
@@ -4033,15 +3984,7 @@ bh_base_HexLayout.prototype = {
 		}
 		var center = this.hexToPixel(h);
 		var offset = this.hexCornerOffset(corner);
-		var x = center.x + towardCenter * offset.x;
-		var y = center.y + towardCenter * offset.y;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		return new h2d_col_PointImpl(x,y);
+		return new bh_base_FPoint(center.x + towardCenter * offset.x,center.y + towardCenter * offset.y);
 	}
 	,polygonEdge: function(h,corner,towardCenter) {
 		if(towardCenter == null) {
@@ -4050,35 +3993,9 @@ bh_base_HexLayout.prototype = {
 		var center = this.hexToPixel(h);
 		var o1 = this.hexCornerOffset(corner);
 		var o2 = this.hexCornerOffset(corner + 1);
-		var x = (o1.x + o2.x) / 2;
-		var y = (o1.y + o2.y) / 2;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var x1 = x;
-		var y1 = y;
-		if(y1 == null) {
-			y1 = 0.;
-		}
-		if(x1 == null) {
-			x1 = 0.;
-		}
-		var edge_x = x1;
-		var edge_y = y1;
-		edge_x *= towardCenter;
-		edge_y *= towardCenter;
-		var x = center.x + edge_x;
-		var y = center.y + edge_y;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		return new h2d_col_PointImpl(x,y);
+		var edgeX = (o1.x + o2.x) / 2 * towardCenter;
+		var edgeY = (o1.y + o2.y) / 2 * towardCenter;
+		return new bh_base_FPoint(center.x + edgeX,center.y + edgeY);
 	}
 	,__class__: bh_base_HexLayout
 };
@@ -5292,7 +5209,10 @@ var bh_base_ParsePosition = function(source,line,col) {
 $hxClasses["bh.base.ParsePosition"] = bh_base_ParsePosition;
 bh_base_ParsePosition.__name__ = "bh.base.ParsePosition";
 bh_base_ParsePosition.prototype = {
-	format: function(input) {
+	toString: function() {
+		return "" + this.psource + ":" + this.line + ":" + this.col;
+	}
+	,format: function(input) {
 		return "" + this.psource + ":" + this.line + ": character " + this.col;
 	}
 	,__class__: bh_base_ParsePosition
@@ -7844,15 +7764,7 @@ bh_multianim_HexCoordinateSystemHelper.resolveHexDoubled = function(system,col,r
 	return new bh_base_FPoint(pos.x,pos.y);
 };
 bh_multianim_HexCoordinateSystemHelper.resolveHexPixel = function(system,x,y) {
-	var x1 = x;
-	var y1 = y;
-	if(y1 == null) {
-		y1 = 0.;
-	}
-	if(x1 == null) {
-		x1 = 0.;
-	}
-	var hex = system.hexLayout.pixelToHex(new h2d_col_PointImpl(x1,y1)).round();
+	var hex = system.hexLayout.pixelToHex(new bh_base_FPoint(x,y)).round();
 	var pos = system.hexLayout.hexToPixel(hex);
 	return new bh_base_FPoint(pos.x,pos.y);
 };
@@ -8011,16 +7923,17 @@ var bh_multianim__$MacroManimParser_MacroTokenType = $hxEnums["bh.multianim._Mac
 	,TGreaterEquals: {_hx_name:"TGreaterEquals",_hx_index:25,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}
 	,TNotEquals: {_hx_name:"TNotEquals",_hx_index:26,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}
 	,TDoubleEquals: {_hx_name:"TDoubleEquals",_hx_index:27,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}
-	,TInteger: ($_=function(s) { return {_hx_index:28,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TInteger",$_.__params__ = ["s"],$_)
-	,TFloat: ($_=function(s) { return {_hx_index:29,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TFloat",$_.__params__ = ["s"],$_)
-	,THexInteger: ($_=function(s) { return {_hx_index:30,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="THexInteger",$_.__params__ = ["s"],$_)
-	,TIdentifier: ($_=function(s) { return {_hx_index:31,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TIdentifier",$_.__params__ = ["s"],$_)
-	,TName: ($_=function(s) { return {_hx_index:32,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TName",$_.__params__ = ["s"],$_)
-	,TReference: ($_=function(s) { return {_hx_index:33,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TReference",$_.__params__ = ["s"],$_)
-	,TQuotedString: ($_=function(s) { return {_hx_index:34,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TQuotedString",$_.__params__ = ["s"],$_)
+	,TPipe: {_hx_name:"TPipe",_hx_index:28,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}
+	,TInteger: ($_=function(s) { return {_hx_index:29,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TInteger",$_.__params__ = ["s"],$_)
+	,TFloat: ($_=function(s) { return {_hx_index:30,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TFloat",$_.__params__ = ["s"],$_)
+	,THexInteger: ($_=function(s) { return {_hx_index:31,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="THexInteger",$_.__params__ = ["s"],$_)
+	,TIdentifier: ($_=function(s) { return {_hx_index:32,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TIdentifier",$_.__params__ = ["s"],$_)
+	,TName: ($_=function(s) { return {_hx_index:33,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TName",$_.__params__ = ["s"],$_)
+	,TReference: ($_=function(s) { return {_hx_index:34,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TReference",$_.__params__ = ["s"],$_)
+	,TQuotedString: ($_=function(s) { return {_hx_index:35,s:s,__enum__:"bh.multianim._MacroManimParser.MacroTokenType",toString:$estr}; },$_._hx_name="TQuotedString",$_.__params__ = ["s"],$_)
 };
-bh_multianim__$MacroManimParser_MacroTokenType.__constructs__ = [bh_multianim__$MacroManimParser_MacroTokenType.TEof,bh_multianim__$MacroManimParser_MacroTokenType.TOpen,bh_multianim__$MacroManimParser_MacroTokenType.TClosed,bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen,bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed,bh_multianim__$MacroManimParser_MacroTokenType.TComma,bh_multianim__$MacroManimParser_MacroTokenType.TAt,bh_multianim__$MacroManimParser_MacroTokenType.TExclamation,bh_multianim__$MacroManimParser_MacroTokenType.TQuestion,bh_multianim__$MacroManimParser_MacroTokenType.TColon,bh_multianim__$MacroManimParser_MacroTokenType.TDot,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot,bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon,bh_multianim__$MacroManimParser_MacroTokenType.TArrow,bh_multianim__$MacroManimParser_MacroTokenType.TStar,bh_multianim__$MacroManimParser_MacroTokenType.TPercent,bh_multianim__$MacroManimParser_MacroTokenType.TPlus,bh_multianim__$MacroManimParser_MacroTokenType.TSlash,bh_multianim__$MacroManimParser_MacroTokenType.TMinus,bh_multianim__$MacroManimParser_MacroTokenType.TEquals,bh_multianim__$MacroManimParser_MacroTokenType.TLessThan,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterThan,bh_multianim__$MacroManimParser_MacroTokenType.TLessEquals,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterEquals,bh_multianim__$MacroManimParser_MacroTokenType.TNotEquals,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleEquals,bh_multianim__$MacroManimParser_MacroTokenType.TInteger,bh_multianim__$MacroManimParser_MacroTokenType.TFloat,bh_multianim__$MacroManimParser_MacroTokenType.THexInteger,bh_multianim__$MacroManimParser_MacroTokenType.TIdentifier,bh_multianim__$MacroManimParser_MacroTokenType.TName,bh_multianim__$MacroManimParser_MacroTokenType.TReference,bh_multianim__$MacroManimParser_MacroTokenType.TQuotedString];
-bh_multianim__$MacroManimParser_MacroTokenType.__empty_constructs__ = [bh_multianim__$MacroManimParser_MacroTokenType.TEof,bh_multianim__$MacroManimParser_MacroTokenType.TOpen,bh_multianim__$MacroManimParser_MacroTokenType.TClosed,bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen,bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed,bh_multianim__$MacroManimParser_MacroTokenType.TComma,bh_multianim__$MacroManimParser_MacroTokenType.TAt,bh_multianim__$MacroManimParser_MacroTokenType.TExclamation,bh_multianim__$MacroManimParser_MacroTokenType.TQuestion,bh_multianim__$MacroManimParser_MacroTokenType.TColon,bh_multianim__$MacroManimParser_MacroTokenType.TDot,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot,bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon,bh_multianim__$MacroManimParser_MacroTokenType.TArrow,bh_multianim__$MacroManimParser_MacroTokenType.TStar,bh_multianim__$MacroManimParser_MacroTokenType.TPercent,bh_multianim__$MacroManimParser_MacroTokenType.TPlus,bh_multianim__$MacroManimParser_MacroTokenType.TSlash,bh_multianim__$MacroManimParser_MacroTokenType.TMinus,bh_multianim__$MacroManimParser_MacroTokenType.TEquals,bh_multianim__$MacroManimParser_MacroTokenType.TLessThan,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterThan,bh_multianim__$MacroManimParser_MacroTokenType.TLessEquals,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterEquals,bh_multianim__$MacroManimParser_MacroTokenType.TNotEquals,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleEquals];
+bh_multianim__$MacroManimParser_MacroTokenType.__constructs__ = [bh_multianim__$MacroManimParser_MacroTokenType.TEof,bh_multianim__$MacroManimParser_MacroTokenType.TOpen,bh_multianim__$MacroManimParser_MacroTokenType.TClosed,bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen,bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed,bh_multianim__$MacroManimParser_MacroTokenType.TComma,bh_multianim__$MacroManimParser_MacroTokenType.TAt,bh_multianim__$MacroManimParser_MacroTokenType.TExclamation,bh_multianim__$MacroManimParser_MacroTokenType.TQuestion,bh_multianim__$MacroManimParser_MacroTokenType.TColon,bh_multianim__$MacroManimParser_MacroTokenType.TDot,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot,bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon,bh_multianim__$MacroManimParser_MacroTokenType.TArrow,bh_multianim__$MacroManimParser_MacroTokenType.TStar,bh_multianim__$MacroManimParser_MacroTokenType.TPercent,bh_multianim__$MacroManimParser_MacroTokenType.TPlus,bh_multianim__$MacroManimParser_MacroTokenType.TSlash,bh_multianim__$MacroManimParser_MacroTokenType.TMinus,bh_multianim__$MacroManimParser_MacroTokenType.TEquals,bh_multianim__$MacroManimParser_MacroTokenType.TLessThan,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterThan,bh_multianim__$MacroManimParser_MacroTokenType.TLessEquals,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterEquals,bh_multianim__$MacroManimParser_MacroTokenType.TNotEquals,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleEquals,bh_multianim__$MacroManimParser_MacroTokenType.TPipe,bh_multianim__$MacroManimParser_MacroTokenType.TInteger,bh_multianim__$MacroManimParser_MacroTokenType.TFloat,bh_multianim__$MacroManimParser_MacroTokenType.THexInteger,bh_multianim__$MacroManimParser_MacroTokenType.TIdentifier,bh_multianim__$MacroManimParser_MacroTokenType.TName,bh_multianim__$MacroManimParser_MacroTokenType.TReference,bh_multianim__$MacroManimParser_MacroTokenType.TQuotedString];
+bh_multianim__$MacroManimParser_MacroTokenType.__empty_constructs__ = [bh_multianim__$MacroManimParser_MacroTokenType.TEof,bh_multianim__$MacroManimParser_MacroTokenType.TOpen,bh_multianim__$MacroManimParser_MacroTokenType.TClosed,bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen,bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen,bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed,bh_multianim__$MacroManimParser_MacroTokenType.TComma,bh_multianim__$MacroManimParser_MacroTokenType.TAt,bh_multianim__$MacroManimParser_MacroTokenType.TExclamation,bh_multianim__$MacroManimParser_MacroTokenType.TQuestion,bh_multianim__$MacroManimParser_MacroTokenType.TColon,bh_multianim__$MacroManimParser_MacroTokenType.TDot,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot,bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon,bh_multianim__$MacroManimParser_MacroTokenType.TArrow,bh_multianim__$MacroManimParser_MacroTokenType.TStar,bh_multianim__$MacroManimParser_MacroTokenType.TPercent,bh_multianim__$MacroManimParser_MacroTokenType.TPlus,bh_multianim__$MacroManimParser_MacroTokenType.TSlash,bh_multianim__$MacroManimParser_MacroTokenType.TMinus,bh_multianim__$MacroManimParser_MacroTokenType.TEquals,bh_multianim__$MacroManimParser_MacroTokenType.TLessThan,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterThan,bh_multianim__$MacroManimParser_MacroTokenType.TLessEquals,bh_multianim__$MacroManimParser_MacroTokenType.TGreaterEquals,bh_multianim__$MacroManimParser_MacroTokenType.TNotEquals,bh_multianim__$MacroManimParser_MacroTokenType.TDoubleEquals,bh_multianim__$MacroManimParser_MacroTokenType.TPipe];
 var bh_multianim__$MacroManimParser_Token = function(type,line,col) {
 	this.type = type;
 	this.line = line;
@@ -8200,6 +8113,9 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 				case 123:
 					this.pos++;
 					return new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen,startLine,startCol);
+				case 124:
+					this.pos++;
+					return new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TPipe,startLine,startCol);
 				case 125:
 					this.pos++;
 					return new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed,startLine,startCol);
@@ -8395,7 +8311,7 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 						while(_g2 < _g3) {
 							var i = _g2++;
 							var _g4 = codeTokens[i].type;
-							if(_g4._hx_index == 31) {
+							if(_g4._hx_index == 32) {
 								var s = _g4.s;
 								if(!bh_multianim__$MacroManimParser_MacroLexer.isInterpolationKeyword(s)) {
 									codeTokens[i] = new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TReference(s),codeTokens[i].line,codeTokens[i].col);
@@ -8729,7 +8645,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,expectKeyword: function(keyword) {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,keyword)) {
 				this.advance();
@@ -8749,7 +8665,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,error: function(msg) {
 		var t = this.tokens[this.tpos];
-		throw haxe_Exception.thrown("" + this.sourceName + ":" + t.line + ":" + t.col + ": " + msg);
+		throw haxe_Exception.thrown(new bh_multianim_InvalidSyntax("" + this.sourceName + ": " + msg,new bh_base_ParsePosition(this.sourceName,t.line,t.col)));
 	}
 	,posString: function() {
 		var t = this.tokens[this.tpos];
@@ -8982,7 +8898,7 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			}
 			return this.binop(e1,bh_multianim_RvOp.OpEq,tmp);
-		case 31:
+		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"div")) {
 				this.advance();
@@ -9119,15 +9035,15 @@ bh_multianim_MacroManimParser.prototype = {
 				var e = this.parseIntegerOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EInt);
-			case 28:
+			case 29:
 				var n = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EInt);
-			case 30:
+			case 31:
 				var n = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EInt);
-			case 33:
+			case 34:
 				var s = _g1.s;
 				this.advance();
 				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EInt);
@@ -9135,15 +9051,15 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected value after unary minus");
 			}
 			break;
-		case 28:
+		case 29:
 			var n = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EInt);
-		case 30:
+		case 31:
 			var n = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EInt);
-		case 31:
+		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
 				this.advance();
@@ -9152,7 +9068,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected integer or expression, got " + Std.string(this.tokens[this.tpos].type));
 			}
 			break;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EInt);
@@ -9180,15 +9096,15 @@ bh_multianim_MacroManimParser.prototype = {
 				var e = this.parseFloatOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EFloat);
-			case 28:
-				var n = _g1.s;
-				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
 			case 29:
 				var n = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
-			case 33:
+			case 30:
+				var n = _g1.s;
+				this.advance();
+				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			case 34:
 				var s = _g1.s;
 				this.advance();
 				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EFloat);
@@ -9196,15 +9112,15 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected value after unary minus");
 			}
 			break;
-		case 28:
-			var n = _g.s;
-			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
 		case 29:
 			var n = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
-		case 31:
+		case 30:
+			var n = _g.s;
+			this.advance();
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
 				this.advance();
@@ -9213,7 +9129,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected float or expression, got " + Std.string(this.tokens[this.tpos].type));
 			}
 			break;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EFloat);
@@ -9223,7 +9139,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseAngleOrReference: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			var lower = s.toLowerCase();
 			switch(lower) {
@@ -9247,7 +9163,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,applyAngleUnit: function(value) {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			var lower = s.toLowerCase();
 			switch(lower) {
@@ -9296,11 +9212,11 @@ bh_multianim_MacroManimParser.prototype = {
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
-			case 28:
+			case 29:
 				var n = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("-" + n),bh_multianim__$MacroManimParser_ExprType.EString);
-			case 29:
+			case 30:
 				var n = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("-" + n),bh_multianim__$MacroManimParser_ExprType.EString);
@@ -9308,23 +9224,11 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected number after minus in string context");
 			}
 			break;
-		case 28:
-			var n = _g.s;
-			this.advance();
-			var _g1 = this.tokens[this.tpos].type;
-			if(_g1._hx_index == 31) {
-				var s2 = _g1.s;
-				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n + s2),bh_multianim__$MacroManimParser_ExprType.EString);
-			} else {
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n),bh_multianim__$MacroManimParser_ExprType.EString);
-			}
-			break;
 		case 29:
 			var n = _g.s;
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
-			if(_g1._hx_index == 31) {
+			if(_g1._hx_index == 32) {
 				var s2 = _g1.s;
 				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n + s2),bh_multianim__$MacroManimParser_ExprType.EString);
@@ -9335,8 +9239,20 @@ bh_multianim_MacroManimParser.prototype = {
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("0x" + n),bh_multianim__$MacroManimParser_ExprType.EString);
+			var _g1 = this.tokens[this.tpos].type;
+			if(_g1._hx_index == 32) {
+				var s2 = _g1.s;
+				this.advance();
+				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n + s2),bh_multianim__$MacroManimParser_ExprType.EString);
+			} else {
+				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n),bh_multianim__$MacroManimParser_ExprType.EString);
+			}
+			break;
 		case 31:
+			var n = _g.s;
+			this.advance();
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("0x" + n),bh_multianim__$MacroManimParser_ExprType.EString);
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
@@ -9348,11 +9264,11 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
 			}
 			break;
-		case 32:
+		case 33:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			this.validateRef(s);
@@ -9362,7 +9278,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVElementOfArray(s,idx),bh_multianim__$MacroManimParser_ExprType.EString);
 			}
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVReference(s),bh_multianim__$MacroManimParser_ExprType.EString);
-		case 34:
+		case 35:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
@@ -9400,19 +9316,19 @@ bh_multianim_MacroManimParser.prototype = {
 				var e = this.parseAnything();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EAny);
-			case 28:
-				var n = _g1.s;
-				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 			case 29:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 			case 30:
 				var n = _g1.s;
 				this.advance();
+				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			case 31:
+				var n = _g1.s;
+				this.advance();
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
-			case 33:
+			case 34:
 				var s = _g1.s;
 				this.advance();
 				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EAny),bh_multianim__$MacroManimParser_ExprType.EAny);
@@ -9420,19 +9336,19 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected value after unary minus");
 			}
 			break;
-		case 28:
-			var n = _g.s;
-			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 29:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 31:
+			var n = _g.s;
+			this.advance();
+			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
@@ -9444,7 +9360,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
 			}
 			break;
-		case 32:
+		case 33:
 			var s = _g.s;
 			var c = bh_multianim_MacroManimParser.tryStringToColor("#" + s);
 			this.advance();
@@ -9452,11 +9368,11 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(c),bh_multianim__$MacroManimParser_ExprType.EAny);
 			}
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EAny),bh_multianim__$MacroManimParser_ExprType.EAny);
-		case 34:
+		case 35:
 			var s = _g.s;
 			this.advance();
 			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
@@ -9567,14 +9483,14 @@ bh_multianim_MacroManimParser.prototype = {
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 			var ifFalse = this.parseColorOrReference();
 			return bh_multianim_ReferenceableValue.RVTernary(cond,ifTrue,ifFalse);
-		case 31:
+		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"palette")) {
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 				var externalReference = null;
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 31) {
+				if(_g._hx_index == 32) {
 					var s2 = _g.s;
 					if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
 						this.advance();
@@ -9613,7 +9529,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,tryParseColor: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 30:
+		case 31:
 			var n = _g.s;
 			var c = bh_multianim_MacroManimParser.tryStringToColor("0x" + n);
 			if(c != null) {
@@ -9621,7 +9537,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return c;
 			}
 			return null;
-		case 31:
+		case 32:
 			var s = _g.s;
 			var c = bh_multianim_MacroManimParser.tryStringToColor(s);
 			if(c != null) {
@@ -9629,7 +9545,7 @@ bh_multianim_MacroManimParser.prototype = {
 				return c;
 			}
 			return null;
-		case 32:
+		case 33:
 			var s = _g.s;
 			var c = bh_multianim_MacroManimParser.tryStringToColor("#" + s);
 			if(c != null) {
@@ -9648,7 +9564,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var coord;
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"extrapoint")) {
@@ -9676,7 +9592,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
@@ -9884,7 +9800,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var fallback = null;
 		while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var s = _g.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"fallback")) {
 					this.advance();
@@ -9912,7 +9828,7 @@ bh_multianim_MacroManimParser.prototype = {
 		case 20:
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
-			if(_g1._hx_index == 28) {
+			if(_g1._hx_index == 29) {
 				var n = _g1.s;
 				this.advance();
 				return -this.stringToInt(n);
@@ -9920,11 +9836,11 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected integer");
 			}
 			break;
-		case 28:
+		case 29:
 			var n = _g.s;
 			this.advance();
 			return this.stringToInt(n);
-		case 30:
+		case 31:
 			var n = _g.s;
 			this.advance();
 			return this.stringToInt("0x" + n);
@@ -9939,11 +9855,11 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 28:
+		case 29:
 			var n = _g.s;
 			this.advance();
 			return sign * this.stringToFloat(n);
-		case 29:
+		case 30:
 			var n = _g.s;
 			this.advance();
 			return sign * this.stringToFloat(n);
@@ -9954,7 +9870,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseBool: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 28:
+		case 29:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(s == "1") {
@@ -9970,7 +9886,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"yes") || bh_multianim_MacroManimParser.isKeyword(s,"true")) {
@@ -9993,7 +9909,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseBoolOrReference: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 28:
+		case 29:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(s == "1") {
@@ -10009,7 +9925,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"yes") || bh_multianim_MacroManimParser.isKeyword(s,"true")) {
@@ -10025,7 +9941,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			this.validateRef(s);
@@ -10037,15 +9953,15 @@ bh_multianim_MacroManimParser.prototype = {
 	,expectIdentifierOrString: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 31:
-			var s = _g.s;
-			this.advance();
-			return s;
-		case 33:
+		case 32:
 			var s = _g.s;
 			this.advance();
 			return s;
 		case 34:
+			var s = _g.s;
+			this.advance();
+			return s;
+		case 35:
 			var s = _g.s;
 			this.advance();
 			return s;
@@ -10056,11 +9972,11 @@ bh_multianim_MacroManimParser.prototype = {
 	,expectReferenceOrIdentifier: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 31:
+		case 32:
 			var s = _g.s;
 			this.advance();
 			return s;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			return s;
@@ -10071,7 +9987,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseTileSource: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"file")) {
@@ -10116,7 +10032,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 33:
+		case 34:
 			var s = _g.s;
 			this.advance();
 			this.validateRef(s);
@@ -10134,7 +10050,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseGeneratedTileType: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"cross")) {
@@ -10247,7 +10163,7 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TEquals)) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 34) {
+			if(_g._hx_index == 35) {
 				var s = _g.s;
 				this.advance();
 				return { name : paramName, type : bh_multianim_DefinitionType.PPTString, defaultValue : bh_multianim_ResolvedIndexParameters.StringValue(s)};
@@ -10276,7 +10192,7 @@ bh_multianim_MacroManimParser.prototype = {
 					this.advance();
 					lastWasComma = true;
 					break;
-				case 28:
+				case 29:
 					var s = _g1.s;
 					this.advance();
 					if(enumNames.indexOf(s) >= 0) {
@@ -10285,7 +10201,7 @@ bh_multianim_MacroManimParser.prototype = {
 					enumNames.push(s);
 					lastWasComma = false;
 					break;
-				case 29:
+				case 30:
 					var s1 = _g1.s;
 					this.advance();
 					if(enumNames.indexOf(s1) >= 0) {
@@ -10294,7 +10210,7 @@ bh_multianim_MacroManimParser.prototype = {
 					enumNames.push(s1);
 					lastWasComma = false;
 					break;
-				case 31:
+				case 32:
 					var s2 = _g1.s;
 					this.advance();
 					if(enumNames.indexOf(s2) >= 0) {
@@ -10303,7 +10219,7 @@ bh_multianim_MacroManimParser.prototype = {
 					enumNames.push(s2);
 					lastWasComma = false;
 					break;
-				case 34:
+				case 35:
 					var s3 = _g1.s;
 					this.advance();
 					if(enumNames.indexOf(s3) >= 0) {
@@ -10324,14 +10240,14 @@ bh_multianim_MacroManimParser.prototype = {
 			var to = this.parseInteger();
 			def.type = bh_multianim_DefinitionType.PPTRange(from,to);
 			break;
-		case 28:
+		case 29:
 			var _g1 = _g.s;
 			var from = this.parseInteger();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot);
 			var to = this.parseInteger();
 			def.type = bh_multianim_DefinitionType.PPTRange(from,to);
 			break;
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"hexdirection")) {
@@ -10438,12 +10354,12 @@ bh_multianim_MacroManimParser.prototype = {
 				this.advance();
 				var _g1 = this.tokens[this.tpos].type;
 				switch(_g1._hx_index) {
-				case 28:
+				case 29:
 					var n = _g1.s;
 					this.advance();
 					s = "-" + n;
 					break;
-				case 29:
+				case 30:
 					var n = _g1.s;
 					this.advance();
 					s = "-" + n;
@@ -10452,27 +10368,27 @@ bh_multianim_MacroManimParser.prototype = {
 					this.error("expected number after minus");
 				}
 				break;
-			case 28:
-				var n = _g.s;
-				this.advance();
-				s = n;
-				break;
 			case 29:
 				var n = _g.s;
 				this.advance();
 				s = n;
 				break;
 			case 30:
-				var str = _g.s;
+				var n = _g.s;
 				this.advance();
-				s = "0x" + str;
+				s = n;
 				break;
 			case 31:
 				var str = _g.s;
 				this.advance();
+				s = "0x" + str;
+				break;
+			case 32:
+				var str = _g.s;
+				this.advance();
 				s = str;
 				break;
-			case 34:
+			case 35:
 				var str = _g.s;
 				this.advance();
 				s = str;
@@ -10584,12 +10500,12 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
-			case 28:
+			case 29:
 				var n = _g.s;
 				this.advance();
 				arr.push(n);
 				break;
-			case 29:
+			case 30:
 				var n1 = _g.s;
 				this.advance();
 				arr.push(n1);
@@ -10616,7 +10532,7 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			var paramName;
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 33) {
+			if(_g._hx_index == 34) {
 				var s = _g.s;
 				this.advance();
 				paramName = s;
@@ -10657,21 +10573,19 @@ bh_multianim_MacroManimParser.prototype = {
 					break;
 				default:
 					var _g1 = this.tokens[this.tpos].type;
-					if(_g1._hx_index == 31) {
+					if(_g1._hx_index == 32) {
 						var _g2 = _g1.s;
 						var s1 = _g2;
 						if(bh_multianim_MacroManimParser.isKeyword(s1,"greaterthanorequal")) {
 							this.advance();
 							var val1 = this.parseAnything();
-							var value = bh_multianim_ConditionalValues.CoRange(this.resolveToFloat(val1),null,false,false);
-							result.h[paramName] = value;
+							result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val1,null,false,false);
 						} else {
 							var s2 = _g2;
 							if(bh_multianim_MacroManimParser.isKeyword(s2,"lessthanorequal")) {
 								this.advance();
 								var val2 = this.parseAnything();
-								var value1 = bh_multianim_ConditionalValues.CoRange(null,this.resolveToFloat(val2),false,false);
-								result.h[paramName] = value1;
+								result.h[paramName] = bh_multianim_ConditionalValues.CoRange(null,val2,false,false);
 							} else {
 								var s3 = _g2;
 								if(bh_multianim_MacroManimParser.isKeyword(s3,"bit")) {
@@ -10684,26 +10598,23 @@ bh_multianim_MacroManimParser.prototype = {
 									var s4 = _g2;
 									if(bh_multianim_MacroManimParser.isKeyword(s4,"between")) {
 										this.advance();
-										var from = this.parseConditionalValue();
+										var from = this.parseAnything();
 										this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot);
-										var to = this.parseConditionalValue();
-										var fromF = this.resolveCondToFloat(from);
-										var toF = this.resolveCondToFloat(to);
-										result.h[paramName] = bh_multianim_ConditionalValues.CoRange(fromF,toF,false,false);
+										var to = this.parseAnything();
+										result.h[paramName] = bh_multianim_ConditionalValues.CoRange(from,to,false,false);
 									} else {
-										var val3 = this.parseConditionalValue();
+										var val3 = this.parseAnything();
 										if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot)) {
-											var to1 = this.parseConditionalValue();
-											var fromF1 = this.resolveCondToFloat(val3);
-											var toF1 = this.resolveCondToFloat(to1);
-											result.h[paramName] = bh_multianim_ConditionalValues.CoRange(fromF1,toF1,false,false);
+											var to1 = this.parseAnything();
+											result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val3,to1,false,false);
 										} else {
+											var valStr = this.rvToCondString(val3);
 											var paramDef1 = defs.h[paramName];
 											if(paramDef1 != null) {
-												var cv1 = this.stringToConditional(val3,paramDef1.type);
+												var cv1 = this.stringToConditional(valStr,paramDef1.type);
 												result.h[paramName] = cv1;
 											} else {
-												var cv2 = this.stringToConditionalGeneric(val3);
+												var cv2 = this.stringToConditionalGeneric(valStr);
 												result.h[paramName] = cv2;
 											}
 										}
@@ -10712,19 +10623,18 @@ bh_multianim_MacroManimParser.prototype = {
 							}
 						}
 					} else {
-						var val4 = this.parseConditionalValue();
+						var val4 = this.parseAnything();
 						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot)) {
-							var to2 = this.parseConditionalValue();
-							var fromF2 = this.resolveCondToFloat(val4);
-							var toF2 = this.resolveCondToFloat(to2);
-							result.h[paramName] = bh_multianim_ConditionalValues.CoRange(fromF2,toF2,false,false);
+							var to2 = this.parseAnything();
+							result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val4,to2,false,false);
 						} else {
+							var valStr1 = this.rvToCondString(val4);
 							var paramDef2 = defs.h[paramName];
 							if(paramDef2 != null) {
-								var cv3 = this.stringToConditional(val4,paramDef2.type);
+								var cv3 = this.stringToConditional(valStr1,paramDef2.type);
 								result.h[paramName] = cv3;
 							} else {
-								var cv21 = this.stringToConditionalGeneric(val4);
+								var cv21 = this.stringToConditionalGeneric(valStr1);
 								result.h[paramName] = cv21;
 							}
 						}
@@ -10734,26 +10644,22 @@ bh_multianim_MacroManimParser.prototype = {
 			case 22:
 				this.advance();
 				var val5 = this.parseAnything();
-				var value2 = bh_multianim_ConditionalValues.CoRange(null,this.resolveToFloat(val5),false,true);
-				result.h[paramName] = value2;
+				result.h[paramName] = bh_multianim_ConditionalValues.CoRange(null,val5,false,true);
 				break;
 			case 23:
 				this.advance();
 				var val6 = this.parseAnything();
-				var value3 = bh_multianim_ConditionalValues.CoRange(this.resolveToFloat(val6),null,true,false);
-				result.h[paramName] = value3;
+				result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val6,null,true,false);
 				break;
 			case 24:
 				this.advance();
 				var val7 = this.parseAnything();
-				var value4 = bh_multianim_ConditionalValues.CoRange(null,this.resolveToFloat(val7),false,false);
-				result.h[paramName] = value4;
+				result.h[paramName] = bh_multianim_ConditionalValues.CoRange(null,val7,false,false);
 				break;
 			case 25:
 				this.advance();
 				var val8 = this.parseAnything();
-				var value5 = bh_multianim_ConditionalValues.CoRange(this.resolveToFloat(val8),null,false,false);
-				result.h[paramName] = value5;
+				result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val8,null,false,false);
 				break;
 			case 26:
 				this.advance();
@@ -10786,11 +10692,11 @@ bh_multianim_MacroManimParser.prototype = {
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
-			case 28:
+			case 29:
 				var n = _g1.s;
 				this.advance();
 				return "-" + n;
-			case 29:
+			case 30:
 				var n = _g1.s;
 				this.advance();
 				return "-" + n;
@@ -10798,10 +10704,6 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected number after minus");
 			}
 			break;
-		case 28:
-			var n = _g.s;
-			this.advance();
-			return n;
 		case 29:
 			var n = _g.s;
 			this.advance();
@@ -10809,12 +10711,16 @@ bh_multianim_MacroManimParser.prototype = {
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return "0x" + n;
+			return n;
 		case 31:
+			var n = _g.s;
+			this.advance();
+			return "0x" + n;
+		case 32:
 			var s = _g.s;
 			this.advance();
 			return s;
-		case 34:
+		case 35:
 			var s = _g.s;
 			this.advance();
 			return s;
@@ -10883,28 +10789,34 @@ bh_multianim_MacroManimParser.prototype = {
 			return bh_multianim_ConditionalValues.CoStringValue(val);
 		}
 	}
-	,resolveToFloat: function(rv) {
+	,rvToCondString: function(rv) {
 		switch(rv._hx_index) {
+		case 1:
+			var s = rv.s;
+			return s;
 		case 2:
 			var i = rv.i;
-			return i;
+			if(i == null) {
+				return "null";
+			} else {
+				return "" + i;
+			}
+			break;
 		case 5:
 			var f = rv.f;
-			return f;
+			if(f == null) {
+				return "null";
+			} else {
+				return "" + f;
+			}
+			break;
 		default:
-			return 0;
+			return this.error("expected simple value for conditional, got " + Std.string(rv));
 		}
-	}
-	,resolveCondToFloat: function(s) {
-		var f = parseFloat(s);
-		if(!isNaN(f)) {
-			return f;
-		}
-		return 0;
 	}
 	,tryParseBlendMode: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			var bm;
 			switch(s.toLowerCase()) {
@@ -10958,7 +10870,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseHAlign: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"left")) {
@@ -10985,7 +10897,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseVAlign: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"top")) {
@@ -11012,7 +10924,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseFilter: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"none")) {
@@ -11204,7 +11116,7 @@ bh_multianim_MacroManimParser.prototype = {
 														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 														var mode;
 														var _g = this.tokens[this.tpos].type;
-														if(_g._hx_index == 31) {
+														if(_g._hx_index == 32) {
 															var _g2 = _g.s;
 															var s2 = _g2;
 															if(bh_multianim_MacroManimParser.isKeyword(s2,"knockout")) {
@@ -11233,7 +11145,7 @@ bh_multianim_MacroManimParser.prototype = {
 														var smoothColor = false;
 														if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 															var _g = this.tokens[this.tpos].type;
-															if(_g._hx_index == 31) {
+															if(_g._hx_index == 32) {
 																var s2 = _g.s;
 																if(bh_multianim_MacroManimParser.isKeyword(s2,"smoothcolor")) {
 																	this.advance();
@@ -11311,14 +11223,14 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseCustomFilterArg: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 30:
+		case 31:
 			var _g1 = _g.s;
 			var color = this.tryParseColor();
 			if(color != null) {
 				return { value : bh_multianim_ReferenceableValue.RVInteger(color), type : bh_multianim_CustomFilterArgType.CFColor};
 			}
 			return { value : this.parseFloatOrReference(), type : bh_multianim_CustomFilterArgType.CFFloat};
-		case 31:
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"true") || bh_multianim_MacroManimParser.isKeyword(s,"yes")) {
@@ -11334,7 +11246,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 			}
 			break;
-		case 32:
+		case 33:
 			var _g1 = _g.s;
 			var color = this.tryParseColor();
 			if(color != null) {
@@ -11361,7 +11273,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,isNamedParamNext: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var saved = this.tpos;
 			this.advance();
@@ -11374,7 +11286,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseLayoutContent: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
 				this.advance();
@@ -11399,7 +11311,7 @@ bh_multianim_MacroManimParser.prototype = {
 			case 6:
 				this.advance();
 				return layouts;
-			case 31:
+			case 32:
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"grid")) {
@@ -11450,7 +11362,7 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 				}
 				break;
-			case 32:
+			case 33:
 				var _g2 = _g.s;
 				this.parseLayoutEntry(layouts,offsets,currentGrid,currentHex);
 				break;
@@ -11461,7 +11373,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseHexOrientation: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"flat")) {
@@ -11489,7 +11401,7 @@ bh_multianim_MacroManimParser.prototype = {
 			case 6:
 				this.advance();
 				return;
-			case 31:
+			case 32:
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"grid")) {
@@ -11536,7 +11448,7 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 				}
 				break;
-			case 32:
+			case 33:
 				var _g2 = _g.s;
 				this.parseLayoutEntry(layouts,offsets,grid,hex);
 				break;
@@ -11547,7 +11459,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseLayoutEntry: function(layouts,offsets,grid,hex) {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 32) {
+		if(_g._hx_index == 33) {
 			var name = _g.s;
 			this.advance();
 			var layoutType = null;
@@ -11556,7 +11468,7 @@ bh_multianim_MacroManimParser.prototype = {
 				layoutType = bh_multianim_layouts_LayoutsType.Single(content);
 			} else {
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 31) {
+				if(_g._hx_index == 32) {
 					var _g1 = _g.s;
 					var s = _g1;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"sequence")) {
@@ -11707,7 +11619,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var alignX = bh_multianim_layouts_LayoutAlignX.Left;
 		var alignY = bh_multianim_layouts_LayoutAlignY.Top;
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"align")) {
 				this.advance();
@@ -11718,7 +11630,7 @@ bh_multianim_MacroManimParser.prototype = {
 				var count = 0;
 				while(!(count > 0 && !this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma))) {
 					var _g = this.tokens[this.tpos].type;
-					if(_g._hx_index == 31) {
+					if(_g._hx_index == 32) {
 						var _g1 = _g.s;
 						var v = _g1;
 						if(bh_multianim_MacroManimParser.isKeyword(v,"center")) {
@@ -11864,6 +11776,9 @@ bh_multianim_MacroManimParser.prototype = {
 				var _g = this.tokens[this.tpos].type;
 				switch(_g._hx_index) {
 				case 1:
+					if(conditional._hx_index != 3) {
+						this.error("stacked conditionals are not allowed — use @all() or @any() with comma-separated parameters");
+					}
 					this.advance();
 					conditional = bh_multianim_NodeConditionalValues.Conditional(this.parseConditionalParameters(currentDefs),false);
 					++atCount;
@@ -11871,17 +11786,23 @@ bh_multianim_MacroManimParser.prototype = {
 				case 8:
 					this.advance();
 					break;
-				case 31:
+				case 32:
 					var _g1 = _g.s;
 					var s = _g1;
-					if(bh_multianim_MacroManimParser.isKeyword(s,"if")) {
+					if(bh_multianim_MacroManimParser.isKeyword(s,"if") || bh_multianim_MacroManimParser.isKeyword(s,"all")) {
+						if(conditional._hx_index != 3) {
+							this.error("stacked conditionals are not allowed — use @all() or @any() with comma-separated parameters");
+						}
 						this.advance();
 						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 						conditional = bh_multianim_NodeConditionalValues.Conditional(this.parseConditionalParameters(currentDefs),false);
 						++atCount;
 					} else {
 						var s1 = _g1;
-						if(bh_multianim_MacroManimParser.isKeyword(s1,"ifstrict")) {
+						if(bh_multianim_MacroManimParser.isKeyword(s1,"any")) {
+							if(conditional._hx_index != 3) {
+								this.error("stacked conditionals are not allowed — use @all() or @any() with comma-separated parameters");
+							}
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 							conditional = bh_multianim_NodeConditionalValues.Conditional(this.parseConditionalParameters(currentDefs),true);
@@ -11944,49 +11865,66 @@ bh_multianim_MacroManimParser.prototype = {
 														++atCount;
 													} else {
 														var s9 = _g1;
-														if(bh_multianim_MacroManimParser.isKeyword(s9,"flow")) {
-															this.advance();
-															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDot);
-															var flowProp = this.expectIdentifierOrString();
-															switch(flowProp.toLowerCase()) {
-															case "absolute":
-																flowIsAbsolute = true;
-																break;
-															case "halign":
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																flowHAlign = this.parseFlowAlign();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																break;
-															case "offset":
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																flowOffsetX = this.parseIntegerOrReference();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																flowOffsetY = this.parseIntegerOrReference();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																break;
-															case "valign":
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																flowVAlign = this.parseFlowAlign();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																break;
-															default:
-																this.error("unknown flow property: " + flowProp + " (expected halign, valign, offset, absolute)");
+														if(bh_multianim_MacroManimParser.isKeyword(s9,"switch")) {
+															if(atCount > 0) {
+																this.error("@switch cannot be combined with other @ modifiers");
 															}
-															hasFlowProps = true;
-															++atCount;
+															if(parent == null) {
+																this.error("@switch cannot be used at root level");
+															}
+															this.advance();
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+															var switchParam = this.expectIdentifierOrString();
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+															this.parseSwitchArms(parent,switchParam,currentDefs);
+															return null;
 														} else {
 															var s10 = _g1;
-															if(bh_multianim_MacroManimParser.isKeyword(s10,"final")) {
+															if(bh_multianim_MacroManimParser.isKeyword(s10,"flow")) {
 																this.advance();
-																var name = this.expectIdentifierOrString();
-																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TEquals);
-																var expr = this.parseAnything();
-																if(this.scopeVars != null) {
-																	this.scopeVars.push(name);
+																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TDot);
+																var flowProp = this.expectIdentifierOrString();
+																switch(flowProp.toLowerCase()) {
+																case "absolute":
+																	flowIsAbsolute = true;
+																	break;
+																case "halign":
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																	flowHAlign = this.parseFlowAlign();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																	break;
+																case "offset":
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																	flowOffsetX = this.parseIntegerOrReference();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																	flowOffsetY = this.parseIntegerOrReference();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																	break;
+																case "valign":
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																	flowVAlign = this.parseFlowAlign();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																	break;
+																default:
+																	this.error("unknown flow property: " + flowProp + " (expected halign, valign, offset, absolute)");
 																}
-																return this.createNode(bh_multianim_NodeType.FINAL_VAR(name,expr),parent,bh_multianim_NodeConditionalValues.NoConditional,null,null,null,null,-1,bh_multianim_UpdatableNameType.UNTObject(name));
+																hasFlowProps = true;
+																++atCount;
 															} else {
-																break _hx_loop1;
+																var s11 = _g1;
+																if(bh_multianim_MacroManimParser.isKeyword(s11,"final")) {
+																	this.advance();
+																	var name = this.expectIdentifierOrString();
+																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TEquals);
+																	var expr = this.parseAnything();
+																	if(this.scopeVars != null) {
+																		this.scopeVars.push(name);
+																	}
+																	return this.createNode(bh_multianim_NodeType.FINAL_VAR(name,expr),parent,bh_multianim_NodeConditionalValues.NoConditional,null,null,null,null,-1,bh_multianim_UpdatableNameType.UNTObject(name));
+																} else {
+																	break _hx_loop1;
+																}
 															}
 														}
 													}
@@ -12086,7 +12024,7 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 		}
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 32) {
+		if(_g._hx_index == 33) {
 			var name = _g.s;
 			if(!(updatableName._hx_index == 0 && updatableName.name == null)) {
 				this.error("#" + name + ": element already has a name");
@@ -12095,7 +12033,7 @@ bh_multianim_MacroManimParser.prototype = {
 			updatableName = bh_multianim_UpdatableNameType.UNTObject(name);
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 31) {
+				if(_g._hx_index == 32) {
 					var s = _g.s;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"updatable")) {
 						this.advance();
@@ -12105,12 +12043,12 @@ bh_multianim_MacroManimParser.prototype = {
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 			} else if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 33) {
+				if(_g._hx_index == 34) {
 					var indexVar1 = _g.s;
 					this.advance();
 					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 						var _g = this.tokens[this.tpos].type;
-						if(_g._hx_index == 33) {
+						if(_g._hx_index == 34) {
 							var indexVar2 = _g.s;
 							this.advance();
 							if(this.scopeVars == null || this.scopeVars.indexOf(indexVar1) == -1) {
@@ -12206,7 +12144,18 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		var node;
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		switch(_g._hx_index) {
+		case 5:
+			if(conditional._hx_index != 3) {
+				this.advance();
+				var wrapper = this.createNode(bh_multianim_NodeType.POINT,parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+				this.parseNodes(wrapper,currentDefs);
+				return wrapper;
+			} else {
+				node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+			}
+			break;
+		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"bitmap")) {
@@ -12273,22 +12222,22 @@ bh_multianim_MacroManimParser.prototype = {
 								case 10:case 20:
 									textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 									break;
-								case 28:
-									var _g2 = _g.s;
-									textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
-									break;
-								case 30:
+								case 29:
 									var _g2 = _g.s;
 									textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 									break;
 								case 31:
+									var _g2 = _g.s;
+									textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+									break;
+								case 32:
 									var gs = _g.s;
 									if(bh_multianim_MacroManimParser.isKeyword(gs,"grid")) {
 										this.advance();
 										textAlignWidth = bh_multianim_TextAlignWidth.TAWGrid;
 									}
 									break;
-								case 33:
+								case 34:
 									var _g2 = _g.s;
 									textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 									break;
@@ -12391,22 +12340,22 @@ bh_multianim_MacroManimParser.prototype = {
 									case 10:case 20:
 										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 										break;
-									case 28:
-										var _g2 = _g.s;
-										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
-										break;
-									case 30:
+									case 29:
 										var _g2 = _g.s;
 										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 										break;
 									case 31:
+										var _g2 = _g.s;
+										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
+										break;
+									case 32:
 										var gs = _g.s;
 										if(bh_multianim_MacroManimParser.isKeyword(gs,"grid")) {
 											this.advance();
 											textAlignWidth = bh_multianim_TextAlignWidth.TAWGrid;
 										}
 										break;
-									case 33:
+									case 34:
 										var _g2 = _g.s;
 										textAlignWidth = bh_multianim_TextAlignWidth.TAWValue(this.parseIntegerOrReference());
 										break;
@@ -12603,7 +12552,7 @@ bh_multianim_MacroManimParser.prototype = {
 															var metadata = null;
 															if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 																var _g = this.tokens[this.tpos].type;
-																if(_g._hx_index == 31) {
+																if(_g._hx_index == 32) {
 																	var d = _g.s;
 																	if(bh_multianim_MacroManimParser.isKeyword(d,"debug")) {
 																		this.advance();
@@ -12751,7 +12700,7 @@ bh_multianim_MacroManimParser.prototype = {
 																	this.advance();
 																	var isTileGroup = false;
 																	var _g = this.tokens[this.tpos].type;
-																	if(_g._hx_index == 31) {
+																	if(_g._hx_index == 32) {
 																		var s2 = _g.s;
 																		if(bh_multianim_MacroManimParser.isKeyword(s2,"tilegroup")) {
 																			this.advance();
@@ -12814,7 +12763,7 @@ bh_multianim_MacroManimParser.prototype = {
 																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																				var extRef = null;
 																				var _g = this.tokens[this.tpos].type;
-																				if(_g._hx_index == 31) {
+																				if(_g._hx_index == 32) {
 																					var s2 = _g.s;
 																					if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
 																						this.advance();
@@ -12838,7 +12787,7 @@ bh_multianim_MacroManimParser.prototype = {
 																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																					var extRef = null;
 																					var _g = this.tokens[this.tpos].type;
-																					if(_g._hx_index == 31) {
+																					if(_g._hx_index == 32) {
 																						var s2 = _g.s;
 																						if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
 																							this.advance();
@@ -12862,7 +12811,7 @@ bh_multianim_MacroManimParser.prototype = {
 																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 																						var type;
 																						var _g = this.tokens[this.tpos].type;
-																						if(_g._hx_index == 31) {
+																						if(_g._hx_index == 32) {
 																							var _g2 = _g.s;
 																							var s2 = _g2;
 																							if(bh_multianim_MacroManimParser.isKeyword(s2,"error")) {
@@ -12883,7 +12832,7 @@ bh_multianim_MacroManimParser.prototype = {
 																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 																						var source = null;
 																						var _g = this.tokens[this.tpos].type;
-																						if(_g._hx_index == 31) {
+																						if(_g._hx_index == 32) {
 																							var _g2 = _g.s;
 																							var s2 = _g2;
 																							if(bh_multianim_MacroManimParser.isKeyword(s2,"callback")) {
@@ -12944,7 +12893,7 @@ bh_multianim_MacroManimParser.prototype = {
 																								if(bh_multianim_MacroManimParser.isKeyword(s,"stateanim")) {
 																									this.advance();
 																									var _g = this.tokens[this.tpos].type;
-																									if(_g._hx_index == 31) {
+																									if(_g._hx_index == 32) {
 																										var s2 = _g.s;
 																										if(bh_multianim_MacroManimParser.isKeyword(s2,"construct")) {
 																											this.advance();
@@ -12953,7 +12902,7 @@ bh_multianim_MacroManimParser.prototype = {
 																											this.eatComma();
 																											var externallyDriven = false;
 																											var _g = this.tokens[this.tpos].type;
-																											if(_g._hx_index == 31) {
+																											if(_g._hx_index == 32) {
 																												var s3 = _g.s;
 																												if(bh_multianim_MacroManimParser.isKeyword(s3,"externallydriven")) {
 																													this.advance();
@@ -13020,7 +12969,7 @@ bh_multianim_MacroManimParser.prototype = {
 																												case 1:
 																													this.advance();
 																													var _g = this.tokens[this.tpos].type;
-																													if(_g._hx_index == 31) {
+																													if(_g._hx_index == 32) {
 																														var _g2 = _g.s;
 																														var s2 = _g2;
 																														if(bh_multianim_MacroManimParser.isKeyword(s2,"2d")) {
@@ -13381,7 +13330,8 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 				}
 			}
-		} else {
+			break;
+		default:
 			node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
 		}
 		if(hasFlowProps) {
@@ -13468,7 +13418,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseRepeatIterator: function(defs) {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"step")) {
@@ -13523,7 +13473,7 @@ bh_multianim_MacroManimParser.prototype = {
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 							var _g = this.tokens[this.tpos].type;
-							if(_g._hx_index == 31) {
+							if(_g._hx_index == 32) {
 								var fromId = _g.s;
 								if(bh_multianim_MacroManimParser.isKeyword(fromId,"from")) {
 									this.advance();
@@ -13623,21 +13573,21 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseTilesIteratorArgs: function(bitmapVar,defs) {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 31:
+		case 32:
 			var s = _g.s;
 			this.advance();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 			var sheetName = this.expectIdentifierOrString();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 			return bh_multianim_RepeatType.TilesIterator(bitmapVar,s,sheetName,null);
-		case 33:
+		case 34:
 			var tilename = _g.s;
 			this.advance();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 			var sheetName = this.expectIdentifierOrString();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 			return bh_multianim_RepeatType.TilesIterator(bitmapVar,tilename,sheetName,null);
-		case 34:
+		case 35:
 			var sheetName = _g.s;
 			this.advance();
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
@@ -13656,14 +13606,14 @@ bh_multianim_MacroManimParser.prototype = {
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
-			case 28:
+			case 29:
 				var _g1 = _g.s;
 				var rate = this.parseFloatOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 				this.parseParticleRateAction(rate,p);
 				this.eatSemicolon();
 				continue;
-			case 29:
+			case 30:
 				var _g2 = _g.s;
 				var rate1 = this.parseFloatOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
@@ -13866,7 +13816,7 @@ bh_multianim_MacroManimParser.prototype = {
 			while(_g < 2) {
 				var _ = _g++;
 				var _g1 = this.tokens[this.tpos].type;
-				if(_g1._hx_index == 31) {
+				if(_g1._hx_index == 32) {
 					var _g2 = _g1.s;
 					var s = _g2;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"color")) {
@@ -13877,7 +13827,7 @@ bh_multianim_MacroManimParser.prototype = {
 						case 10:
 							color = this.parseColorOrReference();
 							break;
-						case 33:
+						case 34:
 							var _g4 = _g3.s;
 							color = this.parseColorOrReference();
 							break;
@@ -13897,12 +13847,12 @@ bh_multianim_MacroManimParser.prototype = {
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 							var _g5 = this.tokens[this.tpos].type;
 							switch(_g5._hx_index) {
-							case 33:
+							case 34:
 								var r = _g5.s;
 								this.advance();
 								fontName = bh_multianim_ReferenceableValue.RVReference(r);
 								break;
-							case 34:
+							case 35:
 								var s2 = _g5.s;
 								this.advance();
 								fontName = bh_multianim_ReferenceableValue.RVString(s2);
@@ -13942,7 +13892,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var valign = null;
 			var spacing = null;
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var s = _g.s;
 				if(s == "top" || s == "middle" || s == "bottom") {
 					this.advance();
@@ -13951,11 +13901,11 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
-			case 28:
+			case 29:
 				var _g2 = _g1.s;
 				spacing = this.parseFloat_();
 				break;
-			case 29:
+			case 30:
 				var _g3 = _g1.s;
 				spacing = this.parseFloat_();
 				break;
@@ -13969,7 +13919,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var fill = false;
 		var mode = bh_multianim_AutoFitMode.AFWidth;
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"fill")) {
 				this.advance();
@@ -13977,7 +13927,7 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 		}
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"width")) {
@@ -14028,7 +13978,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var curveName = null;
 			var inlineEasing = null;
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var s = _g.s;
 				var easing = bh_multianim_MacroManimParser.tryMatchEasingName(s);
 				if(easing != null) {
@@ -14048,7 +13998,7 @@ bh_multianim_MacroManimParser.prototype = {
 		_hx_loop1: while(true) {
 			var _g = this.tokens[this.tpos].type;
 			switch(_g._hx_index) {
-			case 31:
+			case 32:
 				var s = _g.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"file") || bh_multianim_MacroManimParser.isKeyword(s,"generated") || bh_multianim_MacroManimParser.isKeyword(s,"sheet")) {
 					tiles.push(this.parseTileSource());
@@ -14056,7 +14006,7 @@ bh_multianim_MacroManimParser.prototype = {
 					break _hx_loop1;
 				}
 				break;
-			case 33:
+			case 34:
 				var _g1 = _g.s;
 				tiles.push(this.parseTileSource());
 				break;
@@ -14068,7 +14018,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseEmitMode: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"point")) {
@@ -14211,7 +14161,7 @@ bh_multianim_MacroManimParser.prototype = {
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 			}
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"turbulence")) {
@@ -14306,7 +14256,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseBoundsMode: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"kill")) {
@@ -14344,7 +14294,7 @@ bh_multianim_MacroManimParser.prototype = {
 		p.boundsMode = this.parseBoundsMode();
 		while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"box")) {
@@ -14487,7 +14437,7 @@ bh_multianim_MacroManimParser.prototype = {
 			switch(_g._hx_index) {
 			case 2:
 				return params;
-			case 31:
+			case 32:
 				var name = _g.s;
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
@@ -14512,7 +14462,7 @@ bh_multianim_MacroManimParser.prototype = {
 					return metadata;
 				}
 				break;
-			case 31:
+			case 32:
 				var name = _g.s;
 				this.advance();
 				if(bh_multianim_MacroManimParser.isKeyword(name,"events")) {
@@ -14527,7 +14477,7 @@ bh_multianim_MacroManimParser.prototype = {
 				}
 				this.eatComma();
 				break;
-			case 33:
+			case 34:
 				var name1 = _g.s;
 				this.advance();
 				metadata.push(this.parseMetadataValue(bh_multianim_ReferenceableValue.RVReference(name1)));
@@ -14619,7 +14569,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseFlowOrientation: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"horizontal")) {
@@ -14646,7 +14596,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseFlowOverflow: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"expand")) {
@@ -14679,7 +14629,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseFlowAlign: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"left")) {
@@ -14731,7 +14681,7 @@ bh_multianim_MacroManimParser.prototype = {
 			case 14:
 				this.advance();
 				continue;
-			case 31:
+			case 32:
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"pos") || bh_multianim_MacroManimParser.isKeyword(s,"position")) {
@@ -14752,7 +14702,7 @@ bh_multianim_MacroManimParser.prototype = {
 						}
 						var gridName = null;
 						var _g2 = this.tokens[this.tpos].type;
-						if(_g2._hx_index == 32) {
+						if(_g2._hx_index == 33) {
 							var n = _g2.s;
 							this.advance();
 							gridName = n;
@@ -14784,7 +14734,7 @@ bh_multianim_MacroManimParser.prototype = {
 								}
 								var hexName = null;
 								var _g3 = this.tokens[this.tpos].type;
-								if(_g3._hx_index == 32) {
+								if(_g3._hx_index == 33) {
 									var n1 = _g3.s;
 									this.advance();
 									hexName = n1;
@@ -14972,14 +14922,14 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 				}
 				break;
-			case 32:
+			case 33:
 				var name = _g.s;
 				this.advance();
 				this.currentName = name;
 				var nameType = bh_multianim_UpdatableNameType.UNTObject(name);
 				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TOpen)) {
 					var _g8 = this.tokens[this.tpos].type;
-					if(_g8._hx_index == 31) {
+					if(_g8._hx_index == 32) {
 						var s11 = _g8.s;
 						if(bh_multianim_MacroManimParser.isKeyword(s11,"updatable")) {
 							this.advance();
@@ -14989,12 +14939,12 @@ bh_multianim_MacroManimParser.prototype = {
 					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
 				} else if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
 					var _g9 = this.tokens[this.tpos].type;
-					if(_g9._hx_index == 33) {
+					if(_g9._hx_index == 34) {
 						var indexVar1 = _g9.s;
 						this.advance();
 						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 							var _g10 = this.tokens[this.tpos].type;
-							if(_g10._hx_index == 33) {
+							if(_g10._hx_index == 34) {
 								var indexVar2 = _g10.s;
 								this.advance();
 								if(this.scopeVars == null || this.scopeVars.indexOf(indexVar1) == -1) {
@@ -15113,6 +15063,121 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 		}
 	}
+	,parseSwitchArms: function(parent,paramName,defs) {
+		var arms = [];
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TSemiColon)) {
+				continue;
+			}
+			var pattern = null;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 22:
+				this.advance();
+				var val = this.parseIntegerOrReference();
+				pattern = bh_multianim_ConditionalValues.CoRange(null,val,false,true);
+				break;
+			case 23:
+				this.advance();
+				var val1 = this.parseIntegerOrReference();
+				pattern = bh_multianim_ConditionalValues.CoRange(val1,null,true,false);
+				break;
+			case 24:
+				this.advance();
+				var val2 = this.parseIntegerOrReference();
+				pattern = bh_multianim_ConditionalValues.CoRange(null,val2,false,false);
+				break;
+			case 25:
+				this.advance();
+				var val3 = this.parseIntegerOrReference();
+				pattern = bh_multianim_ConditionalValues.CoRange(val3,null,false,false);
+				break;
+			case 32:
+				var s = _g.s;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"default")) {
+					this.advance();
+				} else {
+					var values = [];
+					values.push(this.parseSwitchArmValue());
+					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot)) {
+						var toStr = this.parseSwitchArmValue();
+						pattern = bh_multianim_ConditionalValues.CoRange(this.parseRV(values[0]),this.parseRV(toStr),false,false);
+					} else {
+						while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) values.push(this.parseSwitchArmValue());
+						pattern = bh_multianim_ConditionalValues.CoEnums(values);
+					}
+				}
+				break;
+			default:
+				var values1 = [];
+				values1.push(this.parseSwitchArmValue());
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot)) {
+					var toStr1 = this.parseSwitchArmValue();
+					pattern = bh_multianim_ConditionalValues.CoRange(this.parseRV(values1[0]),this.parseRV(toStr1),false,false);
+				} else {
+					while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) values1.push(this.parseSwitchArmValue());
+					pattern = bh_multianim_ConditionalValues.CoEnums(values1);
+				}
+			}
+			var tempContainer = this.createNode(bh_multianim_NodeType.POINT,parent,bh_multianim_NodeConditionalValues.NoConditional,null,null,null,null,-1,bh_multianim_UpdatableNameType.UNTObject(null));
+			switch(this.tokens[this.tpos].type._hx_index) {
+			case 5:
+				this.advance();
+				this.parseNodes(tempContainer,defs);
+				break;
+			case 11:
+				this.advance();
+				var armNode = this.parseNode(bh_multianim_UpdatableNameType.UNTObject(null),tempContainer,defs);
+				if(armNode != null) {
+					tempContainer.children.push(armNode);
+				}
+				break;
+			default:
+				this.error("expected : or { after switch arm pattern");
+			}
+			arms.push({ pattern : pattern, children : tempContainer.children});
+		}
+		if(arms.length == 0) {
+			this.error("@switch requires at least one arm");
+		}
+		var switchNode = this.createNode(bh_multianim_NodeType.SWITCH(paramName,arms),parent,bh_multianim_NodeConditionalValues.NoConditional,null,null,null,null,-1,bh_multianim_UpdatableNameType.UNTObject(null));
+		parent.children.push(switchNode);
+	}
+	,parseSwitchArmValue: function() {
+		var _g = this.tokens[this.tpos].type;
+		switch(_g._hx_index) {
+		case 20:
+			this.advance();
+			var _g1 = this.tokens[this.tpos].type;
+			if(_g1._hx_index == 29) {
+				var n = _g1.s;
+				this.advance();
+				return "-" + n;
+			} else {
+				this.error("expected integer after -");
+				return "";
+			}
+			break;
+		case 29:
+			var n = _g.s;
+			this.advance();
+			return n;
+		case 32:
+			var s = _g.s;
+			this.advance();
+			return s;
+		default:
+			this.error("expected value in switch arm, got " + Std.string(this.tokens[this.tpos].type));
+			return "";
+		}
+	}
+	,parseRV: function(s) {
+		var i = Std.parseInt(s);
+		if(i != null) {
+			return bh_multianim_ReferenceableValue.RVInteger(i);
+		}
+		return bh_multianim_ReferenceableValue.RVInteger(0);
+	}
 	,parseChildNode: function(node,defs) {
 		var newNode = this.parseNode(bh_multianim_UpdatableNameType.UNTObject(null),node,defs);
 		if(newNode != null) {
@@ -15136,21 +15201,21 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parse: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"version")) {
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 				var _g = this.tokens[this.tpos].type;
 				switch(_g._hx_index) {
-				case 28:
+				case 29:
 					var v = _g.s;
 					this.advance();
 					if(v != "1") {
 						this.error("version 1.0 expected, got " + v);
 					}
 					break;
-				case 29:
+				case 30:
 					var v = _g.s;
 					this.advance();
 					if(v != "1.0") {
@@ -15184,7 +15249,7 @@ bh_multianim_MacroManimParser.prototype = {
 			case 14:
 				this.advance();
 				break;
-			case 31:
+			case 32:
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"rect")) {
@@ -15240,15 +15305,15 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseGraphicsStyle: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
-		case 28:
-			var n = _g.s;
-			this.advance();
-			return bh_multianim_GraphicsStyle.GSLineWidth(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)));
 		case 29:
 			var n = _g.s;
 			this.advance();
+			return bh_multianim_GraphicsStyle.GSLineWidth(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)));
+		case 30:
+			var n = _g.s;
+			this.advance();
 			return bh_multianim_GraphicsStyle.GSLineWidth(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)));
-		case 31:
+		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"filled")) {
 				this.advance();
@@ -15378,7 +15443,7 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			}
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"line")) {
@@ -15443,7 +15508,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var stateName = this.expectIdentifierOrString();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TArrow);
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var s = _g.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"sheet")) {
 					this.advance();
@@ -15463,7 +15528,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var center = false;
 			while(true) {
 				var _g1 = this.tokens[this.tpos].type;
-				if(_g1._hx_index == 31) {
+				if(_g1._hx_index == 32) {
 					var _g2 = _g1.s;
 					var s1 = _g2;
 					if(bh_multianim_MacroManimParser.isKeyword(s1,"loop")) {
@@ -15493,7 +15558,7 @@ bh_multianim_MacroManimParser.prototype = {
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var pathName;
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 32) {
+			if(_g._hx_index == 33) {
 				var s = _g.s;
 				this.advance();
 				pathName = s;
@@ -15501,7 +15566,7 @@ bh_multianim_MacroManimParser.prototype = {
 				pathName = this.expectIdentifierOrString();
 			}
 			var _g1 = this.tokens[this.tpos].type;
-			if(_g1._hx_index == 31) {
+			if(_g1._hx_index == 32) {
 				var s1 = _g1.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s1,"path")) {
 					this.advance();
@@ -15519,7 +15584,7 @@ bh_multianim_MacroManimParser.prototype = {
 					break;
 				}
 				var _g2 = this.tokens[this.tpos].type;
-				if(_g2._hx_index == 31) {
+				if(_g2._hx_index == 32) {
 					var _g3 = _g2.s;
 					var s2 = _g3;
 					if(bh_multianim_MacroManimParser.isKeyword(s2,"forward")) {
@@ -15628,7 +15693,7 @@ bh_multianim_MacroManimParser.prototype = {
 																		pathElements.push(bh_multianim_ParsedPaths.Bezier2To(end2,control1,bh_multianim_PathCoordinateMode.PCMAbsolute,null));
 																	} else if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 																		var _g4 = this.tokens[this.tpos].type;
-																		if(_g4._hx_index == 31) {
+																		if(_g4._hx_index == 32) {
 																			var s21 = _g4.s;
 																			if(bh_multianim_MacroManimParser.isKeyword(s21,"smoothing")) {
 																				var smoothing = this.parsePathSmoothing();
@@ -15670,7 +15735,7 @@ bh_multianim_MacroManimParser.prototype = {
 																			pathElements.push(bh_multianim_ParsedPaths.Bezier2To(end3,control11,bezierMode,null));
 																		} else if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 																			var _g5 = this.tokens[this.tpos].type;
-																			if(_g5._hx_index == 31) {
+																			if(_g5._hx_index == 32) {
 																				var s22 = _g5.s;
 																				if(bh_multianim_MacroManimParser.isKeyword(s22,"smoothing")) {
 																					var smoothing3 = this.parsePathSmoothing();
@@ -15724,7 +15789,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseCoordinateMode: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"absolute")) {
@@ -15747,13 +15812,13 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parsePathSmoothing: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"smoothing")) {
 				this.advance();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 31) {
+				if(_g._hx_index == 32) {
 					var _g1 = _g.s;
 					var s2 = _g1;
 					if(bh_multianim_MacroManimParser.isKeyword(s2,"auto")) {
@@ -15789,7 +15854,7 @@ bh_multianim_MacroManimParser.prototype = {
 		var pingPong = false;
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"type")) {
@@ -15847,22 +15912,22 @@ bh_multianim_MacroManimParser.prototype = {
 											var at;
 											var _g2 = this.tokens[this.tpos].type;
 											switch(_g2._hx_index) {
-											case 28:
+											case 29:
 												var _g3 = _g2.s;
 												var rate = this.parseFloatOrReference();
 												at = bh_multianim_AnimatedPathTime.Rate(rate);
 												break;
-											case 29:
+											case 30:
 												var _g4 = _g2.s;
 												var rate1 = this.parseFloatOrReference();
 												at = bh_multianim_AnimatedPathTime.Rate(rate1);
 												break;
-											case 31:
+											case 32:
 												var _g5 = _g2.s;
 												var cpName = this.expectIdentifierOrString();
 												at = bh_multianim_AnimatedPathTime.Checkpoint(cpName);
 												break;
-											case 34:
+											case 35:
 												var _g6 = _g2.s;
 												var cpName1 = this.expectIdentifierOrString();
 												at = bh_multianim_AnimatedPathTime.Checkpoint(cpName1);
@@ -15884,22 +15949,22 @@ bh_multianim_MacroManimParser.prototype = {
 				var at1;
 				var _g7 = this.tokens[this.tpos].type;
 				switch(_g7._hx_index) {
-				case 28:
+				case 29:
 					var _g8 = _g7.s;
 					var rate2 = this.parseFloatOrReference();
 					at1 = bh_multianim_AnimatedPathTime.Rate(rate2);
 					break;
-				case 29:
+				case 30:
 					var _g9 = _g7.s;
 					var rate3 = this.parseFloatOrReference();
 					at1 = bh_multianim_AnimatedPathTime.Rate(rate3);
 					break;
-				case 31:
+				case 32:
 					var _g10 = _g7.s;
 					var cpName2 = this.expectIdentifierOrString();
 					at1 = bh_multianim_AnimatedPathTime.Checkpoint(cpName2);
 					break;
-				case 34:
+				case 35:
 					var _g11 = _g7.s;
 					var cpName3 = this.expectIdentifierOrString();
 					at1 = bh_multianim_AnimatedPathTime.Checkpoint(cpName3);
@@ -15976,7 +16041,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseAnimatedPathActions: function(at,curveAssignments,events) {
 		while(true) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"event")) {
@@ -16063,7 +16128,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseEasingType: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"linear")) {
@@ -16159,7 +16224,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseTransitionType: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"none")) {
@@ -16212,14 +16277,14 @@ bh_multianim_MacroManimParser.prototype = {
 												eas = this.parseEasingType();
 											}
 											break;
-										case 28:
+										case 29:
 											var _g1 = _g.s;
 											dist = this.parseFloat_();
 											if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 												eas = this.parseEasingType();
 											}
 											break;
-										case 29:
+										case 30:
 											var _g1 = _g.s;
 											dist = this.parseFloat_();
 											if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
@@ -16256,7 +16321,7 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,parseTransitionDirection: function() {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"left")) {
@@ -16292,7 +16357,7 @@ bh_multianim_MacroManimParser.prototype = {
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var curveName;
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 32) {
+			if(_g._hx_index == 33) {
 				var s = _g.s;
 				this.advance();
 				curveName = s;
@@ -16300,7 +16365,7 @@ bh_multianim_MacroManimParser.prototype = {
 				curveName = this.expectIdentifierOrString();
 			}
 			var _g1 = this.tokens[this.tpos].type;
-			if(_g1._hx_index == 31) {
+			if(_g1._hx_index == 32) {
 				var s1 = _g1.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s1,"curve")) {
 					this.advance();
@@ -16331,7 +16396,7 @@ bh_multianim_MacroManimParser.prototype = {
 					segments.push(this.parseCurveSegment(explicit));
 					segExplicit.push(explicit[0]);
 					break;
-				case 31:
+				case 32:
 					var _g3 = _g2.s;
 					var s2 = _g3;
 					if(bh_multianim_MacroManimParser.isKeyword(s2,"easing")) {
@@ -16459,14 +16524,14 @@ bh_multianim_MacroManimParser.prototype = {
 		var allowPartialMapping = false;
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 31) {
+			if(_g._hx_index == 32) {
 				var _g1 = _g.s;
 				var s = _g1;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"format")) {
 					this.advance();
 					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 					var _g2 = this.tokens[this.tpos].type;
-					if(_g2._hx_index == 31) {
+					if(_g2._hx_index == 32) {
 						var _g3 = _g2.s;
 						var s2 = _g3;
 						if(bh_multianim_MacroManimParser.isKeyword(s2,"cross")) {
@@ -16492,7 +16557,7 @@ bh_multianim_MacroManimParser.prototype = {
 						var sheet = this.parseStringOrReference();
 						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 						var _g4 = this.tokens[this.tpos].type;
-						if(_g4._hx_index == 31) {
+						if(_g4._hx_index == 32) {
 							var _g5 = _g4.s;
 							var s22 = _g5;
 							if(bh_multianim_MacroManimParser.isKeyword(s22,"prefix")) {
@@ -16637,7 +16702,7 @@ bh_multianim_MacroManimParser.prototype = {
 		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 		var source;
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"sheet")) {
 				this.advance();
@@ -16671,7 +16736,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var entry = { name : name, x : x, y : y, w : w, h : h};
 			while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
 				var _g = this.tokens[this.tpos].type;
-				if(_g._hx_index == 31) {
+				if(_g._hx_index == 32) {
 					var _g1 = _g.s;
 					var s = _g1;
 					if(bh_multianim_MacroManimParser.isKeyword(s,"offset")) {
@@ -16721,6 +16786,7 @@ bh_multianim_MacroManimParser.prototype = {
 		return { source : source, entries : entries};
 	}
 	,parseData: function() {
+		var enums = new haxe_ds_StringMap();
 		var records = new haxe_ds_StringMap();
 		var fields = [];
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
@@ -16729,27 +16795,72 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			}
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 32) {
+			if(_g._hx_index == 33) {
 				var name = _g.s;
 				this.advance();
-				this.expectKeyword("record");
-				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-				var recordFields = this.parseDataRecordFields();
-				if(Object.prototype.hasOwnProperty.call(records.h,name)) {
-					this.error("record type \"" + name + "\" already defined");
+				var _g1 = this.tokens[this.tpos].type;
+				if(_g1._hx_index == 32) {
+					var _g2 = _g1.s;
+					var s = _g2;
+					if(bh_multianim_MacroManimParser.isKeyword(s,"record")) {
+						this.advance();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+						var recordFields = this.parseDataRecordFields(enums);
+						if(Object.prototype.hasOwnProperty.call(records.h,name)) {
+							this.error("record type \"" + name + "\" already defined");
+						}
+						if(Object.prototype.hasOwnProperty.call(enums.h,name)) {
+							this.error("\"" + name + "\" is already defined as an enum");
+						}
+						records.h[name] = { name : name, fields : recordFields};
+					} else {
+						var s1 = _g2;
+						if(bh_multianim_MacroManimParser.isKeyword(s1,"enum")) {
+							this.advance();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+							var enumValues = this.parseDataEnumValues();
+							if(Object.prototype.hasOwnProperty.call(enums.h,name)) {
+								this.error("enum type \"" + name + "\" already defined");
+							}
+							if(Object.prototype.hasOwnProperty.call(records.h,name)) {
+								this.error("\"" + name + "\" is already defined as a record");
+							}
+							enums.h[name] = { name : name, values : enumValues};
+						} else {
+							this.error("expected \"record\" or \"enum\" after #" + name);
+						}
+					}
+				} else {
+					this.error("expected \"record\" or \"enum\" after #" + name);
 				}
-				records.h[name] = { name : name, fields : recordFields};
 			} else {
 				var fieldName = this.expectIdentifierOrString();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-				var field = this.parseDataField(fieldName,records);
+				var field = this.parseDataField(fieldName,enums,records);
 				fields.push(field);
 			}
 			this.eatSemicolon();
 		}
-		return { records : records, fields : fields};
+		return { enums : enums, records : records, fields : fields};
 	}
-	,parseDataRecordFields: function() {
+	,parseDataEnumValues: function() {
+		var result = [];
+		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+			return result;
+		}
+		while(true) {
+			var value = this.expectIdentifierOrString();
+			if(result.indexOf(value) != -1) {
+				this.error("duplicate enum value \"" + value + "\"");
+			}
+			result.push(value);
+			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
+				return result;
+			}
+			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+		}
+	}
+	,parseDataRecordFields: function(enums) {
 		var result = [];
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
 			return result;
@@ -16758,7 +16869,7 @@ bh_multianim_MacroManimParser.prototype = {
 			var isOptional = this.match(bh_multianim__$MacroManimParser_MacroTokenType.TQuestion);
 			var fieldName = this.expectIdentifierOrString();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-			var fieldType = this.parseDataType();
+			var fieldType = this.parseDataType(enums);
 			result.push({ name : fieldName, type : fieldType, optional : isOptional});
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TClosed)) {
 				return result;
@@ -16766,7 +16877,7 @@ bh_multianim_MacroManimParser.prototype = {
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 		}
 	}
-	,parseDataType: function() {
+	,parseDataType: function(enums) {
 		var typeName = this.expectIdentifierOrString();
 		var baseType;
 		switch(typeName.toLowerCase()) {
@@ -16783,7 +16894,7 @@ bh_multianim_MacroManimParser.prototype = {
 			baseType = bh_multianim_DataValueType.DVTString;
 			break;
 		default:
-			baseType = bh_multianim_DataValueType.DVTRecord(typeName);
+			baseType = Object.prototype.hasOwnProperty.call(enums.h,typeName) ? bh_multianim_DataValueType.DVTEnum(typeName) : bh_multianim_DataValueType.DVTRecord(typeName);
 		}
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
@@ -16791,9 +16902,9 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		return baseType;
 	}
-	,parseDataField: function(fieldName,records) {
+	,parseDataField: function(fieldName,enums,records) {
 		var _g = this.tokens[this.tpos].type;
-		if(_g._hx_index == 31) {
+		if(_g._hx_index == 32) {
 			var _g1 = _g.s;
 			var s = _g1;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"true") || bh_multianim_MacroManimParser.isKeyword(s,"false")) {
@@ -16801,26 +16912,42 @@ bh_multianim_MacroManimParser.prototype = {
 				return { name : fieldName, type : bh_multianim_DataValueType.DVTBool, value : bh_multianim_DataValue.DVBool(boolVal)};
 			} else {
 				var s = _g1;
-				var saved = this.tpos;
-				this.advance();
-				switch(this.tokens[this.tpos].type._hx_index) {
-				case 3:
+				if(Object.prototype.hasOwnProperty.call(enums.h,s)) {
 					this.advance();
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
-					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
-					var elements = this.parseDataArrayElements(bh_multianim_DataValueType.DVTRecord(s),records);
-					return { name : fieldName, type : bh_multianim_DataValueType.DVTArray(bh_multianim_DataValueType.DVTRecord(s)), value : bh_multianim_DataValue.DVArray(elements)};
-				case 5:
-					this.advance();
-					var recordDef = records.h[s];
-					if(recordDef == null) {
-						this.error("unknown record type \"" + s + "\"");
-						return null;
+					if(this.tokens[this.tpos].type._hx_index == 3) {
+						this.advance();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+						var elements = this.parseDataArrayElements(bh_multianim_DataValueType.DVTEnum(s),enums,records);
+						return { name : fieldName, type : bh_multianim_DataValueType.DVTArray(bh_multianim_DataValueType.DVTEnum(s)), value : bh_multianim_DataValue.DVArray(elements)};
+					} else {
+						var valueStr = this.expectIdentifierOrString();
+						this.validateEnumValue(s,valueStr,enums);
+						return { name : fieldName, type : bh_multianim_DataValueType.DVTEnum(s), value : bh_multianim_DataValue.DVEnumValue(s,valueStr)};
 					}
-					var recordValue = this.parseDataRecordValue(s,recordDef,records);
-					return { name : fieldName, type : bh_multianim_DataValueType.DVTRecord(s), value : recordValue};
-				default:
-					this.tpos = saved;
+				} else {
+					var s = _g1;
+					var saved = this.tpos;
+					this.advance();
+					switch(this.tokens[this.tpos].type._hx_index) {
+					case 3:
+						this.advance();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
+						var elements = this.parseDataArrayElements(bh_multianim_DataValueType.DVTRecord(s),enums,records);
+						return { name : fieldName, type : bh_multianim_DataValueType.DVTArray(bh_multianim_DataValueType.DVTRecord(s)), value : bh_multianim_DataValue.DVArray(elements)};
+					case 5:
+						this.advance();
+						var recordDef = records.h[s];
+						if(recordDef == null) {
+							this.error("unknown record type \"" + s + "\"");
+							return null;
+						}
+						var recordValue = this.parseDataRecordValue(s,recordDef,enums,records);
+						return { name : fieldName, type : bh_multianim_DataValueType.DVTRecord(s), value : recordValue};
+					default:
+						this.tpos = saved;
+					}
 				}
 			}
 		}
@@ -16835,11 +16962,11 @@ bh_multianim_MacroManimParser.prototype = {
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
-			case 28:
+			case 29:
 				var n = _g1.s;
 				this.advance();
 				return { name : fieldName, type : bh_multianim_DataValueType.DVTInt, value : bh_multianim_DataValue.DVInt(-this.stringToInt(n))};
-			case 29:
+			case 30:
 				var n = _g1.s;
 				this.advance();
 				return { name : fieldName, type : bh_multianim_DataValueType.DVTFloat, value : bh_multianim_DataValue.DVFloat(-this.stringToFloat(n))};
@@ -16847,15 +16974,15 @@ bh_multianim_MacroManimParser.prototype = {
 				return this.error("expected number after minus");
 			}
 			break;
-		case 28:
-			var n = _g.s;
-			this.advance();
-			return { name : fieldName, type : bh_multianim_DataValueType.DVTInt, value : bh_multianim_DataValue.DVInt(this.stringToInt(n))};
 		case 29:
 			var n = _g.s;
 			this.advance();
+			return { name : fieldName, type : bh_multianim_DataValueType.DVTInt, value : bh_multianim_DataValue.DVInt(this.stringToInt(n))};
+		case 30:
+			var n = _g.s;
+			this.advance();
 			return { name : fieldName, type : bh_multianim_DataValueType.DVTFloat, value : bh_multianim_DataValue.DVFloat(this.stringToFloat(n))};
-		case 34:
+		case 35:
 			var s = _g.s;
 			this.advance();
 			return { name : fieldName, type : bh_multianim_DataValueType.DVTString, value : bh_multianim_DataValue.DVString(s)};
@@ -16863,7 +16990,7 @@ bh_multianim_MacroManimParser.prototype = {
 			return this.error("expected value in data field \"" + fieldName + "\"");
 		}
 	}
-	,parseDataRecordValue: function(recordName,recordDef,records) {
+	,parseDataRecordValue: function(recordName,recordDef,enums,records) {
 		var fieldValues = new haxe_ds_StringMap();
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			this.eatComma();
@@ -16887,7 +17014,7 @@ bh_multianim_MacroManimParser.prototype = {
 				this.error("unknown field \"" + name + "\" in record \"" + recordName + "\"");
 				return bh_multianim_DataValue.DVInt(0);
 			}
-			var value = this.parseDataValueOfType(expectedType,records);
+			var value = this.parseDataValueOfType(expectedType,enums,records);
 			if(Object.prototype.hasOwnProperty.call(fieldValues.h,name)) {
 				this.error("duplicate field \"" + name + "\" in record");
 			}
@@ -16904,7 +17031,7 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		return bh_multianim_DataValue.DVRecord(recordName,fieldValues);
 	}
-	,parseDataValueOfType: function(type,records) {
+	,parseDataValueOfType: function(type,enums,records) {
 		switch(type._hx_index) {
 		case 0:
 			return bh_multianim_DataValue.DVInt(this.parseInteger());
@@ -16912,7 +17039,7 @@ bh_multianim_MacroManimParser.prototype = {
 			return bh_multianim_DataValue.DVFloat(this.parseFloat_());
 		case 2:
 			var _g = this.tokens[this.tpos].type;
-			if(_g._hx_index == 34) {
+			if(_g._hx_index == 35) {
 				var s = _g.s;
 				this.advance();
 				return bh_multianim_DataValue.DVString(s);
@@ -16924,6 +17051,11 @@ bh_multianim_MacroManimParser.prototype = {
 		case 3:
 			return bh_multianim_DataValue.DVBool(this.parseBool());
 		case 4:
+			var enumName = type.enumName;
+			var valueStr = this.expectIdentifierOrString();
+			this.validateEnumValue(enumName,valueStr,enums);
+			return bh_multianim_DataValue.DVEnumValue(enumName,valueStr);
+		case 5:
 			var recordName = type.recordName;
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 			var recordDef = records.h[recordName];
@@ -16931,23 +17063,33 @@ bh_multianim_MacroManimParser.prototype = {
 				this.error("unknown record type \"" + recordName + "\"");
 				return bh_multianim_DataValue.DVInt(0);
 			}
-			return this.parseDataRecordValue(recordName,recordDef,records);
-		case 5:
+			return this.parseDataRecordValue(recordName,recordDef,enums,records);
+		case 6:
 			var elemType = type.elementType;
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
-			return bh_multianim_DataValue.DVArray(this.parseDataArrayElements(elemType,records));
+			return bh_multianim_DataValue.DVArray(this.parseDataArrayElements(elemType,enums,records));
 		}
 	}
-	,parseDataArrayElements: function(elemType,records) {
+	,parseDataArrayElements: function(elemType,enums,records) {
 		var result = [];
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
 			this.eatComma();
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
 				break;
 			}
-			result.push(this.parseDataValueOfType(elemType,records));
+			result.push(this.parseDataValueOfType(elemType,enums,records));
 		}
 		return result;
+	}
+	,validateEnumValue: function(enumName,value,enums) {
+		var def = enums.h[enumName];
+		if(def == null) {
+			this.error("unknown enum type \"" + enumName + "\"");
+			return;
+		}
+		if(def.values.indexOf(value) == -1) {
+			this.error("invalid value \"" + value + "\" for enum \"" + enumName + "\", expected one of: " + def.values.join(", "));
+		}
 	}
 	,parseDataArrayInferred: function(records) {
 		var result = [];
@@ -16962,12 +17104,12 @@ bh_multianim_MacroManimParser.prototype = {
 				this.advance();
 				var _g1 = this.tokens[this.tpos].type;
 				switch(_g1._hx_index) {
-				case 28:
+				case 29:
 					var n = _g1.s;
 					this.advance();
 					result.push(bh_multianim_DataValue.DVInt(-this.stringToInt(n)));
 					break;
-				case 29:
+				case 30:
 					var n1 = _g1.s;
 					this.advance();
 					result.push(bh_multianim_DataValue.DVFloat(-this.stringToFloat(n1)));
@@ -16976,17 +17118,17 @@ bh_multianim_MacroManimParser.prototype = {
 					this.error("expected number after minus");
 				}
 				break;
-			case 28:
+			case 29:
 				var n2 = _g.s;
 				this.advance();
 				result.push(bh_multianim_DataValue.DVInt(this.stringToInt(n2)));
 				break;
-			case 29:
+			case 30:
 				var n3 = _g.s;
 				this.advance();
 				result.push(bh_multianim_DataValue.DVFloat(this.stringToFloat(n3)));
 				break;
-			case 31:
+			case 32:
 				var s = _g.s;
 				if(bh_multianim_MacroManimParser.isKeyword(s,"true") || bh_multianim_MacroManimParser.isKeyword(s,"false")) {
 					result.push(bh_multianim_DataValue.DVBool(this.parseBool()));
@@ -16994,7 +17136,7 @@ bh_multianim_MacroManimParser.prototype = {
 					this.error("expected value in array literal");
 				}
 				break;
-			case 34:
+			case 35:
 				var s1 = _g.s;
 				this.advance();
 				result.push(bh_multianim_DataValue.DVString(s1));
@@ -17026,6 +17168,10 @@ bh_multianim_MacroManimParser.prototype = {
 			var _g = value.fields;
 			var name = value.recordName;
 			return bh_multianim_DataValueType.DVTRecord(name);
+		case 6:
+			var _g = value.value;
+			var enumName = value.enumName;
+			return bh_multianim_DataValueType.DVTEnum(enumName);
 		}
 	}
 	,parseOptionalParams: function(defs,once) {
@@ -18481,6 +18627,83 @@ bh_multianim_MultiAnimBuilder.collectParamRefs = function(rv,result) {
 		bh_multianim_MultiAnimBuilder.collectParamRefs(e,result);
 		break;
 	default:
+	}
+};
+bh_multianim_MultiAnimBuilder.collectConditionalValueParamRefs = function(cv,result) {
+	switch(cv._hx_index) {
+	case 1:
+		var _g = cv.fromExclusive;
+		var _g = cv.toExclusive;
+		var from = cv.from;
+		var to = cv.to;
+		if(from != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(from,result);
+		}
+		if(to != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(to,result);
+		}
+		break;
+	case 7:
+		var inner = cv.value;
+		bh_multianim_MultiAnimBuilder.collectConditionalValueParamRefs(inner,result);
+		break;
+	default:
+	}
+};
+bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs = function(nodes,result) {
+	var _g = 0;
+	while(_g < nodes.length) {
+		var node = nodes[_g];
+		++_g;
+		var _g1 = node.conditionals;
+		switch(_g1._hx_index) {
+		case 0:
+			var _g2 = _g1.strict;
+			var conditions = _g1.values;
+			var h = conditions.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var paramName = _g_key;
+				var condValue = _g_value;
+				if(result.indexOf(paramName) < 0) {
+					result.push(paramName);
+				}
+				bh_multianim_MultiAnimBuilder.collectConditionalValueParamRefs(condValue,result);
+			}
+			break;
+		case 1:
+			var values = _g1.values;
+			if(values != null) {
+				var h1 = values.h;
+				var _g_h1 = h1;
+				var _g_keys1 = Object.keys(h1);
+				var _g_length1 = _g_keys1.length;
+				var _g_current1 = 0;
+				while(_g_current1 < _g_length1) {
+					var key1 = _g_keys1[_g_current1++];
+					var _g_key1 = key1;
+					var _g_value1 = _g_h1[key1];
+					var paramName1 = _g_key1;
+					var condValue1 = _g_value1;
+					if(result.indexOf(paramName1) < 0) {
+						result.push(paramName1);
+					}
+					bh_multianim_MultiAnimBuilder.collectConditionalValueParamRefs(condValue1,result);
+				}
+			}
+			break;
+		case 2:case 3:
+			break;
+		}
+		if(node.children != null) {
+			bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs(node.children,result);
+		}
 	}
 };
 bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs = function(coord,result) {
@@ -20586,22 +20809,24 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var to = condValue.to;
 			var fromExclusive = condValue.fromExclusive;
 			var toExclusive = condValue.toExclusive;
+			var fromF = from != null ? this.resolveAsNumber(from) : null;
+			var toF = to != null ? this.resolveAsNumber(to) : null;
 			switch(currentValue._hx_index) {
 			case 1:
 				var val = currentValue.val;
-				if(from != null && (fromExclusive ? val <= from : val < from)) {
+				if(fromF != null && (fromExclusive ? val <= fromF : val < fromF)) {
 					return false;
 				}
-				if(to != null && (toExclusive ? val >= to : val > to)) {
+				if(toF != null && (toExclusive ? val >= toF : val > toF)) {
 					return false;
 				}
 				break;
 			case 2:
 				var val = currentValue.val;
-				if(from != null && (fromExclusive ? val <= from : val < from)) {
+				if(fromF != null && (fromExclusive ? val <= fromF : val < fromF)) {
 					return false;
 				}
-				if(to != null && (toExclusive ? val >= to : val > to)) {
+				if(toF != null && (toExclusive ? val >= toF : val > toF)) {
 					return false;
 				}
 				break;
@@ -20686,46 +20911,65 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		return true;
 	}
-	,matchConditions: function(conditions,strict,indexedParams) {
-		var h = conditions.h;
-		var _g_h = h;
-		var _g_keys = Object.keys(h);
-		var _g_length = _g_keys.length;
-		var _g_current = 0;
-		while(_g_current < _g_length) {
-			var key = _g_keys[_g_current++];
-			var _g_key = key;
-			var _g_value = _g_h[key];
-			var key1 = _g_key;
-			var value = _g_value;
-			if(indexedParams.h[key1] == null) {
-				return false;
-			}
-		}
-		var h = indexedParams.h;
-		var _g_h = h;
-		var _g_keys = Object.keys(h);
-		var _g_length = _g_keys.length;
-		var _g_current = 0;
-		while(_g_current < _g_length) {
-			var key = _g_keys[_g_current++];
-			var _g_key = key;
-			var _g_value = _g_h[key];
-			var currentName = _g_key;
-			var currentValue = _g_value;
-			var condValue = conditions.h[currentName];
-			if(condValue == null) {
-				if(strict) {
-					return false;
-				} else {
-					continue;
+	,matchConditions: function(conditions,anyMode,indexedParams) {
+		if(anyMode) {
+			var h = conditions.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var paramName = _g_key;
+				var condValue = _g_value;
+				var paramValue = indexedParams.h[paramName];
+				if(paramValue != null && this.matchSingleCondition(condValue,paramValue)) {
+					return true;
 				}
 			}
-			if(!this.matchSingleCondition(condValue,currentValue)) {
-				return false;
+			return false;
+		} else {
+			var h = conditions.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var paramName = _g_key;
+				var condValue = _g_value;
+				var paramValue = indexedParams.h[paramName];
+				if(paramValue == null) {
+					return false;
+				}
+				if(!this.matchSingleCondition(condValue,paramValue)) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	,resolveMatchedSwitchArm: function(paramName,arms) {
+		var paramValue = this.indexedParams.h[paramName];
+		if(paramValue == null) {
+			return null;
+		}
+		var defaultArm = null;
+		var _g = 0;
+		while(_g < arms.length) {
+			var arm = arms[_g];
+			++_g;
+			if(arm.pattern == null) {
+				defaultArm = arm;
+			} else if(this.matchSingleCondition(arm.pattern,paramValue)) {
+				return arm;
 			}
 		}
-		return true;
+		return defaultArm;
 	}
 	,isMatch: function(node,indexedParams) {
 		var _g = node.conditionals;
@@ -21560,16 +21804,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 9:
 			var x = cell.x;
 			var y = cell.y;
-			var hexCoordinateSystem1 = hexCoordinateSystem.hexLayout;
-			var x1 = this.resolveAsNumber(x);
-			var y1 = this.resolveAsNumber(y);
-			if(y1 == null) {
-				y1 = 0.;
-			}
-			if(x1 == null) {
-				x1 = 0.;
-			}
-			return hexCoordinateSystem1.pixelToHex(new h2d_col_PointImpl(x1,y1)).round();
+			return hexCoordinateSystem.hexLayout.pixelToHex(new bh_base_FPoint(this.resolveAsNumber(x),this.resolveAsNumber(y))).round();
 		case 12:
 			var name = cell.name;
 			var coord = cell.coord;
@@ -22331,6 +22566,22 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.evaluateAndStoreFinal(name,expr,node);
 			tileGroupTile = null;
 			break;
+		case 34:
+			var paramName = _g.paramName;
+			var arms = _g.arms;
+			var matchedArm = this.resolveMatchedSwitchArm(paramName,arms);
+			if(matchedArm != null) {
+				var _g = 0;
+				var _g1 = matchedArm.children;
+				while(_g < _g1.length) {
+					var child = _g1[_g];
+					++_g;
+					this.buildTileGroup(child,tileGroup,currentPos.clone(),gridCoordinateSystem,hexCoordinateSystem,builderParams);
+				}
+			}
+			skipChildren = true;
+			tileGroupTile = null;
+			break;
 		default:
 			throw haxe_Exception.thrown("unsupported node " + node.uniqueNodeName + " " + Std.string(node.type) + " in tileGroup mode" + "");
 		}
@@ -23081,6 +23332,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				bh_multianim_MultiAnimBuilder.collectParamRefs(step,repeatParamRefs);
 				break;
 			default:
+			}
+			if(this.incrementalMode && this.incrementalContext != null) {
+				bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs(node.children,repeatParamRefs);
+				HxOverrides.remove(repeatParamRefs,varName);
 			}
 			var hasIncrementalRepeat = this.incrementalMode && this.incrementalContext != null && repeatParamRefs.length > 0;
 			var needsWrapper = dx != 0 || dy != 0 || iterator != null || hasIncrementalRepeat;
@@ -23838,6 +24093,26 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var expr = _g.value;
 			this.evaluateAndStoreFinal(name,expr,node);
 			return null;
+		case 34:
+			var paramName = _g.paramName;
+			var arms = _g.arms;
+			var container = new h2d_Object();
+			var matchedArm = this.resolveMatchedSwitchArm(paramName,arms);
+			if(matchedArm != null) {
+				var _g = 0;
+				var _g1 = matchedArm.children;
+				while(_g < _g1.length) {
+					var child = _g1[_g];
+					++_g;
+					var childObj = this.build(child,buildMode,gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
+					if(childObj != null) {
+						container.addChild(childObj);
+					}
+				}
+			}
+			skipChildren = true;
+			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(container);
+			break;
 		}
 		var updatableName = node.updatableName;
 		var object = bh_multianim_MultiAnimParser_toh2dObject(builtObject);
@@ -26154,6 +26429,19 @@ bh_multianim_MultiAnimUnexpected.prototype = $extend(bh_base_ParseUnexpected.pro
 	}
 	,__class__: bh_multianim_MultiAnimUnexpected
 });
+var bh_multianim_InvalidSyntax = function(error,pos) {
+	bh_base_ParseError.call(this,pos);
+	this.error = "Error " + error + ", " + pos.format();
+};
+$hxClasses["bh.multianim.InvalidSyntax"] = bh_multianim_InvalidSyntax;
+bh_multianim_InvalidSyntax.__name__ = "bh.multianim.InvalidSyntax";
+bh_multianim_InvalidSyntax.__super__ = bh_base_ParseError;
+bh_multianim_InvalidSyntax.prototype = $extend(bh_base_ParseError.prototype,{
+	toString: function() {
+		return this.error;
+	}
+	,__class__: bh_multianim_InvalidSyntax
+});
 var bh_multianim_PixelShapes = $hxEnums["bh.multianim.PixelShapes"] = { __ename__:true,__constructs__:null
 	,LINE: ($_=function(line) { return {_hx_index:0,line:line,__enum__:"bh.multianim.PixelShapes",toString:$estr}; },$_._hx_name="LINE",$_.__params__ = ["line"],$_)
 	,RECT: ($_=function(rect) { return {_hx_index:1,rect:rect,__enum__:"bh.multianim.PixelShapes",toString:$estr}; },$_._hx_name="RECT",$_.__params__ = ["rect"],$_)
@@ -26515,10 +26803,11 @@ var bh_multianim_DataValueType = $hxEnums["bh.multianim.DataValueType"] = { __en
 	,DVTFloat: {_hx_name:"DVTFloat",_hx_index:1,__enum__:"bh.multianim.DataValueType",toString:$estr}
 	,DVTString: {_hx_name:"DVTString",_hx_index:2,__enum__:"bh.multianim.DataValueType",toString:$estr}
 	,DVTBool: {_hx_name:"DVTBool",_hx_index:3,__enum__:"bh.multianim.DataValueType",toString:$estr}
-	,DVTRecord: ($_=function(recordName) { return {_hx_index:4,recordName:recordName,__enum__:"bh.multianim.DataValueType",toString:$estr}; },$_._hx_name="DVTRecord",$_.__params__ = ["recordName"],$_)
-	,DVTArray: ($_=function(elementType) { return {_hx_index:5,elementType:elementType,__enum__:"bh.multianim.DataValueType",toString:$estr}; },$_._hx_name="DVTArray",$_.__params__ = ["elementType"],$_)
+	,DVTEnum: ($_=function(enumName) { return {_hx_index:4,enumName:enumName,__enum__:"bh.multianim.DataValueType",toString:$estr}; },$_._hx_name="DVTEnum",$_.__params__ = ["enumName"],$_)
+	,DVTRecord: ($_=function(recordName) { return {_hx_index:5,recordName:recordName,__enum__:"bh.multianim.DataValueType",toString:$estr}; },$_._hx_name="DVTRecord",$_.__params__ = ["recordName"],$_)
+	,DVTArray: ($_=function(elementType) { return {_hx_index:6,elementType:elementType,__enum__:"bh.multianim.DataValueType",toString:$estr}; },$_._hx_name="DVTArray",$_.__params__ = ["elementType"],$_)
 };
-bh_multianim_DataValueType.__constructs__ = [bh_multianim_DataValueType.DVTInt,bh_multianim_DataValueType.DVTFloat,bh_multianim_DataValueType.DVTString,bh_multianim_DataValueType.DVTBool,bh_multianim_DataValueType.DVTRecord,bh_multianim_DataValueType.DVTArray];
+bh_multianim_DataValueType.__constructs__ = [bh_multianim_DataValueType.DVTInt,bh_multianim_DataValueType.DVTFloat,bh_multianim_DataValueType.DVTString,bh_multianim_DataValueType.DVTBool,bh_multianim_DataValueType.DVTEnum,bh_multianim_DataValueType.DVTRecord,bh_multianim_DataValueType.DVTArray];
 bh_multianim_DataValueType.__empty_constructs__ = [bh_multianim_DataValueType.DVTInt,bh_multianim_DataValueType.DVTFloat,bh_multianim_DataValueType.DVTString,bh_multianim_DataValueType.DVTBool];
 var bh_multianim_DataValue = $hxEnums["bh.multianim.DataValue"] = { __ename__:true,__constructs__:null
 	,DVInt: ($_=function(v) { return {_hx_index:0,v:v,__enum__:"bh.multianim.DataValue",toString:$estr}; },$_._hx_name="DVInt",$_.__params__ = ["v"],$_)
@@ -26527,8 +26816,9 @@ var bh_multianim_DataValue = $hxEnums["bh.multianim.DataValue"] = { __ename__:tr
 	,DVBool: ($_=function(v) { return {_hx_index:3,v:v,__enum__:"bh.multianim.DataValue",toString:$estr}; },$_._hx_name="DVBool",$_.__params__ = ["v"],$_)
 	,DVArray: ($_=function(elements) { return {_hx_index:4,elements:elements,__enum__:"bh.multianim.DataValue",toString:$estr}; },$_._hx_name="DVArray",$_.__params__ = ["elements"],$_)
 	,DVRecord: ($_=function(recordName,fields) { return {_hx_index:5,recordName:recordName,fields:fields,__enum__:"bh.multianim.DataValue",toString:$estr}; },$_._hx_name="DVRecord",$_.__params__ = ["recordName","fields"],$_)
+	,DVEnumValue: ($_=function(enumName,value) { return {_hx_index:6,enumName:enumName,value:value,__enum__:"bh.multianim.DataValue",toString:$estr}; },$_._hx_name="DVEnumValue",$_.__params__ = ["enumName","value"],$_)
 };
-bh_multianim_DataValue.__constructs__ = [bh_multianim_DataValue.DVInt,bh_multianim_DataValue.DVFloat,bh_multianim_DataValue.DVString,bh_multianim_DataValue.DVBool,bh_multianim_DataValue.DVArray,bh_multianim_DataValue.DVRecord];
+bh_multianim_DataValue.__constructs__ = [bh_multianim_DataValue.DVInt,bh_multianim_DataValue.DVFloat,bh_multianim_DataValue.DVString,bh_multianim_DataValue.DVBool,bh_multianim_DataValue.DVArray,bh_multianim_DataValue.DVRecord,bh_multianim_DataValue.DVEnumValue];
 bh_multianim_DataValue.__empty_constructs__ = [];
 var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true,__constructs__:null
 	,FLOW: ($_=function(maxWidth,maxHeight,minWidth,minHeight,lineHeight,colWidth,layout,paddingTop,paddingBottom,paddingLeft,paddingRight,horizontalSpacing,verticalSpacing,debug,multiline,bgSheet,bgTile,overflow,fillWidth,fillHeight,reverse,hAlign,vAlign) { return {_hx_index:0,maxWidth:maxWidth,maxHeight:maxHeight,minWidth:minWidth,minHeight:minHeight,lineHeight:lineHeight,colWidth:colWidth,layout:layout,paddingTop:paddingTop,paddingBottom:paddingBottom,paddingLeft:paddingLeft,paddingRight:paddingRight,horizontalSpacing:horizontalSpacing,verticalSpacing:verticalSpacing,debug:debug,multiline:multiline,bgSheet:bgSheet,bgTile:bgTile,overflow:overflow,fillWidth:fillWidth,fillHeight:fillHeight,reverse:reverse,hAlign:hAlign,vAlign:vAlign,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FLOW",$_.__params__ = ["maxWidth","maxHeight","minWidth","minHeight","lineHeight","colWidth","layout","paddingTop","paddingBottom","paddingLeft","paddingRight","horizontalSpacing","verticalSpacing","debug","multiline","bgSheet","bgTile","overflow","fillWidth","fillHeight","reverse","hAlign","vAlign"],$_)
@@ -26565,8 +26855,9 @@ var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true
 	,SLOT_CONTENT: {_hx_name:"SLOT_CONTENT",_hx_index:31,__enum__:"bh.multianim.NodeType",toString:$estr}
 	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:32,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
 	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:33,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
+	,SWITCH: ($_=function(paramName,arms) { return {_hx_index:34,paramName:paramName,arms:arms,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SWITCH",$_.__params__ = ["paramName","arms"],$_)
 };
-bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.RICHTEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR];
+bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.RICHTEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR,bh_multianim_NodeType.SWITCH];
 bh_multianim_NodeType.__empty_constructs__ = [bh_multianim_NodeType.POINT,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.SLOT_CONTENT];
 var bh_multianim_NodeConditionalValues = $hxEnums["bh.multianim.NodeConditionalValues"] = { __ename__:true,__constructs__:null
 	,Conditional: ($_=function(values,strict) { return {_hx_index:0,values:values,strict:strict,__enum__:"bh.multianim.NodeConditionalValues",toString:$estr}; },$_._hx_name="Conditional",$_.__params__ = ["values","strict"],$_)
@@ -28317,6 +28608,9 @@ bh_paths_Path.prototype = {
 		}
 		throw haxe_Exception.thrown("rate out of range: " + rate);
 	}
+	,getEndpoint: function() {
+		return this.endpoint;
+	}
 	,getPointInto: function(rate,out) {
 		var _g = 0;
 		var _g1 = this.singlePaths;
@@ -29470,6 +29764,80 @@ var bh_stateanim_MetadataValue = $hxEnums["bh.stateanim.MetadataValue"] = { __en
 };
 bh_stateanim_MetadataValue.__constructs__ = [bh_stateanim_MetadataValue.MVInt,bh_stateanim_MetadataValue.MVFloat,bh_stateanim_MetadataValue.MVString,bh_stateanim_MetadataValue.MVColor];
 bh_stateanim_MetadataValue.__empty_constructs__ = [];
+var bh_stateanim_AnimConditionalMatcher = function() { };
+$hxClasses["bh.stateanim.AnimConditionalMatcher"] = bh_stateanim_AnimConditionalMatcher;
+bh_stateanim_AnimConditionalMatcher.__name__ = "bh.stateanim.AnimConditionalMatcher";
+bh_stateanim_AnimConditionalMatcher.matchConditionalValue = function(condValue,runtimeValue) {
+	switch(condValue._hx_index) {
+	case 0:
+		var v = condValue.value;
+		return v == runtimeValue;
+	case 1:
+		var vs = condValue.values;
+		return vs.indexOf(runtimeValue) != -1;
+	case 2:
+		var inner = condValue.inner;
+		return !bh_stateanim_AnimConditionalMatcher.matchConditionalValue(inner,runtimeValue);
+	case 3:
+		var op = condValue.op;
+		var cmpVal = condValue.value;
+		var numRuntime = parseFloat(runtimeValue);
+		var numCmp = parseFloat(cmpVal);
+		if(isNaN(numRuntime) || isNaN(numCmp)) {
+			return false;
+		} else {
+			switch(op._hx_index) {
+			case 0:
+				return numRuntime >= numCmp;
+			case 1:
+				return numRuntime <= numCmp;
+			case 2:
+				return numRuntime > numCmp;
+			case 3:
+				return numRuntime < numCmp;
+			}
+		}
+		break;
+	case 4:
+		var minVal = condValue.min;
+		var maxVal = condValue.max;
+		var numRuntime = parseFloat(runtimeValue);
+		var numMin = parseFloat(minVal);
+		var numMax = parseFloat(maxVal);
+		if(isNaN(numRuntime) || isNaN(numMin) || isNaN(numMax)) {
+			return false;
+		} else if(numRuntime >= numMin) {
+			return numRuntime <= numMax;
+		} else {
+			return false;
+		}
+		break;
+	}
+};
+bh_stateanim_AnimConditionalMatcher.countStateMatch = function(match,selector) {
+	var retVal = 0;
+	var h = selector.h;
+	var _g_h = h;
+	var _g_keys = Object.keys(h);
+	var _g_length = _g_keys.length;
+	var _g_current = 0;
+	while(_g_current < _g_length) {
+		var key = _g_keys[_g_current++];
+		var _g_key = key;
+		var _g_value = _g_h[key];
+		var key1 = _g_key;
+		var value = _g_value;
+		var condVal = match.h[key1];
+		if(condVal != null) {
+			if(bh_stateanim_AnimConditionalMatcher.matchConditionalValue(condVal,value)) {
+				++retVal;
+			} else {
+				retVal -= 10000;
+			}
+		}
+	}
+	return retVal;
+};
 var bh_stateanim_AnimMetadata = function(metadata) {
 	this.metadata = metadata;
 };
@@ -29637,77 +30005,6 @@ bh_stateanim_AnimParser.validateStateSelector = function(definedStates,selector)
 		}
 	}
 };
-bh_stateanim_AnimParser.matchConditionalValue = function(condValue,runtimeValue) {
-	switch(condValue._hx_index) {
-	case 0:
-		var v = condValue.value;
-		return v == runtimeValue;
-	case 1:
-		var vs = condValue.values;
-		return vs.indexOf(runtimeValue) != -1;
-	case 2:
-		var inner = condValue.inner;
-		return !bh_stateanim_AnimParser.matchConditionalValue(inner,runtimeValue);
-	case 3:
-		var op = condValue.op;
-		var cmpVal = condValue.value;
-		var numRuntime = parseFloat(runtimeValue);
-		var numCmp = parseFloat(cmpVal);
-		if(isNaN(numRuntime) || isNaN(numCmp)) {
-			return false;
-		} else {
-			switch(op._hx_index) {
-			case 0:
-				return numRuntime >= numCmp;
-			case 1:
-				return numRuntime <= numCmp;
-			case 2:
-				return numRuntime > numCmp;
-			case 3:
-				return numRuntime < numCmp;
-			}
-		}
-		break;
-	case 4:
-		var minVal = condValue.min;
-		var maxVal = condValue.max;
-		var numRuntime = parseFloat(runtimeValue);
-		var numMin = parseFloat(minVal);
-		var numMax = parseFloat(maxVal);
-		if(isNaN(numRuntime) || isNaN(numMin) || isNaN(numMax)) {
-			return false;
-		} else if(numRuntime >= numMin) {
-			return numRuntime <= numMax;
-		} else {
-			return false;
-		}
-		break;
-	}
-};
-bh_stateanim_AnimParser.countStateMatch = function(match,selector) {
-	var retVal = 0;
-	var h = selector.h;
-	var _g_h = h;
-	var _g_keys = Object.keys(h);
-	var _g_length = _g_keys.length;
-	var _g_current = 0;
-	while(_g_current < _g_length) {
-		var key = _g_keys[_g_current++];
-		var _g_key = key;
-		var _g_value = _g_h[key];
-		var key1 = _g_key;
-		var value = _g_value;
-		var condVal = match.h[key1];
-		if(condVal != null) {
-			if(bh_stateanim_AnimParser.matchConditionalValue(condVal,value)) {
-				++retVal;
-			} else {
-				retVal -= 10000;
-			}
-		}
-	}
-	return retVal;
-};
 bh_stateanim_AnimParser.findPlaylist = function(stateSelector,animation,definedStates) {
 	bh_stateanim_AnimParser.validateStateSelector(definedStates,stateSelector);
 	return bh_stateanim_AnimParser.findBestStateMatch(animation.playlist,stateSelector,"playlist: " + animation.name);
@@ -29746,7 +30043,7 @@ bh_stateanim_AnimParser.findBestStateMatch = function(items,stateSelector,ambigu
 	while(_g < items.length) {
 		var item = items[_g];
 		++_g;
-		var count = bh_stateanim_AnimParser.countStateMatch(item.states,stateSelector);
+		var count = bh_stateanim_AnimConditionalMatcher.countStateMatch(item.states,stateSelector);
 		if(count > bestScore) {
 			best2Score = bestScore;
 			best2 = best;
@@ -29817,7 +30114,7 @@ bh_stateanim_AnimParser.resolveAnimFilters = function(filters,stateSelector) {
 	while(_g < filters.length) {
 		var entry = filters[_g];
 		++_g;
-		if(bh_stateanim_AnimParser.countStateMatch(entry.states,stateSelector) >= 0) {
+		if(bh_stateanim_AnimConditionalMatcher.countStateMatch(entry.states,stateSelector) >= 0) {
 			var _g1 = entry.filter;
 			switch(_g1._hx_index) {
 			case 0:
@@ -32159,6 +32456,8 @@ bh_ui__$UICardHandHelper_CardEntry.prototype = {
 	__class__: bh_ui__$UICardHandHelper_CardEntry
 };
 var bh_ui__$UICardHandHelper_ActiveAnimation = function(entry,anim,startRotation,endRotation,onComplete) {
+	this.rawEndpoint = null;
+	this.trackingFrom = null;
 	this.entry = entry;
 	this.anim = anim;
 	this.startRotation = startRotation;
@@ -32290,6 +32589,14 @@ bh_ui_UICardHandHelper.prototype = {
 		this.addToHandLayer(entry);
 		var positions = this.computeLayout(-1);
 		var targetIdx = this.cards.indexOf(entry);
+		var _g = 0;
+		var _g1 = this.cards.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(i < positions.length) {
+				this.cards[i].layoutPos = positions[i];
+			}
+		}
 		var _this = entry.container;
 		_this.posChanged = true;
 		_this.x = this.drawPilePosition.x;
@@ -32299,16 +32606,14 @@ bh_ui_UICardHandHelper.prototype = {
 		_this.posChanged = true;
 		_this.rotation = 0;
 		if(targetIdx >= 0 && targetIdx < positions.length) {
-			var targetPos = positions[targetIdx];
-			entry.layoutPos = targetPos;
-			this.animateCardTo(entry,new bh_base_FPoint(this.drawPilePosition.x,this.drawPilePosition.y),new bh_base_FPoint(targetPos.x,targetPos.y),0,targetPos.rotation,this.drawPathName,function() {
+			this.animateCardToTracking(entry,new bh_base_FPoint(this.drawPilePosition.x,this.drawPilePosition.y),0,positions[targetIdx].rotation,this.drawPathName,function() {
 				_gthis.resolveAnimationComplete(entry);
 				var _this = entry.container;
-				var v = targetPos.scale;
+				var v = entry.layoutPos.scale;
 				_this.posChanged = true;
 				_this.scaleX = v;
 				var _this = entry.container;
-				var v = targetPos.scale;
+				var v = entry.layoutPos.scale;
 				_this.posChanged = true;
 				_this.scaleY = v;
 				_gthis.emitEvent(bh_ui_CardHandEvent.DrawAnimComplete(descriptor.id));
@@ -32492,21 +32797,51 @@ bh_ui_UICardHandHelper.prototype = {
 				continue;
 			}
 			var state = anim.anim.update(dt);
-			var _this = anim.entry.container;
-			_this.posChanged = true;
-			_this.x = state.position.x;
-			_this.posChanged = true;
-			_this.y = state.position.y;
 			var rate = state.rate;
-			var _this1 = anim.entry.container;
-			_this1.posChanged = true;
-			_this1.rotation = anim.startRotation + (anim.endRotation - anim.startRotation) * rate + state.rotation;
-			var _this2 = anim.entry.container;
-			_this2.posChanged = true;
-			_this2.scaleX = state.scale;
+			if(anim.trackingFrom != null) {
+				var from = anim.trackingFrom;
+				var target = anim.entry.layoutPos;
+				var rawEp = anim.rawEndpoint;
+				var rawDist = Math.sqrt(rawEp.x * rawEp.x + rawEp.y * rawEp.y);
+				if(rawDist < 1e-10) {
+					var _this = anim.entry.container;
+					_this.posChanged = true;
+					_this.x = from.x + (target.x - from.x) * rate;
+					_this.posChanged = true;
+					_this.y = from.y + (target.y - from.y) * rate;
+				} else {
+					var targetDist = Math.sqrt((target.x - from.x) * (target.x - from.x) + (target.y - from.y) * (target.y - from.y));
+					var targetAngle = Math.atan2(target.y - from.y,target.x - from.x);
+					var rawAngle = Math.atan2(rawEp.y,rawEp.x);
+					var rotation = targetAngle - rawAngle;
+					var scale = targetDist / rawDist;
+					var cosR = Math.cos(rotation);
+					var sinR = Math.sin(rotation);
+					var rx = state.position.x;
+					var ry = state.position.y;
+					var _this1 = anim.entry.container;
+					_this1.posChanged = true;
+					_this1.x = from.x + (rx * cosR - ry * sinR) * scale;
+					_this1.posChanged = true;
+					_this1.y = from.y + (rx * sinR + ry * cosR) * scale;
+				}
+			} else {
+				var _this2 = anim.entry.container;
+				_this2.posChanged = true;
+				_this2.x = state.position.x;
+				_this2.posChanged = true;
+				_this2.y = state.position.y;
+			}
+			var effectiveEndRotation = anim.trackingFrom != null ? anim.entry.layoutPos.rotation : anim.endRotation;
 			var _this3 = anim.entry.container;
 			_this3.posChanged = true;
-			_this3.scaleY = state.scale;
+			_this3.rotation = anim.startRotation + (effectiveEndRotation - anim.startRotation) * rate + state.rotation;
+			var _this4 = anim.entry.container;
+			_this4.posChanged = true;
+			_this4.scaleX = state.scale;
+			var _this5 = anim.entry.container;
+			_this5.posChanged = true;
+			_this5.scaleY = state.scale;
 			anim.entry.container.alpha = state.alpha;
 			if(state.done) {
 				this.activeAnimations.splice(i,1);
@@ -33165,6 +33500,41 @@ bh_ui_UICardHandHelper.prototype = {
 			onComplete();
 		}
 	}
+	,animateCardToTracking: function(entry,from,startRotation,endRotation,pathName,onComplete) {
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.activeAnimations;
+		while(_g1 < _g2.length) {
+			var v = _g2[_g1];
+			++_g1;
+			if(v.entry != entry) {
+				_g.push(v);
+			}
+		}
+		this.activeAnimations = _g;
+		if(pathName != null) {
+			var ap = this.builder.createAnimatedPath(pathName);
+			var durationOv = this.getDurationOverride(pathName);
+			if(durationOv > 0) {
+				ap.durationOverride = durationOv;
+			}
+			var rawEndpoint = ap.path.getEndpoint();
+			var anim = new bh_ui__$UICardHandHelper_ActiveAnimation(entry,ap,startRotation,endRotation,onComplete);
+			anim.trackingFrom = from;
+			anim.rawEndpoint = rawEndpoint;
+			this.activeAnimations.push(anim);
+		} else {
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.x = entry.layoutPos.x;
+			_this.posChanged = true;
+			_this.y = entry.layoutPos.y;
+			var _this = entry.container;
+			_this.posChanged = true;
+			_this.rotation = endRotation;
+			onComplete();
+		}
+	}
 	,emitEvent: function(event) {
 		var _g = 0;
 		var _g1 = this.chainedListeners;
@@ -33555,6 +33925,15 @@ bh_ui_UICardHandTargeting.prototype = {
 		}
 	}
 	,unregisterTarget: function(id) {
+		if(id == this.activeTargetId) {
+			if(this.onTargetHighlight != null) {
+				var wrapper = this.findTarget(this.activeTargetId);
+				if(wrapper != null) {
+					this.onTargetHighlight(this.activeTargetId,false,wrapper.metadata);
+				}
+			}
+			this.activeTargetId = null;
+		}
 		var i = 0;
 		while(i < this.targets.length) {
 			if(this.targets[i].id == id) {
@@ -34018,6 +34397,13 @@ bh_ui_UIElementCursor.__isInterface__ = true;
 bh_ui_UIElementCursor.prototype = {
 	__class__: bh_ui_UIElementCursor
 };
+var bh_ui_UIElementPriority = function() { };
+$hxClasses["bh.ui.UIElementPriority"] = bh_ui_UIElementPriority;
+bh_ui_UIElementPriority.__name__ = "bh.ui.UIElementPriority";
+bh_ui_UIElementPriority.__isInterface__ = true;
+bh_ui_UIElementPriority.prototype = {
+	__class__: bh_ui_UIElementPriority
+};
 var bh_ui_UIElementSelectable = function() { };
 $hxClasses["bh.ui.UIElementSelectable"] = bh_ui_UIElementSelectable;
 bh_ui_UIElementSelectable.__name__ = "bh.ui.UIElementSelectable";
@@ -34191,6 +34577,7 @@ var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
 	this.id = extracted.id;
 	this.metadata = extracted.metadata;
 	this.eventFlags = extracted.eventFlags;
+	this.eventPriority = this.metadata.getIntOrDefault("eventPriority",0);
 	var baseCursor = bh_ui_UIInteractiveWrapper.resolveCursorName(this.metadata.getStringOrDefault("cursor",""),bh_base_CursorManager.getDefaultInteractiveCursor());
 	this.cursorDefault = baseCursor;
 	this.cursorHover = bh_ui_UIInteractiveWrapper.resolveCursorName(this.metadata.getStringOrDefault("cursor.hover",""),baseCursor);
@@ -34199,7 +34586,7 @@ var bh_ui_UIInteractiveWrapper = function(interactive,prefix) {
 };
 $hxClasses["bh.ui.UIInteractiveWrapper"] = bh_ui_UIInteractiveWrapper;
 bh_ui_UIInteractiveWrapper.__name__ = "bh.ui.UIInteractiveWrapper";
-bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementDisablable,bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
+bh_ui_UIInteractiveWrapper.__interfaces__ = [bh_ui_UIElementPriority,bh_ui_UIElementCursor,bh_ui_UIElementDisablable,bh_ui_UIElementIdentifiable,bh_ui_StandardUIElementEvents,bh_ui_UIElement];
 bh_ui_UIInteractiveWrapper.resolveCursorName = function(name,fallback) {
 	if(name == "") {
 		return fallback;
@@ -35000,7 +35387,10 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			this.onDragEndHighlightZones(this.dropZones);
 		}
 		this.target.alpha = this.savedAlpha;
-		if(this.onDragEvent != null) {
+		var cancelPos;
+		if(this.activeWrapper != null) {
+			cancelPos = this.activeWrapper.eventPos;
+		} else {
 			var x = this.root.x;
 			var y = this.root.y;
 			if(y == null) {
@@ -35009,7 +35399,13 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			if(x == null) {
 				x = 0.;
 			}
-			this.onDragEvent(bh_ui_DragEvent.DragCancel,new h2d_col_PointImpl(x,y),null);
+			cancelPos = new h2d_col_PointImpl(x,y);
+		}
+		if(this.onDragEvent != null) {
+			this.onDragEvent(bh_ui_DragEvent.DragCancel,cancelPos,this.activeWrapper);
+		}
+		if(this.onDragCancel != null) {
+			this.onDragCancel(cancelPos,this.activeWrapper);
 		}
 		var _this = this.root;
 		_this.posChanged = true;
@@ -36956,15 +37352,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,hitTestHex: function(localX,localY) {
-		var x = localX;
-		var y = localY;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var fractional = this.hexLayout.pixelToHex(new h2d_col_PointImpl(x,y));
+		var fractional = this.hexLayout.pixelToHex(new bh_base_FPoint(localX,localY));
 		var hex = fractional.round();
 		var coord = new bh_ui_CellCoord(hex.q,hex.r);
 		var key = "" + coord.col + "_" + coord.row;
@@ -39897,7 +40285,7 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 				}
 				break;
 			case 1:
-				if(binding.currentState == bh_ui_InteractiveState.Hover) {
+				if(binding.currentState == bh_ui_InteractiveState.Hover || binding.currentState == bh_ui_InteractiveState.Normal) {
 					binding.currentState = bh_ui_InteractiveState.Pressed;
 					binding.result.setParameter(binding.stateParam,"pressed");
 				}
@@ -40336,10 +40724,10 @@ bh_ui_controllers_UIDefaultController.__interfaces__ = [bh_ui_controllers_UICont
 bh_ui_controllers_UIDefaultController.prototype = {
 	handleEvent: function(element,event,eventPos) {
 		if(element == null) {
-			return;
+			return false;
 		}
 		if(js_Boot.__implements(element,bh_ui_StandardUIElementEvents)) {
-			var wrapper = { event : event, eventPos : eventPos, control : this.controllable};
+			var wrapper = { event : event, eventPos : eventPos, control : this.controllable, consumed : true};
 			var captureEvents = this.controllable.captureEvents;
 			switch(event._hx_index) {
 			case 0:
@@ -40359,7 +40747,7 @@ bh_ui_controllers_UIDefaultController.prototype = {
 			(js_Boot.__cast(element , bh_ui_StandardUIElementEvents)).onEvent(wrapper);
 			this.controllable.clearContext();
 			if(captureEvents.start == false && captureEvents.stop == false) {
-				return;
+				return wrapper.consumed;
 			}
 			if(captureEvents.start && captureEvents.target == null) {
 				captureEvents.target = element;
@@ -40368,13 +40756,16 @@ bh_ui_controllers_UIDefaultController.prototype = {
 				captureEvents.target = null;
 			}
 			captureEvents.reset();
+			return wrapper.consumed;
 		}
+		return false;
 	}
 	,handleClick: function(mousePoint,button,release,eventWrapper) {
-		var element = this.getEventElement(mousePoint);
+		var elements = this.getEventElements(mousePoint);
+		var topElement = elements.length > 0 ? elements[0] : null;
 		if(this.integration.dispatchMouseClick(mousePoint,button,release) == false) {
 			if(release) {
-				var triggeredElements = this.controllable.triggerOutsideEvents(element);
+				var triggeredElements = this.controllable.triggerOutsideEvents(topElement);
 				var _g = 0;
 				while(_g < triggeredElements.length) {
 					var value = triggeredElements[_g];
@@ -40385,7 +40776,7 @@ bh_ui_controllers_UIDefaultController.prototype = {
 			return;
 		}
 		if(release) {
-			var triggeredElements = this.controllable.triggerOutsideEvents(element);
+			var triggeredElements = this.controllable.triggerOutsideEvents(topElement);
 			var _g = 0;
 			while(_g < triggeredElements.length) {
 				var value = triggeredElements[_g];
@@ -40393,41 +40784,58 @@ bh_ui_controllers_UIDefaultController.prototype = {
 				this.handleEvent(value,bh_ui_UIElementEvents.OnReleaseOutside(button),mousePoint);
 			}
 		}
-		if(element == null) {
-			return;
+		var _g = 0;
+		while(_g < elements.length) {
+			var element = elements[_g];
+			++_g;
+			if(this.handleEvent(element,release ? bh_ui_UIElementEvents.OnRelease(button) : bh_ui_UIElementEvents.OnPush(button),mousePoint)) {
+				break;
+			}
 		}
-		this.handleEvent(element,release ? bh_ui_UIElementEvents.OnRelease(button) : bh_ui_UIElementEvents.OnPush(button),mousePoint);
 	}
 	,handleMouseWheel: function(mousePoint,wheelDelta,eventWrapper) {
 		if(this.integration.onMouseWheel(mousePoint,wheelDelta) == false) {
 			return;
 		}
-		var element = this.getEventElement(mousePoint);
-		if(element == null) {
-			return;
+		var _g = 0;
+		var _g1 = this.getEventElements(mousePoint);
+		while(_g < _g1.length) {
+			var element = _g1[_g];
+			++_g;
+			if(this.handleEvent(element,bh_ui_UIElementEvents.OnWheel(wheelDelta),mousePoint)) {
+				break;
+			}
 		}
-		this.handleEvent(element,bh_ui_UIElementEvents.OnWheel(wheelDelta),mousePoint);
 	}
-	,getEventElement: function(pos) {
+	,getEventElements: function(pos) {
 		if(this.controllable.captureEvents.target != null) {
-			return this.controllable.captureEvents.target;
+			return [this.controllable.captureEvents.target];
 		}
+		var hits = [];
 		var _g = 0;
 		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveEvents);
 		while(_g < _g1.length) {
 			var element = _g1[_g];
 			++_g;
 			if(element.containsPoint(pos)) {
-				return element;
+				hits.push(element);
 			}
 		}
-		return null;
+		if(hits.length > 1) {
+			haxe_ds_ArraySort.sort(hits,function(a,b) {
+				var pa = js_Boot.__implements(a,bh_ui_UIElementPriority) ? (js_Boot.__cast(a , bh_ui_UIElementPriority)).eventPriority : 0;
+				var pb = js_Boot.__implements(b,bh_ui_UIElementPriority) ? (js_Boot.__cast(b , bh_ui_UIElementPriority)).eventPriority : 0;
+				return pb - pa;
+			});
+		}
+		return hits;
 	}
 	,handleMove: function(mousePoint,eventWrapper) {
 		if(this.integration.dispatchMouseMove(mousePoint) == false) {
 			return;
 		}
-		var element = this.getEventElement(mousePoint);
+		var elements = this.getEventElements(mousePoint);
+		var element = elements.length > 0 ? elements[0] : null;
 		if(element != null) {
 			this.handleEvent(element,bh_ui_UIElementEvents.OnMouseMove,mousePoint);
 		}
@@ -40491,12 +40899,16 @@ bh_ui_controllers_UIDefaultController.prototype = {
 		if(this.integration.onKey(keyCode,release) == false) {
 			return;
 		}
-		var element = this.getEventElement(mousePoint);
+		var elements = this.getEventElements(mousePoint);
 		this.onScreenEvent(bh_ui_UIScreenEvent.UIKeyPress(keyCode,release),null);
-		if(element == null) {
-			return;
+		var _g = 0;
+		while(_g < elements.length) {
+			var element = elements[_g];
+			++_g;
+			if(this.handleEvent(element,bh_ui_UIElementEvents.OnKey(keyCode,release),mousePoint)) {
+				break;
+			}
 		}
-		this.handleEvent(element,bh_ui_UIElementEvents.OnKey(keyCode,release),mousePoint);
 	}
 	,otherEvent: function(sourceEvent) {
 	}
@@ -123688,7 +124100,7 @@ js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
 Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent","projectList"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "richText", title : "Rich Text"},{ id : "richTextAutofit", title : "Rich Text Autofit"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"},{ id : "floatingText", title : "Floating Text"},{ id : "transitions", title : "Transitions"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"},{ id : "projectList", title : "Project List"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;

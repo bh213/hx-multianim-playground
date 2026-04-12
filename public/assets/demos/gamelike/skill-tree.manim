@@ -117,7 +117,7 @@ layouts {
     }
 
     // ── WAR path slots (orange-red upgraded border) ─────────────
-    repeatable($n, layout("main", "warNodes")) {
+    repeatable($n, layout("warNodes")) {
         #warNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
             @(state => upgraded)        bitmap(generated(color(36, 36, #ff7f50))): 0, 0
             @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0
@@ -142,7 +142,7 @@ layouts {
     }
 
     // ── ROG path slots (green upgraded border) ──────────────────
-    repeatable($n, layout("main", "rogNodes")) {
+    repeatable($n, layout("rogNodes")) {
         #rogNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
             @(state => upgraded)        bitmap(generated(color(36, 36, #4caf50))): 0, 0
             @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0
@@ -167,7 +167,7 @@ layouts {
     }
 
     // ── MAG path slots (blue upgraded border) ───────────────────
-    repeatable($n, layout("main", "magNodes")) {
+    repeatable($n, layout("magNodes")) {
         #magNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
             @(state => upgraded)        bitmap(generated(color(36, 36, #4a90a4))): 0, 0
             @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0

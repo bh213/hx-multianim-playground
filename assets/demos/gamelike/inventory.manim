@@ -124,7 +124,7 @@ layouts {
     bitmap(generated(color(232, 1, #66cc9933))): 0, 140
 
     // Inventory grid (4x3 = 12 slots)
-    repeatable($i, layout("main", "invGrid")) {
+    repeatable($i, layout("invGrid")) {
         bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
         #inv[$i] slot(state:[normal, disabled, highlight] = normal) {
             @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
@@ -157,7 +157,7 @@ layouts {
         bitmap(generated(color(4, 10, #2a2a4e))): 88, 124
 
         // Equipment slots (positioned via equipSlots layout)
-        repeatable($e, layout("main", "equipSlots")) {
+        repeatable($e, layout("equipSlots")) {
             bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
             @($e => 0) text(m5x7, "HEAD",  #333355, center, 52): 0, 20
             @($e => 1) text(m5x7, "L.ARM", #333355, center, 52): 0, 20

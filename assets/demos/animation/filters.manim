@@ -26,7 +26,7 @@ version: 1.0
 
 #outlinePreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
-    outlineSize:float=1.0, outlineColor:int=0xff0000) {
+    outlineSize:float=1.0, outlineColor:int=0xFFff0000) {
     point {
         filter: outline($outlineSize, $outlineColor)
         dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
@@ -35,7 +35,7 @@ version: 1.0
 
 #glowPreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
-    glowAlpha:float=0.8, glowRadius:float=8, glowSmooth:uint=1, glowKnockout:uint=0, glowColor:int=0xffaa00) {
+    glowAlpha:float=0.8, glowRadius:float=8, glowSmooth:uint=1, glowKnockout:uint=0, glowColor:int=0xFFffaa00) {
     // 4 combinations of smooth x knockout (nested conditionals for AND logic)
     @(glowSmooth > 0) point {
         @(glowKnockout > 0) point {
@@ -88,7 +88,7 @@ version: 1.0
 
 #dropShadowPreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
-    dsDist:float=3, dsAngle:float=30, dsAlpha:float=0.5, dsRadius:float=6, dsSmooth:uint=0, dsColor:int=0x000000) {
+    dsDist:float=3, dsAngle:float=30, dsAlpha:float=0.5, dsRadius:float=6, dsSmooth:uint=0, dsColor:int=0xFF000000) {
     @(dsSmooth > 0) point {
         filter: dropShadow(distance: $dsDist, angle: $dsAngle, color: $dsColor, alpha: $dsAlpha, radius: $dsRadius, smoothColor: true)
         dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
@@ -119,7 +119,7 @@ version: 1.0
 
 #pixelOutlinePreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
-    poStrength:float=0.5, poColor:int=0x0000ff) {
+    poStrength:float=0.5, poColor:int=0xFF0000ff) {
     point {
         filter: pixelOutline(knockout, $poColor, $poStrength)
         dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
@@ -135,7 +135,7 @@ version: 1.0
     text(m6x11, "Color", #888888, left, 38): 0, 98
     placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
         pos: 40, 94
-        settings{buildName=>"colorButton", color:int=>0xff0000, width:int=>60, height:int=>22}
+        settings{buildName=>"colorButton", color:int=>0xFFff0000, width:int=>60, height:int=>22}
     }
 
     text(m6x11, "Size", #888888, left, 38): 0, 120
@@ -152,7 +152,7 @@ version: 1.0
     text(m6x11, "Color", #888888, left, 38): 0, 98
     placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
         pos: 40, 94
-        settings{buildName=>"colorButton", color:int=>0xffaa00, width:int=>60, height:int=>22}
+        settings{buildName=>"colorButton", color:int=>0xFFffaa00, width:int=>60, height:int=>22}
     }
 
     text(m6x11, "Alpha", #888888, left, 38): 0, 120
@@ -227,7 +227,7 @@ version: 1.0
     text(m6x11, "Color", #888888, left, 38): 0, 98
     placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
         pos: 40, 94
-        settings{buildName=>"colorButton", color:int=>0x000000, width:int=>60, height:int=>22}
+        settings{buildName=>"colorButton", color:int=>0xFF000000, width:int=>60, height:int=>22}
     }
 
     text(m6x11, "Dist", #888888, left, 38): 0, 120
@@ -293,7 +293,7 @@ version: 1.0
     text(m6x11, "Color", #888888, left, 38): 0, 98
     placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
         pos: 40, 94
-        settings{buildName=>"colorButton", color:int=>0x0000ff, width:int=>60, height:int=>22}
+        settings{buildName=>"colorButton", color:int=>0xFF0000ff, width:int=>60, height:int=>22}
     }
 
     text(m6x11, "Strength", #888888, left, 38): 0, 120

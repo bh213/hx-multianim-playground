@@ -112,19 +112,19 @@ version: 1.0
 
     placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn1")) {
         pos: 0, 640
-        settings{buildName=>"color", color:int=>0xff4444, width:int=>60, height:int=>30}
+        settings{buildName=>"color", color:int=>0xFFff4444, width:int=>60, height:int=>30}
     }
     placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn2")) {
         pos: 80, 640
-        settings{buildName=>"color", color:int=>0x4caf50, width:int=>60, height:int=>30}
+        settings{buildName=>"color", color:int=>0xFF4caf50, width:int=>60, height:int=>30}
     }
     placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn3")) {
         pos: 160, 640
-        settings{buildName=>"color", color:int=>0x2196f3, width:int=>60, height:int=>30}
+        settings{buildName=>"color", color:int=>0xFF2196f3, width:int=>60, height:int=>30}
     }
     placeholder(generated(cross(100, 30, white)), builderParameter("colorBtn4")) {
         pos: 240, 640
-        settings{buildName=>"color", color:int=>0xffcc44, width:int=>100, height:int=>30}
+        settings{buildName=>"color", color:int=>0xFFffcc44, width:int=>100, height:int=>30}
     }
 
     // Click counter display

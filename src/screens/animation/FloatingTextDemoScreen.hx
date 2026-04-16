@@ -47,7 +47,7 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 	];
 
 	static final ANIM_NAMES = ["dmgAnim", "healAnim", "critAnim", "xpAnim", "windAnim", "splatterAnim", "wobbleAnim"];
-	static final COLORS:Array<Int> = [0xFF4444, 0x44FF44, 0xFFD700, 0x4488FF, 0xBBBBBB, 0xFF6622, 0xFF88FF];
+	static final COLORS:Array<Int> = [0xFFFF4444, 0xFF44FF44, 0xFFFFD700, 0xFF4488FF, 0xFFBBBBBB, 0xFFFF6622, 0xFFFF88FF];
 	static final FONTS = ["exo2_black_16", "exo2_16", "exo2_black_20", "exo2_light_14", "exo2_light_14", "exo2_black_16", "exo2_black_16"];
 
 	override public function load():Void {

@@ -91,7 +91,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	static final MODE_ITEMS:Array<UIElementListItem> = [{name: "Stretch"}, {name: "FitCenter"}, {name: "Anchor"}, {name: "FitBounds"}];
 	static final MODE_NAMES = ["Stretch", "FitCenter", "Anchor", "FitBounds"];
 
-	static final COLORS = [0x7fdbda, 0xff4444, 0x44ff44, 0x4488ff, 0xffdd44, 0xff44ff, 0xffffff];
+	static final COLORS = [0xFF7fdbda, 0xFFff4444, 0xFF44ff44, 0xFF4488ff, 0xFFffdd44, 0xFFff44ff, 0xFFffffff];
 	static final COLOR_NAMES = ["Cyan", "Red", "Green", "Blue", "Yellow", "Magenta", "White"];
 
 	static inline final AREA_X = 50;
@@ -227,12 +227,12 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	function updateColorSelection():Void {
 		if (startColorHighlight != null) {
 			startColorHighlight.clear();
-			startColorHighlight.lineStyle(2, 0xFFFFFF);
+			startColorHighlight.lineStyle(2, 0xFFFFFFFF);
 			startColorHighlight.drawRect(SWATCH_X + startColorIndex * 22 - 2, SWATCH_START_Y - 2, 22, 22);
 		}
 		if (endColorHighlight != null) {
 			endColorHighlight.clear();
-			endColorHighlight.lineStyle(2, 0xFFFFFF);
+			endColorHighlight.lineStyle(2, 0xFFFFFFFF);
 			endColorHighlight.drawRect(SWATCH_X + endColorIndex * 22 - 2, SWATCH_END_Y - 2, 22, 22);
 		}
 	}
@@ -243,25 +243,25 @@ class AnimPathDemoScreen extends DemoScreenBase {
 
 		if (mode == 2) {
 			// Anchor: green position + direction line to end (angle indicator)
-			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
-			markerGraphics.lineStyle(1.0, 0xff6644);
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0xFF44ff44);
+			markerGraphics.lineStyle(1.0, 0xFFff6644);
 			markerGraphics.moveTo(startPoint.x, startPoint.y);
 			markerGraphics.lineTo(endPoint.x, endPoint.y);
 			markerGraphics.lineStyle(0);
-			markerGraphics.beginFill(0xff6644);
+			markerGraphics.beginFill(0xFFff6644);
 			markerGraphics.drawCircle(endPoint.x, endPoint.y, 3);
 			markerGraphics.endFill();
 		} else if (mode == 3) {
 			// FitBounds: draw rectangle between start (topLeft) and end (bottomRight)
-			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
-			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xff4444);
-			markerGraphics.lineStyle(1.0, 0x888888);
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0xFF44ff44);
+			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xFFff4444);
+			markerGraphics.lineStyle(1.0, 0xFF888888);
 			markerGraphics.drawRect(startPoint.x, startPoint.y,
 				endPoint.x - startPoint.x, endPoint.y - startPoint.y);
 		} else {
 			// Stretch / FitCenter: green start, red end
-			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0x44ff44);
-			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xff4444);
+			drawCrosshair(markerGraphics, startPoint.x, startPoint.y, 0xFF44ff44);
+			drawCrosshair(markerGraphics, endPoint.x, endPoint.y, 0xFFff4444);
 		}
 	}
 
@@ -306,11 +306,11 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		for (i in 0...count) {
 			// Create circle drawn white, tinted by color
 			var g = new h2d.Graphics();
-			g.beginFill(0xFFFFFF);
+			g.beginFill(0xFFFFFFFF);
 			g.drawCircle(0, 0, circleRadius);
 			g.endFill();
 			// Direction indicator line
-			g.lineStyle(1, 0xFFFFFF);
+			g.lineStyle(1, 0xFFFFFFFF);
 			g.moveTo(0, 0);
 			g.lineTo(circleRadius * 1.5, 0);
 			// Apply initial color tint

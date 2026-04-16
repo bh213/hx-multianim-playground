@@ -341,7 +341,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	static function colorStringToInt(color:String):Int {
 		if (color.charAt(0) == "#")
 			return Std.parseInt("0x" + color.substr(1));
-		return 0xFFFFFF;
+		return 0xFFFFFFFF;
 	}
 
 	// ── Shared Utilities ──
@@ -373,7 +373,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		final font = hxd.Res.load("font/m5x7.fnt").to(hxd.res.BitmapFont).toFont();
 		final txt = new h2d.Text(font, particleContainer);
 		txt.text = "Refreshed!";
-		txt.textColor = 0xFFEE44;
+		txt.textColor = 0xFFFFEE44;
 		txt.textAlign = Center;
 		txt.setPosition(cx, cy - 20);
 		txt.setScale(0.01);

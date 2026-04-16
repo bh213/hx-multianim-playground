@@ -11,7 +11,7 @@ using bh.ui.screens.UIScreen.UIScreenBase;
 
 @:nullSafety
 class ColorPickerDialog extends UIScreenBase {
-	static final PRESET_COLORS:Array<Int> = [0xFF0000, 0xFF8800, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0xFFFFFF];
+	static final PRESET_COLORS:Array<Int> = [0xFFFF0000, 0xFFFF8800, 0xFFFFFF00, 0xFF00FF00, 0xFF00FFFF, 0xFF0000FF, 0xFFFF00FF, 0xFFFFFFFF];
 
 	final initialColor:Int;
 	final dialogTitle:String;

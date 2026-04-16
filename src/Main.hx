@@ -29,7 +29,7 @@ class Main extends hxd.App {
 	// Flat screen order matching sidebar layout, used to determine slide direction
 	static final SCREEN_ORDER:Array<String> = [
 		"nav",
-		"featureShowcase", "incremental", "interactives", "conditionals", "expressions", "settings", "macroPerformance",
+		"featureShowcase", "incremental", "interactives", "conditionals", "expressions", "settings", "macroPerformance", "loadoutRuntime", "loadoutCodegen",
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
@@ -240,6 +240,8 @@ class Main extends hxd.App {
 		screenManager.addScreen("expressions", new ExpressionsDemoScreen(screenManager));
 		screenManager.addScreen("settings", new SettingsDemoScreen(screenManager));
 		screenManager.addScreen("macroPerformance", new MacroPerformanceDemoScreen(screenManager));
+		screenManager.addScreen("loadoutRuntime", new LoadoutRuntimeDemoScreen(screenManager));
+		screenManager.addScreen("loadoutCodegen", new LoadoutCodegenDemoScreen(screenManager));
 		screenManager.addScreen("featureShowcase", new FeatureShowcaseDemoScreen(screenManager));
 
 		final window = hxd.Window.getInstance();
@@ -258,7 +260,7 @@ class Main extends hxd.App {
 			}
 		});
 
-		engine.backgroundColor = 0x1a1a2e;
+		engine.backgroundColor = 0xFF1a1a2e;
 
 		// Read initial screen from React-set window.defaultScreen (parsed from URL hash)
 		var initialScreen = DEFAULT_SCREEN;

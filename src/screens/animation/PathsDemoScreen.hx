@@ -68,7 +68,7 @@ class PathsDemoScreen extends DemoScreenBase {
 
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Path: $currentPath | Speed: 100%';
-		statusText.textColor = 0xCCCCCC;
+		statusText.textColor = 0xFFCCCCCC;
 		statusText.setPosition(50, 590);
 		addObjectToLayer(statusText, DefaultLayer);
 	}
@@ -77,7 +77,7 @@ class PathsDemoScreen extends DemoScreenBase {
 		graphics.clear();
 		if (paths == null) return;
 		var path = paths.getPath(currentPath);
-		graphics.lineStyle(2.0, 0x7fdbda);
+		graphics.lineStyle(2.0, 0xFF7fdbda);
 		graphics.setPosition(PATH_OFFSET_X, PATH_OFFSET_Y);
 		path.drawToGraphics(graphics);
 	}

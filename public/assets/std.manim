@@ -1,7 +1,7 @@
 version: 1.0
 
       #main palette {
-      0x1a1a1a  0x2c5f7c  0x4a90a4  0x7fdbda  0xff7f50  0xff4444  0x4caf50  0xffeb3b  0xffffff  0x666666  0xb0b0b0  0x000000
+      #1a1a1a  #2c5f7c  #4a90a4  #7fdbda  #ff7f50  #ff4444  #4caf50  #ffeb3b  #ffffff  #666666  #b0b0b0  #000000
       }
 
   #slider programmable(status:[hover, pressed, normal]=normal, value:0..100=0, size:[100,200,300], disabled:[true, false]) {
@@ -61,7 +61,7 @@ version: 1.0
       @(textShadow=>true) text($font, $buttonText, $fontColor, center, $width, dropShadowXY: 1, 1): 0, ($height - $ctx.font($font).lineHeight) / 2
 }
 
- #colorButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xff0000) {
+ #colorButton programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xFFff0000) {
       @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
       @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
       @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0

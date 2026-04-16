@@ -91,7 +91,7 @@ class CurvesDemoScreen extends DemoScreenBase {
 		curveGraph = new h2d.Graphics();
 		addObjectToLayer(curveGraph, DefaultLayer);
 
-		animDot = createCircle(0xff6644, 5);
+		animDot = createCircle(0xFFff6644, 5);
 		addObjectToLayer(animDot, DefaultLayer);
 
 		// Create bitmap demo dots
@@ -154,14 +154,14 @@ class CurvesDemoScreen extends DemoScreenBase {
 		curveGraph.setPosition(GRAPH_X, GRAPH_Y);
 
 		// Axis lines
-		curveGraph.lineStyle(1, 0x444455);
+		curveGraph.lineStyle(1, 0xFF444455);
 		curveGraph.moveTo(0, GRAPH_H);
 		curveGraph.lineTo(GRAPH_W, GRAPH_H);
 		curveGraph.moveTo(0, 0);
 		curveGraph.lineTo(0, GRAPH_H);
 
 		// Draw curve
-		curveGraph.lineStyle(2, 0x7fdbda);
+		curveGraph.lineStyle(2, 0xFF7fdbda);
 		final steps = 100;
 		for (s in 0...steps + 1) {
 			final t = s / steps;

@@ -210,7 +210,7 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		var showHeight = currentMode == 1 || currentMode == 3; // Box or Fill Box
 
 		// Background
-		boundsGraphics.beginFill(0x222240, 1.0);
+		boundsGraphics.beginFill(0xFF222240, 1.0);
 		if (showHeight)
 			boundsGraphics.drawRect(0, 0, w, h);
 		else
@@ -218,7 +218,7 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		boundsGraphics.endFill();
 
 		// Border
-		boundsGraphics.lineStyle(1, 0x555588);
+		boundsGraphics.lineStyle(1, 0xFF555588);
 		if (showHeight)
 			boundsGraphics.drawRect(0, 0, w, h);
 		else

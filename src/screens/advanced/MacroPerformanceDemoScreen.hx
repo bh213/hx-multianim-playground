@@ -49,7 +49,7 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 
 	static final COUNT_VALUES:Array<Int> = [1, 100, 1000, 10000];
 
-	static final COLORS:Array<Int> = [0x446688, 0x884466, 0x668844, 0x886644, 0x448866, 0x664488];
+	static final COLORS:Array<Int> = [0xFF446688, 0xFF884466, 0xFF668844, 0xFF886644, 0xFF448866, 0xFF664488];
 
 	override public function load():Void {
 		setupDemo("Macro Performance", "Benchmark: builder vs builder+incremental vs @:manim codegen");

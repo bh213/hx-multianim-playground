@@ -33,7 +33,7 @@ class ConditionalsDemoScreen extends DemoScreenBase {
 		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Value: $currentValue | Drag slider to change which conditionals match';
-		statusText.textColor = 0xCCCCCC;
+		statusText.textColor = 0xFFCCCCCC;
 		statusText.setPosition(50, 610);
 		addObjectToLayer(statusText, DefaultLayer);
 	}

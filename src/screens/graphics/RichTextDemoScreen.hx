@@ -42,7 +42,7 @@ class RichTextDemoScreen extends DemoScreenBase {
 		final font = hxd.res.DefaultFont.get();
 		popupText = new h2d.Text(font);
 		popupText.text = msg;
-		popupText.textColor = 0x44FFFF;
+		popupText.textColor = 0xFF44FFFF;
 		popupText.setPosition(690, 840);
 		result.object.addChild(popupText);
 		popupTimer = 2.0;

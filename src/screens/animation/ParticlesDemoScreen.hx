@@ -123,10 +123,10 @@ class ParticlesDemoScreen extends DemoScreenBase {
 		var g = new h2d.Graphics();
 
 		if (groupIndex < 3) {
-			g.lineStyle(1, 0x666666);
+			g.lineStyle(1, 0xFF666666);
 			drawDashedRect(g, cx - 80, cy - 80, cx + 80, cy + 80);
 		} else {
-			g.lineStyle(1, 0x886644);
+			g.lineStyle(1, 0xFF886644);
 			g.moveTo(cx - 80, cy + 80);
 			g.lineTo(cx + 80, cy + 80);
 			g.moveTo(cx - 80, cy - 80);
@@ -149,7 +149,7 @@ class ParticlesDemoScreen extends DemoScreenBase {
 			var path = paths.getPath(pathNames[i]);
 
 			var g = new h2d.Graphics();
-			g.lineStyle(1, 0x555555);
+			g.lineStyle(1, 0xFF555555);
 
 			var steps = 80;
 			for (s in 0...steps + 1) {

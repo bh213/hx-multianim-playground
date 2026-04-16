@@ -13,16 +13,16 @@ layouts {
     // Category header positions
     #catHeaders list {
         point: 40, 310
-        point: 40, 368
-        point: 40, 458
-        point: 40, 516
-        point: 40, 574
-        point: 40, 664
+        point: 40, 400
+        point: 40, 490
+        point: 40, 548
+        point: 40, 606
+        point: 40, 696
     }
 
     // All nav card positions (colWidth=155, spacingX=5, 7 per row)
     #navCards list {
-        // Advanced Features (7)
+        // Advanced Features (9, wraps to 2 rows)
         point: 40, 330
         point: 200, 330
         point: 360, 330
@@ -30,53 +30,55 @@ layouts {
         point: 680, 330
         point: 840, 330
         point: 1000, 330
+        point: 40, 362
+        point: 200, 362
         // UI Components (12, wraps to 2 rows)
-        point: 40, 388
-        point: 200, 388
-        point: 360, 388
-        point: 520, 388
-        point: 680, 388
-        point: 840, 388
-        point: 1000, 388
         point: 40, 420
         point: 200, 420
         point: 360, 420
         point: 520, 420
         point: 680, 420
+        point: 840, 420
+        point: 1000, 420
+        point: 40, 452
+        point: 200, 452
+        point: 360, 452
+        point: 520, 452
+        point: 680, 452
         // Layout & Composition (6)
-        point: 40, 478
-        point: 200, 478
-        point: 360, 478
-        point: 520, 478
-        point: 680, 478
-        point: 840, 478
+        point: 40, 510
+        point: 200, 510
+        point: 360, 510
+        point: 520, 510
+        point: 680, 510
+        point: 840, 510
         // Graphics & Rendering (6)
-        point: 40, 536
-        point: 200, 536
-        point: 360, 536
-        point: 520, 536
-        point: 680, 536
-        point: 840, 536
+        point: 40, 568
+        point: 200, 568
+        point: 360, 568
+        point: 520, 568
+        point: 680, 568
+        point: 840, 568
         // Animation & Effects (8, wraps to 2 rows)
-        point: 40, 594
-        point: 200, 594
-        point: 360, 594
-        point: 520, 594
-        point: 680, 594
-        point: 840, 594
-        point: 1000, 594
         point: 40, 626
+        point: 200, 626
+        point: 360, 626
+        point: 520, 626
+        point: 680, 626
+        point: 840, 626
+        point: 1000, 626
+        point: 40, 658
         // Game-Like Demos (10, wraps to 2 rows)
-        point: 40, 684
-        point: 200, 684
-        point: 360, 684
-        point: 520, 684
-        point: 680, 684
-        point: 840, 684
-        point: 1000, 684
         point: 40, 716
         point: 200, 716
         point: 360, 716
+        point: 520, 716
+        point: 680, 716
+        point: 840, 716
+        point: 1000, 716
+        point: 40, 748
+        point: 200, 748
+        point: 360, 748
     }
 }
 

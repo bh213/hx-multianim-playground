@@ -60,9 +60,9 @@ class TestBitmaps {
 		final diceTile = atlas.getAnim("dice")[0].tile;
 
 		_allItems = [
-			{name: "Black Rect", tileRef: TRTile(Tile.fromColor(0x000000, ICON_SIZE, ICON_SIZE))},
-			{name: "White Rect", tileRef: TRTile(Tile.fromColor(0xFFFFFF, ICON_SIZE, ICON_SIZE))},
-			{name: "Green Rect", tileRef: TRTile(Tile.fromColor(0x00CC00, ICON_SIZE, ICON_SIZE))},
+			{name: "Black Rect", tileRef: TRTile(Tile.fromColor(0xFF000000, ICON_SIZE, ICON_SIZE))},
+			{name: "White Rect", tileRef: TRTile(Tile.fromColor(0xFFFFFFFF, ICON_SIZE, ICON_SIZE))},
+			{name: "Green Rect", tileRef: TRTile(Tile.fromColor(0xFF00CC00, ICON_SIZE, ICON_SIZE))},
 			{name: "Black Circle", tileRef: TRTile(bakeTile(circleTile, 0xFF000000))},
 			{name: "White Circle", tileRef: TRTile(bakeTile(circleTile))},
 			{name: "Red Circle", tileRef: TRTile(bakeTile(circleTile, 0xFFFF0000))},

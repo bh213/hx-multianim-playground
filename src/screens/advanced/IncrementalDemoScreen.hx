@@ -33,7 +33,7 @@ class IncrementalDemoScreen extends DemoScreenBase {
 		// Status text
 		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
 		statusText.text = 'Value: $currentValue | Drag slider to update live';
-		statusText.textColor = 0xCCCCCC;
+		statusText.textColor = 0xFFCCCCCC;
 		statusText.setPosition(50, 590);
 		addObjectToLayer(statusText, DefaultLayer);
 	}

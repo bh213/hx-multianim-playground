@@ -481,14 +481,14 @@ class StateAnimDemoScreen extends DemoScreenBase {
 			var py = baseY + pt.y;
 
 			// Crosshair
-			pointsGraphics.lineStyle(2, 0xff7f50);
+			pointsGraphics.lineStyle(2, 0xFFff7f50);
 			pointsGraphics.moveTo(px - 8, py);
 			pointsGraphics.lineTo(px + 8, py);
 			pointsGraphics.moveTo(px, py - 8);
 			pointsGraphics.lineTo(px, py + 8);
 
 			// Small circle
-			pointsGraphics.lineStyle(1, 0xff7f50);
+			pointsGraphics.lineStyle(1, 0xFFff7f50);
 			pointsGraphics.drawCircle(px, py, 4);
 
 			// Update info text
@@ -512,18 +512,18 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		addBuilderResult(filtersResult);
 
 		// Apply filters to named state animations
-		applyAnimFilter("filterTint", AFTint(0xFF4444));
+		applyAnimFilter("filterTint", AFTint(0xFFFF4444));
 		applyAnimFilter("filterBrightness", AFBrightness(1.5));
 		applyAnimFilter("filterSaturate", AFSaturate(0.0));
 		applyAnimFilter("filterGrayscale", AFGrayscale(1.0));
 		applyAnimFilter("filterHue", AFHue(120.0));
-		applyAnimFilter("filterOutline", AFOutline(2.0, 0xFFFF00));
-		applyAnimFilter("filterPixelOutline", AFPixelOutline(0x00FF00));
-		applyAnimFilter("filterReplaceColor", AFReplaceColor([0x5B6EE1, 0x3F3F74], [0xE15B5B, 0x743F3F]));
+		applyAnimFilter("filterOutline", AFOutline(2.0, 0xFFFFFF00));
+		applyAnimFilter("filterPixelOutline", AFPixelOutline(0xFF00FF00));
+		applyAnimFilter("filterReplaceColor", AFReplaceColor([0xFF5B6EE1, 0xFF3F3F74], [0xFFE15B5B, 0xFF743F3F]));
 
 		// Combined filter examples
-		applyAnimFilterCombo("filterCombo1", AFTint(0xFF6644), AFOutline(1.0, 0xFFFFFF));
-		applyAnimFilterCombo("filterCombo2", AFGrayscale(1.0), AFPixelOutline(0xFF0000));
+		applyAnimFilterCombo("filterCombo1", AFTint(0xFFFF6644), AFOutline(1.0, 0xFFFFFFFF));
+		applyAnimFilterCombo("filterCombo2", AFGrayscale(1.0), AFPixelOutline(0xFFFF0000));
 		applyAnimFilterCombo("filterCombo3", AFHue(60.0), AFBrightness(1.3));
 
 	}

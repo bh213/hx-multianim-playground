@@ -32,7 +32,7 @@ class NinepatchDemoScreen extends DemoScreenBase {
 		// Resizable ninepatch panel
 		var label = new h2d.Text(FontManager.getFontByName("m6x11"));
 		label.text = "Drag corner to resize:";
-		label.textColor = 0xCCCCCC;
+		label.textColor = 0xFFCCCCCC;
 		label.setPosition(PANEL_X, PANEL_Y - 20);
 		addObjectToLayer(label, DefaultLayer);
 
@@ -41,7 +41,7 @@ class NinepatchDemoScreen extends DemoScreenBase {
 		addBuilderResult(panelResult);
 
 		// Drag handle at bottom-right corner
-		final handleTile = h2d.Tile.fromColor(0x7fdbda, HANDLE_SIZE, HANDLE_SIZE);
+		final handleTile = h2d.Tile.fromColor(0xFF7fdbda, HANDLE_SIZE, HANDLE_SIZE);
 		final handleBitmap = new h2d.Bitmap(handleTile);
 		handleDraggable = UIMultiAnimDraggable.create(handleBitmap);
 		handleDraggable.setSnapAnimPath(demoBuilder, "snapAnim");

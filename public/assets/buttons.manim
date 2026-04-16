@@ -39,7 +39,7 @@ version: 1.0
     settings{font:string=>$font, fontColor:int=>$fontColor}
 }
 
-#color programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xff0000) {
+#color programmable(status:[hover, pressed, normal], disabled:[true, false], buttonText="", width:uint=60, height:uint=22, color:int=0xFFff0000) {
     @(status=>normal, disabled=>false) ninepatch("ui", "button-idle", $width, $height):     0,1
     @(status=>hover, disabled=>false) ninepatch("ui", "button-hover", $width, $height):     0,0
     @(status=>pressed, disabled=>false) ninepatch("ui", "button-pressed", $width, $height): 0,0

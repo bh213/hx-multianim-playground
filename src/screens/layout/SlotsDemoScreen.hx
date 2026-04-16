@@ -60,7 +60,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 
 			// Status text under each slot (only visible when occupied)
 			final text = new h2d.Text(font);
-			text.textColor = 0x44cc44;
+			text.textColor = 0xFF44cc44;
 			text.textAlign = Center;
 			text.maxWidth = SLOT_SIZE;
 			text.setPosition(x, y + SLOT_SIZE + 2);
@@ -246,7 +246,7 @@ class SlotsDemoScreen extends DemoScreenBase {
 			result.object.setPosition(6, 6);
 			// Apply glow filter to items inserted into blessed slots (col 2)
 			if (colIdx == 2)
-				result.object.filter = new h2d.filter.Glow(0xddaa44, 0.8, 4.0, 1.0, 1.0, true);
+				result.object.filter = new h2d.filter.Glow(0xFFddaa44, 0.8, 4.0, 1.0, 1.0, true);
 			slot.setContent(result.object);
 			slot.data = itemType;
 			setComboLog('Added $itemType. Overlays still visible around content.');

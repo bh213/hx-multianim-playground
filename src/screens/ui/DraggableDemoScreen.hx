@@ -45,7 +45,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 	// --- Mode 1: Drop zones with snap & elastic return, alpha feedback ---
 	function setupDropZoneDrag():Void {
-		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0x4488FF, 40, 40)));
+		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFF4488FF, 40, 40)));
 		drag.setReturnAnimPath(demoBuilder, "returnAnim");
 		drag.setSnapAnimPath(demoBuilder, "snapAnim");
 		drag.dragAlpha = 0.6;
@@ -86,7 +86,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 	// --- Mode 2: Horizontal constraint — always bounces back to start ---
 	function setupConstraintDrag():Void {
-		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0x44CC44, 50, 20)));
+		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFF44CC44, 50, 20)));
 		final minX = BX + 0;
 		final maxX = BX + 500;
 		final fixedY = BY + 272;
@@ -108,7 +108,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 	// --- Mode 3: Priority zones (overlapping) with elastic return ---
 	function setupPriorityDrag():Void {
-		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFFAA00, 30, 30)));
+		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFFFFAA00, 30, 30)));
 		drag.setReturnAnimPath(demoBuilder, "returnAnim");
 		drag.setSnapAnimPath(demoBuilder, "snapAnim");
 		drag.dragAlpha = 0.7;
@@ -149,7 +149,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 
 	// --- Mode 4: BackgroundLayer (hides behind everything while dragging) ---
 	function setupDragLayerDrag():Void {
-		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xAA44FF, 50, 50)));
+		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFFAA44FF, 50, 50)));
 		drag.dragLayer = BackgroundLayer;
 		drag.setReturnAnimPath(demoBuilder, "linearReturn");
 		drag.dragAlpha = 0.8;

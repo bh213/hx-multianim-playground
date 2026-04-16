@@ -91,33 +91,33 @@ class GridDemoScreen extends DemoScreenBase {
 
 	// Item definitions for rect grid: color + type
 	static final RECT_ITEMS:Array<{color:Int, type:String}> = [
-		{color: 0xCC4422, type: "weapon"},
-		{color: 0x2266CC, type: "weapon"},
-		{color: 0x22CC44, type: "potion"},
-		{color: 0xCCCC22, type: "weapon"},
-		{color: 0x9944CC, type: "potion"},
+		{color: 0xFFCC4422, type: "weapon"},
+		{color: 0xFF2266CC, type: "weapon"},
+		{color: 0xFF22CC44, type: "potion"},
+		{color: 0xFFCCCC22, type: "weapon"},
+		{color: 0xFF9944CC, type: "potion"},
 	];
 
 	// Card definitions for hex grid — targeting: single (1 cell), double (2 cells), range (AoE)
 	static final CARD_DEFS:Array<{name:String, color:Int, targeting:String, info:String}> = [
-		{name: "Fire", color: 0xCC4422, targeting: "single", info: "1 cell"},
-		{name: "Ice", color: 0x2266CC, targeting: "double", info: "cell + 1 adj"},
-		{name: "Nature", color: 0x22CC44, targeting: "range", info: "cell + all adj"},
-		{name: "Light", color: 0xCCCC22, targeting: "single", info: "1 cell"},
-		{name: "Shadow", color: 0x9944CC, targeting: "double", info: "cell + 1 adj"},
-		{name: "Storm", color: 0x22CCCC, targeting: "range", info: "cell + all adj"},
-		{name: "Meteor", color: 0xFF6600, targeting: "splash_dmg", info: "10+1 AoE"},
+		{name: "Fire", color: 0xFFCC4422, targeting: "single", info: "1 cell"},
+		{name: "Ice", color: 0xFF2266CC, targeting: "double", info: "cell + 1 adj"},
+		{name: "Nature", color: 0xFF22CC44, targeting: "range", info: "cell + all adj"},
+		{name: "Light", color: 0xFFCCCC22, targeting: "single", info: "1 cell"},
+		{name: "Shadow", color: 0xFF9944CC, targeting: "double", info: "cell + 1 adj"},
+		{name: "Storm", color: 0xFF22CCCC, targeting: "range", info: "cell + all adj"},
+		{name: "Meteor", color: 0xFFFF6600, targeting: "splash_dmg", info: "10+1 AoE"},
 	];
 
 	// G2G item definitions: weapons (storage) and potions (loadout)
 	static final G2G_WEAPONS:Array<{color:Int, type:String}> = [
-		{color: 0xCC6622, type: "weapon"},
-		{color: 0x8844CC, type: "weapon"},
-		{color: 0xCCAA22, type: "weapon"},
+		{color: 0xFFCC6622, type: "weapon"},
+		{color: 0xFF8844CC, type: "weapon"},
+		{color: 0xFFCCAA22, type: "weapon"},
 	];
 	static final G2G_POTIONS:Array<{color:Int, type:String}> = [
-		{color: 0x2288CC, type: "potion"},
-		{color: 0x44CC44, type: "potion"},
+		{color: 0xFF2288CC, type: "potion"},
+		{color: 0xFF44CC44, type: "potion"},
 	];
 
 	override public function load():Void {

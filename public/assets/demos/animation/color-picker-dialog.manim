@@ -48,35 +48,35 @@ version: 1.0
         pos: 25, 255
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preRed")) {
             pos: 0, 0
-            settings{buildName=>"colorButton", color:int=>0xff0000, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFFff0000, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preOrange")) {
             pos: 39, 0
-            settings{buildName=>"colorButton", color:int=>0xff8800, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFFff8800, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preYellow")) {
             pos: 78, 0
-            settings{buildName=>"colorButton", color:int=>0xffff00, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFFffff00, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preGreen")) {
             pos: 117, 0
-            settings{buildName=>"colorButton", color:int=>0x00ff00, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFF00ff00, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preCyan")) {
             pos: 156, 0
-            settings{buildName=>"colorButton", color:int=>0x00ffff, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFF00ffff, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preBlue")) {
             pos: 195, 0
-            settings{buildName=>"colorButton", color:int=>0x0000ff, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFF0000ff, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("prePurple")) {
             pos: 234, 0
-            settings{buildName=>"colorButton", color:int=>0xff00ff, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFFff00ff, width:int=>34, height:int=>20}
         }
         placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preWhite")) {
             pos: 273, 0
-            settings{buildName=>"colorButton", color:int=>0xffffff, width:int=>34, height:int=>20}
+            settings{buildName=>"colorButton", color:int=>0xFFffffff, width:int=>34, height:int=>20}
         }
     }
 

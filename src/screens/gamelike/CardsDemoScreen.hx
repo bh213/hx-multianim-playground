@@ -91,14 +91,14 @@ class CardsDemoScreen extends DemoScreenBase {
 
 	// === Card Hand data ===
 	static final CARD_DEFS:Array<{name:String, desc:String, cost:Int, color:Int, artColor:Int, image:String}> = [
-		{name: "Fireball", desc: "Deal 3 fire damage", cost: 3, color: 0xCC4422, artColor: 0x882211, image: "potion_r"},
-		{name: "Shield", desc: "Block 4 damage", cost: 2, color: 0x2266CC, artColor: 0x113366, image: "shield_i"},
-		{name: "Heal", desc: "Restore 5 health", cost: 1, color: 0x22CC44, artColor: 0x116622, image: "potion_b"},
-		{name: "Lightning", desc: "Deal 4 to random", cost: 4, color: 0xCCCC22, artColor: 0x666611, image: "sword_l"},
-		{name: "Poison", desc: "2 damage per turn", cost: 2, color: 0x66CC22, artColor: 0x336611, image: "ring_i"},
-		{name: "Ice Bolt", desc: "Freeze 1 turn", cost: 3, color: 0x22CCCC, artColor: 0x116666, image: "scroll_i"},
-		{name: "Rage", desc: "Double attack", cost: 5, color: 0xCC2222, artColor: 0x661111, image: "helmet_i"},
-		{name: "Bless", desc: "Draw 2 cards", cost: 1, color: 0xCCCC88, artColor: 0x666644, image: "armor_i"},
+		{name: "Fireball", desc: "Deal 3 fire damage", cost: 3, color: 0xFFCC4422, artColor: 0xFF882211, image: "potion_r"},
+		{name: "Shield", desc: "Block 4 damage", cost: 2, color: 0xFF2266CC, artColor: 0xFF113366, image: "shield_i"},
+		{name: "Heal", desc: "Restore 5 health", cost: 1, color: 0xFF22CC44, artColor: 0xFF116622, image: "potion_b"},
+		{name: "Lightning", desc: "Deal 4 to random", cost: 4, color: 0xFFCCCC22, artColor: 0xFF666611, image: "sword_l"},
+		{name: "Poison", desc: "2 damage per turn", cost: 2, color: 0xFF66CC22, artColor: 0xFF336611, image: "ring_i"},
+		{name: "Ice Bolt", desc: "Freeze 1 turn", cost: 3, color: 0xFF22CCCC, artColor: 0xFF116666, image: "scroll_i"},
+		{name: "Rage", desc: "Double attack", cost: 5, color: 0xFFCC2222, artColor: 0xFF661111, image: "helmet_i"},
+		{name: "Bless", desc: "Draw 2 cards", cost: 1, color: 0xFFCCCC88, artColor: 0xFF666644, image: "armor_i"},
 	];
 
 	static final DRAW_EASINGS:Array<UIElementListItem> = [
@@ -213,8 +213,8 @@ class CardsDemoScreen extends DemoScreenBase {
 				"cardName" => ("Shield" : Dynamic),
 				"description" => ("Block 4 damage" : Dynamic),
 				"cost" => (2 : Dynamic),
-				"cardColor" => (0x2266CC : Dynamic),
-				"artColor" => (0x113366 : Dynamic),
+				"cardColor" => (0xFF2266CC : Dynamic),
+				"artColor" => (0xFF113366 : Dynamic),
 				"cardImage" => ("shield_i" : Dynamic),
 			], null, null, true);
 			result.object.setPosition(p.x, p.y);
@@ -226,7 +226,7 @@ class CardsDemoScreen extends DemoScreenBase {
 
 	function buildBehaviorCards():Void {
 		// Hover Pop
-		var hoverPop = buildStateCard("Fireball", "Deal 3 fire damage", 3, 0xCC4422, 0x882211, "potion_r");
+		var hoverPop = buildStateCard("Fireball", "Deal 3 fire damage", 3, 0xFFCC4422, 0xFF882211, "potion_r");
 		hoverPop.object.setPosition(60, 350);
 		hoverPop.object.setScale(1.15);
 		addObjectToLayer(hoverPop.object, DefaultLayer);
@@ -235,7 +235,7 @@ class CardsDemoScreen extends DemoScreenBase {
 		stateCardResults.push(hoverPop);
 
 		// Dragging
-		var dragging = buildStateCard("Lightning", "Deal 4 to random", 4, 0xCCCC22, 0x666611, "sword_l");
+		var dragging = buildStateCard("Lightning", "Deal 4 to random", 4, 0xFFCCCC22, 0xFF666611, "sword_l");
 		dragging.object.setPosition(250, 370);
 		dragging.object.rotation = -0.14;
 		addObjectToLayer(dragging.object, DefaultLayer);
@@ -244,7 +244,7 @@ class CardsDemoScreen extends DemoScreenBase {
 		stateCardResults.push(dragging);
 
 		// Targeting
-		var targeting = buildStateCard("Poison", "2 damage per turn", 2, 0x66CC22, 0x336611, "ring_i");
+		var targeting = buildStateCard("Poison", "2 damage per turn", 2, 0xFF66CC22, 0xFF336611, "ring_i");
 		targeting.object.setPosition(430, 348);
 		targeting.object.setScale(1.1);
 		addObjectToLayer(targeting.object, DefaultLayer);
@@ -280,12 +280,12 @@ class CardsDemoScreen extends DemoScreenBase {
 		addObjectToLayer(headInvalid.object, DefaultLayer);
 
 		// Animating: ghost + main
-		var ghost = buildStateCard("Ice Bolt", "Freeze 1 turn", 3, 0x22CCCC, 0x116666, "scroll_i");
+		var ghost = buildStateCard("Ice Bolt", "Freeze 1 turn", 3, 0xFF22CCCC, 0xFF116666, "scroll_i");
 		ghost.object.setPosition(770, 365);
 		ghost.object.alpha = 0.25;
 		addObjectToLayer(ghost.object, DefaultLayer);
 
-		var animCard = buildStateCard("Ice Bolt", "Freeze 1 turn", 3, 0x22CCCC, 0x116666, "scroll_i");
+		var animCard = buildStateCard("Ice Bolt", "Freeze 1 turn", 3, 0xFF22CCCC, 0xFF116666, "scroll_i");
 		animCard.object.setPosition(795, 390);
 		addObjectToLayer(animCard.object, DefaultLayer);
 		addInteractives(animCard, "sAnimating");
@@ -510,10 +510,10 @@ class CardsDemoScreen extends DemoScreenBase {
 		}
 		thresholdGraphics.clear();
 		if (rectH > 0) {
-			thresholdGraphics.beginFill(0xFFDD44, 0.04);
+			thresholdGraphics.beginFill(0xFFFFDD44, 0.04);
 			thresholdGraphics.drawRect(0, 0, 670, rectH);
 			thresholdGraphics.endFill();
-			thresholdGraphics.lineStyle(1.0, 0xFFDD44, 0.2);
+			thresholdGraphics.lineStyle(1.0, 0xFFFFDD44, 0.2);
 			thresholdGraphics.drawRect(0, 0, 670, rectH);
 		}
 	}

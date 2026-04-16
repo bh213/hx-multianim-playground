@@ -118,7 +118,7 @@ version: 1.0
     bitmap(generated(color(64, 64, #181828))): 270, 14
     point {
       pos: 285, 20
-      filter: outline(2, 0xff4444)
+      filter: outline(2, #ff4444)
       @scale(2) bitmap(sheet("crew2", "marine_r_standing")): 0, 0
     }
 

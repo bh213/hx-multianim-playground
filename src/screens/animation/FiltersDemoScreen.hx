@@ -79,7 +79,7 @@ class FiltersDemoScreen extends DemoScreenBase {
 	// Color-using filter indices: outline=0, glow=1, dropShadow=5, pixelOutline=8
 	static final COLOR_FILTER_INDICES = [0, 1, 5, 8];
 	static final COLOR_PARAM_NAMES = ["outlineColor", "glowColor", "dsColor", "poColor"];
-	static final COLOR_DEFAULTS:Array<Int> = [0xff0000, 0xffaa00, 0x000000, 0x0000ff];
+	static final COLOR_DEFAULTS:Array<Int> = [0xFFff0000, 0xFFffaa00, 0xFF000000, 0xFF0000ff];
 
 	override public function load():Void {
 		setupDemo("Filters", "Visual filters on sprites: outline, glow, blur, saturate, brightness, dropShadow, grayscale, hue, pixelOutline");

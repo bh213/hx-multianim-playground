@@ -97,6 +97,8 @@ class NavScreen extends UIScreenBase {
 				{id: "expressions", title: "Expressions"},
 				{id: "settings", title: "Settings"},
 				{id: "macroPerformance", title: "Macro Performance"},
+				{id: "loadoutRuntime", title: "Loadout Lab (runtime)"},
+				{id: "loadoutCodegen", title: "Loadout Lab (codegen)"},
 			]
 		},
 		{

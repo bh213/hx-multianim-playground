@@ -12,6 +12,8 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'expressions', displayName: 'Expressions', category: 'Advanced Features', manimFile: 'demos/advanced/expressions.manim' },
             { name: 'settings', displayName: 'Settings', category: 'Advanced Features', manimFile: 'demos/advanced/settings.manim' },
             { name: 'macroPerformance', displayName: 'Macro Performance', category: 'Advanced Features', manimFile: 'demos/advanced/macro-performance.manim' },
+            { name: 'loadoutRuntime', displayName: 'Loadout Lab (runtime)', category: 'Advanced Features', manimFile: 'demos/advanced/loadout-lab.manim' },
+            { name: 'loadoutCodegen', displayName: 'Loadout Lab (codegen)', category: 'Advanced Features', manimFile: 'demos/advanced/loadout-lab.manim' },
         ]
     },
     {

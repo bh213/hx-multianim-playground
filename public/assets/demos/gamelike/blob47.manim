@@ -46,22 +46,22 @@ version: 1.0
     // Buttons
     placeholder(generated(cross(80, 20, white)), builderParameter("randomizeBtn")) {
         pos: 0, 30
-        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>0xffffff}
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
     }
     placeholder(generated(cross(80, 20, white)), builderParameter("clearBtn")) {
         pos: 90, 30
-        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>0xffffff}
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
     }
 
     // Tile selector
     text(exo2_14, "Tile:", #aaaaaa): 200, 38
     placeholder(generated(cross(30, 26, white)), builderParameter("grassBtn")) {
         pos: 240, 32
-        settings{color=>0xAA8844, width:int=>30, height:int=>26}
+        settings{color=>#AA8844, width:int=>30, height:int=>26}
     }
     placeholder(generated(cross(30, 26, white)), builderParameter("dirtBtn")) {
         pos: 280, 32
-        settings{color=>0x44AA44, width:int=>30, height:int=>26}
+        settings{color=>#44AA44, width:int=>30, height:int=>26}
     }
 
     // Status

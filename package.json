@@ -11,7 +11,7 @@
     "react:dev": "vite",
     "react:build": "tsc && vite build",
     "react:preview": "vite preview",
-    "full:build": "npm run build && npm run react:build && cp -r public/* dist/",
+    "full:build": "npm run build && npm run react:build && cpx \"public/**/*\" dist",
     "clean": "rimraf dist"
   },
   "keywords": ["haxe", "heaps", "animation", "playground", "webgl", "react"],
@@ -31,6 +31,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "@tailwindcss/vite": "^4.1.10",
     "concurrently": "^8.2.2",
+    "cpx2": "^8.0.2",
     "nodemon": "^3.0.2",
     "rimraf": "^5.0.5",
     "tailwindcss": "^4.1.10",

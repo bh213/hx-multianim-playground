@@ -3,7 +3,7 @@ version: 1.0
 // Dialogue Demo
 // Dialogue panel with speaker name, typewriter text, and branching choices.
 
-#dialogueDemo programmable() {
+#dialogueDemo programmable(portraitColor:color=#4a90a4) {
     pos: 50, 80
 
     // Title
@@ -15,9 +15,9 @@ version: 1.0
     text(exo2_14, "Scene", #7fdbda): 15, 45
     #sceneText(updatable) text(exo2_light_14, "You enter a dimly lit tavern. An old man sits in the corner.", #aaaaaa, left, 660): 15, 70
 
-    // Character portrait area (colored rectangle as placeholder)
+    // Character portrait — color driven by parameter (setParameter("portraitColor", ...) from Haxe)
     ninepatch("ui", "Window_3x3_idle", 100, 100): 0, 170
-    #portraitColor(updatable) bitmap(generated(color(80, 80, #4a90a4))): 10, 180
+    bitmap(generated(color(80, 80, $portraitColor))): 10, 180
 
     // Dialogue panel
     ninepatch("ui", "Window_3x3_idle", 580, 120): 120, 170
@@ -38,10 +38,6 @@ version: 1.0
     placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice2Button")) {
         pos: 410, 305
     }
-
-    // Choice visibility containers
-    #choice1Visible(updatable) point: 120, 305
-    #choice2Visible(updatable) point: 410, 305
 
     // Dialogue state info
     ninepatch("ui", "Window_3x3_idle", 700, 40): 0, 350

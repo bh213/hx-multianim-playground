@@ -43,6 +43,7 @@ class LoadoutRuntimeDemoScreen extends LoadoutLabDemoBase {
 	}
 
 	override function setUpdatableText(name:String, text:String):Void {
+		if (demoResult == null || !demoResult.hasName(name)) return;
 		final u = demoResult.getUpdatable(name);
 		if (u != null) u.updateText(text);
 	}

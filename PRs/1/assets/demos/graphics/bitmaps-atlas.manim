@@ -1,0 +1,139 @@
+version: 1.0
+
+#bitmapsAtlasShowcase programmable() {
+  // Section 1: Generated color bitmaps
+  text(exo2_16, "generated(color(w, h, color)):", #cccccc): 0, 0
+
+  // Row of generated colored bitmaps
+  bitmap(generated(color(60, 60, #ff4444))): 0, 30
+  bitmap(generated(color(60, 60, #ff8844))): 70, 30
+  bitmap(generated(color(60, 60, #ffff44))): 140, 30
+  bitmap(generated(color(60, 60, #44ff44))): 210, 30
+  bitmap(generated(color(60, 60, #44ffff))): 280, 30
+  bitmap(generated(color(60, 60, #4444ff))): 350, 30
+  bitmap(generated(color(60, 60, #ff44ff))): 420, 30
+  bitmap(generated(color(60, 60, #ffffff))): 490, 30
+
+  // Labels
+  text(m6x11, "red", #888888, center, 60): 0, 96
+  text(m6x11, "orange", #888888, center, 60): 70, 96
+  text(m6x11, "yellow", #888888, center, 60): 140, 96
+  text(m6x11, "green", #888888, center, 60): 210, 96
+  text(m6x11, "cyan", #888888, center, 60): 280, 96
+  text(m6x11, "blue", #888888, center, 60): 350, 96
+  text(m6x11, "magenta", #888888, center, 60): 420, 96
+  text(m6x11, "white", #888888, center, 60): 490, 96
+
+  // Section 2: Generated cross bitmaps (placeholder markers)
+  text(exo2_16, "generated(cross(w, h, #FF0000)):", #cccccc): 0, 130
+
+  bitmap(generated(cross(30, 30, white))): 0, 160
+  bitmap(generated(cross(50, 50, black))): 40, 160
+  bitmap(generated(cross(80, 40, #FFFFFFFF))): 100, 160
+  bitmap(generated(cross(40, 80, #FF0000))): 190, 160
+  bitmap(generated(cross(100, 60, #FF0000))): 240, 160
+
+  text(m6x11, "30x30", #888888): 0, 248
+  text(m6x11, "50x50", #888888): 40, 248
+  text(m6x11, "80x40", #888888): 100, 248
+  text(m6x11, "40x80", #888888): 190, 248
+  text(m6x11, "100x60", #888888): 240, 248
+
+  // Section 3: Generated colorWithText
+  text(exo2_16, "generated(colorWithText(w, h, color, text, textColor, font)):", #cccccc): 0, 280
+
+  bitmap(generated(colorWithText(80, 40, #ff4444, "A", white, m6x11))): 0, 310
+  bitmap(generated(colorWithText(80, 40, #ff8844, "B", white, m6x11))): 90, 310
+  bitmap(generated(colorWithText(80, 40, #44aa44, "C", white, m6x11))): 180, 310
+  bitmap(generated(colorWithText(80, 40, #4488cc, "D", white, m6x11))): 270, 310
+  bitmap(generated(colorWithText(80, 40, #9c27b0, "E", white, m6x11))): 360, 310
+  bitmap(generated(colorWithText(80, 40, #ff7f50, "F", black, m6x11))): 450, 310
+
+  // Larger with numbers
+  bitmap(generated(colorWithText(50, 50, #2c5f7c, "1", white, m6x11))): 0, 360
+  bitmap(generated(colorWithText(50, 50, #4a90a4, "2", white, m6x11))): 60, 360
+  bitmap(generated(colorWithText(50, 50, #7fdbda, "3", black, m6x11))): 120, 360
+  bitmap(generated(colorWithText(50, 50, #ffeb3b, "4", black, m6x11))): 180, 360
+  bitmap(generated(colorWithText(50, 50, #4caf50, "5", white, m6x11))): 240, 360
+
+  // Section 4: Real bitmap files
+  text(exo2_16, 'bitmap(file("filename.png")):', #cccccc): 0, 430
+
+  bitmap(file("star.png")): 0, 460
+  bitmap(file("spark.png")): 60, 460
+  bitmap(file("dot.png")): 120, 460
+  bitmap(file("flare.png")): 180, 460
+  bitmap(file("ring.png")): 280, 460
+
+  text(m6x11, "star", #888888): 0, 510
+  text(m6x11, "spark", #888888): 60, 510
+  text(m6x11, "dot", #888888): 120, 510
+  text(m6x11, "flare", #888888): 180, 510
+  text(m6x11, "ring", #888888): 280, 510
+
+  // Section 5: Atlas sprites - UI sheet
+  text(exo2_16, 'bitmap(sheet("ui", "name")):', #cccccc): 0, 540
+
+  bitmap(sheet("ui", "CheckBox_on_idle")): 0, 570
+  bitmap(sheet("ui", "CheckBox_off_idle")): 40, 570
+  bitmap(sheet("ui", "RadioButton_on_idle")): 80, 570
+  bitmap(sheet("ui", "RadioButton_off_idle")): 120, 570
+  bitmap(sheet("ui", "Slider_button_idle")): 160, 570
+  bitmap(sheet("ui", "Toggle_on_idle")): 200, 570
+  bitmap(sheet("ui", "Toggle_off_idle")): 250, 570
+  bitmap(sheet("ui", "icon_drop")): 300, 570
+
+  text(m6x11, "ChkOn", #888888): 0, 600
+  text(m6x11, "ChkOff", #888888): 40, 600
+  text(m6x11, "RadOn", #888888): 80, 600
+  text(m6x11, "RadOff", #888888): 120, 600
+  text(m6x11, "Slider", #888888): 160, 600
+  text(m6x11, "TglOn", #888888): 200, 600
+  text(m6x11, "TglOff", #888888): 250, 600
+  text(m6x11, "Drop", #888888): 300, 600
+
+  // Section 6: Atlas sprites - Crew sheet
+  text(exo2_16, 'bitmap(sheet("crew2", "name")):', #cccccc): 0, 630
+
+  @scale(2) bitmap(sheet("crew2", "marine_r_standing")): 0, 660
+  @scale(2) bitmap(sheet("crew2", "marine_l_standing")): 70, 660
+  @scale(2) bitmap(sheet("crew2", "icon-circle")): 140, 660
+  @scale(2) bitmap(sheet("crew2", "icon-cross")): 180, 660
+  @scale(2) bitmap(sheet("crew2", "icon-skull")): 220, 660
+  @scale(2) bitmap(sheet("crew2", "icon-shield")): 260, 660
+
+  text(m6x11, "marine_r", #888888): 0, 710
+  text(m6x11, "marine_l", #888888): 70, 710
+  text(m6x11, "circle", #888888): 140, 710
+  text(m6x11, "cross", #888888): 180, 710
+  text(m6x11, "skull", #888888): 220, 710
+  text(m6x11, "shield", #888888): 260, 710
+
+  // Section 7: Alpha variations
+  text(exo2_16, "Alpha variations:", #cccccc): 0, 740
+
+  @alpha(1.0) bitmap(generated(color(60, 40, #ff7f50))): 0, 770
+  @alpha(0.8) bitmap(generated(color(60, 40, #ff7f50))): 70, 770
+  @alpha(0.6) bitmap(generated(color(60, 40, #ff7f50))): 140, 770
+  @alpha(0.4) bitmap(generated(color(60, 40, #ff7f50))): 210, 770
+  @alpha(0.2) bitmap(generated(color(60, 40, #ff7f50))): 280, 770
+
+  text(m6x11, "1.0", #888888, center, 60): 0, 816
+  text(m6x11, "0.8", #888888, center, 60): 70, 816
+  text(m6x11, "0.6", #888888, center, 60): 140, 816
+  text(m6x11, "0.4", #888888, center, 60): 210, 816
+  text(m6x11, "0.2", #888888, center, 60): 280, 816
+
+  // Section 8: Scale
+  text(exo2_16, "Scale:", #cccccc): 0, 850
+
+  @scale(1) bitmap(generated(color(20, 20, #4caf50))): 0, 880
+  @scale(2) bitmap(generated(color(20, 20, #4caf50))): 30, 880
+  @scale(3) bitmap(generated(color(20, 20, #4caf50))): 80, 880
+  @scale(4) bitmap(generated(color(20, 20, #4caf50))): 150, 880
+
+  text(m6x11, "1x", #888888): 0, 960
+  text(m6x11, "2x", #888888): 30, 960
+  text(m6x11, "3x", #888888): 80, 960
+  text(m6x11, "4x", #888888): 150, 960
+}

@@ -1,0 +1,96 @@
+version: 1.0
+
+// Curves Demo
+// 1D curve visualization with animated easing demos
+
+curves {
+    #linear curve {
+        easing: linear
+    }
+    #easeInQuad curve {
+        easing: easeinquad
+    }
+    #easeOutQuad curve {
+        easing: easeoutquad
+    }
+    #easeInOutQuad curve {
+        easing: easeinoutquad
+    }
+    #easeInCubic curve {
+        easing: easeincubic
+    }
+    #easeOutCubic curve {
+        easing: easeoutcubic
+    }
+    #easeInOutCubic curve {
+        easing: easeinoutcubic
+    }
+    #easeInBack curve {
+        easing: easeinback
+    }
+    #easeOutBack curve {
+        easing: easeoutback
+    }
+    #easeInOutBack curve {
+        easing: easeinoutback
+    }
+    #easeOutBounce curve {
+        easing: easeoutbounce
+    }
+    #easeOutElastic curve {
+        easing: easeoutelastic
+    }
+    #accelDecel curve {
+        [0..0.5] easeincubic
+        [0.5..1.0] easeoutcubic
+    }
+    #snapBack curve {
+        [0..0.7] easeoutquad (0, 1.15)
+        [0.7..1.0] easeinoutquad (1.15, 1.0)
+    }
+    #cubicBezier curve {
+        easing: cubicbezier(0.68, -0.55, 0.27, 1.55)
+    }
+    #custom curve {
+        points: [(0, 0), (0.2, 0.8), (0.4, 0.2), (0.6, 0.9), (0.8, 0.4), (1.0, 1.0)]
+    }
+}
+
+#curvesDemo programmable() {
+    text(exo2_16, "Curve Visualization", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Select a curve to see its shape and animated effects.", #aaaaaa, left, 700): 50, 110
+
+    // Curve graph
+    #curveLabel(updatable) text(m6x11, "linear", #7fdbda, left, 250): 50, 160
+    bitmap(generated(color(250, 180, #222233))): 50, 180
+
+    // Animation demos
+    text(m6x11, "Y Position", #7fdbda, left, 100): 350, 160
+    bitmap(generated(color(100, 180, #222233))): 350, 180
+
+    text(m6x11, "Alpha", #7fdbda, left, 100): 480, 160
+    bitmap(generated(color(100, 180, #222233))): 480, 180
+
+    text(m6x11, "Scale", #7fdbda, left, 100): 610, 160
+    bitmap(generated(color(100, 180, #222233))): 610, 180
+
+    // Right column - lists
+    text(m6x11, "Curves:", #aaaaaa, left, 70): 750, 80
+    #selectedCurve(updatable) text(m6x11, "linear", #7fdbda, left, 100): 810, 80
+
+    text(m6x11, "Bitmap:", #aaaaaa, left, 70): 750, 300
+    #selectedBitmap(updatable) text(m6x11, "Star", #7fdbda, left, 100): 810, 300
+
+    // Controls
+    text(m6x11, "Inverse:", #aaaaaa, left, 80): 50, 400
+    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("inverseChk")) { pos: 120, 396 }
+
+    text(m6x11, "Speed:", #aaaaaa, left, 80): 250, 400
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
+        pos: 310, 398
+        settings{min:int=>10}
+        settings{max:int=>500}
+        settings{step:int=>10}
+    }
+    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 60): 530, 400
+}

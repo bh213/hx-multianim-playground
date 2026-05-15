@@ -1,0 +1,70 @@
+sheet: crew2
+allowedExtraPoints: ["point", "text"]
+center: 64,64
+fps: 10
+
+animation dir0 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir0"
+    }
+    extrapoints {
+        point: 0, 0
+        text: -60, 0
+    }
+}
+
+animation dir1 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir1"
+    }
+    extrapoints {
+        point: 0, 0
+        text: -24, 50
+    }
+}
+
+animation dir2 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir2"
+    }
+    extrapoints {
+        point: 0, 0
+        text: 24, 50
+    }
+}
+
+animation dir3 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir3"
+    }
+    extrapoints {
+        point: 0, 0
+        text: 64, 0
+    }
+}
+
+animation dir4 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir4"
+    }
+    extrapoints {
+        point: 0, 0
+        text: 25, -60
+    }
+}
+
+animation dir5 {
+    loop: yes
+    playlist {
+        sheet: "Arrow_dir5"
+    }
+    extrapoints {
+        point: 0, 0
+        text: -25, -60
+    }
+}

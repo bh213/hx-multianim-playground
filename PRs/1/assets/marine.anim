@@ -1,0 +1,128 @@
+sheet: crew2
+allowedExtraPoints: [fire, targeting]
+states: direction(l, r)
+center: 32,48
+fps: 20
+
+animation idle {
+    fps: 4
+    loop: yes
+    playlist {
+        sheet: "marine_${direction}_idle"
+    }
+    extrapoints {
+        @(direction=>l) targeting: -1, -12
+        @else targeting: 5, -12
+    }
+}
+
+animation fire-up {
+    loop: 2
+    playlist {
+        sheet: "marine_r_shooting_u"
+    }
+    extrapoints {
+        fire: 5, -19
+    }
+}
+
+animation fire-down {
+    fps: 10
+    playlist {
+        sheet: marine_l_shooting_d
+    }
+    extrapoints {
+        fire: -2, -2
+    }
+}
+
+animation fire-left {
+    playlist {
+        sheet: marine_l_shooting_u
+    }
+    extrapoints {
+        fire: -10, -8
+    }
+}
+
+animation fire-right {
+    playlist {
+        sheet: marine_r_shooting_d
+    }
+    extrapoints {
+        fire: 10, -8
+    }
+}
+
+animation fire-upright {
+    playlist {
+        sheet: marine_r_shooting
+    }
+    extrapoints {
+        fire: 12, -12
+    }
+}
+
+animation fire-downleft {
+    playlist {
+        sheet: marine_l_shooting
+    }
+    extrapoints {
+        fire: -7, -3
+    }
+}
+
+animation fire-upleft {
+    playlist {
+        sheet: marine_l_shooting_uu
+    }
+    extrapoints {
+        fire: -7, -11
+    }
+}
+
+animation fire-downright {
+    playlist {
+        sheet: marine_r_shooting_dd
+    }
+    extrapoints {
+        fire: 7, -6
+    }
+}
+
+animation hit {
+    loop: yes
+    playlist {
+        sheet: "marine_${direction}_hit"
+        event hit random 0,-10, 10
+    }
+}
+
+animation killed {
+    playlist {
+        sheet: "marine_${direction}_killed"
+    }
+}
+
+animation dead {
+    fps: 1
+    loop: yes
+    playlist {
+        sheet: "marine_${direction}_dead"
+    }
+}
+
+animation stand {
+    fps: 1
+    loop: yes
+    playlist {
+        sheet: "marine_${direction}_standing"
+    }
+}
+
+animation dodge {
+    fps: 4
+    playlist {
+        sheet: "marine_${direction}_dodging_${direction}" frames: 0..3
+    }
+}

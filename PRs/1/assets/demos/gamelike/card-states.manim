@@ -1,0 +1,42 @@
+version: 1.0
+
+// ===== Tooltip for state descriptions =====
+
+#stateTooltip programmable(title:string="State", desc:string="", detail:string="") {
+    ninepatch("ui", "Window_3x3_idle", 310, 82): 0, 0
+    bitmap(generated(color(300, 2, #7fdbda))): 5, 2
+    text(exo2_14, $title, #7fdbda, left, 290): 10, 8
+    text(m5x7, $desc, #bbbbbb, left, 290): 10, 30
+    text(m5x7, $detail, #666666, left, 290): 10, 56
+}
+
+// ===== Main Demo Layout =====
+
+#cardStatesDemo programmable() {
+    // Header
+    text(exo2_16, "Card Visual States", #7fdbda): 20, 10
+    text(m5x7, "All visual states in the Card Hand system. Hover any card for details.", #888888): 20, 34
+
+    // --- Section 1: Interactive Status ---
+    text(exo2_14, "Interactive Status", #778899): 30, 62
+    text(m5x7, "Driven by the 'status' parameter via UIRichInteractiveHelper", #555555): 180, 66
+
+    // Row 1 labels (cards placed at y=92 in code, height=200)
+    text(m5x7, "NORMAL", #888888, center, 140): 90, 298
+    text(m5x7, "HOVER", #FFDD44, center, 140): 280, 298
+    text(m5x7, "PRESSED", #FFFFFF, center, 140): 470, 298
+    text(m5x7, "DISABLED", #555555, center, 140): 660, 298
+
+    // --- Section 2: Hand Behavior States ---
+    text(exo2_14, "Hand Behavior", #778899): 30, 330
+    text(m5x7, "Runtime transforms by UICardHandHelper: position, scale, rotation", #555555): 170, 334
+
+    // Row 2 labels (cards placed at varying positions in code)
+    text(m5x7, "HOVER POP", #FFDD44, center, 170): 55, 598
+    text(m5x7, "DRAGGING", #FF8844, center, 160): 240, 598
+    text(m5x7, "TARGETING", #44FF88, center, 200): 407, 598
+    text(m5x7, "ANIMATING", #4488FF, center, 160): 785, 598
+
+    // Status
+    #statusText text(m5x7, "Hover a card to see state description", #888888): 20, 660
+}

@@ -1,0 +1,14 @@
+version: 1.0
+
+// Cards Demo — tabbed view: Card States + Card Hand
+
+#cardsDemo programmable() {
+    pos: 0, 40
+
+    #description(updatable) text(exo2_light_14, "", #aaaaaa, left, 1200): 50, 24
+
+    placeholder(generated(cross(800, 40, #FF0000)), builderParameter("cardTabs")) {
+        pos: 0, 48
+        settings{tabButtonBuildName=>tab, tabPanel.width=>1280, tabPanel.height=>720, tabPanel.contentRoot=>contentArea}
+    }
+}

@@ -1,0 +1,65 @@
+version: 1.0
+
+// Rich Text AutoFit Demo
+// Interactive autoFit mode explorer: choose bounds, fill mode, fonts, and text.
+
+#richTextAutofitDemo programmable() {
+    pos: 40, 70
+
+    text(exo2_16, "Rich Text AutoFit", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Explore autoFit modes interactively. Change bounds, mode, fonts, and text to see how autoFit selects the best font.", #aaaaaa, left, 700): 0, 30
+
+    // ─── Controls Row 1 ─────────────────────────────────
+    text(m6x11, "Mode:", #888888): 0, 65
+    placeholder(generated(cross(120, 24, #FF0000)), builderParameter("modeDropdown")): 40, 62
+
+    text(m6x11, "Width:", #888888): 185, 65
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("widthSlider")) {
+        pos: 220, 62
+        settings{size:int=>200, min:int=>30, max:int=>600, step:int=>10}
+    }
+    #widthValue(updatable) text(m6x11, "200", #cccccc): 430, 65
+
+    text(m6x11, "Height:", #888888): 470, 65
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("heightSlider")) {
+        pos: 510, 62
+        settings{size:int=>200, min:int=>8, max:int=>200, step:int=>2}
+    }
+    #heightValue(updatable) text(m6x11, "40", #cccccc): 720, 65
+
+    // ─── Controls Row 2: Fonts ──────────────────────────
+    text(m6x11, "Fonts:", #888888): 0, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkPixellari")): 45, 92
+    text(m6x11, "pixellari", #aaaaaa): 67, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkDd")): 140, 92
+    text(m6x11, "dd", #aaaaaa): 162, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkM6x11")): 195, 92
+    text(m6x11, "m6x11", #aaaaaa): 217, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkM5x7")): 270, 92
+    text(m6x11, "m5x7", #aaaaaa): 292, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkM3x6")): 335, 92
+    text(m6x11, "m3x6", #aaaaaa): 357, 95
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkF7x5")): 400, 92
+    text(m6x11, "f7x5", #aaaaaa): 422, 95
+
+    // Rich text toggle
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkRichText")): 480, 92
+    text(m6x11, "Rich", #888888): 502, 95
+
+    // ─── Controls Row 3: Text Input ─────────────────────
+    text(m6x11, "Text:", #888888): 0, 122
+    placeholder(generated(cross(500, 24, #FF0000)), builderParameter("textInput")) {
+        pos: 35, 118
+        settings{buildName=>textInput, font=>dd, placeholder=>"Type text here...", inputWidth=>450, width=>500}
+    }
+
+    // ─── Display Area ───────────────────────────────────
+    #statusText(updatable) text(m6x11, "Mode: Width | Bounds: 200 | Fonts: pixellari, dd, m6x11, m3x6, f7x5 | Selected: dd", #666666): 0, 155
+}

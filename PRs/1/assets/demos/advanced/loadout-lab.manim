@@ -1,0 +1,131 @@
+version: 1.0
+
+// Loadout Lab — DSL feature stress-test and codegen-vs-runtime parity test.
+// Focuses on: repeatable, repeatable2d, @switch (nested + outer), @(x=>y)
+// conditional, slider-driven parameter counts, button widgets driving param
+// writes, expressions in positions, @switch inside nested repeatables.
+
+#loadoutLab programmable(
+    theme:[a, b, c] = b,
+    layout:[row, grid, nested] = grid,
+    countX:uint = 8,
+    countY:uint = 5) {
+
+    // Fixed root offset via child point — both runtime and codegen handle
+    // child-point positions (root-level pos is codegen-skipped). Y offset
+    // clears the master screen's description text above.
+    point {
+        pos: 50, 80
+
+        // ── Ninepatch frame wrapping everything ─────────────────────────────
+        ninepatch("ui", "Window_3x3_idle", 560, 310): -10, -15
+
+        // ── Theme selector: 3 button widgets write `theme` param ────────────
+        text(m6x11, "Theme:", #ffffff): 0, 5
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnThemeA")) {
+            pos: 60, -5
+            settings{text=>"A", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnThemeB")) {
+            pos: 160, -5
+            settings{text=>"B", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnThemeC")) {
+            pos: 260, -5
+            settings{text=>"C", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+
+        // ── Layout selector: 3 button widgets write `layout` param ──────────
+        text(m6x11, "Layout:", #ffffff): 0, 33
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnLayoutRow")) {
+            pos: 60, 25
+            settings{text=>"Row", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnLayoutGrid")) {
+            pos: 160, 25
+            settings{text=>"Grid", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+        placeholder(generated(cross(90, 22, #FF0000)), builderParameter("btnLayoutNested")) {
+            pos: 260, 25
+            settings{text=>"Nested", width:int=>90, height:int=>22, font=>"m6x11"}
+        }
+
+        // ── X / Y count sliders (drive countX / countY) ─────────────────────
+        text(m6x11, "X:", #ffffff): 0, 63
+        placeholder(generated(cross(200, 16, #FF0000)), builderParameter("sliderX")) {
+            pos: 20, 63
+            settings{size:int=>200}
+        }
+        #xValue(updatable) text(m6x11, "8", #ffffff, center, 40): 240, 63
+
+        text(m6x11, "Y:", #ffffff): 0, 85
+        placeholder(generated(cross(200, 16, #FF0000)), builderParameter("sliderY")) {
+            pos: 20, 85
+            settings{size:int=>200}
+        }
+        #yValue(updatable) text(m6x11, "5", #ffffff, center, 40): 240, 85
+
+        // Reset: hand-rolled bitmap + text + interactive (contrast with widget buttons)
+        bitmap(generated(color(80, 24, #4488cc))): 380, 70
+        text(m6x11, "Reset", #ffffff, center, 80): 380, 76
+        interactive(80, 24, "btnReset", action => "reset"): 380, 70
+
+        // Separator
+        bitmap(generated(color(540, 1, #444444))): 0, 112
+
+        // ── Display area: @switch(layout) arms use *different* repeatable
+        //    constructs + *different* conditional styles on purpose. ────────
+        point {
+            pos: 0, 125
+
+            @switch(layout) {
+                // ROW: 1D repeatable + @(theme=>x) conditional on siblings.
+                //      Indexed updatable #rowCell[$x] holds a tick counter
+                //      that the base class pokes every 0.25s.
+                row {
+                    repeatable($x, step($countX, dx: 28)) {
+                        @(theme => a) bitmap(generated(color(24, 120, #4488cc))): 0, 0
+                        @(theme => b) bitmap(generated(color(24, 120, #88cc44))): 0, 0
+                        @(theme => c) bitmap(generated(color(24, 120, #cc4488))): 0, 0
+                        #rowCell[$x] text(m5x7, "0", #ffffff, center, 24): 0, 2
+                        interactive(24, 120, $x, type => "rowCell"): 0, 0
+                    }
+                }
+
+                // GRID: repeatable2d, same @(theme=>x) conditional pattern.
+                //       Indexed-2D updatable #gridCell[$x,$y] — one counter
+                //       per cell.
+                grid {
+                    repeatable2d($x, $y, step($countX, dx: 28), step($countY, dy: 16)) {
+                        @(theme => a) bitmap(generated(color(26, 14, #4488cc))): 0, 0
+                        @(theme => b) bitmap(generated(color(26, 14, #88cc44))): 0, 0
+                        @(theme => c) bitmap(generated(color(26, 14, #cc4488))): 0, 0
+                        #gridCell[$x, $y] text(m5x7, "0", #ffffff, center, 26): 0, 1
+                        interactive(26, 14, ""+$x+","+$y, type => "gridCell"): 0, 0
+                    }
+                }
+
+                // NESTED: repeatable-in-repeatable + @switch(theme) *inside*
+                //         the inner body — a switch nested in two loops nested
+                //         in another switch arm. Weird-combo territory.
+                //         Indexed-2D updatable uses ($c, $r) loop var names.
+                nested {
+                    repeatable($r, step($countY, dy: 16)) {
+                        repeatable($c, step($countX, dx: 28)) {
+                            @switch(theme) {
+                                a { bitmap(generated(color(26, 14, #225588))): 0, 0 }
+                                b { bitmap(generated(color(26, 14, #228855))): 0, 0 }
+                                c { bitmap(generated(color(26, 14, #885522))): 0, 0 }
+                            }
+                            #nestedCell[$c, $r] text(m5x7, "0", #ffffff, center, 26): 0, 1
+                            interactive(26, 14, ""+$c+","+$r, type => "nestedCell"): 0, 0
+                        }
+                    }
+                }
+            }
+        }
+
+        // Hover readout (updatable)
+        #hoverText(updatable) text(exo2_light_14, "Drag X/Y to resize. Theme + Layout pick constructs.", #666666, left, 540): 0, 268
+    }
+}

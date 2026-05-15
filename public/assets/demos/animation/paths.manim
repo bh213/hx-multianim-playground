@@ -70,9 +70,10 @@ paths {
     // Speed label
     text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
 
-    // Speed slider
+    // Speed slider (min/max/step also configured here)
     placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
         pos: 50, 620
+        settings{size:int=>200, min:float=>10, max:float=>500, step:float=>10}
     }
 
     // Path selector buttons
@@ -94,12 +95,7 @@ paths {
     placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBezier")) {
         pos: 650, 660
     }
-}
 
-#panim animatedPath {
-    path: circuit
-    type: distance
-    speed: 80
-    0.0: event("start")
-    1.0: event("end")
+    // Status text (updated by Haxe via getUpdatable)
+    #statusText(updatable) text(exo2_light_14, "Path: circuit | Speed: 100 px/s", #cccccc, left, 700): 50, 690
 }

@@ -51,7 +51,8 @@ class FloatingTextDemoScreen extends DemoScreenBase {
 	static final FONTS = ["exo2_black_16", "exo2_16", "exo2_black_20", "exo2_light_14", "exo2_light_14", "exo2_black_16", "exo2_black_16"];
 
 	override public function load():Void {
-		setupDemo("Floating Text", "AnimatedPath-driven floating text for damage numbers, heals, crits, and XP");
+		setupDemo("Floating Text",
+			"AnimatedPath-driven floating text: damage, heals, crits, XP, wind drift, splatter, and wobble effects");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/floating-text.manim", false);
 

@@ -6,7 +6,6 @@ import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimButton.UIStandardMultiAnimButton;
 import bh.multianim.MultiAnimBuilder;
 import bh.base.MacroUtils;
-import bh.base.FontManager;
 import bh.paths.*;
 
 class PathsDemoScreen extends DemoScreenBase {
@@ -15,25 +14,26 @@ class PathsDemoScreen extends DemoScreenBase {
 	var speedSlider:Null<UIStandardMultiAnimSlider>;
 	var pathButtons:Array<UIStandardMultiAnimButton> = [];
 	var currentPath:String = "circuit";
-	var statusText:Null<h2d.Text>;
 
 	var graphics:h2d.Graphics = new h2d.Graphics();
 	var paths:Null<MultiAnimPaths>;
 	var animatedPath:Null<AnimatedPath>;
 	var markerObj:Null<h2d.Object>;
-	var speed:Float = 80;
+	var speed:Float = 100;
 
 	// Path display area offset (matches the bitmap position in .manim)
 	static inline final PATH_OFFSET_X = 400;
 	static inline final PATH_OFFSET_Y = 300;
 
+	static final PATH_NAMES = ["circuit", "star", "zigzag", "spiral", "waves", "bezierLoop"];
+
 	override public function load():Void {
-		setupDemo("Paths", "Path animation: objects follow defined paths using paths{} definitions");
+		setupDemo("Paths", "Path animation: objects follow paths defined in the .manim paths{} block");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/animation/paths.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "pathsDemo", [], [
-			speedSlider => addSlider(stdBuilder, 50),
+			speedSlider => addSlider(stdBuilder, 100),
 			btnCircuit => addButtonWithSingleBuilder(commonBuilder, "backButton", "circuit"),
 			btnStar => addButtonWithSingleBuilder(commonBuilder, "backButton", "star"),
 			btnZigzag => addButtonWithSingleBuilder(commonBuilder, "backButton", "zigzag"),
@@ -44,10 +44,6 @@ class PathsDemoScreen extends DemoScreenBase {
 
 		demoResult = ui.builderResults;
 		speedSlider = ui.speedSlider;
-		speedSlider.min = 10;
-		speedSlider.max = 500;
-		speedSlider.step = 10;
-		speedSlider.setFloatValue(100);
 		pathButtons = [ui.btnCircuit, ui.btnStar, ui.btnZigzag, ui.btnSpiral, ui.btnWaves, ui.btnBezier];
 		addBuilderResult(demoResult);
 
@@ -65,12 +61,7 @@ class PathsDemoScreen extends DemoScreenBase {
 		// Draw initial path and start animation
 		drawCurrentPath();
 		startAnimation();
-
-		statusText = new h2d.Text(FontManager.getFontByName("exo2_light_14"));
-		statusText.text = 'Path: $currentPath | Speed: 100%';
-		statusText.textColor = 0xFFCCCCCC;
-		statusText.setPosition(50, 590);
-		addObjectToLayer(statusText, DefaultLayer);
+		updateStatusText();
 	}
 
 	function drawCurrentPath():Void {
@@ -87,23 +78,25 @@ class PathsDemoScreen extends DemoScreenBase {
 		var path = paths.getPath(currentPath);
 		animatedPath = new AnimatedPath(path, Distance(speed));
 		animatedPath.onUpdate = (state) -> {
-			if (markerObj != null) {
+			if (markerObj != null)
 				markerObj.setPosition(PATH_OFFSET_X + state.position.x, PATH_OFFSET_Y + state.position.y);
-			}
 		};
-		animatedPath.onEvent = (eventName, state) -> {
-			if (eventName == "pathEnd") {
-				// Restart animation when done
-				startAnimation();
-			}
+		animatedPath.onEvent = (eventName, _) -> {
+			// pathEnd fires automatically when the path completes — restart for a continuous loop
+			if (eventName == "pathEnd") startAnimation();
 		};
+	}
+
+	function updateStatusText():Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable("statusText");
+		if (updatable != null)
+			updatable.updateText('Path: $currentPath | Speed: ${Std.int(speed)} px/s');
 	}
 
 	override public function update(dt:Float):Void {
 		super.update(dt);
-		if (animatedPath != null) {
-			animatedPath.update(dt);
-		}
+		if (animatedPath != null) animatedPath.update(dt);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
@@ -111,21 +104,17 @@ class PathsDemoScreen extends DemoScreenBase {
 			case UIClick:
 				for (i in 0...pathButtons.length) {
 					if (source == pathButtons[i]) {
-						final pathNames = ["circuit", "star", "zigzag", "spiral", "waves", "bezierLoop"];
-						currentPath = pathNames[i];
-						if (statusText != null) {
-							statusText.text = 'Path: $currentPath | Speed: ${Std.int(speed / 0.8)}%';
-						}
+						currentPath = PATH_NAMES[i];
 						drawCurrentPath();
 						startAnimation();
+						updateStatusText();
 						return;
 					}
 				}
 			case UIChangeValue(val):
 				if (source == speedSlider) {
-					speed = 0.8 * val; // 80 px/s at 100%
-					if (statusText != null)
-						statusText.text = 'Path: $currentPath | Speed: ${val}%';
+					speed = val;
+					updateStatusText();
 					startAnimation();
 				}
 			default:
@@ -138,7 +127,6 @@ class PathsDemoScreen extends DemoScreenBase {
 		demoResult = null;
 		speedSlider = null;
 		pathButtons = [];
-		statusText = null;
 		paths = null;
 		animatedPath = null;
 		markerObj = null;

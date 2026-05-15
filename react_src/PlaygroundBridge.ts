@@ -24,7 +24,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'sliders', displayName: 'Sliders', category: 'UI Components', manimFile: 'demos/ui/sliders.manim' },
             { name: 'dropdowns', displayName: 'Dropdowns', category: 'UI Components', manimFile: 'demos/ui/dropdowns.manim' },
             { name: 'scrollableList', displayName: 'Scrollable List', category: 'UI Components', manimFile: 'demos/ui/scrollable-list.manim' },
-            { name: 'radio', displayName: 'Radio Buttons', category: 'UI Components', manimFile: 'demos/ui/radio.manim' },
+            { name: 'radio', displayName: 'Radio Buttons', category: 'UI Components', manimFile: 'demos/ui/radios-demo.manim' },
             { name: 'progressBar', displayName: 'Progress Bars', category: 'UI Components', manimFile: 'demos/ui/progress-bar.manim' },
             { name: 'draggable', displayName: 'Draggable', category: 'UI Components', manimFile: 'demos/ui/draggable.manim' },
             { name: 'dialogs', displayName: 'Dialogs', category: 'UI Components', manimFile: 'demos/ui/dialogs.manim' },

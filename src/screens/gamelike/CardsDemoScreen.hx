@@ -658,19 +658,23 @@ class CardsDemoScreen extends DemoScreenBase {
 	}
 
 	function setHandStatus(text:String):Void {
-		if (handResult != null)
-			handResult.getUpdatable("statusText").updateText(text);
+		updateOnResult(handResult, "statusText", text);
 	}
 
 	function setHandEvent(text:String):Void {
-		if (handResult != null)
-			handResult.getUpdatable("eventText").updateText(text);
+		updateOnResult(handResult, "eventText", text);
 	}
 
 	function updateHandUI():Void {
 		if (handResult == null) return;
 		var count = if (cardHand != null) cardHand.getCardCount() else 0;
-		handResult.getUpdatable("handCount").updateText('Hand: $count');
+		updateOnResult(handResult, "handCount", 'Hand: $count');
+	}
+
+	function updateOnResult(result:Null<BuilderResult>, fieldName:String, text:String):Void {
+		if (result == null) return;
+		final updatable = result.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function updateControlStates():Void {
@@ -796,12 +800,12 @@ class CardsDemoScreen extends DemoScreenBase {
 						tooltipHelper.startHover(id, "stateTooltip", params);
 					}
 					if (statesResult != null && data != null)
-						statesResult.getUpdatable("statusText").updateText('State: ${data.title}');
+						updateOnResult(statesResult, "statusText", 'State: ${data.title}');
 				case UIInteractiveEvent(UILeaving, id, _):
 					if (tooltipHelper != null)
 						tooltipHelper.cancelHover(id);
 					if (statesResult != null)
-						statesResult.getUpdatable("statusText").updateText("Hover a card to see state description");
+						updateOnResult(statesResult, "statusText", "Hover a card to see state description");
 				default:
 			}
 			return;

@@ -121,9 +121,13 @@ class CurvesDemoScreen extends DemoScreenBase {
 		if (yBmp != null) yBmp.tile = centered;
 		if (alphaBmp != null) alphaBmp.tile = centered;
 		if (scaleBmp != null) scaleBmp.tile = centered;
-		if (demoResult != null) {
-			demoResult.getUpdatable("selectedBitmap").updateText(TestBitmaps.getName(TestBitmaps.getType(index)));
-		}
+		updateText("selectedBitmap", TestBitmaps.getName(TestBitmaps.getType(index)));
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function createCircle(color:Int, radius:Int):h2d.Graphics {
@@ -142,8 +146,8 @@ class CurvesDemoScreen extends DemoScreenBase {
 		final curves = demoBuilder.getCurves();
 		activeCurve = curves.get(name);
 
-		demoResult.getUpdatable("curveLabel").updateText(name + (inverse ? " (inverse)" : ""));
-		demoResult.getUpdatable("selectedCurve").updateText(name);
+		updateText("curveLabel", name + (inverse ? " (inverse)" : ""));
+		updateText("selectedCurve", name);
 		drawCurveGraph();
 	}
 
@@ -224,13 +228,13 @@ class CurvesDemoScreen extends DemoScreenBase {
 			case UIToggle(checked):
 				if (source == inverseCheckbox) {
 					inverse = checked;
-					demoResult.getUpdatable("curveLabel").updateText(currentCurve + (inverse ? " (inverse)" : ""));
+					updateText("curveLabel", currentCurve + (inverse ? " (inverse)" : ""));
 					drawCurveGraph();
 				}
 			case UIChangeValue(val):
 				if (source == speedSlider) {
 					speedPct = val;
-					demoResult.getUpdatable("speedValue").updateText('$val%');
+					updateText("speedValue", '$val%');
 				}
 			default:
 		}

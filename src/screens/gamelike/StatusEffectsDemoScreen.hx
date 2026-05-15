@@ -99,7 +99,9 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		refreshAnims = [];
 
 		// Create hover interactives for each slot position
-		final container = demoResult.getSingleItemByName("particleContainer").object.toh2dObject();
+		final containerEl = demoResult.getSingleItemByName("particleContainer");
+		if (containerEl == null) return;
+		final container = containerEl.object.toh2dObject();
 		for (i in 0...MAX_SLOTS) {
 			final x = i * (CARD_WIDTH + CARD_SPACING);
 			final inter = new h2d.Interactive(CARD_WIDTH, CARD_HEIGHT, container);
@@ -137,7 +139,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 				e.remaining = def.duration;
 				if (e.cardResult != null) {
 					e.cardResult.setParameter("pct", 100);
-					e.cardResult.getUpdatable("cardTimer").updateText('${Std.int(def.duration)}s');
+					updateOn(e.cardResult, "cardTimer", '${Std.int(def.duration)}s');
 				}
 				spawnRefreshAnim(idx, e.isBuff);
 				setLog('Refreshed ${def.name}!');
@@ -153,8 +155,8 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			"accentColor" => def.color
 		], null, null, true);
 
-		cardResult.getUpdatable("cardName").updateText(def.name);
-		cardResult.getUpdatable("cardTimer").updateText('${Std.int(def.duration)}s');
+		updateOn(cardResult, "cardName", def.name);
+		updateOn(cardResult, "cardTimer", '${Std.int(def.duration)}s');
 
 		// Build icon and insert into card slot
 		final iconType = ICON_TYPE_MAP.get(def.name);
@@ -167,7 +169,9 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		// Create particle effect
 		final particleName = isBuff ? "buffSparkle" : "debuffSmoke";
 		final particles = demoBuilder.createParticles(particleName);
-		final particleContainer = demoResult.getSingleItemByName("particleContainer").object.toh2dObject();
+		final particleContainerEl = demoResult.getSingleItemByName("particleContainer");
+		if (particleContainerEl == null) return;
+		final particleContainer = particleContainerEl.object.toh2dObject();
 		particleContainer.addChild(particles);
 
 		final effect:StatusEffect = {
@@ -254,9 +258,8 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	}
 
 	function updateEffectCount():Void {
-		if (demoResult != null) {
-			demoResult.getUpdatable("effectCountText").updateText('Effects: ${effects.length} / $MAX_SLOTS');
-		}
+		if (demoResult != null)
+			updateOn(demoResult, "effectCountText", 'Effects: ${effects.length} / $MAX_SLOTS');
 		updateButtonStates();
 	}
 
@@ -277,11 +280,11 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			"pct" => pct
 		], null, null, true);
 
-		result.getUpdatable("ttName").updateText(e.name);
-		result.getUpdatable("ttType").updateText(e.isBuff ? "[Buff]" : "[Debuff]");
-		result.getUpdatable("ttDesc").updateText(e.desc);
+		updateOn(result, "ttName", e.name);
+		updateOn(result, "ttType", e.isBuff ? "[Buff]" : "[Debuff]");
+		updateOn(result, "ttDesc", e.desc);
 		final secs = Math.round(e.remaining * 10) / 10;
-		result.getUpdatable("ttTimer").updateText('${secs}s remaining');
+		updateOn(result, "ttTimer", '${secs}s remaining');
 
 		// Position above the hovered card
 		if (e.cardResult != null) {
@@ -315,7 +318,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 		final pct = Std.int(Math.max(0, Math.min(100, e.remaining / e.duration * 100)));
 		tooltipResult.setParameter("pct", pct);
 		final secs = Math.round(e.remaining * 10) / 10;
-		tooltipResult.getUpdatable("ttTimer").updateText('${secs}s remaining');
+		updateOn(tooltipResult, "ttTimer", '${secs}s remaining');
 	}
 
 	// ── Low-TTL Pulsing Glow ──
@@ -347,9 +350,13 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	// ── Shared Utilities ──
 
 	function setLog(text:String):Void {
-		if (demoResult != null) {
-			demoResult.getUpdatable("logText").updateText(text);
-		}
+		if (demoResult != null)
+			updateOn(demoResult, "logText", text);
+	}
+
+	function updateOn(result:BuilderResult, fieldName:String, text:String):Void {
+		final updatable = result.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function updateButtonStates():Void {
@@ -361,7 +368,10 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 	}
 
 	function spawnRefreshAnim(slotIndex:Int, isBuff:Bool):Void {
-		final particleContainer = demoResult.getSingleItemByName("particleContainer").object.toh2dObject();
+		if (demoBuilder == null || demoResult == null) return;
+		final particleContainerEl = demoResult.getSingleItemByName("particleContainer");
+		if (particleContainerEl == null) return;
+		final particleContainer = particleContainerEl.object.toh2dObject();
 		final cx = slotIndex * (CARD_WIDTH + CARD_SPACING) + CARD_WIDTH / 2;
 		final cy = CARD_HEIGHT / 2;
 
@@ -443,7 +453,7 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 					final pct = Std.int(Math.max(0, Math.min(100, e.remaining / e.duration * 100)));
 					e.cardResult.setParameter("pct", pct);
 					final secs = Math.max(0, Math.round(e.remaining * 10) / 10);
-					e.cardResult.getUpdatable("cardTimer").updateText('${secs}s');
+					updateOn(e.cardResult, "cardTimer", '${secs}s');
 				}
 			}
 

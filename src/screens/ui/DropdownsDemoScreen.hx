@@ -5,8 +5,6 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
 import bh.multianim.MultiAnimBuilder;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
 import bh.base.MacroUtils;
 
 class DropdownsDemoScreen extends DemoScreenBase {
@@ -82,9 +80,10 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownDisabled = ui.dropdownDisabled;
 		dropdownDisabled.disabled = true;
 		disableCheckbox = ui.disableCheckbox;
+		// dropdownDisabled stays permanently disabled — excluded from the toggle list
 		allDropdowns = [
 			dropdownScrollable, dropdownAutoFew, dropdownAutoMany,
-			dropdownCustom, dropdownWide, dropdownLarge, dropdownDisabled,
+			dropdownCustom, dropdownWide, dropdownLarge,
 		];
 
 		addBuilderResult(demoResult);

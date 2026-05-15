@@ -18,7 +18,7 @@ class CheckboxesDemoScreen extends DemoScreenBase {
 	var disableToggle:Null<UIStandardMultiCheckbox>;
 
 	override public function load():Void {
-		setupDemo("Checkboxes", "Checkbox, tickbox, toggle, radio, and simple variants with selection tracking");
+		setupDemo("Checkboxes", "Checkbox, tickbox, toggle, radio, radio2, and simple variants with selection tracking and disabled state");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/ui/checkboxes-demo.manim", false);
 		checkboxBuilder = screenManager.buildFromResourceName("checkbox.manim", false);

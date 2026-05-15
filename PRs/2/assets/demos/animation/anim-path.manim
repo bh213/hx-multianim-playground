@@ -1,0 +1,163 @@
+version: 1.0
+
+// Anim Path Demo
+// Circles follow paths with curves for alpha, scale, progress, color & direction
+
+curves {
+    #linear curve {
+        easing: linear
+    }
+    #easeInQuad curve {
+        easing: easeinquad
+    }
+    #easeOutQuad curve {
+        easing: easeoutquad
+    }
+    #easeInOutQuad curve {
+        easing: easeinoutquad
+    }
+    #easeInCubic curve {
+        easing: easeincubic
+    }
+    #easeOutCubic curve {
+        easing: easeoutcubic
+    }
+    #easeInOutCubic curve {
+        easing: easeinoutcubic
+    }
+    #easeInBack curve {
+        easing: easeinback
+    }
+    #easeOutBack curve {
+        easing: easeoutback
+    }
+    #easeInOutBack curve {
+        easing: easeinoutback
+    }
+    #easeOutBounce curve {
+        easing: easeoutbounce
+    }
+    #easeOutElastic curve {
+        easing: easeoutelastic
+    }
+    #accelDecel curve {
+        [0..0.5] easeincubic
+        [0.5..1.0] easeoutcubic
+    }
+    #snapBack curve {
+        [0..0.7] easeoutquad (0, 1.15)
+        [0.7..1.0] easeinoutquad (1.15, 1.0)
+    }
+    #cubicBezier curve {
+        easing: cubicbezier(0.68, -0.55, 0.27, 1.55)
+    }
+    #custom curve {
+        points: [(0, 0), (0.2, 0.8), (0.4, 0.2), (0.6, 0.9), (0.8, 0.4), (1.0, 1.0)]
+    }
+    #fadeIn curve {
+        points: [(0, 0), (0.3, 1.0), (1.0, 1.0)]
+    }
+    #pulse curve {
+        points: [(0, 0.3), (0.5, 1.0), (1.0, 0.3)]
+    }
+}
+
+paths {
+    #circuit path {
+        forward(80)
+        arc(50, 90)
+        forward(60)
+        arc(50, 90)
+        forward(80)
+        arc(50, 90)
+        forward(60)
+        arc(50, 90)
+    }
+    #star path {
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+        turn(144)
+        forward(60)
+    }
+    #spiral path {
+        spiral(10, 70, 720)
+    }
+    #waves path {
+        wave(30, 60, 4)
+    }
+    #bezierLoop path {
+        bezier(relative, 100, 0, 30, -80)
+        bezier(relative, 100, 0, 30, 80)
+        arc(40, 180)
+        bezier(relative, -100, 0, -30, 80)
+        bezier(relative, -100, 0, -30, -80)
+        close
+    }
+    #circle path {
+        arc(50, 360)
+    }
+}
+
+#animPathDemo programmable() {
+    text(exo2_16, "Animated Paths", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Left-click: set start. Right-click: set end. Circles follow paths with curves.", #aaaaaa, left, 700): 50, 105
+
+    // Display area (680x400)
+    bitmap(generated(color(680, 400, #111122))): 50, 130
+
+    // Right column labels
+    text(m6x11, "Path:", #aaaaaa, left, 70): 750, 110
+    #selectedPath(updatable) text(m6x11, "circuit", #7fdbda, left, 100): 800, 110
+
+    text(m6x11, "Curve:", #aaaaaa, left, 70): 750, 330
+    #selectedCurve(updatable) text(m6x11, "linear", #7fdbda, left, 100): 810, 330
+
+    // Count dropdown
+    text(m6x11, "Count:", #aaaaaa, left, 50): 50, 545
+    placeholder(generated(cross(60, 24, #FF0000)), builderParameter("countDropdown")) {
+        pos: 100, 543
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>120}
+    }
+
+    // Mode dropdown
+    text(m6x11, "Mode:", #aaaaaa, left, 50): 200, 545
+    placeholder(generated(cross(110, 24, #FF0000)), builderParameter("modeDropdown")) {
+        pos: 240, 543
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>120}
+    }
+
+    // Apply-to checkboxes
+    text(m6x11, "Apply:", #aaaaaa, left, 50): 50, 580
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkAlpha")) { pos: 100, 578 }
+    text(m6x11, "Alpha", #cccccc, left, 40): 122, 580
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkScale")) { pos: 175, 578 }
+    text(m6x11, "Scale", #cccccc, left, 40): 197, 580
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkProgress")) { pos: 250, 578 }
+    text(m6x11, "Progress", #cccccc, left, 55): 272, 580
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkColor")) { pos: 345, 578 }
+    text(m6x11, "Color", #cccccc, left, 40): 367, 580
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("chkDirection")) { pos: 420, 578 }
+    text(m6x11, "Direction", #cccccc, left, 60): 442, 580
+
+    // Color start/end swatches (created in code)
+    text(m6x11, "Start:", #aaaaaa, left, 40): 515, 580
+    text(m6x11, "End:", #aaaaaa, left, 40): 515, 615
+
+    // Speed slider + Randomize
+    text(m6x11, "Speed:", #aaaaaa, left, 50): 50, 615
+    placeholder(generated(cross(180, 20, #FF0000)), builderParameter("speedSlider")) {
+        pos: 100, 613
+        settings{min:int=>10, max:int=>500, step:int=>10}
+    }
+    #speedValue(updatable) text(m6x11, "100%", #7fdbda, left, 50): 290, 615
+
+    placeholder(generated(cross(90, 24, #FF0000)), builderParameter("btnRandomize")) { pos: 370, 612 }
+
+    // Status
+    #statusText(updatable) text(m6x11, "L-click start, R-click end | Path: circuit | Curve: linear | Count: 5", #7fdbda, left, 900): 50, 650
+}

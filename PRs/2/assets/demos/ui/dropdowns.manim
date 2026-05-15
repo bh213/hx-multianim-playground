@@ -1,0 +1,101 @@
+version: 1.0
+
+// Dropdowns Demo
+// Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).
+
+#dropdownsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Scrollable (default)
+    text(exo2_16, "Scrollable (default)", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Fixed panel height, always scrolls:", #cccccc): 0, 35
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownScrollable")) {
+        pos: 0, 55
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
+    }
+
+    #scrollableText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 65
+
+    // Section: Autoscale (few items)
+    text(exo2_16, "Autoscale (few items)", #7fdbda): 0, 140
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 162
+    text(exo2_light_14, "Panel sizes to fit items:", #cccccc): 0, 175
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownAutoFew")) {
+        pos: 0, 195
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>300}
+    }
+
+    #autoFewText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 205
+
+    // Section: Autoscale (many items)
+    text(exo2_16, "Autoscale (many items)", #7fdbda): 0, 280
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 302
+    text(exo2_light_14, "Auto-sizes up to max height, then scrolls:", #cccccc): 0, 315
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownAutoMany")) {
+        pos: 0, 335
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>150}
+    }
+
+    #autoManyText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 345
+
+    // Section: Custom Font & Color
+    text(exo2_16, "Custom Font & Color", #ffeb3b): 0, 420
+    bitmap(generated(color(600, 1, #ffeb3b33))): 0, 442
+    text(exo2_light_14, "White text with dd font:", #cccccc): 0, 455
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownCustom")) {
+        pos: 0, 475
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150, font=>"dd", fontColor:color=>white}
+    }
+
+    #customText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 485
+
+    // Section: Wide Dropdown (180px)
+    text(exo2_16, "Wide Dropdown (180px)", #7fdbda): 0, 560
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 582
+    text(exo2_light_14, "Wider dropdown with pixellari font:", #cccccc): 0, 595
+
+    placeholder(generated(cross(180, 30, #FF0000)), builderParameter("dropdownWide")) {
+        pos: 0, 615
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>180, itemBuildName=>list-item-w, width:int=>180, height:int=>150, font=>"pixellari", fontColor:int=>0x7fdbda12}
+    }
+
+    #wideText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 240, 625
+
+    // Section: Large Dropdown (200x40)
+    text(exo2_16, "Large Dropdown (200x40)", #ffeb3b): 0, 700
+    bitmap(generated(color(600, 1, #ffeb3b33))): 0, 722
+    text(exo2_light_14, "Extra large button with exo2_16 font:", #cccccc): 0, 735
+
+    placeholder(generated(cross(200, 40, #FF0000)), builderParameter("dropdownLarge")) {
+        pos: 0, 755
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>200, dropdown.btnHeight:int=>40, itemBuildName=>list-item-w, item.itemHeight:int=>28, width:int=>200, height:int=>150, font=>"exo2_16", fontColor:int=>0xffeb3b12}
+    }
+
+    #largeText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 260, 770
+
+    // Section: Disabled
+    text(exo2_16, "Disabled", #b0b0b0): 0, 840
+    bitmap(generated(color(600, 1, #b0b0b033))): 0, 862
+    text(exo2_light_14, "Dropdown with disabled state:", #cccccc): 0, 875
+
+    placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownDisabled")) {
+        pos: 0, 895
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, height:int=>150}
+    }
+
+    #disabledText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 905
+
+    // Disable toggle section
+    text(exo2_16, "Disable Toggle", #7fdbda): 0, 970
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 992
+    placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
+        pos: 0, 1010
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Toggle to disable all dropdowns", #aaaaaa): 30, 1012
+}

@@ -1,0 +1,144 @@
+version: 1.0
+
+// Buttons Demo
+// Shows all button styles from buttons.manim builder: Normal, Warning, Small
+// Plus custom settings: text shadow, font colors, sizes, color buttons
+
+#buttonsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Normal Buttons (buttons.main)
+    text(exo2_16, "Normal Buttons", #7fdbda): 0, 0
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 22
+
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn1")) {
+        pos: 0, 40
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn2")) {
+        pos: 220, 40
+        settings{text=>"Action"}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("normalBtn3")) {
+        pos: 440, 40
+        settings{text=>"Submit"}
+    }
+
+    // Section: Warning Buttons (buttons.warning)
+    text(exo2_16, "Warning Buttons", #ff7f50): 0, 100
+    bitmap(generated(color(660, 1, #ff7f5033))): 0, 122
+
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn1")) {
+        pos: 0, 140
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn2")) {
+        pos: 220, 140
+        settings{text=>"Delete"}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("warningBtn3")) {
+        pos: 440, 140
+        settings{text=>"Reset"}
+    }
+
+    // Section: Small Buttons (buttons.small)
+    text(exo2_16, "Small Buttons", #4caf50): 0, 200
+    bitmap(generated(color(660, 1, #4caf5033))): 0, 222
+
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn1")) {
+        pos: 0, 240
+    }
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn2")) {
+        pos: 80, 240
+        settings{text=>"No"}
+    }
+    placeholder(generated(cross(64, 32, white)), builderParameter("smallBtn3")) {
+        pos: 160, 240
+        settings{text=>"Info"}
+    }
+
+    // Section: Text Shadow
+    text(exo2_16, "Text Shadow", #b0b0b0): 0, 300
+    bitmap(generated(color(660, 1, #b0b0b033))): 0, 322
+
+    placeholder(generated(cross(200, 30, white)), builderParameter("shadowBtn1")) {
+        pos: 0, 340
+        settings{text=>"Shadow", textShadow:bool=>true}
+    }
+    placeholder(generated(cross(200, 40, white)), builderParameter("shadowBtn2")) {
+        pos: 220, 335
+        settings{text=>"Big Shadow", width:int=>200, height:int=>40, font=>"exo2_16", textShadow:bool=>true}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("shadowBtn3")) {
+        pos: 440, 340
+        settings{buildName=>"warning", text=>"Warning Shadow", textShadow:bool=>true}
+    }
+
+    // Section: Font Colors
+    text(exo2_16, "Font Colors", #ffeb3b): 0, 400
+    bitmap(generated(color(660, 1, #ffeb3b33))): 0, 422
+
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn1")) {
+        pos: 0, 440
+        settings{text=>"Red Text", fontColor:int=>0xff444412}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn2")) {
+        pos: 220, 440
+        settings{text=>"Green Text", fontColor:int=>0x44ff4412}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn3")) {
+        pos: 440, 440
+        settings{text=>"Gold Text", fontColor:int=>0xffcc4412}
+    }
+
+    // Section: Size Variants
+    text(exo2_16, "Size Variants", #4a90a4): 0, 500
+    bitmap(generated(color(660, 1, #4a90a433))): 0, 522
+
+    placeholder(generated(cross(120, 22, white)), builderParameter("sizeBtn1")) {
+        pos: 0, 540
+        settings{text=>"Compact", width:int=>120, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(200, 30, white)), builderParameter("sizeBtn2")) {
+        pos: 140, 536
+        settings{text=>"Standard"}
+    }
+    placeholder(generated(cross(300, 50, white)), builderParameter("sizeBtn3")) {
+        pos: 360, 526
+        settings{text=>"Large Button", width:int=>300, height:int=>50, font=>"exo2_20"}
+    }
+
+    // Section: Color Buttons
+    text(exo2_16, "Color Buttons", #ff7f50): 0, 600
+    bitmap(generated(color(660, 1, #ff7f5033))): 0, 622
+
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn1")) {
+        pos: 0, 640
+        settings{buildName=>"color", color:int=>0xFFff4444, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn2")) {
+        pos: 80, 640
+        settings{buildName=>"color", color:int=>0xFF4caf50, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(60, 30, white)), builderParameter("colorBtn3")) {
+        pos: 160, 640
+        settings{buildName=>"color", color:int=>0xFF2196f3, width:int=>60, height:int=>30}
+    }
+    placeholder(generated(cross(100, 30, white)), builderParameter("colorBtn4")) {
+        pos: 240, 640
+        settings{buildName=>"color", color:int=>0xFFffcc44, width:int=>100, height:int=>30}
+    }
+
+    // Click counter display
+    text(exo2_16, "Click Counter", #7fdbda): 0, 700
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 722
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 740
+    #counterText(updatable) text(exo2_20, "Clicks: 0", #ffffff, left, 280): 15, 748
+
+    // Disable toggle section
+    text(exo2_16, "Disable Toggle", #7fdbda): 0, 810
+    bitmap(generated(color(660, 1, #7fdbda33))): 0, 832
+    placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
+        pos: 0, 850
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 852
+}

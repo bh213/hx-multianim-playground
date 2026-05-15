@@ -1,0 +1,108 @@
+version: 1.0
+
+// Progress Bar Demo
+// Shows progress bars at various values with auto-animation.
+
+#progressBar programmable(value:0..100=50) {
+    bitmap(generated(color(202, 20, #333333))): 0, 0
+
+    @(value => 0..25) bitmap(generated(color($value * 2, 16, #ff4444))): 1, 2
+    @(value => 26..60) bitmap(generated(color($value * 2, 16, #ffaa00))): 1, 2
+    @(value => 61..100) bitmap(generated(color($value * 2, 16, #44cc44))): 1, 2
+
+    text(dd, $value, white, left): 210, 3
+}
+
+#progressBarWide programmable(value:0..100=50) {
+    bitmap(generated(color(302, 24, #333333))): 0, 0
+
+    @(value => 0..33) bitmap(generated(color($value * 3, 20, #cc2222))): 1, 2
+    @(value => 34..66) bitmap(generated(color($value * 3, 20, #dddd44))): 1, 2
+    @(value => 67..100) bitmap(generated(color($value * 3, 20, #22cc44))): 1, 2
+
+    text(dd, $value, white, center, 300): 0, 5
+}
+
+#progressBarThin programmable(value:0..100=50) {
+    bitmap(generated(color(152, 12, #444444))): 0, 0
+
+    @(value => 0..50) bitmap(generated(color($value * 150 div 100, 8, #4a90a4))): 1, 2
+    @(value => 51..100) bitmap(generated(color($value * 150 div 100, 8, #7fdbda))): 1, 2
+}
+
+#progressBarPixel programmable(value:0..100=50) {
+    bitmap(generated(color(252, 24, #222222))): 0, 0
+
+    @(value => 0..33) bitmap(generated(color($value * 250 div 100, 20, #cc3333))): 1, 2
+    @(value => 34..66) bitmap(generated(color($value * 250 div 100, 20, #cc8800))): 1, 2
+    @(value => 67..100) bitmap(generated(color($value * 250 div 100, 20, #33aa33))): 1, 2
+
+    text(m6x11, '${$value}%', white, center, 252): 0, 7
+}
+
+#progressBarDemo programmable() {
+    pos: 50, 80
+
+    // Section: Static Progress Bars
+    text(exo2_16, "Progress Bars (Static)", #7fdbda): 0, 0
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "25% - Low", #cccccc): 0, 35
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("bar1")) {
+        pos: 0, 55
+        settings{buildName=>progressBar}
+    }
+
+    text(exo2_light_14, "60% - Medium", #cccccc): 0, 85
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("bar2")) {
+        pos: 0, 105
+        settings{buildName=>progressBar}
+    }
+
+    text(exo2_light_14, "90% - High", #cccccc): 0, 135
+    placeholder(generated(cross(210, 20, #FF0000)), builderParameter("bar3")) {
+        pos: 0, 155
+        settings{buildName=>progressBar}
+    }
+
+    // Section: Auto-Animated Progress Bar
+    text(exo2_16, "Auto-Animated (0 -> 100, resets)", #7fdbda): 0, 210
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 232
+
+    text(exo2_light_14, "Wide bar with auto-increment:", #cccccc): 0, 245
+    placeholder(generated(cross(310, 24, #FF0000)), builderParameter("animBar")) {
+        pos: 0, 265
+        settings{buildName=>progressBarWide}
+    }
+
+    // Section: Animated with Pixel Art Counter
+    text(exo2_16, "Animated + Pixel Counter (m6x11)", #7fdbda): 0, 320
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 342
+
+    text(exo2_light_14, "Centered percentage with pixel art font:", #cccccc): 0, 355
+    placeholder(generated(cross(252, 24, #FF0000)), builderParameter("pixelBar")) {
+        pos: 0, 375
+        settings{buildName=>progressBarPixel}
+    }
+
+    // Section: Thin Progress Bars
+    text(exo2_16, "Thin Style", #7fdbda): 0, 430
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 452
+
+    placeholder(generated(cross(152, 12, #FF0000)), builderParameter("thinBar1")) {
+        pos: 0, 470
+        settings{buildName=>progressBarThin}
+    }
+    placeholder(generated(cross(152, 12, #FF0000)), builderParameter("thinBar2")) {
+        pos: 170, 470
+        settings{buildName=>progressBarThin}
+    }
+    placeholder(generated(cross(152, 12, #FF0000)), builderParameter("thinBar3")) {
+        pos: 340, 470
+        settings{buildName=>progressBarThin}
+    }
+
+    // Current animated value display
+    ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 510
+    #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 518
+}

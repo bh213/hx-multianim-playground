@@ -1,0 +1,72 @@
+version: 1.0
+
+// Expressions Demo
+// Arithmetic, ternary, and string interpolation
+
+#expressionsDemo programmable(value:0..100=25) {
+    pos: 50, 140
+
+    text(exo2_16, "Expressions", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "Arithmetic, ternary, and string interpolation.", #aaaaaa, left, 600): 0, 25
+
+    // Basic arithmetic
+    text(m6x11, "Basic arithmetic:", #cccccc, left, 400): 0, 60
+
+    text(m6x11, "$value = ", #888888, left, 200): 20, 80
+    text(m6x11, $value, #ffffff, left, 100): 140, 80
+
+    text(m6x11, "$value + 10 = ", #888888, left, 200): 20, 97
+    text(m6x11, '${value + 10}', #ffffff, left, 100): 140, 97
+
+    text(m6x11, "$value * 2 = ", #888888, left, 200): 20, 114
+    text(m6x11, '${value * 2}', #ffffff, left, 100): 140, 114
+
+    text(m6x11, "$value * 3 + 5 = ", #888888, left, 200): 20, 131
+    text(m6x11, '${value * 3 + 5}', #ffffff, left, 100): 160, 131
+
+    text(m6x11, "$value div 10 = ", #888888, left, 200): 20, 148
+    text(m6x11, '${value div 10}', #ffffff, left, 100): 160, 148
+
+    text(m6x11, "$value % 7 = ", #888888, left, 200): 20, 165
+    text(m6x11, '${value % 7}', #ffffff, left, 100): 140, 165
+
+    // Ternary expressions
+    text(m6x11, "Ternary  ?(cond) a : b :", #cccccc, left, 400): 0, 195
+
+    text(m6x11, "?($value >= 50)", #888888, left, 180): 20, 215
+    text(m6x11, ?($value >= 50) "HIGH" : "low", ?($value >= 50) #44ff44 : #ff4444, left, 80): 200, 215
+
+    text(m6x11, "?($value > 25)", #888888, left, 180): 20, 232
+    text(m6x11, ?($value > 25) "yes" : "no", ?($value > 25) #44ff44 : #ff4444, left, 80): 200, 232
+
+    text(m6x11, "?($value == 50)", #888888, left, 180): 20, 249
+    text(m6x11, ?($value == 50) "MATCH!" : "--", ?($value == 50) #ffdd44 : #666666, left, 80): 200, 249
+
+    text(m6x11, "Color:", #888888, left, 80): 20, 272
+    bitmap(generated(color(100, 14, ?($value >= 50) #44ff44 : #ff4444))): 100, 272
+
+    text(m6x11, "Width:", #888888, left, 80): 20, 292
+    bitmap(generated(color(?($value > 50) 200 : 80, 14, #4488cc))): 100, 292
+
+    // String interpolation
+    text(m6x11, "String interpolation:", #cccccc, left, 400): 0, 322
+
+    text(m6x11, "simple:", #888888, left, 80): 20, 342
+    text(m6x11, 'Value is ${value}', #ffffff, left, 300): 100, 342
+
+    text(m6x11, "math:", #888888, left, 80): 20, 359
+     text(m6x11, 'Double: ${value * 2}', #ffffff, left, 300): 100, 359
+
+    text(m6x11, "multi:", #888888, left, 80): 20, 376
+   text(m6x11, '${$value} and ${$value + 10}', #ffffff, left, 300): 100, 376
+
+    // Visual expression result
+    text(m6x11, "Visual width = $value * 3:", #cccccc, left, 400): 0, 406
+    bitmap(generated(color($value * 3, 20, #4488cc))): 0, 424
+
+    // Slider
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("valueSlider")) {
+        pos: 0, 460
+        settings{size:int=>300}
+    }
+}

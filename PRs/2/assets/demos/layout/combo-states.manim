@@ -1,0 +1,63 @@
+version: 1.0
+
+// Combo States Demo
+// Shows @if, @else, @default conditional patterns
+
+#comboStatesShowcase programmable(mode:[idle, active, warning, error]=idle, level:[low, medium, high, critical]=low, state:[on, off, standby, unknown]=on) {
+  pos: 40, 80
+
+  // Section 1: @if per-state — each @(param=>value) is independent
+  text(exo2_16, "@if per-state conditionals:", #cccccc): 0, 0
+  point {
+    pos: 0, 30
+    bitmap(generated(color(120, 40, #222222))): 0, 0
+    @(mode=>idle) bitmap(generated(color(116, 36, #334455))): 2, 2
+    @(mode=>active) bitmap(generated(color(116, 36, #335533))): 2, 2
+    @(mode=>warning) bitmap(generated(color(116, 36, #555533))): 2, 2
+    @(mode=>error) bitmap(generated(color(116, 36, #553333))): 2, 2
+    @(mode=>idle) text(m6x11, "IDLE", #8888aa, center, 120): 0, 14
+    @(mode=>active) text(m6x11, "ACTIVE", #88ff88, center, 120): 0, 14
+    @(mode=>warning) text(m6x11, "WARNING", #ffff88, center, 120): 0, 14
+    @(mode=>error) text(m6x11, "ERROR", #ff8888, center, 120): 0, 14
+  }
+  #modeText(updatable) text(exo2_light_14, "mode: idle", #7fdbda, left, 200): 140, 42
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleMode")) {
+    pos: 350, 34
+  }
+
+  // Section 2: @else chain — if/else-if/else pattern
+  text(exo2_16, "@else / @else(cond) chain:", #cccccc): 0, 100
+  point {
+    pos: 0, 130
+    bitmap(generated(color(120, 40, #222222))): 0, 0
+    @(level=>low) bitmap(generated(color(116, 36, #003366))): 2, 2
+    @else(level=>medium) bitmap(generated(color(116, 36, #006633))): 2, 2
+    @else(level=>high) bitmap(generated(color(116, 36, #663300))): 2, 2
+    @else bitmap(generated(color(116, 36, #660000))): 2, 2
+    @(level=>low) text(m6x11, "LOW", #88ccff, center, 120): 0, 14
+    @else(level=>medium) text(m6x11, "MED", #88ff88, center, 120): 0, 14
+    @else(level=>high) text(m6x11, "HIGH", #ffcc88, center, 120): 0, 14
+    @else text(m6x11, "CRIT!", #ff8888, center, 120): 0, 14
+  }
+  #levelText(updatable) text(exo2_light_14, "level: low", #7fdbda, left, 200): 140, 142
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleLevel")) {
+    pos: 350, 134
+  }
+
+  // Section 3: @default — specific matches + catch-all fallback
+  text(exo2_16, "@default catch-all:", #cccccc): 0, 200
+  point {
+    pos: 0, 230
+    bitmap(generated(color(120, 40, #222222))): 0, 0
+    @(state=>on) bitmap(generated(color(116, 36, #006600))): 2, 2
+    @(state=>off) bitmap(generated(color(116, 36, #660000))): 2, 2
+    @default bitmap(generated(color(116, 36, #444444))): 2, 2
+    @(state=>on) text(m6x11, "ON", #88ff88, center, 120): 0, 14
+    @(state=>off) text(m6x11, "OFF", #ff8888, center, 120): 0, 14
+    @default text(m6x11, "OTHER", #aaaaaa, center, 120): 0, 14
+  }
+  #stateText(updatable) text(exo2_light_14, "state: on", #7fdbda, left, 200): 140, 242
+  placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleState")) {
+    pos: 350, 234
+  }
+}

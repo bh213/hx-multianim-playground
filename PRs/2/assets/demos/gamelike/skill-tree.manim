@@ -1,0 +1,236 @@
+version: 1.0
+
+// Equipment Tree Demo
+// 4 tiers x 3 paths using roguelike item icons.
+// Nodes are slots with slotContent for the icon.
+// Slot states: upgraded, upgradable, hidden, notEnoughPoints
+// Hover is a separate bool-like parameter on each slot.
+
+// ── Equipment icon (just the sprite, optionally grayscale) ──────────────
+#eqIcon programmable(
+    icon:[helm, armor, axe, tshield, boots, gloves, bow, ring, staff, book, scroll, gem]=helm,
+    style:[full, gray]=full
+) {
+    @(style => full) point {
+        @(icon => helm)     scale(2) bitmap(sheet("roguelikeitems", "helmet", 0)): 0, 0
+        @(icon => armor)    scale(2) bitmap(sheet("roguelikeitems", "armor", 0)): 0, 0
+        @(icon => axe)      scale(2) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+        @(icon => tshield)  scale(2) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+        @(icon => boots)    scale(2) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+        @(icon => gloves)   scale(2) bitmap(sheet("roguelikeitems", "gloves", 0)): 0, 0
+        @(icon => bow)      scale(2) bitmap(sheet("roguelikeitems", "bow", 0)): 0, 0
+        @(icon => ring)     scale(2) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+        @(icon => staff)    scale(2) bitmap(sheet("roguelikeitems", "scepter", 0)): 0, 0
+        @(icon => book)     scale(2) bitmap(sheet("roguelikeitems", "book", 0)): 0, 0
+        @(icon => scroll)   scale(2) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+        @(icon => gem)      scale(2) bitmap(sheet("roguelikeitems", "gem", 0)): 0, 0
+    }
+    @(style => gray) point {
+        filter: grayscale(1.0)
+        @(icon => helm)     scale(2) bitmap(sheet("roguelikeitems", "helmet", 0)): 0, 0
+        @(icon => armor)    scale(2) bitmap(sheet("roguelikeitems", "armor", 0)): 0, 0
+        @(icon => axe)      scale(2) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+        @(icon => tshield)  scale(2) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+        @(icon => boots)    scale(2) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+        @(icon => gloves)   scale(2) bitmap(sheet("roguelikeitems", "gloves", 0)): 0, 0
+        @(icon => bow)      scale(2) bitmap(sheet("roguelikeitems", "bow", 0)): 0, 0
+        @(icon => ring)     scale(2) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+        @(icon => staff)    scale(2) bitmap(sheet("roguelikeitems", "scepter", 0)): 0, 0
+        @(icon => book)     scale(2) bitmap(sheet("roguelikeitems", "book", 0)): 0, 0
+        @(icon => scroll)   scale(2) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+        @(icon => gem)      scale(2) bitmap(sheet("roguelikeitems", "gem", 0)): 0, 0
+    }
+}
+
+// ── Node grid layouts (one per path for path-specific border colors) ────
+layouts {
+    #warNodes list {
+        point: 60, 65
+        point: 160, 65
+        point: 260, 65
+        point: 360, 65
+    }
+    #rogNodes list {
+        point: 60, 140
+        point: 160, 140
+        point: 260, 140
+        point: 360, 140
+    }
+    #magNodes list {
+        point: 60, 215
+        point: 160, 215
+        point: 260, 215
+        point: 360, 215
+    }
+}
+
+// ── Main equipment tree ─────────────────────────────────────────────────
+#eqTreeDemo programmable() {
+    pos: 50, 60
+
+    // Title
+    text(exo2_16, "Equipment Tree", #7fdbda): 0, 0
+    bitmap(generated(color(500, 1, #7fdbda33))): 0, 22
+
+    // Everything below title shifted 10px down via point wrapper
+    point {
+        pos: 0, 10
+
+    // Tree panel
+    ninepatch("ui", "Window_3x3_idle", 500, 250): 0, 35
+
+    // Tier headers
+    text(exo2_light_14, "Tier 1", #666666, center, 50): 53, 46
+    text(exo2_light_14, "Tier 2", #666666, center, 50): 153, 46
+    text(exo2_light_14, "Tier 3", #666666, center, 50): 253, 46
+    text(exo2_light_14, "Tier 4", #666666, center, 50): 353, 46
+
+    // Cost labels under tier headers
+    text(m5x7, "1 SP", #555555, center, 50): 53, 60
+    text(m5x7, "2 SP", #555555, center, 50): 153, 60
+    text(m5x7, "3 SP", #555555, center, 50): 253, 60
+    text(m5x7, "5 SP", #555555, center, 50): 353, 60
+
+    // Row labels
+    text(exo2_14, "WAR", #ff7f50): 14, 78
+    text(exo2_14, "ROG", #4caf50): 14, 153
+    text(exo2_14, "MAG", #4a90a4): 14, 228
+
+    // ── Connectors (horizontal lines between nodes) ──────────────
+    point {
+        pos: 96, 82
+        repeatable($c, step(3, dx: 100)) {
+            bitmap(generated(color(64, 2, #3a3a3a))): 0, 0
+        }
+    }
+    point {
+        pos: 96, 157
+        repeatable($c, step(3, dx: 100)) {
+            bitmap(generated(color(64, 2, #3a3a3a))): 0, 0
+        }
+    }
+    point {
+        pos: 96, 232
+        repeatable($c, step(3, dx: 100)) {
+            bitmap(generated(color(64, 2, #3a3a3a))): 0, 0
+        }
+    }
+
+    // ── WAR path slots (orange-red upgraded border) ─────────────
+    repeatable($n, layout("warNodes")) {
+        #warNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
+            @(state => upgraded)        bitmap(generated(color(36, 36, #ff7f50))): 0, 0
+            @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0
+            @(state => notEnoughPoints) bitmap(generated(color(36, 36, #333333))): 0, 0
+            @(state => hidden)          bitmap(generated(color(36, 36, #222222))): 0, 0
+            bitmap(generated(color(32, 32, #1a1a1a))): 2, 2
+            slotContent: 2, 2
+            @(state => hidden) text(m6x11, "?", #444444, center, 36): 0, 12
+            @(state => upgradable) @alpha(0.5) bitmap(generated(color(16, 16, #22aa22))): 10, 10
+            @(state => upgradable) @alpha(0.5) text(m6x11, "+", #ffffff, center, 16): 10, 12
+            @(state => notEnoughPoints) graphics(
+                line(#cc4444, 2, 6, 6, 30, 30);
+                line(#cc4444, 2, 30, 6, 6, 30);
+            ): 0, 0
+            @(hover => on) graphics(
+                line(#ffffff, 1, 0, 0, 35, 0);
+                line(#ffffff, 1, 35, 0, 35, 35);
+                line(#ffffff, 1, 35, 35, 0, 35);
+                line(#ffffff, 1, 0, 35, 0, 0);
+            ): 0, 0
+        }
+    }
+
+    // ── ROG path slots (green upgraded border) ──────────────────
+    repeatable($n, layout("rogNodes")) {
+        #rogNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
+            @(state => upgraded)        bitmap(generated(color(36, 36, #4caf50))): 0, 0
+            @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0
+            @(state => notEnoughPoints) bitmap(generated(color(36, 36, #333333))): 0, 0
+            @(state => hidden)          bitmap(generated(color(36, 36, #222222))): 0, 0
+            bitmap(generated(color(32, 32, #1a1a1a))): 2, 2
+            slotContent: 2, 2
+            @(state => hidden) text(m6x11, "?", #444444, center, 36): 0, 12
+            @(state => upgradable) @alpha(0.5) bitmap(generated(color(16, 16, #22aa22))): 10, 10
+            @(state => upgradable) @alpha(0.5) text(m6x11, "+", #ffffff, center, 16): 10, 12
+            @(state => notEnoughPoints) graphics(
+                line(#cc4444, 2, 6, 6, 30, 30);
+                line(#cc4444, 2, 30, 6, 6, 30);
+            ): 0, 0
+            @(hover => on) graphics(
+                line(#ffffff, 1, 0, 0, 35, 0);
+                line(#ffffff, 1, 35, 0, 35, 35);
+                line(#ffffff, 1, 35, 35, 0, 35);
+                line(#ffffff, 1, 0, 35, 0, 0);
+            ): 0, 0
+        }
+    }
+
+    // ── MAG path slots (blue upgraded border) ───────────────────
+    repeatable($n, layout("magNodes")) {
+        #magNode[$n] slot(state:[upgraded, upgradable, hidden, notEnoughPoints] = hidden, hover:[off, on] = off) {
+            @(state => upgraded)        bitmap(generated(color(36, 36, #4a90a4))): 0, 0
+            @(state => upgradable)      bitmap(generated(color(36, 36, #2a4a2a))): 0, 0
+            @(state => notEnoughPoints) bitmap(generated(color(36, 36, #333333))): 0, 0
+            @(state => hidden)          bitmap(generated(color(36, 36, #222222))): 0, 0
+            bitmap(generated(color(32, 32, #1a1a1a))): 2, 2
+            slotContent: 2, 2
+            @(state => hidden) text(m6x11, "?", #444444, center, 36): 0, 12
+            @(state => upgradable) @alpha(0.5) bitmap(generated(color(16, 16, #22aa22))): 10, 10
+            @(state => upgradable) @alpha(0.5) text(m6x11, "+", #ffffff, center, 16): 10, 12
+            @(state => notEnoughPoints) graphics(
+                line(#cc4444, 2, 6, 6, 30, 30);
+                line(#cc4444, 2, 30, 6, 6, 30);
+            ): 0, 0
+            @(hover => on) graphics(
+                line(#ffffff, 1, 0, 0, 35, 0);
+                line(#ffffff, 1, 35, 0, 35, 35);
+                line(#ffffff, 1, 35, 35, 0, 35);
+                line(#ffffff, 1, 0, 35, 0, 0);
+            ): 0, 0
+        }
+    }
+
+    // ── Interactives (click & hover hit regions per node) ────────
+    interactive(36, 36, "0"):   60, 65
+    interactive(36, 36, "1"):  160, 65
+    interactive(36, 36, "2"):  260, 65
+    interactive(36, 36, "3"):  360, 65
+    interactive(36, 36, "4"):   60, 140
+    interactive(36, 36, "5"):  160, 140
+    interactive(36, 36, "6"):  260, 140
+    interactive(36, 36, "7"):  360, 140
+    interactive(36, 36, "8"):   60, 215
+    interactive(36, 36, "9"):  160, 215
+    interactive(36, 36, "10"): 260, 215
+    interactive(36, 36, "11"): 360, 215
+
+    // ── Info panel ──────────────────────────────────────────────
+    ninepatch("ui", "Window_3x3_idle", 500, 55): 0, 295
+    #skillPointsText(updatable) text(m6x11, "Skill Points: 5", #ffeb3b, left, 150): 18, 310
+
+    placeholder(generated(cross(50, 20, #FF0000)), builderParameter("addPointButton")) {
+        pos: 170, 310
+        settings{width:int=>50, height:int=>20, font=>"m5x7"}
+    }
+
+    #skillInfoText(updatable) text(exo2_14, "Hover over equipment to see details", #aaaaaa, left, 280): 18, 332
+
+    placeholder(generated(cross(50, 20, #FF0000)), builderParameter("resetButton")) {
+        pos: 230, 310
+        settings{width:int=>50, height:int=>20, font=>"m5x7"}
+    }
+
+    // Legend (single row, pixel font)
+    bitmap(generated(color(6, 6, #22aa22))): 310, 312
+    text(m5x7, "Buy", #888888): 319, 310
+    bitmap(generated(color(6, 6, #cc4444))): 345, 312
+    text(m5x7, "No SP", #888888): 354, 310
+    bitmap(generated(color(6, 6, #444444))): 390, 312
+    text(m5x7, "???", #888888): 399, 310
+
+    // Instructions
+    text(exo2_light_14, "Click to unlock equipment. Previous tier required. +SP to add points.", #555555): 0, 365
+
+    } // end point (10px down offset)
+}

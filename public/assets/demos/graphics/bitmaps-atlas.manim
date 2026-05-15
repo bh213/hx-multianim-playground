@@ -136,4 +136,63 @@ version: 1.0
   text(m6x11, "2x", #888888): 30, 960
   text(m6x11, "3x", #888888): 80, 960
   text(m6x11, "4x", #888888): 150, 960
+
+  // ====== Right column: filter showcases ======
+
+  // Section 9: @tint annotation - recolor a white sprite
+  text(exo2_16, "@tint(color) - recolor white bitmaps:", #cccccc): 600, 0
+
+  @tint(#ff4444) bitmap(generated(color(40, 40, #ffffff))): 600, 30
+  @tint(#44ff44) bitmap(generated(color(40, 40, #ffffff))): 650, 30
+  @tint(#4488ff) bitmap(generated(color(40, 40, #ffffff))): 700, 30
+  @tint(#ffcc44) bitmap(generated(color(40, 40, #ffffff))): 750, 30
+  @tint(#ff44ff) bitmap(generated(color(40, 40, #ffffff))): 800, 30
+
+  text(m6x11, "red",     #888888, center, 40): 600, 76
+  text(m6x11, "green",   #888888, center, 40): 650, 76
+  text(m6x11, "blue",    #888888, center, 40): 700, 76
+  text(m6x11, "gold",    #888888, center, 40): 750, 76
+  text(m6x11, "magenta", #888888, center, 40): 800, 76
+
+  // Section 10: filter: replaceColor - palette swap
+  text(exo2_16, "filter: replaceColor([from], [to]):", #cccccc): 600, 110
+
+  bitmap(generated(colorWithText(60, 60, #ff0000, "RED", white, m6x11))): 600, 140
+  bitmap(generated(colorWithText(60, 60, #ff0000, "GRN", white, m6x11))) {
+    filter: replaceColor([#ff0000], [#00cc44])
+    pos: 670, 140
+  }
+  bitmap(generated(colorWithText(60, 60, #ff0000, "BLU", white, m6x11))) {
+    filter: replaceColor([#ff0000], [#3366cc])
+    pos: 740, 140
+  }
+  bitmap(generated(colorWithText(60, 60, #ff0000, "PUR", white, m6x11))) {
+    filter: replaceColor([#ff0000], [#9933cc])
+    pos: 810, 140
+  }
+
+  // Section 11: filter: outline / group / grayscale
+  text(exo2_16, "filter: outline / group / grayscale:", #cccccc): 600, 220
+
+  bitmap(generated(color(50, 50, #4488ff))) {
+    filter: outline(2, #ffff00)
+    pos: 600, 250
+  }
+  bitmap(generated(color(50, 50, #4488ff))) {
+    filter: outline(4, #ff0000)
+    pos: 670, 250
+  }
+  bitmap(generated(color(50, 50, #4488ff))) {
+    filter: group(outline(2, #000000), brightness(1.4))
+    pos: 740, 250
+  }
+  bitmap(generated(color(50, 50, #4488ff))) {
+    filter: grayscale(1.0)
+    pos: 810, 250
+  }
+
+  text(m6x11, "ol 2px",     #888888, center, 50): 600, 310
+  text(m6x11, "ol 4px",     #888888, center, 50): 670, 310
+  text(m6x11, "ol+bright",  #888888, center, 50): 740, 310
+  text(m6x11, "grayscale",  #888888, center, 50): 810, 310
 }

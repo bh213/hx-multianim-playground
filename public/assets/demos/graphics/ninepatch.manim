@@ -68,6 +68,7 @@ paths {
 }
 
 #resizablePanel programmable(width:60..510=210, height:60..210=150) {
+    text(m6x11, "Drag corner to resize:", #cccccc): 0, -20
     ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
     #sizeText(updatable) text(m6x11, "210 x 150", #ffffff, left, 200): 10, 10
 }

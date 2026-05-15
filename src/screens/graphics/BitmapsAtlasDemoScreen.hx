@@ -8,7 +8,8 @@ class BitmapsAtlasDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 
 	override public function load():Void {
-		setupDemo("Bitmaps & Atlas", "Generated bitmaps (color, cross, colorWithText), file bitmaps, and atlas sheet sprites");
+		setupDemo("Bitmaps & Atlas",
+			"Generated/file/sheet bitmaps; @alpha/@scale/@tint annotations; filter: replaceColor/outline/group/grayscale");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/graphics/bitmaps-atlas.manim", false);
 

@@ -4,18 +4,18 @@ version: 1.0
   // Section 1: Pixels primitives
   text(exo2_16, "Pixels primitives:", #cccccc): 0, 0
 
-  // Colored squares
+  // Colored squares (filledrect)
   point {
     pos: 0, 30
     pixels (
-      rect 0, 0, 20, 20, #ff4444
-      rect 20, 0, 20, 20, #44ff44
-      rect 0, 20, 20, 20, #4444ff
-      rect 20, 20, 20, 20, #ffff44
+      filledrect 0, 0, 20, 20, #ff4444
+      filledrect 20, 0, 20, 20, #44ff44
+      filledrect 0, 20, 20, 20, #4444ff
+      filledrect 20, 20, 20, 20, #ffff44
     ) {
       scale: 3
     }
-    text(m6x11, "Colored squares", #888888): 0, 130
+    text(m6x11, "filledrect", #888888): 0, 130
   }
 
   // Diagonal lines
@@ -50,18 +50,17 @@ version: 1.0
     text(m6x11, "Individual pixels", #888888): 0, 130
   }
 
-  // Border rectangle
+  // Outline rectangle (rect = unfilled)
   point {
     pos: 500, 30
     pixels (
-      rect 0, 0, 1, 30, #ff7f50
-      rect 0, 0, 30, 1, #ff7f50
-      rect 29, 0, 1, 30, #ff7f50
-      rect 0, 29, 30, 1, #ff7f50
+      rect 0, 0, 30, 30, #ff7f50
+      rect 4, 4, 22, 22, #44aaff
+      rect 9, 9, 12, 12, #ffff44
     ) {
       scale: 4
     }
-    text(m6x11, "1px border rect", #888888): 0, 130
+    text(m6x11, "rect (outline)", #888888): 0, 130
   }
 
   // Section 2: Graphics primitives
@@ -124,6 +123,14 @@ version: 1.0
       );
     );
     text(m6x11, "Triangle", #888888): -26, 40
+  }
+
+  // Ellipse + Arc (standalone shapes)
+  point {
+    pos: 760, 250
+    ellipse(#44cc88, filled, 80, 40): -40, -20
+    arc(#cc4488, 4, 30, 0, 270): 0, 0
+    text(m6x11, "Ellipse + Arc", #888888, center, 100): -50, 40
   }
 
   // Section 3: Combined shapes

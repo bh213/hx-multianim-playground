@@ -8,7 +8,8 @@ class PixelsGraphicsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 
 	override public function load():Void {
-		setupDemo("Pixels & Graphics", "Drawing primitives with pixels{} and graphics{} elements");
+		setupDemo("Pixels & Graphics",
+			"pixels (pixel, line, rect, filledrect) and graphics (rect, circle, ellipse, arc, roundRect, line, polygon)");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/graphics/pixels-graphics.manim", false);
 

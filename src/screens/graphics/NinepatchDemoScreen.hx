@@ -4,7 +4,6 @@ import bh.ui.*;
 import bh.ui.UIMultiAnimDraggable;
 import bh.ui.UIMultiAnimDraggable.DropZoneId;
 import bh.multianim.MultiAnimBuilder;
-import bh.base.FontManager;
 import h2d.col.Point;
 import h2d.col.Bounds;
 
@@ -29,13 +28,7 @@ class NinepatchDemoScreen extends DemoScreenBase {
 		result.object.setPosition(40, 80);
 		addBuilderResult(result);
 
-		// Resizable ninepatch panel
-		var label = new h2d.Text(FontManager.getFontByName("m6x11"));
-		label.text = "Drag corner to resize:";
-		label.textColor = 0xFFCCCCCC;
-		label.setPosition(PANEL_X, PANEL_Y - 20);
-		addObjectToLayer(label, DefaultLayer);
-
+		// Resizable ninepatch panel (label included in #resizablePanel)
 		panelResult = demoBuilder.buildWithParameters("resizablePanel", ["width" => panelWidth, "height" => panelHeight], null, null, true);
 		panelResult.object.setPosition(PANEL_X, PANEL_Y);
 		addBuilderResult(panelResult);

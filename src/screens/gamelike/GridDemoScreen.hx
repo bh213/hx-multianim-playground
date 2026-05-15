@@ -630,10 +630,8 @@ class GridDemoScreen extends DemoScreenBase {
 				toRemove.push({col: col, row: row});
 		});
 		for (c in toRemove) {
-			if (hexGrid.isOccupied(c.col, c.row)) {
+			if (hexGrid.isOccupied(c.col, c.row))
 				hexGrid.clear(c.col, c.row);
-				hexGrid.setCellParameter(c.col, c.row, "occupied", false);
-			}
 			// removeCell auto-refreshes card targets
 			hexGrid.removeCell(c.col, c.row);
 		}

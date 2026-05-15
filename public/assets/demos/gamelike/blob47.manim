@@ -57,18 +57,18 @@ version: 1.0
     text(exo2_14, "Tile:", #aaaaaa): 200, 38
     placeholder(generated(cross(30, 26, white)), builderParameter("grassBtn")) {
         pos: 240, 32
-        settings{color=>#AA8844, width:int=>30, height:int=>26}
+        settings{color=>#44AA44, width:int=>30, height:int=>26}
     }
     placeholder(generated(cross(30, 26, white)), builderParameter("dirtBtn")) {
         pos: 280, 32
-        settings{color=>#44AA44, width:int=>30, height:int=>26}
+        settings{color=>#AA8844, width:int=>30, height:int=>26}
     }
 
     // Status
     #statusText(updatable) text(exo2_14, "Draw on the map!", #aaaaaa, left, 400): 400, 38
 
     // Dirt background
-    bitmap(generated(color(640, 448, #66AA44))): 0, 70
+    bitmap(generated(color(640, 448, #8b6f47))): 0, 70
 
     // Map container - autotile TileGroup goes here
     #mapContainer(updatable) point: 0, 70

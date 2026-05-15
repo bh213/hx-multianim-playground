@@ -116,9 +116,12 @@ class Blob47DemoScreen extends DemoScreenBase {
 	}
 
 	function clearMap():Void {
+		// Fill with the OPPOSITE of paintValue so the user can immediately
+		// paint with their currently-selected tile on a clean background.
+		final fillValue = 1 - paintValue;
 		for (y in 0...GRID_H) {
 			for (x in 0...GRID_W) {
-				grid[y][x] = paintValue;
+				grid[y][x] = fillValue;
 			}
 		}
 		rebuildAutotile();
@@ -147,8 +150,6 @@ class Blob47DemoScreen extends DemoScreenBase {
 					randomize();
 				else if (source == clearButton) {
 					clearMap();
-					paintValue = 1 - paintValue;
-					updateTileSelection();
 				}
 				else if (source == grassButton) {
 					paintValue = 1;

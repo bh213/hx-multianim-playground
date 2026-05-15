@@ -1,0 +1,212 @@
+version: 1.0
+
+// Item that goes into a slot - uses same icons as inventory demo
+#slotItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
+  // Colored background per item type (48x48 matching inventory)
+  @(itemType => empty)   bitmap(generated(color(48, 48, #2a2a3a))): 0, 0
+  @(itemType => hpot)    bitmap(generated(color(48, 48, #cc3333))): 0, 0
+  @(itemType => mpot)    bitmap(generated(color(48, 48, #3366bb))): 0, 0
+  @(itemType => lsword)  bitmap(generated(color(48, 48, #88aa44))): 0, 0
+  @(itemType => ssword)  bitmap(generated(color(48, 48, #669944))): 0, 0
+  @(itemType => shield)  bitmap(generated(color(48, 48, #4488cc))): 0, 0
+  @(itemType => ring)    bitmap(generated(color(48, 48, #ccaa33))): 0, 0
+  @(itemType => boots)   bitmap(generated(color(48, 48, #44aa88))): 0, 0
+  @(itemType => scroll)  bitmap(generated(color(48, 48, #aa66cc))): 0, 0
+  @(itemType => helm)    bitmap(generated(color(48, 48, #999999))): 0, 0
+  @(itemType => armor)   bitmap(generated(color(48, 48, #445588))): 0, 0
+
+  // Item sprites from roguelike atlas (3x scale = 48x48)
+  @(itemType => hpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 0)): 0, 0
+  @(itemType => mpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 2)): 0, 0
+  @(itemType => lsword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+  @(itemType => ssword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 11)): 0, 0
+  @(itemType => shield)  scale(3) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+  @(itemType => ring)    scale(3) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+  @(itemType => boots)   scale(3) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+  @(itemType => scroll)  scale(3) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+  @(itemType => helm)    scale(3) bitmap(sheet("roguelikeitems", "helmet", 0)): 0, 0
+  @(itemType => armor)   scale(3) bitmap(sheet("roguelikeitems", "armor", 0)): 0, 0
+
+  // Item name labels
+  @(itemType => empty)   text(m5x7, "empty", #888888, center, 48): 0, 32
+  @(itemType => hpot)    text(m5x7, "H.Pot", #ff8888, center, 48): 0, 32
+  @(itemType => mpot)    text(m5x7, "M.Pot", #88aaff, center, 48): 0, 32
+  @(itemType => lsword)  text(m5x7, "L.Sword", #bbcc88, center, 48): 0, 32
+  @(itemType => ssword)  text(m5x7, "S.Sword", #99cc77, center, 48): 0, 32
+  @(itemType => shield)  text(m5x7, "Shield", #88bbdd, center, 48): 0, 32
+  @(itemType => ring)    text(m5x7, "Ring", #ddbb66, center, 48): 0, 32
+  @(itemType => boots)   text(m5x7, "Boots", #88ddbb, center, 48): 0, 32
+  @(itemType => scroll)  text(m5x7, "Scroll", #bb99dd, center, 48): 0, 32
+  @(itemType => helm)    text(m5x7, "Helm", #bbbbbb, center, 48): 0, 32
+  @(itemType => armor)   text(m5x7, "Armor", #7799bb, center, 48): 0, 32
+}
+
+// Main showcase with 10 slots in 2 rows of 5
+#slotsShowcase programmable() {
+  pos: 40, 80
+
+  text(exo2_16, "Slot Items", #7fdbda): 0, 0
+  bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+  text(exo2_light_14, "Click an empty slot to fill it. Auto-fills every second. Clears when full.", #aaaaaa): 0, 30
+
+  // Row 1: slots 0-4
+  point {
+    pos: 0, 55
+    repeatable($i, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot[$i] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
+      }
+    }
+  }
+
+  // Row 2: slots 5-9
+  point {
+    pos: 0, 145
+    repeatable($j, step(5, dx: 80)) {
+      bitmap(generated(color(70, 70, #333344))): 0, 0
+      #slot2[$j] slot {
+        bitmap(generated(color(1, 1, #33334400))): 0, 0
+      }
+    }
+  }
+
+  // Container for programmatic status texts and interactives
+  #slotContainer(updatable) point: 0, 0
+
+  // Auto-add checkbox
+  placeholder(generated(cross(20, 20, #FF0000)), builderParameter("autoAddChk")) { pos: 0, 240 }
+  text(exo2_light_14, "Auto-add", #aaaaaa): 24, 240
+
+  // Counter
+  #slotCountText(updatable) text(exo2_16, "Slots: 0 / 10 occupied", #ffffff, left, 400): 0, 265
+
+  // Log
+  #logText(updatable) text(exo2_light_14, "Click a slot or wait for auto-fill.", #666666, left, 500): 0, 290
+
+  // --- Slot Combinations ---
+  // Parametrized slots with state: en/ec/eb (enabled none/cursed/blessed), dn/dc/db (disabled)
+  // Content goes to contentRoot — overlays (borders, X marks) persist around inserted items
+  text(exo2_16, "Slot Combinations", #7fdbda): 0, 325
+  bitmap(generated(color(700, 1, #7fdbda33))): 0, 347
+  text(exo2_light_14, "Status: enabled (clickable), disabled (X mark, non-clickable).", #aaaaaa): 0, 357
+  text(exo2_light_14, "Extra: none, cursed (violet border), blessed (golden glow on item).", #aaaaaa): 0, 373
+  text(exo2_light_14, "Click enabled slots to toggle items. Overlays persist around content.", #aaaaaa): 0, 389
+
+  // Column headers
+  text(exo2_light_14, "None", #888888, center, 60): 100, 410
+  text(exo2_light_14, "Cursed", #9944cc, center, 60): 180, 410
+  text(exo2_light_14, "Blessed", #ddaa44, center, 60): 260, 410
+
+  // ===== Row 1: ENABLED =====
+  text(exo2_light_14, "Enabled", #66cc99): 10, 448
+
+  point {
+    pos: 100, 426
+    repeatable($i, step(3, dx: 80)) {
+      bitmap(generated(color(60, 60, #333344))): 0, 0
+      #cs_e[$i] slot(state:[en, ec, eb, dn, dc, db] = en) {
+        bitmap(generated(color(1, 1, #00000000))): 0, 0
+        // Disabled grey overlay
+        @(state => dn) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        @(state => dc) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        @(state => db) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        // Cursed violet border
+        @(state => ec) graphics(
+          line(#7700aa, 2, 0, 0, 59, 0);
+          line(#7700aa, 2, 0, 59, 59, 59);
+          line(#7700aa, 2, 0, 0, 0, 59);
+          line(#7700aa, 2, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => dc) graphics(
+          line(#7700aa, 2, 0, 0, 59, 0);
+          line(#7700aa, 2, 0, 59, 59, 59);
+          line(#7700aa, 2, 0, 0, 0, 59);
+          line(#7700aa, 2, 59, 0, 59, 59);
+        ): 0, 0
+        // Blessed golden border
+        @(state => eb) graphics(
+          line(#ddaa44, 1, 0, 0, 59, 0);
+          line(#ddaa44, 1, 0, 59, 59, 59);
+          line(#ddaa44, 1, 0, 0, 0, 59);
+          line(#ddaa44, 1, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => db) graphics(
+          line(#ddaa44, 1, 0, 0, 59, 0);
+          line(#ddaa44, 1, 0, 59, 59, 59);
+          line(#ddaa44, 1, 0, 0, 0, 59);
+          line(#ddaa44, 1, 59, 0, 59, 59);
+        ): 0, 0
+        // Disabled X mark
+        @(state => dn) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+        @(state => dc) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+        @(state => db) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+      }
+    }
+  }
+
+  // ===== Row 2: DISABLED =====
+  text(exo2_light_14, "Disabled", #cc6666): 10, 526
+
+  point {
+    pos: 100, 504
+    repeatable($j, step(3, dx: 80)) {
+      bitmap(generated(color(60, 60, #333344))): 0, 0
+      #cs_d[$j] slot(state:[en, ec, eb, dn, dc, db] = dn) {
+        bitmap(generated(color(1, 1, #00000000))): 0, 0
+        @(state => dn) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        @(state => dc) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        @(state => db) bitmap(generated(color(60, 60, #44444499))): 0, 0
+        @(state => ec) graphics(
+          line(#7700aa, 2, 0, 0, 59, 0);
+          line(#7700aa, 2, 0, 59, 59, 59);
+          line(#7700aa, 2, 0, 0, 0, 59);
+          line(#7700aa, 2, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => dc) graphics(
+          line(#7700aa, 2, 0, 0, 59, 0);
+          line(#7700aa, 2, 0, 59, 59, 59);
+          line(#7700aa, 2, 0, 0, 0, 59);
+          line(#7700aa, 2, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => eb) graphics(
+          line(#ddaa44, 1, 0, 0, 59, 0);
+          line(#ddaa44, 1, 0, 59, 59, 59);
+          line(#ddaa44, 1, 0, 0, 0, 59);
+          line(#ddaa44, 1, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => db) graphics(
+          line(#ddaa44, 1, 0, 0, 59, 0);
+          line(#ddaa44, 1, 0, 59, 59, 59);
+          line(#ddaa44, 1, 0, 0, 0, 59);
+          line(#ddaa44, 1, 59, 0, 59, 59);
+        ): 0, 0
+        @(state => dn) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+        @(state => dc) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+        @(state => db) graphics(
+          line(#cc4444, 2, 6, 6, 54, 54);
+          line(#cc4444, 2, 54, 6, 6, 54);
+        ): 0, 0
+      }
+    }
+  }
+
+  // Combo status / info
+  #comboStatusText(updatable) text(exo2_light_14, "Click an enabled slot to add/remove an item.", #666666, left, 500): 0, 575
+  #comboInfoText(updatable) text(exo2_light_14, "", #aaaaaa, left, 500): 0, 593
+}

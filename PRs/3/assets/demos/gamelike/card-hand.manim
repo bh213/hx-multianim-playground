@@ -1,0 +1,965 @@
+version: 1.0
+
+// ===== Curves =====
+
+curves {
+    // Fade out: alpha 1→0 (for discard animations)
+    #fadeOut curve { points: [(0, 1.0), (1, 0)] }
+
+    // Shrink out: scale 1→0.3 (for discard animations)
+    #shrinkOut curve { points: [(0, 1.0), (1, 0.3)] }
+
+    // Grow in: scale 0→1 with slight overshoot (for draw animations)
+    #growIn curve { points: [(0, 0), (0.7, 1.1), (1, 1.0)] }
+
+    // Fade in: alpha 0→1 (for draw animations)
+    #fadeIn curve { points: [(0, 0), (1, 1.0)] }
+
+    // Quick fade in: alpha reaches 1 by 15% of animation (for improved draw)
+    #quickFadeIn curve { points: [(0, 0), (0.15, 1.0), (1, 1.0)] }
+
+    // Linear grow: scale from draw-pile ratio (0.4) to full size (for improved draw)
+    #linearGrowIn curve { points: [(0, 0.4), (1, 1.0)] }
+
+    // Quick fade out: alpha stays at 1 until 85% then drops fast (for improved discard)
+    #quickFadeOut curve { points: [(0, 1.0), (0.85, 1.0), (1, 0)] }
+
+    // Linear shrink: scale from full to draw-pile ratio (for improved discard)
+    #linearShrinkOut curve { points: [(0, 1.0), (1, 0.4)] }
+
+    // Scale pulse: overshoot then settle (for creative draw)
+    #scalePulse curve { points: [(0, 0.4), (0.4, 1.3), (0.7, 0.85), (1, 1.0)] }
+
+    // Full spin: one 360° rotation (for creative spin variants)
+    #spinOnce curve { points: [(0, 0), (1, 6.283)] }
+
+    // Half spin: 180° rotation
+    #spinHalf curve { points: [(0, 0), (1, 3.14)] }
+
+    // Alpha flicker: rapid blink during middle of animation
+    #flickerAlpha curve { points: [(0, 0), (0.15, 1.0), (0.3, 0.3), (0.45, 1.0), (0.6, 0.5), (0.75, 1.0), (1, 1.0)] }
+
+    // Scale bounce: overshoot with secondary bounce
+    #scaleBounce curve { points: [(0, 0.4), (0.5, 1.2), (0.7, 0.9), (0.85, 1.05), (1, 1.0)] }
+}
+
+// ===== Paths =====
+
+paths {
+    // Animation arc for draw/discard/return/rearrange
+    #cardArc path {
+        bezier(100, 0, 50, -40)
+    }
+
+    // Hand layout paths (used with PathLayout mode)
+    #handCurve path { bezier(880, 0, 440, -80) }
+    #handFlat path { lineTo(880, 0) }
+    #handDeep path { bezier(880, 0, 440, -160) }
+    #handWave path {
+        bezier(440, -40, 220, -80)
+        bezier(880, 0, 660, 40)
+    }
+    #handTight path { bezier(600, 0, 300, -100) }
+
+    // Targeting arrow curve (Stretch-normalized from card to cursor)
+    #arrowCurve path { bezier(100, 0, 50, -30) }
+
+    // Straight line path (for return/rearrange)
+    #cardStraight path { lineTo(100, 0) }
+
+    // Creative paths
+    #spiralPath path { spiral(5, 35, 540) }
+    #wavePath path { wave(25, 40, 3) }
+    #highArcPath path { bezier(100, 0, 50, -100) }
+    #zigzagPath path {
+        lineTo(33, -25)
+        lineTo(34, 50)
+        lineTo(33, -25)
+    }
+    #loopPath path {
+        bezier(50, 0, 25, -50)
+        bezier(50, 0, 25, 50)
+    }
+    #sCurvePath path {
+        bezier(50, 0, 10, -40, 40, -40)
+        bezier(50, 0, 10, 40, 40, 40)
+    }
+    #tightSpiralPath path { spiral(3, 20, 720) }
+}
+
+// ===== Default Animated Paths =====
+
+#drawPath animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#discardPath animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#returnPath animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrangePath animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+// ===== Draw Path Easing Variants =====
+
+#draw_linear animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeOutQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeOutBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeOutElastic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutElastic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInOutCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeOutCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeOutBounce animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutBounce, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInOutBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInOutBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInOutQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInBack, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_easeInQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeInQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+// ===== Discard Path Easing Variants =====
+
+#discard_linear animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeOutQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInOutCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInOutCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInOutQuad animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInOutQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeInOutBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInOutBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeOutCubic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeOutBack animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeOutBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeOutBounce animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeOutBounce, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_easeOutElastic animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeOutElastic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+// ===== Return Path Easing Variants =====
+
+#return_linear animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+}
+
+#return_easeOutCubic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutCubic
+}
+
+#return_easeOutQuad animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutQuad
+}
+
+#return_easeOutBack animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutBack
+}
+
+#return_easeOutElastic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutElastic
+}
+
+#return_easeInOutCubic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_easeOutBounce animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutBounce
+}
+
+#return_easeInOutBack animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutBack
+}
+
+// ===== Rearrange Path Easing Variants =====
+
+#rearrange_linear animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+}
+
+#rearrange_easeInOutCubic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_easeOutQuad animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutQuad
+}
+
+#rearrange_easeOutBack animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutBack
+}
+
+#rearrange_easeInOutQuad animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutQuad
+}
+
+#rearrange_easeOutCubic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutCubic
+}
+
+#rearrange_easeOutBounce animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutBounce
+}
+
+#rearrange_easeOutElastic animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutElastic
+}
+
+// ===== Creative Draw Variants =====
+
+#draw_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutQuad, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_spinFlip animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn, rotationCurve: spinOnce
+}
+
+#draw_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: linearGrowIn, alphaCurve: quickFadeIn
+}
+
+#draw_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutBounce, scaleCurve: scaleBounce, alphaCurve: quickFadeIn
+}
+
+#draw_flicker animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.35
+    0.0: progressCurve: easeOutCubic, scaleCurve: scalePulse, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Discard Variants =====
+
+#discard_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInQuad, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_spinFlip animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut, rotationCurve: spinOnce
+}
+
+#discard_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInBack, scaleCurve: linearShrinkOut, alphaCurve: quickFadeOut
+}
+
+#discard_flicker animatedPath {
+    path: cardArc
+    type: time
+    duration: 0.25
+    0.0: progressCurve: easeInCubic, scaleCurve: linearShrinkOut, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Return Variants =====
+
+#return_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_spinFlip animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic, rotationCurve: spinHalf
+}
+
+#return_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic
+}
+
+#return_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeOutBounce
+}
+
+#return_flicker animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.2
+    0.0: progressCurve: easeInOutCubic, alphaCurve: flickerAlpha
+}
+
+// ===== Creative Rearrange Variants =====
+
+#rearrange_spiral animatedPath {
+    path: spiralPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_wave animatedPath {
+    path: wavePath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_highArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_zigzag animatedPath {
+    path: zigzagPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_spinFlip animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic, rotationCurve: spinHalf
+}
+
+#rearrange_loop animatedPath {
+    path: loopPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic
+}
+
+#rearrange_bouncyArc animatedPath {
+    path: highArcPath
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOutBounce
+}
+
+#rearrange_flicker animatedPath {
+    path: cardStraight
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeInOutCubic, alphaCurve: flickerAlpha
+}
+
+// ===== Targeting Arrow =====
+
+// Arrow body segment — chevron placed along the arrow path
+#arrowSegment programmable(valid:bool=false) {
+    @(valid => false) graphics(
+        line(#FF4444, 2.0, -4, -4, 4, 0);
+        line(#FF4444, 2.0, -4, 4, 4, 0);
+    ): 0, 0
+    @(valid => true) graphics(
+        line(#44FF88, 2.0, -4, -4, 4, 0);
+        line(#44FF88, 2.0, -4, 4, 4, 0);
+    ): 0, 0
+}
+
+// Arrow head — larger chevron at the end
+#arrowHead programmable(valid:bool=false) {
+    @(valid => false) graphics(
+        polygon(#FF4444, filled, 10, 0, -6, -6, -6, 6);
+    ): 0, 0
+    @(valid => true) graphics(
+        polygon(#44FF88, filled, 10, 0, -6, -6, -6, 6);
+    ): 0, 0
+}
+
+// ===== Card Programmable (140x200) =====
+
+#card programmable(
+    status:[normal,hover,pressed,disabled]=normal,
+    cardName:string="Card",
+    description:string="",
+    cost:uint=1,
+    cardColor:color=#3366AA,
+    artColor:color=#224488,
+    cardImage:[none,potion_r,potion_b,sword_l,sword_s,shield_i,ring_i,scroll_i,helmet_i,armor_i]=none
+) {
+    // Hit area
+    interactive(140, 200, "card", bind => "status", events: [hover, click, push]): 0, 0
+
+    // Dark card base
+    bitmap(generated(color(140, 200, #16162a))): 0, 0
+
+    // Color accent bar at top
+    bitmap(generated(color(136, 4, $cardColor))): 2, 2
+
+    // Art area background
+    bitmap(generated(color(120, 60, $artColor))): 10, 16
+
+    // Art area center highlight
+    bitmap(generated(color(80, 36, #FFFFFF11))): 30, 28
+
+    // Card art sprites (3x scale = 48x48, centered in 120x60 art area)
+    @(cardImage => potion_r) scale(3) bitmap(sheet("roguelikeitems", "potion", 0)): 36, 22
+    @(cardImage => potion_b) scale(3) bitmap(sheet("roguelikeitems", "potion", 2)): 36, 22
+    @(cardImage => sword_l)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 9)): 36, 22
+    @(cardImage => sword_s)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 11)): 36, 22
+    @(cardImage => shield_i) scale(3) bitmap(sheet("roguelikeitems", "shield", 6)): 36, 22
+    @(cardImage => ring_i)   scale(3) bitmap(sheet("roguelikeitems", "ring", 0)): 36, 22
+    @(cardImage => scroll_i) scale(3) bitmap(sheet("roguelikeitems", "scroll", 0)): 36, 22
+    @(cardImage => helmet_i) scale(3) bitmap(sheet("roguelikeitems", "helmet", 0)): 36, 22
+    @(cardImage => armor_i)  scale(3) bitmap(sheet("roguelikeitems", "armor", 0)): 36, 22
+
+    // Separator line
+    graphics(line(#334466, 1.0, 10, 0, 130, 0)): 0, 82
+
+    // Card name
+    text(m5x7, $cardName, #FFFFFF, center, 120): 10, 88
+
+    // Description
+    text(m5x7, $description, #777777, center, 120): 10, 104
+
+    // Bottom flavor area
+    bitmap(generated(color(120, 50, #FFFFFF08))): 10, 142
+
+    // Cost circle - dark bg
+    graphics(circle(#0D0D1A, filled, 16)): 18, 18
+    // Cost circle - colored ring
+    graphics(circle(#667799, 1.5, 12)): 18, 18
+    // Cost number
+    text(m5x7, $cost, #FFD700, center, 24): 6, 10
+
+    // Border: normal
+    @(status => normal) graphics(rect(#334466, 1.0, 140, 200)): 0, 0
+
+    // Border: hover - golden glow
+    @(status => hover) graphics(rect(#FFDD44, 2.0, 138, 198)): 1, 1
+
+    // Border: pressed - white
+    @(status => pressed) graphics(rect(#FFFFFF, 2.0, 138, 198)): 1, 1
+
+    // Disabled: grayscale + slight dim + dim border
+    @(status => disabled) apply {
+        filter: group(grayscale(0.9), brightness(0.5))
+    }
+    @(status => disabled) graphics(rect(#444444, 1.0, 140, 200)): 0, 0
+}
+
+// ===== Target Zone (180x180) =====
+
+#targetZone programmable(highlighted:bool=false) {
+    interactive(180, 180, "target", events: [hover]): 0, 0
+    @(highlighted => false) graphics(
+        rect(#446688, 1.0, 180, 180);
+    ): 0, 0
+    @(highlighted => true) graphics(
+        rect(#44FF88, 2.0, 180, 180);
+    ): 0, 0
+    text(m5x7, "TARGET", #668899, center, 160): 10, 80
+}
+
+// ===== Help Tooltip =====
+
+#helpTip programmable(desc:string="") {
+    ninepatch("ui", "Window_3x3_idle", 280, 44): 0, 0
+    text(m5x7, $desc, #bbbbbb, left, 260): 10, 10
+}
+
+// ===== Main Demo Layout =====
+
+#cardHandDemo programmable() {
+    // Title & instructions (left side)
+    text(m5x7, "Card Hand Demo", #7fdbda): 20, 10
+    text(m5x7, "Hover cards, drag to play. Drag above line to target.", #999999): 20, 28
+
+    // Target zones area label
+    text(m5x7, "Target Zones", #778899): 20, 50
+
+    // Draw pile
+    text(m5x7, "DRAW", #888888, center, 60): 15, 555
+    graphics(rect(#334455, 1.0, 60, 80)): 15, 575
+
+    // Discard pile
+    text(m5x7, "DISCARD", #888888, center, 80): 1170, 555
+    graphics(rect(#553344, 1.0, 60, 80)): 1180, 575
+
+    // Targeting threshold rect drawn dynamically from Haxe
+
+    // ===== Right Panel =====
+    // Panel background (588 x 450, starts at X=677)
+    bitmap(generated(color(588, 450, #0D0D1A99))): 677, 0
+
+    // --- Row 1: Status --- Y=48
+    text(m5x7, "Status:", #667799): 690, 50
+    #statusText text(m5x7, "Ready", #AAAAAA): 738, 50
+    #handCount text(m5x7, "Hand: 0", #888888): 1100, 50
+
+    // --- Row 2: Action buttons --- Y=68
+    placeholder(generated(cross(70, 22, white)), builderParameter("drawBtn")) {
+        pos: 690, 68
+        settings{width=>70, height=>22}
+    }
+    placeholder(generated(cross(70, 22, white)), builderParameter("discardBtn")) {
+        pos: 768, 68
+        settings{width=>70, height=>22}
+    }
+    placeholder(generated(cross(70, 22, white)), builderParameter("resetBtn")) {
+        pos: 846, 68
+        settings{width=>70, height=>22}
+    }
+    placeholder(generated(cross(70, 22, white)), builderParameter("disableBtn")) {
+        pos: 924, 68
+        settings{width=>70, height=>22}
+    }
+
+    // --- Row 3: Layout dropdown + toggles --- Y=96
+    text(m5x7, "Layout:", #667799): 690, 106
+    placeholder(generated(cross(120, 30, white)), builderParameter("layoutDropdown")) {
+        pos: 750, 96
+    }
+    text(m5x7, "Arrow:", #667799): 890, 106
+    placeholder(generated(cross(20, 20, white)), builderParameter("arrowToggle")) {
+        pos: 938, 101
+        settings{buildName=>toggle}
+    }
+    text(m5x7, "C2C:", #667799): 970, 106
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cToggle")) {
+        pos: 1002, 101
+        settings{buildName=>toggle}
+    }
+
+    // --- Row 4: Hand path dropdown --- Y=130
+    text(m5x7, "Hand path:", #667799): 690, 140
+    placeholder(generated(cross(120, 30, white)), builderParameter("handPathDropdown")) {
+        pos: 782, 130
+    }
+
+    // --- Row 5: Draw easing + duration --- Y=164
+    text(m5x7, "Draw:", #778899): 690, 174
+    placeholder(generated(cross(120, 30, white)), builderParameter("drawDropdown")) {
+        pos: 750, 164
+    }
+    text(m5x7, "dur:", #555555): 882, 174
+    placeholder(generated(cross(110, 8, white)), builderParameter("drawSlider")) {
+        pos: 910, 175
+        settings{size=>100}
+    }
+    #drawDurLabel text(m5x7, "1.0", #888888): 1026, 174
+
+    // --- Row 6: Discard easing + duration --- Y=198
+    text(m5x7, "Discard:", #778899): 690, 208
+    placeholder(generated(cross(120, 30, white)), builderParameter("discardDropdown")) {
+        pos: 750, 198
+    }
+    text(m5x7, "dur:", #555555): 882, 208
+    placeholder(generated(cross(110, 8, white)), builderParameter("discardSlider")) {
+        pos: 910, 209
+        settings{size=>100}
+    }
+    #discardDurLabel text(m5x7, "1.0", #888888): 1026, 208
+
+    // --- Row 7: Return easing + duration --- Y=232
+    text(m5x7, "Return:", #778899): 690, 242
+    placeholder(generated(cross(120, 30, white)), builderParameter("returnDropdown")) {
+        pos: 750, 232
+    }
+    text(m5x7, "dur:", #555555): 882, 242
+    placeholder(generated(cross(110, 8, white)), builderParameter("returnSlider")) {
+        pos: 910, 243
+        settings{size=>100}
+    }
+    #returnDurLabel text(m5x7, "0.2", #888888): 1026, 242
+
+    // --- Row 8: Rearrange easing + duration --- Y=266
+    text(m5x7, "Rearr:", #778899): 690, 276
+    placeholder(generated(cross(120, 30, white)), builderParameter("rearrangeDropdown")) {
+        pos: 750, 266
+    }
+    text(m5x7, "dur:", #555555): 882, 276
+    placeholder(generated(cross(110, 8, white)), builderParameter("rearrangeSlider")) {
+        pos: 910, 277
+        settings{size=>100}
+    }
+    #rearrangeDurLabel text(m5x7, "0.15", #888888): 1026, 276
+
+    // --- Config sliders (2 columns, 20px spacing) ---
+    // Row 9: Y=302
+    text(m5x7, "Hover scale:", #667799): 690, 302
+    placeholder(generated(cross(110, 8, white)), builderParameter("hoverScaleSlider")) {
+        pos: 790, 302
+        settings{size=>100}
+    }
+    #hoverScaleLabel text(m5x7, "1.2", #888888): 906, 302
+    text(m5x7, "Fan angle:", #667799): 940, 302
+    placeholder(generated(cross(110, 8, white)), builderParameter("fanAngleSlider")) {
+        pos: 1030, 302
+        settings{size=>100}
+    }
+    #fanAngleLabel text(m5x7, "45", #888888): 1146, 302
+
+    // Row 10: Y=322
+    text(m5x7, "Threshold:", #667799): 690, 322
+    placeholder(generated(cross(110, 8, white)), builderParameter("thresholdSlider")) {
+        pos: 790, 322
+        settings{size=>100}
+    }
+    #thresholdLabel text(m5x7, "240", #888888): 906, 322
+    text(m5x7, "Hover pop:", #667799): 940, 322
+    placeholder(generated(cross(110, 8, white)), builderParameter("hoverPopSlider")) {
+        pos: 1030, 322
+        settings{size=>100}
+    }
+    #hoverPopLabel text(m5x7, "40", #888888): 1146, 322
+
+    // Row 11: Y=342
+    text(m5x7, "Spread:", #667799): 690, 342
+    placeholder(generated(cross(110, 8, white)), builderParameter("spreadSlider")) {
+        pos: 790, 342
+        settings{size=>100}
+    }
+    #spreadLabel text(m5x7, "20", #888888): 906, 342
+    text(m5x7, "Fan radius:", #667799): 940, 342
+    placeholder(generated(cross(110, 8, white)), builderParameter("fanRadiusSlider")) {
+        pos: 1030, 342
+        settings{size=>100}
+    }
+    #fanRadiusLabel text(m5x7, "600", #888888): 1146, 342
+
+    // --- Row 12: Path dist + Orient --- Y=366
+    text(m5x7, "Path dist:", #667799): 690, 376
+    placeholder(generated(cross(120, 30, white)), builderParameter("pathDistDropdown")) {
+        pos: 782, 366
+    }
+    text(m5x7, "Orient:", #667799): 940, 376
+    placeholder(generated(cross(120, 30, white)), builderParameter("pathOrientDropdown")) {
+        pos: 990, 366
+    }
+
+    // --- Row 13: Card-to-card toggles --- Y=400
+    text(m5x7, "Hover pop:", #667799): 690, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cHoverPopToggle")) {
+        pos: 768, 395
+        settings{buildName=>toggle}
+    }
+    text(m5x7, "Hover scale:", #667799): 800, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cHoverScaleToggle")) {
+        pos: 890, 395
+        settings{buildName=>toggle}
+    }
+    text(m5x7, "Spread:", #667799): 920, 400
+    placeholder(generated(cross(20, 20, white)), builderParameter("c2cSpreadToggle")) {
+        pos: 976, 395
+        settings{buildName=>toggle}
+    }
+
+    // --- Row 14: Event log --- Y=424
+    text(m5x7, "Event:", #555555): 690, 424
+    #eventText text(m5x7, "", #667799): 738, 424
+
+    // --- Help tooltips (hover any label for description) ---
+    interactive(50, 14, "hlpLayout", events: [hover]): 690, 102
+    interactive(44, 14, "hlpArrow", events: [hover]): 890, 102
+    interactive(30, 14, "hlpC2C", events: [hover]): 970, 102
+    interactive(68, 14, "hlpHandPath", events: [hover]): 690, 136
+    interactive(38, 14, "hlpDraw", events: [hover]): 690, 170
+    interactive(56, 14, "hlpDiscard", events: [hover]): 690, 204
+    interactive(50, 14, "hlpReturn", events: [hover]): 690, 238
+    interactive(44, 14, "hlpRearr", events: [hover]): 690, 272
+    interactive(80, 14, "hlpHoverScale", events: [hover]): 690, 298
+    interactive(68, 14, "hlpFanAngle", events: [hover]): 940, 298
+    interactive(68, 14, "hlpThreshold", events: [hover]): 690, 318
+    interactive(68, 14, "hlpHoverPop", events: [hover]): 940, 318
+    interactive(50, 14, "hlpSpread", events: [hover]): 690, 338
+    interactive(74, 14, "hlpFanRadius", events: [hover]): 940, 338
+    interactive(68, 14, "hlpPathDist", events: [hover]): 690, 372
+    interactive(50, 14, "hlpOrient", events: [hover]): 940, 372
+    interactive(68, 14, "hlpC2CPop", events: [hover]): 690, 396
+    interactive(80, 14, "hlpC2CScale", events: [hover]): 800, 396
+    interactive(50, 14, "hlpC2CSpread", events: [hover]): 920, 396
+}

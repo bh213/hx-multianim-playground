@@ -1,0 +1,105 @@
+version: 1.0
+
+// Paths Demo
+// Object follows defined paths using paths{} definitions
+
+paths {
+    #circuit path {
+        forward(100)
+        arc(80, 90)
+        forward(150)
+        arc(80, 90)
+        forward(100)
+        arc(80, 90)
+        forward(150)
+        arc(80, 90)
+    }
+    #star path {
+        turn(0)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+        turn(144)
+        forward(80)
+    }
+    #zigzag path {
+        lineTo(60, -40)
+        lineTo(60, 40)
+        lineTo(60, -40)
+        lineTo(60, 40)
+        lineTo(60, -40)
+        lineTo(60, 40)
+    }
+    #spiral path {
+        spiral(20, 120, 720)
+    }
+    #waves path {
+        wave(40, 80, 4)
+    }
+    #bezierLoop path {
+        bezier(relative, 150, 0, 50, -120)
+        bezier(relative, 150, 0, 50, 120)
+        arc(60, 180)
+        bezier(relative, -150, 0, -50, 120)
+        bezier(relative, -150, 0, -50, -120)
+        close
+    }
+}
+
+#pathMarker bitmap(generated(color(12, 12, #7fdbda)), center);
+
+#pathsDemo programmable() {
+    text(exo2_16, "Path Animation", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Objects follow defined paths. Select a path type below.", #aaaaaa, left, 600): 50, 110
+
+    // Path display area
+    bitmap(generated(color(800, 450, #1a1a2e))): 240, 140
+
+    // Path name labels
+    text(m6x11, "Circuit: forward + arc", #aaaaaa, left, 300): 50, 150
+    text(m6x11, "Star: forward + turn", #aaaaaa, left, 300): 50, 170
+    text(m6x11, "Zigzag: lineTo", #aaaaaa, left, 300): 50, 190
+    text(m6x11, "Spiral: spiral", #aaaaaa, left, 300): 50, 210
+    text(m6x11, "Waves: wave", #aaaaaa, left, 300): 50, 230
+    text(m6x11, "Bezier: bezier + arc + close", #aaaaaa, left, 300): 50, 250
+
+    // Speed label
+    text(exo2_14, "Speed", #cccccc, left, 100): 50, 600
+
+    // Speed slider
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("speedSlider")) {
+        pos: 50, 620
+    }
+
+    // Path selector buttons
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnCircuit")) {
+        pos: 50, 660
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnStar")) {
+        pos: 170, 660
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnZigzag")) {
+        pos: 290, 660
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnSpiral")) {
+        pos: 410, 660
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnWaves")) {
+        pos: 530, 660
+    }
+    placeholder(generated(cross(100, 24, #FF0000)), builderParameter("btnBezier")) {
+        pos: 650, 660
+    }
+}
+
+#panim animatedPath {
+    path: circuit
+    type: distance
+    speed: 80
+    0.0: event("start")
+    1.0: event("end")
+}

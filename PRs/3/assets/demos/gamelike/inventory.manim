@@ -1,0 +1,186 @@
+version: 1.0
+
+// Inventory Demo — Shop, Player Inventory (3x4), Equipment (head, 2 arms, armor, legs)
+
+curves {
+    #elasticBounce curve {
+        easing: easeoutelastic
+    }
+    #easeOut curve {
+        easing: easeoutcubic
+    }
+}
+
+paths {
+    #straightLine path {
+        lineTo(100, 0)
+    }
+}
+
+#returnAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.4
+    0.0: progressCurve: elasticBounce
+}
+
+#snapAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.12
+    0.0: progressCurve: easeOut
+}
+
+// Item visual — colored block with icon and item name
+#invItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
+    // Colored background per item type
+    @(itemType => empty)   bitmap(generated(color(48, 48, #1a1a2e))): 0, 0
+    @(itemType => hpot)    bitmap(generated(color(48, 48, #cc3333))): 0, 0
+    @(itemType => mpot)    bitmap(generated(color(48, 48, #3366bb))): 0, 0
+    @(itemType => lsword)  bitmap(generated(color(48, 48, #88aa44))): 0, 0
+    @(itemType => ssword)  bitmap(generated(color(48, 48, #669944))): 0, 0
+    @(itemType => shield)  bitmap(generated(color(48, 48, #4488cc))): 0, 0
+    @(itemType => ring)    bitmap(generated(color(48, 48, #ccaa33))): 0, 0
+    @(itemType => boots)   bitmap(generated(color(48, 48, #44aa88))): 0, 0
+    @(itemType => scroll)  bitmap(generated(color(48, 48, #aa66cc))): 0, 0
+    @(itemType => helm)    bitmap(generated(color(48, 48, #999999))): 0, 0
+    @(itemType => armor)   bitmap(generated(color(48, 48, #445588))): 0, 0
+
+    // Item sprites from roguelike atlas (3x scale = 48x48)
+    @(itemType => hpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 0)): 0, 0
+    @(itemType => mpot)    scale(3) bitmap(sheet("roguelikeitems", "potion", 2)): 0, 0
+    @(itemType => lsword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+    @(itemType => ssword)  scale(3) bitmap(sheet("roguelikeitems", "weapon", 11)): 0, 0
+    @(itemType => shield)  scale(3) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+    @(itemType => ring)    scale(3) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+    @(itemType => boots)   scale(3) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+    @(itemType => scroll)  scale(3) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+    @(itemType => helm)    scale(3) bitmap(sheet("roguelikeitems", "helmet", 0)): 0, 0
+    @(itemType => armor)   scale(3) bitmap(sheet("roguelikeitems", "armor", 0)): 0, 0
+
+    // Item name label (bottom of item)
+    @(itemType => empty)   text(m5x7, "---", #555555, center, 48): 0, 32
+    @(itemType => hpot)    text(m5x7, "H.Pot", #ff8888, center, 48): 0, 32
+    @(itemType => mpot)    text(m5x7, "M.Pot", #88aaff, center, 48): 0, 32
+    @(itemType => lsword)  text(m5x7, "L.Sword", #bbcc88, center, 48): 0, 32
+    @(itemType => ssword)  text(m5x7, "S.Sword", #99cc77, center, 48): 0, 32
+    @(itemType => shield)  text(m5x7, "Shield", #88bbdd, center, 48): 0, 32
+    @(itemType => ring)    text(m5x7, "Ring", #ddbb66, center, 48): 0, 32
+    @(itemType => boots)   text(m5x7, "Boots", #88ddbb, center, 48): 0, 32
+    @(itemType => scroll)  text(m5x7, "Scroll", #bb99dd, center, 48): 0, 32
+    @(itemType => helm)    text(m5x7, "Helm", #bbbbbb, center, 48): 0, 32
+    @(itemType => armor)   text(m5x7, "Armor", #7799bb, center, 48): 0, 32
+}
+
+layouts {
+    // Inventory grid: 4 cols x 3 rows, 58px step, offset 155px down
+    offset: 0, 155 {
+        #invGrid cells(cols: 4, rows: 3, cellWidth: 58, cellHeight: 58)
+    }
+    // Equipment slot positions (relative to the equipment point block at 310, 155)
+    #equipSlots list {
+        point: 58, 0              // head
+        point: 0, 66              // larm
+        point: 58, 66             // armor
+        point: 116, 66            // rarm
+        point: 58, 132            // legs
+    }
+}
+
+// Main demo layout
+#inventoryDemo programmable() {
+    pos: 30, 70
+
+    // ===== SHOP BAR =====
+    text(exo2_16, "Shop", #7fdbda): 0, 0
+    bitmap(generated(color(720, 1, #7fdbda33))): 0, 20
+
+    // Shop slots (10 items)
+    point {
+        pos: 0, 30
+        repeatable($s, step(10, dx: 56)) {
+            bitmap(generated(color(52, 52, #222244))): 0, 0
+            #shop[$s] slot(state:[normal, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(1, 1, #22224400))): 0, 0
+                @(state => unavailable) bitmap(generated(color(52, 52, #00000099))): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+    }
+
+    // ===== GOLD / WEIGHT / RESET =====
+    text(m6x11, "Gold:", #ffcc33): 0, 95
+    #goldText(updatable) text(exo2_16, "600", #ffcc33): 35, 92
+    text(m6x11, "Weight:", #aaaaaa): 130, 95
+    #weightText(updatable) text(exo2_16, "0 / 60 kg", #aaaaaa): 178, 92
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("resetBtn")) { pos: 350, 92 }
+    text(exo2_light_14, "Reset", #aaaaaa): 374, 92
+
+    // ===== PLAYER INVENTORY (left) =====
+    text(exo2_16, "Inventory", #66cc99): 0, 120
+    bitmap(generated(color(232, 1, #66cc9933))): 0, 140
+
+    // Inventory grid (4x3 = 12 slots)
+    repeatable($i, layout("invGrid")) {
+        bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+        #inv[$i] slot(state:[normal, disabled, highlight] = normal) {
+            @(state => normal)    bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+            @(state => disabled)  bitmap(generated(color(52, 52, #55555599))): 0, 0
+            @(state => highlight) graphics(
+                line(#ffffff, 1, 0, 0, 51, 0);
+                line(#ffffff, 1, 0, 51, 51, 51);
+                line(#ffffff, 1, 0, 0, 0, 51);
+                line(#ffffff, 1, 51, 0, 51, 51);
+            ): 0, 0
+        }
+    }
+
+    #playerWeightText(updatable) text(exo2_light_14, "Weight: 0 / 60 kg", #66cc99): 0, 332
+    #playerCountText(updatable) text(exo2_light_14, "Items: 0 / 12  Equipped: 0 / 5", #66cc99): 0, 350
+
+    // ===== EQUIPMENT (right) =====
+    text(exo2_16, "Equipment", #cc9966): 310, 120
+    bitmap(generated(color(200, 1, #cc996633))): 310, 140
+
+    point {
+        pos: 310, 155
+
+        // Stick figure body silhouette (visible in gaps between slots)
+        bitmap(generated(color(20, 20, #2a2a4e))): 74, -24
+        bitmap(generated(color(4, 208, #2a2a4e))): 82, -24
+        bitmap(generated(color(120, 4, #2a2a4e))): 24, 56
+        bitmap(generated(color(20, 4, #2a2a4e))): 74, 122
+        bitmap(generated(color(4, 10, #2a2a4e))): 76, 124
+        bitmap(generated(color(4, 10, #2a2a4e))): 88, 124
+
+        // Equipment slots (positioned via equipSlots layout)
+        repeatable($e, layout("equipSlots")) {
+            bitmap(generated(color(52, 52, #1a1a2e88))): 0, 0
+            @($e => 0) text(m5x7, "HEAD",  #333355, center, 52): 0, 20
+            @($e => 1) text(m5x7, "L.ARM", #333355, center, 52): 0, 20
+            @($e => 2) text(m5x7, "ARMOR", #333355, center, 52): 0, 20
+            @($e => 3) text(m5x7, "R.ARM", #333355, center, 52): 0, 20
+            @($e => 4) text(m5x7, "LEGS",  #333355, center, 52): 0, 20
+            #equip[$e] slot(state:[normal, disabled, highlight, unavailable] = normal) {
+                @(state => normal)      bitmap(generated(color(52, 52, #2a2a4400))): 0, 0
+                @(state => disabled)    bitmap(generated(color(52, 52, #55555599))): 0, 0
+                @(state => highlight)   graphics(
+                    line(#ffffff, 1, 0, 0, 51, 0);
+                    line(#ffffff, 1, 0, 51, 51, 51);
+                    line(#ffffff, 1, 0, 0, 0, 51);
+                    line(#ffffff, 1, 51, 0, 51, 51);
+                ): 0, 0
+                @(state => unavailable) graphics(
+                    line(#cc4444, 2, 6, 6, 46, 46);
+                    line(#cc4444, 2, 46, 6, 6, 46);
+                ): 0, 0
+            }
+        }
+    }
+
+    // ===== LOG =====
+    #logText(updatable) text(exo2_light_14, "Drag items from shop to inventory or equip them.", #666666): 0, 375
+}

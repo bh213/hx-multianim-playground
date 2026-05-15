@@ -1,0 +1,95 @@
+version: 1.0
+
+// Color Picker Dialog
+// Modal dialog with R/G/B sliders, live color preview, hex display, and preset colors.
+
+#colorPickerDialog programmable(dialogTitle = "Pick a Color") {
+    pos: 300, 120
+
+    ninepatch("ui", "Droppanel_3x3_idle", 400, 340): 0, 0
+    text(exo2_black_20, $dialogTitle, #ffffff, center, 360): 20, 15
+    bitmap(generated(color(360, 1, #ffffff33))): 20, 45
+
+    // R slider
+    text(m6x11, "R", #ff4444, left, 20): 25, 65
+    placeholder(generated(cross(200, 14, #FF0000)), builderParameter("sliderR")) {
+        pos: 45, 65
+        settings{size:int=>200, min:float=>0, max:float=>255, step:float=>1}
+    }
+    #rValue(updatable) text(m6x11, "0", #cccccc, left, 40): 255, 65
+
+    // G slider
+    text(m6x11, "G", #44ff44, left, 20): 25, 90
+    placeholder(generated(cross(200, 14, #FF0000)), builderParameter("sliderG")) {
+        pos: 45, 90
+        settings{size:int=>200, min:float=>0, max:float=>255, step:float=>1}
+    }
+    #gValue(updatable) text(m6x11, "0", #cccccc, left, 40): 255, 90
+
+    // B slider
+    text(m6x11, "B", #4444ff, left, 20): 25, 115
+    placeholder(generated(cross(200, 14, #FF0000)), builderParameter("sliderB")) {
+        pos: 45, 115
+        settings{size:int=>200, min:float=>0, max:float=>255, step:float=>1}
+    }
+    #bValue(updatable) text(m6x11, "0", #cccccc, left, 40): 255, 115
+
+    // Color preview swatch
+    text(m6x11, "Preview:", #888888, left, 60): 25, 150
+    #colorPreview(updatable) bitmap(generated(color(100, 60, #000000))): 25, 168
+
+    // Hex value display
+    text(m6x11, "Hex:", #888888, left, 40): 145, 175
+    #hexValue(updatable) text(exo2_16, "#000000", #ffffff, left, 150): 185, 172
+
+    // Preset colors
+    text(m6x11, "Presets:", #888888, left, 60): 25, 238
+    point {
+        pos: 25, 255
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preRed")) {
+            pos: 0, 0
+            settings{buildName=>"colorButton", color:int=>0xFFff0000, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preOrange")) {
+            pos: 39, 0
+            settings{buildName=>"colorButton", color:int=>0xFFff8800, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preYellow")) {
+            pos: 78, 0
+            settings{buildName=>"colorButton", color:int=>0xFFffff00, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preGreen")) {
+            pos: 117, 0
+            settings{buildName=>"colorButton", color:int=>0xFF00ff00, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preCyan")) {
+            pos: 156, 0
+            settings{buildName=>"colorButton", color:int=>0xFF00ffff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preBlue")) {
+            pos: 195, 0
+            settings{buildName=>"colorButton", color:int=>0xFF0000ff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("prePurple")) {
+            pos: 234, 0
+            settings{buildName=>"colorButton", color:int=>0xFFff00ff, width:int=>34, height:int=>20}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("preWhite")) {
+            pos: 273, 0
+            settings{buildName=>"colorButton", color:int=>0xFFffffff, width:int=>34, height:int=>20}
+        }
+    }
+
+    // OK / Cancel buttons
+    point {
+        pos: 25, 290
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")) {
+            pos: 0, 0
+            settings{width:int=>120, height:int=>26}
+        }
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")) {
+            pos: 230, 0
+            settings{width:int=>120, height:int=>26}
+        }
+    }
+}

@@ -1,0 +1,333 @@
+version: 1.0
+
+// Filters Demo — 9 filters shown simultaneously with interactive controls
+// Each filter defined as a programmable with filter: syntax and $param expressions
+
+// ── Shared bitmap preview (renders selected bitmap with scaling) ──────────
+#bitmapPreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack) {
+    @(bitmapType=>marine) apply { scale: 2 }
+    @(bitmapType=>skull) apply { scale: 5 }
+    @(bitmapType=>dice) apply { scale: 5 }
+    @(bitmapType=>rectBlack) bitmap(generated(color(60, 60, #000000)));
+    @(bitmapType=>rectWhite) bitmap(generated(color(60, 60, #ffffff)));
+    @(bitmapType=>rectGreen) bitmap(generated(color(60, 60, #00cc00)));
+    @(bitmapType=>circleWhite) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleBlack) @tint(#000000) bitmap(file("circle_soft.png"));
+    @(bitmapType=>circleRed) @tint(#ff0000) bitmap(file("circle_soft.png"));
+    @(bitmapType=>star) bitmap(file("star.png"));
+    @(bitmapType=>skull) bitmap(sheet("crew2", "icon-skull"));
+    @(bitmapType=>marine) bitmap(sheet("crew2", "marine_r_standing"));
+    @(bitmapType=>dice) bitmap(sheet("crew2", "dice"));
+}
+
+// ── Per-filter preview programmables ──────────────────────────────────────
+// Each wraps bitmapPreview in a filtered point container
+
+#outlinePreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    outlineSize:float=1.0, outlineColor:int=0xFFff0000) {
+    point {
+        filter: outline($outlineSize, $outlineColor)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#glowPreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    glowAlpha:float=0.8, glowRadius:float=8, glowSmooth:uint=1, glowKnockout:uint=0, glowColor:int=0xFFffaa00) {
+    // 4 combinations of smooth x knockout (nested conditionals for AND logic)
+    @(glowSmooth > 0) point {
+        @(glowKnockout > 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true, knockout: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+        @(glowKnockout <= 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+    }
+    @(glowSmooth <= 0) point {
+        @(glowKnockout > 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, knockout: true)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+        @(glowKnockout <= 0) point {
+            filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius)
+            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        }
+    }
+}
+
+#blurPreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    blurRadius:float=4, blurGain:float=1.0) {
+    point {
+        filter: blur($blurRadius, $blurGain)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#saturatePreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    satValue:float=0.0) {
+    point {
+        filter: saturate($satValue)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#brightnessPreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    brightValue:float=1.5) {
+    point {
+        filter: brightness($brightValue)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#dropShadowPreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    dsDist:float=3, dsAngle:float=30, dsAlpha:float=0.5, dsRadius:float=6, dsSmooth:uint=0, dsColor:int=0xFF000000) {
+    @(dsSmooth > 0) point {
+        filter: dropShadow(distance: $dsDist, angle: $dsAngle, color: $dsColor, alpha: $dsAlpha, radius: $dsRadius, smoothColor: true)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+    @(dsSmooth <= 0) point {
+        filter: dropShadow(distance: $dsDist, angle: $dsAngle, color: $dsColor, alpha: $dsAlpha, radius: $dsRadius)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#grayscalePreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    gsValue:float=1.0) {
+    point {
+        filter: grayscale($gsValue)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#huePreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    hueValue:float=0.0) {
+    point {
+        filter: hue($hueValue)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+#pixelOutlinePreview programmable(
+    bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
+    poStrength:float=0.5, poColor:int=0xFF0000ff) {
+    point {
+        filter: pixelOutline(knockout, $poColor, $poStrength)
+        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+    }
+}
+
+// ── Per-filter cell programmables (layout + controls) ─────────────────────
+// Bitmap preview is added as child by Haxe at (10, 14)
+
+#outlineCell programmable() {
+    text(m6x11, "outline", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xFFff0000, width:int=>60, height:int=>22}
+    }
+
+    text(m6x11, "Size", #888888, left, 38): 0, 120
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sSize")) {
+        pos: 40, 120
+        settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
+    }
+    #sizeValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 120
+}
+
+#glowCell programmable() {
+    text(m6x11, "glow", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xFFffaa00, width:int=>60, height:int=>22}
+    }
+
+    text(m6x11, "Alpha", #888888, left, 38): 0, 120
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
+        pos: 40, 120
+        settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
+    }
+    #alphaValue(updatable) text(m6x11, "0.8", #cccccc, left, 45): 145, 120
+
+    text(m6x11, "Radius", #888888, left, 38): 0, 136
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
+        pos: 40, 136
+        settings{size:int=>100, min:float=>0, max:float=>50, step:float=>1}
+    }
+    #radiusValue(updatable) text(m6x11, "8", #cccccc, left, 45): 145, 136
+
+    text(m6x11, "Smooth", #888888, left, 50): 0, 160
+    placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
+        pos: 53, 160
+        settings{buildName=>checkbox, initialValue:int=>1}
+    }
+    text(m6x11, "Knockout", #888888, left, 50): 80, 160
+    placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cKnockout")) {
+        pos: 133, 160
+        settings{buildName=>checkbox}
+    }
+}
+
+#blurCell programmable() {
+    text(m6x11, "blur", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Radius", #888888, left, 38): 0, 94
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
+        pos: 40, 94
+        settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
+    }
+    #radiusValue(updatable) text(m6x11, "4", #cccccc, left, 45): 145, 94
+
+    text(m6x11, "Gain", #888888, left, 38): 0, 110
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sGain")) {
+        pos: 40, 110
+        settings{size:int=>100, min:float=>0, max:float=>5, step:float=>0.1}
+    }
+    #gainValue(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 110
+}
+
+#saturateCell programmable() {
+    text(m6x11, "saturate", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Value", #888888, left, 38): 0, 94
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
+        pos: 40, 94
+        settings{size:int=>100, min:float=>0, max:float=>2, step:float=>0.05}
+    }
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
+}
+
+#brightnessCell programmable() {
+    text(m6x11, "brightness", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Value", #888888, left, 38): 0, 94
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
+        pos: 40, 94
+        settings{size:int=>100, min:float=>0, max:float=>3, step:float=>0.05}
+    }
+    #valueText(updatable) text(m6x11, "1.5", #cccccc, left, 45): 145, 94
+}
+
+#dropShadowCell programmable() {
+    text(m6x11, "dropShadow", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xFF000000, width:int=>60, height:int=>22}
+    }
+
+    text(m6x11, "Dist", #888888, left, 38): 0, 120
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sDist")) {
+        pos: 40, 120
+        settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
+    }
+    #distValue(updatable) text(m6x11, "3", #cccccc, left, 45): 145, 120
+
+    text(m6x11, "Angle", #888888, left, 38): 0, 136
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAngle")) {
+        pos: 40, 136
+        settings{size:int=>100, min:float=>0, max:float=>360, step:float=>5}
+    }
+    #angleValue(updatable) text(m6x11, "30", #cccccc, left, 45): 145, 136
+
+    text(m6x11, "Alpha", #888888, left, 38): 0, 152
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sAlpha")) {
+        pos: 40, 152
+        settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
+    }
+    #alphaValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 152
+
+    text(m6x11, "Radius", #888888, left, 38): 0, 168
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sRadius")) {
+        pos: 40, 168
+        settings{size:int=>100, min:float=>0, max:float=>20, step:float=>0.5}
+    }
+    #radiusValue(updatable) text(m6x11, "6", #cccccc, left, 45): 145, 168
+
+    text(m6x11, "Smooth", #888888, left, 50): 0, 188
+    placeholder(generated(cross(14, 14, #FF0000)), builderParameter("cSmooth")) {
+        pos: 53, 188
+        settings{buildName=>checkbox}
+    }
+}
+
+#grayscaleCell programmable() {
+    text(m6x11, "grayscale", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Value", #888888, left, 38): 0, 94
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
+        pos: 40, 94
+        settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
+    }
+    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 94
+}
+
+#hueCell programmable() {
+    text(m6x11, "hue", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Value", #888888, left, 38): 0, 94
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
+        pos: 40, 94
+        settings{size:int=>100, min:float=>0, max:float=>6.28, step:float=>0.1}
+    }
+    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
+}
+
+#pixelOutlineCell programmable() {
+    text(m6x11, "pixelOutline", #aaaaaa, left, 180): 0, 0
+
+    text(m6x11, "Color", #888888, left, 38): 0, 98
+    placeholder(generated(cross(60, 22, #FF0000)), builderParameter("bColor")) {
+        pos: 40, 94
+        settings{buildName=>"colorButton", color:int=>0xFF0000ff, width:int=>60, height:int=>22}
+    }
+
+    text(m6x11, "Strength", #888888, left, 38): 0, 120
+    placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sStrength")) {
+        pos: 40, 120
+        settings{size:int=>100, min:float=>0, max:float=>1, step:float=>0.05}
+    }
+    #strengthValue(updatable) text(m6x11, "0.5", #cccccc, left, 45): 145, 120
+}
+
+// ── Main layout with grid-positioned filter cells ─────────────────────────
+#filtersLayout programmable() {
+    text(exo2_16, "Visual Filters", #7fdbda, left, 400): 50, 80
+    text(exo2_light_14, "Double-click a bitmap type to change preview", #aaaaaa, left, 600): 50, 130
+
+    placeholder(generated(cross(160, 200, #FF0000)), builderParameter("bitmapList")) {
+        pos: 50, 160
+    }
+
+    #selectedText(updatable) text(exo2_light_14, "Active: Black Rect", #7fdbda, left, 200): 50, 380
+
+    // 3x3 grid of filter cells
+    point {
+        pos: 230, 160
+        grid: 293, 205
+
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell0")) { pos: $grid.pos(0, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell1")) { pos: $grid.pos(1, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell2")) { pos: $grid.pos(2, 0) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell3")) { pos: $grid.pos(0, 1) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell4")) { pos: $grid.pos(1, 1) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell5")) { pos: $grid.pos(2, 1) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell6")) { pos: $grid.pos(0, 2) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell7")) { pos: $grid.pos(1, 2) }
+        placeholder(generated(cross(190, 200, #FF0000)), builderParameter("cell8")) { pos: $grid.pos(2, 2) }
+    }
+}

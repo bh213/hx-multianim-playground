@@ -1,0 +1,225 @@
+version: 1.0
+
+// Battle HUD — 3 visual styles, same parameter interface
+// Demonstrates that UI can change considerably without changing the driving code
+
+// ════════════════════════════════════════════════════
+// STANDARD VARIANT — vector graphics bars
+// ════════════════════════════════════════════════════
+
+// ── HP bar: green/yellow/red based on HP%, white trail for recent damage ──
+#hpBar programmable(hp:uint=100, maxHp:uint=100, trail:float=100) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#dddddd, filled, $trail * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 1..25) graphics(rect(#cc3322, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 26..60) graphics(rect(#eecc00, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    @(hp => 61..100) graphics(rect(#44cc44, filled, $hp * 310 / $maxHp, 20): 0, 0): 0, 0
+    text(exo2_14, '${$hp} / ${$maxHp}', #ffffff, center, 310): 0, 2
+}
+
+// ── MP bar: blue normally, reddish when low ──
+#mpBar programmable(mp:uint=50, maxMp:uint=50, trail:float=50) {
+    graphics(rect(#1a1a1a, filled, 310, 20): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#88bbdd, filled, $trail * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 1..12) graphics(rect(#993388, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    @(mp => 13..50) graphics(rect(#2196f3, filled, $mp * 310 / $maxMp, 20): 0, 0): 0, 0
+    text(exo2_14, '${$mp} / ${$maxMp}', #ffffff, center, 310): 0, 2
+}
+
+// ── Standard HUD layout ──
+#battleHudDemo programmable(
+    hp:uint=100, maxHp:uint=100, hpTrail:float=100,
+    mp:uint=50, maxMp:uint=50, mpTrail:float=50,
+    dead:uint=1
+) {
+    pos: 50, 60
+
+    text(exo2_16, 'Standard HUD', #7fdbda): 0, 0
+    graphics(rect(#7fdbda33, filled, 400, 1): 0, 0): 0, 22
+
+    @(dead => 1) apply {
+        filter: grayscale(1.0)
+    }
+
+    ninepatch("ui", "Window_3x3_idle", 400, 160): 0, 40
+
+    text(exo2_16, "HERO", #4caf50): 20, 55
+    text(exo2_20, "Aethon", #ffffff, left, 350): 20, 76
+
+    text(exo2_14, "HP", #ff4444): 20, 108
+    dynamicRef($hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
+
+    text(exo2_14, "MP", #4488cc): 20, 140
+    dynamicRef($mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
+
+    @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 360): 20, 170
+
+    text(exo2_light_14, "Vector graphics bars (graphics rect).", #666666): 0, 215
+}
+
+// ════════════════════════════════════════════════════
+// PIXEL ART VARIANT — pixels() primitives at 4× scale
+// ════════════════════════════════════════════════════
+
+// ── Pixel HP bar (34×7 px at 4× = 136×28 display) ──
+#pixelHpBar programmable(hp:uint=100, maxHp:uint=100, trail:float=100) {
+    pixels (
+        filledRect 1, 1, 32, 5, #111111
+        rect 0, 0, 34, 7, #555555
+    ) {
+        scale: 4
+    }
+    @(trail > 0) pixels (
+        filledRect 1, 1, $trail * 32 / $maxHp, 5, #dddddd
+    ) {
+        scale: 4
+    }
+    @(hp => 1..25) pixels (
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #cc3322
+    ) {
+        scale: 4
+    }
+    @(hp => 26..60) pixels (
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #eecc00
+    ) {
+        scale: 4
+    }
+    @(hp => 61..100) pixels (
+        filledRect 1, 1, ($hp * 32) / $maxHp, 5, #44cc44
+    ) {
+        scale: 4
+    }
+}
+
+// ── Pixel MP bar ──
+#pixelMpBar programmable(mp:uint=50, maxMp:uint=50, trail:float=50) {
+    pixels (
+        filledRect 1, 1, 32, 5, #111111
+        rect 0, 0, 34, 7, #444466
+    ) {
+        scale: 4
+    }
+    @(trail > 0) pixels (
+        filledRect 1, 1, $trail * 32 / $maxMp, 5, #88bbdd
+    ) {
+        scale: 4
+    }
+    @(mp => 1..12) pixels (
+        filledRect 1, 1, $mp * 32 / $maxMp, 5, #993388
+    ) {
+        scale: 4
+    }
+    @(mp => 13..50) pixels (
+        filledRect 1, 1, $mp * 32 / $maxMp, 5, #2196f3
+    ) {
+        scale: 4
+    }
+}
+
+// ── Pixel HUD layout ──
+#pixelBattleHud programmable(
+    hp:uint=100, maxHp:uint=100, hpTrail:float=100,
+    mp:uint=50, maxMp:uint=50, mpTrail:float=50,
+    dead:uint=1
+) {
+    pos: 500, 60
+
+    text(exo2_16, 'Pixel HUD', #7fdbda): 0, 0
+    graphics(rect(#7fdbda33, filled, 200, 1): 0, 0): 0, 22
+
+    @(dead => 1) apply {
+        filter: grayscale(1.0)
+    }
+
+    // Pixel art panel frame
+    pixels (
+        filledRect 0, 0, 50, 38, #1a1a2e
+        rect 0, 0, 50, 38, #4a5568
+    ) {
+        scale: 4
+        pos: 0, 30
+    }
+
+    text(exo2_14, "HERO", #4caf50): 10, 44
+    text(exo2_16, "Aethon", #ffffff): 10, 62
+
+    text(exo2_14, "HP", #ff4444): 10, 90
+    dynamicRef($pixelHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 40, 88
+
+    text(exo2_14, "MP", #4488cc): 10, 122
+    dynamicRef($pixelMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 40, 120
+
+    @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 180): 10, 150
+
+    text(exo2_light_14, "Pixel art bars using pixels() at 4x scale.", #666666): 0, 188
+}
+
+// ════════════════════════════════════════════════════
+// VERTICAL VARIANT — bars fill bottom-up
+// ════════════════════════════════════════════════════
+
+// ── Vertical HP bar (30×100, fills from bottom) ──
+#verticalHpBar programmable(hp:uint=100, maxHp:uint=100, trail:float=100) {
+    graphics(rect(#1a1a1a, filled, 30, 100): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#dddddd, filled, 30, $trail * 100 / $maxHp): 0, 100 - $trail * 100 / $maxHp): 0, 0
+    @(hp => 1..25) graphics(rect(#cc3322, filled, 30, $hp * 100 / $maxHp): 0, 100 - $hp * 100 / $maxHp): 0, 0
+    @(hp => 26..60) graphics(rect(#eecc00, filled, 30, $hp * 100 / $maxHp): 0, 100 - $hp * 100 / $maxHp): 0, 0
+    @(hp => 61..100) graphics(rect(#44cc44, filled, 30, $hp * 100 / $maxHp): 0, 100 - $hp * 100 / $maxHp): 0, 0
+}
+
+// ── Vertical MP bar (30×100, fills from bottom) ──
+#verticalMpBar programmable(mp:uint=50, maxMp:uint=50, trail:float=50) {
+    graphics(rect(#1a1a1a, filled, 30, 100): 0, 0): 0, 0
+    @(trail > 0) graphics(rect(#88bbdd, filled, 30, $trail * 100 / $maxMp): 0, 100 - $trail * 100 / $maxMp): 0, 0
+    @(mp => 1..12) graphics(rect(#993388, filled, 30, $mp * 100 / $maxMp): 0, 100 - $mp * 100 / $maxMp): 0, 0
+    @(mp => 13..50) graphics(rect(#2196f3, filled, 30, $mp * 100 / $maxMp): 0, 100 - $mp * 100 / $maxMp): 0, 0
+}
+
+// ── Vertical HUD layout ──
+#verticalBattleHud programmable(
+    hp:uint=100, maxHp:uint=100, hpTrail:float=100,
+    mp:uint=50, maxMp:uint=50, mpTrail:float=50,
+    dead:uint=1
+) {
+    pos: 50, 320
+
+    text(exo2_16, 'Vertical HUD', #7fdbda): 0, 0
+    graphics(rect(#7fdbda33, filled, 180, 1): 0, 0): 0, 22
+
+    @(dead => 1) apply {
+        filter: grayscale(1.0)
+    }
+
+    ninepatch("ui", "Window_3x3_idle", 180, 200): 0, 30
+
+    text(exo2_16, "HERO", #4caf50): 15, 44
+    text(exo2_20, "Aethon", #ffffff): 15, 64
+
+    // Vertical bars side by side
+    text(exo2_14, "HP", #ff4444, center, 30): 30, 88
+    dynamicRef($verticalHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 30, 104
+
+    text(exo2_14, "MP", #4488cc, center, 30): 110, 88
+    dynamicRef($verticalMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 110, 104
+
+    // Values below bars
+    text(exo2_14, '${$hp}', #ffffff, center, 30): 30, 206
+    text(exo2_14, '${$mp}', #ffffff, center, 30): 110, 206
+
+    @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 140): 20, 148
+
+    text(exo2_light_14, "Vertical bars filling bottom-up.", #666666): 0, 240
+}
+
+// ════════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════════
+
+#battleHudControls programmable() {
+    pos: 500, 280
+
+    placeholder(generated(cross(100, 30, #FF0000)), builderParameter("pauseButton")) {
+        pos: 0, 0
+        settings { }
+    }
+}

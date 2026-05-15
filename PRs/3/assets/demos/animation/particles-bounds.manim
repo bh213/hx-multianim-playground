@@ -1,0 +1,101 @@
+version: 1.0
+
+// Particles Demo — Bounds & Collision
+// New bounds: combined syntax with box() and line()
+
+layouts {
+    #positions list {
+        point: 160, 380
+        point: 420, 380
+        point: 680, 380
+        point: 940, 380
+    }
+}
+
+// Kill at boundaries — particles disappear at edges
+#killBounds particles {
+    count: 60
+    emit: point(dist: 0, distRand: 30)
+    tiles: file("dot.png")
+    loop: true
+    maxLife: 3.0
+    speed: 80
+    speedRand: 0.4
+    size: 0.7
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.95
+    colorStops: 0.0 #FF4444, 1.0 #FF8888
+    blendMode: add
+    bounds: kill, box(x: -80, y: -80, w: 160, h: 160)
+}
+
+// Bounce off walls with damping
+#bounceBounds particles {
+    count: 40
+    emit: point(dist: 0, distRand: 20)
+    tiles: file("circle_hard.png")
+    loop: true
+    maxLife: 4.0
+    speed: 100
+    speedRand: 0.3
+    gravity: 80
+    gravityAngle: down
+    size: 0.5
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.9
+    colorStops: 0.0 #44FF44, 1.0 #88FF88
+    blendMode: add
+    bounds: bounce(0.7), box(x: -80, y: -80, w: 160, h: 160)
+}
+
+// Wrap around — seamless teleportation
+#wrapBounds particles {
+    count: 50
+    emit: cone(dist: 0, distRand: 10, angle: 45deg, angleSpread: 30deg)
+    tiles: file("star.png")
+    loop: true
+    maxLife: 5.0
+    speed: 50
+    speedRand: 0.3
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.1
+    fadeOut: 0.95
+    colorStops: 0.0 #FFFF44, 1.0 #FFAA22
+    blendMode: add
+    bounds: wrap, box(x: -80, y: -80, w: 160, h: 160)
+    rotSpeed: 60deg
+}
+
+// Line bounds — bounce off diagonal walls
+#lineBounds particles {
+    count: 40
+    emit: point(dist: 0, distRand: 15)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 4.0
+    speed: 70
+    speedRand: 0.3
+    gravity: 60
+    gravityAngle: down
+    size: 0.4
+    sizeRand: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.9
+    colorStops: 0.0 #8844FF, 1.0 #CC88FF
+    blendMode: add
+    bounds: bounce(0.8), line(-80, 80, 80, 80), line(-80, -80, -80, 80), line(80, -80, -80, -80), line(80, 80, 80, -80)
+}
+
+#boundsUI programmable() {
+    text(m6x11, "Kill", #FF4444, center, 120): 120, 20
+    text(m3x6, "bounds: kill, box()", #888888, center, 160): 120, 36
+    text(m6x11, "Bounce", #44FF44, center, 120): 380, 20
+    text(m3x6, "bounds: bounce(), box()", #888888, center, 180): 380, 36
+    text(m6x11, "Wrap", #FFFF44, center, 120): 640, 20
+    text(m3x6, "bounds: wrap, box()", #888888, center, 160): 640, 36
+    text(m6x11, "Line Bounds", #8844FF, center, 120): 900, 20
+    text(m3x6, "bounds: bounce(), line()", #888888, center, 180): 900, 36
+}

@@ -77,16 +77,14 @@ class CurvesDemoScreen extends DemoScreenBase {
 		// Curves dropdown list
 		curveList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
 			CURVE_ITEMS, null, 0, 160, 190);
-		addElement(curveList, null);
+		addElement(curveList, DefaultLayer);
 		curveList.getObject().setPosition(750, 100);
-		addObjectToLayer(curveList.getObject(), DefaultLayer);
 
 		// Bitmap dropdown list
 		bitmapList = addScrollableListWithSingleBuilder(stdBuilder, "list-panel", "list-item-120", "scrollbar", "scrollbar",
 			TestBitmaps.ALL_ITEMS, null, currentBitmapIndex, 160, 170);
-		addElement(bitmapList, null);
+		addElement(bitmapList, DefaultLayer);
 		bitmapList.getObject().setPosition(750, 320);
-		addObjectToLayer(bitmapList.getObject(), DefaultLayer);
 
 		curveGraph = new h2d.Graphics();
 		addObjectToLayer(curveGraph, DefaultLayer);
@@ -121,9 +119,13 @@ class CurvesDemoScreen extends DemoScreenBase {
 		if (yBmp != null) yBmp.tile = centered;
 		if (alphaBmp != null) alphaBmp.tile = centered;
 		if (scaleBmp != null) scaleBmp.tile = centered;
-		if (demoResult != null) {
-			demoResult.getUpdatable("selectedBitmap").updateText(TestBitmaps.getName(TestBitmaps.getType(index)));
-		}
+		setUpdatable("selectedBitmap", TestBitmaps.getName(TestBitmaps.getType(index)));
+	}
+
+	function setUpdatable(name:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(name);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function createCircle(color:Int, radius:Int):h2d.Graphics {
@@ -142,8 +144,8 @@ class CurvesDemoScreen extends DemoScreenBase {
 		final curves = demoBuilder.getCurves();
 		activeCurve = curves.get(name);
 
-		demoResult.getUpdatable("curveLabel").updateText(name + (inverse ? " (inverse)" : ""));
-		demoResult.getUpdatable("selectedCurve").updateText(name);
+		setUpdatable("curveLabel", name + (inverse ? " (inverse)" : ""));
+		setUpdatable("selectedCurve", name);
 		drawCurveGraph();
 	}
 
@@ -224,13 +226,13 @@ class CurvesDemoScreen extends DemoScreenBase {
 			case UIToggle(checked):
 				if (source == inverseCheckbox) {
 					inverse = checked;
-					demoResult.getUpdatable("curveLabel").updateText(currentCurve + (inverse ? " (inverse)" : ""));
+					setUpdatable("curveLabel", currentCurve + (inverse ? " (inverse)" : ""));
 					drawCurveGraph();
 				}
 			case UIChangeValue(val):
 				if (source == speedSlider) {
 					speedPct = val;
-					demoResult.getUpdatable("speedValue").updateText('$val%');
+					setUpdatable("speedValue", '$val%');
 				}
 			default:
 		}

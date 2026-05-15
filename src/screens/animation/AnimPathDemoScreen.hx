@@ -427,23 +427,23 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		}
 	}
 
+	function setUpdatable(name:String, text:String):Void {
+		if (demoResult == null) return;
+		final u = demoResult.getUpdatable(name);
+		if (u != null) u.updateText(text);
+	}
+
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIDoubleClickItem(index, items):
 				if (source == pathList && index >= 0 && index < PATH_NAMES.length) {
 					currentPath = PATH_NAMES[index];
-					if (demoResult != null) {
-						final u = demoResult.getUpdatable("selectedPath");
-						if (u != null) u.updateText(PATH_NAMES[index]);
-					}
+					setUpdatable("selectedPath", PATH_NAMES[index]);
 					rebuildCircles();
 				}
 				if (source == curveList && index >= 0 && index < CURVE_NAMES.length) {
 					currentCurve = CURVE_NAMES[index];
-					if (demoResult != null) {
-						final u = demoResult.getUpdatable("selectedCurve");
-						if (u != null) u.updateText(CURVE_NAMES[index]);
-					}
+					setUpdatable("selectedCurve", CURVE_NAMES[index]);
 					rebuildCircles();
 				}
 			case UIChangeItem(index, items):
@@ -459,10 +459,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			case UIChangeValue(val):
 				if (source == speedSlider) {
 					speedPct = val;
-					if (demoResult != null) {
-						final su = demoResult.getUpdatable("speedValue");
-						if (su != null) su.updateText('$val%');
-					}
+					setUpdatable("speedValue", '$val%');
 					rebuildCircles();
 				}
 			case UIToggle(checked):

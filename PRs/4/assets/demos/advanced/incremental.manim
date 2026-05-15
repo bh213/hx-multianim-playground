@@ -1,0 +1,45 @@
+version: 1.0
+
+// Incremental Updates Demo
+// Build once, update live via setParameter() without rebuild
+
+#incrementalDemo programmable(value:0..100=50) {
+    pos: 50, 140
+
+    text(exo2_16, "Incremental Mode", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "The elements below update live when the slider changes value.", #aaaaaa, left, 600): 0, 30
+
+    // Dynamic width bar that responds to value
+    text(m6x11, "Bar width = $value * 5", #cccccc, left, 300): 0, 80
+    bitmap(generated(color($value * 5, 30, #4488cc))): 0, 100
+
+    // Text showing computed value
+    text(m6x11, 'Value: ${value}', #ffffff, left, 200): 0, 150
+
+    // Conditional visibility based on value ranges
+    text(m6x11, "Conditional blocks:", #cccccc, left, 300): 0, 190
+
+    @(value <= 25) text(m6x11, "LOW (value <= 25)", #ff4444, left, 300): 20, 220
+    @(value => 26..50) text(m6x11, "MEDIUM-LOW (26-50)", #ffaa44, left, 300): 20, 220
+    @(value => 51..75) text(m6x11, "MEDIUM-HIGH (51-75)", #44aaff, left, 300): 20, 220
+    @(value > 75) text(m6x11, "HIGH (value > 75)", #44ff44, left, 300): 20, 220
+
+    // Expression result
+    text(m6x11, 'Expression: $value * 2 + 10 = ${value * 2 + 10}' , #cccccc, left, 300): 0, 260
+    bitmap(generated(color($value * 2 + 10, 20, #7fdbda))): 0, 280
+
+    // Repeatable grid sized by value
+    text(m6x11, "Grid ($value div 10 items):", #cccccc, left, 300): 0, 320
+    repeatable($i, step($value div 10, dx:25)) {
+        bitmap(generated(color(20, 20, #446688))): 0, 350
+    }
+
+    // Hint text — uses string interpolation; updates automatically with $value
+    text(m6x11, 'Drag slider to update all elements. Current value: ${value}', #888888, left, 500): 0, 405
+
+    // Slider placeholder — filled in by screen code
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("valueSlider")) {
+        pos: 0, 430
+        settings{size:int=>300}
+    }
+}

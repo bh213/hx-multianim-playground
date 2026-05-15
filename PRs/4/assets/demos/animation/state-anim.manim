@@ -1,0 +1,14 @@
+version: 1.0
+
+// State Animation Demo — Interactive tab-based exploration of .anim state machines
+
+#stateAnimDemo programmable() {
+    pos: 0, 20
+
+    placeholder(generated(cross(800, 40, #FF0000)), builderParameter("animTabs")) {
+        pos: 0, 60
+        settings{tabButtonBuildName=>tab, tabPanel.width=>1280, tabPanel.height=>640, tabPanel.contentRoot=>contentArea}
+    }
+
+    #description(updatable) text(exo2_light_14, "", #aaaaaa, left, 1200): 20, 40
+}

@@ -1,0 +1,66 @@
+version: 1.0
+
+// Conditionals Demo
+// All conditional types demonstrated
+
+#conditionalsDemo programmable(value:0..100=50, tier:[low, mid, high]=mid) {
+    pos: 50, 140
+
+    text(exo2_16, "Conditional Types", #7fdbda, left, 400): 0, 0
+    text(exo2_light_14, "Drag the slider to see which conditional blocks match the current value.", #aaaaaa, left, 700): 0, 30
+
+    // Section 1: Basic @() match
+    text(m6x11, "1. Basic @(value => N):", #cccccc, left, 300): 0, 80
+    @(value => 0) text(m6x11, "  MATCH: value is exactly 0", #44ff44, left, 300): 0, 100
+    @(value => 50) text(m6x11, "  MATCH: value is exactly 50", #44ff44, left, 300): 0, 100
+    @(value => 100) text(m6x11, "  MATCH: value is exactly 100", #44ff44, left, 300): 0, 100
+
+    // Section 2: Range match
+    text(m6x11, "2. Range @(value => 20..40):", #cccccc, left, 300): 0, 130
+    @(value => 20..40) text(m6x11, "  MATCH: value in range 20-40", #44ff44, left, 300): 0, 150
+    @(value => 60..80) text(m6x11, "  MATCH: value in range 60-80", #44ff44, left, 300): 0, 150
+
+    // Section 3: Comparison operators
+    text(m6x11, "3. Comparisons:", #cccccc, left, 300): 0, 180
+    @(value <= 25) text(m6x11, "  value <= 25", #ff8844, left, 300): 0, 200
+    @(value > 75) text(m6x11, "  value > 75", #ff8844, left, 300): 0, 200
+    @(value >= 50) text(m6x11, "  value >= 50", #4488ff, left, 300): 200, 200
+    @(value < 50) text(m6x11, "  value < 50", #4488ff, left, 300): 200, 200
+
+    // Section 4: @else and @default
+    text(m6x11, "4. @if / @else / @default chain:", #cccccc, left, 400): 0, 240
+    @if(value <= 30) text(m6x11, "  @if(value <= 30): LOW", #ff4444, left, 300): 0, 260
+    @else(value <= 70) text(m6x11, "  @else(value <= 70): MID", #ffaa44, left, 300): 0, 260
+    @default text(m6x11, "  @default: HIGH", #44ff44, left, 300): 0, 260
+
+    // Section 5: @switch — picks one arm by enum param (tier auto-derived from value)
+    text(m6x11, "5. @switch(tier):", #cccccc, left, 400): 0, 300
+    @switch(tier) {
+        low {
+            bitmap(generated(color(120, 18, #aa3333))): 0, 320
+            text(m6x11, "  tier=low (value <= 33)", #ffffff, left, 300): 130, 322
+        }
+        mid {
+            bitmap(generated(color(120, 18, #aa8833))): 0, 320
+            text(m6x11, "  tier=mid (34..66)", #ffffff, left, 300): 130, 322
+        }
+        high {
+            bitmap(generated(color(120, 18, #33aa33))): 0, 320
+            text(m6x11, "  tier=high (value >= 67)", #ffffff, left, 300): 130, 322
+        }
+    }
+
+    // Section 6: Visual indicator bar
+    text(m6x11, "6. Visual bar (width = $value * 4):", #cccccc, left, 400): 0, 360
+    bitmap(generated(color(400, 20, #222233))): 0, 380
+    bitmap(generated(color($value * 4, 20, #4488cc))): 0, 380
+
+    // Current value display
+    #valueText(updatable) text(exo2_20, 'Current value: ${value}  |  tier: $tier', #ffffff, left, 400): 0, 420
+
+    // Slider (placeholder filled by screen code)
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("valueSlider")) {
+        pos: 0, 470
+        settings{size:int=>300}
+    }
+}

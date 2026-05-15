@@ -1,0 +1,54 @@
+version: 1.0
+
+// A health bar that changes color based on value
+#healthBar programmable(value:uint=50, label:string="HP") {
+  // Background
+  bitmap(generated(color(200, 20, #333333))): 0, 0
+  // Bar fill (width based on value * 2)
+  @(value >= 50) bitmap(generated(color($value * 2, 16, #44cc44))): 2, 2
+  @(value < 50) bitmap(generated(color($value * 2, 16, #cc4444))): 2, 2
+  // Label
+  text(m6x11, $label, #ffffff): 5, 4
+  // Value text
+  text(m6x11, $value, #ffffff, right, 190): 0, 4
+}
+
+// A stat display that uses dynamicRef
+#statDisplay programmable(statName:string="Stat", statValue:uint=0, barColor:color=#4488cc) {
+  text(m6x11, $statName, #aaaaaa): 0, 0
+  bitmap(generated(color($statValue, 8, $barColor))): 80, 2
+  text(m6x11, $statValue, #ffffff): 190, 0
+}
+
+// Main showcase with dynamicRefs
+#dynamicRefsShowcase programmable(barValue:uint=50) {
+  pos: 50, 80
+
+  // Section 1: Dynamic health bar controlled by slider
+  text(exo2_16, "Dynamic health bar (use slider):", #cccccc): 0, 0
+
+  dynamicRef($healthBar, value=>$barValue, label=>"Player HP"): 0, 30
+
+  // Slider control
+  placeholder(generated(cross(210, 20, #FF0000)), builderParameter("slider")) {
+    pos: 0, 60
+  }
+  #sliderValue(updatable) text(exo2_light_14, "50", #cccccc): 230, 60
+
+  // Section 2: Derived health bars (all driven by slider)
+  text(exo2_16, "Derived bars (expressions of slider):", #cccccc): 0, 100
+
+  dynamicRef($healthBar, value=>100 - $barValue, label=>"Inverse"): 0, 130
+  dynamicRef($healthBar, value=>$barValue / 2 + 10, label=>"Half+10"): 0, 160
+  dynamicRef($healthBar, value=>$barValue * 3 / 4 + 10, label=>"3/4+10"): 0, 190
+  dynamicRef($healthBar, value=>($barValue + 30) % 100, label=>"Wrap"): 0, 220
+
+  // Section 3: Stat displays (derived from slider)
+  text(exo2_16, "Stat displays (derived from slider):", #cccccc): 0, 260
+
+  dynamicRef($statDisplay, statName=>"Attack", statValue=>$barValue, barColor=>#cc4444): 0, 290
+  dynamicRef($statDisplay, statName=>"Defense", statValue=>100 - $barValue, barColor=>#4488cc): 0, 310
+  dynamicRef($statDisplay, statName=>"Speed", statValue=>$barValue / 2 + 25, barColor=>#44cc44): 0, 330
+  dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
+  dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
+}

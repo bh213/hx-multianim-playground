@@ -1,0 +1,109 @@
+version: 1.0
+
+// Floating Text Demo
+// AnimatedPath-driven floating text for damage numbers, heal text, status effects, etc.
+// Uses FloatingTextHelper to bind h2d.Objects to AnimatedPaths with auto-removal.
+
+// ─── Paths ─────────────────────────────────────────────
+
+paths {
+    #floatUp path { lineTo(0, -60) }
+    #floatUpRight path { lineTo(30, -70) }
+    #arcUp path { bezier(0, -80, -20, -40) }
+    #bounceUp path { bezier(0, -90, 10, -50) }
+    #windDrift path { bezier(80, -40, 40, -70) }
+    #splatter path { bezier(80, 20, 40, -130) }
+}
+
+// ─── Curves ────────────────────────────────────────────
+
+curves {
+    #fadeOut curve { points: [(0, 1.0), (0.6, 0.9), (1.0, 0.0)] }
+    #fadeOutSlow curve { points: [(0, 1.0), (0.8, 0.8), (1.0, 0.0)] }
+    #growShrink curve { points: [(0, 0.5), (0.15, 1.2), (0.3, 1.0), (1.0, 0.8)] }
+    #critScale curve { points: [(0, 0.3), (0.1, 1.5), (0.2, 1.0), (0.8, 1.0), (1.0, 0.6)] }
+    #windFade curve { points: [(0, 1.0), (0.3, 1.0), (0.7, 0.6), (1.0, 0.0)] }
+    #windScale curve { points: [(0, 1.0), (0.3, 0.9), (1.0, 0.6)] }
+    #splatterScale curve { points: [(0, 0.4), (0.05, 1.4), (0.15, 1.0), (0.5, 0.9), (1.0, 0.5)] }
+    #splatterFade curve { points: [(0, 1.0), (0.4, 1.0), (0.7, 0.5), (1.0, 0.0)] }
+    #wobbleOsc curve { points: [(0, 0), (0.1, -0.524), (0.3, 0.524), (0.5, -0.524), (0.7, 0.524), (0.9, -0.524), (1.0, 0)] }
+    #wobbleEnv curve { easing: easeinoutcubic  points: [(0, 0), (1.0, 1.0)] }
+    #wobbleRot curve { multiply: [wobbleOsc, wobbleEnv] }
+}
+
+// ─── Animated Paths ────────────────────────────────────
+
+#dmgAnim animatedPath {
+    path: floatUp
+    type: time
+    duration: 1.0
+    0.0: alphaCurve: fadeOut, scaleCurve: growShrink
+}
+
+#healAnim animatedPath {
+    path: floatUp
+    type: time
+    duration: 1.2
+    0.0: alphaCurve: fadeOutSlow, scaleCurve: growShrink
+}
+
+#critAnim animatedPath {
+    path: bounceUp
+    type: time
+    duration: 1.5
+    0.0: alphaCurve: fadeOut, scaleCurve: critScale
+}
+
+#xpAnim animatedPath {
+    path: floatUpRight
+    type: time
+    duration: 1.5
+    0.0: alphaCurve: fadeOutSlow
+}
+
+#windAnim animatedPath {
+    path: windDrift
+    type: time
+    duration: 1.8
+    0.0: alphaCurve: windFade, scaleCurve: windScale
+}
+
+#splatterAnim animatedPath {
+    path: splatter
+    type: time
+    duration: 1.0
+    easing: easeOutCubic
+    0.0: alphaCurve: splatterFade, scaleCurve: splatterScale
+}
+
+#wobbleAnim animatedPath {
+    path: floatUp
+    type: time
+    duration: 1.5
+    0.0: alphaCurve: fadeOut, scaleCurve: growShrink, rotationCurve: wobbleRot
+}
+
+// ─── Demo Layout ───────────────────────────────────────
+
+#floatingTextDemo programmable() {
+    pos: 40, 70
+
+    text(exo2_16, "Floating Text Helper", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "AnimatedPath-driven floating text. Click anywhere in the area below to spawn text.", #aaaaaa, left, 700): 0, 30
+
+    // Spawn area background
+    bitmap(generated(color(700, 400, #222240))): 0, 70
+    graphics(line(#333355, 1, 0, 0, 699, 0); line(#333355, 1, 699, 0, 699, 399); line(#333355, 1, 699, 399, 0, 399); line(#333355, 1, 0, 399, 0, 0);): 0, 70
+
+    // Style selector
+    text(m6x11, "Style:", #888888): 0, 482
+    placeholder(generated(cross(140, 24, #FF0000)), builderParameter("styleDropdown")): 40, 478
+
+    // Auto-spawn + Clear
+    text(m6x11, "Auto-spawn:", #888888): 220, 482
+    placeholder(generated(cross(24, 24, #FF0000)), builderParameter("chkAutoSpawn")): 300, 478
+    placeholder(generated(cross(80, 24, #FF0000)), builderParameter("btnClear")): 340, 478
+
+    #statusText(updatable) text(m6x11, "Active: 0  |  Total spawned: 0", #666666): 0, 520
+}

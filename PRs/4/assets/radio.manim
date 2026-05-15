@@ -1,0 +1,42 @@
+version: 1.0
+
+// Radio Button Styles Builder
+// #radio    - Small radio button (ui atlas: RadioButton_off/on_*)
+// #radio2   - Large radio button (ui atlas: RadioButton2_off/on_*)
+// Radio group layouts for vertical and horizontal arrangements
+
+#radio programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "RadioButton_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "RadioButton_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "RadioButton_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "RadioButton_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "RadioButton_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "RadioButton_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "RadioButton_on_disabled"));
+}
+
+#radio2 programmable(status:[hover, pressed, normal], checked:[true, false], disabled:[true, false]) {
+    @(status=>normal, checked=>false) bitmap(sheet("ui", "RadioButton2_off_idle"));
+    @(status=>hover, checked=>false) bitmap(sheet("ui", "RadioButton2_off_hover"));
+    @(status=>pressed, checked=>false) bitmap(sheet("ui", "RadioButton2_off_pressed"));
+    @(disabled=>true, checked=>false) bitmap(sheet("ui", "RadioButton2_off_disabled"));
+    @(status=>normal, checked=>true) bitmap(sheet("ui", "RadioButton2_on_idle"));
+    @(status=>hover, checked=>true) bitmap(sheet("ui", "RadioButton2_on_hover"));
+    @(status=>pressed, checked=>true) bitmap(sheet("ui", "RadioButton2_on_pressed"));
+    @(disabled=>true, checked=>true) bitmap(sheet("ui", "RadioButton2_on_disabled"));
+}
+
+#radioButtonsVertical programmable(count:int){
+    repeatable($index, step($count, dy:30)) {
+        placeholder(generated(cross(15, 15, #FF0000)), callback("checkbox", $index)):0,0
+        text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
+    }
+}
+
+#radioButtonsHorizontal programmable(count:int){
+    repeatable($index, step($count, dx:120)) {
+        placeholder(generated(cross(15, 15, #FF0000)), callback("checkbox", $index)):0,0
+        text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
+    }
+}

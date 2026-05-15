@@ -1,0 +1,103 @@
+version: 1.0
+
+// Draggable Demo
+// All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight.
+
+curves {
+    #elasticBounce curve {
+        easing: easeoutelastic
+    }
+    #easeOut curve {
+        easing: easeoutcubic
+    }
+}
+
+paths {
+    #straightLine path {
+        lineTo(100, 0)
+    }
+}
+
+// Elastic return — bounces to origin like a card snapping back
+#returnAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.5
+    0.0: progressCurve: elasticBounce
+}
+
+// Quick snap to drop zone
+#snapAnim animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.15
+    0.0: progressCurve: easeOut
+}
+
+// Linear return for simple cases
+#linearReturn animatedPath {
+    path: straightLine
+    type: time
+    duration: 0.2
+}
+
+#draggableDemo programmable() {
+    pos: 50, 80
+
+    // Section 1: Drop Zones with Snap Animation
+    text(exo2_16, "Drop Zones + Elastic Return", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Blue rect: alpha dims while dragging, brightens on zone hover.", #cccccc): 0, 35
+
+    // Drop zone 1
+    ninepatch("ui", "Window_3x3_idle", 120, 120): 0, 60
+    text(exo2_light_14, "Zone 1", #ffffffaa, center, 120): 0, 185
+
+    // Drop zone 2
+    ninepatch("ui", "Window_3x3_idle", 120, 120): 150, 60
+    text(exo2_light_14, "Zone 2", #ffffffaa, center, 120): 150, 185
+
+    // Section 2: Horizontal Constraint
+    text(exo2_16, "Horizontal Constraint (clamped)", #7fdbda): 0, 215
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 237
+
+    text(exo2_light_14, "Green rect: locked to Y, X clamped to rail (50..550):", #cccccc): 0, 250
+    bitmap(generated(color(500, 2, #ffffff44))): 0, 280
+
+    // Section 3: Priority Zones (Overlapping)
+    text(exo2_16, "Priority Zones (Overlapping)", #7fdbda): 0, 310
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 332
+
+    text(exo2_light_14, "Inner zone = high priority. Elastic return on miss.", #cccccc): 0, 345
+
+    // Outer zone (low priority)
+    ninepatch("ui", "Window_3x3_idle", 180, 120): 0, 370
+    text(exo2_light_14, "Low", #ff8888aa, center, 180): 0, 495
+
+    // Inner zone (high priority, overlapping)
+    ninepatch("ui", "Window_3x3_idle", 80, 80): 50, 390
+    text(exo2_light_14, "High", #88ff88aa, center, 80): 50, 475
+
+    // Section 4: Background Layer
+    text(exo2_16, "Background Layer", #7fdbda): 350, 215
+    bitmap(generated(color(350, 1, #7fdbda33))): 350, 237
+
+    text(exo2_light_14, "Purple rect goes behind everything while dragging:", #cccccc): 350, 250
+
+    // Events panel
+    text(exo2_16, "Events", #7fdbda): 350, 0
+    bitmap(generated(color(350, 1, #7fdbda33))): 350, 22
+
+    ninepatch("ui", "Window_3x3_idle", 350, 160): 350, 35
+    #eventText(updatable) text(exo2_light_14, "Drag items to see events here", #ffffff, left, 330): 365, 50
+
+    // Disable toggle section
+    text(exo2_16, "Disable Toggle", #7fdbda): 350, 310
+    bitmap(generated(color(350, 1, #7fdbda33))): 350, 332
+    placeholder(generated(cross(200, 20, white)), builderParameter("disableCheckbox")) {
+        pos: 350, 350
+        settings{buildName=>checkbox}
+    }
+    text(exo2_light_14, "Toggle to disable all draggables", #aaaaaa): 380, 352
+}

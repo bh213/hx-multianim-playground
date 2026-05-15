@@ -1,0 +1,166 @@
+version: 1.0
+
+// Dialogs Demo
+// Shows modal dialogs with different overlay configurations.
+
+// Dialog with no overlay (no settings block)
+#dialogNoOverlay programmable(dialogText = "Are you sure?") {
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "No Overlay", #ffffff, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #ffffff33))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #cccccc, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+// Dialog with dark overlay (default black, 50% alpha)
+#dialogDarkOverlay programmable(dialogText = "Are you sure?",
+    overlayColor:color = #000000, overlayAlpha:float = 0.5,
+    overlayFadeIn:float = 0.3, overlayFadeOut:float = 0.2) {
+    settings {
+        overlay.color:color => $overlayColor,
+        overlay.alpha:float => $overlayAlpha,
+        overlay.fadeIn:float => $overlayFadeIn,
+        overlay.fadeOut:float => $overlayFadeOut
+    }
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "Dark Overlay", #ffffff, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #ffffff33))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #cccccc, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+// Dialog with blue-tinted overlay
+#dialogBlueOverlay programmable(dialogText = "Are you sure?",
+    overlayColor:color = #001144, overlayAlpha:float = 0.6,
+    overlayFadeIn:float = 0.4, overlayFadeOut:float = 0.3) {
+    settings {
+        overlay.color:color => $overlayColor,
+        overlay.alpha:float => $overlayAlpha,
+        overlay.fadeIn:float => $overlayFadeIn,
+        overlay.fadeOut:float => $overlayFadeOut
+    }
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "Blue Overlay", #aaccff, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #aaccff33))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #ccccee, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+// Dialog with heavy dark overlay (high alpha)
+#dialogHeavyOverlay programmable(dialogText = "Are you sure?",
+    overlayColor:color = #000000, overlayAlpha:float = 0.85,
+    overlayFadeIn:float = 0.5, overlayFadeOut:float = 0.3) {
+    settings {
+        overlay.color:color => $overlayColor,
+        overlay.alpha:float => $overlayAlpha,
+        overlay.fadeIn:float => $overlayFadeIn,
+        overlay.fadeOut:float => $overlayFadeOut
+    }
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "Heavy Overlay", #ff8888, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #ff888833))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #cccccc, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+// Dialog with red warning overlay
+#dialogRedOverlay programmable(dialogText = "Are you sure?",
+    overlayColor:color = #330000, overlayAlpha:float = 0.5,
+    overlayFadeIn:float = 0.2, overlayFadeOut:float = 0.15) {
+    settings {
+        overlay.color:color => $overlayColor,
+        overlay.alpha:float => $overlayAlpha,
+        overlay.fadeIn:float => $overlayFadeIn,
+        overlay.fadeOut:float => $overlayFadeOut
+    }
+    pos: 300, 150
+
+    ninepatch("ui", "Droppanel_3x3_idle", 500, 250): 0, 0
+    text(exo2_black_20, "Warning!", #ff4444, center, 460): 20, 20
+    bitmap(generated(color(460, 1, #ff444433))): 20, 50
+    #dialogText(updatable) text(exo2_light_14, $dialogText, #ffcccc, center, 400): 50, 80
+
+    point {
+        pos: 20, 180
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("ok")): 0, 0
+        placeholder(generated(cross(20, 20, #FF0000)), builderParameter("cancel")): 260, 0
+    }
+}
+
+#dialogsDemo programmable() {
+    pos: 50, 80
+
+    // Section: Modal Dialogs
+    text(exo2_16, "Modal Dialogs - Overlay Variants", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    text(exo2_light_14, "Each button opens a dialog with a different overlay style:", #cccccc): 0, 35
+
+    // Row 1: No overlay vs Dark overlay
+    text(exo2_light_14, "No Overlay:", #888888): 0, 58
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton1")) {
+        pos: 0, 72
+    }
+    text(exo2_light_14, "Dark (50%):", #888888): 220, 58
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton2")) {
+        pos: 220, 72
+    }
+    text(exo2_light_14, "Blue Tint:", #888888): 440, 58
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton3")) {
+        pos: 440, 72
+    }
+
+    // Row 2: Heavy dark, Red warning
+    text(exo2_light_14, "Heavy Dark (85%):", #888888): 0, 112
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton4")) {
+        pos: 0, 126
+    }
+    text(exo2_light_14, "Red Warning:", #888888): 220, 112
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("openButton5")) {
+        pos: 220, 126
+    }
+
+    // Result display
+    text(exo2_16, "Dialog Result", #7fdbda): 0, 190
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 212
+    ninepatch("ui", "Window_3x3_idle", 500, 50): 0, 230
+    #resultText(updatable) text(exo2_20, "No dialog opened yet", #ffffff, left, 480): 15, 245
+
+    // History
+    text(exo2_16, "Dialog History", #7fdbda): 0, 310
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 332
+    ninepatch("ui", "Window_3x3_idle", 500, 150): 0, 345
+    #historyText1(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 355
+    #historyText2(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 375
+    #historyText3(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 395
+    #historyText4(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 415
+    #historyText5(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 435
+}

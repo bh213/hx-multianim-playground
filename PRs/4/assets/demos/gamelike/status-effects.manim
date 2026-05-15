@@ -1,0 +1,207 @@
+version: 1.0
+
+// Status Bar Demo
+// Horizontal flow layout with dynamic buff/debuff cards, progress bars, particles,
+// and hover popup tooltips with live TTL.
+
+// ── Effect Icon ──
+// Colored background + roguelike sprite per effect type
+#effectIcon programmable(effectType:[regen, strength, shield, haste, poison, slow, weakness, curse] = regen) {
+    // Colored backgrounds
+    @(effectType => regen)    bitmap(generated(color(48, 48, #4CAF50))): 0, 0
+    @(effectType => strength) bitmap(generated(color(48, 48, #FF7F50))): 0, 0
+    @(effectType => shield)   bitmap(generated(color(48, 48, #4A90A4))): 0, 0
+    @(effectType => haste)    bitmap(generated(color(48, 48, #CCBB33))): 0, 0
+    @(effectType => poison)   bitmap(generated(color(48, 48, #8B00FF))): 0, 0
+    @(effectType => slow)     bitmap(generated(color(48, 48, #666666))): 0, 0
+    @(effectType => weakness) bitmap(generated(color(48, 48, #FF4444))): 0, 0
+    @(effectType => curse)    bitmap(generated(color(48, 48, #440044))): 0, 0
+
+    // Roguelike sprites (3x scale = 48x48)
+    @(effectType => regen)    scale(3) bitmap(sheet("roguelikeitems", "potion", 0)): 0, 0
+    @(effectType => strength) scale(3) bitmap(sheet("roguelikeitems", "weapon", 9)): 0, 0
+    @(effectType => shield)   scale(3) bitmap(sheet("roguelikeitems", "shield", 6)): 0, 0
+    @(effectType => haste)    scale(3) bitmap(sheet("roguelikeitems", "boots", 0)): 0, 0
+    @(effectType => poison)   scale(3) bitmap(sheet("roguelikeitems", "potion", 2)): 0, 0
+    @(effectType => slow)     scale(3) bitmap(sheet("roguelikeitems", "scroll", 0)): 0, 0
+    @(effectType => weakness) scale(3) bitmap(sheet("roguelikeitems", "weapon", 11)): 0, 0
+    @(effectType => curse)    scale(3) bitmap(sheet("roguelikeitems", "ring", 0)): 0, 0
+}
+
+// ── Status Effect Card ──
+// Progress bar width driven by pct parameter (incremental update).
+// accentColor provides per-effect color for accent bar, name text, and progress bar.
+#statusCard programmable(pct:0..100=100, kind:[buff, debuff]=buff, accentColor:color=#44cc44) {
+    // Card background
+    @(kind => buff)   bitmap(generated(color(64, 88, #12261a))): 0, 0
+    @(kind => debuff) bitmap(generated(color(64, 88, #261216))): 0, 0
+
+    // Top accent bar — effect's own color
+    bitmap(generated(color(64, 2, $accentColor))): 0, 0
+
+    // Icon slot (Haxe builds effectIcon and inserts here)
+    #cardIcon slot {
+        bitmap(generated(color(1, 1, #00000000))): 0, 0
+    }
+
+    // Effect name — colored per effect
+    #cardName(updatable) text(m5x7, "", $accentColor, center, 64): 0, 58
+
+    // Countdown timer
+    #cardTimer(updatable) text(m6x11, "", #ffeb3b, center, 64): 0, 68
+
+    // Progress bar background
+    bitmap(generated(color(60, 6, #111111))): 2, 79
+
+    // Progress bar fill — effect's own color
+    bitmap(generated(color($pct * 58 / 100, 4, $accentColor))): 3, 80
+}
+
+// ── Effect Tooltip (hover popup) ──
+// Rich tooltip shown above hovered card with live TTL updates.
+#effectTooltip programmable(accentColor:color=#44cc44, pct:0..100=100) {
+    ninepatch("ui", "Window_3x3_idle", 190, 90): 0, 0
+    // Accent bar at top
+    bitmap(generated(color(170, 2, $accentColor))): 10, 8
+    // Effect name in accent color
+    #ttName(updatable) text(exo2_14, "", $accentColor, left, 120): 10, 14
+    // Type badge (right-aligned)
+    #ttType(updatable) text(m5x7, "", #888888, right, 60): 120, 18
+    // Description
+    #ttDesc(updatable) text(m6x11, "", #cccccc, left, 170): 10, 38
+    // Timer countdown
+    #ttTimer(updatable) text(m6x11, "", #ffeb3b, left, 170): 10, 58
+    // Progress bar background
+    bitmap(generated(color(170, 5, #222222))): 10, 74
+    // Progress bar fill
+    bitmap(generated(color($pct * 166 / 100, 3, $accentColor))): 12, 75
+}
+
+// ── Particle Effects ──
+
+// Buff: sparkles drifting outward from card edges
+#buffSparkle particles {
+    count: 10
+    emit: circle(r: 36, rRand: 6, angle: 0, angleSpread: 360deg)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 1.8
+    speed: 8
+    speedRandom: 0.5
+    size: 0.2
+    sizeRandom: 0.1
+    fadeIn: 0.2
+    fadeOut: 0.7
+    colorStops: 0.0 #FFEE88, 0.5 #88FFAA, 1.0 #44CC4400
+    blendMode: add
+}
+
+// Debuff: wisps rising from card top
+#debuffSmoke particles {
+    count: 8
+    emit: box(w: 60, h: 2, angle: 270deg, angleSpread: 20deg)
+    tiles: file("circle_soft.png")
+    loop: true
+    maxLife: 1.6
+    speed: 18
+    speedRandom: 0.3
+    size: 0.3
+    sizeRandom: 0.15
+    fadeIn: 0.2
+    fadeOut: 0.6
+    colorStops: 0.0 #8844AA, 0.5 #664488, 1.0 #44004400
+    blendMode: alpha
+}
+
+// One-shot burst for buff refresh
+#buffRefreshBurst particles {
+    count: 40
+    loop: false
+    emit: circle(r: 24, rRand: 10, angle: 0, angleSpread: 360deg)
+    tiles: file("circle_soft.png")
+    maxLife: 0.6
+    speed: 100
+    speedRandom: 0.4
+    size: 0.35
+    sizeRandom: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.6
+    colorStops: 0.0 #FFFFFF, 0.3 #FFEE44, 1.0 #FF880000
+    blendMode: add
+}
+
+// One-shot burst for debuff refresh
+#debuffRefreshBurst particles {
+    count: 40
+    loop: false
+    emit: circle(r: 24, rRand: 10, angle: 0, angleSpread: 360deg)
+    tiles: file("circle_soft.png")
+    maxLife: 0.6
+    speed: 100
+    speedRandom: 0.4
+    size: 0.35
+    sizeRandom: 0.2
+    fadeIn: 0.05
+    fadeOut: 0.6
+    colorStops: 0.0 #BB66DD, 0.3 #8844AA, 1.0 #44004400
+    blendMode: add
+}
+
+// ── Main Demo Layout ──
+
+#statusBarDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Status Bar", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Effect slots panel
+    ninepatch("ui", "Window_3x3_idle", 640, 130): 0, 35
+
+    text(exo2_14, "Active Effects", #7fdbda): 15, 45
+
+    // Flow container with 8 card slots
+    point {
+        pos: 15, 65
+        flow(layout: horizontal, horizontalSpacing: 8) {
+            repeatable($i, range(0, 8)) {
+                point {
+                    bitmap(generated(color(64, 88, #111122))): 0, 0
+                    #effectSlot[$i] slot {
+                        bitmap(generated(color(1, 1, #00000000))): 0, 0
+                    }
+                }
+            }
+        }
+    }
+
+    // Particle layer (above cards)
+    #particleContainer(updatable) point: 15, 65
+
+    // Action buttons
+    ninepatch("ui", "Window_3x3_idle", 640, 55): 0, 175
+    placeholder(generated(cross(130, 35, #FF0000)), builderParameter("addBuffButton")) {
+        pos: 15, 185
+        settings{width:int=>130, height:int=>35}
+    }
+    placeholder(generated(cross(130, 35, #FF0000)), builderParameter("addDebuffButton")) {
+        pos: 160, 185
+        settings{width:int=>130, height:int=>35}
+    }
+    placeholder(generated(cross(130, 35, #FF0000)), builderParameter("clearAllButton")) {
+        pos: 305, 185
+        settings{width:int=>130, height:int=>35}
+    }
+
+    // Effect count
+    #effectCountText(updatable) text(exo2_14, "Effects: 0 / 8", #aaaaaa, left, 200): 460, 190
+
+    // Effect log
+    ninepatch("ui", "Window_3x3_idle", 640, 40): 0, 240
+    #logText(updatable) text(exo2_light_14, "Add buffs or debuffs to see them tick down.", #666666, left, 610): 15, 252
+
+    // Instructions
+    text(exo2_light_14, "Hover over an effect card to see details. Effects expire when their timer runs out.", #666666): 0, 295
+    text(exo2_light_14, "Features: flow layout, slots, incremental updates, particles, hover tooltips, glow", #555555): 0, 315
+}

@@ -4,6 +4,8 @@ version: 1.0
 // Build once, update live via setParameter() without rebuild
 
 #incrementalDemo programmable(value:0..100=50) {
+    pos: 50, 140
+
     text(exo2_16, "Incremental Mode", #7fdbda, left, 400): 0, 0
     text(exo2_light_14, "The elements below update live when the slider changes value.", #aaaaaa, left, 600): 0, 30
 
@@ -32,6 +34,12 @@ version: 1.0
         bitmap(generated(color(20, 20, #446688))): 0, 350
     }
 
-    // Slider label
-    text(exo2_14, "Drag slider to update all elements live", #888888, left, 400): 0, 400
+    // Hint text — uses string interpolation; updates automatically with $value
+    text(m6x11, 'Drag slider to update all elements. Current value: ${value}', #888888, left, 500): 0, 405
+
+    // Slider placeholder — filled in by screen code
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("valueSlider")) {
+        pos: 0, 430
+        settings{size:int=>300}
+    }
 }

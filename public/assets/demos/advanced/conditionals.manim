@@ -3,7 +3,9 @@ version: 1.0
 // Conditionals Demo
 // All conditional types demonstrated
 
-#conditionalsDemo programmable(value:0..100=50) {
+#conditionalsDemo programmable(value:0..100=50, tier:[low, mid, high]=mid) {
+    pos: 50, 140
+
     text(exo2_16, "Conditional Types", #7fdbda, left, 400): 0, 0
     text(exo2_light_14, "Drag the slider to see which conditional blocks match the current value.", #aaaaaa, left, 700): 0, 30
 
@@ -31,14 +33,34 @@ version: 1.0
     @else(value <= 70) text(m6x11, "  @else(value <= 70): MID", #ffaa44, left, 300): 0, 260
     @default text(m6x11, "  @default: HIGH", #44ff44, left, 300): 0, 260
 
-    // Section 5: Visual indicator bar
-    text(m6x11, "5. Visual bar (width = $value * 4):", #cccccc, left, 400): 0, 300
-    bitmap(generated(color(400, 20, #222233))): 0, 320
-    bitmap(generated(color($value * 4, 20, #4488cc))): 0, 320
+    // Section 5: @switch — picks one arm by enum param (tier auto-derived from value)
+    text(m6x11, "5. @switch(tier):", #cccccc, left, 400): 0, 300
+    @switch(tier) {
+        low {
+            bitmap(generated(color(120, 18, #aa3333))): 0, 320
+            text(m6x11, "  tier=low (value <= 33)", #ffffff, left, 300): 130, 322
+        }
+        mid {
+            bitmap(generated(color(120, 18, #aa8833))): 0, 320
+            text(m6x11, "  tier=mid (34..66)", #ffffff, left, 300): 130, 322
+        }
+        high {
+            bitmap(generated(color(120, 18, #33aa33))): 0, 320
+            text(m6x11, "  tier=high (value >= 67)", #ffffff, left, 300): 130, 322
+        }
+    }
+
+    // Section 6: Visual indicator bar
+    text(m6x11, "6. Visual bar (width = $value * 4):", #cccccc, left, 400): 0, 360
+    bitmap(generated(color(400, 20, #222233))): 0, 380
+    bitmap(generated(color($value * 4, 20, #4488cc))): 0, 380
 
     // Current value display
-    text(exo2_20, 'Current value: ${value}', #ffffff, left, 300): 0, 370
+    #valueText(updatable) text(exo2_20, 'Current value: ${value}  |  tier: $tier', #ffffff, left, 400): 0, 420
 
-    // Slider label
-    text(exo2_14, "Value slider", #888888, left, 200): 0, 420
+    // Slider (placeholder filled by screen code)
+    placeholder(generated(cross(310, 20, #FF0000)), builderParameter("valueSlider")) {
+        pos: 0, 470
+        settings{size:int=>300}
+    }
 }

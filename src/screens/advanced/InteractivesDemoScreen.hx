@@ -5,8 +5,6 @@ import bh.ui.*;
 import bh.ui.UIRichInteractiveHelper;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.MultiAnimBuilder.BuilderResolvedSettings;
-import bh.ui.screens.UIScreen;
-import bh.ui.screens.ScreenManager;
 
 class InteractivesDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;

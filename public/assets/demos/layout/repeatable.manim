@@ -1,6 +1,16 @@
 version: 1.0
 
+// Named layouts consumed below via `repeatable($i, layout("name")) { ... }`.
+layouts {
+  // cells() produces cols*rows points in row-major order (here 5*2 = 10).
+  #cellGrid cells(cols: 5, rows: 2, cellWidth: 50, cellHeight: 40)
+
+  // sequence() computes each point from a per-iteration expression.
+  #seqPoints sequence($i: 0..5) point: $i * 50, ($i - 2) * ($i - 2) * 8
+}
+
 #repeatableControls programmable() {
+  pos: 40, 80
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
   #countText(updatable) text(m6x11, "3", #7fdbda, left, 50): 160, 0
 
@@ -14,6 +24,7 @@ version: 1.0
 }
 
 #repeatableShowcase programmable(count: 0..5 = 3) {
+  pos: 40, 130
   // Section 1: Basic horizontal step
   text(exo2_16, "Horizontal step:", #cccccc): 0, 0
 
@@ -78,6 +89,28 @@ version: 1.0
     repeatable($n, step($count, dx: 40)) {
       @alpha(1.0 - $n / 5) bitmap(generated(color(30, 30, #ff7f50))): 0, 0
       text(m6x11, $n, #ffffff, center, 30): 0, 10
+    }
+  }
+
+  // Section 7: cells() layout — fixed cols*rows points; slider count has no effect here.
+  text(exo2_16, "Layout cells(5x2):", #cccccc): 0, 560
+
+  point {
+    pos: 0, 590
+    repeatable($c, layout("cellGrid")) {
+      bitmap(generated(color(40, 30, #4488cc))): 0, 0
+      text(m6x11, $c, #ffffff, center, 40): 0, 8
+    }
+  }
+
+  // Section 8: sequence() layout — points computed from a per-iteration expression.
+  text(exo2_16, "Layout sequence ($i: 0..5):", #cccccc): 400, 560
+
+  point {
+    pos: 400, 590
+    repeatable($s, layout("seqPoints")) {
+      bitmap(generated(color(30, 30, #cc8844))): 0, 0
+      text(m6x11, $s, #ffffff, center, 30): 0, 8
     }
   }
 }

@@ -12,10 +12,7 @@ class StaticRefsDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/static-refs.manim", false);
 
-		// Build the main showcase programmable
-		var result = demoBuilder.buildWithParameters("staticRefsShowcase", []);
-		result.object.setPosition(40, 80);
-		addBuilderResult(result);
+		addBuilderResult(demoBuilder.buildWithParameters("staticRefsShowcase", []));
 	}
 
 	override public function onClear():Void {

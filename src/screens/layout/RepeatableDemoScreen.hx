@@ -12,12 +12,8 @@ class RepeatableDemoScreen extends DemoScreenBase {
 	var showcaseResult:Null<BuilderResult>;
 	var countSlider:Null<UIStandardMultiAnimSlider>;
 
-	static inline final BASE_X = 40;
-	static inline final BASE_Y = 80;
-	static inline final SHOWCASE_Y = 130;
-
 	override public function load():Void {
-		setupDemo("Repeatable", "Generated grids via repeatable() with step, range, and indexed elements");
+		setupDemo("Repeatable", "Generated grids via repeatable() with step, range, indexed elements, and layout()");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/repeatable.manim", false);
 
@@ -27,7 +23,6 @@ class RepeatableDemoScreen extends DemoScreenBase {
 
 		controlsResult = ui.builderResults;
 		countSlider = ui.countSlider;
-		controlsResult.object.setPosition(BASE_X, BASE_Y);
 		addBuilderResult(controlsResult);
 
 		buildShowcase(3);
@@ -36,7 +31,6 @@ class RepeatableDemoScreen extends DemoScreenBase {
 	function buildShowcase(count:Int):Void {
 		if (showcaseResult != null) showcaseResult.object.remove();
 		showcaseResult = demoBuilder.buildWithParameters("repeatableShowcase", ["count" => count]);
-		showcaseResult.object.setPosition(BASE_X, SHOWCASE_Y);
 		addBuilderResult(showcaseResult);
 	}
 

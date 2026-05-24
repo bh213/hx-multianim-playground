@@ -41,7 +41,7 @@ class DialogueDemoScreen extends DemoScreenBase {
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dialogueDemo", [], [
 			choice1Button => addButtonWithSingleBuilder(stdBuilder, "button", "Choice 1"),
 			choice2Button => addButtonWithSingleBuilder(stdBuilder, "button", "Choice 2"),
-		]);
+		], true);
 
 		demoResult = ui.builderResults;
 		choice1Button = ui.choice1Button;
@@ -159,41 +159,44 @@ class DialogueDemoScreen extends DemoScreenBase {
 		currentNode = nodes.get(nodeId);
 		if (currentNode == null) return;
 
-		demoResult.getUpdatable("speakerText").updateText(currentNode.speaker);
-		demoResult.getUpdatable("sceneText").updateText(currentNode.scene);
+		updateText("speakerText", currentNode.speaker);
+		updateText("sceneText", currentNode.scene);
 
-		final portraitObj = demoResult.getSingleItemByName("portraitColor").object.toh2dObject();
-		if (Std.isOfType(portraitObj, h2d.Bitmap)) {
-			var bmp:h2d.Bitmap = cast portraitObj;
-			bmp.tile = h2d.Tile.fromColor(currentNode.portraitColor, 80, 80);
-		}
+		// Portrait color is a .manim parameter — the DSL handles bitmap regeneration
+		demoResult.setParameter("portraitColor", currentNode.portraitColor);
 
 		fullText = currentNode.text;
 		displayedChars = 0;
 		charTimer = 0;
 		textComplete = false;
-		demoResult.getUpdatable("dialogueText").updateText("");
-		demoResult.getUpdatable("continueText").updateText("");
+		updateText("dialogueText", "");
+		updateText("continueText", "");
 
-		choice1Button.getObject().visible = false;
-		choice2Button.getObject().visible = false;
+		if (choice1Button != null) choice1Button.getObject().visible = false;
+		if (choice2Button != null) choice2Button.getObject().visible = false;
 
-		demoResult.getUpdatable("stateText").updateText('Node: $currentNodeId');
+		updateText("stateText", 'Node: $currentNodeId');
 	}
 
 	function showChoices():Void {
 		if (currentNode == null || demoResult == null) return;
 
-		if (currentNode.choice1 != null) {
+		if (currentNode.choice1 != null && choice1Button != null) {
 			choice1Button.getObject().visible = true;
 		}
-		if (currentNode.choice2 != null) {
+		if (currentNode.choice2 != null && choice2Button != null) {
 			choice2Button.getObject().visible = true;
 		}
 
 		if (currentNode.choice1 == null && currentNode.choice2 == null && currentNode.next != null) {
-			demoResult.getUpdatable("continueText").updateText("[Click to continue]");
+			updateText("continueText", "[Click to continue]");
 		}
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	override public function update(dt:Float):Void {
@@ -206,7 +209,7 @@ class DialogueDemoScreen extends DemoScreenBase {
 				charTimer -= CHAR_SPEED;
 			}
 
-			demoResult.getUpdatable("dialogueText").updateText(fullText.substr(0, displayedChars));
+			updateText("dialogueText", fullText.substr(0, displayedChars));
 
 			if (displayedChars >= fullText.length) {
 				textComplete = true;

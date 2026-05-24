@@ -175,15 +175,17 @@ class SkillTreeDemoScreen extends DemoScreenBase {
 	}
 
 	function updateInfoText(text:String):Void {
-		if (demoResult != null) {
-			demoResult.getUpdatable("skillInfoText").updateText(text);
-		}
+		updateText("skillInfoText", text);
 	}
 
 	function updateSkillPointsText():Void {
-		if (demoResult != null) {
-			demoResult.getUpdatable("skillPointsText").updateText('Skill Points: $skillPoints');
-		}
+		updateText("skillPointsText", 'Skill Points: $skillPoints');
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

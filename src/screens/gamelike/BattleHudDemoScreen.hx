@@ -8,7 +8,6 @@ import bh.base.MacroUtils;
 class BattleHudDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 	var demoResults:Array<BuilderResult> = [];
-	var controlsResult:Null<BuilderResult>;
 	var pauseButton:Null<UIStandardMultiAnimButton>;
 	var paused:Bool = false;
 
@@ -53,17 +52,14 @@ class BattleHudDemoScreen extends DemoScreenBase {
 	}
 
 	function buildControls():Void {
-		if (controlsResult != null)
-			controlsResult.object.remove();
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "battleHudControls", [], [
-			pauseButton => addButtonWithSingleBuilder(stdBuilder, "button", paused ? "Resume" : "Pause"),
+			pauseButton => addButtonWithSingleBuilder(stdBuilder, "button", "Pause"),
 		]);
-		controlsResult = ui.builderResults;
-		addBuilderResult(controlsResult);
+		addBuilderResult(ui.builderResults);
 		pauseButton = ui.pauseButton;
 		pauseButton.onClick = function() {
 			paused = !paused;
-			buildControls();
+			pauseButton.setText(paused ? "Resume" : "Pause");
 		};
 	}
 
@@ -199,6 +195,5 @@ class BattleHudDemoScreen extends DemoScreenBase {
 		loopTimer = 0;
 		paused = false;
 		pauseButton = null;
-		controlsResult = null;
 	}
 }

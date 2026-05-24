@@ -43,6 +43,7 @@ class LoadoutRuntimeDemoScreen extends LoadoutLabDemoBase {
 	}
 
 	override function setUpdatableText(name:String, text:String):Void {
+		if (demoResult == null) return;
 		final u = demoResult.getUpdatable(name);
 		if (u != null) u.updateText(text);
 	}
@@ -51,13 +52,19 @@ class LoadoutRuntimeDemoScreen extends LoadoutLabDemoBase {
 		// Runtime keys 1D indexed names as `"$name $idx"` in the internal map.
 		if (demoResult == null) return;
 		final key = '$name $idx';
-		if (demoResult.hasName(key)) demoResult.getUpdatable(key).updateText(text);
+		if (demoResult.hasName(key)) {
+			final u = demoResult.getUpdatable(key);
+			if (u != null) u.updateText(text);
+		}
 	}
 
 	override function setIndexedText2D(name:String, x:Int, y:Int, text:String):Void {
 		if (demoResult == null) return;
 		final key = '$name $x $y';
-		if (demoResult.hasName(key)) demoResult.getUpdatable(key).updateText(text);
+		if (demoResult.hasName(key)) {
+			final u = demoResult.getUpdatable(key);
+			if (u != null) u.updateText(text);
+		}
 	}
 
 	override function disposeLoadout():Void {

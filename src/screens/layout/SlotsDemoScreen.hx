@@ -46,7 +46,9 @@ class SlotsDemoScreen extends DemoScreenBase {
 		statusTexts = [];
 		slotInteractives = [];
 
-		final container = slotsResult.getSingleItemByName("slotContainer").object.toh2dObject();
+		final containerEl = slotsResult.getSingleItemByName("slotContainer");
+		if (containerEl == null) return;
+		final container = containerEl.object.toh2dObject();
 		final font = FontManager.getFontByName("m6x11");
 
 		for (i in 0...TOTAL_SLOTS) {
@@ -192,13 +194,17 @@ class SlotsDemoScreen extends DemoScreenBase {
 		for (i in 0...TOTAL_SLOTS) {
 			if (slotItems[i] != null) count++;
 		}
-		slotsResult.getUpdatable("slotCountText").updateText('Slots: $count / $TOTAL_SLOTS occupied');
+		updateText("slotCountText", 'Slots: $count / $TOTAL_SLOTS occupied');
 	}
 
 	function setLog(text:String):Void {
-		if (slotsResult != null) {
-			slotsResult.getUpdatable("logText").updateText(text);
-		}
+		updateText("logText", text);
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (slotsResult == null) return;
+		final updatable = slotsResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function isAutoAddEnabled():Bool {
@@ -261,12 +267,11 @@ class SlotsDemoScreen extends DemoScreenBase {
 			if (slotsResult.getSlot("cs_e", i).isOccupied()) occupied++;
 			if (slotsResult.getSlot("cs_d", i).isOccupied()) occupied++;
 		}
-		slotsResult.getUpdatable("comboInfoText").updateText('Occupied: $occupied / 6  (only enabled slots accept clicks)');
+		updateText("comboInfoText", 'Occupied: $occupied / 6  (only enabled slots accept clicks)');
 	}
 
 	function setComboLog(text:String):Void {
-		if (slotsResult != null)
-			slotsResult.getUpdatable("comboStatusText").updateText(text);
+		updateText("comboStatusText", text);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {}

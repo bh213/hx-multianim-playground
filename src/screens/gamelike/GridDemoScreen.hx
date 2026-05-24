@@ -367,8 +367,13 @@ class GridDemoScreen extends DemoScreenBase {
 	}
 
 	function setRectLog(text:String):Void {
-		if (demoResult != null)
-			demoResult.getUpdatable("rectLog").updateText(text);
+		updateText("rectLog", text);
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	// ========== Center: Hex Grid + Cards ==========
@@ -650,8 +655,7 @@ class GridDemoScreen extends DemoScreenBase {
 	}
 
 	function setHexLog(text:String):Void {
-		if (demoResult != null)
-			demoResult.getUpdatable("hexLog").updateText(text);
+		updateText("hexLog", text);
 	}
 
 	// ========== Right: Grid-to-Grid ==========
@@ -893,13 +897,12 @@ class GridDemoScreen extends DemoScreenBase {
 			storageGrid.forEach((_, _, data) -> { if (data != null) sc++; });
 		if (loadoutGrid != null)
 			loadoutGrid.forEach((_, _, data) -> { if (data != null) lc++; });
-		demoResult.getUpdatable("storageCount").updateText('Storage: $sc');
-		demoResult.getUpdatable("loadoutCount").updateText('Loadout: $lc');
+		updateText("storageCount", 'Storage: $sc');
+		updateText("loadoutCount", 'Loadout: $lc');
 	}
 
 	function setG2GLog(text:String):Void {
-		if (demoResult != null)
-			demoResult.getUpdatable("g2gLog").updateText(text);
+		updateText("g2gLog", text);
 	}
 
 	// ========== Button State ==========

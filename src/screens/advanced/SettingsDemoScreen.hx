@@ -31,13 +31,18 @@ class SettingsDemoScreen extends DemoScreenBase {
 		variantButtons = [ui.btnCompact, ui.btnWide, ui.btnTall];
 		addBuilderResult(demoResult);
 
-		panelContainer = demoResult.getSingleItemByName("panelContainer").object.toh2dObject();
+		final container = demoResult.getSingleItemByName("panelContainer");
+		if (container != null)
+			panelContainer = container.object.toh2dObject();
 		currentPanels = [];
 
 		setVariant(0);
 	}
 
 	function setVariant(index:Int):Void {
+		if (demoBuilder == null || panelContainer == null)
+			return;
+
 		// Clear previous panels
 		for (p in currentPanels)
 			p.remove();
@@ -66,13 +71,21 @@ class SettingsDemoScreen extends DemoScreenBase {
 		}
 
 		// Update inspector with the settings the code just used
-		demoResult.getUpdatable("inspWidth").updateText('width: $width');
-		demoResult.getUpdatable("inspHeight").updateText('height: $height');
-		demoResult.getUpdatable("inspGap").updateText('gap: $gap');
-		demoResult.getUpdatable("inspCategory").updateText('category: "$category"');
+		updateStatus("inspWidth", 'width: $width');
+		updateStatus("inspHeight", 'height: $height');
+		updateStatus("inspGap", 'gap: $gap');
+		updateStatus("inspCategory", 'category: "$category"');
 
 		final total = 3 * width + 2 * gap;
-		demoResult.getUpdatable("logText").updateText('${PANEL_LABELS[index]}: 3 x ${width}px + ${gap}px gap = ${total}px total');
+		updateStatus("logText", '${PANEL_LABELS[index]}: 3 x ${width}px + ${gap}px gap = ${total}px total');
+	}
+
+	function updateStatus(fieldName:String, text:String):Void {
+		if (demoResult == null)
+			return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null)
+			updatable.updateText(text);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

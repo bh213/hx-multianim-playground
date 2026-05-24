@@ -479,12 +479,18 @@ class InventoryDemoScreen extends DemoScreenBase {
 		final ic = invCount();
 		final ec = equipCount();
 
-		demoResult.getUpdatable("goldText").updateText('$gold');
-		demoResult.getUpdatable("weightText").updateText('$tw / $MAX_WEIGHT kg');
-		demoResult.getUpdatable("playerWeightText").updateText('Weight: $tw / $MAX_WEIGHT kg');
-		demoResult.getUpdatable("playerCountText").updateText('Items: $ic / $GRID_TOTAL  Equipped: $ec / ${EQUIP_ACCEPTS.length}');
+		updateText("goldText", '$gold');
+		updateText("weightText", '$tw / $MAX_WEIGHT kg');
+		updateText("playerWeightText", 'Weight: $tw / $MAX_WEIGHT kg');
+		updateText("playerCountText", 'Items: $ic / $GRID_TOTAL  Equipped: $ec / ${EQUIP_ACCEPTS.length}');
 
 		updateSlotStates();
+	}
+
+	function updateText(fieldName:String, text:String):Void {
+		if (demoResult == null) return;
+		final updatable = demoResult.getUpdatable(fieldName);
+		if (updatable != null) updatable.updateText(text);
 	}
 
 	function updateSlotStates():Void {
@@ -518,8 +524,7 @@ class InventoryDemoScreen extends DemoScreenBase {
 	}
 
 	function setLog(text:String):Void {
-		if (demoResult != null)
-			demoResult.getUpdatable("logText").updateText(text);
+		updateText("logText", text);
 	}
 
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {

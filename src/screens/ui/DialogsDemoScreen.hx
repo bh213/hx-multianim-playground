@@ -80,7 +80,7 @@ class DialogsDemoScreen extends DemoScreenBase {
 		final dialog = new OkCancelDialog(screenManager, dialogScreenBuilder, okBuilder, cancelBuilder, "OK", "Cancel", text);
 		dialog.closeTransition = closeTransition;
 		if (openTransition != null) {
-			screenManager.modalDialogWithTransition(dialog, this, dialogName, openTransition);
+			screenManager.modalDialogWithTransition(dialog, this, dialogName, null, openTransition);
 		} else {
 			screenManager.modalDialog(dialog, this, dialogName);
 		}

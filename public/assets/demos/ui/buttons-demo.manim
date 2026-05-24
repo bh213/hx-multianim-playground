@@ -78,15 +78,15 @@ version: 1.0
 
     placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn1")) {
         pos: 0, 440
-        settings{text=>"Red Text", fontColor:int=>0xff444412}
+        settings{text=>"Red Text", fontColor:int=>0xFFff4444}
     }
     placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn2")) {
         pos: 220, 440
-        settings{text=>"Green Text", fontColor:int=>0x44ff4412}
+        settings{text=>"Green Text", fontColor:int=>0xFF44ff44}
     }
     placeholder(generated(cross(200, 30, white)), builderParameter("colorTextBtn3")) {
         pos: 440, 440
-        settings{text=>"Gold Text", fontColor:int=>0xffcc4412}
+        settings{text=>"Gold Text", fontColor:int=>0xFFffcc44}
     }
 
     // Section: Size Variants

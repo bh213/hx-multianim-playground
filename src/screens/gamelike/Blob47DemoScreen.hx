@@ -53,7 +53,10 @@ class Blob47DemoScreen extends DemoScreenBase {
 		grid = [for (_ in 0...GRID_H) [for (_ in 0...GRID_W) 1]];
 
 		// Get map container
-		mapContainer = demoResult.getSingleItemByName("mapContainer").object.toh2dObject();
+		final mapContainerEl = demoResult.getSingleItemByName("mapContainer");
+		if (mapContainerEl == null)
+			return;
+		mapContainer = mapContainerEl.object.toh2dObject();
 
 		// Create interactive overlay for painting (screen-space size accounts for tile scale)
 		mapInteractive = new h2d.Interactive(GRID_W * TILE_SIZE * SCALE, GRID_H * TILE_SIZE * SCALE, mapContainer);
@@ -97,6 +100,7 @@ class Blob47DemoScreen extends DemoScreenBase {
 	}
 
 	function rebuildAutotile():Void {
+		if (autotileBuilder == null || mapContainer == null) return;
 		if (tileGroup != null) {
 			tileGroup.remove();
 		}
@@ -132,7 +136,9 @@ class Blob47DemoScreen extends DemoScreenBase {
 			for (x in 0...GRID_W)
 				if (grid[y][x] == 1) grassCount++;
 		final total = GRID_W * GRID_H;
-		demoResult.getUpdatable("statusText").updateText('Grass: $grassCount / $total tiles');
+		final updatable = demoResult.getUpdatable("statusText");
+		if (updatable != null)
+			updatable.updateText('Grass: $grassCount / $total tiles');
 	}
 
 	function updateTileSelection():Void {

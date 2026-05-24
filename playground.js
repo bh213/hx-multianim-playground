@@ -38,11 +38,13 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.tabAutoWired = false;
 	this.tabGroup = null;
 	this.higherOrderComponents = [];
+	this.tooltipHelpers = [];
 	this.panelHelpers = [];
 	this.autoStatusHelper = null;
 	this.interactiveSubscriptions = [];
 	this.interactiveMap = new haxe_ds_StringMap();
 	this.interactiveWrappers = [];
+	this.postCustomAddToLayerPending = false;
 	this.postCustomAddToLayer = new haxe_ds_ObjectMap();
 	this.groups = new haxe_ds_StringMap();
 	this.controllersStack = [];
@@ -120,7 +122,22 @@ bh_ui_screens_UIScreenBase.prototype = {
 			this.autoStatusHelper.unbindAll();
 		}
 		this.autoStatusHelper = null;
+		var _g = 0;
+		var _g1 = this.panelHelpers;
+		while(_g < _g1.length) {
+			var helper = _g1[_g];
+			++_g;
+			helper.dispose();
+		}
 		this.panelHelpers = [];
+		var _g = 0;
+		var _g1 = this.tooltipHelpers;
+		while(_g < _g1.length) {
+			var helper = _g1[_g];
+			++_g;
+			helper.dispose();
+		}
+		this.tooltipHelpers = [];
 		var _g = 0;
 		var _g1 = this.higherOrderComponents;
 		while(_g < _g1.length) {
@@ -130,16 +147,19 @@ bh_ui_screens_UIScreenBase.prototype = {
 		}
 		this.higherOrderComponents = [];
 		this.postCustomAddToLayer.h = { __keys__ : { }};
+		this.postCustomAddToLayerPending = false;
 		this.contentTarget = null;
 		this.contentTargetOwnership.h = { __keys__ : { }};
 		this.inElementRouting = false;
 		this.initialSyncDone = false;
-		var _g = 0;
-		var _g1 = this.controllersStack;
-		while(_g < _g1.length) {
-			var c = _g1[_g];
-			++_g;
-			c.clearState();
+		while(this.controllersStack.length > 1) {
+			var c = this.controllersStack.pop();
+			if(c != null) {
+				c.lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerFinished);
+			}
+		}
+		if(this.controllersStack.length > 0) {
+			this.controllersStack[0].clearState();
 		}
 		this.getSceneRoot().removeChildren();
 		this.onClear();
@@ -258,33 +278,52 @@ bh_ui_screens_UIScreenBase.prototype = {
 			++_g;
 			comp.update(dt);
 		}
-		var map = this.postCustomAddToLayer;
-		var _g_map = map;
-		var _g_keys = map.keys();
-		while(_g_keys.hasNext()) {
-			var key = _g_keys.next();
-			var _g_value = _g_map.get(key);
-			var _g_key = key;
-			var obj = _g_key;
-			var v = _g_value;
-			var insertedLayer = this.findLayerFromObject(obj);
-			if(insertedLayer == null) {
-				throw haxe_Exception.thrown("could not find layer for object " + Std.string(obj));
+		if(this.postCustomAddToLayerPending) {
+			var map = this.postCustomAddToLayer;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var obj = _g_key;
+				var v = _g_value;
+				var insertedLayer = this.findLayerFromObject(obj);
+				if(insertedLayer == null) {
+					throw haxe_Exception.thrown("could not find layer for object " + Std.string(obj));
+				}
+				v.customAddToLayer(insertedLayer,this,true);
 			}
-			v.customAddToLayer(insertedLayer,this,true);
+			this.postCustomAddToLayer.h = { __keys__ : { }};
+			this.postCustomAddToLayerPending = false;
 		}
-		this.postCustomAddToLayer.h = { __keys__ : { }};
 	}
-	,getElements: function(type) {
-		var retVal = this.elements.slice();
+	,forEachElement: function(type,fn) {
+		var _g = 0;
+		var _g1 = this.elements;
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			var tmp;
+			switch(type._hx_index) {
+			case 0:
+				tmp = js_Boot.__implements(e,bh_ui_UIElementUpdatable) || js_Boot.__implements(e,bh_ui_UIElementSyncRedraw);
+				break;
+			case 1:
+				tmp = js_Boot.__implements(e,bh_ui_StandardUIElementEvents);
+				break;
+			}
+			if(tmp) {
+				fn(e);
+			}
+		}
 		var _g = 0;
 		var _g1 = this.subElementProviders;
 		while(_g < _g1.length) {
 			var provider = _g1[_g];
 			++_g;
-			retVal = retVal.concat(provider.getSubElements(type));
+			provider.forEachSubElement(type,fn);
 		}
-		return retVal;
 	}
 	,hasSettings: function(settings,settingName) {
 		if(settings == null) {
@@ -434,7 +473,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 		var hasAny = false;
 		var config = { };
 		if(rootSettings.has("overlay.color")) {
-			config.color = rootSettings.getIntOrDefault("overlay.color",0);
+			config.color = rootSettings.getColorOrDefault("overlay.color",0);
 			hasAny = true;
 		}
 		if(rootSettings.has("overlay.alpha")) {
@@ -813,6 +852,11 @@ bh_ui_screens_UIScreenBase.prototype = {
 			this.higherOrderComponents.push(component);
 		}
 	}
+	,registerTooltipHelper: function(helper) {
+		if(this.tooltipHelpers.indexOf(helper) == -1) {
+			this.tooltipHelpers.push(helper);
+		}
+	}
 	,addScrollableListWithSingleBuilder: function(builder,panelBuilderName,itemBuilderName,scrollbarBuilderName,scrollbarInPanelName,items,settings,initialIndex,width,height) {
 		if(height == null) {
 			height = 100;
@@ -1160,6 +1204,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 						throw haxe_Exception.thrown("element already is in postCustomAddToLayer");
 					}
 					this.postCustomAddToLayer.set(element.getObject(),customElement);
+					this.postCustomAddToLayerPending = true;
 					break;
 				}
 			}
@@ -1186,6 +1231,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 					throw haxe_Exception.thrown("element already is in postCustomAddToLayer");
 				}
 				this.postCustomAddToLayer.set(element.getObject(),customElement);
+				this.postCustomAddToLayerPending = true;
 				break;
 			}
 		}
@@ -1245,6 +1291,9 @@ bh_ui_screens_UIScreenBase.prototype = {
 	}
 	,getSceneRoot: function() {
 		return this.root;
+	}
+	,getLayers: function() {
+		return this.layers;
 	}
 	,getHigherLayer: function(originalLayer) {
 		var currentIndex = this.layers.get(originalLayer);
@@ -1625,16 +1674,6 @@ Lambda.array = function(it) {
 		a.push(i1);
 	}
 	return a;
-};
-Lambda.foreach = function(it,f) {
-	var x = $getIterator(it);
-	while(x.hasNext()) {
-		var x1 = x.next();
-		if(!f(x1)) {
-			return false;
-		}
-	}
-	return true;
 };
 Lambda.iter = function(it,f) {
 	var x = $getIterator(it);
@@ -3867,10 +3906,6 @@ var bh_base_Hex = function(q,r,s) {
 };
 $hxClasses["bh.base.Hex"] = bh_base_Hex;
 bh_base_Hex.__name__ = "bh.base.Hex";
-bh_base_Hex.neighbor = function(hex,direction) {
-	var b = bh_base_GridDirection.hexDirection(direction,direction);
-	return new bh_base_Hex(hex.q + b.q,hex.r + b.r,hex.s + b.s);
-};
 bh_base_Hex.cubeRing = function(radius,direction) {
 	var results = [];
 	var a = bh_base_GridDirection.directions[direction];
@@ -3926,6 +3961,14 @@ function bh_base_HeapsUtils_safeDetach(obj) {
 		obj.parent.removeChild(obj);
 	}
 }
+function bh_base_HeapsUtils_solidTile(color,width,height) {
+	var top = color >>> 24;
+	var alpha = top == 0 ? 1.0 : (top & 255) / 255.0;
+	return h2d_Tile.fromColor(color & 16777215,width,height,alpha);
+}
+function bh_base_HeapsUtils_solidBitmap(color,width,height,parent) {
+	return new h2d_Bitmap(bh_base_HeapsUtils_solidTile(color,width,height),parent);
+}
 var bh_base_RelativeHex = {};
 bh_base_RelativeHex.fromRelativeHex = function(hex) {
 	return hex;
@@ -3959,6 +4002,27 @@ bh_base_FractionalHex.prototype = {
 			si = -qi - ri;
 		}
 		return new bh_base_Hex(qi,ri,si);
+	}
+	,roundInto: function(out) {
+		var qi = Math.round(this.q);
+		var ri = Math.round(this.r);
+		var si = Math.round(this.s);
+		var q_diff = Math.abs(qi - this.q);
+		var r_diff = Math.abs(ri - this.r);
+		var s_diff = Math.abs(si - this.s);
+		if(q_diff > r_diff && q_diff > s_diff) {
+			qi = -ri - si;
+		} else if(r_diff > s_diff) {
+			ri = -qi - si;
+		} else {
+			si = -qi - ri;
+		}
+		out.q = qi;
+		out.r = ri;
+		out.s = si;
+		if(qi + ri + si != 0) {
+			throw haxe_Exception.thrown("q + r + s must be 0");
+		}
 	}
 	,__class__: bh_base_FractionalHex
 };
@@ -4062,6 +4126,15 @@ bh_base_HexLayout.prototype = {
 		var q = this.orientationData.b0 * ptX + this.orientationData.b1 * ptY;
 		var r = this.orientationData.b2 * ptX + this.orientationData.b3 * ptY;
 		return new bh_base_FractionalHex(q,r,-q - r);
+	}
+	,pixelToHexInto: function(p,out) {
+		var ptX = (p.x - this.origin.x) / this.size.x;
+		var ptY = (p.y - this.origin.y) / this.size.y;
+		var q = this.orientationData.b0 * ptX + this.orientationData.b1 * ptY;
+		var r = this.orientationData.b2 * ptX + this.orientationData.b3 * ptY;
+		out.q = q;
+		out.r = r;
+		out.s = -q - r;
 	}
 	,hexCornerOffset: function(corner,towardsCenter) {
 		if(towardsCenter == null) {
@@ -5180,7 +5253,7 @@ var bh_base_MAObject = function(maType,debug,parent) {
 		var height = maType.height;
 		var identifier = maType.identifier;
 		if(debug) {
-			var bitmap = new h2d_Bitmap(h2d_Tile.fromColor(-32768,width,height,0.5),this);
+			var bitmap = bh_base_HeapsUtils_solidBitmap(-2130739200,width,height,this);
 			var font = hxd_res_DefaultFont.get();
 			var text = new h2d_Text(font,bitmap);
 			text.set_text("interactive " + identifier);
@@ -5195,7 +5268,7 @@ var bh_base_MAObject = function(maType,debug,parent) {
 		var width = maType.width;
 		var height = maType.height;
 		if(debug) {
-			var bitmap = new h2d_Bitmap(h2d_Tile.fromColor(-32768,width,height,0.5),this);
+			var bitmap = bh_base_HeapsUtils_solidBitmap(-2130739200,width,height,this);
 			var font = hxd_res_DefaultFont.get();
 			var text = new h2d_Text(font,bitmap);
 			text.set_text("draggable");
@@ -5372,6 +5445,9 @@ h2d_BatchElement.prototype = {
 	,__class__: h2d_BatchElement
 };
 var bh_base__$Particles_Particle = function(group) {
+	this.currentColorSegmentIndex = 0;
+	this.animOverrideReleasable = false;
+	this.animOverrideActive = false;
 	this.currentAnimStateIndex = 0;
 	this.baseScaleY = 1;
 	this.baseScaleX = 1;
@@ -5406,11 +5482,32 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 				if(this.group.init(this)) {
 					this.visible = true;
 					this.group.triggerSubEmitters(this,bh_base_SubEmitTrigger.OnBirth);
+				} else {
+					return true;
 				}
 			} else {
 				this.visible = false;
 				return true;
 			}
+		}
+		if(this.rejected) {
+			if(this.group.emitLoop) {
+				if(this.group.shutdownActive && this.group.liveCount > this.group.shutdownTargetCount) {
+					this.group.liveCount--;
+					this.group.freeParticles.push(this);
+					return false;
+				}
+				if(!this.group.init(this)) {
+					this.group.liveCount--;
+					this.group.freeParticles.push(this);
+					return false;
+				}
+				this.delay = 0;
+				return true;
+			}
+			this.group.liveCount--;
+			this.group.freeParticles.push(this);
+			return false;
 		}
 		var timeNormalized = this.life / this.maxLife;
 		var velocityMult = this.group.getVelocityCurveValue(timeNormalized);
@@ -5448,14 +5545,50 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 		}
 		this.a *= this.group.shutdownAlphaMult;
 		if(this.group.colorEnabled) {
-			var col = this.group.evaluateColorCurve(timeNormalized);
-			this.r = (col >> 16 & 255) / 255.0;
-			this.g = (col >> 8 & 255) / 255.0;
-			this.b = (col & 255) / 255.0;
+			var segs = this.group.colorCurveSegments;
+			var segCount = segs.length;
+			if(segCount > 0) {
+				var segIdx = this.currentColorSegmentIndex;
+				while(segIdx + 1 < segCount && segs[segIdx + 1].startRate <= timeNormalized) ++segIdx;
+				this.currentColorSegmentIndex = segIdx;
+				var segment = segs[segIdx];
+				var segStart = segment.startRate;
+				var segEnd = segIdx + 1 < segCount ? segs[segIdx + 1].startRate : 1.0;
+				var localT = segEnd <= segStart ? 0. : (timeNormalized - segStart) / (segEnd - segStart);
+				if(localT < 0) {
+					localT = 0;
+				} else if(localT > 1) {
+					localT = 1;
+				}
+				var curveValue = segment.curve.getValue(localT);
+				var c1 = segment.startColor;
+				var c2 = segment.endColor;
+				var r1 = c1 >> 16 & 255;
+				var g1 = c1 >> 8 & 255;
+				var b1 = c1 & 255;
+				var r2 = c2 >> 16 & 255;
+				var g2 = c2 >> 8 & 255;
+				var b2 = c2 & 255;
+				var r = r1 + (r2 - r1) * curveValue | 0;
+				var g = g1 + (g2 - g1) * curveValue | 0;
+				var b = b1 + (b2 - b1) * curveValue | 0;
+				var col = r << 16 | g << 8 | b;
+				this.r = (col >> 16 & 255) / 255.0;
+				this.g = (col >> 8 & 255) / 255.0;
+				this.b = (col & 255) / 255.0;
+			}
 		}
 		if(this.group.animStates.length > 0) {
 			var stateIdx = this.currentAnimStateIndex;
-			while(stateIdx + 1 < this.group.animStates.length && timeNormalized >= this.group.animStates[stateIdx + 1].startLifeRate) ++stateIdx;
+			if(this.animOverrideActive && this.animOverrideReleasable) {
+				var overrideEnd = stateIdx + 1 < this.group.animStates.length ? this.group.animStates[stateIdx + 1].startLifeRate : 1.0;
+				if(timeNormalized >= overrideEnd) {
+					this.animOverrideActive = false;
+				}
+			}
+			if(!this.animOverrideActive) {
+				while(stateIdx + 1 < this.group.animStates.length && timeNormalized >= this.group.animStates[stateIdx + 1].startLifeRate) ++stateIdx;
+			}
 			this.currentAnimStateIndex = stateIdx;
 			var animState = this.group.animStates[stateIdx];
 			if(animState.tiles.length > 0) {
@@ -5476,31 +5609,46 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 				if(this.group.emitLoop) {
 					if(this.group.shutdownActive && this.group.liveCount > this.group.shutdownTargetCount) {
 						this.group.liveCount--;
+						this.group.freeParticles.push(this);
 						return false;
 					}
-					this.group.init(this);
+					if(!this.group.init(this)) {
+						this.group.liveCount--;
+						this.group.freeParticles.push(this);
+						return false;
+					}
 					this.delay = 0;
 					return true;
 				} else {
 					this.group.liveCount--;
+					this.group.freeParticles.push(this);
 					return false;
 				}
 			}
 		}
-		this.group.checkIntervalSubEmitters(this,timeNormalized);
+		if(!this.rejected) {
+			this.group.checkIntervalSubEmitters(this,timeNormalized);
+		}
 		if(timeNormalized > 1) {
 			if(!this.rejected) {
 				this.group.triggerSubEmitters(this,bh_base_SubEmitTrigger.OnDeath);
+				this.group.applyAnimEventOverride(this,"onDeath");
 			}
 			if(this.group.emitLoop) {
 				if(this.group.shutdownActive && this.group.liveCount > this.group.shutdownTargetCount) {
 					this.group.liveCount--;
+					this.group.freeParticles.push(this);
 					return false;
 				}
-				this.group.init(this);
+				if(!this.group.init(this)) {
+					this.group.liveCount--;
+					this.group.freeParticles.push(this);
+					return false;
+				}
 				this.delay = 0;
 			} else {
 				this.group.liveCount--;
+				this.group.freeParticles.push(this);
 				return false;
 			}
 		}
@@ -5512,7 +5660,9 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 	this.shutdownSpeedMult = 1.0;
 	this.shutdownSizeMult = 1.0;
 	this.shutdownAlphaMult = 1.0;
+	this.shutdownInitialCount = 0;
 	this.shutdownTargetCount = 0;
+	this.freeParticles = [];
 	this.liveCount = 0;
 	this.shutdownActiveDuration = 0;
 	this.shutdownTime = 0;
@@ -5618,6 +5768,15 @@ bh_base_ParticleGroup.prototype = {
 		var ny = -dx / len;
 		this.boundsLines.push({ x1 : x1, y1 : y1, x2 : x2, y2 : y2, nx : nx, ny : ny});
 	}
+	,allocParticle: function() {
+		if(this.freeParticles.length > 0) {
+			var p = this.freeParticles.pop();
+			if(p != null) {
+				return p;
+			}
+		}
+		return new bh_base__$Particles_Particle(this);
+	}
 	,start: function() {
 		this.batch.clear();
 		this.started = true;
@@ -5627,7 +5786,7 @@ bh_base_ParticleGroup.prototype = {
 		var _g1 = this.nparts;
 		while(_g < _g1) {
 			var i = _g++;
-			var p = new bh_base__$Particles_Particle(this);
+			var p = this.allocParticle();
 			p.delay = this.randomFunc() * this.life * (1 - this.emitSync) + this.emitDelay;
 			if(p.delay <= 0) {
 				if(this.init(p)) {
@@ -5648,18 +5807,18 @@ bh_base_ParticleGroup.prototype = {
 		var _g1 = count;
 		while(_g < _g1) {
 			var i = _g++;
-			var p = new bh_base__$Particles_Particle(this);
+			var p = this.allocParticle();
 			var accepted = this.init(p);
-			p.x += atX;
-			p.y += atY;
-			p.vx += inheritVx;
-			p.vy += inheritVy;
-			this.batch.add(p);
 			if(accepted) {
-				this.liveCount++;
+				p.x += atX;
+				p.y += atY;
+				p.vx += inheritVx;
+				p.vy += inheritVy;
 				p.visible = true;
 				this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnBirth);
 			}
+			this.batch.add(p);
+			this.liveCount++;
 		}
 	}
 	,emitBurst: function(count) {
@@ -5811,19 +5970,47 @@ bh_base_ParticleGroup.prototype = {
 			p.g = (initColor >> 8 & 255) / 255.0;
 			p.b = (initColor & 255) / 255.0;
 		}
+		p.currentColorSegmentIndex = 0;
+		p.currentAnimStateIndex = 0;
+		p.animOverrideActive = false;
+		p.animOverrideReleasable = false;
 		if(!this.isRelative) {
 			var parts = this.parts;
 			parts.syncPos();
+			var rA = parts.matA;
+			var rB = parts.matB;
+			var rC = parts.matC;
+			var rD = parts.matD;
+			var rX = parts.absX;
+			var rY = parts.absY;
+			var anchor = this.parts.worldAnchor;
+			if(anchor != null) {
+				anchor.syncPos();
+				var wa = anchor.matA;
+				var wb = anchor.matB;
+				var wc = anchor.matC;
+				var wd = anchor.matD;
+				var det = wa * wd - wb * wc;
+				var invDet = det != 0 ? 1.0 / det : 0.0;
+				rA = (wd * parts.matA - wc * parts.matB) * invDet;
+				rB = (wa * parts.matB - wb * parts.matA) * invDet;
+				rC = (wd * parts.matC - wc * parts.matD) * invDet;
+				rD = (wa * parts.matD - wb * parts.matC) * invDet;
+				var dx = parts.absX - anchor.absX;
+				var dy = parts.absY - anchor.absY;
+				rX = (wd * dx - wc * dy) * invDet;
+				rY = (wa * dy - wb * dx) * invDet;
+			}
 			var px = p.x;
-			p.x = px * parts.matA + p.y * parts.matC + parts.absX;
-			p.y = px * parts.matB + p.y * parts.matD + parts.absY;
-			var scX = Math.sqrt(parts.matA * parts.matA + parts.matC * parts.matC) * size;
-			var scY = Math.sqrt(parts.matB * parts.matB + parts.matD * parts.matD) * size;
+			p.x = px * rA + p.y * rC + rX;
+			p.y = px * rB + p.y * rD + rY;
+			var scX = Math.sqrt(rA * rA + rB * rB) * size;
+			var scY = Math.sqrt(rC * rC + rD * rD) * size;
 			p.scaleX = scX;
 			p.scaleY = scY;
 			p.baseScaleX = scX;
 			p.baseScaleY = scY;
-			var absRot = Math.atan2(parts.matB / scY,parts.matA / scX);
+			var absRot = Math.atan2(rB,rA);
 			p.rotation += absRot;
 			var cos = Math.cos(absRot);
 			var sin = Math.sin(absRot);
@@ -5849,40 +6036,6 @@ bh_base_ParticleGroup.prototype = {
 			}
 		}
 		return true;
-	}
-	,evaluateColorCurve: function(rate) {
-		var activeIndex = -1;
-		var _g = 0;
-		var _g1 = this.colorCurveSegments.length;
-		while(_g < _g1) {
-			var i = _g++;
-			if(this.colorCurveSegments[i].startRate <= rate) {
-				activeIndex = i;
-			} else {
-				break;
-			}
-		}
-		if(activeIndex < 0) {
-			return 16777215;
-		}
-		var segment = this.colorCurveSegments[activeIndex];
-		var segStart = segment.startRate;
-		var segEnd = activeIndex + 1 < this.colorCurveSegments.length ? this.colorCurveSegments[activeIndex + 1].startRate : 1.0;
-		var localT = segEnd <= segStart ? 0. : (rate - segStart) / (segEnd - segStart);
-		localT = Math.min(Math.max(localT,0.),1.);
-		var curveValue = segment.curve.getValue(localT);
-		var c1 = segment.startColor;
-		var c2 = segment.endColor;
-		var r1 = c1 >> 16 & 255;
-		var g1 = c1 >> 8 & 255;
-		var b1 = c1 & 255;
-		var r2 = c2 >> 16 & 255;
-		var g2 = c2 >> 8 & 255;
-		var b2 = c2 & 255;
-		var r = r1 + (r2 - r1) * curveValue | 0;
-		var g = g1 + (g2 - g1) * curveValue | 0;
-		var b = b1 + (b2 - b1) * curveValue | 0;
-		return r << 16 | g << 8 | b;
 	}
 	,getVelocityCurveValue: function(t) {
 		if(this.velocityCurve != null) {
@@ -6134,6 +6287,10 @@ bh_base_ParticleGroup.prototype = {
 		var stateIndex = this.animEventOverrides.h[triggerName];
 		if(stateIndex != null && stateIndex < this.animStates.length) {
 			p.currentAnimStateIndex = stateIndex;
+			p.animOverrideActive = true;
+			var overrideEnd = stateIndex + 1 < this.animStates.length ? this.animStates[stateIndex + 1].startLifeRate : 1.0;
+			var timeNormalized = p.maxLife > 0 ? p.life / p.maxLife : 0.0;
+			p.animOverrideReleasable = timeNormalized < overrideEnd;
 			var animState = this.animStates[stateIndex];
 			if(animState.tiles.length > 0) {
 				p.t = animState.tiles[0];
@@ -6171,7 +6328,7 @@ bh_base_ParticleGroup.prototype = {
 			var rate = Math.min(this.shutdownTime / this.shutdownActiveDuration,1.0);
 			var countProgress = this.shutdownCountCurve != null ? this.shutdownCountCurve.getValue(rate) : rate;
 			var aliveFraction = Math.max(0,1.0 - countProgress);
-			this.shutdownTargetCount = Math.round(this.nparts * aliveFraction);
+			this.shutdownTargetCount = Math.round(this.shutdownInitialCount * aliveFraction);
 			if(this.shutdownAlphaCurve != null) {
 				this.shutdownAlphaMult = Math.max(0,1.0 - this.shutdownAlphaCurve.getValue(rate));
 			}
@@ -6189,7 +6346,7 @@ bh_base_ParticleGroup.prototype = {
 				this.shutdownSpeedMult = 1.0;
 			}
 		}
-		if(this.attachedPath != null) {
+		if(this.attachedPath != null && this.enabled) {
 			var state = this.attachedPath.update(dt);
 			this.dx = state.position.x | 0;
 			this.dy = state.position.y | 0;
@@ -6270,6 +6427,9 @@ h2d_Drawable.prototype = $extend(h2d_Object.prototype,{
 	,__class__: h2d_Drawable
 });
 var bh_base_Particles = function(parent) {
+	this.worldAnchor = null;
+	this.hasEmittedAny = false;
+	this.groupList = [];
 	h2d_Drawable.call(this,parent);
 	this.groups = new haxe_ds_StringMap();
 };
@@ -6282,6 +6442,7 @@ bh_base_Particles.prototype = $extend(h2d_Drawable.prototype,{
 			throw haxe_Exception.thrown("group " + g.id + " already exists");
 		}
 		this.groups.h[g.id] = g;
+		this.groupList.push(g);
 		return g;
 	}
 	,getGroup: function(id) {
@@ -6291,13 +6452,11 @@ bh_base_Particles.prototype = $extend(h2d_Drawable.prototype,{
 		h2d_Drawable.prototype.sync.call(this,ctx);
 		var isDone = true;
 		var dt = ctx.elapsedTime;
-		var h = this.groups.h;
-		var g_h = h;
-		var g_keys = Object.keys(h);
-		var g_length = g_keys.length;
-		var g_current = 0;
-		while(g_current < g_length) {
-			var g = g_h[g_keys[g_current++]];
+		var _g = 0;
+		var _g1 = this.groupList;
+		while(_g < _g1.length) {
+			var g = _g1[_g];
+			++_g;
 			if(!g.started && g.enabled) {
 				g.start();
 			}
@@ -6306,9 +6465,10 @@ bh_base_Particles.prototype = $extend(h2d_Drawable.prototype,{
 			}
 			if(g.batch.first != null) {
 				isDone = false;
+				this.hasEmittedAny = true;
 			}
 		}
-		if(isDone) {
+		if(isDone && this.hasEmittedAny) {
 			this.onEnd();
 		}
 	}
@@ -6325,24 +6485,33 @@ bh_base_Particles.prototype = $extend(h2d_Drawable.prototype,{
 		var realB = this.matB;
 		var realC = this.matC;
 		var realD = this.matD;
-		var h = this.groups.h;
-		var g_h = h;
-		var g_keys = Object.keys(h);
-		var g_length = g_keys.length;
-		var g_current = 0;
-		while(g_current < g_length) {
-			var g = g_h[g_keys[g_current++]];
+		var _g = 0;
+		var _g1 = this.groupList;
+		while(_g < _g1.length) {
+			var g = _g1[_g];
+			++_g;
 			if(g.enabled) {
 				this.blendMode = g.batch.blendMode;
 				if(g.isRelative) {
 					g.batch.drawWith(ctx,this);
 				} else {
-					this.matA = 1;
-					this.matB = 0;
-					this.matC = 0;
-					this.matD = 1;
-					this.absX = 0;
-					this.absY = 0;
+					var anchor = this.worldAnchor;
+					if(anchor != null) {
+						anchor.syncPos();
+						this.matA = anchor.matA;
+						this.matB = anchor.matB;
+						this.matC = anchor.matC;
+						this.matD = anchor.matD;
+						this.absX = anchor.absX;
+						this.absY = anchor.absY;
+					} else {
+						this.matA = 1;
+						this.matB = 0;
+						this.matC = 0;
+						this.matD = 1;
+						this.absX = 0;
+						this.absY = 0;
+					}
 					g.batch.drawWith(ctx,this);
 					this.matA = realA;
 					this.matB = realB;
@@ -6354,13 +6523,11 @@ bh_base_Particles.prototype = $extend(h2d_Drawable.prototype,{
 			}
 		}
 		this.blendMode = old;
-		var h = this.groups.h;
-		var g_h = h;
-		var g_keys = Object.keys(h);
-		var g_length = g_keys.length;
-		var g_current = 0;
-		while(g_current < g_length) {
-			var g = g_h[g_keys[g_current++]];
+		var _g = 0;
+		var _g1 = this.groupList;
+		while(_g < _g1.length) {
+			var g = _g1[_g];
+			++_g;
 			if(g.externallyDriven) {
 				g._externalDt = 0;
 			}
@@ -6714,15 +6881,15 @@ var bh_base__$TweenManager_TweenPropertyKind = $hxEnums["bh.base._TweenManager.T
 };
 bh_base__$TweenManager_TweenPropertyKind.__constructs__ = [bh_base__$TweenManager_TweenPropertyKind.KAlpha,bh_base__$TweenManager_TweenPropertyKind.KX,bh_base__$TweenManager_TweenPropertyKind.KY,bh_base__$TweenManager_TweenPropertyKind.KScaleX,bh_base__$TweenManager_TweenPropertyKind.KScaleY,bh_base__$TweenManager_TweenPropertyKind.KRotation,bh_base__$TweenManager_TweenPropertyKind.KCustom];
 bh_base__$TweenManager_TweenPropertyKind.__empty_constructs__ = [bh_base__$TweenManager_TweenPropertyKind.KAlpha,bh_base__$TweenManager_TweenPropertyKind.KX,bh_base__$TweenManager_TweenPropertyKind.KY,bh_base__$TweenManager_TweenPropertyKind.KScaleX,bh_base__$TweenManager_TweenPropertyKind.KScaleY,bh_base__$TweenManager_TweenPropertyKind.KRotation];
-var bh_base__$TweenManager_TweenPropertyEntry = function(kind,to) {
+var bh_base_TweenPropertyEntry = function(kind,to) {
 	this.kind = kind;
 	this.to = to;
 	this.from = 0.0;
 };
-$hxClasses["bh.base._TweenManager.TweenPropertyEntry"] = bh_base__$TweenManager_TweenPropertyEntry;
-bh_base__$TweenManager_TweenPropertyEntry.__name__ = "bh.base._TweenManager.TweenPropertyEntry";
-bh_base__$TweenManager_TweenPropertyEntry.prototype = {
-	__class__: bh_base__$TweenManager_TweenPropertyEntry
+$hxClasses["bh.base.TweenPropertyEntry"] = bh_base_TweenPropertyEntry;
+bh_base_TweenPropertyEntry.__name__ = "bh.base.TweenPropertyEntry";
+bh_base_TweenPropertyEntry.prototype = {
+	__class__: bh_base_TweenPropertyEntry
 };
 var bh_base__$TweenManager_TweenHandle = $hxEnums["bh.base._TweenManager.TweenHandle"] = { __ename__:true,__constructs__:null
 	,HTween: ($_=function(tween) { return {_hx_index:0,tween:tween,__enum__:"bh.base._TweenManager.TweenHandle",toString:$estr}; },$_._hx_name="HTween",$_.__params__ = ["tween"],$_)
@@ -6732,6 +6899,7 @@ var bh_base__$TweenManager_TweenHandle = $hxEnums["bh.base._TweenManager.TweenHa
 bh_base__$TweenManager_TweenHandle.__constructs__ = [bh_base__$TweenManager_TweenHandle.HTween,bh_base__$TweenManager_TweenHandle.HSequence,bh_base__$TweenManager_TweenHandle.HGroup];
 bh_base__$TweenManager_TweenHandle.__empty_constructs__ = [];
 var bh_base_Tween = function(target,duration,properties,easing) {
+	this.removeTargetOnComplete = false;
 	this.skipFirstDt = false;
 	this.initialized = false;
 	this.cancelled = false;
@@ -6739,11 +6907,7 @@ var bh_base_Tween = function(target,duration,properties,easing) {
 	this.elapsed = 0.0;
 	this.target = target;
 	this.duration = duration;
-	this.easingFn = easing != null ? function(t) {
-		return bh_base_FloatTools.applyEasing(easing,t);
-	} : function(t) {
-		return t;
-	};
+	this.easing = easing;
 	this.entries = [];
 	var _g = 0;
 	while(_g < properties.length) {
@@ -6752,38 +6916,146 @@ var bh_base_Tween = function(target,duration,properties,easing) {
 		switch(prop._hx_index) {
 		case 0:
 			var to = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KAlpha,to));
+			var tmp = this.entries;
+			var kind = bh_base__$TweenManager_TweenPropertyKind.KAlpha;
+			var e = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp1;
+			if(e != null) {
+				e.kind = kind;
+				e.to = to;
+				e.from = 0.0;
+				tmp1 = e;
+			} else {
+				tmp1 = new bh_base_TweenPropertyEntry(kind,to);
+			}
+			tmp.push(tmp1);
 			break;
 		case 1:
 			var to1 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KX,to1));
+			var tmp2 = this.entries;
+			var kind1 = bh_base__$TweenManager_TweenPropertyKind.KX;
+			var e1 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp3;
+			if(e1 != null) {
+				e1.kind = kind1;
+				e1.to = to1;
+				e1.from = 0.0;
+				tmp3 = e1;
+			} else {
+				tmp3 = new bh_base_TweenPropertyEntry(kind1,to1);
+			}
+			tmp2.push(tmp3);
 			break;
 		case 2:
 			var to2 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KY,to2));
+			var tmp4 = this.entries;
+			var kind2 = bh_base__$TweenManager_TweenPropertyKind.KY;
+			var e2 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp5;
+			if(e2 != null) {
+				e2.kind = kind2;
+				e2.to = to2;
+				e2.from = 0.0;
+				tmp5 = e2;
+			} else {
+				tmp5 = new bh_base_TweenPropertyEntry(kind2,to2);
+			}
+			tmp4.push(tmp5);
 			break;
 		case 3:
 			var to3 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleX,to3));
+			var tmp6 = this.entries;
+			var kind3 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+			var e3 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp7;
+			if(e3 != null) {
+				e3.kind = kind3;
+				e3.to = to3;
+				e3.from = 0.0;
+				tmp7 = e3;
+			} else {
+				tmp7 = new bh_base_TweenPropertyEntry(kind3,to3);
+			}
+			tmp6.push(tmp7);
 			break;
 		case 4:
 			var to4 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleY,to4));
+			var tmp8 = this.entries;
+			var kind4 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+			var e4 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp9;
+			if(e4 != null) {
+				e4.kind = kind4;
+				e4.to = to4;
+				e4.from = 0.0;
+				tmp9 = e4;
+			} else {
+				tmp9 = new bh_base_TweenPropertyEntry(kind4,to4);
+			}
+			tmp8.push(tmp9);
 			break;
 		case 5:
 			var to5 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleX,to5));
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KScaleY,to5));
+			var tmp10 = this.entries;
+			var kind5 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+			var e5 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp11;
+			if(e5 != null) {
+				e5.kind = kind5;
+				e5.to = to5;
+				e5.from = 0.0;
+				tmp11 = e5;
+			} else {
+				tmp11 = new bh_base_TweenPropertyEntry(kind5,to5);
+			}
+			tmp10.push(tmp11);
+			var tmp12 = this.entries;
+			var kind6 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+			var e6 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp13;
+			if(e6 != null) {
+				e6.kind = kind6;
+				e6.to = to5;
+				e6.from = 0.0;
+				tmp13 = e6;
+			} else {
+				tmp13 = new bh_base_TweenPropertyEntry(kind6,to5);
+			}
+			tmp12.push(tmp13);
 			break;
 		case 6:
 			var to6 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KRotation,to6));
+			var tmp14 = this.entries;
+			var kind7 = bh_base__$TweenManager_TweenPropertyKind.KRotation;
+			var e7 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp15;
+			if(e7 != null) {
+				e7.kind = kind7;
+				e7.to = to6;
+				e7.from = 0.0;
+				tmp15 = e7;
+			} else {
+				tmp15 = new bh_base_TweenPropertyEntry(kind7,to6);
+			}
+			tmp14.push(tmp15);
 			break;
 		case 7:
 			var getter = prop.getter;
 			var setter = prop.setter;
 			var to7 = prop.to;
-			this.entries.push(new bh_base__$TweenManager_TweenPropertyEntry(bh_base__$TweenManager_TweenPropertyKind.KCustom(getter,setter),to7));
+			var tmp16 = this.entries;
+			var kind8 = bh_base__$TweenManager_TweenPropertyKind.KCustom(getter,setter);
+			var e8 = bh_base_TweenPropertyEntry._pool.pop();
+			var tmp17;
+			if(e8 != null) {
+				e8.kind = kind8;
+				e8.to = to7;
+				e8.from = 0.0;
+				tmp17 = e8;
+			} else {
+				tmp17 = new bh_base_TweenPropertyEntry(kind8,to7);
+			}
+			tmp16.push(tmp17);
 			break;
 		}
 	}
@@ -6791,12 +7063,37 @@ var bh_base_Tween = function(target,duration,properties,easing) {
 $hxClasses["bh.base.Tween"] = bh_base_Tween;
 bh_base_Tween.__name__ = "bh.base.Tween";
 bh_base_Tween.prototype = {
-	setOnComplete: function(cb) {
+	recycleEntries: function() {
+		var _g = 0;
+		var _g1 = this.entries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			entry.kind = bh_base__$TweenManager_TweenPropertyKind.KAlpha;
+			entry.from = 0.0;
+			entry.to = 0.0;
+			bh_base_TweenPropertyEntry._pool.push(entry);
+		}
+		this.entries.length = 0;
+	}
+	,setOnComplete: function(cb) {
 		this.onComplete = cb;
 		return this;
 	}
 	,cancel: function() {
 		this.cancelled = true;
+	}
+	,runCompletionHooks: function() {
+		var cb = this.onComplete;
+		if(cb != null) {
+			cb();
+		}
+		if(this.removeTargetOnComplete) {
+			var _this = this.target;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
 	}
 	,init: function() {
 		if(this.initialized) {
@@ -6818,6 +7115,17 @@ bh_base_Tween.prototype = {
 		if(!this.initialized) {
 			this.init();
 		}
+		if(this.duration <= 0) {
+			var _g = 0;
+			var _g1 = this.entries;
+			while(_g < _g1.length) {
+				var entry = _g1[_g];
+				++_g;
+				this.setPropertyValue(entry.kind,entry.to);
+			}
+			this.elapsed = this.duration;
+			return true;
+		}
 		if(this.skipFirstDt) {
 			this.skipFirstDt = false;
 			return false;
@@ -6833,7 +7141,8 @@ bh_base_Tween.prototype = {
 			min = 0.0;
 		}
 		var t = value <= min ? min : max <= value ? max : value;
-		var easedT = this.easingFn(t);
+		var e = this.easing;
+		var easedT = e == null ? t : bh_base_FloatTools.applyEasing(e,t);
 		var _g = 0;
 		var _g1 = this.entries;
 		while(_g < _g1.length) {
@@ -6927,45 +7236,37 @@ bh_base_TweenSequence.__name__ = "bh.base.TweenSequence";
 bh_base_TweenSequence.prototype = {
 	cancel: function() {
 		this.cancelled = true;
-		if(this.currentIndex < this.tweens.length) {
-			this.tweens[this.currentIndex].cancel();
+		var _g = 0;
+		var _g1 = this.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			tween.cancel();
 		}
 	}
 	,step: function(dt) {
 		if(this.cancelled) {
 			return true;
 		}
-		if(this.currentIndex >= this.tweens.length) {
-			return true;
-		}
-		var current = this.tweens[this.currentIndex];
-		current.init();
-		if(current.step(dt)) {
-			var cb = current.onComplete;
-			if(cb != null) {
-				cb();
+		var remainingDt = dt;
+		while(this.currentIndex < this.tweens.length) {
+			var current = this.tweens[this.currentIndex];
+			if(current.cancelled) {
+				this.currentIndex++;
+				continue;
 			}
+			current.init();
+			if(!current.step(remainingDt)) {
+				return false;
+			}
+			current.runCompletionHooks();
 			this.currentIndex++;
-			var remaining = current.elapsed - current.duration;
-			if(remaining > 0 && this.currentIndex < this.tweens.length) {
-				return this.step(remaining);
-			}
-			return this.currentIndex >= this.tweens.length;
-		}
-		return false;
-	}
-	,getTargets: function() {
-		var targets = [];
-		var _g = 0;
-		var _g1 = this.tweens;
-		while(_g < _g1.length) {
-			var tween = _g1[_g];
-			++_g;
-			if(targets.indexOf(tween.target) == -1) {
-				targets.push(tween.target);
+			remainingDt = current.elapsed - current.duration;
+			if(remainingDt <= 0) {
+				break;
 			}
 		}
-		return targets;
+		return this.currentIndex >= this.tweens.length;
 	}
 	,__class__: bh_base_TweenSequence
 };
@@ -7004,25 +7305,19 @@ bh_base_TweenGroup.prototype = {
 			var tween = _g1[_g];
 			++_g;
 			if(!tween.cancelled && tween.elapsed < tween.duration) {
-				if(!tween.step(dt)) {
+				if(tween.step(dt)) {
+					if(tween.removeTargetOnComplete) {
+						var _this = tween.target;
+						if(_this != null && _this.parent != null) {
+							_this.parent.removeChild(_this);
+						}
+					}
+				} else {
 					allDone = false;
 				}
 			}
 		}
 		return allDone;
-	}
-	,getTargets: function() {
-		var targets = [];
-		var _g = 0;
-		var _g1 = this.tweens;
-		while(_g < _g1.length) {
-			var tween = _g1[_g];
-			++_g;
-			if(targets.indexOf(tween.target) == -1) {
-				targets.push(tween.target);
-			}
-		}
-		return targets;
 	}
 	,__class__: bh_base_TweenGroup
 };
@@ -7031,6 +7326,51 @@ var bh_base_TweenManager = function() {
 };
 $hxClasses["bh.base.TweenManager"] = bh_base_TweenManager;
 bh_base_TweenManager.__name__ = "bh.base.TweenManager";
+bh_base_TweenManager.recycleHandle = function(handle) {
+	switch(handle._hx_index) {
+	case 0:
+		var tween = handle.tween;
+		tween.recycleEntries();
+		tween.onComplete = null;
+		bh_base_Tween._pool.push(tween);
+		break;
+	case 1:
+		var seq = handle.seq;
+		var _g = 0;
+		var _g1 = seq.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			tween.recycleEntries();
+			tween.onComplete = null;
+			bh_base_Tween._pool.push(tween);
+		}
+		break;
+	case 2:
+		var group = handle.group;
+		var _g = 0;
+		var _g1 = group.tweens;
+		while(_g < _g1.length) {
+			var tween = _g1[_g];
+			++_g;
+			tween.recycleEntries();
+			tween.onComplete = null;
+			bh_base_Tween._pool.push(tween);
+		}
+		break;
+	}
+};
+bh_base_TweenManager.allCancelled = function(tweens) {
+	var _g = 0;
+	while(_g < tweens.length) {
+		var tween = tweens[_g];
+		++_g;
+		if(!tween.cancelled) {
+			return false;
+		}
+	}
+	return true;
+};
 bh_base_TweenManager.isChildOf = function(obj,root) {
 	var current = obj;
 	while(current != null) {
@@ -7054,10 +7394,7 @@ bh_base_TweenManager.prototype = {
 					done = true;
 				} else if(tween.step(dt)) {
 					done = true;
-					var cb = tween.onComplete;
-					if(cb != null) {
-						cb();
-					}
+					tween.runCompletionHooks();
 				}
 				break;
 			case 1:
@@ -7066,9 +7403,9 @@ bh_base_TweenManager.prototype = {
 					done = true;
 				} else if(seq.step(dt)) {
 					done = true;
-					var cb1 = seq.onComplete;
-					if(cb1 != null) {
-						cb1();
+					var cb = seq.onComplete;
+					if(cb != null) {
+						cb();
 					}
 				}
 				break;
@@ -7078,14 +7415,15 @@ bh_base_TweenManager.prototype = {
 					done = true;
 				} else if(group.step(dt)) {
 					done = true;
-					var cb2 = group.onComplete;
-					if(cb2 != null) {
-						cb2();
+					var cb1 = group.onComplete;
+					if(cb1 != null) {
+						cb1();
 					}
 				}
 				break;
 			}
 			if(done) {
+				bh_base_TweenManager.recycleHandle(handle);
 				this.handles[i] = this.handles[this.handles.length - 1];
 				this.handles.pop();
 			} else {
@@ -7094,13 +7432,342 @@ bh_base_TweenManager.prototype = {
 		}
 	}
 	,tween: function(target,duration,properties,easing) {
-		var t = new bh_base_Tween(target,duration,properties,easing);
-		t.init();
-		this.handles.push(bh_base__$TweenManager_TweenHandle.HTween(t));
-		return t;
+		var t = bh_base_Tween._pool.pop();
+		var t1;
+		if(t != null) {
+			t.target = target;
+			t.duration = duration;
+			t.easing = easing;
+			t.elapsed = 0.0;
+			t.onComplete = null;
+			t.cancelled = false;
+			t.initialized = false;
+			t.skipFirstDt = false;
+			t.removeTargetOnComplete = false;
+			var _g = 0;
+			while(_g < properties.length) {
+				var prop = properties[_g];
+				++_g;
+				switch(prop._hx_index) {
+				case 0:
+					var to = prop.to;
+					var t2 = t.entries;
+					var kind = bh_base__$TweenManager_TweenPropertyKind.KAlpha;
+					var e = bh_base_TweenPropertyEntry._pool.pop();
+					var t3;
+					if(e != null) {
+						e.kind = kind;
+						e.to = to;
+						e.from = 0.0;
+						t3 = e;
+					} else {
+						t3 = new bh_base_TweenPropertyEntry(kind,to);
+					}
+					t2.push(t3);
+					break;
+				case 1:
+					var to1 = prop.to;
+					var t4 = t.entries;
+					var kind1 = bh_base__$TweenManager_TweenPropertyKind.KX;
+					var e1 = bh_base_TweenPropertyEntry._pool.pop();
+					var t5;
+					if(e1 != null) {
+						e1.kind = kind1;
+						e1.to = to1;
+						e1.from = 0.0;
+						t5 = e1;
+					} else {
+						t5 = new bh_base_TweenPropertyEntry(kind1,to1);
+					}
+					t4.push(t5);
+					break;
+				case 2:
+					var to2 = prop.to;
+					var t6 = t.entries;
+					var kind2 = bh_base__$TweenManager_TweenPropertyKind.KY;
+					var e2 = bh_base_TweenPropertyEntry._pool.pop();
+					var t7;
+					if(e2 != null) {
+						e2.kind = kind2;
+						e2.to = to2;
+						e2.from = 0.0;
+						t7 = e2;
+					} else {
+						t7 = new bh_base_TweenPropertyEntry(kind2,to2);
+					}
+					t6.push(t7);
+					break;
+				case 3:
+					var to3 = prop.to;
+					var t8 = t.entries;
+					var kind3 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+					var e3 = bh_base_TweenPropertyEntry._pool.pop();
+					var t9;
+					if(e3 != null) {
+						e3.kind = kind3;
+						e3.to = to3;
+						e3.from = 0.0;
+						t9 = e3;
+					} else {
+						t9 = new bh_base_TweenPropertyEntry(kind3,to3);
+					}
+					t8.push(t9);
+					break;
+				case 4:
+					var to4 = prop.to;
+					var t10 = t.entries;
+					var kind4 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+					var e4 = bh_base_TweenPropertyEntry._pool.pop();
+					var t11;
+					if(e4 != null) {
+						e4.kind = kind4;
+						e4.to = to4;
+						e4.from = 0.0;
+						t11 = e4;
+					} else {
+						t11 = new bh_base_TweenPropertyEntry(kind4,to4);
+					}
+					t10.push(t11);
+					break;
+				case 5:
+					var to5 = prop.to;
+					var t12 = t.entries;
+					var kind5 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+					var e5 = bh_base_TweenPropertyEntry._pool.pop();
+					var t13;
+					if(e5 != null) {
+						e5.kind = kind5;
+						e5.to = to5;
+						e5.from = 0.0;
+						t13 = e5;
+					} else {
+						t13 = new bh_base_TweenPropertyEntry(kind5,to5);
+					}
+					t12.push(t13);
+					var t14 = t.entries;
+					var kind6 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+					var e6 = bh_base_TweenPropertyEntry._pool.pop();
+					var t15;
+					if(e6 != null) {
+						e6.kind = kind6;
+						e6.to = to5;
+						e6.from = 0.0;
+						t15 = e6;
+					} else {
+						t15 = new bh_base_TweenPropertyEntry(kind6,to5);
+					}
+					t14.push(t15);
+					break;
+				case 6:
+					var to6 = prop.to;
+					var t16 = t.entries;
+					var kind7 = bh_base__$TweenManager_TweenPropertyKind.KRotation;
+					var e7 = bh_base_TweenPropertyEntry._pool.pop();
+					var t17;
+					if(e7 != null) {
+						e7.kind = kind7;
+						e7.to = to6;
+						e7.from = 0.0;
+						t17 = e7;
+					} else {
+						t17 = new bh_base_TweenPropertyEntry(kind7,to6);
+					}
+					t16.push(t17);
+					break;
+				case 7:
+					var getter = prop.getter;
+					var setter = prop.setter;
+					var to7 = prop.to;
+					var t18 = t.entries;
+					var kind8 = bh_base__$TweenManager_TweenPropertyKind.KCustom(getter,setter);
+					var e8 = bh_base_TweenPropertyEntry._pool.pop();
+					var t19;
+					if(e8 != null) {
+						e8.kind = kind8;
+						e8.to = to7;
+						e8.from = 0.0;
+						t19 = e8;
+					} else {
+						t19 = new bh_base_TweenPropertyEntry(kind8,to7);
+					}
+					t18.push(t19);
+					break;
+				}
+			}
+			t1 = t;
+		} else {
+			t1 = new bh_base_Tween(target,duration,properties,easing);
+		}
+		t1.init();
+		this.handles.push(bh_base__$TweenManager_TweenHandle.HTween(t1));
+		return t1;
 	}
 	,createTween: function(target,duration,properties,easing) {
-		return new bh_base_Tween(target,duration,properties,easing);
+		var t = bh_base_Tween._pool.pop();
+		if(t != null) {
+			t.target = target;
+			t.duration = duration;
+			t.easing = easing;
+			t.elapsed = 0.0;
+			t.onComplete = null;
+			t.cancelled = false;
+			t.initialized = false;
+			t.skipFirstDt = false;
+			t.removeTargetOnComplete = false;
+			var _g = 0;
+			while(_g < properties.length) {
+				var prop = properties[_g];
+				++_g;
+				switch(prop._hx_index) {
+				case 0:
+					var to = prop.to;
+					var t1 = t.entries;
+					var kind = bh_base__$TweenManager_TweenPropertyKind.KAlpha;
+					var e = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp;
+					if(e != null) {
+						e.kind = kind;
+						e.to = to;
+						e.from = 0.0;
+						tmp = e;
+					} else {
+						tmp = new bh_base_TweenPropertyEntry(kind,to);
+					}
+					t1.push(tmp);
+					break;
+				case 1:
+					var to1 = prop.to;
+					var t2 = t.entries;
+					var kind1 = bh_base__$TweenManager_TweenPropertyKind.KX;
+					var e1 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp1;
+					if(e1 != null) {
+						e1.kind = kind1;
+						e1.to = to1;
+						e1.from = 0.0;
+						tmp1 = e1;
+					} else {
+						tmp1 = new bh_base_TweenPropertyEntry(kind1,to1);
+					}
+					t2.push(tmp1);
+					break;
+				case 2:
+					var to2 = prop.to;
+					var t3 = t.entries;
+					var kind2 = bh_base__$TweenManager_TweenPropertyKind.KY;
+					var e2 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp2;
+					if(e2 != null) {
+						e2.kind = kind2;
+						e2.to = to2;
+						e2.from = 0.0;
+						tmp2 = e2;
+					} else {
+						tmp2 = new bh_base_TweenPropertyEntry(kind2,to2);
+					}
+					t3.push(tmp2);
+					break;
+				case 3:
+					var to3 = prop.to;
+					var t4 = t.entries;
+					var kind3 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+					var e3 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp3;
+					if(e3 != null) {
+						e3.kind = kind3;
+						e3.to = to3;
+						e3.from = 0.0;
+						tmp3 = e3;
+					} else {
+						tmp3 = new bh_base_TweenPropertyEntry(kind3,to3);
+					}
+					t4.push(tmp3);
+					break;
+				case 4:
+					var to4 = prop.to;
+					var t5 = t.entries;
+					var kind4 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+					var e4 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp4;
+					if(e4 != null) {
+						e4.kind = kind4;
+						e4.to = to4;
+						e4.from = 0.0;
+						tmp4 = e4;
+					} else {
+						tmp4 = new bh_base_TweenPropertyEntry(kind4,to4);
+					}
+					t5.push(tmp4);
+					break;
+				case 5:
+					var to5 = prop.to;
+					var t6 = t.entries;
+					var kind5 = bh_base__$TweenManager_TweenPropertyKind.KScaleX;
+					var e5 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp5;
+					if(e5 != null) {
+						e5.kind = kind5;
+						e5.to = to5;
+						e5.from = 0.0;
+						tmp5 = e5;
+					} else {
+						tmp5 = new bh_base_TweenPropertyEntry(kind5,to5);
+					}
+					t6.push(tmp5);
+					var t7 = t.entries;
+					var kind6 = bh_base__$TweenManager_TweenPropertyKind.KScaleY;
+					var e6 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp6;
+					if(e6 != null) {
+						e6.kind = kind6;
+						e6.to = to5;
+						e6.from = 0.0;
+						tmp6 = e6;
+					} else {
+						tmp6 = new bh_base_TweenPropertyEntry(kind6,to5);
+					}
+					t7.push(tmp6);
+					break;
+				case 6:
+					var to6 = prop.to;
+					var t8 = t.entries;
+					var kind7 = bh_base__$TweenManager_TweenPropertyKind.KRotation;
+					var e7 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp7;
+					if(e7 != null) {
+						e7.kind = kind7;
+						e7.to = to6;
+						e7.from = 0.0;
+						tmp7 = e7;
+					} else {
+						tmp7 = new bh_base_TweenPropertyEntry(kind7,to6);
+					}
+					t8.push(tmp7);
+					break;
+				case 7:
+					var getter = prop.getter;
+					var setter = prop.setter;
+					var to7 = prop.to;
+					var t9 = t.entries;
+					var kind8 = bh_base__$TweenManager_TweenPropertyKind.KCustom(getter,setter);
+					var e8 = bh_base_TweenPropertyEntry._pool.pop();
+					var tmp8;
+					if(e8 != null) {
+						e8.kind = kind8;
+						e8.to = to7;
+						e8.from = 0.0;
+						tmp8 = e8;
+					} else {
+						tmp8 = new bh_base_TweenPropertyEntry(kind8,to7);
+					}
+					t9.push(tmp8);
+					break;
+				}
+			}
+			return t;
+		} else {
+			return new bh_base_Tween(target,duration,properties,easing);
+		}
 	}
 	,cancelAll: function(target) {
 		var _g = 0;
@@ -7126,9 +7793,7 @@ bh_base_TweenManager.prototype = {
 						tween1.cancel();
 					}
 				}
-				if(seq.getTargets().length == 0 || Lambda.foreach(seq.tweens,function(t) {
-					return t.cancelled;
-				})) {
+				if(bh_base_TweenManager.allCancelled(seq.tweens)) {
 					seq.cancel();
 				}
 				break;
@@ -7143,9 +7808,7 @@ bh_base_TweenManager.prototype = {
 						tween2.cancel();
 					}
 				}
-				if(group.getTargets().length == 0 || Lambda.foreach(group.tweens,function(t) {
-					return t.cancelled;
-				})) {
+				if(bh_base_TweenManager.allCancelled(group.tweens)) {
 					group.cancel();
 				}
 				break;
@@ -7176,9 +7839,7 @@ bh_base_TweenManager.prototype = {
 						tween1.cancel();
 					}
 				}
-				if(Lambda.foreach(seq.tweens,function(t) {
-					return t.cancelled;
-				})) {
+				if(bh_base_TweenManager.allCancelled(seq.tweens)) {
 					seq.cancel();
 				}
 				break;
@@ -7193,9 +7854,7 @@ bh_base_TweenManager.prototype = {
 						tween2.cancel();
 					}
 				}
-				if(Lambda.foreach(group.tweens,function(t) {
-					return t.cancelled;
-				})) {
+				if(bh_base_TweenManager.allCancelled(group.tweens)) {
 					group.cancel();
 				}
 				break;
@@ -7853,6 +8512,66 @@ bh_base_filters_ReplacePaletteShader.prototype = $extend(h3d_shader_ScreenShader
 	}
 	,__class__: bh_base_filters_ReplacePaletteShader
 });
+var haxe_Exception = function(message,previous,native) {
+	Error.call(this,message);
+	this.message = message;
+	this.__previousException = previous;
+	this.__nativeException = native != null ? native : this;
+};
+$hxClasses["haxe.Exception"] = haxe_Exception;
+haxe_Exception.__name__ = "haxe.Exception";
+haxe_Exception.caught = function(value) {
+	if(((value) instanceof haxe_Exception)) {
+		return value;
+	} else if(((value) instanceof Error)) {
+		return new haxe_Exception(value.message,null,value);
+	} else {
+		return new haxe_ValueException(value,null,value);
+	}
+};
+haxe_Exception.thrown = function(value) {
+	if(((value) instanceof haxe_Exception)) {
+		return value.get_native();
+	} else if(((value) instanceof Error)) {
+		return value;
+	} else {
+		var e = new haxe_ValueException(value);
+		return e;
+	}
+};
+haxe_Exception.__super__ = Error;
+haxe_Exception.prototype = $extend(Error.prototype,{
+	unwrap: function() {
+		return this.__nativeException;
+	}
+	,toString: function() {
+		return this.get_message();
+	}
+	,get_message: function() {
+		return this.message;
+	}
+	,get_native: function() {
+		return this.__nativeException;
+	}
+	,__class__: haxe_Exception
+});
+var bh_multianim_BuilderError = function(message,node,code) {
+	haxe_Exception.call(this,message);
+	this.node = node;
+	this.code = code;
+};
+$hxClasses["bh.multianim.BuilderError"] = bh_multianim_BuilderError;
+bh_multianim_BuilderError.__name__ = "bh.multianim.BuilderError";
+bh_multianim_BuilderError.__super__ = haxe_Exception;
+bh_multianim_BuilderError.prototype = $extend(haxe_Exception.prototype,{
+	toString: function() {
+		return this.get_message();
+	}
+	,parsedPos: function() {
+		return null;
+	}
+	,__class__: bh_multianim_BuilderError
+});
 var bh_multianim_OffsetParity = $hxEnums["bh.multianim.OffsetParity"] = { __ename__:true,__constructs__:null
 	,EVEN: {_hx_name:"EVEN",_hx_index:0,__enum__:"bh.multianim.OffsetParity",toString:$estr}
 	,ODD: {_hx_name:"ODD",_hx_index:1,__enum__:"bh.multianim.OffsetParity",toString:$estr}
@@ -7968,6 +8687,1511 @@ var bh_multianim_IUpdatable = function() { };
 $hxClasses["bh.multianim.IUpdatable"] = bh_multianim_IUpdatable;
 bh_multianim_IUpdatable.__name__ = "bh.multianim.IUpdatable";
 bh_multianim_IUpdatable.__isInterface__ = true;
+var h2d_Graphics = function(parent) {
+	this.bevel = 0.25;
+	this.my = 0.;
+	this.mx = 0.;
+	this.md = 1.;
+	this.mc = 0.;
+	this.mb = 0.;
+	this.ma = 1.;
+	h2d_Drawable.call(this,parent);
+	this.content = new h2d__$Graphics_GraphicsContent();
+	this.tile = h2d_Tile.fromColor(16777215);
+	this.clear();
+};
+$hxClasses["h2d.Graphics"] = h2d_Graphics;
+h2d_Graphics.__name__ = "h2d.Graphics";
+h2d_Graphics.__super__ = h2d_Drawable;
+h2d_Graphics.prototype = $extend(h2d_Drawable.prototype,{
+	onRemove: function() {
+		h2d_Drawable.prototype.onRemove.call(this);
+		this.clear();
+	}
+	,clear: function() {
+		this.content.clear();
+		this.tmpPoints = [];
+		this.pindex = 0;
+		this.lineSize = 0;
+		this.xMin = Infinity;
+		this.yMin = Infinity;
+		this.yMax = -Infinity;
+		this.xMax = -Infinity;
+		this.xMinSize = Infinity;
+		this.yMinSize = Infinity;
+		this.yMaxSize = -Infinity;
+		this.xMaxSize = -Infinity;
+	}
+	,getBoundsRec: function(relativeTo,out,forSize) {
+		h2d_Drawable.prototype.getBoundsRec.call(this,relativeTo,out,forSize);
+		if(this.tile != null) {
+			if(forSize) {
+				this.addBounds(relativeTo,out,this.xMinSize,this.yMinSize,this.xMaxSize - this.xMinSize,this.yMaxSize - this.yMinSize);
+			} else {
+				this.addBounds(relativeTo,out,this.xMin,this.yMin,this.xMax - this.xMin,this.yMax - this.yMin);
+			}
+		}
+	}
+	,isConvex: function(points) {
+		var first = true;
+		var sign = false;
+		var _g = 0;
+		var _g1 = points.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var p1 = points[i];
+			var p2 = points[(i + 1) % points.length];
+			var p3 = points[(i + 2) % points.length];
+			var s = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+			if(first) {
+				first = false;
+				sign = s;
+			} else if(sign != s) {
+				return false;
+			}
+		}
+		return true;
+	}
+	,flushLine: function(start) {
+		var pts = this.tmpPoints;
+		var last = pts.length - 1;
+		var prev = pts[last];
+		var p = pts[0];
+		this.content.setTile(h2d_Tile.fromColor(16777215));
+		var closed = p.x == prev.x && p.y == prev.y;
+		var count = pts.length;
+		if(!closed) {
+			var prevLast = pts[last - 1];
+			if(prevLast == null) {
+				prevLast = p;
+			}
+			var gp = new h2d_GPoint();
+			gp.load(prev.x * 2 - prevLast.x,prev.y * 2 - prevLast.y,0,0,0,0);
+			pts.push(gp);
+			var pNext = pts[1];
+			if(pNext == null) {
+				pNext = p;
+			}
+			var gp = new h2d_GPoint();
+			gp.load(p.x * 2 - pNext.x,p.y * 2 - pNext.y,0,0,0,0);
+			prev = gp;
+		} else if(p != prev) {
+			--count;
+			--last;
+			prev = pts[last];
+		}
+		var _g = 0;
+		var _g1 = count;
+		while(_g < _g1) {
+			var i = _g++;
+			var next = pts[(i + 1) % pts.length];
+			var nx1 = prev.y - p.y;
+			var ny1 = p.x - prev.x;
+			var ns1 = 1. / Math.sqrt(nx1 * nx1 + ny1 * ny1);
+			var nx2 = p.y - next.y;
+			var ny2 = next.x - p.x;
+			var ns2 = 1. / Math.sqrt(nx2 * nx2 + ny2 * ny2);
+			var nx = nx1 * ns1 + nx2 * ns2;
+			var ny = ny1 * ns1 + ny2 * ns2;
+			var ns = 1. / Math.sqrt(nx * nx + ny * ny);
+			nx *= ns;
+			ny *= ns;
+			var size = nx * nx1 * ns1 + ny * ny1 * ns1;
+			if(size < 0.1) {
+				size = 0.1;
+			}
+			var d = this.lineSize * 0.5 / size;
+			nx *= d;
+			ny *= d;
+			if(size > this.bevel) {
+				var _this = this.content;
+				var x = p.x + nx;
+				var y = p.y + ny;
+				var r = p.r;
+				var g = p.g;
+				var b = p.b;
+				var a = p.a;
+				var this1 = _this.tmp;
+				if(this1.pos == this1.array.length) {
+					var newSize = this1.array.length << 1;
+					if(newSize < 128) {
+						newSize = 128;
+					}
+					var newArray = new Float32Array(newSize);
+					newArray.set(this1.array);
+					this1.array = newArray;
+				}
+				this1.array[this1.pos++] = x;
+				var this2 = _this.tmp;
+				if(this2.pos == this2.array.length) {
+					var newSize1 = this2.array.length << 1;
+					if(newSize1 < 128) {
+						newSize1 = 128;
+					}
+					var newArray1 = new Float32Array(newSize1);
+					newArray1.set(this2.array);
+					this2.array = newArray1;
+				}
+				this2.array[this2.pos++] = y;
+				var this3 = _this.tmp;
+				if(this3.pos == this3.array.length) {
+					var newSize2 = this3.array.length << 1;
+					if(newSize2 < 128) {
+						newSize2 = 128;
+					}
+					var newArray2 = new Float32Array(newSize2);
+					newArray2.set(this3.array);
+					this3.array = newArray2;
+				}
+				this3.array[this3.pos++] = 0;
+				var this4 = _this.tmp;
+				if(this4.pos == this4.array.length) {
+					var newSize3 = this4.array.length << 1;
+					if(newSize3 < 128) {
+						newSize3 = 128;
+					}
+					var newArray3 = new Float32Array(newSize3);
+					newArray3.set(this4.array);
+					this4.array = newArray3;
+				}
+				this4.array[this4.pos++] = 0;
+				var this5 = _this.tmp;
+				if(this5.pos == this5.array.length) {
+					var newSize4 = this5.array.length << 1;
+					if(newSize4 < 128) {
+						newSize4 = 128;
+					}
+					var newArray4 = new Float32Array(newSize4);
+					newArray4.set(this5.array);
+					this5.array = newArray4;
+				}
+				this5.array[this5.pos++] = r;
+				var this6 = _this.tmp;
+				if(this6.pos == this6.array.length) {
+					var newSize5 = this6.array.length << 1;
+					if(newSize5 < 128) {
+						newSize5 = 128;
+					}
+					var newArray5 = new Float32Array(newSize5);
+					newArray5.set(this6.array);
+					this6.array = newArray5;
+				}
+				this6.array[this6.pos++] = g;
+				var this7 = _this.tmp;
+				if(this7.pos == this7.array.length) {
+					var newSize6 = this7.array.length << 1;
+					if(newSize6 < 128) {
+						newSize6 = 128;
+					}
+					var newArray6 = new Float32Array(newSize6);
+					newArray6.set(this7.array);
+					this7.array = newArray6;
+				}
+				this7.array[this7.pos++] = b;
+				var this8 = _this.tmp;
+				if(this8.pos == this8.array.length) {
+					var newSize7 = this8.array.length << 1;
+					if(newSize7 < 128) {
+						newSize7 = 128;
+					}
+					var newArray7 = new Float32Array(newSize7);
+					newArray7.set(this8.array);
+					this8.array = newArray7;
+				}
+				this8.array[this8.pos++] = a;
+				_this.bufferDirty = true;
+				var _this1 = this.content;
+				var x1 = p.x - nx;
+				var y1 = p.y - ny;
+				var r1 = p.r;
+				var g1 = p.g;
+				var b1 = p.b;
+				var a1 = p.a;
+				var this9 = _this1.tmp;
+				if(this9.pos == this9.array.length) {
+					var newSize8 = this9.array.length << 1;
+					if(newSize8 < 128) {
+						newSize8 = 128;
+					}
+					var newArray8 = new Float32Array(newSize8);
+					newArray8.set(this9.array);
+					this9.array = newArray8;
+				}
+				this9.array[this9.pos++] = x1;
+				var this10 = _this1.tmp;
+				if(this10.pos == this10.array.length) {
+					var newSize9 = this10.array.length << 1;
+					if(newSize9 < 128) {
+						newSize9 = 128;
+					}
+					var newArray9 = new Float32Array(newSize9);
+					newArray9.set(this10.array);
+					this10.array = newArray9;
+				}
+				this10.array[this10.pos++] = y1;
+				var this11 = _this1.tmp;
+				if(this11.pos == this11.array.length) {
+					var newSize10 = this11.array.length << 1;
+					if(newSize10 < 128) {
+						newSize10 = 128;
+					}
+					var newArray10 = new Float32Array(newSize10);
+					newArray10.set(this11.array);
+					this11.array = newArray10;
+				}
+				this11.array[this11.pos++] = 0;
+				var this12 = _this1.tmp;
+				if(this12.pos == this12.array.length) {
+					var newSize11 = this12.array.length << 1;
+					if(newSize11 < 128) {
+						newSize11 = 128;
+					}
+					var newArray11 = new Float32Array(newSize11);
+					newArray11.set(this12.array);
+					this12.array = newArray11;
+				}
+				this12.array[this12.pos++] = 0;
+				var this13 = _this1.tmp;
+				if(this13.pos == this13.array.length) {
+					var newSize12 = this13.array.length << 1;
+					if(newSize12 < 128) {
+						newSize12 = 128;
+					}
+					var newArray12 = new Float32Array(newSize12);
+					newArray12.set(this13.array);
+					this13.array = newArray12;
+				}
+				this13.array[this13.pos++] = r1;
+				var this14 = _this1.tmp;
+				if(this14.pos == this14.array.length) {
+					var newSize13 = this14.array.length << 1;
+					if(newSize13 < 128) {
+						newSize13 = 128;
+					}
+					var newArray13 = new Float32Array(newSize13);
+					newArray13.set(this14.array);
+					this14.array = newArray13;
+				}
+				this14.array[this14.pos++] = g1;
+				var this15 = _this1.tmp;
+				if(this15.pos == this15.array.length) {
+					var newSize14 = this15.array.length << 1;
+					if(newSize14 < 128) {
+						newSize14 = 128;
+					}
+					var newArray14 = new Float32Array(newSize14);
+					newArray14.set(this15.array);
+					this15.array = newArray14;
+				}
+				this15.array[this15.pos++] = b1;
+				var this16 = _this1.tmp;
+				if(this16.pos == this16.array.length) {
+					var newSize15 = this16.array.length << 1;
+					if(newSize15 < 128) {
+						newSize15 = 128;
+					}
+					var newArray15 = new Float32Array(newSize15);
+					newArray15.set(this16.array);
+					this16.array = newArray15;
+				}
+				this16.array[this16.pos++] = a1;
+				_this1.bufferDirty = true;
+				var pnext = i == last ? start : this.pindex + 2;
+				if(i < count - 1 || closed) {
+					var _this2 = this.content;
+					_this2.index.push(this.pindex);
+					var _this3 = _this2.state;
+					_this3.tail.count += 1;
+					_this3.totalCount += 1;
+					_this2.indexDirty = true;
+					var _this4 = this.content;
+					_this4.index.push(this.pindex + 1);
+					var _this5 = _this4.state;
+					_this5.tail.count += 1;
+					_this5.totalCount += 1;
+					_this4.indexDirty = true;
+					var _this6 = this.content;
+					_this6.index.push(pnext);
+					var _this7 = _this6.state;
+					_this7.tail.count += 1;
+					_this7.totalCount += 1;
+					_this6.indexDirty = true;
+					var _this8 = this.content;
+					_this8.index.push(this.pindex + 1);
+					var _this9 = _this8.state;
+					_this9.tail.count += 1;
+					_this9.totalCount += 1;
+					_this8.indexDirty = true;
+					var _this10 = this.content;
+					_this10.index.push(pnext);
+					var _this11 = _this10.state;
+					_this11.tail.count += 1;
+					_this11.totalCount += 1;
+					_this10.indexDirty = true;
+					var _this12 = this.content;
+					_this12.index.push(pnext + 1);
+					var _this13 = _this12.state;
+					_this13.tail.count += 1;
+					_this13.totalCount += 1;
+					_this12.indexDirty = true;
+				}
+				this.pindex += 2;
+			} else {
+				var n0x = next.x - p.x;
+				var n0y = next.y - p.y;
+				var sign = n0x * nx + n0y * ny;
+				var nnx = -ny;
+				var nny = nx;
+				var size1 = nnx * nx1 * ns1 + nny * ny1 * ns1;
+				var d1 = this.lineSize * 0.5 / size1;
+				nnx *= d1;
+				nny *= d1;
+				var pnext1 = i == last ? start : this.pindex + 3;
+				if(sign > 0) {
+					var _this14 = this.content;
+					var x2 = p.x + nx;
+					var y2 = p.y + ny;
+					var r2 = p.r;
+					var g2 = p.g;
+					var b2 = p.b;
+					var a2 = p.a;
+					var this17 = _this14.tmp;
+					if(this17.pos == this17.array.length) {
+						var newSize16 = this17.array.length << 1;
+						if(newSize16 < 128) {
+							newSize16 = 128;
+						}
+						var newArray16 = new Float32Array(newSize16);
+						newArray16.set(this17.array);
+						this17.array = newArray16;
+					}
+					this17.array[this17.pos++] = x2;
+					var this18 = _this14.tmp;
+					if(this18.pos == this18.array.length) {
+						var newSize17 = this18.array.length << 1;
+						if(newSize17 < 128) {
+							newSize17 = 128;
+						}
+						var newArray17 = new Float32Array(newSize17);
+						newArray17.set(this18.array);
+						this18.array = newArray17;
+					}
+					this18.array[this18.pos++] = y2;
+					var this19 = _this14.tmp;
+					if(this19.pos == this19.array.length) {
+						var newSize18 = this19.array.length << 1;
+						if(newSize18 < 128) {
+							newSize18 = 128;
+						}
+						var newArray18 = new Float32Array(newSize18);
+						newArray18.set(this19.array);
+						this19.array = newArray18;
+					}
+					this19.array[this19.pos++] = 0;
+					var this20 = _this14.tmp;
+					if(this20.pos == this20.array.length) {
+						var newSize19 = this20.array.length << 1;
+						if(newSize19 < 128) {
+							newSize19 = 128;
+						}
+						var newArray19 = new Float32Array(newSize19);
+						newArray19.set(this20.array);
+						this20.array = newArray19;
+					}
+					this20.array[this20.pos++] = 0;
+					var this21 = _this14.tmp;
+					if(this21.pos == this21.array.length) {
+						var newSize20 = this21.array.length << 1;
+						if(newSize20 < 128) {
+							newSize20 = 128;
+						}
+						var newArray20 = new Float32Array(newSize20);
+						newArray20.set(this21.array);
+						this21.array = newArray20;
+					}
+					this21.array[this21.pos++] = r2;
+					var this22 = _this14.tmp;
+					if(this22.pos == this22.array.length) {
+						var newSize21 = this22.array.length << 1;
+						if(newSize21 < 128) {
+							newSize21 = 128;
+						}
+						var newArray21 = new Float32Array(newSize21);
+						newArray21.set(this22.array);
+						this22.array = newArray21;
+					}
+					this22.array[this22.pos++] = g2;
+					var this23 = _this14.tmp;
+					if(this23.pos == this23.array.length) {
+						var newSize22 = this23.array.length << 1;
+						if(newSize22 < 128) {
+							newSize22 = 128;
+						}
+						var newArray22 = new Float32Array(newSize22);
+						newArray22.set(this23.array);
+						this23.array = newArray22;
+					}
+					this23.array[this23.pos++] = b2;
+					var this24 = _this14.tmp;
+					if(this24.pos == this24.array.length) {
+						var newSize23 = this24.array.length << 1;
+						if(newSize23 < 128) {
+							newSize23 = 128;
+						}
+						var newArray23 = new Float32Array(newSize23);
+						newArray23.set(this24.array);
+						this24.array = newArray23;
+					}
+					this24.array[this24.pos++] = a2;
+					_this14.bufferDirty = true;
+					var _this15 = this.content;
+					var x3 = p.x - nnx;
+					var y3 = p.y - nny;
+					var r3 = p.r;
+					var g3 = p.g;
+					var b3 = p.b;
+					var a3 = p.a;
+					var this25 = _this15.tmp;
+					if(this25.pos == this25.array.length) {
+						var newSize24 = this25.array.length << 1;
+						if(newSize24 < 128) {
+							newSize24 = 128;
+						}
+						var newArray24 = new Float32Array(newSize24);
+						newArray24.set(this25.array);
+						this25.array = newArray24;
+					}
+					this25.array[this25.pos++] = x3;
+					var this26 = _this15.tmp;
+					if(this26.pos == this26.array.length) {
+						var newSize25 = this26.array.length << 1;
+						if(newSize25 < 128) {
+							newSize25 = 128;
+						}
+						var newArray25 = new Float32Array(newSize25);
+						newArray25.set(this26.array);
+						this26.array = newArray25;
+					}
+					this26.array[this26.pos++] = y3;
+					var this27 = _this15.tmp;
+					if(this27.pos == this27.array.length) {
+						var newSize26 = this27.array.length << 1;
+						if(newSize26 < 128) {
+							newSize26 = 128;
+						}
+						var newArray26 = new Float32Array(newSize26);
+						newArray26.set(this27.array);
+						this27.array = newArray26;
+					}
+					this27.array[this27.pos++] = 0;
+					var this28 = _this15.tmp;
+					if(this28.pos == this28.array.length) {
+						var newSize27 = this28.array.length << 1;
+						if(newSize27 < 128) {
+							newSize27 = 128;
+						}
+						var newArray27 = new Float32Array(newSize27);
+						newArray27.set(this28.array);
+						this28.array = newArray27;
+					}
+					this28.array[this28.pos++] = 0;
+					var this29 = _this15.tmp;
+					if(this29.pos == this29.array.length) {
+						var newSize28 = this29.array.length << 1;
+						if(newSize28 < 128) {
+							newSize28 = 128;
+						}
+						var newArray28 = new Float32Array(newSize28);
+						newArray28.set(this29.array);
+						this29.array = newArray28;
+					}
+					this29.array[this29.pos++] = r3;
+					var this30 = _this15.tmp;
+					if(this30.pos == this30.array.length) {
+						var newSize29 = this30.array.length << 1;
+						if(newSize29 < 128) {
+							newSize29 = 128;
+						}
+						var newArray29 = new Float32Array(newSize29);
+						newArray29.set(this30.array);
+						this30.array = newArray29;
+					}
+					this30.array[this30.pos++] = g3;
+					var this31 = _this15.tmp;
+					if(this31.pos == this31.array.length) {
+						var newSize30 = this31.array.length << 1;
+						if(newSize30 < 128) {
+							newSize30 = 128;
+						}
+						var newArray30 = new Float32Array(newSize30);
+						newArray30.set(this31.array);
+						this31.array = newArray30;
+					}
+					this31.array[this31.pos++] = b3;
+					var this32 = _this15.tmp;
+					if(this32.pos == this32.array.length) {
+						var newSize31 = this32.array.length << 1;
+						if(newSize31 < 128) {
+							newSize31 = 128;
+						}
+						var newArray31 = new Float32Array(newSize31);
+						newArray31.set(this32.array);
+						this32.array = newArray31;
+					}
+					this32.array[this32.pos++] = a3;
+					_this15.bufferDirty = true;
+					var _this16 = this.content;
+					var x4 = p.x + nnx;
+					var y4 = p.y + nny;
+					var r4 = p.r;
+					var g4 = p.g;
+					var b4 = p.b;
+					var a4 = p.a;
+					var this33 = _this16.tmp;
+					if(this33.pos == this33.array.length) {
+						var newSize32 = this33.array.length << 1;
+						if(newSize32 < 128) {
+							newSize32 = 128;
+						}
+						var newArray32 = new Float32Array(newSize32);
+						newArray32.set(this33.array);
+						this33.array = newArray32;
+					}
+					this33.array[this33.pos++] = x4;
+					var this34 = _this16.tmp;
+					if(this34.pos == this34.array.length) {
+						var newSize33 = this34.array.length << 1;
+						if(newSize33 < 128) {
+							newSize33 = 128;
+						}
+						var newArray33 = new Float32Array(newSize33);
+						newArray33.set(this34.array);
+						this34.array = newArray33;
+					}
+					this34.array[this34.pos++] = y4;
+					var this35 = _this16.tmp;
+					if(this35.pos == this35.array.length) {
+						var newSize34 = this35.array.length << 1;
+						if(newSize34 < 128) {
+							newSize34 = 128;
+						}
+						var newArray34 = new Float32Array(newSize34);
+						newArray34.set(this35.array);
+						this35.array = newArray34;
+					}
+					this35.array[this35.pos++] = 0;
+					var this36 = _this16.tmp;
+					if(this36.pos == this36.array.length) {
+						var newSize35 = this36.array.length << 1;
+						if(newSize35 < 128) {
+							newSize35 = 128;
+						}
+						var newArray35 = new Float32Array(newSize35);
+						newArray35.set(this36.array);
+						this36.array = newArray35;
+					}
+					this36.array[this36.pos++] = 0;
+					var this37 = _this16.tmp;
+					if(this37.pos == this37.array.length) {
+						var newSize36 = this37.array.length << 1;
+						if(newSize36 < 128) {
+							newSize36 = 128;
+						}
+						var newArray36 = new Float32Array(newSize36);
+						newArray36.set(this37.array);
+						this37.array = newArray36;
+					}
+					this37.array[this37.pos++] = r4;
+					var this38 = _this16.tmp;
+					if(this38.pos == this38.array.length) {
+						var newSize37 = this38.array.length << 1;
+						if(newSize37 < 128) {
+							newSize37 = 128;
+						}
+						var newArray37 = new Float32Array(newSize37);
+						newArray37.set(this38.array);
+						this38.array = newArray37;
+					}
+					this38.array[this38.pos++] = g4;
+					var this39 = _this16.tmp;
+					if(this39.pos == this39.array.length) {
+						var newSize38 = this39.array.length << 1;
+						if(newSize38 < 128) {
+							newSize38 = 128;
+						}
+						var newArray38 = new Float32Array(newSize38);
+						newArray38.set(this39.array);
+						this39.array = newArray38;
+					}
+					this39.array[this39.pos++] = b4;
+					var this40 = _this16.tmp;
+					if(this40.pos == this40.array.length) {
+						var newSize39 = this40.array.length << 1;
+						if(newSize39 < 128) {
+							newSize39 = 128;
+						}
+						var newArray39 = new Float32Array(newSize39);
+						newArray39.set(this40.array);
+						this40.array = newArray39;
+					}
+					this40.array[this40.pos++] = a4;
+					_this16.bufferDirty = true;
+					var _this17 = this.content;
+					_this17.index.push(this.pindex);
+					var _this18 = _this17.state;
+					_this18.tail.count += 1;
+					_this18.totalCount += 1;
+					_this17.indexDirty = true;
+					var _this19 = this.content;
+					_this19.index.push(pnext1);
+					var _this20 = _this19.state;
+					_this20.tail.count += 1;
+					_this20.totalCount += 1;
+					_this19.indexDirty = true;
+					var _this21 = this.content;
+					_this21.index.push(this.pindex + 2);
+					var _this22 = _this21.state;
+					_this22.tail.count += 1;
+					_this22.totalCount += 1;
+					_this21.indexDirty = true;
+					var _this23 = this.content;
+					_this23.index.push(this.pindex + 2);
+					var _this24 = _this23.state;
+					_this24.tail.count += 1;
+					_this24.totalCount += 1;
+					_this23.indexDirty = true;
+					var _this25 = this.content;
+					_this25.index.push(pnext1);
+					var _this26 = _this25.state;
+					_this26.tail.count += 1;
+					_this26.totalCount += 1;
+					_this25.indexDirty = true;
+					var _this27 = this.content;
+					_this27.index.push(pnext1 + 1);
+					var _this28 = _this27.state;
+					_this28.tail.count += 1;
+					_this28.totalCount += 1;
+					_this27.indexDirty = true;
+				} else {
+					var _this29 = this.content;
+					var x5 = p.x + nnx;
+					var y5 = p.y + nny;
+					var r5 = p.r;
+					var g5 = p.g;
+					var b5 = p.b;
+					var a5 = p.a;
+					var this41 = _this29.tmp;
+					if(this41.pos == this41.array.length) {
+						var newSize40 = this41.array.length << 1;
+						if(newSize40 < 128) {
+							newSize40 = 128;
+						}
+						var newArray40 = new Float32Array(newSize40);
+						newArray40.set(this41.array);
+						this41.array = newArray40;
+					}
+					this41.array[this41.pos++] = x5;
+					var this42 = _this29.tmp;
+					if(this42.pos == this42.array.length) {
+						var newSize41 = this42.array.length << 1;
+						if(newSize41 < 128) {
+							newSize41 = 128;
+						}
+						var newArray41 = new Float32Array(newSize41);
+						newArray41.set(this42.array);
+						this42.array = newArray41;
+					}
+					this42.array[this42.pos++] = y5;
+					var this43 = _this29.tmp;
+					if(this43.pos == this43.array.length) {
+						var newSize42 = this43.array.length << 1;
+						if(newSize42 < 128) {
+							newSize42 = 128;
+						}
+						var newArray42 = new Float32Array(newSize42);
+						newArray42.set(this43.array);
+						this43.array = newArray42;
+					}
+					this43.array[this43.pos++] = 0;
+					var this44 = _this29.tmp;
+					if(this44.pos == this44.array.length) {
+						var newSize43 = this44.array.length << 1;
+						if(newSize43 < 128) {
+							newSize43 = 128;
+						}
+						var newArray43 = new Float32Array(newSize43);
+						newArray43.set(this44.array);
+						this44.array = newArray43;
+					}
+					this44.array[this44.pos++] = 0;
+					var this45 = _this29.tmp;
+					if(this45.pos == this45.array.length) {
+						var newSize44 = this45.array.length << 1;
+						if(newSize44 < 128) {
+							newSize44 = 128;
+						}
+						var newArray44 = new Float32Array(newSize44);
+						newArray44.set(this45.array);
+						this45.array = newArray44;
+					}
+					this45.array[this45.pos++] = r5;
+					var this46 = _this29.tmp;
+					if(this46.pos == this46.array.length) {
+						var newSize45 = this46.array.length << 1;
+						if(newSize45 < 128) {
+							newSize45 = 128;
+						}
+						var newArray45 = new Float32Array(newSize45);
+						newArray45.set(this46.array);
+						this46.array = newArray45;
+					}
+					this46.array[this46.pos++] = g5;
+					var this47 = _this29.tmp;
+					if(this47.pos == this47.array.length) {
+						var newSize46 = this47.array.length << 1;
+						if(newSize46 < 128) {
+							newSize46 = 128;
+						}
+						var newArray46 = new Float32Array(newSize46);
+						newArray46.set(this47.array);
+						this47.array = newArray46;
+					}
+					this47.array[this47.pos++] = b5;
+					var this48 = _this29.tmp;
+					if(this48.pos == this48.array.length) {
+						var newSize47 = this48.array.length << 1;
+						if(newSize47 < 128) {
+							newSize47 = 128;
+						}
+						var newArray47 = new Float32Array(newSize47);
+						newArray47.set(this48.array);
+						this48.array = newArray47;
+					}
+					this48.array[this48.pos++] = a5;
+					_this29.bufferDirty = true;
+					var _this30 = this.content;
+					var x6 = p.x - nx;
+					var y6 = p.y - ny;
+					var r6 = p.r;
+					var g6 = p.g;
+					var b6 = p.b;
+					var a6 = p.a;
+					var this49 = _this30.tmp;
+					if(this49.pos == this49.array.length) {
+						var newSize48 = this49.array.length << 1;
+						if(newSize48 < 128) {
+							newSize48 = 128;
+						}
+						var newArray48 = new Float32Array(newSize48);
+						newArray48.set(this49.array);
+						this49.array = newArray48;
+					}
+					this49.array[this49.pos++] = x6;
+					var this50 = _this30.tmp;
+					if(this50.pos == this50.array.length) {
+						var newSize49 = this50.array.length << 1;
+						if(newSize49 < 128) {
+							newSize49 = 128;
+						}
+						var newArray49 = new Float32Array(newSize49);
+						newArray49.set(this50.array);
+						this50.array = newArray49;
+					}
+					this50.array[this50.pos++] = y6;
+					var this51 = _this30.tmp;
+					if(this51.pos == this51.array.length) {
+						var newSize50 = this51.array.length << 1;
+						if(newSize50 < 128) {
+							newSize50 = 128;
+						}
+						var newArray50 = new Float32Array(newSize50);
+						newArray50.set(this51.array);
+						this51.array = newArray50;
+					}
+					this51.array[this51.pos++] = 0;
+					var this52 = _this30.tmp;
+					if(this52.pos == this52.array.length) {
+						var newSize51 = this52.array.length << 1;
+						if(newSize51 < 128) {
+							newSize51 = 128;
+						}
+						var newArray51 = new Float32Array(newSize51);
+						newArray51.set(this52.array);
+						this52.array = newArray51;
+					}
+					this52.array[this52.pos++] = 0;
+					var this53 = _this30.tmp;
+					if(this53.pos == this53.array.length) {
+						var newSize52 = this53.array.length << 1;
+						if(newSize52 < 128) {
+							newSize52 = 128;
+						}
+						var newArray52 = new Float32Array(newSize52);
+						newArray52.set(this53.array);
+						this53.array = newArray52;
+					}
+					this53.array[this53.pos++] = r6;
+					var this54 = _this30.tmp;
+					if(this54.pos == this54.array.length) {
+						var newSize53 = this54.array.length << 1;
+						if(newSize53 < 128) {
+							newSize53 = 128;
+						}
+						var newArray53 = new Float32Array(newSize53);
+						newArray53.set(this54.array);
+						this54.array = newArray53;
+					}
+					this54.array[this54.pos++] = g6;
+					var this55 = _this30.tmp;
+					if(this55.pos == this55.array.length) {
+						var newSize54 = this55.array.length << 1;
+						if(newSize54 < 128) {
+							newSize54 = 128;
+						}
+						var newArray54 = new Float32Array(newSize54);
+						newArray54.set(this55.array);
+						this55.array = newArray54;
+					}
+					this55.array[this55.pos++] = b6;
+					var this56 = _this30.tmp;
+					if(this56.pos == this56.array.length) {
+						var newSize55 = this56.array.length << 1;
+						if(newSize55 < 128) {
+							newSize55 = 128;
+						}
+						var newArray55 = new Float32Array(newSize55);
+						newArray55.set(this56.array);
+						this56.array = newArray55;
+					}
+					this56.array[this56.pos++] = a6;
+					_this30.bufferDirty = true;
+					var _this31 = this.content;
+					var x7 = p.x - nnx;
+					var y7 = p.y - nny;
+					var r7 = p.r;
+					var g7 = p.g;
+					var b7 = p.b;
+					var a7 = p.a;
+					var this57 = _this31.tmp;
+					if(this57.pos == this57.array.length) {
+						var newSize56 = this57.array.length << 1;
+						if(newSize56 < 128) {
+							newSize56 = 128;
+						}
+						var newArray56 = new Float32Array(newSize56);
+						newArray56.set(this57.array);
+						this57.array = newArray56;
+					}
+					this57.array[this57.pos++] = x7;
+					var this58 = _this31.tmp;
+					if(this58.pos == this58.array.length) {
+						var newSize57 = this58.array.length << 1;
+						if(newSize57 < 128) {
+							newSize57 = 128;
+						}
+						var newArray57 = new Float32Array(newSize57);
+						newArray57.set(this58.array);
+						this58.array = newArray57;
+					}
+					this58.array[this58.pos++] = y7;
+					var this59 = _this31.tmp;
+					if(this59.pos == this59.array.length) {
+						var newSize58 = this59.array.length << 1;
+						if(newSize58 < 128) {
+							newSize58 = 128;
+						}
+						var newArray58 = new Float32Array(newSize58);
+						newArray58.set(this59.array);
+						this59.array = newArray58;
+					}
+					this59.array[this59.pos++] = 0;
+					var this60 = _this31.tmp;
+					if(this60.pos == this60.array.length) {
+						var newSize59 = this60.array.length << 1;
+						if(newSize59 < 128) {
+							newSize59 = 128;
+						}
+						var newArray59 = new Float32Array(newSize59);
+						newArray59.set(this60.array);
+						this60.array = newArray59;
+					}
+					this60.array[this60.pos++] = 0;
+					var this61 = _this31.tmp;
+					if(this61.pos == this61.array.length) {
+						var newSize60 = this61.array.length << 1;
+						if(newSize60 < 128) {
+							newSize60 = 128;
+						}
+						var newArray60 = new Float32Array(newSize60);
+						newArray60.set(this61.array);
+						this61.array = newArray60;
+					}
+					this61.array[this61.pos++] = r7;
+					var this62 = _this31.tmp;
+					if(this62.pos == this62.array.length) {
+						var newSize61 = this62.array.length << 1;
+						if(newSize61 < 128) {
+							newSize61 = 128;
+						}
+						var newArray61 = new Float32Array(newSize61);
+						newArray61.set(this62.array);
+						this62.array = newArray61;
+					}
+					this62.array[this62.pos++] = g7;
+					var this63 = _this31.tmp;
+					if(this63.pos == this63.array.length) {
+						var newSize62 = this63.array.length << 1;
+						if(newSize62 < 128) {
+							newSize62 = 128;
+						}
+						var newArray62 = new Float32Array(newSize62);
+						newArray62.set(this63.array);
+						this63.array = newArray62;
+					}
+					this63.array[this63.pos++] = b7;
+					var this64 = _this31.tmp;
+					if(this64.pos == this64.array.length) {
+						var newSize63 = this64.array.length << 1;
+						if(newSize63 < 128) {
+							newSize63 = 128;
+						}
+						var newArray63 = new Float32Array(newSize63);
+						newArray63.set(this64.array);
+						this64.array = newArray63;
+					}
+					this64.array[this64.pos++] = a7;
+					_this31.bufferDirty = true;
+					var _this32 = this.content;
+					_this32.index.push(this.pindex + 1);
+					var _this33 = _this32.state;
+					_this33.tail.count += 1;
+					_this33.totalCount += 1;
+					_this32.indexDirty = true;
+					var _this34 = this.content;
+					_this34.index.push(pnext1);
+					var _this35 = _this34.state;
+					_this35.tail.count += 1;
+					_this35.totalCount += 1;
+					_this34.indexDirty = true;
+					var _this36 = this.content;
+					_this36.index.push(this.pindex + 2);
+					var _this37 = _this36.state;
+					_this37.tail.count += 1;
+					_this37.totalCount += 1;
+					_this36.indexDirty = true;
+					var _this38 = this.content;
+					_this38.index.push(this.pindex + 1);
+					var _this39 = _this38.state;
+					_this39.tail.count += 1;
+					_this39.totalCount += 1;
+					_this38.indexDirty = true;
+					var _this40 = this.content;
+					_this40.index.push(pnext1);
+					var _this41 = _this40.state;
+					_this41.tail.count += 1;
+					_this41.totalCount += 1;
+					_this40.indexDirty = true;
+					var _this42 = this.content;
+					_this42.index.push(pnext1 + 1);
+					var _this43 = _this42.state;
+					_this43.tail.count += 1;
+					_this43.totalCount += 1;
+					_this42.indexDirty = true;
+				}
+				var _this44 = this.content;
+				_this44.index.push(this.pindex);
+				var _this45 = _this44.state;
+				_this45.tail.count += 1;
+				_this45.totalCount += 1;
+				_this44.indexDirty = true;
+				var _this46 = this.content;
+				_this46.index.push(this.pindex + 1);
+				var _this47 = _this46.state;
+				_this47.tail.count += 1;
+				_this47.totalCount += 1;
+				_this46.indexDirty = true;
+				var _this48 = this.content;
+				_this48.index.push(this.pindex + 2);
+				var _this49 = _this48.state;
+				_this49.tail.count += 1;
+				_this49.totalCount += 1;
+				_this48.indexDirty = true;
+				this.pindex += 3;
+			}
+			prev = p;
+			p = next;
+		}
+		this.content.setTile(this.tile);
+	}
+	,flushFill: function(i0) {
+		if(this.tmpPoints.length < 3) {
+			return;
+		}
+		var pts = this.tmpPoints;
+		var p0 = pts[0];
+		var p1 = pts[pts.length - 1];
+		var last = null;
+		var tmp;
+		var f = p0.x - p1.x;
+		if((f < 0 ? -f : f) < 1e-9) {
+			var f = p0.y - p1.y;
+			tmp = (f < 0 ? -f : f) < 1e-9;
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			last = pts.pop();
+		}
+		if(this.isConvex(pts)) {
+			var _g = 1;
+			var _g1 = pts.length - 1;
+			while(_g < _g1) {
+				var i = _g++;
+				var _this = this.content;
+				_this.index.push(i0);
+				var _this1 = _this.state;
+				_this1.tail.count += 1;
+				_this1.totalCount += 1;
+				_this.indexDirty = true;
+				var _this2 = this.content;
+				_this2.index.push(i0 + i);
+				var _this3 = _this2.state;
+				_this3.tail.count += 1;
+				_this3.totalCount += 1;
+				_this2.indexDirty = true;
+				var _this4 = this.content;
+				_this4.index.push(i0 + i + 1);
+				var _this5 = _this4.state;
+				_this5.tail.count += 1;
+				_this5.totalCount += 1;
+				_this4.indexDirty = true;
+			}
+		} else {
+			var ear = h2d_Graphics.EARCUT;
+			if(ear == null) {
+				ear = new hxd_earcut_Earcut();
+				h2d_Graphics.EARCUT = ear;
+			}
+			var _g = 0;
+			var _g1 = ear.triangulate_h2d_GPoint(pts);
+			while(_g < _g1.length) {
+				var i = _g1[_g];
+				++_g;
+				var _this = this.content;
+				_this.index.push(i + i0);
+				var _this1 = _this.state;
+				_this1.tail.count += 1;
+				_this1.totalCount += 1;
+				_this.indexDirty = true;
+			}
+		}
+		if(last != null) {
+			pts.push(last);
+		}
+	}
+	,flush: function() {
+		if(this.tmpPoints.length == 0) {
+			return;
+		}
+		if(this.doFill) {
+			this.flushFill(this.pindex);
+			this.pindex += this.tmpPoints.length;
+			if(this.content.next()) {
+				this.pindex = 0;
+			}
+		}
+		if(this.lineSize > 0) {
+			this.flushLine(this.pindex);
+			if(this.content.next()) {
+				this.pindex = 0;
+			}
+		}
+		this.tmpPoints = [];
+	}
+	,beginFill: function(color,alpha) {
+		if(alpha == null) {
+			alpha = 1.;
+		}
+		if(color == null) {
+			color = 0;
+		}
+		this.flush();
+		this.tile = h2d_Tile.fromColor(16777215);
+		this.content.setTile(this.tile);
+		var alpha1 = alpha;
+		if(alpha1 == null) {
+			alpha1 = 1.;
+		}
+		this.curA = alpha1;
+		this.curR = (color >> 16 & 255) / 255.;
+		this.curG = (color >> 8 & 255) / 255.;
+		this.curB = (color & 255) / 255.;
+		this.doFill = true;
+	}
+	,lineStyle: function(size,color,alpha) {
+		if(alpha == null) {
+			alpha = 1.;
+		}
+		if(color == null) {
+			color = 0;
+		}
+		if(size == null) {
+			size = 0;
+		}
+		this.flush();
+		this.lineSize = size;
+		this.lineA = alpha;
+		this.lineR = (color >> 16 & 255) / 255.;
+		this.lineG = (color >> 8 & 255) / 255.;
+		this.lineB = (color & 255) / 255.;
+	}
+	,endFill: function() {
+		this.flush();
+		this.doFill = false;
+	}
+	,drawRect: function(x,y,w,h) {
+		this.flush();
+		this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
+		var x1 = x + w;
+		this.addVertex(x1,y,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y * this.mc + this.mx,x1 * this.mb + y * this.md + this.my);
+		var x1 = x + w;
+		var y1 = y + h;
+		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
+		var y1 = y + h;
+		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
+		this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
+		var e = 0.01;
+		this.tmpPoints[0].x += e;
+		this.tmpPoints[0].y += e;
+		this.tmpPoints[1].y += e;
+		this.tmpPoints[3].x += e;
+		this.tmpPoints[4].x += e;
+		this.tmpPoints[4].y += e;
+		this.flush();
+	}
+	,drawRoundedRect: function(x,y,w,h,radius,nsegments) {
+		if(nsegments == null) {
+			nsegments = 0;
+		}
+		var _gthis = this;
+		if(radius <= 0) {
+			this.drawRect(x,y,w,h);
+			return;
+		}
+		x += radius;
+		y += radius;
+		w -= radius * 2;
+		h -= radius * 2;
+		this.flush();
+		if(nsegments == 0) {
+			var f = radius * 1.57079632679489656 / 4;
+			nsegments = Math.ceil(f < 0 ? -f : f);
+		}
+		if(nsegments < 3) {
+			nsegments = 3;
+		}
+		var angle = 1.57079632679489656 / (nsegments - 1);
+		var y1 = y - radius;
+		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
+		var x1 = x + w;
+		var y1 = y - radius;
+		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
+		var x1 = x + w;
+		var _g = 0;
+		var _g1 = nsegments;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle + 4.71238898038469;
+			var x2 = x1 + Math.cos(a) * radius;
+			var y1 = y + Math.sin(a) * radius;
+			_gthis.addVertex(x2,y1,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x2 * _gthis.ma + y1 * _gthis.mc + _gthis.mx,x2 * _gthis.mb + y1 * _gthis.md + _gthis.my);
+		}
+		var x1 = x + w + radius;
+		var y1 = y + h;
+		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
+		var x1 = x + w;
+		var y1 = y + h;
+		var _g = 0;
+		var _g1 = nsegments;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle;
+			var x2 = x1 + Math.cos(a) * radius;
+			var y2 = y1 + Math.sin(a) * radius;
+			_gthis.addVertex(x2,y2,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x2 * _gthis.ma + y2 * _gthis.mc + _gthis.mx,x2 * _gthis.mb + y2 * _gthis.md + _gthis.my);
+		}
+		var y1 = y + h + radius;
+		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
+		var y1 = y + h;
+		var _g = 0;
+		var _g1 = nsegments;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle + 1.57079632679489656;
+			var x1 = x + Math.cos(a) * radius;
+			var y2 = y1 + Math.sin(a) * radius;
+			_gthis.addVertex(x1,y2,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x1 * _gthis.ma + y2 * _gthis.mc + _gthis.mx,x1 * _gthis.mb + y2 * _gthis.md + _gthis.my);
+		}
+		var x1 = x - radius;
+		this.addVertex(x1,y,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y * this.mc + this.mx,x1 * this.mb + y * this.md + this.my);
+		var _g = 0;
+		var _g1 = nsegments;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle + 3.14159265358979312;
+			var x1 = x + Math.cos(a) * radius;
+			var y1 = y + Math.sin(a) * radius;
+			_gthis.addVertex(x1,y1,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x1 * _gthis.ma + y1 * _gthis.mc + _gthis.mx,x1 * _gthis.mb + y1 * _gthis.md + _gthis.my);
+		}
+		this.flush();
+	}
+	,drawCircle: function(cx,cy,radius,nsegments) {
+		if(nsegments == null) {
+			nsegments = 0;
+		}
+		this.flush();
+		if(nsegments == 0) {
+			var f = radius * 3.14 * 2 / 4;
+			nsegments = Math.ceil(f < 0 ? -f : f);
+		}
+		if(nsegments < 3) {
+			nsegments = 3;
+		}
+		var angle = 6.28318530717958623 / nsegments;
+		var _g = 0;
+		var _g1 = nsegments + 1;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle;
+			var x = cx + Math.cos(a) * radius;
+			var y = cy + Math.sin(a) * radius;
+			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
+		}
+		this.flush();
+	}
+	,drawEllipse: function(cx,cy,radiusX,radiusY,rotationAngle,nsegments) {
+		if(nsegments == null) {
+			nsegments = 0;
+		}
+		if(rotationAngle == null) {
+			rotationAngle = 0;
+		}
+		this.flush();
+		if(nsegments == 0) {
+			var f = radiusY * 3.14 * 2 / 4;
+			nsegments = Math.ceil(f < 0 ? -f : f);
+		}
+		if(nsegments < 3) {
+			nsegments = 3;
+		}
+		var angle = 6.28318530717958623 / nsegments;
+		var x1;
+		var y1;
+		var _g = 0;
+		var _g1 = nsegments + 1;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle;
+			x1 = Math.cos(a) * Math.cos(rotationAngle) * radiusX - Math.sin(a) * Math.sin(rotationAngle) * radiusY;
+			y1 = Math.cos(rotationAngle) * Math.sin(a) * radiusY + Math.cos(a) * Math.sin(rotationAngle) * radiusX;
+			var x = cx + x1;
+			var y = cy + y1;
+			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
+		}
+		this.flush();
+	}
+	,drawPie: function(cx,cy,radius,angleStart,angleLength,nsegments) {
+		if(nsegments == null) {
+			nsegments = 0;
+		}
+		if((angleLength < 0 ? -angleLength : angleLength) >= 6.28318530717958623) {
+			this.drawCircle(cx,cy,radius,nsegments);
+			return;
+		}
+		this.flush();
+		this.addVertex(cx,cy,this.curR,this.curG,this.curB,this.curA,cx * this.ma + cy * this.mc + this.mx,cx * this.mb + cy * this.md + this.my);
+		if(nsegments == 0) {
+			var f = radius * angleLength / 4;
+			nsegments = Math.ceil(f < 0 ? -f : f);
+		}
+		if(nsegments < 3) {
+			nsegments = 3;
+		}
+		var angle = angleLength / (nsegments - 1);
+		var _g = 0;
+		var _g1 = nsegments;
+		while(_g < _g1) {
+			var i = _g++;
+			var a = i * angle + angleStart;
+			var x = cx + Math.cos(a) * radius;
+			var y = cy + Math.sin(a) * radius;
+			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
+		}
+		this.addVertex(cx,cy,this.curR,this.curG,this.curB,this.curA,cx * this.ma + cy * this.mc + this.mx,cx * this.mb + cy * this.md + this.my);
+		this.flush();
+	}
+	,addVertex: function(x,y,r,g,b,a,u,v) {
+		if(v == null) {
+			v = 0.;
+		}
+		if(u == null) {
+			u = 0.;
+		}
+		var half = this.lineSize / 2.0;
+		if(x - half < this.xMin) {
+			this.xMin = x - half;
+		}
+		if(y - half < this.yMin) {
+			this.yMin = y - half;
+		}
+		if(x + half > this.xMax) {
+			this.xMax = x + half;
+		}
+		if(y + half > this.yMax) {
+			this.yMax = y + half;
+		}
+		if(x < this.xMinSize) {
+			this.xMinSize = x;
+		}
+		if(y < this.yMinSize) {
+			this.yMinSize = y;
+		}
+		if(x > this.xMaxSize) {
+			this.xMaxSize = x;
+		}
+		if(y > this.yMaxSize) {
+			this.yMaxSize = y;
+		}
+		if(this.doFill) {
+			var _this = this.content;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = x;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = y;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = u;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = v;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = r;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = g;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = b;
+			var this1 = _this.tmp;
+			if(this1.pos == this1.array.length) {
+				var newSize = this1.array.length << 1;
+				if(newSize < 128) {
+					newSize = 128;
+				}
+				var newArray = new Float32Array(newSize);
+				newArray.set(this1.array);
+				this1.array = newArray;
+			}
+			this1.array[this1.pos++] = a;
+			_this.bufferDirty = true;
+		}
+		var gp = new h2d_GPoint();
+		gp.load(x,y,this.lineR,this.lineG,this.lineB,this.lineA);
+		this.tmpPoints.push(gp);
+	}
+	,draw: function(ctx) {
+		if(!ctx.beginDrawBatchState(this)) {
+			return;
+		}
+		this.content.doRender(ctx);
+	}
+	,sync: function(ctx) {
+		h2d_Drawable.prototype.sync.call(this,ctx);
+		this.flush();
+		this.content.flush();
+	}
+	,__class__: h2d_Graphics
+});
+var bh_multianim_KeepGraphics = function(parent) {
+	this.suppressClear = false;
+	h2d_Graphics.call(this,parent);
+};
+$hxClasses["bh.multianim.KeepGraphics"] = bh_multianim_KeepGraphics;
+bh_multianim_KeepGraphics.__name__ = "bh.multianim.KeepGraphics";
+bh_multianim_KeepGraphics.__super__ = h2d_Graphics;
+bh_multianim_KeepGraphics.prototype = $extend(h2d_Graphics.prototype,{
+	onRemove: function() {
+		this.suppressClear = true;
+		h2d_Graphics.prototype.onRemove.call(this);
+		this.suppressClear = false;
+	}
+	,clear: function() {
+		if(this.suppressClear) {
+			return;
+		}
+		h2d_Graphics.prototype.clear.call(this);
+	}
+	,__class__: bh_multianim_KeepGraphics
+});
 var bh_multianim_MacroBlendMode = $hxEnums["bh.multianim.MacroBlendMode"] = { __ename__:true,__constructs__:null
 	,MBNone: {_hx_name:"MBNone",_hx_index:0,__enum__:"bh.multianim.MacroBlendMode",toString:$estr}
 	,MBAlpha: {_hx_name:"MBAlpha",_hx_index:1,__enum__:"bh.multianim.MacroBlendMode",toString:$estr}
@@ -8598,6 +10822,8 @@ var bh_multianim_MacroManimParser = function(tokens,sourceName,resourceLoader) {
 	this.uniqueCounter = 654321;
 	this.activeDefs = null;
 	this.scopeVars = null;
+	this.activeFinals = null;
+	this.activeFinalNames = null;
 	this.customFilterRefs = [];
 };
 $hxClasses["bh.multianim.MacroManimParser"] = bh_multianim_MacroManimParser;
@@ -8737,6 +10963,155 @@ bh_multianim_MacroManimParser.tryStringToColor = function(s) {
 	}
 	return Std.parseInt(s);
 };
+bh_multianim_MacroManimParser.inferFinalLiteralType = function(expr) {
+	switch(expr._hx_index) {
+	case 1:
+		var s = expr.s;
+		if(s.toLowerCase() == "true" || s.toLowerCase() == "false") {
+			return bh_multianim_SettingValueType.SVTBool;
+		} else {
+			return bh_multianim_SettingValueType.SVTString;
+		}
+		break;
+	case 2:
+		var _g = expr.i;
+		return bh_multianim_SettingValueType.SVTInt;
+	case 5:
+		var _g = expr.f;
+		return bh_multianim_SettingValueType.SVTFloat;
+	default:
+		return null;
+	}
+};
+bh_multianim_MacroManimParser.isMetaTypeCompatibleWithFinalType = function(metaType,finalType) {
+	switch(metaType._hx_index) {
+	case 0:
+		return true;
+	case 2:
+		switch(finalType._hx_index) {
+		case 1:case 2:case 3:case 4:
+			return true;
+		default:
+			return false;
+		}
+		break;
+	case 3:
+		switch(finalType._hx_index) {
+		case 1:case 3:case 4:
+			return true;
+		default:
+			return false;
+		}
+		break;
+	case 1:case 4:
+		switch(finalType._hx_index) {
+		case 1:case 3:case 4:
+			return true;
+		default:
+			return false;
+		}
+		break;
+	}
+};
+bh_multianim_MacroManimParser.isMetaTypeCompatibleWithParam = function(metaType,paramType) {
+	switch(metaType._hx_index) {
+	case 0:
+		switch(paramType._hx_index) {
+		case 2:
+			var _g = paramType.bits;
+			return false;
+		case 11:case 12:
+			return false;
+		default:
+			return true;
+		}
+		break;
+	case 2:
+		switch(paramType._hx_index) {
+		case 0:case 1:case 5:case 6:case 7:case 8:case 10:
+			return true;
+		case 4:
+			var _g = paramType.from;
+			var _g = paramType.to;
+			return true;
+		default:
+			return false;
+		}
+		break;
+	case 3:
+		switch(paramType._hx_index) {
+		case 0:case 1:case 5:case 7:case 8:
+			return true;
+		case 4:
+			var _g = paramType.from;
+			var _g = paramType.to;
+			return true;
+		default:
+			return false;
+		}
+		break;
+	case 1:case 4:
+		switch(paramType._hx_index) {
+		case 0:case 1:case 5:case 7:case 8:case 10:
+			return true;
+		case 4:
+			var _g = paramType.from;
+			var _g = paramType.to;
+			return true;
+		default:
+			return false;
+		}
+		break;
+	}
+};
+bh_multianim_MacroManimParser.settingValueTypeName = function(t) {
+	switch(t._hx_index) {
+	case 0:
+		return "string";
+	case 1:
+		return "int";
+	case 2:
+		return "float";
+	case 3:
+		return "bool";
+	case 4:
+		return "color";
+	}
+};
+bh_multianim_MacroManimParser.definitionTypeName = function(t) {
+	switch(t._hx_index) {
+	case 0:
+		return "hexDirection";
+	case 1:
+		return "gridDirection";
+	case 2:
+		var _g = t.bits;
+		return "flags";
+	case 3:
+		var _g = t.values;
+		return "enum";
+	case 4:
+		var _g = t.from;
+		var _g = t.to;
+		return "range";
+	case 5:
+		return "int";
+	case 6:
+		return "float";
+	case 7:
+		return "bool";
+	case 8:
+		return "uint";
+	case 9:
+		return "string";
+	case 10:
+		return "color";
+	case 11:
+		return "array";
+	case 12:
+		return "tile";
+	}
+};
 bh_multianim_MacroManimParser.tryMatchEasingName = function(s) {
 	switch(s.toLowerCase()) {
 	case "easeinback":
@@ -8815,6 +11190,41 @@ bh_multianim_MacroManimParser.prototype = {
 		var available = allVars.length > 0 ? allVars.join(", ") : "(none)";
 		this.error("unknown variable $" + name + ". Available: " + available);
 	}
+	,validateLoopVarName: function(name,currentDefs,kind) {
+		if(currentDefs != null && Object.prototype.hasOwnProperty.call(currentDefs.h,name)) {
+			this.error("" + kind + " loop variable $" + name + " shadows parameter $" + name + " of the enclosing programmable — pick a different name");
+		}
+		if(this.scopeVars != null && this.scopeVars.indexOf(name) >= 0) {
+			this.error("" + kind + " loop variable $" + name + " shadows an outer $" + name + " already in scope — pick a different name");
+		}
+	}
+	,iteratorOutputVars: function(rt) {
+		switch(rt._hx_index) {
+		case 2:
+			var _g = rt.arrayName;
+			var valueVar = rt.valueVariableName;
+			return [valueVar];
+		case 4:
+			var _g = rt.animFilename;
+			var _g = rt.animationName;
+			var _g = rt.selector;
+			var bitmapVar = rt.bitmapVarName;
+			return [bitmapVar];
+		case 5:
+			var _g = rt.sheetName;
+			var _g = rt.tileFilter;
+			var bitmapVar = rt.bitmapVarName;
+			var tilenameVar = rt.tilenameVarName;
+			if(tilenameVar != null) {
+				return [bitmapVar,tilenameVar];
+			} else {
+				return [bitmapVar];
+			}
+			break;
+		default:
+			return [];
+		}
+	}
 	,advance: function() {
 		var t = this.tokens[this.tpos];
 		if(this.tpos < this.tokens.length - 1) {
@@ -8883,290 +11293,90 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		return f;
 	}
-	,parseNextExpression: function(e1,t) {
-		var _g = this.tokens[this.tpos].type;
-		switch(_g._hx_index) {
-		case 16:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpMul,tmp);
-		case 17:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpMod,tmp);
-		case 18:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpAdd,tmp);
-		case 19:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpDiv,tmp);
-		case 20:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpSub,tmp);
-		case 22:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpLess,tmp);
-		case 23:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpGreater,tmp);
-		case 24:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpLessEq,tmp);
-		case 25:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpGreaterEq,tmp);
-		case 26:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpNotEq,tmp);
-		case 27:
-			this.advance();
-			var tmp;
-			switch(t._hx_index) {
-			case 0:
-				tmp = this.parseIntegerOrReference();
-				break;
-			case 1:
-				tmp = this.parseFloatOrReference();
-				break;
-			case 2:
-				tmp = this.parseStringOrReference();
-				break;
-			case 3:
-				tmp = this.parseAnything();
-				break;
-			}
-			return this.binop(e1,bh_multianim_RvOp.OpEq,tmp);
-		case 32:
-			var s = _g.s;
-			if(bh_multianim_MacroManimParser.isKeyword(s,"div")) {
-				this.advance();
-				var tmp;
-				switch(t._hx_index) {
-				case 0:
-					tmp = this.parseIntegerOrReference();
-					break;
-				case 1:
-					tmp = this.parseFloatOrReference();
-					break;
-				case 2:
-					tmp = this.parseStringOrReference();
-					break;
-				case 3:
-					tmp = this.parseAnything();
-					break;
-				}
-				return this.binop(e1,bh_multianim_RvOp.OpIntegerDiv,tmp);
-			} else {
-				return e1;
-			}
+	,parseExpression: function(minBp,t) {
+		var tmp;
+		switch(t._hx_index) {
+		case 0:
+			tmp = this.parseAtomInt();
 			break;
-		default:
-			return e1;
+		case 1:
+			tmp = this.parseAtomFloat();
+			break;
+		case 2:
+			tmp = this.parseAtomString();
+			break;
+		case 3:
+			tmp = this.parseAtomAny();
+			break;
+		}
+		return this.parseExpressionFromAtom(tmp,minBp,t);
+	}
+	,parseExpressionFromAtom: function(lhs,minBp,t) {
+		while(true) {
+			var token = this.tokens[this.tpos].type;
+			var bp;
+			switch(token._hx_index) {
+			case 16:
+				bp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMul};
+				break;
+			case 17:
+				bp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMod};
+				break;
+			case 18:
+				bp = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpAdd};
+				break;
+			case 19:
+				bp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpDiv};
+				break;
+			case 20:
+				bp = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpSub};
+				break;
+			case 22:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLess};
+				break;
+			case 23:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreater};
+				break;
+			case 24:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLessEq};
+				break;
+			case 25:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreaterEq};
+				break;
+			case 26:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpNotEq};
+				break;
+			case 27:
+				bp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpEq};
+				break;
+			case 32:
+				var s = token.s;
+				bp = bh_multianim_MacroManimParser.isKeyword(s,"div") ? { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpIntegerDiv} : null;
+				break;
+			default:
+				bp = null;
+			}
+			if(bp == null || bp.lbp < minBp) {
+				return lhs;
+			}
+			this.advance();
+			var rhs = this.parseExpression(bp.rbp,t);
+			lhs = bh_multianim_ReferenceableValue.EBinop(bp.op,lhs,rhs);
 		}
 	}
 	,parseTernaryExpr: function(t) {
 		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 		var cond = this.parseAnything();
 		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-		var ifTrue;
-		switch(t._hx_index) {
-		case 0:
-			ifTrue = this.parseIntegerOrReference();
-			break;
-		case 1:
-			ifTrue = this.parseFloatOrReference();
-			break;
-		case 2:
-			ifTrue = this.parseStringOrReference();
-			break;
-		case 3:
-			ifTrue = this.parseAnything();
-			break;
-		}
+		var ifTrue = this.parseExpression(0,t);
 		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-		var ifFalse;
-		switch(t._hx_index) {
-		case 0:
-			ifFalse = this.parseIntegerOrReference();
-			break;
-		case 1:
-			ifFalse = this.parseFloatOrReference();
-			break;
-		case 2:
-			ifFalse = this.parseStringOrReference();
-			break;
-		case 3:
-			ifFalse = this.parseAnything();
-			break;
-		}
+		var ifFalse = this.parseExpression(0,t);
 		return bh_multianim_ReferenceableValue.RVTernary(cond,ifTrue,ifFalse);
 	}
 	,parseRefExpr: function(s,idxType) {
 		this.validateRef(s);
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
-			var idx;
-			switch(idxType._hx_index) {
-			case 0:
-				idx = this.parseIntegerOrReference();
-				break;
-			case 1:
-				idx = this.parseFloatOrReference();
-				break;
-			case 2:
-				idx = this.parseStringOrReference();
-				break;
-			case 3:
-				idx = this.parseAnything();
-				break;
-			}
+			var idx = this.parseExpression(0,idxType);
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
 			return bh_multianim_ReferenceableValue.RVElementOfArray(s,idx);
 		}
@@ -9178,21 +11388,7 @@ bh_multianim_MacroManimParser.prototype = {
 	,parseUnaryMinusRef: function(s,idxType) {
 		this.validateRef(s);
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
-			var idx;
-			switch(idxType._hx_index) {
-			case 0:
-				idx = this.parseIntegerOrReference();
-				break;
-			case 1:
-				idx = this.parseFloatOrReference();
-				break;
-			case 2:
-				idx = this.parseStringOrReference();
-				break;
-			case 3:
-				idx = this.parseAnything();
-				break;
-			}
+			var idx = this.parseExpression(0,idxType);
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
 			return bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVElementOfArray(s,idx));
 		}
@@ -9201,38 +11397,38 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		return bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVReference(s));
 	}
-	,parseIntegerOrReference: function() {
+	,parseAtomInt: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
 		case 1:
 			this.advance();
-			var e = this.parseIntegerOrReference();
+			var e = this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EInt);
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVParenthesis(e),bh_multianim__$MacroManimParser_ExprType.EInt);
+			return bh_multianim_ReferenceableValue.RVParenthesis(e);
 		case 10:
 			this.advance();
-			return this.parseNextExpression(this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EInt);
+			return this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EInt);
 		case 20:
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
 			case 1:
 				this.advance();
-				var e = this.parseIntegerOrReference();
+				var e = this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EInt);
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EInt);
+				return bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e));
 			case 29:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EInt);
+				return bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n));
 			case 31:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EInt);
+				return bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt("0x" + n));
 			case 34:
 				var s = _g1.s;
 				this.advance();
-				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EInt);
+				return this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt);
 			default:
 				return this.error("expected value after unary minus");
 			}
@@ -9240,11 +11436,11 @@ bh_multianim_MacroManimParser.prototype = {
 		case 29:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EInt);
+			return bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n));
 		case 31:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EInt);
+			return bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n));
 		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
@@ -9257,43 +11453,43 @@ bh_multianim_MacroManimParser.prototype = {
 		case 34:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EInt);
+			return this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt);
 		default:
 			return this.error("expected integer or expression, got " + Std.string(this.tokens[this.tpos].type));
 		}
 	}
-	,parseFloatOrReference: function() {
+	,parseAtomFloat: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
 		case 1:
 			this.advance();
-			var e = this.parseFloatOrReference();
+			var e = this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EFloat);
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVParenthesis(e),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			return bh_multianim_ReferenceableValue.RVParenthesis(e);
 		case 10:
 			this.advance();
-			return this.parseNextExpression(this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EFloat),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			return this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EFloat);
 		case 20:
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
 			switch(_g1._hx_index) {
 			case 1:
 				this.advance();
-				var e = this.parseFloatOrReference();
+				var e = this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EFloat);
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+				return bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e));
 			case 29:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+				return bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n));
 			case 30:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+				return bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n));
 			case 34:
 				var s = _g1.s;
 				this.advance();
-				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EFloat);
+				return this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EInt);
 			default:
 				return this.error("expected value after unary minus");
 			}
@@ -9301,11 +11497,11 @@ bh_multianim_MacroManimParser.prototype = {
 		case 29:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			return bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n));
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			return bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n));
 		case 32:
 			var s = _g.s;
 			if(bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
@@ -9318,7 +11514,7 @@ bh_multianim_MacroManimParser.prototype = {
 		case 34:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt),bh_multianim__$MacroManimParser_ExprType.EFloat);
+			return this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt);
 		default:
 			return this.error("expected float or expression, got " + Std.string(this.tokens[this.tpos].type));
 		}
@@ -9383,17 +11579,17 @@ bh_multianim_MacroManimParser.prototype = {
 			return value;
 		}
 	}
-	,parseStringOrReference: function() {
+	,parseAtomString: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
 		case 1:
 			this.advance();
 			var e = this.parseAnything();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVParenthesis(e),bh_multianim__$MacroManimParser_ExprType.EString);
+			return bh_multianim_ReferenceableValue.RVParenthesis(e);
 		case 10:
 			this.advance();
-			return this.parseNextExpression(this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EString),bh_multianim__$MacroManimParser_ExprType.EString);
+			return this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EString);
 		case 20:
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
@@ -9401,11 +11597,11 @@ bh_multianim_MacroManimParser.prototype = {
 			case 29:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("-" + n),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString("-" + n);
 			case 30:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("-" + n),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString("-" + n);
 			default:
 				return this.error("expected number after minus in string context");
 			}
@@ -9417,9 +11613,9 @@ bh_multianim_MacroManimParser.prototype = {
 			if(_g1._hx_index == 32) {
 				var s2 = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n + s2),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString(n + s2);
 			} else {
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString(n);
 			}
 			break;
 		case 30:
@@ -9429,15 +11625,15 @@ bh_multianim_MacroManimParser.prototype = {
 			if(_g1._hx_index == 32) {
 				var s2 = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n + s2),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString(n + s2);
 			} else {
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(n),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString(n);
 			}
 			break;
 		case 31:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString("0x" + n),bh_multianim__$MacroManimParser_ExprType.EString);
+			return bh_multianim_ReferenceableValue.RVString("0x" + n);
 		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
@@ -9447,13 +11643,13 @@ bh_multianim_MacroManimParser.prototype = {
 			} else {
 				var s = _g1;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVString(s);
 			}
 			break;
 		case 33:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
+			return bh_multianim_ReferenceableValue.RVString(s);
 		case 34:
 			var s = _g.s;
 			this.advance();
@@ -9461,25 +11657,25 @@ bh_multianim_MacroManimParser.prototype = {
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen)) {
 				var idx = this.parseIntegerOrReference();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed);
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVElementOfArray(s,idx),bh_multianim__$MacroManimParser_ExprType.EString);
+				return bh_multianim_ReferenceableValue.RVElementOfArray(s,idx);
 			}
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVReference(s),bh_multianim__$MacroManimParser_ExprType.EString);
+			return bh_multianim_ReferenceableValue.RVReference(s);
 		case 35:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EString);
+			return bh_multianim_ReferenceableValue.RVString(s);
 		default:
 			return this.error("expected string or reference, got " + Std.string(this.tokens[this.tpos].type));
 		}
 	}
-	,parseAnything: function() {
+	,parseAtomAny: function() {
 		var _g = this.tokens[this.tpos].type;
 		switch(_g._hx_index) {
 		case 1:
 			this.advance();
 			var e = this.parseAnything();
 			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVParenthesis(e),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVParenthesis(e);
 		case 3:
 			this.advance();
 			var arr = [];
@@ -9492,7 +11688,7 @@ bh_multianim_MacroManimParser.prototype = {
 			return bh_multianim_ReferenceableValue.RVArray(arr);
 		case 10:
 			this.advance();
-			return this.parseNextExpression(this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EAny),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return this.parseTernaryExpr(bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 20:
 			this.advance();
 			var _g1 = this.tokens[this.tpos].type;
@@ -9501,23 +11697,23 @@ bh_multianim_MacroManimParser.prototype = {
 				this.advance();
 				var e = this.parseAnything();
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e)),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.EUnaryOp(bh_multianim_RvUnaryOp.OpNeg,bh_multianim_ReferenceableValue.RVParenthesis(e));
 			case 29:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n));
 			case 30:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n));
 			case 31:
 				var n = _g1.s;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt("0x" + n));
 			case 34:
 				var s = _g1.s;
 				this.advance();
-				return this.parseNextExpression(this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EAny),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return this.parseUnaryMinusRef(s,bh_multianim__$MacroManimParser_ExprType.EAny);
 			default:
 				return this.error("expected value after unary minus");
 			}
@@ -9525,15 +11721,15 @@ bh_multianim_MacroManimParser.prototype = {
 		case 29:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n));
 		case 30:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n));
 		case 31:
 			var n = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n)),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVInteger(this.stringToInt("0x" + n));
 		case 32:
 			var _g1 = _g.s;
 			var s = _g1;
@@ -9543,7 +11739,7 @@ bh_multianim_MacroManimParser.prototype = {
 			} else {
 				var s = _g1;
 				this.advance();
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.RVString(s);
 			}
 			break;
 		case 33:
@@ -9551,60 +11747,32 @@ bh_multianim_MacroManimParser.prototype = {
 			var c = bh_multianim_MacroManimParser.tryStringToColor("#" + s);
 			this.advance();
 			if(c != null) {
-				return this.parseNextExpression(bh_multianim_ReferenceableValue.RVInteger(c),bh_multianim__$MacroManimParser_ExprType.EAny);
+				return bh_multianim_ReferenceableValue.RVInteger(c);
 			}
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVString(s);
 		case 34:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EAny),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EAny);
 		case 35:
 			var s = _g.s;
 			this.advance();
-			return this.parseNextExpression(bh_multianim_ReferenceableValue.RVString(s),bh_multianim__$MacroManimParser_ExprType.EAny);
+			return bh_multianim_ReferenceableValue.RVString(s);
 		default:
 			return this.error("expected value or expression, got " + Std.string(this.tokens[this.tpos].type));
 		}
 	}
-	,binop: function(e1,op,e2) {
-		if(e2._hx_index == 16) {
-			var _g = e2.op;
-			var _g1 = e2.e1;
-			var _g2 = e2.e2;
-			switch(_g._hx_index) {
-			case 0:case 2:
-				switch(op._hx_index) {
-				case 0:case 2:
-					var op2 = _g;
-					var e4 = _g2;
-					var e3 = _g1;
-					return bh_multianim_ReferenceableValue.EBinop(op2,this.binop(e1,op,e3),e4);
-				case 1:case 3:case 4:case 5:
-					var op2 = _g;
-					var e4 = _g2;
-					var e3 = _g1;
-					return bh_multianim_ReferenceableValue.EBinop(op2,this.binop(e1,op,e3),e4);
-				default:
-					return bh_multianim_ReferenceableValue.EBinop(op,e1,e2);
-				}
-				break;
-			case 1:case 3:case 4:case 5:
-				switch(op._hx_index) {
-				case 1:case 3:case 4:case 5:
-					var op2 = _g;
-					var e4 = _g2;
-					var e3 = _g1;
-					return bh_multianim_ReferenceableValue.EBinop(op2,this.binop(e1,op,e3),e4);
-				default:
-					return bh_multianim_ReferenceableValue.EBinop(op,e1,e2);
-				}
-				break;
-			default:
-				return bh_multianim_ReferenceableValue.EBinop(op,e1,e2);
-			}
-		} else {
-			return bh_multianim_ReferenceableValue.EBinop(op,e1,e2);
-		}
+	,parseIntegerOrReference: function() {
+		return this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EInt);
+	}
+	,parseFloatOrReference: function() {
+		return this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EFloat);
+	}
+	,parseStringOrReference: function() {
+		return this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EString);
+	}
+	,parseAnything: function() {
+		return this.parseExpression(0,bh_multianim__$MacroManimParser_ExprType.EAny);
 	}
 	,parseCallback: function() {
 		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
@@ -9786,7 +11954,7 @@ bh_multianim_MacroManimParser.prototype = {
 				coord = this.parseCoordinateMethodChain(s);
 			} else {
 				this.validateRef(s);
-				var x = this.parseNextExpression(bh_multianim_ReferenceableValue.RVReference(s),bh_multianim__$MacroManimParser_ExprType.EInt);
+				var x = this.parseExpressionFromAtom(bh_multianim_ReferenceableValue.RVReference(s),0,bh_multianim__$MacroManimParser_ExprType.EInt);
 				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 				var y = this.parseIntegerOrReference();
 				coord = bh_multianim_Coordinates.OFFSET(x,y);
@@ -10791,6 +12959,9 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			if(!Object.prototype.hasOwnProperty.call(defs.h,paramName) && (this.scopeVars == null || this.scopeVars.indexOf(paramName) == -1)) {
 				this.error("conditional parameter \"" + paramName + "\" does not have definition");
+			}
+			if(this.activeFinalNames != null && this.activeFinalNames.indexOf(paramName) != -1) {
+				this.error("conditional key \"" + paramName + "\" is a @final constant — @final cannot be used as a conditional key (no runtime value slot). Use a programmable parameter instead.");
 			}
 			if(Object.prototype.hasOwnProperty.call(result.h,paramName)) {
 				this.error("conditional parameter \"" + paramName + "\" already defined");
@@ -11999,12 +14170,22 @@ bh_multianim_MacroManimParser.prototype = {
 			nameStr = n;
 			break;
 		}
-		return { pos : bh_multianim_Coordinates.ZERO, scale : scale, rotation : rotation, alpha : alpha, tint : tint, layer : layerIndex, gridCoordinateSystem : null, hexCoordinateSystem : null, namedCoordinateSystems : null, blendMode : null, filter : null, parent : parent, updatableName : updatableName, type : type, children : [], conditionals : conditional, uniqueNodeName : this.generateUniqueName(this.uniqueCounter,nameStr,Std.string(type)), settings : null, transitions : null, flowProperties : null};
+		var tmp;
+		if(type._hx_index == 34) {
+			var _g = type.paramName;
+			var _g = type.arms;
+			tmp = $hxEnums[type.__enum__].__constructs__[type._hx_index]._hx_name;
+		} else {
+			tmp = Std.string(type);
+		}
+		return { pos : bh_multianim_Coordinates.ZERO, scale : scale, rotation : rotation, alpha : alpha, tint : tint, layer : layerIndex, gridCoordinateSystem : null, hexCoordinateSystem : null, namedCoordinateSystems : null, blendMode : null, filter : null, parent : parent, updatableName : updatableName, type : type, children : [], conditionals : conditional, uniqueNodeName : this.generateUniqueName(this.uniqueCounter,nameStr,tmp), settings : null, transitions : null, flowProperties : null, cachedRelevantParamRefs : null};
 	}
 	,parseNode: function(updatableName,parent,currentDefs) {
 		if(parent == null) {
 			this.activeDefs = null;
 			this.scopeVars = null;
+			this.activeFinals = null;
+			this.activeFinalNames = null;
 			this.namedElements = null;
 			this.namedCoordSystems = null;
 		}
@@ -12024,6 +14205,8 @@ bh_multianim_MacroManimParser.prototype = {
 		var slotSavedCurrentDefs = null;
 		var slotSavedActiveDefs = null;
 		var slotSavedScopeVars = null;
+		var slotSavedActiveFinals = null;
+		var slotSavedActiveFinalNames = null;
 		var slotSavedNamedElements = null;
 		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TAt)) {
 			var atCount = 0;
@@ -12130,6 +14313,9 @@ bh_multianim_MacroManimParser.prototype = {
 															this.advance();
 															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 															var switchParam = this.expectIdentifierOrString();
+															if(this.activeFinalNames != null && this.activeFinalNames.indexOf(switchParam) != -1) {
+																this.error("@switch key \"" + switchParam + "\" is a @final constant — @final cannot be used as a @switch key (no runtime value slot). Use a programmable parameter instead.");
+															}
 															var switchDef = currentDefs.h[switchParam];
 															if(switchDef == null) {
 																this.error("@switch parameter \"" + switchParam + "\" does not have definition");
@@ -12197,6 +14383,13 @@ bh_multianim_MacroManimParser.prototype = {
 																	if(this.scopeVars != null) {
 																		this.scopeVars.push(name);
 																	}
+																	if(this.activeFinalNames != null) {
+																		this.activeFinalNames.push(name);
+																	}
+																	var finalLiteralType = bh_multianim_MacroManimParser.inferFinalLiteralType(expr);
+																	if(finalLiteralType != null && this.activeFinals != null) {
+																		this.activeFinals.h[name] = finalLiteralType;
+																	}
 																	return this.createNode(bh_multianim_NodeType.FINAL_VAR(name,expr),parent,bh_multianim_NodeConditionalValues.NoConditional,null,null,null,null,-1,bh_multianim_UpdatableNameType.UNTObject(name));
 																} else {
 																	break _hx_loop1;
@@ -12230,8 +14423,20 @@ bh_multianim_MacroManimParser.prototype = {
 			if(parent.children.length == 0) {
 				this.error("@else/@default requires a preceding sibling with a @() conditional");
 			}
-			if(parent.children[parent.children.length - 1].conditionals._hx_index == 3) {
+			var _g = parent.children[parent.children.length - 1].conditionals;
+			switch(_g._hx_index) {
+			case 1:
+				if(_g.values == null) {
+					this.error("@else/@default cannot follow a terminal @else or @default — the preceding arm is unconditional");
+				}
+				break;
+			case 2:
+				this.error("@else/@default cannot follow a terminal @else or @default — the preceding arm is unconditional");
+				break;
+			case 3:
 				this.error("@else/@default: previous sibling has no conditional");
+				break;
+			default:
 			}
 			break;
 		case 2:
@@ -12241,8 +14446,20 @@ bh_multianim_MacroManimParser.prototype = {
 			if(parent.children.length == 0) {
 				this.error("@else/@default requires a preceding sibling with a @() conditional");
 			}
-			if(parent.children[parent.children.length - 1].conditionals._hx_index == 3) {
+			var _g = parent.children[parent.children.length - 1].conditionals;
+			switch(_g._hx_index) {
+			case 1:
+				if(_g.values == null) {
+					this.error("@else/@default cannot follow a terminal @else or @default — the preceding arm is unconditional");
+				}
+				break;
+			case 2:
+				this.error("@else/@default cannot follow a terminal @else or @default — the preceding arm is unconditional");
+				break;
+			case 3:
 				this.error("@else/@default: previous sibling has no conditional");
+				break;
+			default:
 			}
 			break;
 		default:
@@ -12789,11 +15006,15 @@ bh_multianim_MacroManimParser.prototype = {
 														slotSavedCurrentDefs = currentDefs;
 														slotSavedActiveDefs = this.activeDefs;
 														slotSavedScopeVars = this.scopeVars;
+														slotSavedActiveFinals = this.activeFinals;
+														slotSavedActiveFinalNames = this.activeFinalNames;
 														slotSavedNamedElements = this.namedElements;
 														slotScopeSaved = true;
 														currentDefs = parsed.defs;
 														this.activeDefs = parsed.defs;
 														this.scopeVars = [];
+														this.activeFinals = new haxe_ds_StringMap();
+														this.activeFinalNames = [];
 														this.namedElements = [];
 														node = this.createNode(bh_multianim_NodeType.SLOT(parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 													} else {
@@ -12996,6 +15217,8 @@ bh_multianim_MacroManimParser.prototype = {
 																	currentDefs = parsed.defs;
 																	this.activeDefs = parsed.defs;
 																	this.scopeVars = [];
+																	this.activeFinals = new haxe_ds_StringMap();
+																	this.activeFinalNames = [];
 																	this.namedElements = [];
 																	node = this.createNode(bh_multianim_NodeType.PROGRAMMABLE(isTileGroup,parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																} else {
@@ -13158,6 +15381,40 @@ bh_multianim_MacroManimParser.prototype = {
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 																							var repeatTypeY = this.parseRepeatIterator(currentDefs);
 																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																							this.validateLoopVarName(varNameX,currentDefs,"repeatable2d");
+																							this.validateLoopVarName(varNameY,currentDefs,"repeatable2d");
+																							if(varNameX == varNameY) {
+																								this.error("repeatable2d loop variables must be distinct, got $" + varNameX + " twice");
+																							}
+																							var iterVarsX = this.iteratorOutputVars(repeatTypeX);
+																							var iterVarsY = this.iteratorOutputVars(repeatTypeY);
+																							var _g = 0;
+																							while(_g < iterVarsX.length) {
+																								var v = iterVarsX[_g];
+																								++_g;
+																								this.validateLoopVarName(v,currentDefs,"repeatable2d iterator");
+																								if(v == varNameX || v == varNameY) {
+																									this.error("repeatable2d iterator output $" + v + " collides with loop variable $" + v);
+																								}
+																							}
+																							var _g = 0;
+																							while(_g < iterVarsY.length) {
+																								var v = iterVarsY[_g];
+																								++_g;
+																								this.validateLoopVarName(v,currentDefs,"repeatable2d iterator");
+																								if(v == varNameX || v == varNameY) {
+																									this.error("repeatable2d iterator output $" + v + " collides with loop variable $" + v);
+																								}
+																								if(iterVarsX.indexOf(v) >= 0) {
+																									this.error("repeatable2d iterator outputs collide on $" + v);
+																								}
+																							}
+																							if(iterVarsX.length == 2 && iterVarsX[0] == iterVarsX[1]) {
+																								this.error("repeatable2d X iterator outputs collide on $" + iterVarsX[0]);
+																							}
+																							if(iterVarsY.length == 2 && iterVarsY[0] == iterVarsY[1]) {
+																								this.error("repeatable2d Y iterator outputs collide on $" + iterVarsY[0]);
+																							}
 																							node = this.createNode(bh_multianim_NodeType.REPEAT2D(varNameX,varNameY,repeatTypeX,repeatTypeY),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																						} else {
 																							var s = _g1;
@@ -13168,6 +15425,20 @@ bh_multianim_MacroManimParser.prototype = {
 																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 																								var repeatType = this.parseRepeatIterator(currentDefs);
 																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																								this.validateLoopVarName(varName,currentDefs,"repeatable");
+																								var iterVars = this.iteratorOutputVars(repeatType);
+																								var _g = 0;
+																								while(_g < iterVars.length) {
+																									var v = iterVars[_g];
+																									++_g;
+																									this.validateLoopVarName(v,currentDefs,"repeatable iterator");
+																									if(v == varName) {
+																										this.error("repeatable iterator output $" + v + " collides with loop variable $" + varName);
+																									}
+																								}
+																								if(iterVars.length == 2 && iterVars[0] == iterVars[1]) {
+																									this.error("repeatable iterator outputs collide on $" + iterVars[0]);
+																								}
 																								node = this.createNode(bh_multianim_NodeType.REPEAT(varName,repeatType),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																							} else {
 																								var s = _g1;
@@ -13664,13 +15935,29 @@ bh_multianim_MacroManimParser.prototype = {
 					}
 					break;
 				case 20:
-					var _g1 = _g.repeatTypeX;
-					var _g1 = _g.repeatTypeY;
 					var varNameX = _g.varNameX;
 					var varNameY = _g.varNameY;
+					var repeatTypeX = _g.repeatTypeX;
+					var repeatTypeY = _g.repeatTypeY;
 					this.scopeVars.push(varNameX);
 					this.scopeVars.push(varNameY);
 					loopVarsToPop = 2;
+					var _g = 0;
+					var _g1 = this.iteratorOutputVars(repeatTypeX);
+					while(_g < _g1.length) {
+						var v = _g1[_g];
+						++_g;
+						this.scopeVars.push(v);
+						++loopVarsToPop;
+					}
+					var _g = 0;
+					var _g1 = this.iteratorOutputVars(repeatTypeY);
+					while(_g < _g1.length) {
+						var v = _g1[_g];
+						++_g;
+						this.scopeVars.push(v);
+						++loopVarsToPop;
+					}
 					break;
 				default:
 				}
@@ -13686,6 +15973,8 @@ bh_multianim_MacroManimParser.prototype = {
 				currentDefs = slotSavedCurrentDefs;
 				this.activeDefs = slotSavedActiveDefs;
 				this.scopeVars = slotSavedScopeVars;
+				this.activeFinals = slotSavedActiveFinals;
+				this.activeFinalNames = slotSavedActiveFinalNames;
 				this.namedElements = slotSavedNamedElements;
 				slotScopeSaved = false;
 			}
@@ -14888,6 +17177,7 @@ bh_multianim_MacroManimParser.prototype = {
 		case 11:
 			this.advance();
 			var tv = this.parseTypedSettingValue();
+			this.validateTypedMetadataRef(key,tv.type,tv.value);
 			return { key : key, type : tv.type, value : tv.value};
 		case 15:
 			this.advance();
@@ -14895,6 +17185,50 @@ bh_multianim_MacroManimParser.prototype = {
 			return { key : key, type : this.inferSettingType(value), value : value};
 		default:
 			return this.error("expected :type=> or => after metadata key");
+		}
+	}
+	,validateTypedMetadataRef: function(key,metaType,value) {
+		if(value._hx_index == 6) {
+			var name = value.ref;
+			if(this.activeDefs == null) {
+				return;
+			}
+			var keyName;
+			switch(key._hx_index) {
+			case 1:
+				var s = key.s;
+				keyName = s;
+				break;
+			case 6:
+				var r = key.ref;
+				keyName = "$" + r;
+				break;
+			default:
+				keyName = Std.string(key);
+			}
+			if(Object.prototype.hasOwnProperty.call(this.activeDefs.h,name)) {
+				var def = this.activeDefs.h[name];
+				if(def == null) {
+					return;
+				}
+				if(bh_multianim_MacroManimParser.isMetaTypeCompatibleWithParam(metaType,def.type)) {
+					return;
+				}
+				var metaName = bh_multianim_MacroManimParser.settingValueTypeName(metaType);
+				var paramName = bh_multianim_MacroManimParser.definitionTypeName(def.type);
+				this.error("metadata \"" + keyName + "\" declared as :" + metaName + " cannot reference param \"" + name + "\" of type :" + paramName + " — " + ("runtime and codegen resolve this incompatibly. Use an untyped \"" + keyName + " => $" + name + "\" or match the param type."));
+			}
+			if(this.activeFinals != null) {
+				var finalType = this.activeFinals.h[name];
+				if(finalType != null) {
+					if(bh_multianim_MacroManimParser.isMetaTypeCompatibleWithFinalType(metaType,finalType)) {
+						return;
+					}
+					var metaName = bh_multianim_MacroManimParser.settingValueTypeName(metaType);
+					var finalName = bh_multianim_MacroManimParser.settingValueTypeName(finalType);
+					this.error("metadata \"" + keyName + "\" declared as :" + metaName + " cannot reference @final \"" + name + "\" of type :" + finalName + " — " + ("runtime and codegen resolve this incompatibly. Use an untyped \"" + keyName + " => $" + name + "\" or match the @final literal type."));
+				}
+			}
 		}
 	}
 	,parseFlowOrientation: function() {
@@ -17700,9 +20034,9 @@ var bh_multianim__$MultiAnimBuilder_ComputedShape = $hxEnums["bh.multianim._Mult
 bh_multianim__$MultiAnimBuilder_ComputedShape.__constructs__ = [bh_multianim__$MultiAnimBuilder_ComputedShape.Line,bh_multianim__$MultiAnimBuilder_ComputedShape.Rect,bh_multianim__$MultiAnimBuilder_ComputedShape.Pixel];
 bh_multianim__$MultiAnimBuilder_ComputedShape.__empty_constructs__ = [];
 var bh_multianim_Updatable = function(updatables) {
-	this.lastObject = null;
+	this.addedObjects = [];
 	if(updatables == null || updatables.length == 0) {
-		throw haxe_Exception.thrown("empty updatable");
+		throw new bh_multianim_BuilderError("empty updatable",null,null);
 	}
 	this.updatables = updatables;
 };
@@ -17724,7 +20058,7 @@ bh_multianim_Updatable.prototype = {
 				var t = _g2.b;
 				t.set_text(newText);
 			} else if(throwIfAnyFails) {
-				throw haxe_Exception.thrown("invalid updateText: expected HeapsText but got " + Std.string(v.object));
+				throw new bh_multianim_BuilderError("invalid updateText: expected HeapsText but got " + Std.string(v.object),null,null);
 			}
 		}
 	}
@@ -17742,27 +20076,30 @@ bh_multianim_Updatable.prototype = {
 				var b = _g2.b;
 				b.set_tile(newTile);
 			} else if(throwIfAnyFails) {
-				throw haxe_Exception.thrown("invalid updateTile: expected HeapsBitmap but got " + Std.string(v.object));
+				throw new bh_multianim_BuilderError("invalid updateTile: expected HeapsBitmap but got " + Std.string(v.object),null,null);
 			}
 		}
 	}
 	,setObject: function(newObject) {
 		if(this.updatables.length != 1) {
-			throw haxe_Exception.thrown("setObject needs exactly one updatable");
+			throw new bh_multianim_BuilderError("setObject needs exactly one updatable",null,null);
 		}
-		if(this.lastObject == newObject) {
+		if(this.addedObjects.length == 1 && this.addedObjects[0] == newObject) {
 			return;
 		}
-		if(this.lastObject != null) {
-			var _this = this.lastObject;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
+		var _g = 0;
+		var _g1 = this.addedObjects;
+		while(_g < _g1.length) {
+			var o = _g1[_g];
+			++_g;
+			if(o != null && o.parent != null) {
+				o.parent.removeChild(o);
 			}
-			this.lastObject = null;
 		}
+		this.addedObjects.length = 0;
 		var parent = bh_multianim_MultiAnimParser_toh2dObject(this.updatables[0].object);
 		parent.addChild(newObject);
-		this.lastObject = newObject;
+		this.addedObjects.push(newObject);
 	}
 	,__class__: bh_multianim_Updatable
 };
@@ -17823,13 +20160,13 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 		switch(r._hx_index) {
 		case 0:
 			var s = r.s;
-			throw haxe_Exception.thrown("expected int setting " + settingName + " to valid int number but was string " + s);
+			throw new bh_multianim_BuilderError("expected int setting " + settingName + " to valid int number but was string " + s,null,null);
 		case 1:
 			var i = r.i;
 			return i;
 		case 2:
 			var f = r.f;
-			throw haxe_Exception.thrown("expected int setting " + settingName + " to valid int number but was float " + f);
+			throw new bh_multianim_BuilderError("expected int setting " + settingName + " to valid int number but was float " + f,null,null);
 		case 3:
 			var b = r.b;
 			if(b) {
@@ -17840,21 +20177,21 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 			break;
 		case 4:
 			var c = r.c;
-			return c;
+			throw new bh_multianim_BuilderError("expected int setting " + settingName + " but was color " + c + " — use getColorOrDefault for color settings",null,null);
 		}
 	}
 	,getFloatOrException: function(settingName) {
 		if(this.settings == null) {
-			throw haxe_Exception.thrown("settings not found, was looking for " + settingName);
+			throw new bh_multianim_BuilderError("settings not found, was looking for " + settingName,null,null);
 		}
 		var r = this.settings.h[settingName];
 		if(r == null) {
-			throw haxe_Exception.thrown("expected float setting " + settingName + " to be present but was not");
+			throw new bh_multianim_BuilderError("expected float setting " + settingName + " to be present but was not",null,null);
 		}
 		switch(r._hx_index) {
 		case 0:
 			var s = r.s;
-			throw haxe_Exception.thrown("expected float setting " + settingName + " to valid float number but was string " + s);
+			throw new bh_multianim_BuilderError("expected float setting " + settingName + " to valid float number but was string " + s,null,null);
 		case 1:
 			var i = r.i;
 			return i;
@@ -17871,7 +20208,7 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 			break;
 		case 4:
 			var c = r.c;
-			return c;
+			throw new bh_multianim_BuilderError("expected float setting " + settingName + " but was color " + c + " — use getColorOrException for color settings",null,null);
 		}
 	}
 	,getFloatOrDefault: function(settingName,defaultValue) {
@@ -17885,7 +20222,7 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 		switch(r._hx_index) {
 		case 0:
 			var s = r.s;
-			throw haxe_Exception.thrown("expected float setting " + settingName + " to valid float number but was string " + s);
+			throw new bh_multianim_BuilderError("expected float setting " + settingName + " to valid float number but was string " + s,null,null);
 		case 1:
 			var i = r.i;
 			return i;
@@ -17902,6 +20239,32 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 			break;
 		case 4:
 			var c = r.c;
+			throw new bh_multianim_BuilderError("expected float setting " + settingName + " but was color " + c + " — use getColorOrDefault for color settings",null,null);
+		}
+	}
+	,getColorOrDefault: function(settingName,defaultValue) {
+		if(this.settings == null) {
+			return defaultValue;
+		}
+		var r = this.settings.h[settingName];
+		if(r == null) {
+			return defaultValue;
+		}
+		switch(r._hx_index) {
+		case 0:
+			var s = r.s;
+			throw new bh_multianim_BuilderError("expected color setting " + settingName + " but was string " + s,null,null);
+		case 1:
+			var i = r.i;
+			return i;
+		case 2:
+			var f = r.f;
+			throw new bh_multianim_BuilderError("expected color setting " + settingName + " but was float " + f,null,null);
+		case 3:
+			var b = r.b;
+			throw new bh_multianim_BuilderError("expected color setting " + settingName + " but was bool " + (b == null ? "null" : "" + b),null,null);
+		case 4:
+			var c = r.c;
 			return c;
 		}
 	}
@@ -17913,17 +20276,60 @@ bh_multianim_BuilderResolvedSettings.prototype = {
 	}
 	,__class__: bh_multianim_BuilderResolvedSettings
 };
+var bh_multianim__$MultiAnimBuilder_TrackedExpression = function(updateFn,paramRefs,object) {
+	this.declOrder = 0;
+	this.gen = 0;
+	this.updateFn = updateFn;
+	this.paramRefs = paramRefs;
+	this.object = object;
+};
+$hxClasses["bh.multianim._MultiAnimBuilder.TrackedExpression"] = bh_multianim__$MultiAnimBuilder_TrackedExpression;
+bh_multianim__$MultiAnimBuilder_TrackedExpression.__name__ = "bh.multianim._MultiAnimBuilder.TrackedExpression";
+bh_multianim__$MultiAnimBuilder_TrackedExpression.prototype = {
+	__class__: bh_multianim__$MultiAnimBuilder_TrackedExpression
+};
+var bh_multianim__$MultiAnimBuilder_DynamicRefBinding = function(childContext,childParam,resolveFn,referencedParams,object) {
+	this.gen = 0;
+	this.childContext = childContext;
+	this.childParam = childParam;
+	this.resolveFn = resolveFn;
+	this.referencedParams = referencedParams;
+	this.object = object;
+};
+$hxClasses["bh.multianim._MultiAnimBuilder.DynamicRefBinding"] = bh_multianim__$MultiAnimBuilder_DynamicRefBinding;
+bh_multianim__$MultiAnimBuilder_DynamicRefBinding.__name__ = "bh.multianim._MultiAnimBuilder.DynamicRefBinding";
+bh_multianim__$MultiAnimBuilder_DynamicRefBinding.prototype = {
+	__class__: bh_multianim__$MultiAnimBuilder_DynamicRefBinding
+};
 var bh_multianim_IncrementalUpdateContext = function(builder,indexedParams,builderParams,rootNode) {
+	this.cachedApplyMap = null;
+	this.cachedEntryMap = null;
+	this.applyingUpdates = false;
+	this.fwdCtxScratch = [];
+	this.dynamicRefBindingRelevantScanCount = 0;
+	this.trackedRelevantScanCount = 0;
+	this.rebuildListenerSnapshotCount = 0;
+	this.paramRefsRebuildCount = 0;
+	this.conditionalMapRebuildCount = 0;
+	this.untrackedParams = new haxe_ds_StringMap();
 	this.rebuildListeners = [];
 	this.activeTransitionTweens = [];
 	this.tweenManager = null;
 	this.hasChanges = false;
+	this.changedParamList = [];
 	this.changedParams = new haxe_ds_StringMap();
 	this.batchMode = false;
 	this.dynamicNameBindings = [];
+	this.applyGen = 0;
+	this.fwdBindingScratch = [];
+	this.dynamicRefBindingsByParam = new haxe_ds_StringMap();
 	this.dynamicRefBindings = [];
 	this.deferredEntries = [];
+	this.trackedFireScratch = [];
+	this.trackedSeq = 0;
+	this.trackedByParam = new haxe_ds_StringMap();
 	this.trackedExpressions = [];
+	this.conditionalApplyBaselines = new haxe_ds_ObjectMap();
 	this.conditionalApplyEntries = [];
 	this.conditionalEntries = [];
 	this.builder = builder;
@@ -17971,11 +20377,31 @@ bh_multianim_IncrementalUpdateContext.isEffectivelyVisible = function(obj) {
 	return true;
 };
 bh_multianim_IncrementalUpdateContext.prototype = {
-	trackConditional: function(object,node,sentinel,parent,layer) {
+	syncFinalsFromBuilder: function(live) {
+		var h = live.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var name = _g_key;
+			var v = _g_value;
+			if(v._hx_index == 7) {
+				var _g = v.expr;
+				this.indexedParams.h[name] = v;
+			}
+		}
+	}
+	,trackConditional: function(object,node,sentinel,parent,layer) {
 		this.conditionalEntries.push({ object : object, node : node, sentinel : sentinel, parent : parent, layer : layer, savedFlowProps : this.saveFlowProperties(object,parent)});
+		this.cachedEntryMap = null;
 	}
 	,trackDeferredConditional: function(wrapper,node,sentinel,parent,layer,gridCS,hexCS,internalResults,builderParams) {
 		this.conditionalEntries.push({ object : wrapper, node : node, sentinel : sentinel, parent : parent, layer : layer, savedFlowProps : this.saveFlowProperties(wrapper,parent)});
+		this.cachedEntryMap = null;
 		this.deferredEntries.push({ wrapper : wrapper, node : node, sentinel : sentinel, parent : parent, layer : layer, gridCS : gridCS, hexCS : hexCS, internalResults : internalResults, builderParams : builderParams});
 	}
 	,saveFlowProperties: function(object,parent) {
@@ -18008,10 +20434,35 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		props.paddingBottom = saved.paddingBottom;
 	}
 	,trackExpression: function(updateFn,paramRefs,object) {
-		this.trackedExpressions.push({ updateFn : updateFn, paramRefs : paramRefs, object : object});
+		var tracked = new bh_multianim__$MultiAnimBuilder_TrackedExpression(updateFn,paramRefs,object);
+		tracked.declOrder = this.trackedSeq++;
+		this.trackedExpressions.push(tracked);
+		var _g = 0;
+		while(_g < paramRefs.length) {
+			var ref = paramRefs[_g];
+			++_g;
+			var arr = this.trackedByParam.h[ref];
+			if(arr == null) {
+				arr = [];
+				this.trackedByParam.h[ref] = arr;
+			}
+			arr.push(tracked);
+		}
 	}
-	,trackDynamicRef: function(childContext,childParam,resolveFn,referencedParams) {
-		this.dynamicRefBindings.push({ childContext : childContext, childParam : childParam, resolveFn : resolveFn, referencedParams : referencedParams});
+	,trackDynamicRef: function(childContext,childParam,resolveFn,referencedParams,object) {
+		var binding = new bh_multianim__$MultiAnimBuilder_DynamicRefBinding(childContext,childParam,resolveFn,referencedParams,object);
+		this.dynamicRefBindings.push(binding);
+		var _g = 0;
+		while(_g < referencedParams.length) {
+			var ref = referencedParams[_g];
+			++_g;
+			var arr = this.dynamicRefBindingsByParam.h[ref];
+			if(arr == null) {
+				arr = [];
+				this.dynamicRefBindingsByParam.h[ref] = arr;
+			}
+			arr.push(binding);
+		}
 	}
 	,trackDynamicName: function(binding) {
 		this.dynamicNameBindings.push(binding);
@@ -18034,20 +20485,38 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			var _g_key = key;
 			var _g_value = _g_h[key];
 			var _ = _g_key;
-			var result = _g_value;
-			var obj = result.object;
-			var isUnder = obj == container || obj.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
-			if(isUnder && result.incrementalContext != null) {
-				removedChildContexts.push(result.incrementalContext);
+			var arr = _g_value;
+			var _g = 0;
+			while(_g < arr.length) {
+				var result = arr[_g];
+				++_g;
+				var obj = result.object;
+				var isUnder = obj == container || obj.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
+				if(isUnder && result.incrementalContext != null) {
+					removedChildContexts.push(result.incrementalContext);
+				}
 			}
 		}
 		bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(ir,container);
 		if(removedChildContexts.length > 0) {
 			var i = 0;
-			while(i < this.dynamicRefBindings.length) if(removedChildContexts.indexOf(this.dynamicRefBindings[i].childContext) >= 0) {
-				this.dynamicRefBindings.splice(i,1);
-			} else {
-				++i;
+			while(i < this.dynamicRefBindings.length) {
+				var binding = this.dynamicRefBindings[i];
+				if(removedChildContexts.indexOf(binding.childContext) >= 0) {
+					this.dynamicRefBindings.splice(i,1);
+					var _g = 0;
+					var _g1 = binding.referencedParams;
+					while(_g < _g1.length) {
+						var ref = _g1[_g];
+						++_g;
+						var arr = this.dynamicRefBindingsByParam.h[ref];
+						if(arr != null) {
+							HxOverrides.remove(arr,binding);
+						}
+					}
+				} else {
+					++i;
+				}
 			}
 		}
 		var ni = 0;
@@ -18062,37 +20531,77 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		}
 		var ti = 0;
 		while(ti < this.trackedExpressions.length) {
-			var obj = this.trackedExpressions[ti].object;
+			var tracked = this.trackedExpressions[ti];
+			var obj = tracked.object;
 			if(obj != null && obj != container && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container)) {
 				this.trackedExpressions.splice(ti,1);
+				var _g = 0;
+				var _g1 = tracked.paramRefs;
+				while(_g < _g1.length) {
+					var ref = _g1[_g];
+					++_g;
+					var arr = this.trackedByParam.h[ref];
+					if(arr != null) {
+						HxOverrides.remove(arr,tracked);
+					}
+				}
 			} else {
 				++ti;
 			}
 		}
 		var ci = 0;
+		var entriesChanged = false;
 		while(ci < this.conditionalEntries.length) {
-			var obj = this.conditionalEntries[ci].object;
-			var isUnder = obj == container || obj.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
+			var entry = this.conditionalEntries[ci];
+			var obj = entry.object;
+			var sentinel = entry.sentinel;
+			var isUnder = obj == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container) || sentinel == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(sentinel,container);
 			if(isUnder) {
 				this.conditionalEntries.splice(ci,1);
+				entriesChanged = true;
 			} else {
 				++ci;
 			}
 		}
+		if(entriesChanged) {
+			this.cachedEntryMap = null;
+		}
 		var ai = 0;
+		var applyChanged = false;
 		while(ai < this.conditionalApplyEntries.length) {
 			var parent = this.conditionalApplyEntries[ai].parent;
-			var isUnder = parent == container || parent.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(parent,container);
+			var isUnder = parent == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(parent,container);
 			if(isUnder) {
 				this.conditionalApplyEntries.splice(ai,1);
+				applyChanged = true;
 			} else {
 				++ai;
 			}
 		}
+		if(applyChanged) {
+			this.cachedApplyMap = null;
+		}
+		var baselineParents = [];
+		var parent = this.conditionalApplyBaselines.keys();
+		while(parent.hasNext()) {
+			var parent1 = parent.next();
+			baselineParents.push(parent1);
+		}
+		var _g = 0;
+		while(_g < baselineParents.length) {
+			var parent = baselineParents[_g];
+			++_g;
+			var isUnder = parent == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(parent,container);
+			if(isUnder) {
+				this.conditionalApplyBaselines.remove(parent);
+			}
+		}
 		var di = 0;
 		while(di < this.deferredEntries.length) {
-			var wrapper = this.deferredEntries[di].wrapper;
-			var isUnder = wrapper == container || wrapper.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(wrapper,container);
+			var entry = this.deferredEntries[di];
+			var wrapper = entry.wrapper;
+			var sentinel = entry.sentinel;
+			var isUnder = wrapper == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(wrapper,container) || sentinel == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(sentinel,container);
 			if(isUnder) {
 				this.deferredEntries.splice(di,1);
 			} else {
@@ -18102,7 +20611,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		var twi = 0;
 		while(twi < this.activeTransitionTweens.length) {
 			var obj = this.activeTransitionTweens[twi].obj;
-			var isUnder = obj == container || obj.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
+			var isUnder = obj == container || bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
 			if(isUnder) {
 				var entry = this.activeTransitionTweens[twi];
 				if(entry.tween != null) {
@@ -18119,8 +20628,100 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			}
 		}
 	}
-	,trackConditionalApply: function(parent,node,applied,savedFilter,savedAlpha,savedScaleX,savedScaleY,savedRotation,appliedPosX,appliedPosY) {
-		this.conditionalApplyEntries.push({ parent : parent, node : node, applied : applied, savedFilter : savedFilter, savedAlpha : savedAlpha, savedScaleX : savedScaleX, savedScaleY : savedScaleY, savedRotation : savedRotation, appliedPosX : appliedPosX, appliedPosY : appliedPosY});
+	,trackConditionalApply: function(parent,node,applied) {
+		this.conditionalApplyEntries.push({ parent : parent, node : node, applied : applied});
+		this.cachedApplyMap = null;
+	}
+	,captureApplyBaseline: function(parent) {
+		if(this.conditionalApplyBaselines.h.__keys__[parent.__id__] != null) {
+			return;
+		}
+		this.conditionalApplyBaselines.set(parent,{ filter : parent.filter, alpha : parent.alpha, scaleX : parent.scaleX, scaleY : parent.scaleY, rotation : parent.rotation, x : parent.x, y : parent.y});
+	}
+	,reconcileApplyParent: function(parent) {
+		var baseline = this.conditionalApplyBaselines.h[parent.__id__];
+		if(baseline == null) {
+			return;
+		}
+		var anyTouchesFilter = false;
+		var anyTouchesAlpha = false;
+		var anyTouchesScale = false;
+		var anyTouchesRotation = false;
+		var anyTouchesPos = false;
+		var anyTouchesTint = false;
+		var _g = 0;
+		var _g1 = this.conditionalApplyEntries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.parent != parent) {
+				continue;
+			}
+			var node = entry.node;
+			if(node.filter != null) {
+				anyTouchesFilter = true;
+			}
+			if(node.alpha != null) {
+				anyTouchesAlpha = true;
+			}
+			if(node.scale != null) {
+				anyTouchesScale = true;
+			}
+			if(node.rotation != null) {
+				anyTouchesRotation = true;
+			}
+			if(node.tint != null) {
+				anyTouchesTint = true;
+			}
+			var _g2 = node.pos;
+			if(_g2 != null) {
+				if(_g2._hx_index != 0) {
+					anyTouchesPos = true;
+				}
+			}
+		}
+		if(anyTouchesFilter) {
+			parent.set_filter(baseline.filter);
+		}
+		if(anyTouchesAlpha) {
+			parent.alpha = baseline.alpha;
+		}
+		if(anyTouchesScale) {
+			parent.posChanged = true;
+			parent.scaleX = baseline.scaleX;
+			parent.posChanged = true;
+			parent.scaleY = baseline.scaleY;
+		}
+		if(anyTouchesRotation) {
+			parent.posChanged = true;
+			parent.rotation = baseline.rotation;
+		}
+		if(anyTouchesPos) {
+			parent.posChanged = true;
+			parent.x = baseline.x;
+			parent.posChanged = true;
+			parent.y = baseline.y;
+		}
+		var _g = 0;
+		var _g1 = this.conditionalApplyEntries;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.parent != parent) {
+				continue;
+			}
+			if(!entry.applied) {
+				continue;
+			}
+			var node = entry.node;
+			var _g2 = node.pos;
+			var hasPos = _g2 == null ? false : _g2._hx_index == 0 ? false : true;
+			if(hasPos) {
+				var pos = this.builder.calculatePosition(node.pos,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node));
+				this.builder.addPosition(parent,pos.x,pos.y);
+			}
+			this.builder.applyExtendedFormProperties(parent,node);
+		}
 	}
 	,addToGraph: function(entry) {
 		if(entry.object.parent != null) {
@@ -18164,94 +20765,121 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		if(entry.applied) {
 			return;
 		}
-		var parent = entry.parent;
-		var node = entry.node;
-		if(node.filter != null) {
-			entry.savedFilter = parent.filter;
-		}
-		if(node.alpha != null) {
-			entry.savedAlpha = parent.alpha;
-		}
-		if(node.scale != null) {
-			entry.savedScaleX = parent.scaleX;
-			entry.savedScaleY = parent.scaleY;
-		}
-		if(node.rotation != null) {
-			entry.savedRotation = parent.rotation;
-		}
-		var pos = this.builder.calculatePosition(node.pos,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node));
-		entry.appliedPosX = pos.x;
-		entry.appliedPosY = pos.y;
-		this.builder.addPosition(parent,pos.x,pos.y);
-		this.builder.applyExtendedFormProperties(parent,node);
 		entry.applied = true;
+		this.reconcileApplyParent(entry.parent);
 	}
 	,unapplyConditionalApplyEntry: function(entry) {
 		if(!entry.applied) {
 			return;
 		}
-		var parent = entry.parent;
-		var node = entry.node;
-		if(node.filter != null) {
-			parent.set_filter(entry.savedFilter);
-		}
-		var _alpha = entry.savedAlpha;
-		if(node.alpha != null && _alpha != null) {
-			parent.alpha = _alpha;
-		}
-		var _scaleX = entry.savedScaleX;
-		var _scaleY = entry.savedScaleY;
-		if(node.scale != null && _scaleX != null && _scaleY != null) {
-			parent.posChanged = true;
-			parent.scaleX = _scaleX;
-			parent.posChanged = true;
-			parent.scaleY = _scaleY;
-		}
-		var _rotation = entry.savedRotation;
-		if(node.rotation != null && _rotation != null) {
-			parent.posChanged = true;
-			parent.rotation = _rotation;
-		}
-		parent.posChanged = true;
-		parent.x -= entry.appliedPosX;
-		parent.posChanged = true;
-		parent.y -= entry.appliedPosY;
 		entry.applied = false;
+		this.reconcileApplyParent(entry.parent);
+	}
+	,markParamUntracked: function(paramName,reason) {
+		var existing = this.untrackedParams.h[paramName];
+		if(existing == null) {
+			existing = [];
+			this.untrackedParams.h[paramName] = existing;
+		}
+		if(existing.indexOf(reason) < 0) {
+			existing.push(reason);
+		}
 	}
 	,setParameter: function(name,value) {
-		var paramDef = this.getParamDefinition(name);
-		var paramType = paramDef != null ? paramDef.type : null;
-		var tmp;
-		if(paramType != null) {
-			if(paramType == null) {
-				tmp = false;
-			} else if(paramType._hx_index == 2) {
-				var _g = paramType.bits;
-				tmp = true;
-			} else {
-				tmp = false;
+		try {
+			this.setParameterImpl(name,value);
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g).unwrap();
+			if(this.batchMode) {
+				this.cancelUpdate();
 			}
-		} else {
-			tmp = false;
+			throw haxe_Exception.thrown(e);
 		}
-		if(tmp) {
-			var this1 = this.indexedParams;
-			var value1 = bh_multianim_MultiAnimParser.dynamicValueToIndex(name,paramType,value,function(s) {
-				throw haxe_Exception.thrown(s);
-			});
-			this1.h[name] = value1;
-		} else if(typeof(value) == "number" && ((value | 0) === value)) {
-			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.Value(value);
-		} else if(typeof(value) == "number") {
-			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.ValueF(value);
-		} else if(typeof(value) == "string") {
-			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.StringValue(value);
-		} else if(typeof(value) == "boolean") {
-			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.Value(js_Boot.__cast(value , Bool) ? 1 : 0);
-		} else if(js_Boot.__instanceof(value,bh_multianim_ResolvedIndexParameters)) {
-			this.indexedParams.h[name] = value;
+	}
+	,setParameterImpl: function(name,value) {
+		var untrackedReasons = this.untrackedParams.h[name];
+		if(untrackedReasons != null) {
+			throw new bh_multianim_BuilderError("setParameter(\"" + name + "\", ...) rejected: this param is referenced in incremental-unsupported slot(s) [" + untrackedReasons.join(", ") + "]. Changing it would leave the rendered state inconsistent. Either rebuild the programmable or avoid runtime mutation of this param.",null,"untracked_param");
+		}
+		var paramDef = this.getParamDefinition(name);
+		if(paramDef == null) {
+			var available = this.getAvailableParamNames();
+			throw new bh_multianim_BuilderError("setParameter(\"" + name + "\", ...) rejected: unknown parameter. Available: " + available.join(", "),null,"unknown_param");
+		}
+		var paramType = paramDef.type;
+		var converted = null;
+		if(js_Boot.__instanceof(value,bh_multianim_ResolvedIndexParameters)) {
+			converted = value;
 		} else if(((value) instanceof h2d_Tile)) {
-			this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSTile(value));
+			converted = bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSTile(value));
+		} else {
+			switch(paramType._hx_index) {
+			case 3:
+				var values = paramType.values;
+				if(typeof(value) == "string") {
+					var s = value;
+					var idx = values.indexOf(s);
+					converted = idx >= 0 ? bh_multianim_ResolvedIndexParameters.Index(idx,s) : bh_multianim_ResolvedIndexParameters.StringValue(s);
+				} else {
+					converted = null;
+				}
+				break;
+			case 4:
+				var _g = paramType.from;
+				var _g = paramType.to;
+				converted = typeof(value) == "number" && ((value | 0) === value) ? bh_multianim_ResolvedIndexParameters.Value(value) : null;
+				break;
+			case 6:
+				converted = typeof(value) == "number" ? bh_multianim_ResolvedIndexParameters.ValueF(value) : null;
+				break;
+			case 7:
+				converted = typeof(value) == "boolean" ? bh_multianim_ResolvedIndexParameters.Value(js_Boot.__cast(value , Bool) ? 1 : 0) : null;
+				break;
+			case 9:
+				converted = typeof(value) == "string" ? bh_multianim_ResolvedIndexParameters.StringValue(value) : null;
+				break;
+			case 0:case 1:case 5:case 8:case 10:
+				converted = typeof(value) == "number" && ((value | 0) === value) ? bh_multianim_ResolvedIndexParameters.Value(value) : null;
+				break;
+			default:
+				converted = null;
+			}
+			if(converted == null) {
+				try {
+					converted = bh_multianim_MultiAnimParser.dynamicValueToIndex(name,paramType,value,function(s) {
+						throw haxe_Exception.thrown(s);
+					});
+				} catch( _g ) {
+					var _g1 = haxe_Exception.caught(_g).unwrap();
+					if(typeof(_g1) == "string") {
+						var e = _g1;
+						throw new bh_multianim_BuilderError("setParameter(\"" + name + "\", ...) rejected: " + e,null,"invalid_param_value");
+					} else {
+						throw _g;
+					}
+				}
+			}
+		}
+		if(converted == null) {
+			var typeDesc;
+			if(value == null) {
+				typeDesc = "null";
+			} else {
+				var c = js_Boot.getClass(value);
+				typeDesc = c.__name__;
+			}
+			if(typeDesc == null) {
+				throw new bh_multianim_BuilderError("setParameter(\"" + name + "\", ...) rejected: value type not convertible to a parameter shape (got " + Std.string(value) + "). Accepted: Int, Float, String, Bool, ResolvedIndexParameters, h2d.Tile.",null,"invalid_param_value");
+			}
+			throw new bh_multianim_BuilderError("setParameter(\"" + name + "\", ...) rejected: value type not convertible to a parameter shape (got " + typeDesc + "). Accepted: Int, Float, String, Bool, ResolvedIndexParameters, h2d.Tile.",null,"invalid_param_value");
+		}
+		var existing = this.indexedParams.h[name];
+		if(existing != null && Type.enumEq(existing,converted)) {
+			return;
+		}
+		this.indexedParams.h[name] = converted;
+		if(!Object.prototype.hasOwnProperty.call(this.changedParams.h,name)) {
+			this.changedParamList.push(name);
 		}
 		this.changedParams.h[name] = true;
 		this.hasChanges = true;
@@ -18260,58 +20888,258 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		}
 	}
 	,beginUpdate: function() {
+		if(this.batchMode) {
+			throw new bh_multianim_BuilderError("beginUpdate: already in batch; nesting is not supported",null,"nested_begin_update");
+		}
 		this.batchMode = true;
 		this.changedParams.h = Object.create(null);
+		this.changedParamList.length = 0;
 		this.hasChanges = false;
 	}
 	,endUpdate: function() {
+		if(!this.batchMode) {
+			throw new bh_multianim_BuilderError("endUpdate: no matching beginUpdate",null,"unbalanced_end_update");
+		}
 		this.batchMode = false;
 		if(this.hasChanges) {
 			this.applyUpdates();
 		}
 		this.changedParams.h = Object.create(null);
+		this.changedParamList.length = 0;
 		this.hasChanges = false;
+	}
+	,cancelUpdate: function() {
+		if(!this.batchMode) {
+			return;
+		}
+		this.batchMode = false;
+		this.changedParams.h = Object.create(null);
+		this.changedParamList.length = 0;
+		this.hasChanges = false;
+	}
+	,hasParameter: function(name) {
+		return this.getParamDefinition(name) != null;
 	}
 	,getParamDefinition: function(name) {
 		var _g = this.rootNode.type;
-		if(_g._hx_index == 9) {
+		switch(_g._hx_index) {
+		case 9:
 			var _g1 = _g.isTileGroup;
 			var _g1 = _g.paramOrder;
 			var defs = _g.parameters;
 			return defs.h[name];
-		} else {
+		case 30:
+			var _g1 = _g.paramOrder;
+			var defs = _g.parameters;
+			if(defs == null) {
+				return null;
+			} else {
+				return defs.h[name];
+			}
+			break;
+		default:
 			return null;
+		}
+	}
+	,getAvailableParamNames: function() {
+		var _g = this.rootNode.type;
+		switch(_g._hx_index) {
+		case 9:
+			var _g1 = _g.isTileGroup;
+			var _g1 = _g.paramOrder;
+			var defs = _g.parameters;
+			var _g1 = [];
+			var h = defs.h;
+			var k_h = h;
+			var k_keys = Object.keys(h);
+			var k_length = k_keys.length;
+			var k_current = 0;
+			while(k_current < k_length) {
+				var k = k_keys[k_current++];
+				_g1.push(k);
+			}
+			return _g1;
+		case 30:
+			var _g1 = _g.paramOrder;
+			var defs = _g.parameters;
+			if(defs == null) {
+				return [];
+			} else {
+				var _g = [];
+				var h = defs.h;
+				var k_h = h;
+				var k_keys = Object.keys(h);
+				var k_length = k_keys.length;
+				var k_current = 0;
+				while(k_current < k_length) {
+					var k = k_keys[k_current++];
+					_g.push(k);
+				}
+				return _g;
+			}
+			break;
+		default:
+			return [];
 		}
 	}
 	,setTweenManager: function(tm) {
 		this.tweenManager = tm;
 	}
-	,findTransitionSpec: function() {
+	,findTransitionSpec: function(node) {
 		if(this.transitionsDef == null) {
 			return null;
 		}
-		var h = this.changedParams.h;
+		var relevant = this.getRelevantParamRefsForNode(node);
+		if(relevant.length == 0) {
+			return null;
+		}
+		var winnerName = null;
+		var _g = 0;
+		while(_g < relevant.length) {
+			var paramName = relevant[_g];
+			++_g;
+			if(!Object.prototype.hasOwnProperty.call(this.changedParams.h,paramName)) {
+				continue;
+			}
+			if(!Object.prototype.hasOwnProperty.call(this.transitionsDef.h,paramName)) {
+				continue;
+			}
+			if(winnerName == null || paramName < winnerName) {
+				winnerName = paramName;
+			}
+		}
+		if(winnerName == null) {
+			return null;
+		} else {
+			return this.transitionsDef.h[winnerName];
+		}
+	}
+	,getRelevantParamRefsForNode: function(node) {
+		var cached = node.cachedRelevantParamRefs;
+		if(cached != null) {
+			return cached;
+		}
+		this.paramRefsRebuildCount++;
+		var refs = new haxe_ds_StringMap();
+		this.collectParamRefsFromNode(node,refs);
+		var _g = [];
+		var h = refs.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
 		var _g_length = _g_keys.length;
 		var _g_current = 0;
 		while(_g_current < _g_length) {
-			var key = _g_keys[_g_current++];
-			var _g_key = key;
-			var _g_value = _g_h[key];
-			var paramName = _g_key;
-			var _ = _g_value;
-			var spec = this.transitionsDef.h[paramName];
-			if(spec != null) {
-				return spec;
+			var k = _g_keys[_g_current++];
+			_g.push(k);
+		}
+		var computed = _g;
+		node.cachedRelevantParamRefs = computed;
+		return computed;
+	}
+	,collectParamRefsFromNode: function(node,refs) {
+		var _g = node.conditionals;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.anyMode;
+			var values = _g.values;
+			var h = values.h;
+			var k_h = h;
+			var k_keys = Object.keys(h);
+			var k_length = k_keys.length;
+			var k_current = 0;
+			while(k_current < k_length) {
+				var k = k_keys[k_current++];
+				refs.h[k] = true;
+			}
+			break;
+		case 1:
+			var extraConditions = _g.values;
+			if(extraConditions != null) {
+				var h = extraConditions.h;
+				var k_h = h;
+				var k_keys = Object.keys(h);
+				var k_length = k_keys.length;
+				var k_current = 0;
+				while(k_current < k_length) {
+					var k = k_keys[k_current++];
+					refs.h[k] = true;
+				}
+			}
+			this.collectChainParamRefs(node,refs);
+			break;
+		case 2:
+			this.collectChainParamRefs(node,refs);
+			break;
+		case 3:
+			break;
+		}
+	}
+	,collectChainParamRefs: function(node,refs) {
+		var p = node.parent;
+		if(p == null || p.children == null) {
+			return;
+		}
+		var siblings = p.children;
+		var idx = -1;
+		var _g = 0;
+		var _g1 = siblings.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(siblings[i] == node) {
+				idx = i;
+				break;
 			}
 		}
-		return null;
+		if(idx <= 0) {
+			return;
+		}
+		var i = idx - 1;
+		while(i >= 0) {
+			var sib = siblings[i];
+			var _g = sib.conditionals;
+			switch(_g._hx_index) {
+			case 0:
+				var _g1 = _g.anyMode;
+				var values = _g.values;
+				var h = values.h;
+				var k_h = h;
+				var k_keys = Object.keys(h);
+				var k_length = k_keys.length;
+				var k_current = 0;
+				while(k_current < k_length) {
+					var k = k_keys[k_current++];
+					refs.h[k] = true;
+				}
+				break;
+			case 1:
+				var extraConditions = _g.values;
+				if(extraConditions != null) {
+					var h1 = extraConditions.h;
+					var k_h1 = h1;
+					var k_keys1 = Object.keys(h1);
+					var k_length1 = k_keys1.length;
+					var k_current1 = 0;
+					while(k_current1 < k_length1) {
+						var k1 = k_keys1[k_current1++];
+						refs.h[k1] = true;
+					}
+				}
+				break;
+			case 2:
+				return;
+			case 3:
+				return;
+			}
+			--i;
+		}
 	}
 	,cancelActiveTransition: function(obj) {
 		var i = 0;
 		while(i < this.activeTransitionTweens.length) if(this.activeTransitionTweens[i].obj == obj) {
 			var entry = this.activeTransitionTweens[i];
+			if(entry.restore != null) {
+				entry.restore();
+			}
 			if(entry.tween != null) {
 				entry.tween.onComplete = null;
 				entry.tween.cancel();
@@ -18320,24 +21148,14 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				entry.sequence.onComplete = null;
 				entry.sequence.cancel();
 			}
-			obj.alpha = entry.savedAlpha;
-			obj.posChanged = true;
-			obj.scaleX = entry.savedScaleX;
-			obj.posChanged = true;
-			obj.scaleY = entry.savedScaleY;
-			obj.posChanged = true;
-			obj.x = entry.savedX;
-			obj.posChanged = true;
-			obj.y = entry.savedY;
 			this.activeTransitionTweens.splice(i,1);
 		} else {
 			++i;
 		}
 	}
-	,trackTransitionTween: function(obj,tween,savedAlpha,savedScaleX,savedScaleY,savedX,savedY) {
+	,trackTransitionTween: function(obj,tween,target,restore) {
 		var _gthis = this;
-		this.activeTransitionTweens.push({ obj : obj, tween : tween, sequence : null, savedAlpha : savedAlpha, savedScaleX : savedScaleX, savedScaleY : savedScaleY, savedX : savedX, savedY : savedY});
-		var origOnComplete = tween.onComplete;
+		this.activeTransitionTweens.push({ obj : obj, tween : tween, sequence : null, target : target, restore : restore});
 		tween.onComplete = function() {
 			var i = 0;
 			while(i < _gthis.activeTransitionTweens.length) {
@@ -18347,15 +21165,14 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				}
 				++i;
 			}
-			if(origOnComplete != null) {
-				origOnComplete();
+			if(restore != null) {
+				restore();
 			}
 		};
 	}
-	,trackTransitionSequence: function(obj,seq,savedAlpha,savedScaleX,savedScaleY,savedX,savedY) {
+	,trackTransitionSequence: function(obj,seq,target,restore) {
 		var _gthis = this;
-		this.activeTransitionTweens.push({ obj : obj, tween : null, sequence : seq, savedAlpha : savedAlpha, savedScaleX : savedScaleX, savedScaleY : savedScaleY, savedX : savedX, savedY : savedY});
-		var origOnComplete = seq.onComplete;
+		this.activeTransitionTweens.push({ obj : obj, tween : null, sequence : seq, target : target, restore : restore});
 		seq.onComplete = function() {
 			var i = 0;
 			while(i < _gthis.activeTransitionTweens.length) {
@@ -18365,30 +21182,33 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				}
 				++i;
 			}
-			if(origOnComplete != null) {
-				origOnComplete();
+			if(restore != null) {
+				restore();
 			}
 		};
 	}
-	,hasActiveTransition: function(obj) {
+	,getActiveTransitionTarget: function(obj) {
 		var _g = 0;
 		var _g1 = this.activeTransitionTweens;
 		while(_g < _g1.length) {
 			var entry = _g1[_g];
 			++_g;
 			if(entry.obj == obj) {
-				return true;
+				return entry.target;
 			}
 		}
-		return false;
+		return null;
 	}
-	,setPresenceWithTransition: function(entry,newVisible) {
+	,setPresenceWithTransition: function(entry,newVisible,node) {
 		var obj = entry.object;
 		var inGraph = obj.parent != null;
-		if(inGraph == newVisible && !this.hasActiveTransition(obj)) {
-			return;
+		if(inGraph == newVisible) {
+			var activeTarget = this.getActiveTransitionTarget(obj);
+			if(activeTarget == null || activeTarget == newVisible) {
+				return;
+			}
 		}
-		var transSpec = this.findTransitionSpec();
+		var transSpec = this.findTransitionSpec(node);
 		if(transSpec == null || this.tweenManager == null || (transSpec == null ? false : transSpec._hx_index == 0)) {
 			this.cancelActiveTransition(obj);
 			if(newVisible) {
@@ -18418,6 +21238,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		var preScaleY = obj.scaleY;
 		var preX = obj.x;
 		var preY = obj.y;
+		var capturedEntry = entry;
 		switch(spec._hx_index) {
 		case 0:
 			if(show) {
@@ -18433,15 +21254,17 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				this.addToGraph(entry);
 				obj.alpha = 0.0;
 				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(preAlpha)],easing);
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				var restore = function() {
+					return capturedEntry.object.alpha = preAlpha;
+				};
+				this.trackTransitionTween(obj,t,show,restore);
 			} else {
 				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(0.0)],easing);
-				var capturedEntry = entry;
-				t.onComplete = function() {
+				var restore = function() {
 					_gthis.removeFromGraph(capturedEntry);
-					capturedEntry.object.alpha = preAlpha;
+					return capturedEntry.object.alpha = preAlpha;
 				};
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				this.trackTransitionTween(obj,t,show,restore);
 			}
 			break;
 		case 2:
@@ -18453,15 +21276,17 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				var pause = tm.createTween(obj,duration,[]);
 				var fadeIn = tm.createTween(obj,duration,[bh_base_TweenProperty.Alpha(preAlpha)],easing);
 				var seq = tm.sequence([pause,fadeIn]);
-				this.trackTransitionSequence(obj,seq,preAlpha,preScaleX,preScaleY,preX,preY);
+				var restore = function() {
+					return capturedEntry.object.alpha = preAlpha;
+				};
+				this.trackTransitionSequence(obj,seq,show,restore);
 			} else {
 				var t = tm.tween(obj,duration,[bh_base_TweenProperty.Alpha(0.0)],easing);
-				var capturedEntry1 = entry;
-				t.onComplete = function() {
-					_gthis.removeFromGraph(capturedEntry1);
-					capturedEntry1.object.alpha = preAlpha;
+				var restore = function() {
+					_gthis.removeFromGraph(capturedEntry);
+					return capturedEntry.object.alpha = preAlpha;
 				};
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				this.trackTransitionTween(obj,t,show,restore);
 			}
 			break;
 		case 3:
@@ -18475,17 +21300,21 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				var pause = tm.createTween(obj,halfDuration,[]);
 				var grow = tm.createTween(obj,halfDuration,[bh_base_TweenProperty.ScaleX(preScaleX)],easing);
 				var seq = tm.sequence([pause,grow]);
-				this.trackTransitionSequence(obj,seq,preAlpha,preScaleX,preScaleY,preX,preY);
+				var restore = function() {
+					var _this = capturedEntry.object;
+					_this.posChanged = true;
+					return _this.scaleX = preScaleX;
+				};
+				this.trackTransitionSequence(obj,seq,show,restore);
 			} else {
 				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleX(0.0)],easing);
-				var capturedEntry2 = entry;
-				t.onComplete = function() {
-					_gthis.removeFromGraph(capturedEntry2);
-					var _this = capturedEntry2.object;
+				var restore = function() {
+					_gthis.removeFromGraph(capturedEntry);
+					var _this = capturedEntry.object;
 					_this.posChanged = true;
-					_this.scaleX = preScaleX;
+					return _this.scaleX = preScaleX;
 				};
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				this.trackTransitionTween(obj,t,show,restore);
 			}
 			break;
 		case 4:
@@ -18499,17 +21328,21 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				var pause = tm.createTween(obj,halfDuration,[]);
 				var grow = tm.createTween(obj,halfDuration,[bh_base_TweenProperty.ScaleY(preScaleY)],easing);
 				var seq = tm.sequence([pause,grow]);
-				this.trackTransitionSequence(obj,seq,preAlpha,preScaleX,preScaleY,preX,preY);
+				var restore = function() {
+					var _this = capturedEntry.object;
+					_this.posChanged = true;
+					return _this.scaleY = preScaleY;
+				};
+				this.trackTransitionSequence(obj,seq,show,restore);
 			} else {
 				var t = tm.tween(obj,halfDuration,[bh_base_TweenProperty.ScaleY(0.0)],easing);
-				var capturedEntry3 = entry;
-				t.onComplete = function() {
-					_gthis.removeFromGraph(capturedEntry3);
-					var _this = capturedEntry3.object;
+				var restore = function() {
+					_gthis.removeFromGraph(capturedEntry);
+					var _this = capturedEntry.object;
 					_this.posChanged = true;
-					_this.scaleY = preScaleY;
+					return _this.scaleY = preScaleY;
 				};
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				this.trackTransitionTween(obj,t,show,restore);
 			}
 			break;
 		case 5:
@@ -18540,7 +21373,16 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 					break;
 				}
 				var t = tm.tween(obj,duration,[bh_base_TweenProperty.X(preX),bh_base_TweenProperty.Y(preY),bh_base_TweenProperty.Alpha(preAlpha)],easing);
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				var restore = function() {
+					var _this = capturedEntry.object;
+					_this.posChanged = true;
+					_this.x = preX;
+					var _this = capturedEntry.object;
+					_this.posChanged = true;
+					_this.y = preY;
+					return capturedEntry.object.alpha = preAlpha;
+				};
+				this.trackTransitionTween(obj,t,show,restore);
 			} else {
 				var targetX = obj.x;
 				var targetY = obj.y;
@@ -18559,18 +21401,17 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 					break;
 				}
 				var t = tm.tween(obj,duration,[bh_base_TweenProperty.X(targetX),bh_base_TweenProperty.Y(targetY),bh_base_TweenProperty.Alpha(0.0)],easing);
-				var capturedEntry4 = entry;
-				t.onComplete = function() {
-					_gthis.removeFromGraph(capturedEntry4);
-					capturedEntry4.object.alpha = preAlpha;
-					var _this = capturedEntry4.object;
+				var restore = function() {
+					_gthis.removeFromGraph(capturedEntry);
+					capturedEntry.object.alpha = preAlpha;
+					var _this = capturedEntry.object;
 					_this.posChanged = true;
 					_this.x = preX;
-					var _this = capturedEntry4.object;
+					var _this = capturedEntry.object;
 					_this.posChanged = true;
-					_this.y = preY;
+					return _this.y = preY;
 				};
-				this.trackTransitionTween(obj,t,preAlpha,preScaleX,preScaleY,preX,preY);
+				this.trackTransitionTween(obj,t,show,restore);
 			}
 			break;
 		}
@@ -18589,15 +21430,17 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	}
 	,materializeDeferred: function(entry) {
 		var _gthis = this;
+		bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(entry.internalResults,entry.wrapper);
 		entry.wrapper.removeChildren();
 		this.rebuildDeferredContent(entry);
-		var paramRefs = this.builder.collectNodeParamRefs(entry.node);
+		var paramRefs = bh_multianim_MultiAnimBuilder.collectNodeParamRefs(entry.node);
 		if(paramRefs.length > 0) {
 			var capturedEntry = entry;
-			this.trackedExpressions.push({ updateFn : function() {
+			this.trackExpression(function() {
+				bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(capturedEntry.internalResults,capturedEntry.wrapper);
 				capturedEntry.wrapper.removeChildren();
 				_gthis.rebuildDeferredContent(capturedEntry);
-			}, paramRefs : paramRefs, object : entry.wrapper});
+			},paramRefs,entry.wrapper);
 			HxOverrides.remove(this.deferredEntries,entry);
 		}
 	}
@@ -18611,30 +21454,16 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	}
 	,rebuildDynamicNameRef: function(binding,newName) {
 		var _gthis = this;
-		var _g = [];
-		var _g1 = 0;
-		var _g2 = this.dynamicRefBindings;
-		while(_g1 < _g2.length) {
-			var v = _g2[_g1];
-			++_g1;
-			var oldResult = binding.internalResults.dynamicRefs.h[binding.currentName];
-			if(oldResult == null || v.childContext != oldResult.incrementalContext) {
-				_g.push(v);
-			}
+		if(binding.container.children.length > 0) {
+			this.cleanupDestroyedSubtree(binding.internalResults,binding.container.getChildAt(0));
 		}
-		this.dynamicRefBindings = _g;
 		binding.container.removeChildren();
-		var key = binding.currentName;
-		var _this = binding.internalResults.dynamicRefs;
-		if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
-			delete(_this.h[key]);
-		}
 		var targetBuilder;
 		if(binding.externalReference != null) {
 			var tmp = this.builder.multiParserResult.imports;
 			var b = tmp != null ? tmp.h[binding.externalReference] : null;
 			if(b == null) {
-				throw haxe_Exception.thrown("could not find builder for external dynamicRef " + binding.externalReference);
+				throw new bh_multianim_BuilderError("could not find builder for external dynamicRef " + binding.externalReference,null,null);
 			}
 			targetBuilder = b;
 		} else {
@@ -18656,11 +21485,21 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		}
 		var result = targetBuilder.buildWithParameters(newName,paramMap,this.builderParams,this.indexedParams,true);
 		if((result != null ? result.object : null) == null) {
-			throw haxe_Exception.thrown("could not build dynamicRef \"" + newName + "\"");
+			throw new bh_multianim_BuilderError("could not build dynamicRef \"" + newName + "\"",null,null);
 		}
 		binding.container.addChild(result.object);
 		binding.currentName = newName;
-		binding.internalResults.dynamicRefs.h[newName] = result;
+		var _g = binding.node.updatableName;
+		var nodeHasExplicitName = _g._hx_index == 0 ? _g.name == null ? false : true : true;
+		if(!nodeHasExplicitName) {
+			binding.stableKey = newName;
+		}
+		var arr = binding.internalResults.dynamicRefs.h[binding.stableKey];
+		if(arr == null) {
+			binding.internalResults.dynamicRefs.h[binding.stableKey] = [result];
+		} else {
+			arr.push(result);
+		}
 		if(result.incrementalContext != null) {
 			var tmp = targetBuilder.multiParserResult.nodes;
 			var childNode = tmp != null ? tmp.h[newName] : null;
@@ -18720,7 +21559,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 							})(capturedValue);
 						}
 					}
-					this.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs);
+					this.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs,result.object);
 				}
 			}
 		}
@@ -18731,107 +21570,169 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			if(deferred != null && entry.object.parent == null) {
 				this.addToGraph(entry);
 				this.materializeDeferred(deferred);
-				var transSpec = this.findTransitionSpec();
+				var transSpec = this.findTransitionSpec(entry.node);
 				if(transSpec != null && this.tweenManager != null && !(transSpec == null ? false : transSpec._hx_index == 0)) {
 					this.executePresenceTransition(entry,true,transSpec);
 				}
 				return;
 			}
 		}
-		this.setPresenceWithTransition(entry,newVisible);
+		this.setPresenceWithTransition(entry,newVisible,entry.node);
 	}
 	,applyUpdates: function() {
-		this.builder.pushBuilderState();
-		this.builder.indexedParams = this.indexedParams;
-		this.builder.builderParams = this.builderParams;
-		var _g = 0;
-		var _g1 = this.conditionalEntries;
-		while(_g < _g1.length) {
-			var entry = _g1[_g];
-			++_g;
-			var shouldBeVisible = this.builder.isMatch(entry.node,this.indexedParams);
-			this.setPresenceOrMaterialize(entry,shouldBeVisible);
+		if(this.applyingUpdates) {
+			throw new bh_multianim_BuilderError("applyUpdates: re-entrant call detected. A rebuild listener on a forwarded dynamicRef child called setParameter back into the parent context during the parent's pass-2 dispatch. Defer the call (queue it for the next tick or fire it from outside the listener) — the parent's per-call scratch (fwdCtxScratch, changedParams) cannot be safely re-used mid-iteration.",null,"reentrant_apply_updates");
 		}
-		var _g = 0;
-		var _g1 = this.conditionalApplyEntries;
-		while(_g < _g1.length) {
-			var entry = _g1[_g];
-			++_g;
-			var shouldApply = this.builder.isMatch(entry.node,this.indexedParams);
-			if(shouldApply) {
-				this.applyConditionalApplyEntry(entry);
+		this.applyingUpdates = true;
+		this.builder.pushBuilderStateNoReset();
+		var firedRebuild = false;
+		var caught = null;
+		try {
+			this.builder.indexedParams = this.indexedParams;
+			this.builder.builderParams = this.builderParams;
+			this.applyConditionalChains();
+			var gen = ++this.applyGen;
+			if(this.hasChanges) {
+				this.trackedFireScratch.length = 0;
+				var _g = 0;
+				var _g1 = this.changedParamList;
+				while(_g < _g1.length) {
+					var param = _g1[_g];
+					++_g;
+					var arr = this.trackedByParam.h[param];
+					if(arr == null) {
+						continue;
+					}
+					var _g2 = 0;
+					while(_g2 < arr.length) {
+						var tracked = arr[_g2];
+						++_g2;
+						if(tracked.gen == gen) {
+							continue;
+						}
+						tracked.gen = gen;
+						this.trackedFireScratch.push(tracked);
+					}
+				}
+				if(this.trackedFireScratch.length > 1) {
+					this.trackedFireScratch.sort(function(a,b) {
+						return a.declOrder - b.declOrder;
+					});
+				}
+				var _g = 0;
+				var _g1 = this.trackedFireScratch;
+				while(_g < _g1.length) {
+					var tracked = _g1[_g];
+					++_g;
+					var obj = tracked.object;
+					if(obj != null && !bh_multianim_IncrementalUpdateContext.isEffectivelyVisible(obj)) {
+						continue;
+					}
+					this.trackedRelevantScanCount++;
+					tracked.updateFn();
+				}
 			} else {
-				this.unapplyConditionalApplyEntry(entry);
-			}
-		}
-		this.applyConditionalChains();
-		var _g = 0;
-		var _g1 = this.trackedExpressions;
-		while(_g < _g1.length) {
-			var tracked = _g1[_g];
-			++_g;
-			var obj = tracked.object;
-			if(obj != null && !bh_multianim_IncrementalUpdateContext.isEffectivelyVisible(obj)) {
-				continue;
-			}
-			var relevant = false;
-			var _g2 = 0;
-			var _g3 = tracked.paramRefs;
-			while(_g2 < _g3.length) {
-				var ref = _g3[_g2];
-				++_g2;
-				if(Object.prototype.hasOwnProperty.call(this.changedParams.h,ref)) {
-					relevant = true;
-					break;
+				var _g = 0;
+				var _g1 = this.trackedExpressions;
+				while(_g < _g1.length) {
+					var tracked = _g1[_g];
+					++_g;
+					var obj = tracked.object;
+					if(obj != null && !bh_multianim_IncrementalUpdateContext.isEffectivelyVisible(obj)) {
+						continue;
+					}
+					this.trackedRelevantScanCount++;
+					tracked.updateFn();
 				}
 			}
-			if(relevant || !this.hasChanges) {
-				tracked.updateFn();
-			}
-		}
-		var _g = 0;
-		var _g1 = this.dynamicRefBindings;
-		while(_g < _g1.length) {
-			var binding = _g1[_g];
-			++_g;
-			var relevant = false;
-			var _g2 = 0;
-			var _g3 = binding.referencedParams;
-			while(_g2 < _g3.length) {
-				var ref = _g3[_g2];
-				++_g2;
-				if(Object.prototype.hasOwnProperty.call(this.changedParams.h,ref)) {
-					relevant = true;
-					break;
+			this.fwdCtxScratch.length = 0;
+			this.fwdBindingScratch.length = 0;
+			var _g = 0;
+			var _g1 = this.changedParamList;
+			while(_g < _g1.length) {
+				var param = _g1[_g];
+				++_g;
+				var arr = this.dynamicRefBindingsByParam.h[param];
+				if(arr == null) {
+					continue;
+				}
+				var _g2 = 0;
+				while(_g2 < arr.length) {
+					var binding = arr[_g2];
+					++_g2;
+					if(binding.gen == gen) {
+						continue;
+					}
+					binding.gen = gen;
+					this.dynamicRefBindingRelevantScanCount++;
+					this.fwdBindingScratch.push(binding);
+					if(this.fwdCtxScratch.indexOf(binding.childContext) < 0) {
+						this.fwdCtxScratch.push(binding.childContext);
+					}
 				}
 			}
-			if(relevant) {
-				binding.childContext.setParameter(binding.childParam,binding.resolveFn());
-			}
-		}
-		var _g = 0;
-		var _g1 = this.dynamicNameBindings;
-		while(_g < _g1.length) {
-			var binding = _g1[_g];
-			++_g;
-			if(Object.prototype.hasOwnProperty.call(this.changedParams.h,binding.paramName)) {
-				var newName = this.builder.resolveAsString(bh_multianim_ReferenceableValue.RVReference(binding.paramName));
-				if(newName != binding.currentName) {
-					this.rebuildDynamicNameRef(binding,newName);
+			var _g = 0;
+			var _g1 = this.fwdCtxScratch;
+			while(_g < _g1.length) {
+				var ctx = _g1[_g];
+				++_g;
+				ctx.beginUpdate();
+				try {
+					var _g2 = 0;
+					var _g3 = this.fwdBindingScratch;
+					while(_g2 < _g3.length) {
+						var binding = _g3[_g2];
+						++_g2;
+						if(binding.childContext != ctx) {
+							continue;
+						}
+						ctx.setParameter(binding.childParam,binding.resolveFn());
+					}
+					ctx.endUpdate();
+				} catch( _g4 ) {
+					var e = haxe_Exception.caught(_g4).unwrap();
+					ctx.cancelUpdate();
+					throw haxe_Exception.thrown(e);
 				}
 			}
+			var _g = 0;
+			var _g1 = this.dynamicNameBindings;
+			while(_g < _g1.length) {
+				var binding = _g1[_g];
+				++_g;
+				if(Object.prototype.hasOwnProperty.call(this.changedParams.h,binding.paramName)) {
+					var newName = this.builder.resolveAsString(bh_multianim_ReferenceableValue.RVReference(binding.paramName));
+					if(newName != binding.currentName) {
+						this.rebuildDynamicNameRef(binding,newName);
+					}
+				}
+			}
+			firedRebuild = this.hasChanges;
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g).unwrap();
+			caught = e;
 		}
 		this.builder.popBuilderState();
-		var firedRebuild = this.hasChanges;
 		this.changedParams.h = Object.create(null);
+		this.changedParamList.length = 0;
 		this.hasChanges = false;
-		if(firedRebuild && this.rebuildListeners.length > 0) {
-			var snapshot = this.rebuildListeners.slice();
-			var _g = 0;
-			while(_g < snapshot.length) {
-				var fn = snapshot[_g];
-				++_g;
-				fn();
+		this.applyingUpdates = false;
+		if(caught != null) {
+			throw haxe_Exception.thrown(caught);
+		}
+		if(firedRebuild) {
+			var n = this.rebuildListeners.length;
+			if(n == 1) {
+				this.rebuildListeners[0]();
+			} else if(n > 1) {
+				this.rebuildListenerSnapshotCount++;
+				var snapshot = this.rebuildListeners.slice();
+				var _g = 0;
+				while(_g < snapshot.length) {
+					var fn = snapshot[_g];
+					++_g;
+					fn();
+				}
 			}
 		}
 	}
@@ -18839,23 +21740,28 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		if(this.rootNode.children == null) {
 			return;
 		}
-		var entryMap = new haxe_ds_StringMap();
-		var _g = 0;
-		var _g1 = this.conditionalEntries;
-		while(_g < _g1.length) {
-			var entry = _g1[_g];
-			++_g;
-			entryMap.h[entry.node.uniqueNodeName] = entry;
+		if(this.cachedEntryMap == null || this.cachedApplyMap == null) {
+			this.conditionalMapRebuildCount++;
+			var fresh = new haxe_ds_StringMap();
+			var _g = 0;
+			var _g1 = this.conditionalEntries;
+			while(_g < _g1.length) {
+				var entry = _g1[_g];
+				++_g;
+				fresh.h[entry.node.uniqueNodeName] = entry;
+			}
+			this.cachedEntryMap = fresh;
+			var freshApply = new haxe_ds_StringMap();
+			var _g = 0;
+			var _g1 = this.conditionalApplyEntries;
+			while(_g < _g1.length) {
+				var ae = _g1[_g];
+				++_g;
+				freshApply.h[ae.node.uniqueNodeName] = ae;
+			}
+			this.cachedApplyMap = freshApply;
 		}
-		var applyMap = new haxe_ds_StringMap();
-		var _g = 0;
-		var _g1 = this.conditionalApplyEntries;
-		while(_g < _g1.length) {
-			var ae = _g1[_g];
-			++_g;
-			applyMap.h[ae.node.uniqueNodeName] = ae;
-		}
-		this.resolveVisibilityForChildren(this.rootNode.children,entryMap,applyMap);
+		this.resolveVisibilityForChildren(this.rootNode.children,this.cachedEntryMap,this.cachedApplyMap);
 	}
 	,resolveVisibilityForChildren: function(children,entryMap,applyMap) {
 		var prevSiblingMatched = false;
@@ -18943,6 +21849,9 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			case 3:
 				prevSiblingMatched = false;
 				anyConditionalSiblingMatched = false;
+				if(trackedApply != null) {
+					this.reconcileApplyParent(trackedApply.parent);
+				}
 				break;
 			}
 			if(childNode.children != null && childNode.children.length > 0) {
@@ -18972,6 +21881,7 @@ var bh_multianim_SlotHandle = function(container,incrementalContext,contentTarge
 	this.hasParameters = false;
 	this.contentTarget = null;
 	this.contentRoot = null;
+	this.disposed = false;
 	this.incrementalContext = null;
 	this.data = null;
 	this.container = container;
@@ -18997,6 +21907,12 @@ $hxClasses["bh.multianim.SlotHandle"] = bh_multianim_SlotHandle;
 bh_multianim_SlotHandle.__name__ = "bh.multianim.SlotHandle";
 bh_multianim_SlotHandle.prototype = {
 	setContent: function(obj) {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
+		if(obj == null) {
+			throw new bh_multianim_BuilderError("SlotHandle.setContent received null — use clear() to empty the slot",null,"slot_null_content");
+		}
 		this.clear();
 		if(this.contentTarget != null) {
 			this.currentContent = obj;
@@ -19017,6 +21933,9 @@ bh_multianim_SlotHandle.prototype = {
 		}
 	}
 	,clear: function() {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
 		if(this.currentContent != null) {
 			if(this.contentTarget != null) {
 				this.contentTarget.removeChild(this.currentContent);
@@ -19038,17 +21957,29 @@ bh_multianim_SlotHandle.prototype = {
 		}
 	}
 	,getContent: function() {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
 		return this.currentContent;
 	}
 	,isEmpty: function() {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
 		return this.currentContent == null;
 	}
 	,isOccupied: function() {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
 		return this.currentContent != null;
 	}
 	,setParameter: function(name,value) {
+		if(this.disposed) {
+			throw new bh_multianim_BuilderError("Slot disposed — enclosing subtree was rebuilt",null,"slot_disposed");
+		}
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("Slot has no parameters");
+			throw new bh_multianim_BuilderError("Slot has no parameters",null,"slot_no_parameters");
 		}
 		this.incrementalContext.setParameter(name,value);
 	}
@@ -19088,48 +22019,54 @@ bh_multianim_BuilderResult.prototype = {
 	}
 	,addRebuildListener: function(fn) {
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("addRebuildListener requires incremental mode — gate on `isIncremental` or pass incremental:true to buildWithParameters");
+			throw new bh_multianim_BuilderError("addRebuildListener requires incremental mode — gate on `isIncremental` or pass incremental:true to buildWithParameters",null,null);
 		}
 		this.incrementalContext.addRebuildListener(fn);
 	}
 	,removeRebuildListener: function(fn) {
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("removeRebuildListener requires incremental mode");
+			throw new bh_multianim_BuilderError("removeRebuildListener requires incremental mode",null,null);
 		}
 		this.incrementalContext.removeRebuildListener(fn);
 	}
 	,setParameter: function(name,value) {
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("setParameter requires incremental mode — pass incremental:true to buildWithParameters");
+			throw new bh_multianim_BuilderError("setParameter requires incremental mode — pass incremental:true to buildWithParameters",null,null);
 		}
 		this.incrementalContext.setParameter(name,value);
 	}
+	,hasParameter: function(name) {
+		if(this.incrementalContext == null) {
+			return false;
+		}
+		return this.incrementalContext.hasParameter(name);
+	}
 	,beginUpdate: function() {
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("beginUpdate requires incremental mode");
+			throw new bh_multianim_BuilderError("beginUpdate requires incremental mode",null,null);
 		}
 		this.incrementalContext.beginUpdate();
 	}
 	,endUpdate: function() {
 		if(this.incrementalContext == null) {
-			throw haxe_Exception.thrown("endUpdate requires incremental mode");
+			throw new bh_multianim_BuilderError("endUpdate requires incremental mode",null,null);
 		}
 		this.incrementalContext.endUpdate();
 	}
 	,getSingleItemByName: function(name) {
 		var items = this.names.h[name];
 		if(items == null) {
-			throw haxe_Exception.thrown("builder result name " + name + " not found");
+			throw new bh_multianim_BuilderError("builder result name " + name + " not found",null,null);
 		}
 		if(items.length != 1) {
-			throw haxe_Exception.thrown("builder result name " + name + " expected single item but got " + items.length);
+			throw new bh_multianim_BuilderError("builder result name " + name + " expected single item but got " + items.length,null,null);
 		}
 		return items[0];
 	}
 	,getUpdatable: function(name) {
 		var namesArray = this.names.h[name];
 		if(namesArray == null) {
-			throw haxe_Exception.thrown("Name " + name + " not found in BuilderResult");
+			throw new bh_multianim_BuilderError("Name " + name + " not found in BuilderResult",null,null);
 		}
 		return new bh_multianim_Updatable(namesArray);
 	}
@@ -19138,7 +22075,7 @@ bh_multianim_BuilderResult.prototype = {
 	}
 	,getSlot: function(name,index,indexY) {
 		if(this.slots == null) {
-			throw haxe_Exception.thrown("No slots in BuilderResult");
+			throw new bh_multianim_BuilderError("No slots in BuilderResult",null,null);
 		}
 		var is1DIndexed = false;
 		var is2DIndexed = false;
@@ -19171,7 +22108,7 @@ bh_multianim_BuilderResult.prototype = {
 		}
 		if(is2DIndexed) {
 			if(index == null || indexY == null) {
-				throw haxe_Exception.thrown("Slot \"" + name + "\" is 2D-indexed — use getSlot(\"" + name + "\", x, y)");
+				throw new bh_multianim_BuilderError("Slot \"" + name + "\" is 2D-indexed — use getSlot(\"" + name + "\", x, y)",null,null);
 			}
 			var _g = 0;
 			var _g1 = this.slots;
@@ -19188,10 +22125,10 @@ bh_multianim_BuilderResult.prototype = {
 					}
 				}
 			}
-			throw haxe_Exception.thrown("Slot \"" + name + "\" index (" + index + ", " + indexY + ") not found");
+			throw new bh_multianim_BuilderError("Slot \"" + name + "\" index (" + index + ", " + indexY + ") not found",null,null);
 		} else if(is1DIndexed) {
 			if(index == null) {
-				throw haxe_Exception.thrown("Slot \"" + name + "\" is indexed — use getSlot(\"" + name + "\", index)");
+				throw new bh_multianim_BuilderError("Slot \"" + name + "\" is indexed — use getSlot(\"" + name + "\", index)",null,null);
 			}
 			var _g = 0;
 			var _g1 = this.slots;
@@ -19207,10 +22144,10 @@ bh_multianim_BuilderResult.prototype = {
 					}
 				}
 			}
-			throw haxe_Exception.thrown("Slot \"" + name + "\" index " + index + " not found");
+			throw new bh_multianim_BuilderError("Slot \"" + name + "\" index " + index + " not found",null,null);
 		} else {
 			if(index != null) {
-				throw haxe_Exception.thrown("Slot \"" + name + "\" is not indexed — use getSlot(\"" + name + "\") without index");
+				throw new bh_multianim_BuilderError("Slot \"" + name + "\" is not indexed — use getSlot(\"" + name + "\") without index",null,null);
 			}
 			var _g = 0;
 			var _g1 = this.slots;
@@ -19225,7 +22162,7 @@ bh_multianim_BuilderResult.prototype = {
 					}
 				}
 			}
-			throw haxe_Exception.thrown("Slot \"" + name + "\" not found in BuilderResult");
+			throw new bh_multianim_BuilderError("Slot \"" + name + "\" not found in BuilderResult",null,null);
 		}
 	}
 	,__class__: bh_multianim_BuilderResult
@@ -19318,8 +22255,11 @@ var bh_multianim_MultiAnimBuilder = function(data,resourceLoader,sourceName) {
 	this.tweenManager = null;
 	this.currentInternalResults = null;
 	this.incrementalContext = null;
+	this.suppressConditionalTracking = false;
 	this.incrementalMode = false;
 	this.inlineAtlases = new haxe_ds_StringMap();
+	this.buildingRefs = [];
+	this.stateStackPool = [];
 	this.stateStack = [];
 	this.currentNode = null;
 	this.builderParams = { };
@@ -19355,11 +22295,12 @@ bh_multianim_MultiAnimBuilder.removeRegistrationsUnder = function(ir,container) 
 	}
 	var s = 0;
 	while(s < ir.slots.length) if(isUnder(ir.slots[s].handle.container)) {
+		ir.slots[s].handle.disposed = true;
 		ir.slots.splice(s,1);
 	} else {
 		++s;
 	}
-	var keysToRemove = [];
+	var emptyKeys = [];
 	var h = ir.dynamicRefs.h;
 	var _g_h = h;
 	var _g_keys = Object.keys(h);
@@ -19370,14 +22311,20 @@ bh_multianim_MultiAnimBuilder.removeRegistrationsUnder = function(ir,container) 
 		var _g_key = key;
 		var _g_value = _g_h[key];
 		var key1 = _g_key;
-		var result = _g_value;
-		if(isUnder(result.object)) {
-			keysToRemove.push(key1);
+		var arr = _g_value;
+		var i = 0;
+		while(i < arr.length) if(isUnder(arr[i].object)) {
+			arr.splice(i,1);
+		} else {
+			++i;
+		}
+		if(arr.length == 0) {
+			emptyKeys.push(key1);
 		}
 	}
 	var _g = 0;
-	while(_g < keysToRemove.length) {
-		var k = keysToRemove[_g];
+	while(_g < emptyKeys.length) {
+		var k = emptyKeys[_g];
 		++_g;
 		var _this = ir.dynamicRefs;
 		if(Object.prototype.hasOwnProperty.call(_this.h,k)) {
@@ -19585,11 +22532,20 @@ bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs = function(coord,result
 		return;
 	}
 	switch(coord._hx_index) {
+	case 0:
+		break;
 	case 1:
 		var x = coord.x;
 		var y = coord.y;
 		bh_multianim_MultiAnimBuilder.collectParamRefs(x,result);
 		bh_multianim_MultiAnimBuilder.collectParamRefs(y,result);
+		break;
+	case 2:
+		var _g = coord.layoutName;
+		var index = coord.index;
+		if(index != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(index,result);
+		}
 		break;
 	case 3:
 		var x = coord.gridX;
@@ -19636,6 +22592,22 @@ bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs = function(coord,result
 		bh_multianim_MultiAnimBuilder.collectParamRefs(x,result);
 		bh_multianim_MultiAnimBuilder.collectParamRefs(y,result);
 		break;
+	case 10:
+		var cell = coord.cell;
+		var cornerIndex = coord.cornerIndex;
+		var factor = coord.factor;
+		bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(cell,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(cornerIndex,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(factor,result);
+		break;
+	case 11:
+		var cell = coord.cell;
+		var direction = coord.direction;
+		var factor = coord.factor;
+		bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(cell,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(direction,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(factor,result);
+		break;
 	case 12:
 		var _g = coord.name;
 		var coord1 = coord.coord;
@@ -19649,7 +22621,39 @@ bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs = function(coord,result
 		bh_multianim_MultiAnimBuilder.collectParamRefs(offsetX,result);
 		bh_multianim_MultiAnimBuilder.collectParamRefs(offsetY,result);
 		break;
-	default:
+	case 14:
+		var _g = coord.elementName;
+		var _g = coord.pointName;
+		var fallback = coord.fallback;
+		if(fallback != null) {
+			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(fallback,result);
+		}
+		break;
+	case 15:
+		var _g = coord.filename;
+		var _g = coord.animName;
+		var _g = coord.pointName;
+		var selector = coord.selector;
+		var fallback = coord.fallback;
+		if(selector != null) {
+			var h = selector.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var _ = _g_key;
+				var v = _g_value;
+				bh_multianim_MultiAnimBuilder.collectParamRefs(v,result);
+			}
+		}
+		if(fallback != null) {
+			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(fallback,result);
+		}
+		break;
 	}
 };
 bh_multianim_MultiAnimBuilder.collectFilterParamRefs = function(filter,result) {
@@ -19980,6 +22984,389 @@ bh_multianim_MultiAnimBuilder.collectPixelShapesParamRefs = function(shapes,resu
 		}
 	}
 };
+bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs = function(node,out) {
+	var _g = node.type;
+	switch(_g._hx_index) {
+	case 4:
+		var _g1 = _g.filename;
+		var initialState = _g.initialState;
+		var selector = _g.selector;
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(initialState,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		if(selector != null) {
+			var h = selector.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var _ = _g_key;
+				var v = _g_value;
+				var tmp = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(v,tmp);
+				var _g1 = 0;
+				while(_g1 < tmp.length) {
+					var r = tmp[_g1];
+					++_g1;
+					if(out.indexOf(r) < 0) {
+						out.push(r);
+					}
+				}
+			}
+		}
+		break;
+	case 5:
+		var _g1 = _g.externallyDriven;
+		var initialState = _g.initialState;
+		var construct = _g.construct;
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(initialState,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		if(construct != null) {
+			var h = construct.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var _ = _g_key;
+				var value = _g_value;
+				var _g1 = value.sheet;
+				var _g2 = value.loop;
+				var _g3 = value.center;
+				var animName = value.name;
+				var fps = value.fps;
+				var tmp = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(animName,tmp);
+				var _g4 = 0;
+				while(_g4 < tmp.length) {
+					var r = tmp[_g4];
+					++_g4;
+					if(out.indexOf(r) < 0) {
+						out.push(r);
+					}
+				}
+				var tmp1 = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(fps,tmp1);
+				var _g5 = 0;
+				while(_g5 < tmp1.length) {
+					var r1 = tmp1[_g5];
+					++_g5;
+					if(out.indexOf(r1) < 0) {
+						out.push(r1);
+					}
+				}
+			}
+		}
+		break;
+	case 21:
+		var _g1 = _g.externalReference;
+		var programmableRef = _g.programmableReference;
+		var parameters = _g.parameters;
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(programmableRef,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		var h = parameters.h;
+		var value_h = h;
+		var value_keys = Object.keys(h);
+		var value_length = value_keys.length;
+		var value_current = 0;
+		while(value_current < value_length) {
+			var value = value_h[value_keys[value_current++]];
+			var tmp = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(value,tmp);
+			var _g1 = 0;
+			while(_g1 < tmp.length) {
+				var r = tmp[_g1];
+				++_g1;
+				if(out.indexOf(r) < 0) {
+					out.push(r);
+				}
+			}
+		}
+		break;
+	case 24:
+		var _g1 = _g.debug;
+		var width = _g.width;
+		var height = _g.height;
+		var id = _g.id;
+		var metadata = _g.metadata;
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(width,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(height,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(id,tmp);
+		var _g1 = 0;
+		while(_g1 < tmp.length) {
+			var r = tmp[_g1];
+			++_g1;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		if(metadata != null) {
+			var _g1 = 0;
+			while(_g1 < metadata.length) {
+				var entry = metadata[_g1];
+				++_g1;
+				var tmp = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(entry.key,tmp);
+				var _g2 = 0;
+				while(_g2 < tmp.length) {
+					var r = tmp[_g2];
+					++_g2;
+					if(out.indexOf(r) < 0) {
+						out.push(r);
+					}
+				}
+				var tmp1 = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(entry.value,tmp1);
+				var _g3 = 0;
+				while(_g3 < tmp1.length) {
+					var r1 = tmp1[_g3];
+					++_g3;
+					if(out.indexOf(r1) < 0) {
+						out.push(r1);
+					}
+				}
+			}
+		}
+		break;
+	case 32:
+		var _g1 = _g.externalReference;
+		var programmableRef = _g.programmableReference;
+		var parameters = _g.parameters;
+		var tmp = [];
+		bh_multianim_MultiAnimBuilder.collectParamRefs(programmableRef,tmp);
+		var _g = 0;
+		while(_g < tmp.length) {
+			var r = tmp[_g];
+			++_g;
+			if(out.indexOf(r) < 0) {
+				out.push(r);
+			}
+		}
+		var h = parameters.h;
+		var value_h = h;
+		var value_keys = Object.keys(h);
+		var value_length = value_keys.length;
+		var value_current = 0;
+		while(value_current < value_length) {
+			var value = value_h[value_keys[value_current++]];
+			var tmp = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(value,tmp);
+			var _g = 0;
+			while(_g < tmp.length) {
+				var r = tmp[_g];
+				++_g;
+				if(out.indexOf(r) < 0) {
+					out.push(r);
+				}
+			}
+		}
+		break;
+	default:
+	}
+	if(node.children != null) {
+		var _g = 0;
+		var _g1 = node.children;
+		while(_g < _g1.length) {
+			var child = _g1[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs(child,out);
+		}
+	}
+};
+bh_multianim_MultiAnimBuilder.collectNodeParamRefs = function(node) {
+	var refs = [];
+	var _g = node.type;
+	switch(_g._hx_index) {
+	case 2:
+		var _g1 = _g.hAlign;
+		var _g1 = _g.vAlign;
+		var tileSource = _g.tileSource;
+		bh_multianim_MultiAnimBuilder.collectTileSourceParamRefs(tileSource,refs);
+		break;
+	case 6:
+		var shapes = _g.shapes;
+		bh_multianim_MultiAnimBuilder.collectPixelShapesParamRefs(shapes,refs);
+		break;
+	case 7:
+		var textDef = _g.textDef;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,refs);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,refs);
+		break;
+	case 8:
+		var textDef = _g.textDef;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,refs);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,refs);
+		break;
+	case 19:
+		var _g1 = _g.varName;
+		var repeatType = _g.repeatType;
+		switch(repeatType._hx_index) {
+		case 0:
+			var dirX = repeatType.dx;
+			var dirY = repeatType.dy;
+			var repeats = repeatType.repeatCount;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(repeats,refs);
+			if(dirX != null) {
+				bh_multianim_MultiAnimBuilder.collectParamRefs(dirX,refs);
+			}
+			if(dirY != null) {
+				bh_multianim_MultiAnimBuilder.collectParamRefs(dirY,refs);
+			}
+			break;
+		case 3:
+			var start = repeatType.start;
+			var end = repeatType.end;
+			var step = repeatType.step;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(start,refs);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(end,refs);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(step,refs);
+			break;
+		default:
+		}
+		break;
+	case 23:
+		var _g1 = _g.sheet;
+		var _g1 = _g.tilename;
+		var width = _g.width;
+		var height = _g.height;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(width,refs);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(height,refs);
+		break;
+	case 26:
+		var elements = _g.elements;
+		var _g1 = 0;
+		while(_g1 < elements.length) {
+			var item = elements[_g1];
+			++_g1;
+			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(item.pos,refs);
+			bh_multianim_MultiAnimBuilder.collectGraphicsElementParamRefs(item.element,refs);
+		}
+		break;
+	case 34:
+		var paramName = _g.paramName;
+		var arms = _g.arms;
+		if(refs.indexOf(paramName) < 0) {
+			refs.push(paramName);
+		}
+		var _g = 0;
+		while(_g < arms.length) {
+			var arm = arms[_g];
+			++_g;
+			var _g1 = 0;
+			var _g2 = arm.children;
+			while(_g1 < _g2.length) {
+				var child = _g2[_g1];
+				++_g1;
+				var arr = bh_multianim_MultiAnimBuilder.collectNodeParamRefs(child);
+				var _g3 = 0;
+				while(_g3 < arr.length) {
+					var r = arr[_g3];
+					++_g3;
+					if(refs.indexOf(r) < 0) {
+						refs.push(r);
+					}
+				}
+			}
+		}
+		break;
+	default:
+	}
+	var _pos = node.pos;
+	if(_pos != null) {
+		var posRefs = [];
+		bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(_pos,posRefs);
+		var _g = 0;
+		while(_g < posRefs.length) {
+			var r = posRefs[_g];
+			++_g;
+			if(refs.indexOf(r) < 0) {
+				refs.push(r);
+			}
+		}
+	}
+	if(node.scale != null) {
+		bh_multianim_MultiAnimBuilder.collectParamRefs(node.scale,refs);
+	}
+	if(node.rotation != null) {
+		bh_multianim_MultiAnimBuilder.collectParamRefs(node.rotation,refs);
+	}
+	if(node.alpha != null) {
+		bh_multianim_MultiAnimBuilder.collectParamRefs(node.alpha,refs);
+	}
+	if(node.tint != null) {
+		bh_multianim_MultiAnimBuilder.collectParamRefs(node.tint,refs);
+	}
+	if(node.filter != null) {
+		bh_multianim_MultiAnimBuilder.collectFilterParamRefs(node.filter,refs);
+	}
+	if(node.children != null) {
+		var _g = 0;
+		var _g1 = node.children;
+		while(_g < _g1.length) {
+			var child = _g1[_g];
+			++_g;
+			var arr = bh_multianim_MultiAnimBuilder.collectNodeParamRefs(child);
+			var _g2 = 0;
+			while(_g2 < arr.length) {
+				var r = arr[_g2];
+				++_g2;
+				if(refs.indexOf(r) < 0) {
+					refs.push(r);
+				}
+			}
+		}
+	}
+	return refs;
+};
 bh_multianim_MultiAnimBuilder.dynamicToResolvedWithDef = function(type,value) {
 	switch(type._hx_index) {
 	case 0:case 1:case 5:case 7:case 8:case 10:
@@ -20006,9 +23393,19 @@ bh_multianim_MultiAnimBuilder.dynamicToResolvedWithDef = function(type,value) {
 	case 9:
 		return bh_multianim_ResolvedIndexParameters.StringValue(value);
 	case 11:
+		if(value != null && !((value) instanceof Array)) {
+			throw new bh_multianim_BuilderError("PPTArray parameter requires Array, got: " + Std.string(value),null,null);
+		}
 		return bh_multianim_ResolvedIndexParameters.ArrayString(value);
 	case 12:
-		return bh_multianim_ResolvedIndexParameters.StringValue(Std.string(value));
+		if(((value) instanceof h2d_Tile)) {
+			return bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSTile(value));
+		} else if(js_Boot.__instanceof(value,bh_multianim_ResolvedIndexParameters)) {
+			return value;
+		} else {
+			throw new bh_multianim_BuilderError("PPTTile parameter requires h2d.Tile, got: " + Std.string(value),null,null);
+		}
+		break;
 	}
 };
 bh_multianim_MultiAnimBuilder.dynamicToResolvedInferred = function(value) {
@@ -20061,7 +23458,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,popBuilderState: function() {
 		var state = this.stateStack.pop();
 		if(state == null) {
-			throw haxe_Exception.thrown("builder state stack is empty, sourceName: " + this.sourceName);
+			throw new bh_multianim_BuilderError("builder state stack is empty, sourceName: " + this.sourceName,this.currentNode,null);
 		}
 		this.indexedParams = state.indexedParams;
 		this.builderParams = state.builderParams;
@@ -20069,22 +23466,51 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		this.incrementalMode = state.incrementalMode;
 		this.incrementalContext = state.incrementalContext;
 		this.currentInternalResults = state.currentInternalResults;
+		state.currentNode = null;
+		state.incrementalContext = null;
+		state.currentInternalResults = null;
+		this.stateStackPool.push(state);
 	}
 	,pushBuilderState: function() {
-		this.stateStack.push({ indexedParams : this.indexedParams, builderParams : this.builderParams, currentNode : this.currentNode, incrementalMode : this.incrementalMode, incrementalContext : this.incrementalContext, currentInternalResults : this.currentInternalResults});
+		var pooled = this.stateStackPool.length > 0 ? this.stateStackPool.pop() : null;
+		if(pooled != null) {
+			pooled.indexedParams = this.indexedParams;
+			pooled.builderParams = this.builderParams;
+			pooled.currentNode = this.currentNode;
+			pooled.incrementalMode = this.incrementalMode;
+			pooled.incrementalContext = this.incrementalContext;
+			pooled.currentInternalResults = this.currentInternalResults;
+			this.stateStack.push(pooled);
+		} else {
+			this.stateStack.push({ indexedParams : this.indexedParams, builderParams : this.builderParams, currentNode : this.currentNode, incrementalMode : this.incrementalMode, incrementalContext : this.incrementalContext, currentInternalResults : this.currentInternalResults});
+		}
 		this.indexedParams = new haxe_ds_StringMap();
 		this.builderParams = { };
 		this.currentNode = null;
+	}
+	,pushBuilderStateNoReset: function() {
+		var pooled = this.stateStackPool.length > 0 ? this.stateStackPool.pop() : null;
+		if(pooled != null) {
+			pooled.indexedParams = this.indexedParams;
+			pooled.builderParams = this.builderParams;
+			pooled.currentNode = this.currentNode;
+			pooled.incrementalMode = this.incrementalMode;
+			pooled.incrementalContext = this.incrementalContext;
+			pooled.currentInternalResults = this.currentInternalResults;
+			this.stateStack.push(pooled);
+			return;
+		}
+		this.stateStack.push({ indexedParams : this.indexedParams, builderParams : this.builderParams, currentNode : this.currentNode, incrementalMode : this.incrementalMode, incrementalContext : this.incrementalContext, currentInternalResults : this.currentInternalResults});
 	}
 	,evaluateAndStoreFinal: function(name,expr,node) {
 		var existing = this.indexedParams.h[name];
 		if(existing != null) {
 			if(existing == null) {
-				throw haxe_Exception.thrown("@final: '" + name + "' shadows an existing parameter" + "");
+				throw new bh_multianim_BuilderError("@final: '" + name + "' shadows an existing parameter",node,null);
 			} else if(existing._hx_index == 7) {
 				var _g = existing.expr;
 			} else {
-				throw haxe_Exception.thrown("@final: '" + name + "' shadows an existing parameter" + "");
+				throw new bh_multianim_BuilderError("@final: '" + name + "' shadows an existing parameter",node,null);
 			}
 		}
 		this.indexedParams.h[name] = bh_multianim_ResolvedIndexParameters.ExpressionAlias(expr);
@@ -20096,16 +23522,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var indexRef = v.index;
 			var arrayVal = this.indexedParams.h[arrayRef];
 			if(arrayVal == null) {
-				throw haxe_Exception.thrown("array reference " + arrayRef + "[" + Std.string(indexRef) + "] does not exist" + "");
+				throw new bh_multianim_BuilderError("array reference " + arrayRef + "[" + Std.string(indexRef) + "] does not exist",this.currentNode,"missing_ref");
 			} else if(arrayVal._hx_index == 5) {
 				var arrayVal1 = arrayVal.strArray;
 				var index = this.resolveAsInteger(indexRef);
 				if(index < 0 || index >= arrayVal1.length) {
-					throw haxe_Exception.thrown("index out of bounds " + index + " for array " + arrayVal1.toString() + "");
+					throw new bh_multianim_BuilderError("index out of bounds " + index + " for array " + arrayVal1.toString(),this.currentNode,null);
 				}
 				return arrayVal1[index];
 			} else {
-				throw haxe_Exception.thrown("element of array reference " + arrayRef + "[" + Std.string(indexRef) + "] is not an array but " + arrayRef + "");
+				throw new bh_multianim_BuilderError("element of array reference " + arrayRef + "[" + Std.string(indexRef) + "] is not an array but " + arrayRef,this.currentNode,null);
 			}
 			break;
 		case 15:
@@ -20119,7 +23545,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("expected array element but got " + Std.string(v) + "");
+			throw new bh_multianim_BuilderError("expected array element but got " + Std.string(v),this.currentNode,null);
 		}
 	}
 	,resolveAsArray: function(v) {
@@ -20138,7 +23564,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var refArr = v.refArr;
 			var arrayVal = this.indexedParams.h[refArr];
 			if(arrayVal == null) {
-				throw haxe_Exception.thrown("array reference " + refArr + " is not an array but " + Std.string(arrayVal) + "");
+				throw new bh_multianim_BuilderError("array reference " + refArr + " is not an array but " + Std.string(arrayVal),this.currentNode,null);
 			} else {
 				switch(arrayVal._hx_index) {
 				case 5:
@@ -20148,7 +23574,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var expr = arrayVal.expr;
 					return this.resolveAsArray(expr);
 				default:
-					throw haxe_Exception.thrown("array reference " + refArr + " is not an array but " + Std.string(arrayVal) + "");
+					throw new bh_multianim_BuilderError("array reference " + refArr + " is not an array but " + Std.string(arrayVal),this.currentNode,null);
 				}
 			}
 			break;
@@ -20163,7 +23589,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("expected array but got " + Std.string(v) + "");
+			throw new bh_multianim_BuilderError("expected array but got " + Std.string(v),this.currentNode,null);
 		}
 	}
 	,collectStateAnimFrames: function(animFilename,animationName,selector) {
@@ -20171,7 +23597,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var animSM = animParser.createAnimSM(selector);
 		var descriptor = animSM.animationStates.h[animationName];
 		if(descriptor == null) {
-			throw haxe_Exception.thrown("animation \"" + animationName + "\" not found in \"" + animFilename + "\"" + "");
+			throw new bh_multianim_BuilderError("animation \"" + animationName + "\" not found in \"" + animFilename + "\"",this.currentNode,"missing_ref");
 		}
 		var result = [];
 		var _g = 0;
@@ -20196,7 +23622,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var builder = _gthis.multiParserResult.imports.h[externalReference];
 			if(builder == null) {
-				throw haxe_Exception.thrown("could not find builder for external reference " + externalReference + "");
+				throw new bh_multianim_BuilderError("could not find builder for external reference " + externalReference,_gthis.currentNode,"missing_ref");
 			}
 			return builder;
 		};
@@ -20211,7 +23637,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			if(parsed != null) {
 				return parsed;
 			}
-			throw haxe_Exception.thrown("cannot resolve color from string \"" + s + "\"" + "");
+			throw new bh_multianim_BuilderError("cannot resolve color from string \"" + s + "\"",this.currentNode,null);
 		case 2:
 			var i = v.i;
 			return i;
@@ -20244,7 +23670,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("expected color to resolve, got " + Std.string(v) + "");
+			throw new bh_multianim_BuilderError("expected color to resolve, got " + Std.string(v),this.currentNode,null);
 		}
 	}
 	,resolveRVPropertyAccess: function(ref,property) {
@@ -20254,27 +23680,27 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case "height":
 				var scene = this.builderParams.scene;
 				if(scene == null) {
-					throw haxe_Exception.thrown("$" + "ctx.height requires scene in BuilderParameters" + "");
+					throw new bh_multianim_BuilderError("$" + "ctx.height requires scene in BuilderParameters",this.currentNode,null);
 				}
 				return scene.height;
 			case "width":
 				var scene = this.builderParams.scene;
 				if(scene == null) {
-					throw haxe_Exception.thrown("$" + "ctx.width requires scene in BuilderParameters" + "");
+					throw new bh_multianim_BuilderError("$" + "ctx.width requires scene in BuilderParameters",this.currentNode,null);
 				}
 				return scene.width;
 			default:
-				throw haxe_Exception.thrown("" + ref + "." + property + " is not a known context property" + "");
+				throw new bh_multianim_BuilderError("" + ref + "." + property + " is not a known context property",this.currentNode,null);
 			}
 			break;
 		case "ctx.grid":case "grid":
 			var node = this.currentNode;
 			if(node == null) {
-				throw haxe_Exception.thrown("currentNode is null in resolveRVPropertyAccess");
+				throw new bh_multianim_BuilderError("currentNode is null in resolveRVPropertyAccess",this.currentNode,null);
 			}
 			var gcs = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
 			if(gcs == null) {
-				throw haxe_Exception.thrown("no grid coordinate system in scope for " + ref + "." + property + "");
+				throw new bh_multianim_BuilderError("no grid coordinate system in scope for " + ref + "." + property,this.currentNode,null);
 			}
 			switch(property) {
 			case "height":
@@ -20282,17 +23708,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case "width":
 				return gcs.spacingX;
 			default:
-				throw haxe_Exception.thrown("" + ref + "." + property + " is not a known grid property" + "");
+				throw new bh_multianim_BuilderError("" + ref + "." + property + " is not a known grid property",this.currentNode,null);
 			}
 			break;
 		case "ctx.hex":case "hex":
 			var node = this.currentNode;
 			if(node == null) {
-				throw haxe_Exception.thrown("currentNode is null in resolveRVPropertyAccess");
+				throw new bh_multianim_BuilderError("currentNode is null in resolveRVPropertyAccess",this.currentNode,null);
 			}
 			var hcs = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
 			if(hcs == null) {
-				throw haxe_Exception.thrown("no hex coordinate system in scope for " + ref + "." + property + "");
+				throw new bh_multianim_BuilderError("no hex coordinate system in scope for " + ref + "." + property,this.currentNode,null);
 			}
 			switch(property) {
 			case "height":
@@ -20300,13 +23726,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case "width":
 				return hcs.hexLayout.size.x;
 			default:
-				throw haxe_Exception.thrown("" + ref + "." + property + " is not a known hex property" + "");
+				throw new bh_multianim_BuilderError("" + ref + "." + property + " is not a known hex property",this.currentNode,null);
 			}
 			break;
 		default:
 			var node = this.currentNode;
 			if(node == null) {
-				throw haxe_Exception.thrown("currentNode is null in resolveRVPropertyAccess");
+				throw new bh_multianim_BuilderError("currentNode is null in resolveRVPropertyAccess",this.currentNode,null);
 			}
 			var namedCS = bh_multianim_MultiAnimParser.getNamedCoordinateSystem(ref,node);
 			if(namedCS != null) {
@@ -20319,7 +23745,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					case "width":
 						return system.spacingX;
 					default:
-						throw haxe_Exception.thrown("" + ref + "." + property + " is not a known grid property" + "");
+						throw new bh_multianim_BuilderError("" + ref + "." + property + " is not a known grid property",this.currentNode,null);
 					}
 					break;
 				case 1:
@@ -20330,41 +23756,41 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					case "width":
 						return system.hexLayout.size.x;
 					default:
-						throw haxe_Exception.thrown("" + ref + "." + property + " is not a known hex property" + "");
+						throw new bh_multianim_BuilderError("" + ref + "." + property + " is not a known hex property",this.currentNode,null);
 					}
 					break;
 				}
 			}
-			throw haxe_Exception.thrown("unknown reference " + ref + " for property access ." + property + "");
+			throw new bh_multianim_BuilderError("unknown reference " + ref + " for property access ." + property,this.currentNode,null);
 		}
 	}
 	,resolveRVMethodCall: function(ref,method,args) {
 		if(ref == "ctx") {
 			switch(method) {
 			case "font":
-				throw haxe_Exception.thrown("$" + "ctx.font() must be followed by .lineHeight or .baseLine" + "");
+				throw new bh_multianim_BuilderError("$" + "ctx.font() must be followed by .lineHeight or .baseLine",this.currentNode,null);
 			case "random":
 				if(args.length != 2) {
-					throw haxe_Exception.thrown("" + ref + "." + method + "() requires 2 arguments (min, max)" + "");
+					throw new bh_multianim_BuilderError("" + ref + "." + method + "() requires 2 arguments (min, max)",this.currentNode,null);
 				}
 				var min = this.resolveAsInteger(args[0]);
 				var max = this.resolveAsInteger(args[1]);
 				return min + Std.random(max - min);
 			default:
-				throw haxe_Exception.thrown("" + ref + "." + method + "() is not a known context method" + "");
+				throw new bh_multianim_BuilderError("" + ref + "." + method + "() is not a known context method",this.currentNode,null);
 			}
 		} else {
-			throw haxe_Exception.thrown("unknown reference " + ref + " for method call ." + method + "()" + "");
+			throw new bh_multianim_BuilderError("unknown reference " + ref + " for method call ." + method + "()",this.currentNode,null);
 		}
 	}
 	,resolveRVMethodCallToPoint: function(ref,method,args) {
 		var node = this.currentNode;
 		if(node == null) {
-			throw haxe_Exception.thrown("currentNode is null in resolveRVMethodCallToPoint");
+			throw new bh_multianim_BuilderError("currentNode is null in resolveRVMethodCallToPoint",this.currentNode,null);
 		}
 		if(method == "extraPoint") {
 			if(args.length < 1) {
-				throw haxe_Exception.thrown("$" + ref + ".extraPoint() requires at least 1 argument (pointName)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".extraPoint() requires at least 1 argument (pointName)",this.currentNode,null);
 			}
 			var pointName = this.resolveAsString(args[0]);
 			var fallback = args.length >= 3 ? bh_multianim_Coordinates.OFFSET(args[1],args[2]) : null;
@@ -20393,11 +23819,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				gcs = null;
 			}
 			if(gcs == null) {
-				throw haxe_Exception.thrown("no grid coordinate system in scope for $" + ref + "." + method + "()" + "");
+				throw new bh_multianim_BuilderError("no grid coordinate system in scope for $" + ref + "." + method + "()",this.currentNode,null);
 			}
 			if(method == "pos") {
 				if(args.length < 2) {
-					throw haxe_Exception.thrown("$" + ref + ".pos() requires at least 2 arguments (x, y)" + "");
+					throw new bh_multianim_BuilderError("$" + ref + ".pos() requires at least 2 arguments (x, y)",this.currentNode,null);
 				}
 				var x = this.resolveAsInteger(args[0]);
 				var y = this.resolveAsInteger(args[1]);
@@ -20408,7 +23834,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				return bh_multianim_CoordinateSystems_resolveAsGrid(gcs,x,y);
 			} else {
-				throw haxe_Exception.thrown("$" + ref + "." + method + "() is not a known grid method" + "");
+				throw new bh_multianim_BuilderError("$" + ref + "." + method + "() is not a known grid method",this.currentNode,null);
 			}
 		}
 		var hcs;
@@ -20423,36 +23849,36 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			hcs = null;
 		}
 		if(hcs == null) {
-			throw haxe_Exception.thrown("no hex coordinate system in scope for $" + ref + "." + method + "()" + "");
+			throw new bh_multianim_BuilderError("no hex coordinate system in scope for $" + ref + "." + method + "()",this.currentNode,null);
 		}
 		switch(method) {
 		case "corner":
 			if(args.length < 1) {
-				throw haxe_Exception.thrown("$" + ref + ".corner() requires at least 1 argument (index)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".corner() requires at least 1 argument (index)",this.currentNode,null);
 			}
 			var idx = this.resolveAsInteger(args[0]);
 			var factor = args.length >= 2 ? this.resolveAsNumber(args[1]) : 1.0;
 			return bh_multianim_HexCoordinateSystemHelper.resolveAsHexCorner(hcs,idx,factor);
 		case "cube":
 			if(args.length != 3) {
-				throw haxe_Exception.thrown("$" + ref + ".cube() requires 3 arguments (q, r, s)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".cube() requires 3 arguments (q, r, s)",this.currentNode,null);
 			}
 			return bh_multianim_HexCoordinateSystemHelper.resolveHexCube(hcs,this.resolveAsNumber(args[0]),this.resolveAsNumber(args[1]),this.resolveAsNumber(args[2]));
 		case "doubled":
 			if(args.length != 2) {
-				throw haxe_Exception.thrown("$" + ref + ".doubled() requires 2 arguments (col, row)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".doubled() requires 2 arguments (col, row)",this.currentNode,null);
 			}
 			return bh_multianim_HexCoordinateSystemHelper.resolveHexDoubled(hcs,this.resolveAsInteger(args[0]),this.resolveAsInteger(args[1]));
 		case "edge":
 			if(args.length < 1) {
-				throw haxe_Exception.thrown("$" + ref + ".edge() requires at least 1 argument (direction)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".edge() requires at least 1 argument (direction)",this.currentNode,null);
 			}
 			var dir = this.resolveAsInteger(args[0]);
 			var factor = args.length >= 2 ? this.resolveAsNumber(args[1]) : 1.0;
 			return bh_multianim_HexCoordinateSystemHelper.resolveAsHexEdge(hcs,dir,factor);
 		case "offset":
 			if(args.length < 2) {
-				throw haxe_Exception.thrown("$" + ref + ".offset() requires at least 2 arguments (col, row)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".offset() requires at least 2 arguments (col, row)",this.currentNode,null);
 			}
 			var parity;
 			if(args.length >= 3) {
@@ -20465,7 +23891,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					parity = bh_multianim_OffsetParity.ODD;
 					break;
 				default:
-					throw haxe_Exception.thrown("Expected \"even\" or \"odd\", got: " + p + "");
+					throw new bh_multianim_BuilderError("Expected \"even\" or \"odd\", got: " + p,this.currentNode,null);
 				}
 			} else {
 				parity = bh_multianim_OffsetParity.EVEN;
@@ -20473,11 +23899,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return bh_multianim_HexCoordinateSystemHelper.resolveHexOffset(hcs,this.resolveAsInteger(args[0]),this.resolveAsInteger(args[1]),parity);
 		case "pixel":
 			if(args.length != 2) {
-				throw haxe_Exception.thrown("$" + ref + ".pixel() requires 2 arguments (x, y)" + "");
+				throw new bh_multianim_BuilderError("$" + ref + ".pixel() requires 2 arguments (x, y)",this.currentNode,null);
 			}
 			return bh_multianim_HexCoordinateSystemHelper.resolveHexPixel(hcs,this.resolveAsNumber(args[0]),this.resolveAsNumber(args[1]));
 		default:
-			throw haxe_Exception.thrown("$" + ref + "." + method + "() is not a known hex method" + "");
+			throw new bh_multianim_BuilderError("$" + ref + "." + method + "() is not a known hex method",this.currentNode,null);
 		}
 	}
 	,resolveRVChainedMethodCall: function(base,property) {
@@ -20488,7 +23914,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var args = base.args;
 				if(ref == "ctx" && method == "font") {
 					if(args.length != 1) {
-						throw haxe_Exception.thrown("$" + "ctx.font() requires 1 argument (font name)" + "");
+						throw new bh_multianim_BuilderError("$" + "ctx.font() requires 1 argument (font name)",this.currentNode,null);
 					}
 					var fontName = this.resolveAsString(args[0]);
 					var font = this.resourceLoader.loadFont(fontName);
@@ -20499,10 +23925,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 				}
 			}
-			throw haxe_Exception.thrown("unsupported base expression for ." + property + " — use $" + "ctx.font(\"name\")." + property + "");
+			throw new bh_multianim_BuilderError("unsupported base expression for ." + property + " — use $" + "ctx.font(\"name\")." + property,this.currentNode,null);
 		}
 		if(property != "x" && property != "y") {
-			throw haxe_Exception.thrown("unsupported chained property ." + property + " — only .x, .y, .lineHeight, .baseLine are supported" + "");
+			throw new bh_multianim_BuilderError("unsupported chained property ." + property + " — only .x, .y, .lineHeight, .baseLine are supported",this.currentNode,null);
 		}
 		if(base._hx_index == 8) {
 			var ref = base.ref;
@@ -20515,10 +23941,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				return pt.y;
 			}
 		} else {
-			throw haxe_Exception.thrown("unsupported base expression for ." + property + " extraction" + "");
+			throw new bh_multianim_BuilderError("unsupported base expression for ." + property + " extraction",this.currentNode,null);
 		}
 	}
 	,resolveAsBool: function(v) {
+		var _gthis = this;
 		switch(v._hx_index) {
 		case 1:
 			var s = v.s;
@@ -20549,33 +23976,73 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case 7:
 				return this.resolveAsString(e1) != this.resolveAsString(e2);
 			case 8:
+				var tmp;
 				try {
-					return this.resolveAsNumber(e1) < this.resolveAsNumber(e2);
+					tmp = _gthis.resolveAsNumber(e1) < _gthis.resolveAsNumber(e2);
 				} catch( _g ) {
-					return this.resolveAsString(e1) < this.resolveAsString(e2);
+					var _g1 = haxe_Exception.caught(_g);
+					if(((_g1) instanceof bh_multianim_BuilderError)) {
+						var err = _g1;
+						if(err.code != "not_a_number") {
+							throw err;
+						}
+						tmp = _gthis.resolveAsString(e1) < _gthis.resolveAsString(e2);
+					} else {
+						throw _g;
+					}
 				}
-				break;
+				return tmp;
 			case 9:
+				var tmp;
 				try {
-					return this.resolveAsNumber(e1) > this.resolveAsNumber(e2);
+					tmp = _gthis.resolveAsNumber(e1) > _gthis.resolveAsNumber(e2);
 				} catch( _g ) {
-					return this.resolveAsString(e1) > this.resolveAsString(e2);
+					var _g1 = haxe_Exception.caught(_g);
+					if(((_g1) instanceof bh_multianim_BuilderError)) {
+						var err = _g1;
+						if(err.code != "not_a_number") {
+							throw err;
+						}
+						tmp = _gthis.resolveAsString(e1) > _gthis.resolveAsString(e2);
+					} else {
+						throw _g;
+					}
 				}
-				break;
+				return tmp;
 			case 10:
+				var tmp;
 				try {
-					return this.resolveAsNumber(e1) <= this.resolveAsNumber(e2);
+					tmp = _gthis.resolveAsNumber(e1) <= _gthis.resolveAsNumber(e2);
 				} catch( _g ) {
-					return this.resolveAsString(e1) <= this.resolveAsString(e2);
+					var _g1 = haxe_Exception.caught(_g);
+					if(((_g1) instanceof bh_multianim_BuilderError)) {
+						var err = _g1;
+						if(err.code != "not_a_number") {
+							throw err;
+						}
+						tmp = _gthis.resolveAsString(e1) <= _gthis.resolveAsString(e2);
+					} else {
+						throw _g;
+					}
 				}
-				break;
+				return tmp;
 			case 11:
+				var tmp;
 				try {
-					return this.resolveAsNumber(e1) >= this.resolveAsNumber(e2);
+					tmp = _gthis.resolveAsNumber(e1) >= _gthis.resolveAsNumber(e2);
 				} catch( _g ) {
-					return this.resolveAsString(e1) >= this.resolveAsString(e2);
+					var _g1 = haxe_Exception.caught(_g);
+					if(((_g1) instanceof bh_multianim_BuilderError)) {
+						var err = _g1;
+						if(err.code != "not_a_number") {
+							throw err;
+						}
+						tmp = _gthis.resolveAsString(e1) >= _gthis.resolveAsString(e2);
+					} else {
+						throw _g;
+					}
 				}
-				break;
+				return tmp;
 			default:
 				return this.resolveAsInteger(v) != 0;
 			}
@@ -20595,11 +24062,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				if(defaultValue != null) {
 					return _gthis.resolveAsInteger(defaultValue);
 				} else {
-					throw haxe_Exception.thrown("no default value for " + Std.string(input) + "");
+					throw new bh_multianim_BuilderError("no default value for " + Std.string(input),_gthis.currentNode,null);
 				}
 				break;
 			default:
-				throw haxe_Exception.thrown("callback should return int but was " + Std.string(result) + " for " + Std.string(input) + "");
+				throw new bh_multianim_BuilderError("callback should return int but was " + Std.string(result) + " for " + Std.string(input),_gthis.currentNode,null);
 			}
 		};
 		switch(v._hx_index) {
@@ -20615,21 +24082,21 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return i;
 		case 3:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArray not supported");
+			throw new bh_multianim_BuilderError("RVArray not supported",this.currentNode,null);
 		case 4:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArrayReference not supported");
+			throw new bh_multianim_BuilderError("RVArrayReference not supported",this.currentNode,null);
 		case 5:
 			var f = v.f;
 			return f | 0;
 		case 6:
 			var ref = v.ref;
 			if(!Object.prototype.hasOwnProperty.call(this.indexedParams.h,ref)) {
-				throw haxe_Exception.thrown("reference " + ref + " does not exist, available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)) + "");
+				throw new bh_multianim_BuilderError("reference " + ref + " does not exist, available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)),this.currentNode,"missing_ref");
 			}
 			var val = this.indexedParams.h[ref];
 			if(val == null) {
-				throw haxe_Exception.thrown("reference " + ref + " is null" + "");
+				throw new bh_multianim_BuilderError("reference " + ref + " is null",this.currentNode,null);
 			} else {
 				switch(val._hx_index) {
 				case 1:
@@ -20645,7 +24112,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var expr = val.expr;
 					return this.resolveAsInteger(expr);
 				default:
-					throw haxe_Exception.thrown("reference " + ref + " is not a value but " + Std.string(val) + "");
+					throw new bh_multianim_BuilderError("reference " + ref + " is not a value but " + Std.string(val),this.currentNode,null);
 				}
 			}
 			break;
@@ -20714,19 +24181,19 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case 3:
 				var d = this.resolveAsInteger(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Division by zero");
+					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
 				}
 				return this.resolveAsInteger(e1) / d | 0;
 			case 4:
 				var d = this.resolveAsInteger(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Division by zero");
+					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
 				}
 				return this.resolveAsInteger(e1) / d | 0;
 			case 5:
 				var d = this.resolveAsInteger(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Modulo by zero");
+					throw new bh_multianim_BuilderError("Modulo by zero",this.currentNode,null);
 				}
 				return this.resolveAsInteger(e1) % d | 0;
 			case 6:
@@ -20789,7 +24256,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var s = v.s;
 			var f = parseFloat(s);
 			if(isNaN(f)) {
-				throw haxe_Exception.thrown("expected number, got " + s + "");
+				throw new bh_multianim_BuilderError("expected number, got " + s,this.currentNode,"not_a_number");
 			}
 			return f;
 		case 2:
@@ -20797,21 +24264,21 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return i;
 		case 3:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArray not supported");
+			throw new bh_multianim_BuilderError("RVArray not supported",this.currentNode,null);
 		case 4:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArrayReference not supported");
+			throw new bh_multianim_BuilderError("RVArrayReference not supported",this.currentNode,null);
 		case 5:
 			var f = v.f;
 			return f;
 		case 6:
 			var ref = v.ref;
 			if(!Object.prototype.hasOwnProperty.call(this.indexedParams.h,ref)) {
-				throw haxe_Exception.thrown("reference " + ref + " does not exist (resolveAsNumber), available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)) + "");
+				throw new bh_multianim_BuilderError("reference " + ref + " does not exist (resolveAsNumber), available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)),this.currentNode,"missing_ref");
 			}
 			var val = this.indexedParams.h[ref];
 			if(val == null) {
-				throw haxe_Exception.thrown("reference " + ref + " is null" + "");
+				throw new bh_multianim_BuilderError("reference " + ref + " is null",this.currentNode,null);
 			} else {
 				switch(val._hx_index) {
 				case 1:
@@ -20824,7 +24291,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var expr = val.expr;
 					return this.resolveAsNumber(expr);
 				default:
-					throw haxe_Exception.thrown("reference " + ref + " is not a value but " + Std.string(val) + "");
+					throw new bh_multianim_BuilderError("reference " + ref + " is not a value but " + Std.string(val),this.currentNode,null);
 				}
 			}
 			break;
@@ -20852,7 +24319,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var input = bh_multianim_CallbackRequest.NameWithIndex(this.resolveAsString(name),this.resolveAsInteger(idx));
 			var result = this.builderParams.callback(input);
 			if(result == null) {
-				throw haxe_Exception.thrown("callback should return number but was null");
+				throw new bh_multianim_BuilderError("callback should return number but was null",this.currentNode,null);
 			} else {
 				switch(result._hx_index) {
 				case 0:
@@ -20863,10 +24330,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return val;
 				case 2:
 					var val = result.val;
-					throw haxe_Exception.thrown("callback should return number but was " + Std.string(result) + " for " + Std.string(input) + "");
+					throw new bh_multianim_BuilderError("callback should return number but was " + Std.string(result) + " for " + Std.string(input),this.currentNode,"not_a_number");
 				case 3:
 					var _g = result.val;
-					throw haxe_Exception.thrown("callback should return number but was CBRObject " + Std.string(result) + " for " + Std.string(input) + "");
+					throw new bh_multianim_BuilderError("callback should return number but was CBRObject " + Std.string(result) + " for " + Std.string(input),this.currentNode,null);
 				case 4:
 					return this.resolveAsNumber(defaultValue);
 				}
@@ -20878,7 +24345,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var input = bh_multianim_CallbackRequest.Name(this.resolveAsString(name));
 			var result = this.builderParams.callback(input);
 			if(result == null) {
-				throw haxe_Exception.thrown("callback should return number but was null for " + Std.string(input) + "");
+				throw new bh_multianim_BuilderError("callback should return number but was null for " + Std.string(input),this.currentNode,null);
 			} else {
 				switch(result._hx_index) {
 				case 0:
@@ -20889,10 +24356,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return val;
 				case 2:
 					var val = result.val;
-					throw haxe_Exception.thrown("callback should return number but was " + val + "");
+					throw new bh_multianim_BuilderError("callback should return number but was " + val,this.currentNode,"not_a_number");
 				case 3:
 					var _g = result.val;
-					throw haxe_Exception.thrown("callback should return number but was CBRObject for " + Std.string(input) + "");
+					throw new bh_multianim_BuilderError("callback should return number but was CBRObject for " + Std.string(input),this.currentNode,null);
 				case 4:
 					return this.resolveAsNumber(defaultValue);
 				}
@@ -20903,12 +24370,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var _g = v.palette;
 			var _g = v.x;
 			var _g = v.y;
-			throw haxe_Exception.thrown("reference is a color but needs to be float");
+			throw new bh_multianim_BuilderError("reference is a color but needs to be float",this.currentNode,"not_a_number");
 		case 14:
 			var _g = v.externalReference;
 			var _g = v.palette;
 			var _g = v.index;
-			throw haxe_Exception.thrown("reference is a color but needs to be float");
+			throw new bh_multianim_BuilderError("reference is a color but needs to be float",this.currentNode,"not_a_number");
 		case 15:
 			var condition = v.condition;
 			var ifTrue = v.ifTrue;
@@ -20933,19 +24400,19 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			case 3:
 				var d = this.resolveAsNumber(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Division by zero");
+					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
 				}
 				return this.resolveAsNumber(e1) / d;
 			case 4:
 				var d = this.resolveAsInteger(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Division by zero");
+					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
 				}
 				return this.resolveAsInteger(e1) / d | 0;
 			case 5:
 				var d = this.resolveAsNumber(e2);
 				if(d == 0) {
-					throw haxe_Exception.thrown("Modulo by zero");
+					throw new bh_multianim_BuilderError("Modulo by zero",this.currentNode,null);
 				}
 				return this.resolveAsNumber(e1) % d;
 			case 6:
@@ -21012,14 +24479,82 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("unexpected ReferenceableValue for programmable reference: " + Std.string(rv));
+			throw new bh_multianim_BuilderError("unexpected ReferenceableValue for programmable reference: " + Std.string(rv),this.currentNode,null);
+		}
+	}
+	,resolveDynamicRefKey: function(node,fallback) {
+		var _g = node.updatableName;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.name;
+			if(_g1 == null) {
+				return fallback;
+			} else {
+				var name = _g1;
+				return name;
+			}
+			break;
+		case 1:
+			var name = _g.name;
+			return name;
+		case 2:
+			var name = _g.name;
+			var indexVar = _g.indexVar;
+			var iv = this.indexedParams.h[indexVar];
+			var idx;
+			if(iv != null) {
+				if(iv == null) {
+					idx = 0;
+				} else if(iv._hx_index == 1) {
+					var v = iv.val;
+					idx = v;
+				} else {
+					idx = 0;
+				}
+			} else {
+				idx = 0;
+			}
+			return "" + name + " " + idx;
+		case 3:
+			var name = _g.name;
+			var indexVarX = _g.indexVarX;
+			var indexVarY = _g.indexVarY;
+			var iv = this.indexedParams.h[indexVarX];
+			var tmp;
+			if(iv != null) {
+				if(iv == null) {
+					tmp = 0;
+				} else if(iv._hx_index == 1) {
+					var v = iv.val;
+					tmp = v;
+				} else {
+					tmp = 0;
+				}
+			} else {
+				tmp = 0;
+			}
+			var iv = this.indexedParams.h[indexVarY];
+			var tmp1;
+			if(iv != null) {
+				if(iv == null) {
+					tmp1 = 0;
+				} else if(iv._hx_index == 1) {
+					var v = iv.val;
+					tmp1 = v;
+				} else {
+					tmp1 = 0;
+				}
+			} else {
+				tmp1 = 0;
+			}
+			return "" + name + " " + tmp + " " + tmp1;
 		}
 	}
 	,resolveAsString: function(v) {
 		var _gthis = this;
 		var handleCallback = function(result,input,defaultValue) {
 			if(result == null) {
-				throw haxe_Exception.thrown("callback should return string but was null for " + Std.string(input) + "");
+				throw new bh_multianim_BuilderError("callback should return string but was null for " + Std.string(input),_gthis.currentNode,null);
 			} else {
 				switch(result._hx_index) {
 				case 0:
@@ -21033,12 +24568,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return val;
 				case 3:
 					var _g = result.val;
-					throw haxe_Exception.thrown("callback should return string but was CBRObject for " + Std.string(input) + "");
+					throw new bh_multianim_BuilderError("callback should return string but was CBRObject for " + Std.string(input),_gthis.currentNode,null);
 				case 4:
 					if(defaultValue != null) {
 						return _gthis.resolveAsString(defaultValue);
 					} else {
-						throw haxe_Exception.thrown("no default value for " + Std.string(input) + "");
+						throw new bh_multianim_BuilderError("no default value for " + Std.string(input),_gthis.currentNode,null);
 					}
 					break;
 				}
@@ -21057,17 +24592,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return "" + i;
 		case 3:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArray not supported");
+			throw new bh_multianim_BuilderError("RVArray not supported",this.currentNode,null);
 		case 4:
 			var refArray = v.refArr;
-			throw haxe_Exception.thrown("RVArrayReference not supported");
+			throw new bh_multianim_BuilderError("RVArrayReference not supported",this.currentNode,null);
 		case 5:
 			var f = v.f;
 			return "" + f;
 		case 6:
 			var ref = v.ref;
 			if(!Object.prototype.hasOwnProperty.call(this.indexedParams.h,ref)) {
-				throw haxe_Exception.thrown("reference " + ref + " does not exist (resolveAsString), available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)) + "");
+				throw new bh_multianim_BuilderError("reference " + ref + " does not exist (resolveAsString), available " + (this.indexedParams == null ? "null" : haxe_ds_StringMap.stringify(this.indexedParams.h)),this.currentNode,"missing_ref");
 			}
 			var val = this.indexedParams.h[ref];
 			switch(val._hx_index) {
@@ -21088,7 +24623,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var expr = val.expr;
 				return this.resolveAsString(expr);
 			default:
-				throw haxe_Exception.thrown("invalid reference value " + ref + ", expected string got " + Std.string(val) + "");
+				throw new bh_multianim_BuilderError("invalid reference value " + ref + ", expected string got " + Std.string(val),this.currentNode,null);
 			}
 			break;
 		case 7:
@@ -21117,7 +24652,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return "" + n;
 				}
 			} catch( _g ) {
-				return this.resolveAsString(e);
+				var _g1 = haxe_Exception.caught(_g);
+				if(((_g1) instanceof bh_multianim_BuilderError)) {
+					var err = _g1;
+					if(err.code == "not_a_number") {
+						return this.resolveAsString(e);
+					}
+					throw err;
+				} else {
+					throw _g;
+				}
 			}
 			break;
 		case 11:
@@ -21240,7 +24784,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var w = type.width;
 			var h = type.height;
 			var color = type.color;
-			return h2d_Tile.fromColor(color,w,h);
+			return bh_base_HeapsUtils_solidTile(color,w,h);
 		case 2:
 			var w = type.width;
 			var h = type.height;
@@ -21277,7 +24821,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var name = this.resolveAsString(autotileName);
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("autotile reference: could not find autotile \"" + name + "\"" + "");
+			throw new bh_multianim_BuilderError("autotile reference: could not find autotile \"" + name + "\"",this.currentNode,null);
 		}
 		var autotileDef;
 		var _g = node.type;
@@ -21285,7 +24829,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var def = _g.autotileDef;
 			autotileDef = def;
 		} else {
-			throw haxe_Exception.thrown("autotile reference: \"" + name + "\" is not an autotile definition" + "");
+			throw new bh_multianim_BuilderError("autotile reference: \"" + name + "\" is not an autotile definition",node,null);
 		}
 		var format = autotileDef.format;
 		var edgeMask = null;
@@ -21324,7 +24868,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					actualIndex = bh_base_Autotile.applyBlob47FallbackWithMap(tileIndex,mapping2);
 				}
 				if(!mapping2.h.hasOwnProperty(actualIndex)) {
-					throw haxe_Exception.thrown("autotile reference: tile index " + tileIndex + " not found in mapping" + "");
+					throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " not found in mapping",node,null);
 				}
 				mappedIndex = mapping2.h[actualIndex];
 			}
@@ -21334,7 +24878,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 1:
 			var sheet = _g.sheet;
 			var region = _g.region;
-			throw haxe_Exception.thrown("autotile reference: \"" + name + "\" uses sheet region - use tiles: or demo: syntax instead" + "");
+			throw new bh_multianim_BuilderError("autotile reference: \"" + name + "\" uses sheet region - use tiles: or demo: syntax instead",node,null);
 		case 2:
 			var filename = _g.filename;
 			var tileSize = this.resolveAsInteger(autotileDef.tileSize);
@@ -21358,7 +24902,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					actualIndex = bh_base_Autotile.applyBlob47FallbackWithMap(tileIndex,mapping);
 				}
 				if(!mapping.h.hasOwnProperty(actualIndex)) {
-					throw haxe_Exception.thrown("autotile reference: tile index " + tileIndex + " not found in mapping" + "");
+					throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " not found in mapping",node,null);
 				}
 				mappedIndex = mapping.h[actualIndex];
 			}
@@ -21374,7 +24918,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				actualIndex = bh_base_Autotile.applyBlob47Fallback(tileIndex,tiles.length);
 			}
 			if(actualIndex < 0 || actualIndex >= tiles.length) {
-				throw haxe_Exception.thrown("autotile reference: tile index " + tileIndex + " out of bounds for \"" + name + "\" (has " + tiles.length + " tiles)" + "");
+				throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " out of bounds for \"" + name + "\" (has " + tiles.length + " tiles)",node,null);
 			}
 			var tile = this.loadTileSource(tiles[actualIndex]);
 			return bh_base_ResolvedGeneratedTileType.PreloadedTile(tile);
@@ -21394,7 +24938,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var fontColorVal = this.resolveAsColorInteger(fontColor);
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("autotileRegionSheet: could not find autotile \"" + name + "\"" + "");
+			throw new bh_multianim_BuilderError("autotileRegionSheet: could not find autotile \"" + name + "\"",this.currentNode,null);
 		}
 		var autotileDef;
 		var _g = node.type;
@@ -21402,7 +24946,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var def = _g.autotileDef;
 			autotileDef = def;
 		} else {
-			throw haxe_Exception.thrown("autotileRegionSheet: \"" + name + "\" is not an autotile definition" + "");
+			throw new bh_multianim_BuilderError("autotileRegionSheet: \"" + name + "\" is not an autotile definition",node,null);
 		}
 		var tileSize = this.resolveAsInteger(autotileDef.tileSize);
 		var tileCount;
@@ -21419,7 +24963,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 0:
 			var _g1 = _g.sheet;
 			var _g1 = _g.prefix;
-			throw haxe_Exception.thrown("autotileRegionSheet: autotile \"" + name + "\" uses atlas prefix - no region to display" + "");
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses atlas prefix - no region to display",node,null);
 		case 1:
 			var sheet = _g.sheet;
 			var region = _g.region;
@@ -21433,7 +24977,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var filename = _g.filename;
 			var baseTile = this.resourceLoader.loadTile(this.resolveAsString(filename));
 			if(autotileDef.region == null) {
-				throw haxe_Exception.thrown("autotileRegionSheet: autotile \"" + name + "\" has no region defined" + "");
+				throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" has no region defined",node,null);
 			}
 			var r = autotileDef.region;
 			var regionX = this.resolveAsInteger(r[0]);
@@ -21443,17 +24987,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return bh_base_ResolvedGeneratedTileType.AutotileRegionSheet(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scaleVal,fontName,fontColorVal);
 		case 3:
 			var _g1 = _g.tiles;
-			throw haxe_Exception.thrown("autotileRegionSheet: autotile \"" + name + "\" uses explicit tiles - no region to display" + "");
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses explicit tiles - no region to display",node,null);
 		case 4:
 			var _g1 = _g.edgeColor;
 			var _g1 = _g.fillColor;
-			throw haxe_Exception.thrown("autotileRegionSheet: autotile \"" + name + "\" uses demo source - no region to display" + "");
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses demo source - no region to display",node,null);
 		}
 	}
 	,generateTileWithText: function(w,h,bgColor,text,textColor,fontName) {
 		var font = this.resourceLoader.loadFont(fontName);
 		var container = new h2d_Object();
-		var bg = new h2d_Bitmap(h2d_Tile.fromColor(bgColor,w,h),container);
+		var bg = bh_base_HeapsUtils_solidBitmap(bgColor,w,h,container);
 		var textObj = new h2d_Text(font,container);
 		textObj.set_text(text);
 		textObj.set_textColor(textColor & 16777215);
@@ -21559,7 +25103,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 					tile = bh_multianim_MultiAnimBuilder.incrementalFallbackTile.clone();
 				} else {
-					throw haxe_Exception.thrown("TSFile: empty filename");
+					throw new bh_multianim_BuilderError("TSFile: empty filename",this.currentNode,null);
 				}
 			} else {
 				tile = this.resourceLoader.loadTile(resolved);
@@ -21633,15 +25177,15 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 					tile = bh_multianim_MultiAnimBuilder.incrementalFallbackTile.clone();
 				} else {
-					throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" not found in indexed params" + "");
+					throw new bh_multianim_BuilderError("TileSource reference \"" + varName + "\" not found in indexed params",this.currentNode,null);
 				}
 			} else if(param == null) {
-				throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" is not a TileSourceValue, got: " + Std.string(param) + "");
+				throw new bh_multianim_BuilderError("TileSource reference \"" + varName + "\" is not a TileSourceValue, got: " + Std.string(param),this.currentNode,null);
 			} else if(param._hx_index == 6) {
 				var ts = param.tileSource;
 				tile = this.loadTileSource(ts);
 			} else {
-				throw haxe_Exception.thrown("TileSource reference \"" + varName + "\" is not a TileSourceValue, got: " + Std.string(param) + "");
+				throw new bh_multianim_BuilderError("TileSource reference \"" + varName + "\" is not a TileSourceValue, got: " + Std.string(param),this.currentNode,null);
 			}
 			break;
 		case 6:
@@ -21663,7 +25207,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			break;
 		}
 		if(tile == null) {
-			throw haxe_Exception.thrown("could not load tile " + Std.string(tileSource) + "");
+			throw new bh_multianim_BuilderError("could not load tile " + Std.string(tileSource),this.currentNode,null);
 		}
 		return tile;
 	}
@@ -21782,7 +25326,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			default:
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 1:
@@ -21793,6 +25337,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var fromF = from != null ? this.resolveAsNumber(from) : null;
 			var toF = to != null ? this.resolveAsNumber(to) : null;
 			switch(currentValue._hx_index) {
+			case 0:
+				var _g = currentValue.value;
+				var idx = currentValue.idx;
+				if(fromF != null && (fromExclusive ? idx <= fromF : idx < fromF)) {
+					return false;
+				}
+				if(toF != null && (toExclusive ? idx >= toF : idx > toF)) {
+					return false;
+				}
+				break;
 			case 1:
 				var val = currentValue.val;
 				if(fromF != null && (fromExclusive ? val <= fromF : val < fromF)) {
@@ -21811,8 +25365,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return false;
 				}
 				break;
+			case 4:
+				var _g = currentValue.s;
+				return false;
 			default:
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 2:
@@ -21833,7 +25390,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			default:
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 3:
@@ -21844,7 +25401,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return false;
 				}
 			} else {
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 4:
@@ -21855,7 +25412,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return false;
 				}
 			} else {
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 5:
@@ -21883,7 +25440,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				break;
 			default:
-				throw haxe_Exception.thrown("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue) + "");
+				throw new bh_multianim_BuilderError("invalid param types " + Std.string(currentValue) + ", " + Std.string(condValue),this.currentNode,null);
 			}
 			break;
 		case 7:
@@ -21963,7 +25520,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		return defaultArm;
 	}
-	,isMatch: function(node,indexedParams) {
+	,shouldBuildInFullMode: function(node,indexedParams) {
 		var _g = node.conditionals;
 		switch(_g._hx_index) {
 		case 0:
@@ -21980,7 +25537,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 	}
 	,resolveConditionalChildren: function(children) {
-		if(this.incrementalMode) {
+		if(this.incrementalMode && !this.suppressConditionalTracking) {
 			return children;
 		}
 		var result = [];
@@ -22038,6 +25595,139 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		return result;
 	}
+	,validateTileGroupSubtree: function(node,loopVarScope) {
+		var _gthis = this;
+		var _g = node.conditionals;
+		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.anyMode;
+			var conds = _g.values;
+			var h = conds.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var name = _g_key;
+				var _ = _g_value;
+				if(loopVarScope.indexOf(name) < 0) {
+					var kind;
+					var _g1 = _gthis.indexedParams.h[name];
+					if(_g1 == null) {
+						kind = "name";
+					} else if(_g1._hx_index == 7) {
+						var _g2 = _g1.expr;
+						kind = "@final";
+					} else {
+						kind = "parameter";
+					}
+					throw new bh_multianim_BuilderError("" + ("@(" + name + " => ...)") + " inside tileGroup references " + kind + " \"" + name + "\"; tileGroup descendants are baked at build time and never re-evaluated. Only repeatable/repeatable2d loop variables (which iterate at build time) are safe as conditional keys here — move the conditional outside the tileGroup, or key it on a loop variable.",node,"tilegroup_conditional");
+				}
+			}
+			break;
+		case 1:
+			var extraConds = _g.values;
+			if(extraConds != null) {
+				var h = extraConds.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var name = _g_key;
+					var _ = _g_value;
+					if(loopVarScope.indexOf(name) < 0) {
+						var kind;
+						var _g = _gthis.indexedParams.h[name];
+						if(_g == null) {
+							kind = "name";
+						} else if(_g._hx_index == 7) {
+							var _g1 = _g.expr;
+							kind = "@final";
+						} else {
+							kind = "parameter";
+						}
+						throw new bh_multianim_BuilderError("" + ("@else(" + name + " => ...)") + " inside tileGroup references " + kind + " \"" + name + "\"; tileGroup descendants are baked at build time and never re-evaluated. Only repeatable/repeatable2d loop variables (which iterate at build time) are safe as conditional keys here — move the conditional outside the tileGroup, or key it on a loop variable.",node,"tilegroup_conditional");
+					}
+				}
+			}
+			break;
+		case 2:case 3:
+			break;
+		}
+		var _g = node.type;
+		switch(_g._hx_index) {
+		case 19:
+			var _g1 = _g.repeatType;
+			var varName = _g.varName;
+			var innerScope = loopVarScope.concat([varName]);
+			var _g1 = 0;
+			var _g2 = node.children;
+			while(_g1 < _g2.length) {
+				var child = _g2[_g1];
+				++_g1;
+				this.validateTileGroupSubtree(child,innerScope);
+			}
+			break;
+		case 20:
+			var _g1 = _g.repeatTypeX;
+			var _g1 = _g.repeatTypeY;
+			var varNameX = _g.varNameX;
+			var varNameY = _g.varNameY;
+			var innerScope = loopVarScope.concat([varNameX,varNameY]);
+			var _g1 = 0;
+			var _g2 = node.children;
+			while(_g1 < _g2.length) {
+				var child = _g2[_g1];
+				++_g1;
+				this.validateTileGroupSubtree(child,innerScope);
+			}
+			break;
+		case 34:
+			var paramName = _g.paramName;
+			var arms = _g.arms;
+			if(loopVarScope.indexOf(paramName) < 0) {
+				var kind;
+				var _g = _gthis.indexedParams.h[paramName];
+				if(_g == null) {
+					kind = "name";
+				} else if(_g._hx_index == 7) {
+					var _g1 = _g.expr;
+					kind = "@final";
+				} else {
+					kind = "parameter";
+				}
+				throw new bh_multianim_BuilderError("" + ("@switch(" + paramName + ")") + " inside tileGroup references " + kind + " \"" + paramName + "\"; tileGroup descendants are baked at build time and never re-evaluated. Only repeatable/repeatable2d loop variables (which iterate at build time) are safe as conditional keys here — move the conditional outside the tileGroup, or key it on a loop variable.",node,"tilegroup_conditional");
+			}
+			var _g = 0;
+			while(_g < arms.length) {
+				var arm = arms[_g];
+				++_g;
+				var _g1 = 0;
+				var _g2 = arm.children;
+				while(_g1 < _g2.length) {
+					var child = _g2[_g1];
+					++_g1;
+					this.validateTileGroupSubtree(child,loopVarScope);
+				}
+			}
+			break;
+		default:
+			var _g = 0;
+			var _g1 = node.children;
+			while(_g < _g1.length) {
+				var child = _g1[_g];
+				++_g;
+				this.validateTileGroupSubtree(child,loopVarScope);
+			}
+		}
+	}
 	,trackIncrementalExpressions: function(node,object,builtObject) {
 		var _gthis = this;
 		var ctx = this.incrementalContext;
@@ -22046,6 +25736,196 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		var _g = node.type;
 		switch(_g._hx_index) {
+		case 0:
+			var _g1 = _g.layout;
+			var _g1 = _g.debug;
+			var _g1 = _g.multiline;
+			var _g1 = _g.bgSheet;
+			var _g1 = _g.bgTile;
+			var _g1 = _g.overflow;
+			var _g1 = _g.fillWidth;
+			var _g1 = _g.fillHeight;
+			var _g1 = _g.reverse;
+			var _g1 = _g.hAlign;
+			var _g1 = _g.vAlign;
+			var maxWidth = _g.maxWidth;
+			var maxHeight = _g.maxHeight;
+			var minWidth = _g.minWidth;
+			var minHeight = _g.minHeight;
+			var lineHeight = _g.lineHeight;
+			var colWidth = _g.colWidth;
+			var paddingTop = _g.paddingTop;
+			var paddingBottom = _g.paddingBottom;
+			var paddingLeft = _g.paddingLeft;
+			var paddingRight = _g.paddingRight;
+			var horizontalSpacing = _g.horizontalSpacing;
+			var verticalSpacing = _g.verticalSpacing;
+			var f;
+			if(builtObject._hx_index == 6) {
+				var ff = builtObject.f;
+				f = ff;
+			} else {
+				f = null;
+			}
+			if(f != null) {
+				var apply = function(v) {
+					f.set_maxWidth(v);
+				};
+				if(maxWidth != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(maxWidth,refs);
+					if(refs.length != 0) {
+						var rvCapture = maxWidth;
+						ctx.trackExpression(function() {
+							apply(_gthis.resolveAsInteger(rvCapture));
+						},refs,object);
+					}
+				}
+				var apply1 = function(v) {
+					f.set_maxHeight(v);
+				};
+				if(maxHeight != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(maxHeight,refs);
+					if(refs.length != 0) {
+						var rvCapture1 = maxHeight;
+						ctx.trackExpression(function() {
+							apply1(_gthis.resolveAsInteger(rvCapture1));
+						},refs,object);
+					}
+				}
+				var apply2 = function(v) {
+					f.set_minWidth(v);
+				};
+				if(minWidth != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(minWidth,refs);
+					if(refs.length != 0) {
+						var rvCapture2 = minWidth;
+						ctx.trackExpression(function() {
+							apply2(_gthis.resolveAsInteger(rvCapture2));
+						},refs,object);
+					}
+				}
+				var apply3 = function(v) {
+					f.set_minHeight(v);
+				};
+				if(minHeight != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(minHeight,refs);
+					if(refs.length != 0) {
+						var rvCapture3 = minHeight;
+						ctx.trackExpression(function() {
+							apply3(_gthis.resolveAsInteger(rvCapture3));
+						},refs,object);
+					}
+				}
+				var apply4 = function(v) {
+					f.set_lineHeight(v);
+				};
+				if(lineHeight != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(lineHeight,refs);
+					if(refs.length != 0) {
+						var rvCapture4 = lineHeight;
+						ctx.trackExpression(function() {
+							apply4(_gthis.resolveAsInteger(rvCapture4));
+						},refs,object);
+					}
+				}
+				var apply5 = function(v) {
+					f.set_colWidth(v);
+				};
+				if(colWidth != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(colWidth,refs);
+					if(refs.length != 0) {
+						var rvCapture5 = colWidth;
+						ctx.trackExpression(function() {
+							apply5(_gthis.resolveAsInteger(rvCapture5));
+						},refs,object);
+					}
+				}
+				var apply6 = function(v) {
+					f.set_paddingTop(v);
+				};
+				if(paddingTop != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(paddingTop,refs);
+					if(refs.length != 0) {
+						var rvCapture6 = paddingTop;
+						ctx.trackExpression(function() {
+							apply6(_gthis.resolveAsInteger(rvCapture6));
+						},refs,object);
+					}
+				}
+				var apply7 = function(v) {
+					f.set_paddingBottom(v);
+				};
+				if(paddingBottom != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(paddingBottom,refs);
+					if(refs.length != 0) {
+						var rvCapture7 = paddingBottom;
+						ctx.trackExpression(function() {
+							apply7(_gthis.resolveAsInteger(rvCapture7));
+						},refs,object);
+					}
+				}
+				var apply8 = function(v) {
+					f.set_paddingLeft(v);
+				};
+				if(paddingLeft != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(paddingLeft,refs);
+					if(refs.length != 0) {
+						var rvCapture8 = paddingLeft;
+						ctx.trackExpression(function() {
+							apply8(_gthis.resolveAsInteger(rvCapture8));
+						},refs,object);
+					}
+				}
+				var apply9 = function(v) {
+					f.set_paddingRight(v);
+				};
+				if(paddingRight != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(paddingRight,refs);
+					if(refs.length != 0) {
+						var rvCapture9 = paddingRight;
+						ctx.trackExpression(function() {
+							apply9(_gthis.resolveAsInteger(rvCapture9));
+						},refs,object);
+					}
+				}
+				var apply10 = function(v) {
+					f.set_horizontalSpacing(v);
+				};
+				if(horizontalSpacing != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(horizontalSpacing,refs);
+					if(refs.length != 0) {
+						var rvCapture10 = horizontalSpacing;
+						ctx.trackExpression(function() {
+							apply10(_gthis.resolveAsInteger(rvCapture10));
+						},refs,object);
+					}
+				}
+				var apply11 = function(v) {
+					f.set_verticalSpacing(v);
+				};
+				if(verticalSpacing != null) {
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(verticalSpacing,refs);
+					if(refs.length != 0) {
+						var rvCapture11 = verticalSpacing;
+						ctx.trackExpression(function() {
+							apply11(_gthis.resolveAsInteger(rvCapture11));
+						},refs,object);
+					}
+				}
+			}
+			break;
 		case 2:
 			var tileSource = _g.tileSource;
 			var hAlign = _g.hAlign;
@@ -22071,7 +25951,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							var hCapture = h;
 							var colorCapture = color;
 							ctx.trackExpression(function() {
-								bmp.set_tile(h2d_Tile.fromColor(_gthis.resolveAsColorInteger(colorCapture),_gthis.resolveAsInteger(wCapture),_gthis.resolveAsInteger(hCapture)));
+								bmp.set_tile(bh_base_HeapsUtils_solidTile(_gthis.resolveAsColorInteger(colorCapture),_gthis.resolveAsInteger(wCapture),_gthis.resolveAsInteger(hCapture)));
 							},bmpRefs,object);
 						} else {
 							var tileSourceCapture = tileSource;
@@ -22138,6 +26018,107 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							}
 							bmp.set_tile(tile.sub(0,0,tile.width,tile.height,wh,dh));
 						},bmpRefs,object);
+					}
+				}
+			}
+			break;
+		case 4:
+			var _g1 = _g.filename;
+			var initialState = _g.initialState;
+			var selectorReferences = _g.selector;
+			var sRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(initialState,sRefs);
+			if(sRefs.length > 0) {
+				var sm;
+				if(builtObject._hx_index == 2) {
+					var a = builtObject.a;
+					sm = a;
+				} else {
+					sm = null;
+				}
+				if(sm != null) {
+					var initCapture = initialState;
+					ctx.trackExpression(function() {
+						sm.play(_gthis.resolveAsString(initCapture));
+					},sRefs,object);
+				}
+			}
+			if(selectorReferences != null) {
+				var h = selectorReferences.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var k = _g_key;
+					var v = _g_value;
+					var selRefs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(v,selRefs);
+					var _g1 = 0;
+					while(_g1 < selRefs.length) {
+						var r = selRefs[_g1];
+						++_g1;
+						ctx.markParamUntracked(r,"stateanim selector \"" + k + "\"");
+					}
+				}
+			}
+			break;
+		case 5:
+			var _g1 = _g.externallyDriven;
+			var initialState = _g.initialState;
+			var construct = _g.construct;
+			var sRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(initialState,sRefs);
+			if(sRefs.length > 0) {
+				var sm1;
+				if(builtObject._hx_index == 2) {
+					var a = builtObject.a;
+					sm1 = a;
+				} else {
+					sm1 = null;
+				}
+				if(sm1 != null) {
+					var initCapture1 = initialState;
+					ctx.trackExpression(function() {
+						sm1.play(_gthis.resolveAsString(initCapture1));
+					},sRefs,object);
+				}
+			}
+			if(construct != null) {
+				var h = construct.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var key1 = _g_key;
+					var value = _g_value;
+					var _g1 = value.sheet;
+					var _g2 = value.loop;
+					var _g3 = value.center;
+					var animName = value.name;
+					var fps = value.fps;
+					var aRefs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(animName,aRefs);
+					var _g4 = 0;
+					while(_g4 < aRefs.length) {
+						var r = aRefs[_g4];
+						++_g4;
+						ctx.markParamUntracked(r,"stateanim_construct animName \"" + key1 + "\"");
+					}
+					var fRefs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(fps,fRefs);
+					var _g5 = 0;
+					while(_g5 < fRefs.length) {
+						var r1 = fRefs[_g5];
+						++_g5;
+						ctx.markParamUntracked(r1,"stateanim_construct fps \"" + key1 + "\"");
 					}
 				}
 			}
@@ -22287,6 +26268,32 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			break;
+		case 18:
+			var width = _g.width;
+			var height = _g.height;
+			var mRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(width,mRefs);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(height,mRefs);
+			if(mRefs.length > 0) {
+				var m;
+				if(builtObject._hx_index == 8) {
+					var mm = builtObject.m;
+					m = mm;
+				} else {
+					m = null;
+				}
+				if(m != null) {
+					var wCapture1 = width;
+					var hCapture1 = height;
+					ctx.trackExpression(function() {
+						var tmp = _gthis.resolveAsNumber(wCapture1);
+						m.width = Math.round(tmp);
+						var tmp = _gthis.resolveAsNumber(hCapture1);
+						m.height = Math.round(tmp);
+					},mRefs,object);
+				}
+			}
+			break;
 		case 23:
 			var _g1 = _g.sheet;
 			var _g1 = _g.tilename;
@@ -22304,12 +26311,78 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					sg = null;
 				}
 				if(sg != null) {
-					var wCapture1 = width;
-					var hCapture1 = height;
+					var wCapture2 = width;
+					var hCapture2 = height;
 					ctx.trackExpression(function() {
-						sg.set_width(_gthis.resolveAsNumber(wCapture1));
-						sg.set_height(_gthis.resolveAsNumber(hCapture1));
+						sg.set_width(_gthis.resolveAsNumber(wCapture2));
+						sg.set_height(_gthis.resolveAsNumber(hCapture2));
 					},npRefs,object);
+				}
+			}
+			break;
+		case 24:
+			var _g1 = _g.debug;
+			var width = _g.width;
+			var height = _g.height;
+			var id = _g.id;
+			var metadata = _g.metadata;
+			var iRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(width,iRefs);
+			bh_multianim_MultiAnimBuilder.collectParamRefs(height,iRefs);
+			if(iRefs.length > 0) {
+				var mao;
+				if(builtObject._hx_index == 0) {
+					var o = builtObject.obj;
+					mao = ((o) instanceof bh_base_MAObject) ? o : null;
+				} else {
+					mao = null;
+				}
+				if(mao != null) {
+					var wCapture3 = width;
+					var hCapture3 = height;
+					ctx.trackExpression(function() {
+						var newW = _gthis.resolveAsInteger(wCapture3);
+						var newH = _gthis.resolveAsInteger(hCapture3);
+						var _g = mao.multiAnimType;
+						if(_g._hx_index == 0) {
+							var _g1 = _g.width;
+							var _g1 = _g.height;
+							var keepId = _g.identifier;
+							var keepMeta = _g.metadata;
+							mao.multiAnimType = bh_base_MultiAnimObjectData.MAInteractive(newW,newH,keepId,keepMeta);
+						}
+					},iRefs,object);
+				}
+			}
+			var idRefs = [];
+			bh_multianim_MultiAnimBuilder.collectParamRefs(id,idRefs);
+			var _g1 = 0;
+			while(_g1 < idRefs.length) {
+				var r = idRefs[_g1];
+				++_g1;
+				ctx.markParamUntracked(r,"interactive id");
+			}
+			if(metadata != null) {
+				var _g1 = 0;
+				while(_g1 < metadata.length) {
+					var entry = metadata[_g1];
+					++_g1;
+					var kRefs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(entry.key,kRefs);
+					var _g2 = 0;
+					while(_g2 < kRefs.length) {
+						var r = kRefs[_g2];
+						++_g2;
+						ctx.markParamUntracked(r,"interactive metadata key");
+					}
+					var vRefs = [];
+					bh_multianim_MultiAnimBuilder.collectParamRefs(entry.value,vRefs);
+					var _g3 = 0;
+					while(_g3 < vRefs.length) {
+						var r1 = vRefs[_g3];
+						++_g3;
+						ctx.markParamUntracked(r1,"interactive metadata value");
+					}
 				}
 			}
 			break;
@@ -22345,93 +26418,40 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var _pos = node.pos;
 		if(_pos != null) {
 			var posRefs = [];
-			switch(_pos._hx_index) {
-			case 1:
-				var x = _pos.x;
-				var y = _pos.y;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(x,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(y,posRefs);
-				break;
-			case 3:
-				var gridX = _pos.gridX;
-				var gridY = _pos.gridY;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(gridX,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(gridY,posRefs);
-				break;
-			case 4:
-				var count = _pos.count;
-				var factor = _pos.factor;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(count,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(factor,posRefs);
-				break;
-			case 5:
-				var direction = _pos.direction;
-				var factor = _pos.factor;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(direction,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(factor,posRefs);
-				break;
-			case 6:
-				var q = _pos.q;
-				var r = _pos.r;
-				var s = _pos.s;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(q,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(r,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(s,posRefs);
-				break;
-			case 7:
-				var _g = _pos.parity;
-				var col = _pos.col;
-				var row = _pos.row;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(col,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(row,posRefs);
-				break;
-			case 8:
-				var col = _pos.col;
-				var row = _pos.row;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(col,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(row,posRefs);
-				break;
-			case 9:
-				var x = _pos.x;
-				var y = _pos.y;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(x,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(y,posRefs);
-				break;
-			case 10:
-				var cell = _pos.cell;
-				var cornerIndex = _pos.cornerIndex;
-				var factor = _pos.factor;
-				bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(cell,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(cornerIndex,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(factor,posRefs);
-				break;
-			case 11:
-				var cell = _pos.cell;
-				var direction = _pos.direction;
-				var factor = _pos.factor;
-				bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(cell,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(direction,posRefs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(factor,posRefs);
-				break;
-			case 12:
-				var _g = _pos.name;
-				var coord = _pos.coord;
-				bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(coord,posRefs);
-				break;
-			default:
-			}
+			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(_pos,posRefs);
 			if(posRefs.length > 0) {
 				var posCapture = _pos;
+				var nodeCapture2 = node;
 				var gcs = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
 				var hcs = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
 				ctx.trackExpression(function() {
-					var p = _gthis.calculatePosition(posCapture,gcs,hcs);
-					object.posChanged = true;
-					object.x = p.x;
-					object.posChanged = true;
-					object.y = p.y;
+					var prev = _gthis.currentNode;
+					_gthis.currentNode = nodeCapture2;
+					try {
+						var p = _gthis.calculatePosition(posCapture,gcs,hcs);
+						object.posChanged = true;
+						object.x = p.x;
+						object.posChanged = true;
+						object.y = p.y;
+					} catch( _g ) {
+						var e = haxe_Exception.caught(_g).unwrap();
+						_gthis.currentNode = prev;
+						throw haxe_Exception.thrown(e);
+					}
+					_gthis.currentNode = prev;
 				},posRefs,object);
 			}
+		}
+		this.trackExtendedFormExpressions(node,object);
+	}
+	,trackExtendedFormExpressions: function(node,object,gateVisibility) {
+		if(gateVisibility == null) {
+			gateVisibility = true;
+		}
+		var _gthis = this;
+		var ctx = this.incrementalContext;
+		if(ctx == null) {
+			return;
 		}
 		var extRefs = [];
 		var _scale = node.scale;
@@ -22457,153 +26477,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(extRefs.length > 0) {
 			ctx.trackExpression(function() {
 				_gthis.applyExtendedFormProperties(object,node);
-			},extRefs,object);
+			},extRefs,gateVisibility ? object : null);
 		}
-	}
-	,collectNodeParamRefs: function(node) {
-		var refs = [];
-		var _g = node.type;
-		switch(_g._hx_index) {
-		case 2:
-			var _g1 = _g.hAlign;
-			var _g1 = _g.vAlign;
-			var tileSource = _g.tileSource;
-			bh_multianim_MultiAnimBuilder.collectTileSourceParamRefs(tileSource,refs);
-			break;
-		case 6:
-			var shapes = _g.shapes;
-			bh_multianim_MultiAnimBuilder.collectPixelShapesParamRefs(shapes,refs);
-			break;
-		case 7:
-			var textDef = _g.textDef;
-			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,refs);
-			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,refs);
-			break;
-		case 8:
-			var textDef = _g.textDef;
-			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,refs);
-			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,refs);
-			break;
-		case 19:
-			var _g1 = _g.varName;
-			var repeatType = _g.repeatType;
-			switch(repeatType._hx_index) {
-			case 0:
-				var dirX = repeatType.dx;
-				var dirY = repeatType.dy;
-				var repeats = repeatType.repeatCount;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(repeats,refs);
-				if(dirX != null) {
-					bh_multianim_MultiAnimBuilder.collectParamRefs(dirX,refs);
-				}
-				if(dirY != null) {
-					bh_multianim_MultiAnimBuilder.collectParamRefs(dirY,refs);
-				}
-				break;
-			case 3:
-				var start = repeatType.start;
-				var end = repeatType.end;
-				var step = repeatType.step;
-				bh_multianim_MultiAnimBuilder.collectParamRefs(start,refs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(end,refs);
-				bh_multianim_MultiAnimBuilder.collectParamRefs(step,refs);
-				break;
-			default:
-			}
-			break;
-		case 23:
-			var _g1 = _g.sheet;
-			var _g1 = _g.tilename;
-			var width = _g.width;
-			var height = _g.height;
-			bh_multianim_MultiAnimBuilder.collectParamRefs(width,refs);
-			bh_multianim_MultiAnimBuilder.collectParamRefs(height,refs);
-			break;
-		case 26:
-			var elements = _g.elements;
-			var _g1 = 0;
-			while(_g1 < elements.length) {
-				var item = elements[_g1];
-				++_g1;
-				bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(item.pos,refs);
-				bh_multianim_MultiAnimBuilder.collectGraphicsElementParamRefs(item.element,refs);
-			}
-			break;
-		case 34:
-			var paramName = _g.paramName;
-			var arms = _g.arms;
-			if(refs.indexOf(paramName) < 0) {
-				refs.push(paramName);
-			}
-			var _g = 0;
-			while(_g < arms.length) {
-				var arm = arms[_g];
-				++_g;
-				var _g1 = 0;
-				var _g2 = arm.children;
-				while(_g1 < _g2.length) {
-					var child = _g2[_g1];
-					++_g1;
-					var arr = this.collectNodeParamRefs(child);
-					var _g3 = 0;
-					while(_g3 < arr.length) {
-						var r = arr[_g3];
-						++_g3;
-						if(refs.indexOf(r) < 0) {
-							refs.push(r);
-						}
-					}
-				}
-			}
-			break;
-		default:
-		}
-		var _pos = node.pos;
-		if(_pos != null) {
-			var posRefs = [];
-			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(_pos,posRefs);
-			var _g = 0;
-			while(_g < posRefs.length) {
-				var r = posRefs[_g];
-				++_g;
-				if(refs.indexOf(r) < 0) {
-					refs.push(r);
-				}
-			}
-		}
-		if(node.scale != null) {
-			bh_multianim_MultiAnimBuilder.collectParamRefs(node.scale,refs);
-		}
-		if(node.rotation != null) {
-			bh_multianim_MultiAnimBuilder.collectParamRefs(node.rotation,refs);
-		}
-		if(node.alpha != null) {
-			bh_multianim_MultiAnimBuilder.collectParamRefs(node.alpha,refs);
-		}
-		if(node.tint != null) {
-			bh_multianim_MultiAnimBuilder.collectParamRefs(node.tint,refs);
-		}
-		if(node.filter != null) {
-			bh_multianim_MultiAnimBuilder.collectFilterParamRefs(node.filter,refs);
-		}
-		if(node.children != null) {
-			var _g = 0;
-			var _g1 = node.children;
-			while(_g < _g1.length) {
-				var child = _g1[_g];
-				++_g;
-				var arr = this.collectNodeParamRefs(child);
-				var _g2 = 0;
-				while(_g2 < arr.length) {
-					var r = arr[_g2];
-					++_g2;
-					if(refs.indexOf(r) < 0) {
-						refs.push(r);
-					}
-				}
-			}
-		}
-		return refs;
 	}
 	,addPosition: function(obj,x,y) {
 		obj.posChanged = true;
@@ -22641,7 +26516,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var gridX = position.gridX;
 			var gridY = position.gridY;
 			if(gridCoordinateSystem == null) {
-				throw haxe_Exception.thrown("gridCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("gridCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_CoordinateSystems_resolveAsGrid(gridCoordinateSystem,this.resolveAsInteger(gridX),this.resolveAsInteger(gridY));
 			break;
@@ -22649,7 +26524,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var count = position.count;
 			var factor = position.factor;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveAsHexCorner(hexCoordinateSystem,this.resolveAsInteger(count),this.resolveAsNumber(factor));
 			break;
@@ -22657,7 +26532,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var direction = position.direction;
 			var factor = position.factor;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveAsHexEdge(hexCoordinateSystem,this.resolveAsInteger(direction),this.resolveAsNumber(factor));
 			break;
@@ -22666,7 +26541,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var r = position.r;
 			var s = position.s;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveHexCube(hexCoordinateSystem,this.resolveAsNumber(q),this.resolveAsNumber(r),this.resolveAsNumber(s));
 			break;
@@ -22675,7 +26550,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var row = position.row;
 			var parity = position.parity;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveHexOffset(hexCoordinateSystem,this.resolveAsInteger(col),this.resolveAsInteger(row),parity);
 			break;
@@ -22683,7 +26558,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var col = position.col;
 			var row = position.row;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveHexDoubled(hexCoordinateSystem,this.resolveAsInteger(col),this.resolveAsInteger(row));
 			break;
@@ -22691,7 +26566,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var x = position.x;
 			var y = position.y;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveHexPixel(hexCoordinateSystem,this.resolveAsNumber(x),this.resolveAsNumber(y));
 			break;
@@ -22700,7 +26575,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var cornerIndex = position.cornerIndex;
 			var factor = position.factor;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			var hex = this.resolveToHex(cell,hexCoordinateSystem);
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveAsHexCellCorner(hexCoordinateSystem,hex,this.resolveAsInteger(cornerIndex),this.resolveAsNumber(factor));
@@ -22710,7 +26585,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var direction = position.direction;
 			var factor = position.factor;
 			if(hexCoordinateSystem == null) {
-				throw haxe_Exception.thrown("hexCoordinateSystem is null");
+				throw new bh_multianim_BuilderError("hexCoordinateSystem is null",this.currentNode,null);
 			}
 			var hex = this.resolveToHex(cell,hexCoordinateSystem);
 			pos = bh_multianim_HexCoordinateSystemHelper.resolveAsHexCellEdge(hexCoordinateSystem,hex,this.resolveAsInteger(direction),this.resolveAsNumber(factor));
@@ -22720,7 +26595,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var coord = position.coord;
 			var namedCS = bh_multianim_MultiAnimParser.getNamedCoordinateSystem(name,this.currentNode);
 			if(namedCS == null) {
-				throw haxe_Exception.thrown("unknown named coordinate system: " + name + "");
+				throw new bh_multianim_BuilderError("unknown named coordinate system: " + name,this.currentNode,null);
 			}
 			switch(namedCS._hx_index) {
 			case 0:
@@ -22759,11 +26634,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	}
 	,resolveExtraPointRef: function(elementName,pointName,fallback,gridCoordinateSystem,hexCoordinateSystem) {
 		if(this.currentInternalResults == null) {
-			throw haxe_Exception.thrown("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): no build context available" + "");
+			throw new bh_multianim_BuilderError("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): no build context available",this.currentNode,null);
 		}
 		var named = this.currentInternalResults.names.h[elementName];
 		if(named == null || named.length == 0) {
-			throw haxe_Exception.thrown("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): element \"" + elementName + "\" not found. " + "Ensure it is defined before this element" + "");
+			throw new bh_multianim_BuilderError("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): element \"" + elementName + "\" not found. " + "Ensure it is defined before this element",this.currentNode,null);
 		}
 		var animSM;
 		var _g = named[0].object;
@@ -22771,7 +26646,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var a = _g.a;
 			animSM = a;
 		} else {
-			throw haxe_Exception.thrown("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): \"" + elementName + "\" is not a stateanim element" + "");
+			throw new bh_multianim_BuilderError("extraPoint reference $" + elementName + ".extraPoint(\"" + pointName + "\"): \"" + elementName + "\" is not a stateanim element",this.currentNode,null);
 		}
 		var pt = animSM.getExtraPoint(pointName);
 		if(pt != null) {
@@ -22780,7 +26655,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(fallback != null) {
 			return this.calculatePosition(fallback,gridCoordinateSystem,hexCoordinateSystem);
 		}
-		throw haxe_Exception.thrown("extraPoint $" + elementName + ".extraPoint(\"" + pointName + "\"): point \"" + pointName + "\" not found in current animation " + ("\"" + (animSM.current != null ? animSM.current.name : "(none)") + "\"") + "");
+		throw new bh_multianim_BuilderError("extraPoint $" + elementName + ".extraPoint(\"" + pointName + "\"): point \"" + pointName + "\" not found in current animation " + ("\"" + (animSM.current != null ? animSM.current.name : "(none)") + "\""),this.currentNode,null);
 	}
 	,resolveExtraPointAnim: function(filename,animName,pointName,selectorRefs,fallback,gridCoordinateSystem,hexCoordinateSystem) {
 		var _g = new haxe_ds_StringMap();
@@ -22808,7 +26683,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(fallback != null) {
 			return this.calculatePosition(fallback,gridCoordinateSystem,hexCoordinateSystem);
 		}
-		throw haxe_Exception.thrown("extraPoint(\"" + filename + "\", \"" + animName + "\", \"" + pointName + "\"): point \"" + pointName + "\" not found" + "");
+		throw new bh_multianim_BuilderError("extraPoint(\"" + filename + "\", \"" + animName + "\", \"" + pointName + "\"): point \"" + pointName + "\" not found",this.currentNode,null);
 	}
 	,resolveToHex: function(cell,hexCoordinateSystem) {
 		switch(cell._hx_index) {
@@ -22856,20 +26731,20 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var coord = cell.coord;
 			var node = this.currentNode;
 			if(node == null) {
-				throw haxe_Exception.thrown("currentNode is null in resolveToHex");
+				throw new bh_multianim_BuilderError("currentNode is null in resolveToHex",this.currentNode,null);
 			}
 			var namedCS = bh_multianim_MultiAnimParser.getNamedCoordinateSystem(name,node);
 			if(namedCS == null) {
-				throw haxe_Exception.thrown("Named system " + name + " is not a hex coordinate system" + "");
+				throw new bh_multianim_BuilderError("Named system " + name + " is not a hex coordinate system",this.currentNode,null);
 			} else if(namedCS._hx_index == 1) {
 				var system = namedCS.system;
 				return this.resolveToHex(coord,system);
 			} else {
-				throw haxe_Exception.thrown("Named system " + name + " is not a hex coordinate system" + "");
+				throw new bh_multianim_BuilderError("Named system " + name + " is not a hex coordinate system",this.currentNode,null);
 			}
 			break;
 		default:
-			throw haxe_Exception.thrown("Cannot resolve cell coordinates to hex: " + Std.string(cell) + "");
+			throw new bh_multianim_BuilderError("Cannot resolve cell coordinates to hex: " + Std.string(cell),this.currentNode,null);
 		}
 	}
 	,drawPixels: function(shapes,gridCoordinateSystem,hexCoordinateSystem) {
@@ -23287,7 +27162,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var animationName = repeatType.animationName;
 			var selectorRefs = repeatType.selector;
 			if(!allowTileIterators) {
-				throw haxe_Exception.thrown("StateAnimIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
 			}
 			var _g = new haxe_ds_StringMap();
 			var h = selectorRefs.h;
@@ -23316,7 +27191,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var sheetName = repeatType.sheetName;
 			var tileFilter = repeatType.tileFilter;
 			if(!allowTileIterators) {
-				throw haxe_Exception.thrown("TilesIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
 			}
 			bitmapVarName = bmpVarName;
 			tilenameVarName = tnVarName;
@@ -23324,7 +27199,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			if(tileFilter != null) {
 				var frames = sheet.getAnim(tileFilter);
 				if(frames == null) {
-					throw haxe_Exception.thrown("Tile \"" + tileFilter + "\" not found in sheet \"" + sheetName + "\". The tile filter must be an exact tile name (key) in the atlas." + "");
+					throw new bh_multianim_BuilderError("Tile \"" + tileFilter + "\" not found in sheet \"" + sheetName + "\". The tile filter must be an exact tile name (key) in the atlas.",node,null);
 				}
 				var _g = 0;
 				while(_g < frames.length) {
@@ -23400,7 +27275,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 	}
 	,buildTileGroup: function(node,tileGroup,currentPos,gridCoordinateSystem,hexCoordinateSystem,builderParams) {
-		if(this.isMatch(node,this.indexedParams) == false) {
+		if(this.shouldBuildInFullMode(node,this.indexedParams) == false) {
 			return;
 		}
 		this.currentNode = node;
@@ -23460,7 +27335,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var this1 = this.indexedParams;
 			var key = bh_multianim_MultiAnimParser_getNameString(node.updatableName);
 			if(Object.prototype.hasOwnProperty.call(this1.h,key)) {
-				throw haxe_Exception.thrown("cannot use repeatable index param \"" + varName + "\" as it is already defined" + "");
+				throw new bh_multianim_BuilderError("cannot use repeatable index param \"" + varName + "\" as it is already defined",node,null);
 			}
 			var _g1 = 0;
 			var _g2 = info.repeatCount;
@@ -23509,7 +27384,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var xInfo = this.resolveTileGroupRepeatAxis(repeatTypeX,node,false);
 			var yInfo = this.resolveTileGroupRepeatAxis(repeatTypeY,node,false);
 			if(Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameX) || Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameY)) {
-				throw haxe_Exception.thrown("cannot use repeatable2d index param \"" + varNameX + "\" or \"" + varNameY + "\" as it is already defined" + "");
+				throw new bh_multianim_BuilderError("cannot use repeatable2d index param \"" + varNameX + "\" or \"" + varNameY + "\" as it is already defined",node,null);
 			}
 			var yIterator = yInfo.layoutName == null ? null : this.getLayouts().getIterator(yInfo.layoutName);
 			var _g1 = 0;
@@ -23613,7 +27488,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			tileGroupTile = null;
 			break;
 		default:
-			throw haxe_Exception.thrown("unsupported node " + node.uniqueNodeName + " " + Std.string(node.type) + " in tileGroup mode" + "");
+			throw new bh_multianim_BuilderError("unsupported node " + node.uniqueNodeName + " " + Std.string(node.type) + " in tileGroup mode",node,null);
 		}
 		this.addToTileGroup(node,currentPos,tileGroupTile,tileGroup);
 		if(!skipChildren) {
@@ -23632,10 +27507,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var scale = node.scale == null ? 1.0 : this.resolveAsNumber(node.scale);
 			tileGroup.setDefaultColor(16777215,node.alpha != null ? this.resolveAsNumber(node.alpha) : 1.0);
 			if(node.filter != null && node.filter != bh_multianim_FilterType.FilterNone) {
-				throw haxe_Exception.thrown("tileGroup does not support filters for " + Std.string(node.type) + "");
+				throw new bh_multianim_BuilderError("tileGroup does not support filters for " + Std.string(node.type),node,null);
 			}
 			if(node.blendMode != null && node.blendMode != bh_multianim_MacroBlendMode.MBAlpha) {
-				throw haxe_Exception.thrown("tileGroup does not support blendMode other than Alpha for " + Std.string(node.type) + "");
+				throw new bh_multianim_BuilderError("tileGroup does not support blendMode other than Alpha for " + Std.string(node.type),node,null);
 			}
 			tileGroup.content.addTransform(currentPos.x,currentPos.y,scale,scale,0,tileGroup.curColor,tileGroupTile);
 		}
@@ -23643,16 +27518,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,addNinePatchToTileGroup: function(node,sheet,tilename,widthRV,heightRV,currentPos,tileGroup) {
 		var atlasSheet = this.getOrLoadSheet(sheet);
 		if(atlasSheet == null) {
-			throw haxe_Exception.thrown("sheet " + sheet + " could not be loaded" + "");
+			throw new bh_multianim_BuilderError("sheet " + sheet + " could not be loaded",this.currentNode,null);
 		}
 		var entries = atlasSheet.getContents().h[tilename];
 		if(entries == null || entries.length == 0 || entries[0] == null) {
-			throw haxe_Exception.thrown("tile " + tilename + " in sheet " + sheet + " could not be loaded" + "");
+			throw new bh_multianim_BuilderError("tile " + tilename + " in sheet " + sheet + " could not be loaded",this.currentNode,null);
 		}
 		var entry = entries[0];
 		var srcTile = entry.t;
 		if(entry.split == null || entry.split.length != 4) {
-			throw haxe_Exception.thrown("tile " + tilename + " in sheet " + sheet + " is not a valid 9-patch (needs split with 4 values)" + "");
+			throw new bh_multianim_BuilderError("tile " + tilename + " in sheet " + sheet + " is not a valid 9-patch (needs split with 4 values)",this.currentNode,null);
 		}
 		var bl = entry.split[0];
 		var br = entry.split[1];
@@ -23662,10 +27537,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var targetH = this.resolveAsNumber(heightRV);
 		var scale = node.scale == null ? 1.0 : this.resolveAsNumber(node.scale);
 		if(node.filter != null && node.filter != bh_multianim_FilterType.FilterNone) {
-			throw haxe_Exception.thrown("tileGroup does not support filters for " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("tileGroup does not support filters for " + Std.string(node.type),node,null);
 		}
 		if(node.blendMode != null && node.blendMode != bh_multianim_MacroBlendMode.MBAlpha) {
-			throw haxe_Exception.thrown("tileGroup does not support blendMode other than Alpha for " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("tileGroup does not support blendMode other than Alpha for " + Std.string(node.type),node,null);
 		}
 		tileGroup.setDefaultColor(16777215,node.alpha != null ? this.resolveAsNumber(node.alpha) : 1.0);
 		var px = currentPos.x;
@@ -23718,8 +27593,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	}
 	,build: function(node,buildMode,gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams) {
 		var _gthis = this;
-		var nodeVisible = this.isMatch(node,this.indexedParams);
-		if(!nodeVisible && !this.incrementalMode) {
+		var nodeVisible = this.shouldBuildInFullMode(node,this.indexedParams);
+		if(!nodeVisible && (!this.incrementalMode || this.suppressConditionalTracking)) {
 			return null;
 		}
 		this.currentNode = node;
@@ -23751,14 +27626,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				if(layersParent != null) {
 					layersParent.add(toAdd,node.layer);
 				} else {
-					throw haxe_Exception.thrown("No layers parent for " + node.uniqueNodeName + "-" + Std.string(node.type) + "");
+					throw new bh_multianim_BuilderError("No layers parent for " + node.uniqueNodeName + "-" + Std.string(node.type),node,null);
 				}
 			} else if(current != null) {
 				current.addChild(toAdd);
 			}
 		};
 		var tmp;
-		if(!nodeVisible && this.incrementalMode && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && node.type._hx_index != 16) {
+		if(!nodeVisible && this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && node.type._hx_index != 16) {
 			var _g = node.type;
 			var tmp1;
 			if(_g._hx_index == 33) {
@@ -24011,7 +27886,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var initialStateResolved = this.resolveAsString(initialState);
 			if(Object.prototype.hasOwnProperty.call(animSM.animationStates.h,initialStateResolved) == false) {
-				throw haxe_Exception.thrown("initialState " + initialStateResolved + " does not exist in constructed stateanim" + "");
+				throw new bh_multianim_BuilderError("initialState " + initialStateResolved + " does not exist in constructed stateanim",node,null);
 			}
 			animSM.play(initialStateResolved);
 			if(externallyDriven) {
@@ -24121,8 +27996,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					try {
 						builderParams.callback(bh_multianim_CallbackRequest.Name("link:" + url));
 					} catch( _g ) {
-						var e = haxe_Exception.caught(_g).unwrap();
-						haxe_Log.trace("Hyperlink callback error: " + Std.string(e),{ fileName : "../hx-multianim/src/bh/multianim/MultiAnimBuilder.hx", lineNumber : 4438, className : "bh.multianim.MultiAnimBuilder", methodName : "build"});
 					}
 				}
 			};
@@ -24187,46 +28060,47 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var _g1 = _g.isTileGroup;
 			var _g1 = _g.parameters;
 			var _g1 = _g.paramOrder;
-			throw haxe_Exception.thrown("invalid state, programmable should not be built");
+			throw new bh_multianim_BuilderError("invalid state, programmable should not be built",node,null);
 		case 10:
+			var _g1 = 0;
+			var _g2 = node.children;
+			while(_g1 < _g2.length) {
+				var child = _g2[_g1];
+				++_g1;
+				this.validateTileGroupSubtree(child,[]);
+			}
 			var tg = new h2d_TileGroup();
 			selectedBuildMode = bh_multianim__$MultiAnimBuilder_InternalBuildMode.TileGroupMode(tg);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(tg);
 			break;
 		case 11:
 			var _g1 = _g.layoutsDef;
-			throw haxe_Exception.thrown("layouts not allowed as non-root node");
+			throw new bh_multianim_BuilderError("layouts not allowed as non-root node",node,null);
 		case 12:
 			var _g1 = _g.paths;
-			throw haxe_Exception.thrown("paths not allowed as non-root node");
+			throw new bh_multianim_BuilderError("paths not allowed as non-root node",node,null);
 		case 13:
 			var _g1 = _g.animatedPathDef;
-			throw haxe_Exception.thrown("animatedPath not allowed as non-root node");
+			throw new bh_multianim_BuilderError("animatedPath not allowed as non-root node",node,null);
 		case 14:
 			var _g1 = _g.curves;
-			throw haxe_Exception.thrown("curves not allowed as non-root node");
+			throw new bh_multianim_BuilderError("curves not allowed as non-root node",node,null);
 		case 15:
 			var particlesDef = _g.particles;
 			builtObject = bh_multianim_BuiltHeapsComponent.Particles(this.createParticleImpl(particlesDef,node.uniqueNodeName));
 			break;
 		case 16:
 			if(current == null) {
-				throw haxe_Exception.thrown("apply not allowed as root node");
+				throw new bh_multianim_BuilderError("apply not allowed as root node",node,null);
 			}
-			if(this.incrementalMode && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null) {
+			if(this.incrementalMode && this.incrementalContext != null) {
+				this.incrementalContext.captureApplyBaseline(current);
 				if(nodeVisible) {
-					var savedFilter = node.filter != null ? current.filter : null;
-					var savedAlpha = node.alpha != null ? current.alpha : null;
-					var savedScaleX = node.scale != null ? current.scaleX : null;
-					var savedScaleY = node.scale != null ? current.scaleY : null;
-					var savedRotation = node.rotation != null ? current.rotation : null;
 					var pos = this.calculatePosition(node.pos,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node));
 					this.addPosition(current,pos.x,pos.y);
 					this.applyExtendedFormProperties(current,node);
-					this.incrementalContext.trackConditionalApply(current,node,true,savedFilter,savedAlpha,savedScaleX,savedScaleY,savedRotation,pos.x,pos.y);
-				} else {
-					this.incrementalContext.trackConditionalApply(current,node,false,null,null,null,null,null,0,0);
 				}
+				this.incrementalContext.trackConditionalApply(current,node,nodeVisible);
 			} else {
 				var pos = this.calculatePosition(node.pos,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node));
 				this.addPosition(current,pos.x,pos.y);
@@ -24322,7 +28196,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				if(tileFilter != null) {
 					var frames = sheet.getAnim(tileFilter);
 					if(frames == null) {
-						throw haxe_Exception.thrown("Tile \"" + tileFilter + "\" not found in sheet \"" + sheetName + "\". The tile filter must be an exact tile name (key) in the atlas." + "");
+						throw new bh_multianim_BuilderError("Tile \"" + tileFilter + "\" not found in sheet \"" + sheetName + "\". The tile filter must be an exact tile name (key) in the atlas.",node,null);
 					}
 					var _g1 = 0;
 					while(_g1 < frames.length) {
@@ -24394,12 +28268,23 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var this1 = this.indexedParams;
 			var key = bh_multianim_MultiAnimParser_getNameString(node.updatableName);
 			if(Object.prototype.hasOwnProperty.call(this1.h,key)) {
-				throw haxe_Exception.thrown("cannot use repeatable index param \"" + varName + "\" as it is already defined" + "");
+				throw new bh_multianim_BuilderError("cannot use repeatable index param \"" + varName + "\" as it is already defined",node,null);
 			}
 			var savedIncrementalMode = this.incrementalMode;
 			var savedIncrementalCtx = this.incrementalContext;
 			if(hasIncrementalRepeat) {
+				var _g1 = 0;
+				var _g2 = node.children;
+				while(_g1 < _g2.length) {
+					var childNode = _g2[_g1];
+					++_g1;
+					this.markUntrackedParamsInSubtree(childNode,savedIncrementalCtx,varName,repeatParamRefs);
+				}
 				this.incrementalMode = false;
+			}
+			var savedSuppressConditionalTracking = this.suppressConditionalTracking;
+			if(this.incrementalMode && this.incrementalContext != null) {
+				this.suppressConditionalTracking = true;
 			}
 			var _g1 = 0;
 			var _g2 = repeatCount;
@@ -24478,6 +28363,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,this.indexedParams);
 			}
+			this.suppressConditionalTracking = savedSuppressConditionalTracking;
 			var _this = this.indexedParams;
 			if(Object.prototype.hasOwnProperty.call(_this.h,varName)) {
 				delete(_this.h[varName]);
@@ -24526,6 +28412,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var newCount = 0;
 					var newRangeStart = 0;
 					var newRangeStep = 1;
+					var newArrayIterator = [];
+					var newTileSourceIterator = [];
+					var newTilenameIterator = [];
+					var newLayoutIterator = null;
 					switch(capturedRepeatType._hx_index) {
 					case 0:
 						var dirX = capturedRepeatType.dx;
@@ -24534,6 +28424,18 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						newCount = _gthis.resolveAsInteger(repeats);
 						newDx = dirX == null ? 0 : _gthis.resolveAsInteger(dirX);
 						newDy = dirY == null ? 0 : _gthis.resolveAsInteger(dirY);
+						break;
+					case 1:
+						var layoutName = capturedRepeatType.layoutName;
+						var l = _gthis.getLayouts();
+						newCount = l.getLayoutSequenceLengthByLayoutName(layoutName);
+						newLayoutIterator = l.getIterator(layoutName);
+						break;
+					case 2:
+						var _g = capturedRepeatType.valueVariableName;
+						var arrayName = capturedRepeatType.arrayName;
+						newArrayIterator = _gthis.resolveAsArray(bh_multianim_ReferenceableValue.RVArrayReference(arrayName));
+						newCount = newArrayIterator.length;
 						break;
 					case 3:
 						var start = capturedRepeatType.start;
@@ -24544,7 +28446,75 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						newRangeStep = _gthis.resolveAsInteger(step);
 						newCount = Math.ceil((rangeEnd - newRangeStart) / newRangeStep);
 						break;
-					default:
+					case 4:
+						var _g = capturedRepeatType.bitmapVarName;
+						var animFilename = capturedRepeatType.animFilename;
+						var animationName = capturedRepeatType.animationName;
+						var selectorRefs = capturedRepeatType.selector;
+						var _g = new haxe_ds_StringMap();
+						var h = selectorRefs.h;
+						var _g_h = h;
+						var _g_keys = Object.keys(h);
+						var _g_length = _g_keys.length;
+						var _g_current = 0;
+						while(_g_current < _g_length) {
+							var key = _g_keys[_g_current++];
+							var _g_key = key;
+							var _g_value = _g_h[key];
+							var k = _g_key;
+							var v = _g_value;
+							var value = _gthis.resolveAsString(v);
+							_g.h[k] = value;
+						}
+						var selector = _g;
+						var animName = _gthis.resolveAsString(animationName);
+						newTileSourceIterator = _gthis.collectStateAnimFrames(animFilename,animName,selector);
+						newCount = newTileSourceIterator.length;
+						break;
+					case 5:
+						var _g = capturedRepeatType.bitmapVarName;
+						var _g = capturedRepeatType.tilenameVarName;
+						var sheetName = capturedRepeatType.sheetName;
+						var tileFilter = capturedRepeatType.tileFilter;
+						var sheet = _gthis.getOrLoadSheet(sheetName);
+						if(tileFilter != null) {
+							var frames = sheet.getAnim(tileFilter);
+							if(frames == null) {
+								throw new bh_multianim_BuilderError("Tile \"" + tileFilter + "\" not found in sheet \"" + sheetName + "\". The tile filter must be an exact tile name (key) in the atlas.",capturedNode,null);
+							}
+							var _g = 0;
+							while(_g < frames.length) {
+								var frame = frames[_g];
+								++_g;
+								if(frame != null && frame.tile != null) {
+									newTileSourceIterator.push(bh_multianim_TileSource.TSTile(frame.tile));
+								}
+							}
+						} else {
+							var h = sheet.getContents().h;
+							var _g_h = h;
+							var _g_keys = Object.keys(h);
+							var _g_length = _g_keys.length;
+							var _g_current = 0;
+							while(_g_current < _g_length) {
+								var key = _g_keys[_g_current++];
+								var _g_key = key;
+								var _g_value = _g_h[key];
+								var tileName = _g_key;
+								var entries = _g_value;
+								var _g = 0;
+								while(_g < entries.length) {
+									var entry = entries[_g];
+									++_g;
+									if(entry != null) {
+										newTileSourceIterator.push(bh_multianim_TileSource.TSTile(entry.t));
+										newTilenameIterator.push(tileName);
+									}
+								}
+							}
+						}
+						newCount = newTileSourceIterator.length;
+						break;
 					}
 					capturedCtx.cleanupDestroyedSubtree(capturedIR,capturedObject);
 					capturedObject.removeChildren();
@@ -24568,17 +28538,61 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							resolvedIndex = count;
 						}
 						_gthis.indexedParams.h[capturedVarName] = bh_multianim_ResolvedIndexParameters.Value(resolvedIndex);
+						switch(capturedRepeatType._hx_index) {
+						case 2:
+							var _g5 = capturedRepeatType.arrayName;
+							var valueVariableName = capturedRepeatType.valueVariableName;
+							_gthis.indexedParams.h[valueVariableName] = bh_multianim_ResolvedIndexParameters.StringValue(newArrayIterator[count]);
+							break;
+						case 4:
+							var _g6 = capturedRepeatType.animFilename;
+							var _g7 = capturedRepeatType.animationName;
+							var _g8 = capturedRepeatType.selector;
+							var bitmapVarName = capturedRepeatType.bitmapVarName;
+							_gthis.indexedParams.h[bitmapVarName] = bh_multianim_ResolvedIndexParameters.TileSourceValue(newTileSourceIterator[count]);
+							break;
+						case 5:
+							var _g9 = capturedRepeatType.sheetName;
+							var _g10 = capturedRepeatType.tileFilter;
+							var bitmapVarName1 = capturedRepeatType.bitmapVarName;
+							var tilenameVarName = capturedRepeatType.tilenameVarName;
+							_gthis.indexedParams.h[bitmapVarName1] = bh_multianim_ResolvedIndexParameters.TileSourceValue(newTileSourceIterator[count]);
+							if(tilenameVarName != null && count < newTilenameIterator.length) {
+								_gthis.indexedParams.h[tilenameVarName] = bh_multianim_ResolvedIndexParameters.StringValue(newTilenameIterator[count]);
+							}
+							break;
+						default:
+						}
 						var resolvedChildren = _gthis.resolveConditionalChildren(capturedNode.children);
-						var _g5 = 0;
-						while(_g5 < resolvedChildren.length) {
-							var childNode = resolvedChildren[_g5];
-							++_g5;
+						var layoutPt;
+						if(capturedRepeatType._hx_index == 1) {
+							var _g11 = capturedRepeatType.layoutName;
+							layoutPt = newLayoutIterator.next();
+						} else {
+							layoutPt = null;
+						}
+						var _g12 = 0;
+						while(_g12 < resolvedChildren.length) {
+							var childNode = resolvedChildren[_g12];
+							++_g12;
 							var obj = _gthis.build(childNode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(capturedObject),gcs,hcs,capturedIR,capturedBP);
 							if(obj == null) {
 								continue;
 							}
-							if(newDx != 0 || newDy != 0) {
-								_gthis.addPosition(obj,newDx * count,newDy * count);
+							switch(capturedRepeatType._hx_index) {
+							case 0:
+								var _g13 = capturedRepeatType.dx;
+								var _g14 = capturedRepeatType.dy;
+								var _g15 = capturedRepeatType.repeatCount;
+								if(newDx != 0 || newDy != 0) {
+									_gthis.addPosition(obj,newDx * count,newDy * count);
+								}
+								break;
+							case 1:
+								var _g16 = capturedRepeatType.layoutName;
+								_gthis.addPosition(obj,layoutPt.x,layoutPt.y);
+								break;
+							default:
 							}
 						}
 						bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,_gthis.indexedParams);
@@ -24586,6 +28600,35 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var _this = _gthis.indexedParams;
 					if(Object.prototype.hasOwnProperty.call(_this.h,capturedVarName)) {
 						delete(_this.h[capturedVarName]);
+					}
+					switch(capturedRepeatType._hx_index) {
+					case 4:
+						var _g = capturedRepeatType.animFilename;
+						var _g = capturedRepeatType.animationName;
+						var _g = capturedRepeatType.selector;
+						var bitmapVarName = capturedRepeatType.bitmapVarName;
+						var _this = _gthis.indexedParams;
+						if(Object.prototype.hasOwnProperty.call(_this.h,bitmapVarName)) {
+							delete(_this.h[bitmapVarName]);
+						}
+						break;
+					case 5:
+						var _g = capturedRepeatType.sheetName;
+						var _g = capturedRepeatType.tileFilter;
+						var bitmapVarName = capturedRepeatType.bitmapVarName;
+						var tilenameVarName = capturedRepeatType.tilenameVarName;
+						var _this = _gthis.indexedParams;
+						if(Object.prototype.hasOwnProperty.call(_this.h,bitmapVarName)) {
+							delete(_this.h[bitmapVarName]);
+						}
+						if(tilenameVarName != null) {
+							var _this = _gthis.indexedParams;
+							if(Object.prototype.hasOwnProperty.call(_this.h,tilenameVarName)) {
+								delete(_this.h[tilenameVarName]);
+							}
+						}
+						break;
+					default:
 					}
 					_gthis.incrementalMode = savedMode;
 					_gthis.incrementalContext = savedCtx;
@@ -24665,13 +28708,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var _g1 = repeatTypeX.animFilename;
 				var _g1 = repeatTypeX.animationName;
 				var _g1 = repeatTypeX.selector;
-				throw haxe_Exception.thrown("StateAnimIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
 			case 5:
 				var _g1 = repeatTypeX.bitmapVarName;
 				var _g1 = repeatTypeX.tilenameVarName;
 				var _g1 = repeatTypeX.sheetName;
 				var _g1 = repeatTypeX.tileFilter;
-				throw haxe_Exception.thrown("TilesIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
 			}
 			switch(repeatTypeY._hx_index) {
 			case 0:
@@ -24711,16 +28754,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var _g1 = repeatTypeY.animFilename;
 				var _g1 = repeatTypeY.animationName;
 				var _g1 = repeatTypeY.selector;
-				throw haxe_Exception.thrown("StateAnimIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
 			case 5:
 				var _g1 = repeatTypeY.bitmapVarName;
 				var _g1 = repeatTypeY.tilenameVarName;
 				var _g1 = repeatTypeY.sheetName;
 				var _g1 = repeatTypeY.tileFilter;
-				throw haxe_Exception.thrown("TilesIterator not supported in REPEAT2D");
+				throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
 			}
 			if(Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameX) || Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameY)) {
-				throw haxe_Exception.thrown("cannot use repeatable2d index param \"" + varNameX + "\" or \"" + varNameY + "\" as it is already defined" + "");
+				throw new bh_multianim_BuilderError("cannot use repeatable2d index param \"" + varNameX + "\" or \"" + varNameY + "\" as it is already defined",node,null);
 			}
 			var yIterator = yLayoutName == null ? null : getLayoutsIfNeeded().getIterator(yLayoutName);
 			var _g1 = 0;
@@ -24871,7 +28914,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var tmp = this.multiParserResult.imports;
 				var builder1 = tmp != null ? tmp.h[externalReference] : null;
 				if(builder1 == null) {
-					throw haxe_Exception.thrown("could not find builder for external staticRef " + externalReference + "");
+					throw new bh_multianim_BuilderError("could not find builder for external staticRef " + externalReference,node,null);
 				}
 				builder = builder1;
 			} else {
@@ -24880,7 +28923,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var result = builder.buildWithParameters(reference,parameters,builderParams,this.indexedParams);
 			var object = result != null ? result.object : null;
 			if(object == null) {
-				throw haxe_Exception.thrown("could not build staticRef " + reference + "");
+				throw new bh_multianim_BuilderError("could not build staticRef " + reference,node,null);
 			}
 			if(object.children.length == 1) {
 				var inner = object.getChildAt(0);
@@ -24905,7 +28948,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					case 4:
 						return null;
 					default:
-						throw haxe_Exception.thrown("expected h2d.object but got " + Std.string(result) + "");
+						throw new bh_multianim_BuilderError("expected h2d.object but got " + Std.string(result),_gthis.currentNode,null);
 					}
 				}
 			};
@@ -24964,7 +29007,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					builtObject = bh_multianim_BuiltHeapsComponent.HeapsBitmap(new h2d_Bitmap(tile));
 					break;
 				case 1:
-					throw haxe_Exception.thrown("placeholder " + Std.string(node.updatableName) + ", type " + Std.string(node.type) + " configured in error mode, no input from " + Std.string(source) + "");
+					throw new bh_multianim_BuilderError("placeholder " + Std.string(node.updatableName) + ", type " + Std.string(node.type) + " configured in error mode, no input from " + Std.string(source),node,null);
 				case 2:
 					builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(new h2d_Object());
 					break;
@@ -25027,22 +29070,22 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			break;
 		case 25:
 			var _g1 = _g.paletteType;
-			throw haxe_Exception.thrown("palette not allowed as non-root node");
+			throw new bh_multianim_BuilderError("palette not allowed as non-root node",node,null);
 		case 26:
 			var elements = _g.elements;
-			var g = new h2d_Graphics();
+			var g = new bh_multianim_KeepGraphics();
 			this.drawGraphicsElements(g,elements,gridCoordinateSystem,hexCoordinateSystem);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(g);
 			break;
 		case 27:
 			var _g1 = _g.autotileDef;
-			throw haxe_Exception.thrown("autotile not allowed as non-root node");
+			throw new bh_multianim_BuilderError("autotile not allowed as non-root node",node,null);
 		case 28:
 			var _g1 = _g.atlas2Def;
-			throw haxe_Exception.thrown("atlas2 is a definition node, not a renderable element");
+			throw new bh_multianim_BuilderError("atlas2 is a definition node, not a renderable element",node,null);
 		case 29:
 			var _g1 = _g.dataDef;
-			throw haxe_Exception.thrown("data is a definition node, not a renderable element");
+			throw new bh_multianim_BuilderError("data is a definition node, not a renderable element",node,null);
 		case 30:
 			var parameters = _g.parameters;
 			var paramOrder = _g.paramOrder;
@@ -25083,7 +29126,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var tmp = this.multiParserResult.imports;
 				var builder1 = tmp != null ? tmp.h[externalReference] : null;
 				if(builder1 == null) {
-					throw haxe_Exception.thrown("could not find builder for external dynamicRef " + externalReference + "");
+					throw new bh_multianim_BuilderError("could not find builder for external dynamicRef " + externalReference,node,null);
 				}
 				builder = builder1;
 			} else {
@@ -25092,7 +29135,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var result = builder.buildWithParameters(reference,parameters,builderParams,this.indexedParams,true);
 			var object = result != null ? result.object : null;
 			if(object == null) {
-				throw haxe_Exception.thrown("could not build dynamicRef " + reference + "");
+				throw new bh_multianim_BuilderError("could not build dynamicRef " + reference,node,null);
 			}
 			var container;
 			if(isDynamicName) {
@@ -25102,7 +29145,18 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			} else {
 				container = null;
 			}
-			internalResults.dynamicRefs.h[reference] = result;
+			var dynRefKey = this.resolveDynamicRefKey(node,reference);
+			var _g1 = node.updatableName;
+			var hasExplicitName = !(_g1._hx_index == 0 && _g1.name == null);
+			var existingArr = internalResults.dynamicRefs.h[dynRefKey];
+			if(hasExplicitName && existingArr != null && existingArr.length > 0) {
+				throw new bh_multianim_BuilderError("duplicate dynamicRef name \"" + dynRefKey + "\" — two #name dynamicRef sites share the same name. Names must be unique within a programmable.",node,null);
+			}
+			if(existingArr == null) {
+				internalResults.dynamicRefs.h[dynRefKey] = [result];
+			} else {
+				existingArr.push(result);
+			}
 			if(this.incrementalMode && this.incrementalContext != null && result.incrementalContext != null) {
 				var tmp = builder.multiParserResult.nodes;
 				var childNode = tmp != null ? tmp.h[reference] : null;
@@ -25162,7 +29216,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 								})(capturedValue);
 							}
 						}
-						this.incrementalContext.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs);
+						this.incrementalContext.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs,result.object);
 					}
 				}
 			}
@@ -25174,7 +29228,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				} else {
 					paramName = "";
 				}
-				this.incrementalContext.trackDynamicName({ paramName : paramName, container : container, currentName : reference, node : node, parameters : parameters, externalReference : externalReference, internalResults : internalResults});
+				this.incrementalContext.trackDynamicName({ paramName : paramName, container : container, currentName : reference, stableKey : dynRefKey, node : node, parameters : parameters, externalReference : externalReference, internalResults : internalResults});
 			}
 			var outputObject = container != null ? container : object;
 			if(outputObject.children.length == 1) {
@@ -25222,7 +29276,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					while(_g1 < _g2.length) {
 						var child = _g2[_g1];
 						++_g1;
-						var childRefs = this.collectNodeParamRefs(child);
+						var childRefs = bh_multianim_MultiAnimBuilder.collectNodeParamRefs(child);
 						var _g3 = 0;
 						while(_g3 < childRefs.length) {
 							var r = childRefs[_g3];
@@ -25231,6 +29285,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 								switchParamRefs.push(r);
 							}
 						}
+						bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs(child,switchParamRefs);
 					}
 				}
 				var capturedArms = arms;
@@ -25269,7 +29324,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var updatableName = node.updatableName;
 		var object = bh_multianim_MultiAnimParser_toh2dObject(builtObject);
 		var conditionalSentinel = null;
-		if(this.incrementalMode && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && current != null) {
+		if(this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && current != null) {
 			conditionalSentinel = new h2d_Object();
 			addChild(conditionalSentinel);
 		}
@@ -25289,9 +29344,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var flowParent = ((current) instanceof h2d_Flow) ? current : null;
 			if(flowParent == null) {
 				if(isSpacer) {
-					throw haxe_Exception.thrown("spacer used outside of flow");
+					throw new bh_multianim_BuilderError("spacer used outside of flow",node,null);
 				} else {
-					throw haxe_Exception.thrown("per-element flow properties (@halign/@valign/@flowOffset/@absolute) used outside of flow");
+					throw new bh_multianim_BuilderError("per-element flow properties (@halign/@valign/@flowOffset/@absolute) used outside of flow",node,null);
 				}
 			}
 			var props = flowParent.getProperties(object);
@@ -25453,6 +29508,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				this.indexedParams = mergedParams;
 				slotIncrementalCtx = new bh_multianim_IncrementalUpdateContext(this,mergedParams,builderParams,node);
+				if(this.tweenManager != null) {
+					slotIncrementalCtx.setTweenManager(this.tweenManager);
+				}
 				this.incrementalMode = true;
 				this.incrementalContext = slotIncrementalCtx;
 			}
@@ -25757,7 +29815,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var args = type.args;
 			var reg = bh_base_FilterManager.getFilter(name);
 			if(reg == null) {
-				throw haxe_Exception.thrown("Unknown custom filter \"" + name + "\". Register it via FilterManager.registerFilter()." + "");
+				throw new bh_multianim_BuilderError("Unknown custom filter \"" + name + "\". Register it via FilterManager.registerFilter().",this.currentNode,null);
 			}
 			var resolved = new haxe_ds_StringMap();
 			var _g = 0;
@@ -25787,7 +29845,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var v3 = paramDef.defaultValue;
 					resolved.h[paramDef.name] = v3;
 				} else {
-					throw haxe_Exception.thrown("Custom filter \"" + name + "\" missing required argument \"" + paramDef.name + "\"" + "");
+					throw new bh_multianim_BuilderError("Custom filter \"" + name + "\" missing required argument \"" + paramDef.name + "\"",this.currentNode,null);
 				}
 			}
 			return reg.factory(resolved);
@@ -25815,7 +29873,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var d = _g.parameters;
 			return d;
 		} else if(throwIfNotProgrammable) {
-			throw haxe_Exception.thrown("buildWithParameters require programmable node, was " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("buildWithParameters require programmable node, was " + Std.string(node.type),node,null);
 		} else {
 			return new haxe_ds_StringMap();
 		}
@@ -25860,6 +29918,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			root.posChanged = true;
 			root.y = 0;
 			this.applyExtendedFormProperties(root,rootNode);
+			if(this.incrementalMode) {
+				this.trackExtendedFormExpressions(rootNode,root,false);
+			}
 			var pos = this.calculatePosition(rootNode.pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.addPosition(root,pos.x,pos.y);
 			var _g = 0;
@@ -25878,6 +29939,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			root.posChanged = true;
 			root.y = 0;
 			this.applyExtendedFormProperties(root,rootNode);
+			if(this.incrementalMode) {
+				this.trackExtendedFormExpressions(rootNode,root,false);
+			}
 			var pos = this.calculatePosition(rootNode.pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.addPosition(root,pos.x,pos.y);
 			var _g = 0;
@@ -25914,7 +29978,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,buildPalettes: function(name) {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("could not get palette node #" + name + "");
+			throw new bh_multianim_BuilderError("could not get palette node #" + name,this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 25) {
@@ -25932,14 +29996,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var filenameResolved = this.resolveAsString(filename);
 				var res = this.resourceLoader.loadHXDResource(filenameResolved);
 				if(res == null) {
-					throw haxe_Exception.thrown("could not load palette image " + Std.string(filename) + "");
+					throw new bh_multianim_BuilderError("could not load palette image " + Std.string(filename),node,null);
 				}
 				var pixels = res.toImage().getPixels();
 				var pixelArray = pixels.toVector().slice(0);
 				return new bh_base_Palette(pixelArray,pixels.width);
 			}
 		} else {
-			throw haxe_Exception.thrown("" + name + " has to be palette" + "");
+			throw new bh_multianim_BuilderError("" + name + " has to be palette",node,null);
 		}
 	}
 	,createParticleImpl: function(particlesDef,name,existingParticles) {
@@ -25995,14 +30059,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(particlesDef.fadeIn != null) {
 			var f = this.resolveAsNumber(particlesDef.fadeIn);
 			if(f < 0 || f > 1.0) {
-				throw haxe_Exception.thrown("fadeIn must be between 0 and 1");
+				throw new bh_multianim_BuilderError("fadeIn must be between 0 and 1",this.currentNode,null);
 			}
 			group.fadeIn = f;
 		}
 		if(particlesDef.fadeOut != null) {
 			var f = this.resolveAsNumber(particlesDef.fadeOut);
 			if(f < 0 || f > 1.0) {
-				throw haxe_Exception.thrown("fadeOut must be between 0 and 1");
+				throw new bh_multianim_BuilderError("fadeOut must be between 0 and 1",this.currentNode,null);
 			}
 			group.fadeOut = this.resolveAsNumber(particlesDef.fadeOut);
 		}
@@ -26045,7 +30109,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			group.colorEnabled = true;
 			var stops = particlesDef.colorStops;
 			if(stops.length < 2) {
-				throw haxe_Exception.thrown("colorStops requires at least 2 stops");
+				throw new bh_multianim_BuilderError("colorStops requires at least 2 stops",this.currentNode,null);
 			}
 			var _g = 0;
 			var _g1 = stops.length - 1;
@@ -26062,7 +30126,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					if(found == null) {
 						var easing = bh_multianim_MacroManimParser.tryMatchEasingName(s.curveName);
 						if(easing == null) {
-							throw haxe_Exception.thrown("color curve not found: " + s.curveName + "");
+							throw new bh_multianim_BuilderError("color curve not found: " + s.curveName,this.currentNode,null);
 						}
 						found = new bh_paths_Curve(null,easing,null);
 						curves.h[s.curveName] = found;
@@ -26259,7 +30323,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var animName = asDef.animName;
 				var descriptor = animSM.animationStates.h[animName];
 				if(descriptor == null) {
-					throw haxe_Exception.thrown("particle animation \"" + animName + "\" not found in \"" + particlesDef.animFile + "\"" + "");
+					throw new bh_multianim_BuilderError("particle animation \"" + animName + "\" not found in \"" + particlesDef.animFile + "\"",this.currentNode,null);
 				}
 				var frameTiles = [];
 				var _g1 = 0;
@@ -26304,7 +30368,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					if(foundIndex < 0) {
 						var descriptor = animSM.animationStates.h[eo.animName];
 						if(descriptor == null) {
-							throw haxe_Exception.thrown("particle event animation \"" + eo.animName + "\" not found in \"" + particlesDef.animFile + "\"" + "");
+							throw new bh_multianim_BuilderError("particle event animation \"" + eo.animName + "\" not found in \"" + particlesDef.animFile + "\"",this.currentNode,null);
 						}
 						var frameTiles = [];
 						var _g3 = 0;
@@ -26350,33 +30414,33 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,createParticles: function(name,builderParams) {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("could not get particles node #" + name + "");
+			throw new bh_multianim_BuilderError("could not get particles node #" + name,this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 15) {
 			var particlesDef = _g.particles;
 			return this.createParticleImpl(particlesDef,name);
 		} else {
-			throw haxe_Exception.thrown("" + name + " has to be particles" + "");
+			throw new bh_multianim_BuilderError("" + name + " has to be particles",node,null);
 		}
 	}
 	,addParticleGroupTo: function(name,particles) {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("could not get particles node #" + name + "");
+			throw new bh_multianim_BuilderError("could not get particles node #" + name,this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 15) {
 			var particlesDef = _g.particles;
 			this.createParticleImpl(particlesDef,name,particles);
 		} else {
-			throw haxe_Exception.thrown("" + name + " has to be particles" + "");
+			throw new bh_multianim_BuilderError("" + name + " has to be particles",node,null);
 		}
 	}
 	,createAnimatedPath: function(name,normalization) {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("could not get animatedPath node #" + name + "");
+			throw new bh_multianim_BuilderError("could not get animatedPath node #" + name,this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 13) {
@@ -26391,7 +30455,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				} else if(pathDef.speed != null) {
 					mode = bh_paths_AnimatedPathMode.Distance(this.resolveAsNumber(pathDef.speed));
 				} else {
-					throw haxe_Exception.thrown("animatedPath requires either speed or duration");
+					throw new bh_multianim_BuilderError("animatedPath requires either speed or duration",node,null);
 				}
 			} else {
 				switch(_g._hx_index) {
@@ -26399,14 +30463,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					if(pathDef.speed != null) {
 						mode = bh_paths_AnimatedPathMode.Distance(this.resolveAsNumber(pathDef.speed));
 					} else {
-						throw haxe_Exception.thrown("distance mode requires speed");
+						throw new bh_multianim_BuilderError("distance mode requires speed",node,null);
 					}
 					break;
 				case 1:
 					if(pathDef.duration != null) {
 						mode = bh_paths_AnimatedPathMode.Time(this.resolveAsNumber(pathDef.duration));
 					} else {
-						throw haxe_Exception.thrown("time mode requires duration");
+						throw new bh_multianim_BuilderError("time mode requires duration",node,null);
 					}
 					break;
 				}
@@ -26447,14 +30511,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					if(resolved == null) {
 						var easing = bh_multianim_MacroManimParser.tryMatchEasingName(ca.curveName);
 						if(easing == null) {
-							throw haxe_Exception.thrown("curve not found: " + ca.curveName + "");
+							throw new bh_multianim_BuilderError("curve not found: " + ca.curveName,node,null);
 						}
 						resolved = new bh_paths_Curve(null,easing,null);
 						allCurves.h[ca.curveName] = resolved;
 					}
 					curve = resolved;
 				} else {
-					throw haxe_Exception.thrown("curve assignment must have either curveName or inlineEasing");
+					throw new bh_multianim_BuilderError("curve assignment must have either curveName or inlineEasing",node,null);
 				}
 				var _g3 = ca.slot;
 				switch(_g3._hx_index) {
@@ -26509,7 +30573,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			return retVal;
 		} else {
-			throw haxe_Exception.thrown("" + name + " has to be animatedPath" + "");
+			throw new bh_multianim_BuilderError("" + name + " has to be animatedPath",node,null);
 		}
 	}
 	,createProjectilePath: function(name,startPoint,endPoint) {
@@ -26518,34 +30582,34 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,getLayouts: function(builderParams) {
 		var node = this.multiParserResult.nodes.h[bh_multianim_MultiAnimParser.defaultLayoutNodeName];
 		if(node == null) {
-			throw haxe_Exception.thrown("layouts block does not exist");
+			throw new bh_multianim_BuilderError("layouts block does not exist",this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 11) {
 			var layoutsDef = _g.layoutsDef;
 			return new bh_multianim_layouts_MultiAnimLayouts(layoutsDef,this);
 		} else {
-			throw haxe_Exception.thrown("layouts block is of unexpected type " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("layouts block is of unexpected type " + Std.string(node.type),node,null);
 		}
 	}
 	,getPaths: function(builderParams) {
 		var node = this.multiParserResult.nodes.h[bh_multianim_MultiAnimParser.defaultPathNodeName];
 		if(node == null) {
-			throw haxe_Exception.thrown("paths does not exist");
+			throw new bh_multianim_BuilderError("paths does not exist",this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 12) {
 			var pathsDef = _g.paths;
 			return new bh_paths_MultiAnimPaths(pathsDef,this);
 		} else {
-			throw haxe_Exception.thrown("paths is of unexpected type " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("paths is of unexpected type " + Std.string(node.type),node,null);
 		}
 	}
 	,getCurves: function() {
 		var _gthis = this;
 		var node = this.multiParserResult.nodes.h[bh_multianim_MultiAnimParser.defaultCurveNodeName];
 		if(node == null) {
-			throw haxe_Exception.thrown("curves does not exist");
+			throw new bh_multianim_BuilderError("curves does not exist",this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 14) {
@@ -26561,13 +30625,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					return existing;
 				}
 				if(Object.prototype.hasOwnProperty.call(resolving_h,name)) {
-					throw haxe_Exception.thrown("circular curve reference: " + name);
+					throw new bh_multianim_BuilderError("circular curve reference: " + name,_gthis.currentNode,null);
 				}
 				var def = curvesDef.h[name];
 				if(def == null) {
 					var easing = bh_multianim_MacroManimParser.tryMatchEasingName(name);
 					if(easing == null) {
-						throw haxe_Exception.thrown("unknown curve reference: " + name);
+						throw new bh_multianim_BuilderError("unknown curve reference: " + name,_gthis.currentNode,null);
 					}
 					var curve = new bh_paths_Curve(null,easing,null);
 					result.h[name] = curve;
@@ -26650,7 +30714,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			return result;
 		} else {
-			throw haxe_Exception.thrown("curves is of unexpected type " + Std.string(node.type) + "");
+			throw new bh_multianim_BuilderError("curves is of unexpected type " + Std.string(node.type),node,null);
 		}
 	}
 	,resolveParticleCurveRef: function(ref) {
@@ -26663,26 +30727,26 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			if(curve == null) {
 				var easing = bh_multianim_MacroManimParser.tryMatchEasingName(ref.curveName);
 				if(easing == null) {
-					throw haxe_Exception.thrown("curve not found: " + ref.curveName + "");
+					throw new bh_multianim_BuilderError("curve not found: " + ref.curveName,this.currentNode,null);
 				}
 				curve = new bh_paths_Curve(null,easing,null);
 				curves.h[ref.curveName] = curve;
 			}
 			return curve;
 		}
-		throw haxe_Exception.thrown("curve reference must have either curveName or inlineEasing");
+		throw new bh_multianim_BuilderError("curve reference must have either curveName or inlineEasing",this.currentNode,null);
 	}
 	,buildAutotile: function(name,grid) {
 		var node = this.multiParserResult.nodes.h[name];
 		if(node == null) {
-			throw haxe_Exception.thrown("could not get autotile node #" + name + "");
+			throw new bh_multianim_BuilderError("could not get autotile node #" + name,this.currentNode,null);
 		}
 		var _g = node.type;
 		if(_g._hx_index == 27) {
 			var autotileDef = _g.autotileDef;
 			return this.buildAutotileImpl(autotileDef,grid,null);
 		} else {
-			throw haxe_Exception.thrown("" + name + " has to be autotile" + "");
+			throw new bh_multianim_BuilderError("" + name + " has to be autotile",node,null);
 		}
 	}
 	,buildAutotileImpl: function(autotileDef,grid,elevationBaseY) {
@@ -26843,7 +30907,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						var fv = _mapping.h[fallbackIdx];
 						mappedIdx = fv != null ? fv : 0;
 					} else {
-						throw haxe_Exception.thrown("autotile: tile index " + i + " not found in mapping" + "");
+						throw new bh_multianim_BuilderError("autotile: tile index " + i + " not found in mapping",this.currentNode,null);
 					}
 					result.push(baseTile.sub(regionX + mappedIdx % tilesPerRow * tileSize,regionY + (mappedIdx / tilesPerRow | 0) * tileSize,tileSize,tileSize));
 				}
@@ -27134,7 +31198,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var _gthis = this;
 		var resolveReferenceableValue = function(ref,type) {
 			if(type == null) {
-				throw haxe_Exception.thrown("type is null");
+				throw new bh_multianim_BuilderError("type is null",node,null);
 			} else {
 				switch(type._hx_index) {
 				case 0:
@@ -27204,7 +31268,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var key1 = _g_key;
 				var value = _g_value;
 				if(Object.prototype.hasOwnProperty.call(retVal.h,key1)) {
-					throw haxe_Exception.thrown("extra input \"" + key1 + "=>" + Std.string(value) + "\" already exists in input" + "");
+					throw new bh_multianim_BuilderError("extra input \"" + key1 + "=>" + Std.string(value) + "\" already exists in input",node,null);
 				}
 				if(js_Boot.__instanceof(value,bh_multianim_ResolvedIndexParameters)) {
 					retVal.h[key1] = value;
@@ -27224,7 +31288,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							_g.push(k);
 						}
 						var availableParams = _g;
-						throw haxe_Exception.thrown("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams.join(", ") + "");
+						throw new bh_multianim_BuilderError("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams.join(", "),node,null);
 					}
 					var type1 = type;
 					var resolved = resolveReferenceableValue(ref,type1);
@@ -27247,7 +31311,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							_g1.push(k1);
 						}
 						var availableParams1 = _g1;
-						throw haxe_Exception.thrown("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams1.join(", ") + "");
+						throw new bh_multianim_BuilderError("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams1.join(", "),node,null);
 					}
 					var type3 = type2;
 					var value2 = bh_multianim_MultiAnimParser.dynamicValueToIndex(key1,type3,value,function(s) {
@@ -27287,7 +31351,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							_g.push(k);
 						}
 						var availableParams = _g;
-						throw haxe_Exception.thrown("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams.join(", ") + "");
+						throw new bh_multianim_BuilderError("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams.join(", "),node,null);
 					}
 					var type1 = type;
 					var resolved = resolveReferenceableValue(ref,type1);
@@ -27310,7 +31374,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							_g1.push(k1);
 						}
 						var availableParams1 = _g1;
-						throw haxe_Exception.thrown("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams1.join(", ") + "");
+						throw new bh_multianim_BuilderError("Setting \"" + key1 + "\" does not match any parameter of programmable \"#" + node.uniqueNodeName + "\". Available parameters: " + availableParams1.join(", "),node,null);
 					}
 					var type3 = type2;
 					var value2 = bh_multianim_MultiAnimParser.dynamicValueToIndex(key1,type3,value,function(s) {
@@ -27342,41 +31406,58 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if(incremental == null) {
 			incremental = false;
 		}
+		var _g = 0;
+		var _g1 = this.buildingRefs;
+		while(_g < _g1.length) {
+			var inFlight = _g1[_g];
+			++_g;
+			if(inFlight == name) {
+				throw new bh_multianim_BuilderError("circular programmable reference: " + name,this.currentNode,"circular_reference");
+			}
+		}
+		this.buildingRefs.push(name);
 		this.pushBuilderState();
-		if(builderParams == null) {
-			builderParams = { callback : $bind(this,this.defaultCallback)};
-		} else if(builderParams.callback == null) {
-			builderParams.callback = $bind(this,this.defaultCallback);
-		}
-		var node = this.multiParserResult.nodes.h[name];
-		if(node == null) {
-			var error = "buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build";
+		try {
+			if(builderParams == null) {
+				builderParams = { callback : $bind(this,this.defaultCallback)};
+			} else if(builderParams.callback == null) {
+				builderParams.callback = $bind(this,this.defaultCallback);
+			}
+			var node = this.multiParserResult.nodes.h[name];
+			if(node == null) {
+				throw haxe_Exception.thrown("buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build");
+			}
+			var hasParams = inputParameters != null && bh_base_MapTools.count(inputParameters) > 0;
+			var definitions = this.getProgrammableParameterDefinitions(node,hasParams);
+			this.updateIndexedParamsFromDynamicMap(node,inputParameters,definitions,inheritedParameters);
+			this.builderParams = builderParams;
+			if(incremental) {
+				this.incrementalMode = true;
+				this.incrementalContext = new bh_multianim_IncrementalUpdateContext(this,this.indexedParams,builderParams,node);
+				if(this.tweenManager != null) {
+					this.incrementalContext.setTweenManager(this.tweenManager);
+				}
+			}
+			var retVal = this.startBuild(name,node,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node),builderParams);
+			if(incremental) {
+				var ctx = this.incrementalContext;
+				retVal.incrementalContext = ctx;
+				if(ctx != null) {
+					ctx.syncFinalsFromBuilder(this.indexedParams);
+					ctx.applyConditionalChains();
+				}
+				this.incrementalMode = false;
+				this.incrementalContext = null;
+			}
 			this.popBuilderState();
-			throw haxe_Exception.thrown(error);
+			this.buildingRefs.pop();
+			return retVal;
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.popBuilderState();
+			this.buildingRefs.pop();
+			throw haxe_Exception.thrown(e);
 		}
-		var hasParams = inputParameters != null && bh_base_MapTools.count(inputParameters) > 0;
-		var definitions = this.getProgrammableParameterDefinitions(node,hasParams);
-		this.updateIndexedParamsFromDynamicMap(node,inputParameters,definitions,inheritedParameters);
-		this.builderParams = builderParams;
-		if(incremental) {
-			this.incrementalMode = true;
-			this.incrementalContext = new bh_multianim_IncrementalUpdateContext(this,this.indexedParams,builderParams,node);
-			if(this.tweenManager != null) {
-				this.incrementalContext.setTweenManager(this.tweenManager);
-			}
-		}
-		var retVal = this.startBuild(name,node,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node),builderParams);
-		if(incremental) {
-			var ctx = this.incrementalContext;
-			retVal.incrementalContext = ctx;
-			if(ctx != null) {
-				ctx.applyConditionalChains();
-			}
-			this.incrementalMode = false;
-			this.incrementalContext = null;
-		}
-		this.popBuilderState();
-		return retVal;
 	}
 	,hasNode: function(name) {
 		var tmp = this.multiParserResult.nodes;
@@ -27385,11 +31466,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,rebuildSwitchArmByOrdinal: function(programmableName,switchOrdinal,armIndex,container,parentParams,sink) {
 		var progNode = this.multiParserResult.nodes.h[programmableName];
 		if(progNode == null) {
-			throw haxe_Exception.thrown("programmable \"" + programmableName + "\" not found");
+			throw new bh_multianim_BuilderError("programmable \"" + programmableName + "\" not found",this.currentNode,null);
 		}
 		var switchNode = bh_multianim_MultiAnimBuilder.findNthSwitchNode(progNode,switchOrdinal);
 		if(switchNode == null) {
-			throw haxe_Exception.thrown("switch node #" + switchOrdinal + " not found in \"" + programmableName + "\"");
+			throw new bh_multianim_BuilderError("switch node #" + switchOrdinal + " not found in \"" + programmableName + "\"",this.currentNode,null);
 		}
 		var arms;
 		var _g = switchNode.type;
@@ -27398,7 +31479,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var a = _g.arms;
 			arms = a;
 		} else {
-			throw haxe_Exception.thrown("node #" + switchOrdinal + " is not a SWITCH node");
+			throw new bh_multianim_BuilderError("node #" + switchOrdinal + " is not a SWITCH node",this.currentNode,null);
 		}
 		if(sink != null) {
 			bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(sink.ir,container);
@@ -27448,25 +31529,411 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.popBuilderState();
 		}
 	}
+	,markUntrackedParamsInSubtree: function(node,ctx,excludeVar,rebuildRefs) {
+		if(node == null || ctx == null) {
+			return;
+		}
+		var _g = node.type;
+		switch(_g._hx_index) {
+		case 4:
+			var _g1 = _g.filename;
+			var _g1 = _g.initialState;
+			var selectorReferences = _g.selector;
+			if(selectorReferences != null) {
+				var h = selectorReferences.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var k = _g_key;
+					var v = _g_value;
+					var reason = "stateanim selector \"" + k + "\"";
+					if(v != null) {
+						var refs = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(v,refs);
+						var _g1 = 0;
+						while(_g1 < refs.length) {
+							var r = refs[_g1];
+							++_g1;
+							if(r == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r,reason);
+						}
+					}
+				}
+			}
+			break;
+		case 5:
+			var _g1 = _g.initialState;
+			var _g1 = _g.externallyDriven;
+			var construct = _g.construct;
+			if(construct != null) {
+				var h = construct.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var key1 = _g_key;
+					var value = _g_value;
+					var _g1 = value.sheet;
+					var _g2 = value.loop;
+					var _g3 = value.center;
+					var animName = value.name;
+					var fps = value.fps;
+					var reason = "stateanim_construct animName \"" + key1 + "\"";
+					if(animName != null) {
+						var refs = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(animName,refs);
+						var _g4 = 0;
+						while(_g4 < refs.length) {
+							var r = refs[_g4];
+							++_g4;
+							if(r == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r,reason);
+						}
+					}
+					var reason1 = "stateanim_construct fps \"" + key1 + "\"";
+					if(fps != null) {
+						var refs1 = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(fps,refs1);
+						var _g5 = 0;
+						while(_g5 < refs1.length) {
+							var r1 = refs1[_g5];
+							++_g5;
+							if(r1 == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r1) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r1,reason1);
+						}
+					}
+				}
+			}
+			break;
+		case 21:
+			var _g1 = _g.externalReference;
+			var programmableRef = _g.programmableReference;
+			var parameters = _g.parameters;
+			if(programmableRef != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(programmableRef,refs);
+				var _g1 = 0;
+				while(_g1 < refs.length) {
+					var r = refs[_g1];
+					++_g1;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: staticRef target");
+				}
+			}
+			if(parameters != null) {
+				var h = parameters.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var _ = _g_key;
+					var value = _g_value;
+					if(value != null) {
+						var refs = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(value,refs);
+						var _g1 = 0;
+						while(_g1 < refs.length) {
+							var r = refs[_g1];
+							++_g1;
+							if(r == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r,"param-dep repeat: staticRef parameter");
+						}
+					}
+				}
+			}
+			break;
+		case 24:
+			var _g1 = _g.width;
+			var _g1 = _g.height;
+			var _g1 = _g.debug;
+			var id = _g.id;
+			var metadata = _g.metadata;
+			if(id != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(id,refs);
+				var _g1 = 0;
+				while(_g1 < refs.length) {
+					var r = refs[_g1];
+					++_g1;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"interactive id");
+				}
+			}
+			if(metadata != null) {
+				var _g1 = 0;
+				while(_g1 < metadata.length) {
+					var entry = metadata[_g1];
+					++_g1;
+					var rv = entry.key;
+					if(rv != null) {
+						var refs = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(rv,refs);
+						var _g2 = 0;
+						while(_g2 < refs.length) {
+							var r = refs[_g2];
+							++_g2;
+							if(r == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r,"interactive metadata key");
+						}
+					}
+					var rv1 = entry.value;
+					if(rv1 != null) {
+						var refs1 = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(rv1,refs1);
+						var _g3 = 0;
+						while(_g3 < refs1.length) {
+							var r1 = refs1[_g3];
+							++_g3;
+							if(r1 == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r1) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r1,"interactive metadata value");
+						}
+					}
+				}
+			}
+			break;
+		case 32:
+			var _g1 = _g.externalReference;
+			var programmableRef = _g.programmableReference;
+			var parameters = _g.parameters;
+			if(programmableRef != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(programmableRef,refs);
+				var _g = 0;
+				while(_g < refs.length) {
+					var r = refs[_g];
+					++_g;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: dynamicRef target");
+				}
+			}
+			if(parameters != null) {
+				var h = parameters.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var _ = _g_key;
+					var value = _g_value;
+					if(value != null) {
+						var refs = [];
+						bh_multianim_MultiAnimBuilder.collectParamRefs(value,refs);
+						var _g = 0;
+						while(_g < refs.length) {
+							var r = refs[_g];
+							++_g;
+							if(r == excludeVar) {
+								continue;
+							}
+							if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+								continue;
+							}
+							ctx.markParamUntracked(r,"param-dep repeat: dynamicRef parameter");
+						}
+					}
+				}
+			}
+			break;
+		default:
+		}
+		if(node.pos != null) {
+			var posRefs = [];
+			bh_multianim_MultiAnimBuilder.collectCoordinateParamRefs(node.pos,posRefs);
+			var _g = 0;
+			while(_g < posRefs.length) {
+				var r = posRefs[_g];
+				++_g;
+				if(r == excludeVar) {
+					continue;
+				}
+				if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+					continue;
+				}
+				ctx.markParamUntracked(r,"param-dep repeat: child position");
+			}
+		}
+		if(node.scale != null) {
+			var rv = node.scale;
+			if(rv != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(rv,refs);
+				var _g = 0;
+				while(_g < refs.length) {
+					var r = refs[_g];
+					++_g;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: child scale");
+				}
+			}
+		}
+		if(node.rotation != null) {
+			var rv = node.rotation;
+			if(rv != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(rv,refs);
+				var _g = 0;
+				while(_g < refs.length) {
+					var r = refs[_g];
+					++_g;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: child rotation");
+				}
+			}
+		}
+		if(node.alpha != null) {
+			var rv = node.alpha;
+			if(rv != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(rv,refs);
+				var _g = 0;
+				while(_g < refs.length) {
+					var r = refs[_g];
+					++_g;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: child alpha");
+				}
+			}
+		}
+		if(node.tint != null) {
+			var rv = node.tint;
+			if(rv != null) {
+				var refs = [];
+				bh_multianim_MultiAnimBuilder.collectParamRefs(rv,refs);
+				var _g = 0;
+				while(_g < refs.length) {
+					var r = refs[_g];
+					++_g;
+					if(r == excludeVar) {
+						continue;
+					}
+					if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+						continue;
+					}
+					ctx.markParamUntracked(r,"param-dep repeat: child tint");
+				}
+			}
+		}
+		if(node.filter != null) {
+			var filterRefs = [];
+			bh_multianim_MultiAnimBuilder.collectFilterParamRefs(node.filter,filterRefs);
+			var _g = 0;
+			while(_g < filterRefs.length) {
+				var r = filterRefs[_g];
+				++_g;
+				if(r == excludeVar) {
+					continue;
+				}
+				if(rebuildRefs != null && rebuildRefs.indexOf(r) >= 0) {
+					continue;
+				}
+				ctx.markParamUntracked(r,"param-dep repeat: child filter");
+			}
+		}
+		if(node.children != null) {
+			var _g = 0;
+			var _g1 = node.children;
+			while(_g < _g1.length) {
+				var child = _g1[_g];
+				++_g;
+				this.markUntrackedParamsInSubtree(child,ctx,excludeVar,rebuildRefs);
+			}
+		}
+	}
 	,loadTileImpl: function(sheetName,tilename,index) {
 		var sheet = this.getOrLoadSheet(sheetName);
 		if(sheet == null) {
-			throw haxe_Exception.thrown("sheet " + sheetName + " could not be loaded" + "");
+			throw new bh_multianim_BuilderError("sheet " + sheetName + " could not be loaded",this.currentNode,null);
 		}
 		var tile;
 		if(index != null) {
 			var arr = sheet.getAnim(tilename);
 			if(arr == null) {
-				throw haxe_Exception.thrown("tile " + tilename + ", index " + index + " sheet " + sheetName + " could not be loaded" + "");
+				throw new bh_multianim_BuilderError("tile " + tilename + ", index " + index + " sheet " + sheetName + " could not be loaded",this.currentNode,null);
 			}
 			if(index < 0 || index >= arr.length) {
-				throw haxe_Exception.thrown("tile " + tilename + " from sheet " + sheetName + " does not have tile index " + index + ", should be [0, " + (arr.length - 1) + "]" + "");
+				throw new bh_multianim_BuilderError("tile " + tilename + " from sheet " + sheetName + " does not have tile index " + index + ", should be [0, " + (arr.length - 1) + "]",this.currentNode,null);
 			}
 			tile = arr[index];
 		} else {
 			var t = sheet.get(tilename);
 			if(t == null) {
-				throw haxe_Exception.thrown("tile " + tilename + " in sheet " + sheetName + " could not be loaded" + "");
+				throw new bh_multianim_BuilderError("tile " + tilename + " in sheet " + sheetName + " could not be loaded",this.currentNode,null);
 			}
 			tile = t;
 		}
@@ -27475,11 +31942,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	,load9Patch: function(sheet,tilename) {
 		var sheet1 = this.getOrLoadSheet(sheet);
 		if(sheet1 == null) {
-			throw haxe_Exception.thrown("sheet " + Std.string(sheet1) + " could not be loaded" + "");
+			throw new bh_multianim_BuilderError("sheet " + Std.string(sheet1) + " could not be loaded",this.currentNode,null);
 		}
 		var ninePatch = sheet1.getNinePatch(tilename);
 		if(ninePatch == null) {
-			throw haxe_Exception.thrown("tile " + tilename + " in sheet " + Std.string(sheet1) + " could not be loaded" + "");
+			throw new bh_multianim_BuilderError("tile " + tilename + " in sheet " + Std.string(sheet1) + " could not be loaded",this.currentNode,null);
 		}
 		return ninePatch;
 	}
@@ -27513,13 +31980,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				var sheetName = _g.sheetName;
 				var sheet = this.resourceLoader.loadSheet2(this.resolveAsString(sheetName));
 				if(sheet == null) {
-					throw haxe_Exception.thrown("atlas2: could not load sheet \"" + this.resolveAsString(sheetName) + "\"" + "");
+					throw new bh_multianim_BuilderError("atlas2: could not load sheet \"" + this.resolveAsString(sheetName) + "\"",this.currentNode,null);
 				}
 				sourceTile = sheet.getSourceTile();
 				break;
 			}
 			if(sourceTile == null) {
-				throw haxe_Exception.thrown("atlas2 \"" + name + "\": could not load source tile" + "");
+				throw new bh_multianim_BuilderError("atlas2 \"" + name + "\": could not load source tile",this.currentNode,null);
 			}
 			var contents = new haxe_ds_StringMap();
 			var _g = 0;
@@ -28287,7 +32754,12 @@ bh_multianim_MultiAnimParser.dynamicValueToIndex = function(name,type,value,err)
 		}
 		break;
 	case 12:
-		return bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSFile(bh_multianim_ReferenceableValue.RVString(s)));
+		if(((value) instanceof h2d_Tile)) {
+			return bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSTile(value));
+		} else {
+			return bh_multianim_ResolvedIndexParameters.TileSourceValue(bh_multianim_TileSource.TSFile(bh_multianim_ReferenceableValue.RVString(s)));
+		}
+		break;
 	}
 };
 bh_multianim_MultiAnimParser.tryStringToColor = function(s) {
@@ -28428,7 +32900,7 @@ bh_multianim_ProgrammableBuilder.prototype = {
 		var atlas = this.getSheet(sheet);
 		var ninePatch = atlas.getNinePatch(name);
 		if(ninePatch == null) {
-			throw haxe_Exception.thrown("9-patch \"" + name + "\" not found in sheet \"" + sheet + "\"");
+			throw new bh_multianim_BuilderError("9-patch \"" + name + "\" not found in sheet \"" + sheet + "\"",null,null);
 		}
 		return ninePatch;
 	}
@@ -28726,7 +33198,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 	getLayoutSequenceLengthByLayoutName: function(layoutName) {
 		var l = this.layoutsDef.h[layoutName];
 		if(l == null) {
-			throw haxe_Exception.thrown("layout " + layoutName + " not found");
+			throw new bh_multianim_BuilderError("layout " + layoutName + " not found",null,null);
 		}
 		return this.getLayoutSequenceLength(l);
 	}
@@ -28756,13 +33228,13 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 	,getIterator: function(name) {
 		var l = this.layoutsDef.h[name];
 		if(l == null) {
-			throw haxe_Exception.thrown("layout " + name + " not found");
+			throw new bh_multianim_BuilderError("layout " + name + " not found",null,null);
 		}
 		return new bh_multianim_layouts_LayoutPointIterator(l,this);
 	}
 	,getPointFromLayout: function(l,index,builderParams) {
 		if(index < 0) {
-			throw haxe_Exception.thrown("index < 0 for layout " + l.name);
+			throw new bh_multianim_BuilderError("index < 0 for layout " + l.name,null,null);
 		}
 		var pt;
 		var _g = l.type;
@@ -28787,7 +33259,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 		case 1:
 			var list = _g.list;
 			if(list.length <= index) {
-				throw haxe_Exception.thrown("cannot get layout \"" + l.name + "\" point at " + index + " because list is only " + list.length + " long");
+				throw new bh_multianim_BuilderError("cannot get layout \"" + l.name + "\" point at " + index + " because list is only " + list.length + " long",null,null);
 			}
 			var gridCoordinateSystem = l.grid;
 			var hexCoordinateSystem = l.hex;
@@ -28810,7 +33282,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var to = _g.to;
 			var content = _g.content;
 			if(index > to - from) {
-				throw haxe_Exception.thrown("index > to - from for layout " + l.name);
+				throw new bh_multianim_BuilderError("index > to - from for layout " + l.name,null,null);
 			}
 			var gridCoordinateSystem = l.grid;
 			var hexCoordinateSystem = l.hex;
@@ -28833,7 +33305,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var cellW = _g.cellW;
 			var cellH = _g.cellH;
 			if(index >= cols * rows) {
-				throw haxe_Exception.thrown("index " + index + " out of bounds for grid layout " + l.name + " (" + cols + "x" + rows + ")");
+				throw new bh_multianim_BuilderError("index " + index + " out of bounds for grid layout " + l.name + " (" + cols + "x" + rows + ")",null,null);
 			}
 			var col = index % cols;
 			var row = index / cols | 0;
@@ -28848,7 +33320,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 		}
 		var scene = this.builder.builderParams.scene;
 		if(scene == null) {
-			throw haxe_Exception.thrown("layout \"" + l.name + "\" uses align but no scene is available");
+			throw new bh_multianim_BuilderError("layout \"" + l.name + "\" uses align but no scene is available",null,null);
 		}
 		if(l.alignX != bh_multianim_layouts_LayoutAlignX.Left) {
 			var tmp;
@@ -28888,7 +33360,7 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 		}
 		var l = this.layoutsDef.h[name];
 		if(l == null) {
-			throw haxe_Exception.thrown("layout " + name + " not found");
+			throw new bh_multianim_BuilderError("layout " + name + " not found",null,null);
 		}
 		var l1 = l;
 		return this.getPointFromLayout(l1,index);
@@ -28958,10 +33430,19 @@ bh_paths__$AnimatedPath_TimedEvent.__name__ = "bh.paths._AnimatedPath.TimedEvent
 bh_paths__$AnimatedPath_TimedEvent.prototype = {
 	__class__: bh_paths__$AnimatedPath_TimedEvent
 };
+var bh_paths_CustomCurveBinding = function(name,segments) {
+	this.name = name;
+	this.segments = segments;
+};
+$hxClasses["bh.paths.CustomCurveBinding"] = bh_paths_CustomCurveBinding;
+bh_paths_CustomCurveBinding.__name__ = "bh.paths.CustomCurveBinding";
+bh_paths_CustomCurveBinding.prototype = {
+	__class__: bh_paths_CustomCurveBinding
+};
 var bh_paths_AnimatedPath = function(path,mode) {
 	this.currentEventIndex = 0;
 	this.timedEvents = [];
-	this.customCurveSegments = new haxe_ds_StringMap();
+	this.customCurves = [];
 	this.colorCurveSegments = [];
 	this.progressCurveSegments = [];
 	this.rotationCurveSegments = [];
@@ -29015,13 +33496,21 @@ bh_paths_AnimatedPath.prototype = {
 		_this.splice(left,0,x);
 	}
 	,addCustomCurveSegment: function(name,startRate,curve) {
-		if(!Object.prototype.hasOwnProperty.call(this.customCurveSegments.h,name)) {
-			this.customCurveSegments.h[name] = [];
+		var segments = null;
+		var _g = 0;
+		var _g1 = this.customCurves.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.customCurves[i].name == name) {
+				segments = this.customCurves[i].segments;
+				break;
+			}
 		}
-		var segments = this.customCurveSegments.h[name];
-		if(segments != null) {
-			this.insertSorted(segments,new bh_paths__$AnimatedPath_CurveSegment(startRate,curve));
+		if(segments == null) {
+			segments = [];
+			this.customCurves.push(new bh_paths_CustomCurveBinding(name,segments));
 		}
+		this.insertSorted(segments,new bh_paths__$AnimatedPath_CurveSegment(startRate,curve));
 	}
 	,addEvent: function(atRate,eventName) {
 		var left = 0;
@@ -29162,20 +33651,15 @@ bh_paths_AnimatedPath.prototype = {
 			this.currentState.color = this.evaluateColorCurve(rate);
 		}
 		this.currentState.done = false;
-		var h = this.customCurveSegments.h;
-		var _g_h = h;
-		var _g_keys = Object.keys(h);
-		var _g_length = _g_keys.length;
-		var _g_current = 0;
-		while(_g_current < _g_length) {
-			var key = _g_keys[_g_current++];
-			var _g_key = key;
-			var _g_value = _g_h[key];
-			var name = _g_key;
-			var segments = _g_value;
+		var _g = 0;
+		var _g1 = this.customCurves.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var binding = this.customCurves[i];
 			var this1 = this.currentState.custom;
-			var value = this.evaluateCurveSlot(segments,rate);
-			this1.h[name] = value;
+			var key = binding.name;
+			var value = this.evaluateCurveSlot(binding.segments,rate);
+			this1.h[key] = value;
 		}
 	}
 	,fireEvent: function(eventName) {
@@ -33488,6 +37972,7 @@ bh_stateanim_AnimParser.prototype = {
 	,__class__: bh_stateanim_AnimParser
 };
 var bh_stateanim_AnimationClip = function(frames,parent) {
+	this._singleFrameBuf = [null];
 	this.currentFrameIndex = 0;
 	this.elapsedTime = 0;
 	h2d_Drawable.call(this,parent);
@@ -33497,8 +37982,14 @@ $hxClasses["bh.stateanim.AnimationClip"] = bh_stateanim_AnimationClip;
 bh_stateanim_AnimationClip.__name__ = "bh.stateanim.AnimationClip";
 bh_stateanim_AnimationClip.__super__ = h2d_Drawable;
 bh_stateanim_AnimationClip.prototype = $extend(h2d_Drawable.prototype,{
-	setFrames: function(frames) {
-		this.frames = frames;
+	setSingleFrame: function(frame) {
+		this._singleFrameBuf[0] = frame;
+		this.frames = this._singleFrameBuf;
+		this.reset();
+	}
+	,clearFrames: function() {
+		this._singleFrameBuf.length = 0;
+		this.frames = this._singleFrameBuf;
 		this.reset();
 	}
 	,reset: function() {
@@ -33626,7 +38117,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		this.paused = false;
 		this.currentStateIndex = 0;
 		this.loopsRemaining = state.loopCount;
-		this.clip.setFrames([]);
+		this.clip.clearFrames();
 		this.clip.set_filter(state.filter);
 		var tc = state.tintColor;
 		if(tc != null) {
@@ -33675,7 +38166,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		return this.clip.getCurrentFrame();
 	}
 	,setCurrentFrame: function(frame) {
-		this.clip.setFrames([frame]);
+		this.clip.setSingleFrame(frame);
 	}
 	,handleCurrent: function(delta) {
 		if(this.current == null) {
@@ -33922,8 +38413,9 @@ bh_ui_FloatingTextHelper.prototype = {
 		return inst;
 	}
 	,update: function(dt) {
+		var count = this.instances.length;
 		var i = 0;
-		while(i < this.instances.length) {
+		while(i < count) {
 			var inst = this.instances[i];
 			var state = inst.animPath.update(dt);
 			if(inst.absolutePosition) {
@@ -33959,9 +38451,15 @@ bh_ui_FloatingTextHelper.prototype = {
 				if(_this5 != null && _this5.parent != null) {
 					_this5.parent.removeChild(_this5);
 				}
+				--count;
+				if(i < count) {
+					this.instances[i] = this.instances[count];
+				}
+				this.instances.splice(count,1);
 				inst.onComplete();
-				this.instances[i] = this.instances[this.instances.length - 1];
-				this.instances.pop();
+				if(count > this.instances.length) {
+					count = this.instances.length;
+				}
 			} else {
 				++i;
 			}
@@ -34000,6 +38498,7 @@ bh_ui__$UICardHandHelper_CardEntry.prototype = {
 var bh_ui__$UICardHandHelper_ActiveAnimation = function(entry,anim,startRotation,endRotation,onComplete) {
 	this.rawEndpoint = null;
 	this.trackingFrom = null;
+	this.resolveOnComplete = false;
 	this.entry = entry;
 	this.anim = anim;
 	this.startRotation = startRotation;
@@ -34029,6 +38528,9 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.nextCardSeq = 0;
 	this.currentTargetId = null;
 	this.cardToCardTarget = null;
+	this.scratchToFPoint = new bh_base_FPoint(0,0);
+	this.scratchFromFPoint = new bh_base_FPoint(0,0);
+	this.scratchPoint = new h2d_col_PointImpl(0.,0.);
 	this.sceneCursorY = 0;
 	this.sceneCursorX = 0;
 	this.cursorY = 0;
@@ -34046,6 +38548,7 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.discardDuration = 0;
 	this.drawDuration = 0;
 	this.resolvedPath = null;
+	this._scratchPositions = [];
 	this.screen = screen;
 	this.builder = builder;
 	this.interactiveHelper = new bh_ui_UIRichInteractiveHelper(screen);
@@ -34076,7 +38579,8 @@ var bh_ui_UICardHandHelper = function(screen,builder,config) {
 	this.discardPilePosition = config != null && config.discardPilePosition != null ? config.discardPilePosition : new bh_base_FPoint(1230,680);
 	this.handLayer = config != null && config.handLayer != null ? config.handLayer : bh_ui_screens_LayersEnum.DefaultLayer;
 	this.dragLayer = config != null && config.dragLayer != null ? config.dragLayer : bh_ui_screens_LayersEnum.ModalLayer;
-	this.interactivePrefix = config != null && config.interactivePrefix != null ? config.interactivePrefix : "card";
+	this.helperInstanceId = bh_ui_UICardHandHelper.helperInstanceCounter++;
+	this.interactivePrefix = config != null && config.interactivePrefix != null ? config.interactivePrefix : "card" + this.helperInstanceId;
 	this.layoutPathName = config != null ? config.layoutPathName : null;
 	this.pathDistribution = config != null && config.pathDistribution != null ? config.pathDistribution : bh_ui_PathDistribution.EvenArcLength;
 	this.pathOrientation = config != null && config.pathOrientation != null ? config.pathOrientation : bh_ui_PathOrientation.Tangent;
@@ -34184,15 +38688,16 @@ bh_ui_UICardHandHelper.prototype = {
 		entry.state = bh_ui_CardState.Animating;
 		this.unregisterCardEntry(entry);
 		this.cards.splice(idx,1);
-		var fromPos = new bh_base_FPoint(entry.container.x,entry.container.y);
-		if(!(this.customDiscardAnimation != null && this.customDiscardAnimation(cardId,entry.container,fromPos.x,fromPos.y,function() {
+		var fromX = entry.container.x;
+		var fromY = entry.container.y;
+		if(!(this.customDiscardAnimation != null && this.customDiscardAnimation(cardId,entry.container,fromX,fromY,function() {
 			var _this = entry.container;
 			if(_this != null && _this.parent != null) {
 				_this.parent.removeChild(_this);
 			}
 			_gthis.emitEvent(bh_ui_CardHandEvent.DiscardAnimComplete(cardId));
 		}))) {
-			this.animateCardTo(entry,fromPos,this.discardPilePosition,entry.container.rotation,0,this.discardPathName,function() {
+			this.animateCardTo(entry,fromX,fromY,this.discardPilePosition.x,this.discardPilePosition.y,entry.container.rotation,0,this.discardPathName,function() {
 				var _this = entry.container;
 				if(_this != null && _this.parent != null) {
 					_this.parent.removeChild(_this);
@@ -34272,7 +38777,8 @@ bh_ui_UICardHandHelper.prototype = {
 			}
 			if(innerEvent._hx_index == 1) {
 				if(!this.isDragging) {
-					return this.startDragFromInteractive(entry);
+					var dragEntry = this.hoveredEntry != null ? this.hoveredEntry : entry;
+					return this.startDragFromInteractive(dragEntry);
 				}
 			}
 			return false;
@@ -34283,15 +38789,9 @@ bh_ui_UICardHandHelper.prototype = {
 	,onMouseMove: function(screenX,screenY) {
 		this.sceneCursorX = screenX;
 		this.sceneCursorY = screenY;
-		var x = screenX;
-		var y = screenY;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var local = this.handContainer.globalToLocal(new h2d_col_PointImpl(x,y));
+		this.scratchPoint.x = screenX;
+		this.scratchPoint.y = screenY;
+		var local = this.handContainer.globalToLocal(this.scratchPoint);
 		this.cursorX = local.x;
 		this.cursorY = local.y;
 		if(this.isDragging) {
@@ -34307,15 +38807,9 @@ bh_ui_UICardHandHelper.prototype = {
 	,onMouseRelease: function(screenX,screenY) {
 		this.sceneCursorX = screenX;
 		this.sceneCursorY = screenY;
-		var x = screenX;
-		var y = screenY;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var local = this.handContainer.globalToLocal(new h2d_col_PointImpl(x,y));
+		this.scratchPoint.x = screenX;
+		this.scratchPoint.y = screenY;
+		var local = this.handContainer.globalToLocal(this.scratchPoint);
 		this.cursorX = local.x;
 		this.cursorY = local.y;
 		if(this.isDragging) {
@@ -34330,13 +38824,10 @@ bh_ui_UICardHandHelper.prototype = {
 		if(this.activeAnimations.length == 0) {
 			return;
 		}
+		var completed = null;
 		var i = this.activeAnimations.length - 1;
 		while(i >= 0) {
 			var anim = this.activeAnimations[i];
-			if(anim == null) {
-				--i;
-				continue;
-			}
 			var state = anim.anim.update(dt);
 			var rate = state.rate;
 			if(anim.trackingFrom != null) {
@@ -34385,10 +38876,26 @@ bh_ui_UICardHandHelper.prototype = {
 			_this5.scaleY = state.scale;
 			anim.entry.container.alpha = state.alpha;
 			if(state.done) {
+				if(completed == null) {
+					completed = [];
+				}
+				completed.push(anim);
 				this.activeAnimations.splice(i,1);
-				anim.onComplete();
 			}
 			--i;
+		}
+		if(completed != null) {
+			var _g = 0;
+			while(_g < completed.length) {
+				var anim = completed[_g];
+				++_g;
+				if(anim.resolveOnComplete) {
+					this.resolveAnimationComplete(anim.entry);
+				}
+				if(anim.onComplete != null) {
+					anim.onComplete();
+				}
+			}
 		}
 	}
 	,dispose: function() {
@@ -34407,8 +38914,7 @@ bh_ui_UICardHandHelper.prototype = {
 	}
 	,buildCardEntry: function(descriptor) {
 		var _gthis = this;
-		var params = descriptor.params != null ? haxe_ds_StringMap.createCopy(descriptor.params.h) : new haxe_ds_StringMap();
-		var result = this.builder.buildWithParameters(descriptor.buildName,params,null,null,true);
+		var result = this.builder.buildWithParameters(descriptor.buildName,descriptor.params,null,null,true);
 		var container = new h2d_Object();
 		var pivotWrapper = new h2d_Object(container);
 		pivotWrapper.posChanged = true;
@@ -34448,8 +38954,29 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 	}
 	,clearHand: function() {
-		if(this.isTargeting && this.hideCursorWhileTargeting) {
-			hxd_System.setCursor(hxd_Cursor.Default);
+		if(this.isTargeting) {
+			if(this.hideCursorWhileTargeting) {
+				hxd_System.setCursor(hxd_Cursor.Default);
+			}
+			this.targeting.clearLine();
+		}
+		var pendingAnims = this.activeAnimations;
+		this.activeAnimations = [];
+		var _g = 0;
+		while(_g < pendingAnims.length) {
+			var anim = pendingAnims[_g];
+			++_g;
+			if(anim.resolveOnComplete) {
+				this.resolveAnimationComplete(anim.entry);
+			}
+			if(anim.onComplete != null) {
+				anim.onComplete();
+			}
+		}
+		var tm = this.builder.tweenManager;
+		if(tm != null) {
+			tm.cancelAllChildren(this.handContainer);
+			tm.cancelAllChildren(this.dragContainer);
 		}
 		var _g = 0;
 		var _g1 = this.cards;
@@ -34489,6 +39016,28 @@ bh_ui_UICardHandHelper.prototype = {
 			return positions;
 		}
 	}
+	,computeLayoutInto: function(hoverIdx,out) {
+		switch(this.layoutMode._hx_index) {
+		case 0:
+			var spreadDeg = this.fanRadius > 0 ? this.hoverNeighborSpread / this.fanRadius * (180.0 / Math.PI) : this.hoverNeighborSpread;
+			bh_ui_UICardHandLayout.computeFanLayoutInto(out,this.cards.length,this.anchorX,this.anchorY,this.fanRadius,this.fanMaxAngle,hoverIdx,this.hoverPopDistance,this.hoverScale,spreadDeg);
+			break;
+		case 1:
+			bh_ui_UICardHandLayout.computeLinearLayoutInto(out,this.cards.length,this.anchorX,this.anchorY,this.cardWidth,this.linearSpacing,this.linearMaxWidth,hoverIdx,this.hoverPopDistance,this.hoverScale,this.hoverNeighborSpread);
+			break;
+		case 2:
+			var spreadRate = this.hoverNeighborSpread * 0.0025;
+			bh_ui_UICardHandLayout.computePathLayoutInto(out,this.cards.length,this.getLayoutPath(),this.pathDistribution,this.pathOrientation,hoverIdx,this.hoverPopDistance,this.hoverScale,spreadRate);
+			var _g = 0;
+			var _g1 = out.length;
+			while(_g < _g1) {
+				var i = _g++;
+				out[i].x += this.anchorX;
+				out[i].y += this.anchorY;
+			}
+			break;
+		}
+	}
 	,getLayoutPath: function() {
 		if(this.resolvedPath == null) {
 			if(this.layoutPathName == null) {
@@ -34515,20 +39064,9 @@ bh_ui_UICardHandHelper.prototype = {
 				continue;
 			}
 			if(animated && entry.state == bh_ui_CardState.InHand) {
-				this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(pos.x,pos.y),entry.container.rotation,pos.rotation,this.rearrangePathName,function() {
-				});
+				this.animateCardTo(entry,entry.container.x,entry.container.y,pos.x,pos.y,entry.container.rotation,pos.rotation,this.rearrangePathName,null);
 			} else if(entry.state != bh_ui_CardState.Animating) {
-				var _g2 = [];
-				var _g3 = 0;
-				var _g4 = this.activeAnimations;
-				while(_g3 < _g4.length) {
-					var v = _g4[_g3];
-					++_g3;
-					if(v.entry != entry) {
-						_g2.push(v);
-					}
-				}
-				this.activeAnimations = _g2;
+				this.removeAnimationsForEntry(entry);
 				var _this = entry.container;
 				_this.posChanged = true;
 				_this.x = pos.x;
@@ -34547,7 +39085,6 @@ bh_ui_UICardHandHelper.prototype = {
 		}
 	}
 	,rearrangeCards: function(positions,skipIndex) {
-		var _gthis = this;
 		var _g = 0;
 		var _g1 = this.cards.length;
 		while(_g < _g1) {
@@ -34555,25 +39092,13 @@ bh_ui_UICardHandHelper.prototype = {
 			if(i == skipIndex || i >= positions.length) {
 				continue;
 			}
-			var entry = [this.cards[i]];
-			if(entry[0].state == bh_ui_CardState.Dragging || entry[0].state == bh_ui_CardState.Targeting || entry[0].state == bh_ui_CardState.Animating) {
+			var entry = this.cards[i];
+			if(entry.state == bh_ui_CardState.Dragging || entry.state == bh_ui_CardState.Targeting || entry.state == bh_ui_CardState.Animating) {
 				continue;
 			}
-			var pos = [positions[i]];
-			entry[0].layoutPos = pos[0];
-			this.animateCardTo(entry[0],new bh_base_FPoint(entry[0].container.x,entry[0].container.y),new bh_base_FPoint(pos[0].x,pos[0].y),entry[0].container.rotation,pos[0].rotation,this.rearrangePathName,(function(pos,entry) {
-				return function() {
-					_gthis.resolveAnimationComplete(entry[0]);
-					var _this = entry[0].container;
-					var v = pos[0].scale;
-					_this.posChanged = true;
-					_this.scaleX = v;
-					var _this = entry[0].container;
-					var v = pos[0].scale;
-					_this.posChanged = true;
-					_this.scaleY = v;
-				};
-			})(pos,entry));
+			var pos = positions[i];
+			entry.layoutPos = pos;
+			this.animateCardTo(entry,entry.container.x,entry.container.y,pos.x,pos.y,entry.container.rotation,pos.rotation,this.rearrangePathName,null,true);
 		}
 	}
 	,setHoveredEntry: function(entry) {
@@ -34898,14 +39423,15 @@ bh_ui_UICardHandHelper.prototype = {
 				this.cards.splice(spliceIdx,1);
 			}
 			this.dragContainer.addChild(entry.container);
-			var fromPos = new bh_base_FPoint(entry.container.x,entry.container.y);
-			if(!(this.customPlayAnimation != null && this.customPlayAnimation(cardId,entry.container,fromPos.x,fromPos.y,function() {
+			var fromX = entry.container.x;
+			var fromY = entry.container.y;
+			if(!(this.customPlayAnimation != null && this.customPlayAnimation(cardId,entry.container,fromX,fromY,function() {
 				var _this = entry.container;
 				if(_this != null && _this.parent != null) {
 					_this.parent.removeChild(_this);
 				}
 			}))) {
-				this.animateCardTo(entry,fromPos,this.discardPilePosition,0,0,this.discardPathName,function() {
+				this.animateCardTo(entry,fromX,fromY,this.discardPilePosition.x,this.discardPilePosition.y,0,0,this.discardPathName,function() {
 					var _this = entry.container;
 					if(_this != null && _this.parent != null) {
 						_this.parent.removeChild(_this);
@@ -34919,7 +39445,7 @@ bh_ui_UICardHandHelper.prototype = {
 				this.addToHandLayer(entry);
 			}
 			var targetPos = entry.layoutPos;
-			this.animateCardTo(entry,new bh_base_FPoint(entry.container.x,entry.container.y),new bh_base_FPoint(targetPos.x,targetPos.y),entry.container.rotation,targetPos.rotation,this.returnPathName,function() {
+			this.animateCardTo(entry,entry.container.x,entry.container.y,targetPos.x,targetPos.y,entry.container.rotation,targetPos.rotation,this.returnPathName,function() {
 				_gthis.resolveAnimationComplete(entry);
 				var _this = entry.container;
 				var v = targetPos.scale;
@@ -34954,7 +39480,8 @@ bh_ui_UICardHandHelper.prototype = {
 		this.emitEvent(bh_ui_CardHandEvent.CardDragEnd(entry.descriptor.id));
 	}
 	,getCardAtBasePosition: function(x,y) {
-		var basePositions = this.computeLayout(-1);
+		var basePositions = this._scratchPositions;
+		this.computeLayoutInto(-1,basePositions);
 		var bestEntry = null;
 		var bestDistSq = Infinity;
 		var _g = 0;
@@ -35018,63 +39545,62 @@ bh_ui_UICardHandHelper.prototype = {
 			throw haxe_Exception.thrown("CardHandHelper: " + configField + " \"" + name + "\" not found in .manim");
 		}
 	}
-	,animateCardTo: function(entry,from,to,startRotation,endRotation,pathName,onComplete) {
-		var _g = [];
-		var _g1 = 0;
-		var _g2 = this.activeAnimations;
-		while(_g1 < _g2.length) {
-			var v = _g2[_g1];
-			++_g1;
-			if(v.entry != entry) {
-				_g.push(v);
-			}
+	,animateCardTo: function(entry,fromX,fromY,toX,toY,startRotation,endRotation,pathName,onComplete,resolveOnComplete) {
+		if(resolveOnComplete == null) {
+			resolveOnComplete = false;
 		}
-		this.activeAnimations = _g;
-		var dx = to.x - from.x;
-		var dy = to.y - from.y;
+		this.removeAnimationsForEntry(entry);
+		var dx = toX - fromX;
+		var dy = toY - fromY;
 		if(dx * dx + dy * dy < 1.0) {
 			var _this = entry.container;
 			_this.posChanged = true;
-			_this.x = to.x;
+			_this.x = toX;
 			_this.posChanged = true;
-			_this.y = to.y;
+			_this.y = toY;
 			var _this = entry.container;
 			_this.posChanged = true;
 			_this.rotation = endRotation;
-			onComplete();
+			if(resolveOnComplete) {
+				this.resolveAnimationComplete(entry);
+			}
+			if(onComplete != null) {
+				onComplete();
+			}
 			return;
 		}
 		if(pathName != null) {
-			var ap = this.builder.createProjectilePath(pathName,from,to);
+			this.scratchFromFPoint.x = fromX;
+			this.scratchFromFPoint.y = fromY;
+			this.scratchToFPoint.x = toX;
+			this.scratchToFPoint.y = toY;
+			var ap = this.builder.createProjectilePath(pathName,this.scratchFromFPoint,this.scratchToFPoint);
 			var durationOv = this.getDurationOverride(pathName);
 			if(durationOv > 0) {
 				ap.durationOverride = durationOv;
 			}
-			this.activeAnimations.push(new bh_ui__$UICardHandHelper_ActiveAnimation(entry,ap,startRotation,endRotation,onComplete));
+			var queued = new bh_ui__$UICardHandHelper_ActiveAnimation(entry,ap,startRotation,endRotation,onComplete);
+			queued.resolveOnComplete = resolveOnComplete;
+			this.activeAnimations.push(queued);
 		} else {
 			var _this = entry.container;
 			_this.posChanged = true;
-			_this.x = to.x;
+			_this.x = toX;
 			_this.posChanged = true;
-			_this.y = to.y;
+			_this.y = toY;
 			var _this = entry.container;
 			_this.posChanged = true;
 			_this.rotation = endRotation;
-			onComplete();
+			if(resolveOnComplete) {
+				this.resolveAnimationComplete(entry);
+			}
+			if(onComplete != null) {
+				onComplete();
+			}
 		}
 	}
 	,animateCardToTracking: function(entry,from,startRotation,endRotation,pathName,onComplete) {
-		var _g = [];
-		var _g1 = 0;
-		var _g2 = this.activeAnimations;
-		while(_g1 < _g2.length) {
-			var v = _g2[_g1];
-			++_g1;
-			if(v.entry != entry) {
-				_g.push(v);
-			}
-		}
-		this.activeAnimations = _g;
+		this.removeAnimationsForEntry(entry);
 		if(pathName != null) {
 			var ap = this.builder.createAnimatedPath(pathName);
 			var durationOv = this.getDurationOverride(pathName);
@@ -35095,7 +39621,9 @@ bh_ui_UICardHandHelper.prototype = {
 			var _this = entry.container;
 			_this.posChanged = true;
 			_this.rotation = endRotation;
-			onComplete();
+			if(onComplete != null) {
+				onComplete();
+			}
 		}
 	}
 	,emitEvent: function(event) {
@@ -35130,6 +39658,33 @@ bh_ui_UICardHandHelper.prototype = {
 			}
 		}
 		return false;
+	}
+	,removeAnimationsForEntry: function(entry) {
+		var displaced = null;
+		var i = this.activeAnimations.length - 1;
+		while(i >= 0) {
+			if(this.activeAnimations[i].entry == entry) {
+				if(displaced == null) {
+					displaced = [];
+				}
+				displaced.push(this.activeAnimations[i]);
+				this.activeAnimations.splice(i,1);
+			}
+			--i;
+		}
+		if(displaced != null) {
+			var _g = 0;
+			while(_g < displaced.length) {
+				var anim = displaced[_g];
+				++_g;
+				if(anim.resolveOnComplete) {
+					this.resolveAnimationComplete(anim.entry);
+				}
+				if(anim.onComplete != null) {
+					anim.onComplete();
+				}
+			}
+		}
 	}
 	,isInTargetingZone: function(x,y) {
 		if(this.targetingZones.length > 0) {
@@ -35193,15 +39748,31 @@ var bh_ui_UICardHandLayout = function() { };
 $hxClasses["bh.ui.UICardHandLayout"] = bh_ui_UICardHandLayout;
 bh_ui_UICardHandLayout.__name__ = "bh.ui.UICardHandLayout";
 bh_ui_UICardHandLayout.computeFanLayout = function(cardCount,anchorX,anchorY,radius,maxAngleDeg,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadDeg) {
-	if(cardCount <= 0) {
-		return [];
-	}
 	var result = [];
+	bh_ui_UICardHandLayout.computeFanLayoutInto(result,cardCount,anchorX,anchorY,radius,maxAngleDeg,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadDeg);
+	return result;
+};
+bh_ui_UICardHandLayout.computeFanLayoutInto = function(out,cardCount,anchorX,anchorY,radius,maxAngleDeg,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadDeg) {
+	if(cardCount <= 0) {
+		out.length = 0;
+		return;
+	}
+	if(out.length < cardCount) {
+		while(out.length < cardCount) out.push(new bh_ui_CardLayoutPosition());
+	} else if(out.length > cardCount) {
+		out.length = cardCount;
+	}
 	if(cardCount == 1) {
 		var pop = hoverIndex == 0 ? hoverPopDistance : 0.0;
 		var s = hoverIndex == 0 ? hoverScale : 1.0;
-		result.push(new bh_ui_CardLayoutPosition(anchorX,anchorY - pop,0.0,s,0.0,-1.0));
-		return result;
+		var p = out[0];
+		p.x = anchorX;
+		p.y = anchorY - pop;
+		p.rotation = 0.0;
+		p.scale = s;
+		p.normalX = 0.0;
+		p.normalY = -1.0;
+		return;
 	}
 	var maxAngleRad = maxAngleDeg * Math.PI / 180.0;
 	var maxPerCardDeg = 8.0;
@@ -35238,15 +39809,32 @@ bh_ui_UICardHandLayout.computeFanLayout = function(cardCount,anchorX,anchorY,rad
 		var normalAngle = angle;
 		x -= pop * Math.sin(normalAngle);
 		y -= pop * Math.cos(normalAngle);
-		result.push(new bh_ui_CardLayoutPosition(x,y,angle,scale,-Math.sin(angle),-Math.cos(angle)));
+		var p = out[i];
+		var normalX = -Math.sin(angle);
+		var normalY = -Math.cos(angle);
+		p.x = x;
+		p.y = y;
+		p.rotation = angle;
+		p.scale = scale;
+		p.normalX = normalX;
+		p.normalY = normalY;
 	}
-	return result;
 };
 bh_ui_UICardHandLayout.computeLinearLayout = function(cardCount,anchorX,anchorY,cardWidth,spacing,maxWidth,hoverIndex,hoverPopDistance,hoverScale,neighborSpread) {
-	if(cardCount <= 0) {
-		return [];
-	}
 	var result = [];
+	bh_ui_UICardHandLayout.computeLinearLayoutInto(result,cardCount,anchorX,anchorY,cardWidth,spacing,maxWidth,hoverIndex,hoverPopDistance,hoverScale,neighborSpread);
+	return result;
+};
+bh_ui_UICardHandLayout.computeLinearLayoutInto = function(out,cardCount,anchorX,anchorY,cardWidth,spacing,maxWidth,hoverIndex,hoverPopDistance,hoverScale,neighborSpread) {
+	if(cardCount <= 0) {
+		out.length = 0;
+		return;
+	}
+	if(out.length < cardCount) {
+		while(out.length < cardCount) out.push(new bh_ui_CardLayoutPosition());
+	} else if(out.length > cardCount) {
+		out.length = cardCount;
+	}
 	var totalWidth = cardCount * cardWidth + (cardCount - 1) * spacing;
 	var effectiveStep = cardWidth + spacing;
 	if(totalWidth > maxWidth && cardCount > 1) {
@@ -35273,16 +39861,32 @@ bh_ui_UICardHandLayout.computeLinearLayout = function(cardCount,anchorX,anchorY,
 			y -= hoverPopDistance;
 			scale = hoverScale;
 		}
-		result.push(new bh_ui_CardLayoutPosition(x,y,0.0,scale,0.0,-1.0));
+		var p = out[i];
+		p.x = x;
+		p.y = y;
+		p.rotation = 0.0;
+		p.scale = scale;
+		p.normalX = 0.0;
+		p.normalY = -1.0;
 	}
-	return result;
 };
 bh_ui_UICardHandLayout.computePathLayout = function(cardCount,path,distribution,orientation,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadRate) {
-	if(cardCount <= 0) {
-		return [];
-	}
 	var result = [];
-	var rates = [];
+	bh_ui_UICardHandLayout.computePathLayoutInto(result,cardCount,path,distribution,orientation,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadRate);
+	return result;
+};
+bh_ui_UICardHandLayout.computePathLayoutInto = function(out,cardCount,path,distribution,orientation,hoverIndex,hoverPopDistance,hoverScale,neighborSpreadRate) {
+	if(cardCount <= 0) {
+		out.length = 0;
+		return;
+	}
+	if(out.length < cardCount) {
+		while(out.length < cardCount) out.push(new bh_ui_CardLayoutPosition());
+	} else if(out.length > cardCount) {
+		out.length = cardCount;
+	}
+	var rates = bh_ui_UICardHandLayout._scratchRates;
+	rates.length = 0;
 	if(cardCount == 1) {
 		rates.push(0.5);
 	} else {
@@ -35301,7 +39905,14 @@ bh_ui_UICardHandLayout.computePathLayout = function(cardCount,path,distribution,
 		}
 	}
 	if(hoverIndex >= 0 && hoverIndex < cardCount) {
-		var adjustedRates = rates.slice();
+		var adjustedRates = bh_ui_UICardHandLayout._scratchAdjustedRates;
+		adjustedRates.length = 0;
+		var _g = 0;
+		var _g1 = cardCount;
+		while(_g < _g1) {
+			var i = _g++;
+			adjustedRates.push(rates[i]);
+		}
 		var _g = 0;
 		var _g1 = cardCount;
 		while(_g < _g1) {
@@ -35327,12 +39938,12 @@ bh_ui_UICardHandLayout.computePathLayout = function(cardCount,path,distribution,
 	while(_g < _g1) {
 		var i = _g++;
 		var rate = rates[i];
-		var pt = path.getPoint(rate);
+		path.getPointInto(rate,bh_ui_UICardHandLayout._scratch);
 		var tangent = path.getTangentAngle(rate);
 		var nrmX = -Math.sin(tangent);
 		var nrmY = Math.cos(tangent);
-		var x = pt.x;
-		var y = pt.y;
+		var x = bh_ui_UICardHandLayout._scratch.x;
+		var y = bh_ui_UICardHandLayout._scratch.y;
 		var scale = 1.0;
 		if(i == hoverIndex) {
 			x += nrmX * hoverPopDistance;
@@ -35353,16 +39964,25 @@ bh_ui_UICardHandLayout.computePathLayout = function(cardCount,path,distribution,
 			rotation = Math.max(-maxRad,Math.min(maxRad,tangent));
 			break;
 		}
-		result.push(new bh_ui_CardLayoutPosition(x,y,rotation,scale,nrmX,nrmY));
+		var p = out[i];
+		p.x = x;
+		p.y = y;
+		p.rotation = rotation;
+		p.scale = scale;
+		p.normalX = nrmX;
+		p.normalY = nrmY;
 	}
-	return result;
 };
 bh_ui_UICardHandLayout.computeEvenArcLengthRates = function(path,cardCount) {
 	var sampleCount = 100;
-	var sampleRates = [];
-	var sampleLengths = [];
+	var sampleRates = bh_ui_UICardHandLayout._scratchSampleRates;
+	sampleRates.length = 0;
+	var sampleLengths = bh_ui_UICardHandLayout._scratchSampleLengths;
+	sampleLengths.length = 0;
 	var cumLength = 0.0;
-	var prevPt = path.getPoint(0.0);
+	path.getPointInto(0.0,bh_ui_UICardHandLayout._scratch);
+	var prevX = bh_ui_UICardHandLayout._scratch.x;
+	var prevY = bh_ui_UICardHandLayout._scratch.y;
 	sampleRates.push(0.0);
 	sampleLengths.push(0.0);
 	var _g = 1;
@@ -35370,16 +39990,18 @@ bh_ui_UICardHandLayout.computeEvenArcLengthRates = function(path,cardCount) {
 	while(_g < _g1) {
 		var s = _g++;
 		var r = s / sampleCount;
-		var pt = path.getPoint(r);
-		var dx = pt.x - prevPt.x;
-		var dy = pt.y - prevPt.y;
+		path.getPointInto(r,bh_ui_UICardHandLayout._scratch);
+		var dx = bh_ui_UICardHandLayout._scratch.x - prevX;
+		var dy = bh_ui_UICardHandLayout._scratch.y - prevY;
 		cumLength += Math.sqrt(dx * dx + dy * dy);
 		sampleRates.push(r);
 		sampleLengths.push(cumLength);
-		prevPt = pt;
+		prevX = bh_ui_UICardHandLayout._scratch.x;
+		prevY = bh_ui_UICardHandLayout._scratch.y;
 	}
 	var totalArcLength = cumLength;
-	var rates = [];
+	var rates = bh_ui_UICardHandLayout._scratchRates;
+	rates.length = 0;
 	var _g = 0;
 	var _g1 = cardCount;
 	while(_g < _g1) {
@@ -35417,6 +40039,18 @@ var bh_ui_UICardHandTargeting = function(builder,segmentName,headName,pathName,s
 	this.arrowSnapPointProvider = null;
 	this.snapToTarget = true;
 	this.arrowEnabled = true;
+	this._scratchCursor = new bh_base_FPoint(0,0);
+	this._scratchOrigin = new bh_base_FPoint(0,0);
+	var x = 0;
+	var y = 0;
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	this._scratchPt = new h2d_col_PointImpl(x,y);
+	this._scratch = new bh_base_FPoint(0,0);
 	this.currentValid = false;
 	this.activeTargetId = null;
 	this.targets = [];
@@ -35518,6 +40152,7 @@ bh_ui_UICardHandTargeting.prototype = {
 	}
 	,updateHighlight: function(sceneX,sceneY,cardId) {
 		var hoveredWrapper = null;
+		var _this = this._scratchPt;
 		var x = sceneX;
 		var y = sceneY;
 		if(y == null) {
@@ -35526,13 +40161,14 @@ bh_ui_UICardHandTargeting.prototype = {
 		if(x == null) {
 			x = 0.;
 		}
-		var pt = new h2d_col_PointImpl(x,y);
+		_this.x = x;
+		_this.y = y;
 		var _g = 0;
 		var _g1 = this.targets;
 		while(_g < _g1.length) {
 			var wrapper = _g1[_g];
 			++_g;
-			if(wrapper.containsPoint(pt)) {
+			if(wrapper.containsPoint(this._scratchPt)) {
 				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
 					hoveredWrapper = wrapper;
 					break;
@@ -35555,6 +40191,7 @@ bh_ui_UICardHandTargeting.prototype = {
 		return newTargetId;
 	}
 	,hitTestTargets: function(sceneX,sceneY,cardId) {
+		var _this = this._scratchPt;
 		var x = sceneX;
 		var y = sceneY;
 		if(y == null) {
@@ -35563,13 +40200,14 @@ bh_ui_UICardHandTargeting.prototype = {
 		if(x == null) {
 			x = 0.;
 		}
-		var pt = new h2d_col_PointImpl(x,y);
+		_this.x = x;
+		_this.y = y;
 		var _g = 0;
 		var _g1 = this.targets;
 		while(_g < _g1.length) {
 			var wrapper = _g1[_g];
 			++_g;
-			if(wrapper.containsPoint(pt)) {
+			if(wrapper.containsPoint(this._scratchPt)) {
 				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
 					return wrapper.id;
 				}
@@ -35580,6 +40218,7 @@ bh_ui_UICardHandTargeting.prototype = {
 	,updateTargetingLine: function(originX,originY,cursorX,cursorY,sceneX,sceneY,cardId) {
 		this.arrowContainer.set_visible(this.arrowEnabled);
 		var hoveredWrapper = null;
+		var _this = this._scratchPt;
 		var x = sceneX;
 		var y = sceneY;
 		if(y == null) {
@@ -35588,13 +40227,14 @@ bh_ui_UICardHandTargeting.prototype = {
 		if(x == null) {
 			x = 0.;
 		}
-		var pt = new h2d_col_PointImpl(x,y);
+		_this.x = x;
+		_this.y = y;
 		var _g = 0;
 		var _g1 = this.targets;
 		while(_g < _g1.length) {
 			var wrapper = _g1[_g];
 			++_g;
-			if(wrapper.containsPoint(pt)) {
+			if(wrapper.containsPoint(this._scratchPt)) {
 				if(this.acceptsFilter == null || this.acceptsFilter(cardId,wrapper.id,wrapper.metadata)) {
 					hoveredWrapper = wrapper;
 					break;
@@ -35618,9 +40258,10 @@ bh_ui_UICardHandTargeting.prototype = {
 		var endX = cursorX;
 		var endY = cursorY;
 		if(this.snapToTarget && valid && hoveredWrapper != null) {
-			var localPoint = null;
+			var hasLocalPoint = false;
 			if(this.arrowSnapPointProvider != null) {
 				var fp = this.arrowSnapPointProvider(hoveredWrapper);
+				var _this = this._scratchPt;
 				var x = fp.x;
 				var y = fp.y;
 				if(y == null) {
@@ -35629,7 +40270,9 @@ bh_ui_UICardHandTargeting.prototype = {
 				if(x == null) {
 					x = 0.;
 				}
-				localPoint = new h2d_col_PointImpl(x,y);
+				_this.x = x;
+				_this.y = y;
+				hasLocalPoint = true;
 			} else {
 				var _g = hoveredWrapper.interactive.multiAnimType;
 				if(_g._hx_index == 0) {
@@ -35637,6 +40280,7 @@ bh_ui_UICardHandTargeting.prototype = {
 					var _g1 = _g.metadata;
 					var width = _g.width;
 					var height = _g.height;
+					var _this = this._scratchPt;
 					var x = width * 0.5;
 					var y = height * 0.5;
 					if(y == null) {
@@ -35645,21 +40289,25 @@ bh_ui_UICardHandTargeting.prototype = {
 					if(x == null) {
 						x = 0.;
 					}
-					localPoint = new h2d_col_PointImpl(x,y);
+					_this.x = x;
+					_this.y = y;
+					hasLocalPoint = true;
 				}
 			}
-			if(localPoint != null) {
-				var centerScene = hoveredWrapper.interactive.localToGlobal(localPoint);
-				var centerLocal = this.arrowContainer.globalToLocal(centerScene);
-				endX = centerLocal.x;
-				endY = centerLocal.y;
+			if(hasLocalPoint) {
+				hoveredWrapper.interactive.localToGlobal(this._scratchPt);
+				this.arrowContainer.globalToLocal(this._scratchPt);
+				endX = this._scratchPt.x;
+				endY = this._scratchPt.y;
 			}
 		}
 		if(this.hasArrowVisual && this.arrowEnabled && this.arrowPathName != null) {
 			var paths = this.builder.getPaths();
-			var origin = new bh_base_FPoint(originX,originY);
-			var cursor = new bh_base_FPoint(endX,endY);
-			var path = paths.getPath(this.arrowPathName,bh_paths_PathNormalization.Stretch(origin,cursor));
+			this._scratchOrigin.x = originX;
+			this._scratchOrigin.y = originY;
+			this._scratchCursor.x = endX;
+			this._scratchCursor.y = endY;
+			var path = paths.getPath(this.arrowPathName,bh_paths_PathNormalization.Stretch(this._scratchOrigin,this._scratchCursor));
 			var totalLen = path.totalLength;
 			var count = Math.floor(totalLen / this.segmentSpacing);
 			if(count > 30) {
@@ -35676,7 +40324,7 @@ bh_ui_UICardHandTargeting.prototype = {
 			while(_g < _g1) {
 				var i = _g++;
 				var rate = (i + 0.5) / (count + 1);
-				var pt2 = path.getPoint(rate);
+				path.getPointInto(rate,this._scratch);
 				var angle = path.getTangentAngle(rate);
 				var inv = this.segmentPoolInvalid[i];
 				var val = this.segmentPoolValid[i];
@@ -35684,17 +40332,17 @@ bh_ui_UICardHandTargeting.prototype = {
 				val.object.set_visible(this.currentValid);
 				var _this = inv.object;
 				_this.posChanged = true;
-				_this.x = pt2.x;
+				_this.x = this._scratch.x;
 				_this.posChanged = true;
-				_this.y = pt2.y;
+				_this.y = this._scratch.y;
 				var _this1 = inv.object;
 				_this1.posChanged = true;
 				_this1.rotation = angle;
 				var _this2 = val.object;
 				_this2.posChanged = true;
-				_this2.x = pt2.x;
+				_this2.x = this._scratch.x;
 				_this2.posChanged = true;
-				_this2.y = pt2.y;
+				_this2.y = this._scratch.y;
 				var _this3 = val.object;
 				_this3.posChanged = true;
 				_this3.rotation = angle;
@@ -35707,15 +40355,15 @@ bh_ui_UICardHandTargeting.prototype = {
 				this.segmentPoolValid[i].object.set_visible(false);
 			}
 			this.activeSegmentCount = count;
-			var endPt = path.getPoint(1.0);
+			path.getPointInto(1.0,this._scratch);
 			var endAngle = path.getTangentAngle(1.0);
 			if(this.headInvalid != null) {
 				this.headInvalid.object.set_visible(!this.currentValid);
 				var _this = this.headInvalid.object;
 				_this.posChanged = true;
-				_this.x = endPt.x;
+				_this.x = this._scratch.x;
 				_this.posChanged = true;
-				_this.y = endPt.y;
+				_this.y = this._scratch.y;
 				var _this = this.headInvalid.object;
 				_this.posChanged = true;
 				_this.rotation = endAngle;
@@ -35724,9 +40372,9 @@ bh_ui_UICardHandTargeting.prototype = {
 				this.headValid.object.set_visible(this.currentValid);
 				var _this = this.headValid.object;
 				_this.posChanged = true;
-				_this.x = endPt.x;
+				_this.x = this._scratch.x;
 				_this.posChanged = true;
-				_this.y = endPt.y;
+				_this.y = this._scratch.y;
 				var _this = this.headValid.object;
 				_this.posChanged = true;
 				_this.rotation = endAngle;
@@ -35803,6 +40451,24 @@ var bh_ui_PathOrientation = $hxEnums["bh.ui.PathOrientation"] = { __ename__:true
 bh_ui_PathOrientation.__constructs__ = [bh_ui_PathOrientation.Tangent,bh_ui_PathOrientation.Straight,bh_ui_PathOrientation.TangentClamped];
 bh_ui_PathOrientation.__empty_constructs__ = [bh_ui_PathOrientation.Tangent,bh_ui_PathOrientation.Straight];
 var bh_ui_CardLayoutPosition = function(x,y,rotation,scale,normalX,normalY) {
+	if(normalY == null) {
+		normalY = -1;
+	}
+	if(normalX == null) {
+		normalX = 0;
+	}
+	if(scale == null) {
+		scale = 1;
+	}
+	if(rotation == null) {
+		rotation = 0;
+	}
+	if(y == null) {
+		y = 0;
+	}
+	if(x == null) {
+		x = 0;
+	}
 	this.x = x;
 	this.y = y;
 	this.rotation = rotation;
@@ -36207,6 +40873,10 @@ bh_ui_UIInteractiveWrapper.prototype = {
 			var _g1 = _g.metadata;
 			var width = _g.width;
 			var height = _g.height;
+			if(bh_ui_UIInteractiveWrapper._scratchPt == null) {
+				bh_ui_UIInteractiveWrapper._scratchPt = new h2d_col_PointImpl(0.,0.);
+			}
+			var _this = bh_ui_UIInteractiveWrapper._scratchPt;
 			var x = pos.x;
 			var y = pos.y;
 			if(y == null) {
@@ -36215,7 +40885,9 @@ bh_ui_UIInteractiveWrapper.prototype = {
 			if(x == null) {
 				x = 0.;
 			}
-			var local = this.interactive.globalToLocal(new h2d_col_PointImpl(x,y));
+			_this.x = x;
+			_this.y = y;
+			var local = this.interactive.globalToLocal(bh_ui_UIInteractiveWrapper._scratchPt);
 			if(local.x >= 0 && local.x <= width && local.y >= 0) {
 				return local.y <= height;
 			} else {
@@ -36310,12 +40982,18 @@ bh_ui_UIStandardMultiAnimButton.create = function(builder,name,buttonText,extraP
 	return new bh_ui_UIStandardMultiAnimButton(builder,name,buttonText,extraParams);
 };
 bh_ui_UIStandardMultiAnimButton.prototype = {
-	set_disabled: function(value) {
+	setText: function(text) {
+		this.buttonText = text;
+		this.result.setParameter("buttonText",text);
+	}
+	,set_disabled: function(value) {
 		if(this.disabled != value) {
 			this.disabled = value;
 			this.result.beginUpdate();
 			this.result.setParameter("status",value ? "disabled" : "normal");
-			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			if(this.result.hasParameter("disabled")) {
+				this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			}
 			this.result.endUpdate();
 		}
 		return value;
@@ -36436,7 +41114,9 @@ bh_ui_UIStandardMultiCheckbox.prototype = {
 			this.disabled = value;
 			this.result.beginUpdate();
 			this.result.setParameter("status",value ? "disabled" : "normal");
-			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			if(this.result.hasParameter("disabled")) {
+				this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			}
 			this.result.endUpdate();
 		}
 		return value;
@@ -36671,6 +41351,8 @@ var bh_ui_UIMultiAnimDraggable = function(target) {
 	this.state = bh_ui_DraggableState.Idle;
 	this.draggingButton = -1;
 	this.draggableButtons = [0];
+	this.tmpPos = new h2d_col_PointImpl(0.,0.);
+	this.dragOffset = new h2d_col_PointImpl(0.,0.);
 	this.target = target;
 	this.root = new bh_base_MAObject(bh_base_MultiAnimObjectData.MADraggable(0,0),false);
 	bh_base_HeapsUtils_safeDetach(target);
@@ -37027,6 +41709,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				this.activeWrapper = wrapper;
 				this.originX = this.root.x;
 				this.originY = this.root.y;
+				var _this = this.dragOffset;
 				var x = this.root.x - wrapper.eventPos.x;
 				var y = this.root.y - wrapper.eventPos.y;
 				if(y == null) {
@@ -37035,7 +41718,8 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				if(x == null) {
 					x = 0.;
 				}
-				this.dragOffset = new h2d_col_PointImpl(x,y);
+				_this.x = x;
+				_this.y = y;
 				wrapper.control.captureEvents.startCapture();
 				this.savedAlpha = this.target.alpha;
 				if(this.dragAlpha != null) {
@@ -37097,6 +41781,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 					this.onDragEndHighlightZones(this.dropZones);
 				}
 				this.target.alpha = this.savedAlpha;
+				var _this = this.tmpPos;
 				var x = wrapper.eventPos.x + this.dragOffset.x;
 				var y = wrapper.eventPos.y + this.dragOffset.y;
 				if(y == null) {
@@ -37105,7 +41790,9 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				if(x == null) {
 					x = 0.;
 				}
-				var dropPos = new h2d_col_PointImpl(x,y);
+				_this.x = x;
+				_this.y = y;
+				var dropPos = this.tmpPos;
 				var zone = this.findDropZone(wrapper.eventPos);
 				var dropResult = new bh_ui_DragDropResult(zone,dropPos);
 				var accepted = zone != null;
@@ -37180,6 +41867,7 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 			break;
 		case 8:
 			if(this.state == bh_ui_DraggableState.Dragging) {
+				var _this = this.tmpPos;
 				var x = wrapper.eventPos.x + this.dragOffset.x;
 				var y = wrapper.eventPos.y + this.dragOffset.y;
 				if(y == null) {
@@ -37188,10 +41876,9 @@ bh_ui_UIMultiAnimDraggable.prototype = {
 				if(x == null) {
 					x = 0.;
 				}
-				var newPos = new h2d_col_PointImpl(x,y);
-				if(this.dragConstraint != null) {
-					newPos = this.dragConstraint(newPos);
-				}
+				_this.x = x;
+				_this.y = y;
+				var newPos = this.dragConstraint != null ? this.dragConstraint(this.tmpPos) : this.tmpPos;
 				var _this = this.root;
 				_this.posChanged = true;
 				_this.x = newPos.x;
@@ -37285,8 +41972,9 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 	_g.h["status"] = "normal";
 	_g.h["panel"] = "closed";
 	var inputParams = _g;
-	if(builder.extraParams != null) {
-		var h = builder.extraParams.h;
+	var extra = builder.extraParams;
+	if(extra != null) {
+		var h = extra.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
 		var _g_length = _g_keys.length;
@@ -37498,6 +42186,7 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		if(this.panelObject == null) {
 			return;
 		}
+		this.ensurePanelAboveHostLayer();
 		this.panel.set_currentHoverIndex(-1);
 		this.panel.set_currentItemIndex(this.currentItemIndex);
 		this.panel.set_currentPressedIndex(-1);
@@ -37582,12 +42271,13 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 	,getList: function() {
 		return this.items;
 	}
-	,getSubElements: function(type) {
+	,forEachSubElement: function(type,fn) {
 		switch(type._hx_index) {
 		case 0:
-			return [this.panel];
+			fn(this.panel);
+			break;
 		case 1:
-			return [];
+			break;
 		}
 	}
 	,customAddToLayer: function(requestedLayer,screen,updateMode) {
@@ -37606,6 +42296,48 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		var higherLayer = screen.getHigherLayer(requestedLayer);
 		screen.addObjectToLayer(this.panel.getObject(),higherLayer);
 		return bh_ui_UIElementCustomAddToLayerResult.Added;
+	}
+	,ensurePanelAboveHostLayer: function() {
+		if(this.panelScreen == null) {
+			return;
+		}
+		var layers = this.panelScreen.getLayers();
+		var sceneRoot = this.panelScreen.getSceneRoot();
+		var current = this.root;
+		var hostLayer = null;
+		while(current != null) {
+			var parent = current.parent;
+			if(parent == sceneRoot) {
+				var idx = sceneRoot.getChildLayer(current);
+				if(idx != -1) {
+					var map = layers;
+					var _g_map = map;
+					var _g_keys = map.keys();
+					while(_g_keys.hasNext()) {
+						var key = _g_keys.next();
+						var _g_value = _g_map.get(key);
+						var _g_key = key;
+						var enumLayer = _g_key;
+						var index = _g_value;
+						if(index == idx) {
+							hostLayer = enumLayer;
+							break;
+						}
+					}
+				}
+				break;
+			}
+			current = parent;
+		}
+		if(hostLayer == null) {
+			return;
+		}
+		var higher = this.panelScreen.getHigherLayer(hostLayer);
+		if(higher == this.panelLayer) {
+			return;
+		}
+		this.panelLayer = higher;
+		this.panelScreen.addObjectToLayer(this.panel.getObject(),higher);
 	}
 	,__class__: bh_ui_UIStandardMultiAnimDropdown
 };
@@ -37685,6 +42417,8 @@ var bh_ui_UIMultiAnimGrid = function(builder,config) {
 	this.layerConfigs = new haxe_ds_StringMap();
 	this._cellCount = 0;
 	this.cells = new haxe_ds_StringMap();
+	this._hitTestRow = 0;
+	this._hitTestCol = 0;
 	this.builder = builder;
 	this.gridType = config.gridType;
 	this.cellFactory = config.cellVisualFactory;
@@ -38149,8 +42883,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				delete(entries.h[key]);
 			}
 		}
-		var buildParams = params != null ? params : new haxe_ds_StringMap();
-		var result = this.builder.buildWithParameters(config.buildName,buildParams,null,null,true);
+		var result = this.builder.buildWithParameters(config.buildName,params,null,null,true);
 		var visual = new bh_ui_DefaultCellVisual(result,"","");
 		var localPos = this.getCellLocalPosition(new bh_ui_CellCoord(col,row));
 		var _this = visual.result.object;
@@ -38271,27 +43004,28 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		return { object : obj, data : data, sceneX : pos.x, sceneY : pos.y};
 	}
 	,cellAtPoint: function(sceneX,sceneY) {
-		var x = sceneX;
-		var y = sceneY;
-		if(y == null) {
-			y = 0.;
+		if(this.cellAtPointInto(sceneX,sceneY)) {
+			return new bh_ui_CellCoord(this._hitTestCol,this._hitTestRow);
+		} else {
+			return null;
 		}
-		if(x == null) {
-			x = 0.;
-		}
-		var local = this.root.globalToLocal(new h2d_col_PointImpl(x,y));
+	}
+	,cellAtPointInto: function(sceneX,sceneY) {
+		bh_ui_UIMultiAnimGrid._scratchPoint.x = sceneX;
+		bh_ui_UIMultiAnimGrid._scratchPoint.y = sceneY;
+		var local = this.root.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
 		var _g = this.gridType;
 		switch(_g._hx_index) {
 		case 0:
 			var _g1 = _g.cellWidth;
 			var _g1 = _g.cellHeight;
 			var _g1 = _g.gap;
-			return this.hitTestRect(local.x,local.y);
+			return this.hitTestRectInto(local.x,local.y);
 		case 1:
 			var _g1 = _g.orientation;
 			var _g1 = _g.sizeX;
 			var _g1 = _g.sizeY;
-			return this.hitTestHex(local.x,local.y);
+			return this.hitTestHexInto(local.x,local.y);
 		}
 	}
 	,cellPosition: function(col,row) {
@@ -38348,14 +43082,33 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			var _g1 = _g.orientation;
 			var _g1 = _g.sizeX;
 			var _g1 = _g.sizeY;
-			var hex = new bh_base_Hex(col,row,-col - row);
+			var _this = bh_ui_UIMultiAnimGrid._scratchHex;
+			var s = -col - row;
+			_this.q = col;
+			_this.r = row;
+			_this.s = s;
+			if(col + row + s != 0) {
+				throw haxe_Exception.thrown("q + r + s must be 0");
+			}
 			var _g = 0;
 			var _g1 = bh_base_GridDirection.allDirections();
 			while(_g < _g1.length) {
 				var dir = _g1[_g];
 				++_g;
-				var neighbor = bh_base_Hex.neighbor(hex,dir);
-				var nc = new bh_ui_CellCoord(neighbor.q,neighbor.r);
+				var a = bh_ui_UIMultiAnimGrid._scratchHex;
+				var b = bh_base_GridDirection.hexDirection(dir,dir);
+				var out = bh_ui_UIMultiAnimGrid._scratchHex2;
+				var q = a.q + b.q;
+				var r = a.r + b.r;
+				var s = a.s + b.s;
+				out.q = q;
+				out.r = r;
+				out.s = s;
+				if(q + r + s != 0) {
+					throw haxe_Exception.thrown("q + r + s must be 0");
+				}
+				var hex = bh_ui_UIMultiAnimGrid._scratchHex2;
+				var nc = new bh_ui_CellCoord(hex.q,hex.r);
 				if(Object.prototype.hasOwnProperty.call(this.cells.h,"" + nc.col + "_" + nc.row)) {
 					result.push(nc);
 				}
@@ -38386,23 +43139,25 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			this.cellDragUpdateMove(sceneX,sceneY);
 			return true;
 		}
-		var hit = this.cellAtPoint(sceneX,sceneY);
-		if(!bh_ui_UIMultiAnimGrid.cellCoordsEqual(hit,this.hoveredCell)) {
-			if(this.hoveredCell != null) {
-				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
-				if(entry != null) {
-					entry.visual.setStatus("normal");
-				}
-				this.emitEvent(bh_ui_GridEvent.CellTargetLeave(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
+		var hasHit = this.cellAtPointInto(sceneX,sceneY);
+		var sameAsHovered = hasHit && this.hoveredCell != null && this.hoveredCell.col == this._hitTestCol && this.hoveredCell.row == this._hitTestRow;
+		if(sameAsHovered || !hasHit && this.hoveredCell == null) {
+			return this.hoveredCell != null;
+		}
+		if(this.hoveredCell != null) {
+			var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
+			if(entry != null) {
+				entry.visual.setStatus("normal");
 			}
-			this.hoveredCell = hit;
-			if(this.hoveredCell != null) {
-				var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
-				if(entry != null) {
-					entry.visual.setStatus("hover");
-				}
-				this.emitEvent(bh_ui_GridEvent.CellTargetEnter(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
+			this.emitEvent(bh_ui_GridEvent.CellTargetLeave(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
+		}
+		this.hoveredCell = hasHit ? new bh_ui_CellCoord(this._hitTestCol,this._hitTestRow) : null;
+		if(this.hoveredCell != null) {
+			var entry = this.cells.h["" + this.hoveredCell.col + "_" + this.hoveredCell.row];
+			if(entry != null) {
+				entry.visual.setStatus("hover");
 			}
+			this.emitEvent(bh_ui_GridEvent.CellTargetEnter(this.hoveredCell,bh_ui_CellTargetSource.Mouse));
 		}
 		return this.hoveredCell != null;
 	}
@@ -38452,15 +43207,27 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		} else {
 			this.root.add(this.cellDragObj,999);
 		}
-		var parentPos = this.sceneToLocal(this.cellDragParent,detached.sceneX,detached.sceneY);
+		var out = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP;
+		bh_ui_UIMultiAnimGrid._scratchPoint.x = detached.sceneX;
+		bh_ui_UIMultiAnimGrid._scratchPoint.y = detached.sceneY;
+		var local = this.cellDragParent.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
+		out.x = local.x;
+		out.y = local.y;
+		var parentPosX = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.x;
+		var parentPosY = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.y;
 		var _this = this.cellDragObj;
 		_this.posChanged = true;
-		_this.x = parentPos.x;
+		_this.x = parentPosX;
 		_this.posChanged = true;
-		_this.y = parentPos.y;
-		var cursorLocal = this.sceneToLocal(this.cellDragParent,sceneX,sceneY);
-		this.cellDragOffsetX = parentPos.x - cursorLocal.x;
-		this.cellDragOffsetY = parentPos.y - cursorLocal.y;
+		_this.y = parentPosY;
+		var out = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP;
+		bh_ui_UIMultiAnimGrid._scratchPoint.x = sceneX;
+		bh_ui_UIMultiAnimGrid._scratchPoint.y = sceneY;
+		var local = this.cellDragParent.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
+		out.x = local.x;
+		out.y = local.y;
+		this.cellDragOffsetX = parentPosX - bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.x;
+		this.cellDragOffsetY = parentPosY - bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.y;
 		this.applyDragHighlights(function(c) {
 			return !(c.col == coord.col && c.row == coord.row);
 		});
@@ -38485,12 +43252,17 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		if(this.cellDragObj == null || this.cellDragParent == null) {
 			return;
 		}
-		var cursorLocal = this.sceneToLocal(this.cellDragParent,sceneX,sceneY);
+		var out = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP;
+		bh_ui_UIMultiAnimGrid._scratchPoint.x = sceneX;
+		bh_ui_UIMultiAnimGrid._scratchPoint.y = sceneY;
+		var local = this.cellDragParent.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
+		out.x = local.x;
+		out.y = local.y;
 		var _this = this.cellDragObj;
 		_this.posChanged = true;
-		_this.x = cursorLocal.x + this.cellDragOffsetX;
+		_this.x = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.x + this.cellDragOffsetX;
 		_this.posChanged = true;
-		_this.y = cursorLocal.y + this.cellDragOffsetY;
+		_this.y = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.y + this.cellDragOffsetY;
 		var hit = this.cellDragFindTarget(sceneX,sceneY);
 		var hitGrid = hit != null ? hit.grid : null;
 		var hitCoord = hit != null ? hit.coord : null;
@@ -38646,12 +43418,17 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			return;
 		}
 		if(pathName == null) {
-			var localTo = this.sceneToLocal(this.cellDragParent,targetScenePos.x,targetScenePos.y);
+			var out = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP;
+			bh_ui_UIMultiAnimGrid._scratchPoint.x = targetScenePos.x;
+			bh_ui_UIMultiAnimGrid._scratchPoint.y = targetScenePos.y;
+			var local = this.cellDragParent.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
+			out.x = local.x;
+			out.y = local.y;
 			var _this = this.cellDragObj;
 			_this.posChanged = true;
-			_this.x = localTo.x;
+			_this.x = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.x;
 			_this.posChanged = true;
-			_this.y = localTo.y;
+			_this.y = bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP.y;
 			onDone();
 			return;
 		}
@@ -38882,7 +43659,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 			this.onCellBuilt(coord,entry.visual);
 		}
 	}
-	,hitTestRect: function(localX,localY) {
+	,hitTestRectInto: function(localX,localY) {
 		var stride = this.rectCellW + this.rectGap;
 		var strideY = this.rectCellH + this.rectGap;
 		var testX;
@@ -38908,25 +43685,28 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		var cellLocalX = testX - col * stride;
 		var cellLocalY = testY - row * strideY;
 		if(cellLocalX > this.rectCellW || cellLocalY > this.rectCellH) {
-			return null;
+			return false;
 		}
-		var key = "" + col + "_" + row;
-		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
-			return new bh_ui_CellCoord(col,row);
-		} else {
-			return null;
+		if(!Object.prototype.hasOwnProperty.call(this.cells.h,"" + col + "_" + row)) {
+			return false;
 		}
+		this._hitTestCol = col;
+		this._hitTestRow = row;
+		return true;
 	}
-	,hitTestHex: function(localX,localY) {
-		var fractional = this.hexLayout.pixelToHex(new bh_base_FPoint(localX,localY));
-		var hex = fractional.round();
-		var coord = new bh_ui_CellCoord(hex.q,hex.r);
-		var key = "" + coord.col + "_" + coord.row;
-		if(Object.prototype.hasOwnProperty.call(this.cells.h,key)) {
-			return coord;
-		} else {
-			return null;
+	,hitTestHexInto: function(localX,localY) {
+		bh_ui_UIMultiAnimGrid._scratchFPoint.x = localX;
+		bh_ui_UIMultiAnimGrid._scratchFPoint.y = localY;
+		this.hexLayout.pixelToHexInto(bh_ui_UIMultiAnimGrid._scratchFPoint,bh_ui_UIMultiAnimGrid._scratchFractionalHex);
+		bh_ui_UIMultiAnimGrid._scratchFractionalHex.roundInto(bh_ui_UIMultiAnimGrid._scratchHex);
+		var col = bh_ui_UIMultiAnimGrid._scratchHex.q;
+		var row = bh_ui_UIMultiAnimGrid._scratchHex.r;
+		if(!Object.prototype.hasOwnProperty.call(this.cells.h,"" + col + "_" + row)) {
+			return false;
 		}
+		this._hitTestCol = col;
+		this._hitTestRow = row;
+		return true;
 	}
 	,createDropZonesForDraggable: function(binding) {
 		var _gthis = this;
@@ -39022,7 +43802,7 @@ bh_ui_UIMultiAnimGrid.prototype = {
 				if(coord != null) {
 					var srcGrid = ((binding.draggable.sourceGrid) instanceof bh_ui_UIMultiAnimGrid) ? binding.draggable.sourceGrid : null;
 					var srcCell = binding.draggable.sourceCellCoord;
-					if(_gthis.swapEnabled && (_gthis.swapAccepts != null ? _gthis.swapAccepts(coord,binding.draggable) : _gthis.isOccupied(coord.col,coord.row))) {
+					if(_gthis.swapEnabled && srcCell != null && (_gthis.swapAccepts != null ? _gthis.swapAccepts(coord,binding.draggable) : _gthis.isOccupied(coord.col,coord.row))) {
 						return _gthis.handleSwapDrop(binding,coord,srcGrid,srcCell);
 					}
 					var ctx = new bh_ui_DropContext();
@@ -39420,15 +44200,9 @@ bh_ui_UIMultiAnimGrid.prototype = {
 		}
 	}
 	,sceneToLocal: function(parent,sceneX,sceneY) {
-		var x = sceneX;
-		var y = sceneY;
-		if(y == null) {
-			y = 0.;
-		}
-		if(x == null) {
-			x = 0.;
-		}
-		var local = parent.globalToLocal(new h2d_col_PointImpl(x,y));
+		bh_ui_UIMultiAnimGrid._scratchPoint.x = sceneX;
+		bh_ui_UIMultiAnimGrid._scratchPoint.y = sceneY;
+		var local = parent.globalToLocal(bh_ui_UIMultiAnimGrid._scratchPoint);
 		return new bh_base_FPoint(local.x,local.y);
 	}
 	,emitEvent: function(event) {
@@ -39843,12 +44617,13 @@ bh_ui_UIMultiAnimRadioButtons.prototype = {
 	,getList: function() {
 		return this.items;
 	}
-	,getSubElements: function(type) {
-		switch(type._hx_index) {
-		case 0:
-			return this.checkboxes;
-		case 1:
-			return this.checkboxes;
+	,forEachSubElement: function(type,fn) {
+		var _g = 0;
+		var _g1 = this.checkboxes;
+		while(_g < _g1.length) {
+			var cb = _g1[_g];
+			++_g;
+			fn(cb);
 		}
 	}
 	,__class__: bh_ui_UIMultiAnimRadioButtons
@@ -40325,6 +45100,7 @@ bh_ui_UIMultiAnimScrollableList.prototype = {
 	,__class__: bh_ui_UIMultiAnimScrollableList
 };
 var bh_ui_UIStandardMultiAnimSlider = function(builder,name,size,initialValue,extraParams) {
+	this.tmpPoint = new h2d_col_PointImpl(0.,0.);
 	this.step = 0;
 	this.max = 100;
 	this.min = 0;
@@ -40460,7 +45236,9 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 			this.currentResult.beginUpdate();
 			this.currentResult.setParameter("status",bh_ui_UIElement_standardUIElementStatusToString(this.status));
 			this.currentResult.setParameter("value",this.externalToInternal(this.currentValue));
-			this.currentResult.setParameter("disabled","" + Std.string(this.disabled));
+			if(this.currentResult.hasParameter("disabled")) {
+				this.currentResult.setParameter("disabled","" + Std.string(this.disabled));
+			}
 			this.currentResult.endUpdate();
 		}
 	}
@@ -40481,16 +45259,18 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 		if(start == null || end == null) {
 			return this.currentValue;
 		}
-		var _this = eventPos;
-		var x = _this.x;
-		var y = _this.y;
+		var _this = this.tmpPoint;
+		var x = eventPos.x;
+		var y = eventPos.y;
 		if(y == null) {
 			y = 0.;
 		}
 		if(x == null) {
 			x = 0.;
 		}
-		var localPos = start.parent.globalToLocal(new h2d_col_PointImpl(x,y));
+		_this.x = x;
+		_this.y = y;
+		var localPos = start.parent.globalToLocal(this.tmpPoint);
 		var f = (localPos.x - start.x) / (end.x - start.x);
 		var min = 0;
 		var max = 1;
@@ -40639,7 +45419,9 @@ bh_ui_UIMultiAnimTabButton.prototype = {
 			this.disabled = value;
 			this.result.beginUpdate();
 			this.result.setParameter("status",value ? "disabled" : "normal");
-			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			if(this.result.hasParameter("disabled")) {
+				this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			}
 			this.result.endUpdate();
 		}
 		return value;
@@ -40971,14 +45753,13 @@ bh_ui_UIMultiAnimTabs.prototype = {
 			}
 		}
 	}
-	,getSubElements: function(type) {
-		var result = [];
+	,forEachSubElement: function(type,fn) {
 		var _g = 0;
 		var _g1 = this.tabButtons;
 		while(_g < _g1.length) {
 			var btn = _g1[_g];
 			++_g;
-			result.push(btn);
+			fn(btn);
 		}
 		var activeContent = this.tabContent.h[this.selectedIndex];
 		if(activeContent != null) {
@@ -40986,19 +45767,12 @@ bh_ui_UIMultiAnimTabs.prototype = {
 			while(_g < activeContent.length) {
 				var element = activeContent[_g];
 				++_g;
-				result.push(element);
+				fn(element);
 				if(js_Boot.__implements(element,bh_ui_UIElementSubElements)) {
-					var sub = (js_Boot.__cast(element , bh_ui_UIElementSubElements)).getSubElements(type);
-					var _g1 = 0;
-					while(_g1 < sub.length) {
-						var s = sub[_g1];
-						++_g1;
-						result.push(s);
-					}
+					(js_Boot.__cast(element , bh_ui_UIElementSubElements)).forEachSubElement(type,fn);
 				}
 			}
 		}
-		return result;
 	}
 	,getObject: function() {
 		return this.builderResult.object;
@@ -41270,7 +46044,9 @@ bh_ui_UIMultiAnimTextInput.prototype = {
 			this.disabled = value;
 			this.result.beginUpdate();
 			this.result.setParameter("status",value ? "disabled" : "normal");
-			this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			if(this.result.hasParameter("disabled")) {
+				this.result.setParameter("disabled","" + (value == null ? "null" : "" + value));
+			}
 			this.result.endUpdate();
 			this.textInput.canEdit = !value;
 			if(value && this.focused) {
@@ -41315,6 +46091,7 @@ bh_ui_PanelCloseMode.__constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_P
 bh_ui_PanelCloseMode.__empty_constructs__ = [bh_ui_PanelCloseMode.OutsideClick,bh_ui_PanelCloseMode.Manual];
 var bh_ui_UIPanelHelper = function(screen,builder,defaults,tweens) {
 	this._pendingClose = false;
+	this.namedFadeOutObjs = new haxe_ds_StringMap();
 	this.namedFadeOutTweens = new haxe_ds_StringMap();
 	this.namedPanels = new haxe_ds_StringMap();
 	this.activeFadeOutTween = null;
@@ -41462,6 +46239,10 @@ bh_ui_UIPanelHelper.prototype = {
 			if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
 				delete(_this.h[slot]);
 			}
+			var _this = this.namedFadeOutObjs;
+			if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
+				delete(_this.h[slot]);
+			}
 		}
 		var panel = this.namedPanels.h[slot];
 		if(panel == null) {
@@ -41470,10 +46251,6 @@ bh_ui_UIPanelHelper.prototype = {
 		if(panel.fadeInTween != null) {
 			panel.fadeInTween.cancel();
 			panel.fadeInTween = null;
-		}
-		if(panel.fadeOutTween != null) {
-			panel.fadeOutTween.cancel();
-			panel.fadeOutTween = null;
 		}
 		this.screen.removeInteractives(panel.prefix);
 		var _this = this.namedPanels;
@@ -41485,11 +46262,16 @@ bh_ui_UIPanelHelper.prototype = {
 		if(this.defaultFadeOut > 0 && this.tweens != null) {
 			var fadeOut = this.tweens.tween(obj,this.defaultFadeOut,[bh_base_TweenProperty.Alpha(0.0)]);
 			this.namedFadeOutTweens.h[slot] = fadeOut;
+			this.namedFadeOutObjs.h[slot] = obj;
 			fadeOut.setOnComplete(function() {
 				if(obj != null && obj.parent != null) {
 					obj.parent.removeChild(obj);
 				}
 				var _this = _gthis.namedFadeOutTweens;
+				if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
+					delete(_this.h[slot]);
+				}
+				var _this = _gthis.namedFadeOutObjs;
 				if(Object.prototype.hasOwnProperty.call(_this.h,slot)) {
 					delete(_this.h[slot]);
 				}
@@ -41648,6 +46430,90 @@ bh_ui_UIPanelHelper.prototype = {
 			}
 		}
 		return false;
+	}
+	,dispose: function() {
+		if(this.activeFadeInTween != null) {
+			this.activeFadeInTween.cancel();
+			this.activeFadeInTween = null;
+		}
+		if(this.activeFadeOutTween != null) {
+			this.activeFadeOutTween.cancel();
+			this.activeFadeOutTween = null;
+		}
+		if(this.fadingOutObj != null) {
+			var _this = this.fadingOutObj;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.fadingOutObj = null;
+		}
+		if(this.activeResult != null) {
+			if(this.activePanelPrefix != null) {
+				this.screen.removeInteractives(this.activePanelPrefix);
+			}
+			var _this = this.activeResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.activeResult = null;
+		}
+		this.activeInteractiveId = null;
+		this.activePanelPrefix = null;
+		this._pendingClose = false;
+		var h = this.namedPanels.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var panel = _g_value;
+			if(panel.fadeInTween != null) {
+				panel.fadeInTween.cancel();
+				panel.fadeInTween = null;
+			}
+			this.screen.removeInteractives(panel.prefix);
+			var _this = panel.result.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
+		this.namedPanels.h = Object.create(null);
+		var h = this.namedFadeOutObjs.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var obj = _g_value;
+			if(obj != null && obj.parent != null) {
+				obj.parent.removeChild(obj);
+			}
+		}
+		this.namedFadeOutObjs.h = Object.create(null);
+		var h = this.namedFadeOutTweens.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var _ = _g_key;
+			var tween = _g_value;
+			tween.cancel();
+		}
+		this.namedFadeOutTweens.h = Object.create(null);
+		this.positionOverrides.h = Object.create(null);
+		this.offsetOverrides.h = Object.create(null);
 	}
 	,__class__: bh_ui_UIPanelHelper
 };
@@ -41869,7 +46735,7 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 		if(stateParam == null) {
 			stateParam = "status";
 		}
-		this.bindings.h[interactiveId] = { source : source, prefix : prefix, stateParam : stateParam, currentState : bh_ui_InteractiveState.Normal};
+		this.bindings.h[interactiveId] = { source : source, prefix : prefix, stateParam : stateParam, currentState : bh_ui_InteractiveState.Normal, enteredPressedViaHover : false};
 	}
 	,unbind: function(interactiveId) {
 		var _this = this.bindings;
@@ -41929,12 +46795,14 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 			switch(innerEvent._hx_index) {
 			case 0:
 				if(binding.currentState == bh_ui_InteractiveState.Pressed) {
-					binding.currentState = bh_ui_InteractiveState.Hover;
-					binding.source.setParameter(binding.stateParam,"hover");
+					var target = binding.enteredPressedViaHover ? bh_ui_InteractiveState.Hover : bh_ui_InteractiveState.Normal;
+					binding.currentState = target;
+					binding.source.setParameter(binding.stateParam,target == bh_ui_InteractiveState.Hover ? "hover" : "normal");
 				}
 				break;
 			case 1:
 				if(binding.currentState == bh_ui_InteractiveState.Hover || binding.currentState == bh_ui_InteractiveState.Normal) {
+					binding.enteredPressedViaHover = binding.currentState == bh_ui_InteractiveState.Hover;
 					binding.currentState = bh_ui_InteractiveState.Pressed;
 					binding.source.setParameter(binding.stateParam,"pressed");
 				}
@@ -42118,6 +46986,9 @@ var bh_ui_UITooltipHelper = function(screen,builder,defaults,tweens) {
 	var tmp = defaults != null ? defaults.fadeOut : null;
 	this.defaultFadeOut = tmp != null ? tmp : 0.1;
 	this.tweens = tweens;
+	if(((screen) instanceof bh_ui_screens_UIScreenBase)) {
+		screen.registerTooltipHelper(this);
+	}
 };
 $hxClasses["bh.ui.UITooltipHelper"] = bh_ui_UITooltipHelper;
 bh_ui_UITooltipHelper.__name__ = "bh.ui.UITooltipHelper";
@@ -42241,6 +47112,40 @@ bh_ui_UITooltipHelper.prototype = {
 			this.fadingOutObj = null;
 		}
 	}
+	,dispose: function() {
+		if(this.fadeInTween != null) {
+			this.fadeInTween.cancel();
+			this.fadeInTween = null;
+		}
+		if(this.fadeOutTween != null) {
+			this.fadeOutTween.cancel();
+			this.fadeOutTween = null;
+		}
+		if(this.fadingOutObj != null) {
+			var _this = this.fadingOutObj;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.fadingOutObj = null;
+		}
+		if(this.activeResult != null) {
+			var _this = this.activeResult.object;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.activeResult = null;
+		}
+		this.activeTooltipId = null;
+		this.activeBuildName = null;
+		this.activeParams = null;
+		this.hoverInteractiveId = null;
+		this.hoverBuildName = null;
+		this.hoverParams = null;
+		this.hoverTimer = 0;
+		this.delayOverrides.h = Object.create(null);
+		this.positionOverrides.h = Object.create(null);
+		this.offsetOverrides.h = Object.create(null);
+	}
 	,__class__: bh_ui_UITooltipHelper
 };
 var bh_ui_controllers_UIControllerLifecycleEvent = $hxEnums["bh.ui.controllers.UIControllerLifecycleEvent"] = { __ename__:true,__constructs__:null
@@ -42332,14 +47237,31 @@ bh_ui_controllers__$UIDefaultController_ControllableImpl.prototype = {
 	,__class__: bh_ui_controllers__$UIDefaultController_ControllableImpl
 };
 var bh_ui_controllers_UIDefaultController = function(integration) {
+	this._hitsPos = null;
+	this._hits = [];
+	this._updateDt = 0;
 	this.exitResponse = null;
 	this.currentOver = null;
+	var _gthis = this;
 	this.integration = integration;
+	this._updateCallback = function(element) {
+		_gthis.redrawAndUpdate(element,_gthis._updateDt);
+	};
+	this._hitsCallback = function(element) {
+		if(element.containsPoint(_gthis._hitsPos)) {
+			_gthis._hits.push(element);
+		}
+	};
 	this.controllable = new bh_ui_controllers__$UIDefaultController_ControllableImpl(this);
 };
 $hxClasses["bh.ui.controllers.UIDefaultController"] = bh_ui_controllers_UIDefaultController;
 bh_ui_controllers_UIDefaultController.__name__ = "bh.ui.controllers.UIDefaultController";
 bh_ui_controllers_UIDefaultController.__interfaces__ = [bh_ui_controllers_UIController];
+bh_ui_controllers_UIDefaultController._priorityComparator = function(a,b) {
+	var pa = js_Boot.__implements(a,bh_ui_UIElementPriority) ? (js_Boot.__cast(a , bh_ui_UIElementPriority)).eventPriority : 0;
+	var pb = js_Boot.__implements(b,bh_ui_UIElementPriority) ? (js_Boot.__cast(b , bh_ui_UIElementPriority)).eventPriority : 0;
+	return pb - pa;
+};
 bh_ui_controllers_UIDefaultController.prototype = {
 	handleEvent: function(element,event,eventPos) {
 		if(element == null) {
@@ -42427,27 +47349,18 @@ bh_ui_controllers_UIDefaultController.prototype = {
 		}
 	}
 	,getEventElements: function(pos) {
+		this._hits.length = 0;
 		if(this.controllable.captureEvents.target != null) {
-			return [this.controllable.captureEvents.target];
+			this._hits.push(this.controllable.captureEvents.target);
+			return this._hits;
 		}
-		var hits = [];
-		var _g = 0;
-		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveEvents);
-		while(_g < _g1.length) {
-			var element = _g1[_g];
-			++_g;
-			if(element.containsPoint(pos)) {
-				hits.push(element);
-			}
+		this._hitsPos = pos;
+		this.integration.forEachElement(bh_ui_SubElementsType.SETReceiveEvents,this._hitsCallback);
+		this._hitsPos = null;
+		if(this._hits.length > 1) {
+			haxe_ds_ArraySort.sort(this._hits,bh_ui_controllers_UIDefaultController._priorityComparator);
 		}
-		if(hits.length > 1) {
-			haxe_ds_ArraySort.sort(hits,function(a,b) {
-				var pa = js_Boot.__implements(a,bh_ui_UIElementPriority) ? (js_Boot.__cast(a , bh_ui_UIElementPriority)).eventPriority : 0;
-				var pb = js_Boot.__implements(b,bh_ui_UIElementPriority) ? (js_Boot.__cast(b , bh_ui_UIElementPriority)).eventPriority : 0;
-				return pb - pa;
-			});
-		}
-		return hits;
+		return this._hits;
 	}
 	,handleMove: function(mousePoint,eventWrapper) {
 		if(this.integration.dispatchMouseMove(mousePoint) == false) {
@@ -42493,13 +47406,8 @@ bh_ui_controllers_UIDefaultController.prototype = {
 		}
 	}
 	,update: function(dt) {
-		var _g = 0;
-		var _g1 = this.integration.getElements(bh_ui_SubElementsType.SETReceiveUpdates);
-		while(_g < _g1.length) {
-			var element = _g1[_g];
-			++_g;
-			this.redrawAndUpdate(element,dt);
-		}
+		this._updateDt = dt;
+		this.integration.forEachElement(bh_ui_SubElementsType.SETReceiveUpdates,this._updateCallback);
 		if(this.exitResponse != null) {
 			var retVal = this.exitResponse;
 			this.exitResponse = null;
@@ -42841,6 +47749,11 @@ bh_ui_screens_ScreenManager.prototype = {
 				var multiAnimUnexpected = js_Boot.__cast(e , bh_multianim_MultiAnimUnexpected);
 				return { success : false, error : multiAnimUnexpected.toString(), file : multiAnimUnexpected.pos.psource, line : multiAnimUnexpected.pos.line, col : multiAnimUnexpected.pos.col};
 			}
+			if(((e) instanceof bh_multianim_BuilderError)) {
+				var builderErr = js_Boot.__cast(e , bh_multianim_BuilderError);
+				var pos = builderErr.parsedPos();
+				return { success : false, error : builderErr.toString(), file : pos != null ? pos.file : null, line : pos != null ? pos.line : null, col : pos != null ? pos.col : null};
+			}
 			return { success : false, error : e.toString(), file : null, line : null, col : null};
 		}
 		var reloadedScreenNames = [];
@@ -42941,15 +47854,15 @@ bh_ui_screens_ScreenManager.prototype = {
 	}
 	,modalDialog: function(dialog,caller,dialogName,data) {
 		dialog.load();
+		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),data);
 		var overlayConfig = this.readOverlayConfig(dialog);
 		if(overlayConfig != null) {
 			this.modalOverlay = this.createModalOverlay(overlayConfig);
 			if(overlayConfig.blur != null && overlayConfig.blur > 0) {
-				this.applyBlurToUnderlyingScreens(overlayConfig.blur);
+				this.applyBlurToUnderlyingScreens(overlayConfig.blur,dialog);
 			}
 			this.modalOverlay.alpha = this.modalOverlayTargetAlpha;
 		}
-		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),data);
 	}
 	,updateScreenMode: function(newScreenMode,data) {
 		var _gthis = this;
@@ -43214,7 +48127,6 @@ bh_ui_screens_ScreenManager.prototype = {
 				overrideActiveScreenControllers = [newDialog];
 				var result = oldDialog.getController().exitResponse;
 				caller.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.OnDialogResult(dialogName,result)),null);
-				removeScreen(oldDialog);
 				break;
 			}
 			break;
@@ -43398,15 +48310,15 @@ bh_ui_screens_ScreenManager.prototype = {
 	}
 	,modalDialogWithTransition: function(dialog,caller,dialogName,data,transition) {
 		dialog.load();
+		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),transition,data);
 		var overlayConfig = this.readOverlayConfig(dialog);
 		if(overlayConfig != null) {
 			this.modalOverlay = this.createModalOverlay(overlayConfig);
 			if(overlayConfig.blur != null && overlayConfig.blur > 0) {
-				this.applyBlurToUnderlyingScreens(overlayConfig.blur);
+				this.applyBlurToUnderlyingScreens(overlayConfig.blur,dialog);
 			}
 			this.tweenOverlayIn(overlayConfig,transition);
 		}
-		this.switchScreen(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),transition,data);
 	}
 	,closeDialogWithTransition: function(transition) {
 		var _gthis = this;
@@ -43863,7 +48775,7 @@ bh_ui_screens_ScreenManager.prototype = {
 	,createModalOverlay: function(config) {
 		var tmp = config.color;
 		var color = tmp != null ? tmp : 0;
-		var overlay = new h2d_Bitmap(h2d_Tile.fromColor(color,4096,4096));
+		var overlay = bh_base_HeapsUtils_solidBitmap(color | -16777216,4096,4096);
 		overlay.alpha = 0.0;
 		this.app.s2d.add(overlay,this.sceneLayers.overlay);
 		var tmp = config.alpha;
@@ -43890,12 +48802,18 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		this.modalOverlayBlurTargets = [];
 	}
-	,applyBlurToUnderlyingScreens: function(blurRadius) {
+	,applyBlurToUnderlyingScreens: function(blurRadius,exclude) {
+		if(exclude != null && this.activeScreens.indexOf(exclude) == -1) {
+			throw haxe_Exception.thrown("applyBlurToUnderlyingScreens: exclude screen is not in activeScreens — " + "caller must commit the mode transition before applying blur");
+		}
 		var _g = 0;
 		var _g1 = this.activeScreens;
 		while(_g < _g1.length) {
 			var screen = _g1[_g];
 			++_g;
+			if(exclude != null && screen == exclude) {
+				continue;
+			}
 			var root = screen.getSceneRoot();
 			this.modalOverlayBlurTargets.push({ root : root, saved : root.filter});
 			root.set_filter(new h2d_filter_Blur(blurRadius,1.0,1.0));
@@ -48618,1490 +53536,6 @@ h2d__$Graphics_GraphicsContent.prototype = $extend(h3d_prim_Primitive.prototype,
 		this.buffers = [];
 	}
 	,__class__: h2d__$Graphics_GraphicsContent
-});
-var h2d_Graphics = function(parent) {
-	this.bevel = 0.25;
-	this.my = 0.;
-	this.mx = 0.;
-	this.md = 1.;
-	this.mc = 0.;
-	this.mb = 0.;
-	this.ma = 1.;
-	h2d_Drawable.call(this,parent);
-	this.content = new h2d__$Graphics_GraphicsContent();
-	this.tile = h2d_Tile.fromColor(16777215);
-	this.clear();
-};
-$hxClasses["h2d.Graphics"] = h2d_Graphics;
-h2d_Graphics.__name__ = "h2d.Graphics";
-h2d_Graphics.__super__ = h2d_Drawable;
-h2d_Graphics.prototype = $extend(h2d_Drawable.prototype,{
-	onRemove: function() {
-		h2d_Drawable.prototype.onRemove.call(this);
-		this.clear();
-	}
-	,clear: function() {
-		this.content.clear();
-		this.tmpPoints = [];
-		this.pindex = 0;
-		this.lineSize = 0;
-		this.xMin = Infinity;
-		this.yMin = Infinity;
-		this.yMax = -Infinity;
-		this.xMax = -Infinity;
-		this.xMinSize = Infinity;
-		this.yMinSize = Infinity;
-		this.yMaxSize = -Infinity;
-		this.xMaxSize = -Infinity;
-	}
-	,getBoundsRec: function(relativeTo,out,forSize) {
-		h2d_Drawable.prototype.getBoundsRec.call(this,relativeTo,out,forSize);
-		if(this.tile != null) {
-			if(forSize) {
-				this.addBounds(relativeTo,out,this.xMinSize,this.yMinSize,this.xMaxSize - this.xMinSize,this.yMaxSize - this.yMinSize);
-			} else {
-				this.addBounds(relativeTo,out,this.xMin,this.yMin,this.xMax - this.xMin,this.yMax - this.yMin);
-			}
-		}
-	}
-	,isConvex: function(points) {
-		var first = true;
-		var sign = false;
-		var _g = 0;
-		var _g1 = points.length;
-		while(_g < _g1) {
-			var i = _g++;
-			var p1 = points[i];
-			var p2 = points[(i + 1) % points.length];
-			var p3 = points[(i + 2) % points.length];
-			var s = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
-			if(first) {
-				first = false;
-				sign = s;
-			} else if(sign != s) {
-				return false;
-			}
-		}
-		return true;
-	}
-	,flushLine: function(start) {
-		var pts = this.tmpPoints;
-		var last = pts.length - 1;
-		var prev = pts[last];
-		var p = pts[0];
-		this.content.setTile(h2d_Tile.fromColor(16777215));
-		var closed = p.x == prev.x && p.y == prev.y;
-		var count = pts.length;
-		if(!closed) {
-			var prevLast = pts[last - 1];
-			if(prevLast == null) {
-				prevLast = p;
-			}
-			var gp = new h2d_GPoint();
-			gp.load(prev.x * 2 - prevLast.x,prev.y * 2 - prevLast.y,0,0,0,0);
-			pts.push(gp);
-			var pNext = pts[1];
-			if(pNext == null) {
-				pNext = p;
-			}
-			var gp = new h2d_GPoint();
-			gp.load(p.x * 2 - pNext.x,p.y * 2 - pNext.y,0,0,0,0);
-			prev = gp;
-		} else if(p != prev) {
-			--count;
-			--last;
-			prev = pts[last];
-		}
-		var _g = 0;
-		var _g1 = count;
-		while(_g < _g1) {
-			var i = _g++;
-			var next = pts[(i + 1) % pts.length];
-			var nx1 = prev.y - p.y;
-			var ny1 = p.x - prev.x;
-			var ns1 = 1. / Math.sqrt(nx1 * nx1 + ny1 * ny1);
-			var nx2 = p.y - next.y;
-			var ny2 = next.x - p.x;
-			var ns2 = 1. / Math.sqrt(nx2 * nx2 + ny2 * ny2);
-			var nx = nx1 * ns1 + nx2 * ns2;
-			var ny = ny1 * ns1 + ny2 * ns2;
-			var ns = 1. / Math.sqrt(nx * nx + ny * ny);
-			nx *= ns;
-			ny *= ns;
-			var size = nx * nx1 * ns1 + ny * ny1 * ns1;
-			if(size < 0.1) {
-				size = 0.1;
-			}
-			var d = this.lineSize * 0.5 / size;
-			nx *= d;
-			ny *= d;
-			if(size > this.bevel) {
-				var _this = this.content;
-				var x = p.x + nx;
-				var y = p.y + ny;
-				var r = p.r;
-				var g = p.g;
-				var b = p.b;
-				var a = p.a;
-				var this1 = _this.tmp;
-				if(this1.pos == this1.array.length) {
-					var newSize = this1.array.length << 1;
-					if(newSize < 128) {
-						newSize = 128;
-					}
-					var newArray = new Float32Array(newSize);
-					newArray.set(this1.array);
-					this1.array = newArray;
-				}
-				this1.array[this1.pos++] = x;
-				var this2 = _this.tmp;
-				if(this2.pos == this2.array.length) {
-					var newSize1 = this2.array.length << 1;
-					if(newSize1 < 128) {
-						newSize1 = 128;
-					}
-					var newArray1 = new Float32Array(newSize1);
-					newArray1.set(this2.array);
-					this2.array = newArray1;
-				}
-				this2.array[this2.pos++] = y;
-				var this3 = _this.tmp;
-				if(this3.pos == this3.array.length) {
-					var newSize2 = this3.array.length << 1;
-					if(newSize2 < 128) {
-						newSize2 = 128;
-					}
-					var newArray2 = new Float32Array(newSize2);
-					newArray2.set(this3.array);
-					this3.array = newArray2;
-				}
-				this3.array[this3.pos++] = 0;
-				var this4 = _this.tmp;
-				if(this4.pos == this4.array.length) {
-					var newSize3 = this4.array.length << 1;
-					if(newSize3 < 128) {
-						newSize3 = 128;
-					}
-					var newArray3 = new Float32Array(newSize3);
-					newArray3.set(this4.array);
-					this4.array = newArray3;
-				}
-				this4.array[this4.pos++] = 0;
-				var this5 = _this.tmp;
-				if(this5.pos == this5.array.length) {
-					var newSize4 = this5.array.length << 1;
-					if(newSize4 < 128) {
-						newSize4 = 128;
-					}
-					var newArray4 = new Float32Array(newSize4);
-					newArray4.set(this5.array);
-					this5.array = newArray4;
-				}
-				this5.array[this5.pos++] = r;
-				var this6 = _this.tmp;
-				if(this6.pos == this6.array.length) {
-					var newSize5 = this6.array.length << 1;
-					if(newSize5 < 128) {
-						newSize5 = 128;
-					}
-					var newArray5 = new Float32Array(newSize5);
-					newArray5.set(this6.array);
-					this6.array = newArray5;
-				}
-				this6.array[this6.pos++] = g;
-				var this7 = _this.tmp;
-				if(this7.pos == this7.array.length) {
-					var newSize6 = this7.array.length << 1;
-					if(newSize6 < 128) {
-						newSize6 = 128;
-					}
-					var newArray6 = new Float32Array(newSize6);
-					newArray6.set(this7.array);
-					this7.array = newArray6;
-				}
-				this7.array[this7.pos++] = b;
-				var this8 = _this.tmp;
-				if(this8.pos == this8.array.length) {
-					var newSize7 = this8.array.length << 1;
-					if(newSize7 < 128) {
-						newSize7 = 128;
-					}
-					var newArray7 = new Float32Array(newSize7);
-					newArray7.set(this8.array);
-					this8.array = newArray7;
-				}
-				this8.array[this8.pos++] = a;
-				_this.bufferDirty = true;
-				var _this1 = this.content;
-				var x1 = p.x - nx;
-				var y1 = p.y - ny;
-				var r1 = p.r;
-				var g1 = p.g;
-				var b1 = p.b;
-				var a1 = p.a;
-				var this9 = _this1.tmp;
-				if(this9.pos == this9.array.length) {
-					var newSize8 = this9.array.length << 1;
-					if(newSize8 < 128) {
-						newSize8 = 128;
-					}
-					var newArray8 = new Float32Array(newSize8);
-					newArray8.set(this9.array);
-					this9.array = newArray8;
-				}
-				this9.array[this9.pos++] = x1;
-				var this10 = _this1.tmp;
-				if(this10.pos == this10.array.length) {
-					var newSize9 = this10.array.length << 1;
-					if(newSize9 < 128) {
-						newSize9 = 128;
-					}
-					var newArray9 = new Float32Array(newSize9);
-					newArray9.set(this10.array);
-					this10.array = newArray9;
-				}
-				this10.array[this10.pos++] = y1;
-				var this11 = _this1.tmp;
-				if(this11.pos == this11.array.length) {
-					var newSize10 = this11.array.length << 1;
-					if(newSize10 < 128) {
-						newSize10 = 128;
-					}
-					var newArray10 = new Float32Array(newSize10);
-					newArray10.set(this11.array);
-					this11.array = newArray10;
-				}
-				this11.array[this11.pos++] = 0;
-				var this12 = _this1.tmp;
-				if(this12.pos == this12.array.length) {
-					var newSize11 = this12.array.length << 1;
-					if(newSize11 < 128) {
-						newSize11 = 128;
-					}
-					var newArray11 = new Float32Array(newSize11);
-					newArray11.set(this12.array);
-					this12.array = newArray11;
-				}
-				this12.array[this12.pos++] = 0;
-				var this13 = _this1.tmp;
-				if(this13.pos == this13.array.length) {
-					var newSize12 = this13.array.length << 1;
-					if(newSize12 < 128) {
-						newSize12 = 128;
-					}
-					var newArray12 = new Float32Array(newSize12);
-					newArray12.set(this13.array);
-					this13.array = newArray12;
-				}
-				this13.array[this13.pos++] = r1;
-				var this14 = _this1.tmp;
-				if(this14.pos == this14.array.length) {
-					var newSize13 = this14.array.length << 1;
-					if(newSize13 < 128) {
-						newSize13 = 128;
-					}
-					var newArray13 = new Float32Array(newSize13);
-					newArray13.set(this14.array);
-					this14.array = newArray13;
-				}
-				this14.array[this14.pos++] = g1;
-				var this15 = _this1.tmp;
-				if(this15.pos == this15.array.length) {
-					var newSize14 = this15.array.length << 1;
-					if(newSize14 < 128) {
-						newSize14 = 128;
-					}
-					var newArray14 = new Float32Array(newSize14);
-					newArray14.set(this15.array);
-					this15.array = newArray14;
-				}
-				this15.array[this15.pos++] = b1;
-				var this16 = _this1.tmp;
-				if(this16.pos == this16.array.length) {
-					var newSize15 = this16.array.length << 1;
-					if(newSize15 < 128) {
-						newSize15 = 128;
-					}
-					var newArray15 = new Float32Array(newSize15);
-					newArray15.set(this16.array);
-					this16.array = newArray15;
-				}
-				this16.array[this16.pos++] = a1;
-				_this1.bufferDirty = true;
-				var pnext = i == last ? start : this.pindex + 2;
-				if(i < count - 1 || closed) {
-					var _this2 = this.content;
-					_this2.index.push(this.pindex);
-					var _this3 = _this2.state;
-					_this3.tail.count += 1;
-					_this3.totalCount += 1;
-					_this2.indexDirty = true;
-					var _this4 = this.content;
-					_this4.index.push(this.pindex + 1);
-					var _this5 = _this4.state;
-					_this5.tail.count += 1;
-					_this5.totalCount += 1;
-					_this4.indexDirty = true;
-					var _this6 = this.content;
-					_this6.index.push(pnext);
-					var _this7 = _this6.state;
-					_this7.tail.count += 1;
-					_this7.totalCount += 1;
-					_this6.indexDirty = true;
-					var _this8 = this.content;
-					_this8.index.push(this.pindex + 1);
-					var _this9 = _this8.state;
-					_this9.tail.count += 1;
-					_this9.totalCount += 1;
-					_this8.indexDirty = true;
-					var _this10 = this.content;
-					_this10.index.push(pnext);
-					var _this11 = _this10.state;
-					_this11.tail.count += 1;
-					_this11.totalCount += 1;
-					_this10.indexDirty = true;
-					var _this12 = this.content;
-					_this12.index.push(pnext + 1);
-					var _this13 = _this12.state;
-					_this13.tail.count += 1;
-					_this13.totalCount += 1;
-					_this12.indexDirty = true;
-				}
-				this.pindex += 2;
-			} else {
-				var n0x = next.x - p.x;
-				var n0y = next.y - p.y;
-				var sign = n0x * nx + n0y * ny;
-				var nnx = -ny;
-				var nny = nx;
-				var size1 = nnx * nx1 * ns1 + nny * ny1 * ns1;
-				var d1 = this.lineSize * 0.5 / size1;
-				nnx *= d1;
-				nny *= d1;
-				var pnext1 = i == last ? start : this.pindex + 3;
-				if(sign > 0) {
-					var _this14 = this.content;
-					var x2 = p.x + nx;
-					var y2 = p.y + ny;
-					var r2 = p.r;
-					var g2 = p.g;
-					var b2 = p.b;
-					var a2 = p.a;
-					var this17 = _this14.tmp;
-					if(this17.pos == this17.array.length) {
-						var newSize16 = this17.array.length << 1;
-						if(newSize16 < 128) {
-							newSize16 = 128;
-						}
-						var newArray16 = new Float32Array(newSize16);
-						newArray16.set(this17.array);
-						this17.array = newArray16;
-					}
-					this17.array[this17.pos++] = x2;
-					var this18 = _this14.tmp;
-					if(this18.pos == this18.array.length) {
-						var newSize17 = this18.array.length << 1;
-						if(newSize17 < 128) {
-							newSize17 = 128;
-						}
-						var newArray17 = new Float32Array(newSize17);
-						newArray17.set(this18.array);
-						this18.array = newArray17;
-					}
-					this18.array[this18.pos++] = y2;
-					var this19 = _this14.tmp;
-					if(this19.pos == this19.array.length) {
-						var newSize18 = this19.array.length << 1;
-						if(newSize18 < 128) {
-							newSize18 = 128;
-						}
-						var newArray18 = new Float32Array(newSize18);
-						newArray18.set(this19.array);
-						this19.array = newArray18;
-					}
-					this19.array[this19.pos++] = 0;
-					var this20 = _this14.tmp;
-					if(this20.pos == this20.array.length) {
-						var newSize19 = this20.array.length << 1;
-						if(newSize19 < 128) {
-							newSize19 = 128;
-						}
-						var newArray19 = new Float32Array(newSize19);
-						newArray19.set(this20.array);
-						this20.array = newArray19;
-					}
-					this20.array[this20.pos++] = 0;
-					var this21 = _this14.tmp;
-					if(this21.pos == this21.array.length) {
-						var newSize20 = this21.array.length << 1;
-						if(newSize20 < 128) {
-							newSize20 = 128;
-						}
-						var newArray20 = new Float32Array(newSize20);
-						newArray20.set(this21.array);
-						this21.array = newArray20;
-					}
-					this21.array[this21.pos++] = r2;
-					var this22 = _this14.tmp;
-					if(this22.pos == this22.array.length) {
-						var newSize21 = this22.array.length << 1;
-						if(newSize21 < 128) {
-							newSize21 = 128;
-						}
-						var newArray21 = new Float32Array(newSize21);
-						newArray21.set(this22.array);
-						this22.array = newArray21;
-					}
-					this22.array[this22.pos++] = g2;
-					var this23 = _this14.tmp;
-					if(this23.pos == this23.array.length) {
-						var newSize22 = this23.array.length << 1;
-						if(newSize22 < 128) {
-							newSize22 = 128;
-						}
-						var newArray22 = new Float32Array(newSize22);
-						newArray22.set(this23.array);
-						this23.array = newArray22;
-					}
-					this23.array[this23.pos++] = b2;
-					var this24 = _this14.tmp;
-					if(this24.pos == this24.array.length) {
-						var newSize23 = this24.array.length << 1;
-						if(newSize23 < 128) {
-							newSize23 = 128;
-						}
-						var newArray23 = new Float32Array(newSize23);
-						newArray23.set(this24.array);
-						this24.array = newArray23;
-					}
-					this24.array[this24.pos++] = a2;
-					_this14.bufferDirty = true;
-					var _this15 = this.content;
-					var x3 = p.x - nnx;
-					var y3 = p.y - nny;
-					var r3 = p.r;
-					var g3 = p.g;
-					var b3 = p.b;
-					var a3 = p.a;
-					var this25 = _this15.tmp;
-					if(this25.pos == this25.array.length) {
-						var newSize24 = this25.array.length << 1;
-						if(newSize24 < 128) {
-							newSize24 = 128;
-						}
-						var newArray24 = new Float32Array(newSize24);
-						newArray24.set(this25.array);
-						this25.array = newArray24;
-					}
-					this25.array[this25.pos++] = x3;
-					var this26 = _this15.tmp;
-					if(this26.pos == this26.array.length) {
-						var newSize25 = this26.array.length << 1;
-						if(newSize25 < 128) {
-							newSize25 = 128;
-						}
-						var newArray25 = new Float32Array(newSize25);
-						newArray25.set(this26.array);
-						this26.array = newArray25;
-					}
-					this26.array[this26.pos++] = y3;
-					var this27 = _this15.tmp;
-					if(this27.pos == this27.array.length) {
-						var newSize26 = this27.array.length << 1;
-						if(newSize26 < 128) {
-							newSize26 = 128;
-						}
-						var newArray26 = new Float32Array(newSize26);
-						newArray26.set(this27.array);
-						this27.array = newArray26;
-					}
-					this27.array[this27.pos++] = 0;
-					var this28 = _this15.tmp;
-					if(this28.pos == this28.array.length) {
-						var newSize27 = this28.array.length << 1;
-						if(newSize27 < 128) {
-							newSize27 = 128;
-						}
-						var newArray27 = new Float32Array(newSize27);
-						newArray27.set(this28.array);
-						this28.array = newArray27;
-					}
-					this28.array[this28.pos++] = 0;
-					var this29 = _this15.tmp;
-					if(this29.pos == this29.array.length) {
-						var newSize28 = this29.array.length << 1;
-						if(newSize28 < 128) {
-							newSize28 = 128;
-						}
-						var newArray28 = new Float32Array(newSize28);
-						newArray28.set(this29.array);
-						this29.array = newArray28;
-					}
-					this29.array[this29.pos++] = r3;
-					var this30 = _this15.tmp;
-					if(this30.pos == this30.array.length) {
-						var newSize29 = this30.array.length << 1;
-						if(newSize29 < 128) {
-							newSize29 = 128;
-						}
-						var newArray29 = new Float32Array(newSize29);
-						newArray29.set(this30.array);
-						this30.array = newArray29;
-					}
-					this30.array[this30.pos++] = g3;
-					var this31 = _this15.tmp;
-					if(this31.pos == this31.array.length) {
-						var newSize30 = this31.array.length << 1;
-						if(newSize30 < 128) {
-							newSize30 = 128;
-						}
-						var newArray30 = new Float32Array(newSize30);
-						newArray30.set(this31.array);
-						this31.array = newArray30;
-					}
-					this31.array[this31.pos++] = b3;
-					var this32 = _this15.tmp;
-					if(this32.pos == this32.array.length) {
-						var newSize31 = this32.array.length << 1;
-						if(newSize31 < 128) {
-							newSize31 = 128;
-						}
-						var newArray31 = new Float32Array(newSize31);
-						newArray31.set(this32.array);
-						this32.array = newArray31;
-					}
-					this32.array[this32.pos++] = a3;
-					_this15.bufferDirty = true;
-					var _this16 = this.content;
-					var x4 = p.x + nnx;
-					var y4 = p.y + nny;
-					var r4 = p.r;
-					var g4 = p.g;
-					var b4 = p.b;
-					var a4 = p.a;
-					var this33 = _this16.tmp;
-					if(this33.pos == this33.array.length) {
-						var newSize32 = this33.array.length << 1;
-						if(newSize32 < 128) {
-							newSize32 = 128;
-						}
-						var newArray32 = new Float32Array(newSize32);
-						newArray32.set(this33.array);
-						this33.array = newArray32;
-					}
-					this33.array[this33.pos++] = x4;
-					var this34 = _this16.tmp;
-					if(this34.pos == this34.array.length) {
-						var newSize33 = this34.array.length << 1;
-						if(newSize33 < 128) {
-							newSize33 = 128;
-						}
-						var newArray33 = new Float32Array(newSize33);
-						newArray33.set(this34.array);
-						this34.array = newArray33;
-					}
-					this34.array[this34.pos++] = y4;
-					var this35 = _this16.tmp;
-					if(this35.pos == this35.array.length) {
-						var newSize34 = this35.array.length << 1;
-						if(newSize34 < 128) {
-							newSize34 = 128;
-						}
-						var newArray34 = new Float32Array(newSize34);
-						newArray34.set(this35.array);
-						this35.array = newArray34;
-					}
-					this35.array[this35.pos++] = 0;
-					var this36 = _this16.tmp;
-					if(this36.pos == this36.array.length) {
-						var newSize35 = this36.array.length << 1;
-						if(newSize35 < 128) {
-							newSize35 = 128;
-						}
-						var newArray35 = new Float32Array(newSize35);
-						newArray35.set(this36.array);
-						this36.array = newArray35;
-					}
-					this36.array[this36.pos++] = 0;
-					var this37 = _this16.tmp;
-					if(this37.pos == this37.array.length) {
-						var newSize36 = this37.array.length << 1;
-						if(newSize36 < 128) {
-							newSize36 = 128;
-						}
-						var newArray36 = new Float32Array(newSize36);
-						newArray36.set(this37.array);
-						this37.array = newArray36;
-					}
-					this37.array[this37.pos++] = r4;
-					var this38 = _this16.tmp;
-					if(this38.pos == this38.array.length) {
-						var newSize37 = this38.array.length << 1;
-						if(newSize37 < 128) {
-							newSize37 = 128;
-						}
-						var newArray37 = new Float32Array(newSize37);
-						newArray37.set(this38.array);
-						this38.array = newArray37;
-					}
-					this38.array[this38.pos++] = g4;
-					var this39 = _this16.tmp;
-					if(this39.pos == this39.array.length) {
-						var newSize38 = this39.array.length << 1;
-						if(newSize38 < 128) {
-							newSize38 = 128;
-						}
-						var newArray38 = new Float32Array(newSize38);
-						newArray38.set(this39.array);
-						this39.array = newArray38;
-					}
-					this39.array[this39.pos++] = b4;
-					var this40 = _this16.tmp;
-					if(this40.pos == this40.array.length) {
-						var newSize39 = this40.array.length << 1;
-						if(newSize39 < 128) {
-							newSize39 = 128;
-						}
-						var newArray39 = new Float32Array(newSize39);
-						newArray39.set(this40.array);
-						this40.array = newArray39;
-					}
-					this40.array[this40.pos++] = a4;
-					_this16.bufferDirty = true;
-					var _this17 = this.content;
-					_this17.index.push(this.pindex);
-					var _this18 = _this17.state;
-					_this18.tail.count += 1;
-					_this18.totalCount += 1;
-					_this17.indexDirty = true;
-					var _this19 = this.content;
-					_this19.index.push(pnext1);
-					var _this20 = _this19.state;
-					_this20.tail.count += 1;
-					_this20.totalCount += 1;
-					_this19.indexDirty = true;
-					var _this21 = this.content;
-					_this21.index.push(this.pindex + 2);
-					var _this22 = _this21.state;
-					_this22.tail.count += 1;
-					_this22.totalCount += 1;
-					_this21.indexDirty = true;
-					var _this23 = this.content;
-					_this23.index.push(this.pindex + 2);
-					var _this24 = _this23.state;
-					_this24.tail.count += 1;
-					_this24.totalCount += 1;
-					_this23.indexDirty = true;
-					var _this25 = this.content;
-					_this25.index.push(pnext1);
-					var _this26 = _this25.state;
-					_this26.tail.count += 1;
-					_this26.totalCount += 1;
-					_this25.indexDirty = true;
-					var _this27 = this.content;
-					_this27.index.push(pnext1 + 1);
-					var _this28 = _this27.state;
-					_this28.tail.count += 1;
-					_this28.totalCount += 1;
-					_this27.indexDirty = true;
-				} else {
-					var _this29 = this.content;
-					var x5 = p.x + nnx;
-					var y5 = p.y + nny;
-					var r5 = p.r;
-					var g5 = p.g;
-					var b5 = p.b;
-					var a5 = p.a;
-					var this41 = _this29.tmp;
-					if(this41.pos == this41.array.length) {
-						var newSize40 = this41.array.length << 1;
-						if(newSize40 < 128) {
-							newSize40 = 128;
-						}
-						var newArray40 = new Float32Array(newSize40);
-						newArray40.set(this41.array);
-						this41.array = newArray40;
-					}
-					this41.array[this41.pos++] = x5;
-					var this42 = _this29.tmp;
-					if(this42.pos == this42.array.length) {
-						var newSize41 = this42.array.length << 1;
-						if(newSize41 < 128) {
-							newSize41 = 128;
-						}
-						var newArray41 = new Float32Array(newSize41);
-						newArray41.set(this42.array);
-						this42.array = newArray41;
-					}
-					this42.array[this42.pos++] = y5;
-					var this43 = _this29.tmp;
-					if(this43.pos == this43.array.length) {
-						var newSize42 = this43.array.length << 1;
-						if(newSize42 < 128) {
-							newSize42 = 128;
-						}
-						var newArray42 = new Float32Array(newSize42);
-						newArray42.set(this43.array);
-						this43.array = newArray42;
-					}
-					this43.array[this43.pos++] = 0;
-					var this44 = _this29.tmp;
-					if(this44.pos == this44.array.length) {
-						var newSize43 = this44.array.length << 1;
-						if(newSize43 < 128) {
-							newSize43 = 128;
-						}
-						var newArray43 = new Float32Array(newSize43);
-						newArray43.set(this44.array);
-						this44.array = newArray43;
-					}
-					this44.array[this44.pos++] = 0;
-					var this45 = _this29.tmp;
-					if(this45.pos == this45.array.length) {
-						var newSize44 = this45.array.length << 1;
-						if(newSize44 < 128) {
-							newSize44 = 128;
-						}
-						var newArray44 = new Float32Array(newSize44);
-						newArray44.set(this45.array);
-						this45.array = newArray44;
-					}
-					this45.array[this45.pos++] = r5;
-					var this46 = _this29.tmp;
-					if(this46.pos == this46.array.length) {
-						var newSize45 = this46.array.length << 1;
-						if(newSize45 < 128) {
-							newSize45 = 128;
-						}
-						var newArray45 = new Float32Array(newSize45);
-						newArray45.set(this46.array);
-						this46.array = newArray45;
-					}
-					this46.array[this46.pos++] = g5;
-					var this47 = _this29.tmp;
-					if(this47.pos == this47.array.length) {
-						var newSize46 = this47.array.length << 1;
-						if(newSize46 < 128) {
-							newSize46 = 128;
-						}
-						var newArray46 = new Float32Array(newSize46);
-						newArray46.set(this47.array);
-						this47.array = newArray46;
-					}
-					this47.array[this47.pos++] = b5;
-					var this48 = _this29.tmp;
-					if(this48.pos == this48.array.length) {
-						var newSize47 = this48.array.length << 1;
-						if(newSize47 < 128) {
-							newSize47 = 128;
-						}
-						var newArray47 = new Float32Array(newSize47);
-						newArray47.set(this48.array);
-						this48.array = newArray47;
-					}
-					this48.array[this48.pos++] = a5;
-					_this29.bufferDirty = true;
-					var _this30 = this.content;
-					var x6 = p.x - nx;
-					var y6 = p.y - ny;
-					var r6 = p.r;
-					var g6 = p.g;
-					var b6 = p.b;
-					var a6 = p.a;
-					var this49 = _this30.tmp;
-					if(this49.pos == this49.array.length) {
-						var newSize48 = this49.array.length << 1;
-						if(newSize48 < 128) {
-							newSize48 = 128;
-						}
-						var newArray48 = new Float32Array(newSize48);
-						newArray48.set(this49.array);
-						this49.array = newArray48;
-					}
-					this49.array[this49.pos++] = x6;
-					var this50 = _this30.tmp;
-					if(this50.pos == this50.array.length) {
-						var newSize49 = this50.array.length << 1;
-						if(newSize49 < 128) {
-							newSize49 = 128;
-						}
-						var newArray49 = new Float32Array(newSize49);
-						newArray49.set(this50.array);
-						this50.array = newArray49;
-					}
-					this50.array[this50.pos++] = y6;
-					var this51 = _this30.tmp;
-					if(this51.pos == this51.array.length) {
-						var newSize50 = this51.array.length << 1;
-						if(newSize50 < 128) {
-							newSize50 = 128;
-						}
-						var newArray50 = new Float32Array(newSize50);
-						newArray50.set(this51.array);
-						this51.array = newArray50;
-					}
-					this51.array[this51.pos++] = 0;
-					var this52 = _this30.tmp;
-					if(this52.pos == this52.array.length) {
-						var newSize51 = this52.array.length << 1;
-						if(newSize51 < 128) {
-							newSize51 = 128;
-						}
-						var newArray51 = new Float32Array(newSize51);
-						newArray51.set(this52.array);
-						this52.array = newArray51;
-					}
-					this52.array[this52.pos++] = 0;
-					var this53 = _this30.tmp;
-					if(this53.pos == this53.array.length) {
-						var newSize52 = this53.array.length << 1;
-						if(newSize52 < 128) {
-							newSize52 = 128;
-						}
-						var newArray52 = new Float32Array(newSize52);
-						newArray52.set(this53.array);
-						this53.array = newArray52;
-					}
-					this53.array[this53.pos++] = r6;
-					var this54 = _this30.tmp;
-					if(this54.pos == this54.array.length) {
-						var newSize53 = this54.array.length << 1;
-						if(newSize53 < 128) {
-							newSize53 = 128;
-						}
-						var newArray53 = new Float32Array(newSize53);
-						newArray53.set(this54.array);
-						this54.array = newArray53;
-					}
-					this54.array[this54.pos++] = g6;
-					var this55 = _this30.tmp;
-					if(this55.pos == this55.array.length) {
-						var newSize54 = this55.array.length << 1;
-						if(newSize54 < 128) {
-							newSize54 = 128;
-						}
-						var newArray54 = new Float32Array(newSize54);
-						newArray54.set(this55.array);
-						this55.array = newArray54;
-					}
-					this55.array[this55.pos++] = b6;
-					var this56 = _this30.tmp;
-					if(this56.pos == this56.array.length) {
-						var newSize55 = this56.array.length << 1;
-						if(newSize55 < 128) {
-							newSize55 = 128;
-						}
-						var newArray55 = new Float32Array(newSize55);
-						newArray55.set(this56.array);
-						this56.array = newArray55;
-					}
-					this56.array[this56.pos++] = a6;
-					_this30.bufferDirty = true;
-					var _this31 = this.content;
-					var x7 = p.x - nnx;
-					var y7 = p.y - nny;
-					var r7 = p.r;
-					var g7 = p.g;
-					var b7 = p.b;
-					var a7 = p.a;
-					var this57 = _this31.tmp;
-					if(this57.pos == this57.array.length) {
-						var newSize56 = this57.array.length << 1;
-						if(newSize56 < 128) {
-							newSize56 = 128;
-						}
-						var newArray56 = new Float32Array(newSize56);
-						newArray56.set(this57.array);
-						this57.array = newArray56;
-					}
-					this57.array[this57.pos++] = x7;
-					var this58 = _this31.tmp;
-					if(this58.pos == this58.array.length) {
-						var newSize57 = this58.array.length << 1;
-						if(newSize57 < 128) {
-							newSize57 = 128;
-						}
-						var newArray57 = new Float32Array(newSize57);
-						newArray57.set(this58.array);
-						this58.array = newArray57;
-					}
-					this58.array[this58.pos++] = y7;
-					var this59 = _this31.tmp;
-					if(this59.pos == this59.array.length) {
-						var newSize58 = this59.array.length << 1;
-						if(newSize58 < 128) {
-							newSize58 = 128;
-						}
-						var newArray58 = new Float32Array(newSize58);
-						newArray58.set(this59.array);
-						this59.array = newArray58;
-					}
-					this59.array[this59.pos++] = 0;
-					var this60 = _this31.tmp;
-					if(this60.pos == this60.array.length) {
-						var newSize59 = this60.array.length << 1;
-						if(newSize59 < 128) {
-							newSize59 = 128;
-						}
-						var newArray59 = new Float32Array(newSize59);
-						newArray59.set(this60.array);
-						this60.array = newArray59;
-					}
-					this60.array[this60.pos++] = 0;
-					var this61 = _this31.tmp;
-					if(this61.pos == this61.array.length) {
-						var newSize60 = this61.array.length << 1;
-						if(newSize60 < 128) {
-							newSize60 = 128;
-						}
-						var newArray60 = new Float32Array(newSize60);
-						newArray60.set(this61.array);
-						this61.array = newArray60;
-					}
-					this61.array[this61.pos++] = r7;
-					var this62 = _this31.tmp;
-					if(this62.pos == this62.array.length) {
-						var newSize61 = this62.array.length << 1;
-						if(newSize61 < 128) {
-							newSize61 = 128;
-						}
-						var newArray61 = new Float32Array(newSize61);
-						newArray61.set(this62.array);
-						this62.array = newArray61;
-					}
-					this62.array[this62.pos++] = g7;
-					var this63 = _this31.tmp;
-					if(this63.pos == this63.array.length) {
-						var newSize62 = this63.array.length << 1;
-						if(newSize62 < 128) {
-							newSize62 = 128;
-						}
-						var newArray62 = new Float32Array(newSize62);
-						newArray62.set(this63.array);
-						this63.array = newArray62;
-					}
-					this63.array[this63.pos++] = b7;
-					var this64 = _this31.tmp;
-					if(this64.pos == this64.array.length) {
-						var newSize63 = this64.array.length << 1;
-						if(newSize63 < 128) {
-							newSize63 = 128;
-						}
-						var newArray63 = new Float32Array(newSize63);
-						newArray63.set(this64.array);
-						this64.array = newArray63;
-					}
-					this64.array[this64.pos++] = a7;
-					_this31.bufferDirty = true;
-					var _this32 = this.content;
-					_this32.index.push(this.pindex + 1);
-					var _this33 = _this32.state;
-					_this33.tail.count += 1;
-					_this33.totalCount += 1;
-					_this32.indexDirty = true;
-					var _this34 = this.content;
-					_this34.index.push(pnext1);
-					var _this35 = _this34.state;
-					_this35.tail.count += 1;
-					_this35.totalCount += 1;
-					_this34.indexDirty = true;
-					var _this36 = this.content;
-					_this36.index.push(this.pindex + 2);
-					var _this37 = _this36.state;
-					_this37.tail.count += 1;
-					_this37.totalCount += 1;
-					_this36.indexDirty = true;
-					var _this38 = this.content;
-					_this38.index.push(this.pindex + 1);
-					var _this39 = _this38.state;
-					_this39.tail.count += 1;
-					_this39.totalCount += 1;
-					_this38.indexDirty = true;
-					var _this40 = this.content;
-					_this40.index.push(pnext1);
-					var _this41 = _this40.state;
-					_this41.tail.count += 1;
-					_this41.totalCount += 1;
-					_this40.indexDirty = true;
-					var _this42 = this.content;
-					_this42.index.push(pnext1 + 1);
-					var _this43 = _this42.state;
-					_this43.tail.count += 1;
-					_this43.totalCount += 1;
-					_this42.indexDirty = true;
-				}
-				var _this44 = this.content;
-				_this44.index.push(this.pindex);
-				var _this45 = _this44.state;
-				_this45.tail.count += 1;
-				_this45.totalCount += 1;
-				_this44.indexDirty = true;
-				var _this46 = this.content;
-				_this46.index.push(this.pindex + 1);
-				var _this47 = _this46.state;
-				_this47.tail.count += 1;
-				_this47.totalCount += 1;
-				_this46.indexDirty = true;
-				var _this48 = this.content;
-				_this48.index.push(this.pindex + 2);
-				var _this49 = _this48.state;
-				_this49.tail.count += 1;
-				_this49.totalCount += 1;
-				_this48.indexDirty = true;
-				this.pindex += 3;
-			}
-			prev = p;
-			p = next;
-		}
-		this.content.setTile(this.tile);
-	}
-	,flushFill: function(i0) {
-		if(this.tmpPoints.length < 3) {
-			return;
-		}
-		var pts = this.tmpPoints;
-		var p0 = pts[0];
-		var p1 = pts[pts.length - 1];
-		var last = null;
-		var tmp;
-		var f = p0.x - p1.x;
-		if((f < 0 ? -f : f) < 1e-9) {
-			var f = p0.y - p1.y;
-			tmp = (f < 0 ? -f : f) < 1e-9;
-		} else {
-			tmp = false;
-		}
-		if(tmp) {
-			last = pts.pop();
-		}
-		if(this.isConvex(pts)) {
-			var _g = 1;
-			var _g1 = pts.length - 1;
-			while(_g < _g1) {
-				var i = _g++;
-				var _this = this.content;
-				_this.index.push(i0);
-				var _this1 = _this.state;
-				_this1.tail.count += 1;
-				_this1.totalCount += 1;
-				_this.indexDirty = true;
-				var _this2 = this.content;
-				_this2.index.push(i0 + i);
-				var _this3 = _this2.state;
-				_this3.tail.count += 1;
-				_this3.totalCount += 1;
-				_this2.indexDirty = true;
-				var _this4 = this.content;
-				_this4.index.push(i0 + i + 1);
-				var _this5 = _this4.state;
-				_this5.tail.count += 1;
-				_this5.totalCount += 1;
-				_this4.indexDirty = true;
-			}
-		} else {
-			var ear = h2d_Graphics.EARCUT;
-			if(ear == null) {
-				ear = new hxd_earcut_Earcut();
-				h2d_Graphics.EARCUT = ear;
-			}
-			var _g = 0;
-			var _g1 = ear.triangulate_h2d_GPoint(pts);
-			while(_g < _g1.length) {
-				var i = _g1[_g];
-				++_g;
-				var _this = this.content;
-				_this.index.push(i + i0);
-				var _this1 = _this.state;
-				_this1.tail.count += 1;
-				_this1.totalCount += 1;
-				_this.indexDirty = true;
-			}
-		}
-		if(last != null) {
-			pts.push(last);
-		}
-	}
-	,flush: function() {
-		if(this.tmpPoints.length == 0) {
-			return;
-		}
-		if(this.doFill) {
-			this.flushFill(this.pindex);
-			this.pindex += this.tmpPoints.length;
-			if(this.content.next()) {
-				this.pindex = 0;
-			}
-		}
-		if(this.lineSize > 0) {
-			this.flushLine(this.pindex);
-			if(this.content.next()) {
-				this.pindex = 0;
-			}
-		}
-		this.tmpPoints = [];
-	}
-	,beginFill: function(color,alpha) {
-		if(alpha == null) {
-			alpha = 1.;
-		}
-		if(color == null) {
-			color = 0;
-		}
-		this.flush();
-		this.tile = h2d_Tile.fromColor(16777215);
-		this.content.setTile(this.tile);
-		var alpha1 = alpha;
-		if(alpha1 == null) {
-			alpha1 = 1.;
-		}
-		this.curA = alpha1;
-		this.curR = (color >> 16 & 255) / 255.;
-		this.curG = (color >> 8 & 255) / 255.;
-		this.curB = (color & 255) / 255.;
-		this.doFill = true;
-	}
-	,lineStyle: function(size,color,alpha) {
-		if(alpha == null) {
-			alpha = 1.;
-		}
-		if(color == null) {
-			color = 0;
-		}
-		if(size == null) {
-			size = 0;
-		}
-		this.flush();
-		this.lineSize = size;
-		this.lineA = alpha;
-		this.lineR = (color >> 16 & 255) / 255.;
-		this.lineG = (color >> 8 & 255) / 255.;
-		this.lineB = (color & 255) / 255.;
-	}
-	,endFill: function() {
-		this.flush();
-		this.doFill = false;
-	}
-	,drawRect: function(x,y,w,h) {
-		this.flush();
-		this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
-		var x1 = x + w;
-		this.addVertex(x1,y,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y * this.mc + this.mx,x1 * this.mb + y * this.md + this.my);
-		var x1 = x + w;
-		var y1 = y + h;
-		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
-		var y1 = y + h;
-		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
-		this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
-		var e = 0.01;
-		this.tmpPoints[0].x += e;
-		this.tmpPoints[0].y += e;
-		this.tmpPoints[1].y += e;
-		this.tmpPoints[3].x += e;
-		this.tmpPoints[4].x += e;
-		this.tmpPoints[4].y += e;
-		this.flush();
-	}
-	,drawRoundedRect: function(x,y,w,h,radius,nsegments) {
-		if(nsegments == null) {
-			nsegments = 0;
-		}
-		var _gthis = this;
-		if(radius <= 0) {
-			this.drawRect(x,y,w,h);
-			return;
-		}
-		x += radius;
-		y += radius;
-		w -= radius * 2;
-		h -= radius * 2;
-		this.flush();
-		if(nsegments == 0) {
-			var f = radius * 1.57079632679489656 / 4;
-			nsegments = Math.ceil(f < 0 ? -f : f);
-		}
-		if(nsegments < 3) {
-			nsegments = 3;
-		}
-		var angle = 1.57079632679489656 / (nsegments - 1);
-		var y1 = y - radius;
-		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
-		var x1 = x + w;
-		var y1 = y - radius;
-		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
-		var x1 = x + w;
-		var _g = 0;
-		var _g1 = nsegments;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle + 4.71238898038469;
-			var x2 = x1 + Math.cos(a) * radius;
-			var y1 = y + Math.sin(a) * radius;
-			_gthis.addVertex(x2,y1,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x2 * _gthis.ma + y1 * _gthis.mc + _gthis.mx,x2 * _gthis.mb + y1 * _gthis.md + _gthis.my);
-		}
-		var x1 = x + w + radius;
-		var y1 = y + h;
-		this.addVertex(x1,y1,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y1 * this.mc + this.mx,x1 * this.mb + y1 * this.md + this.my);
-		var x1 = x + w;
-		var y1 = y + h;
-		var _g = 0;
-		var _g1 = nsegments;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle;
-			var x2 = x1 + Math.cos(a) * radius;
-			var y2 = y1 + Math.sin(a) * radius;
-			_gthis.addVertex(x2,y2,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x2 * _gthis.ma + y2 * _gthis.mc + _gthis.mx,x2 * _gthis.mb + y2 * _gthis.md + _gthis.my);
-		}
-		var y1 = y + h + radius;
-		this.addVertex(x,y1,this.curR,this.curG,this.curB,this.curA,x * this.ma + y1 * this.mc + this.mx,x * this.mb + y1 * this.md + this.my);
-		var y1 = y + h;
-		var _g = 0;
-		var _g1 = nsegments;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle + 1.57079632679489656;
-			var x1 = x + Math.cos(a) * radius;
-			var y2 = y1 + Math.sin(a) * radius;
-			_gthis.addVertex(x1,y2,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x1 * _gthis.ma + y2 * _gthis.mc + _gthis.mx,x1 * _gthis.mb + y2 * _gthis.md + _gthis.my);
-		}
-		var x1 = x - radius;
-		this.addVertex(x1,y,this.curR,this.curG,this.curB,this.curA,x1 * this.ma + y * this.mc + this.mx,x1 * this.mb + y * this.md + this.my);
-		var _g = 0;
-		var _g1 = nsegments;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle + 3.14159265358979312;
-			var x1 = x + Math.cos(a) * radius;
-			var y1 = y + Math.sin(a) * radius;
-			_gthis.addVertex(x1,y1,_gthis.curR,_gthis.curG,_gthis.curB,_gthis.curA,x1 * _gthis.ma + y1 * _gthis.mc + _gthis.mx,x1 * _gthis.mb + y1 * _gthis.md + _gthis.my);
-		}
-		this.flush();
-	}
-	,drawCircle: function(cx,cy,radius,nsegments) {
-		if(nsegments == null) {
-			nsegments = 0;
-		}
-		this.flush();
-		if(nsegments == 0) {
-			var f = radius * 3.14 * 2 / 4;
-			nsegments = Math.ceil(f < 0 ? -f : f);
-		}
-		if(nsegments < 3) {
-			nsegments = 3;
-		}
-		var angle = 6.28318530717958623 / nsegments;
-		var _g = 0;
-		var _g1 = nsegments + 1;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle;
-			var x = cx + Math.cos(a) * radius;
-			var y = cy + Math.sin(a) * radius;
-			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
-		}
-		this.flush();
-	}
-	,drawEllipse: function(cx,cy,radiusX,radiusY,rotationAngle,nsegments) {
-		if(nsegments == null) {
-			nsegments = 0;
-		}
-		if(rotationAngle == null) {
-			rotationAngle = 0;
-		}
-		this.flush();
-		if(nsegments == 0) {
-			var f = radiusY * 3.14 * 2 / 4;
-			nsegments = Math.ceil(f < 0 ? -f : f);
-		}
-		if(nsegments < 3) {
-			nsegments = 3;
-		}
-		var angle = 6.28318530717958623 / nsegments;
-		var x1;
-		var y1;
-		var _g = 0;
-		var _g1 = nsegments + 1;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle;
-			x1 = Math.cos(a) * Math.cos(rotationAngle) * radiusX - Math.sin(a) * Math.sin(rotationAngle) * radiusY;
-			y1 = Math.cos(rotationAngle) * Math.sin(a) * radiusY + Math.cos(a) * Math.sin(rotationAngle) * radiusX;
-			var x = cx + x1;
-			var y = cy + y1;
-			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
-		}
-		this.flush();
-	}
-	,drawPie: function(cx,cy,radius,angleStart,angleLength,nsegments) {
-		if(nsegments == null) {
-			nsegments = 0;
-		}
-		if((angleLength < 0 ? -angleLength : angleLength) >= 6.28318530717958623) {
-			this.drawCircle(cx,cy,radius,nsegments);
-			return;
-		}
-		this.flush();
-		this.addVertex(cx,cy,this.curR,this.curG,this.curB,this.curA,cx * this.ma + cy * this.mc + this.mx,cx * this.mb + cy * this.md + this.my);
-		if(nsegments == 0) {
-			var f = radius * angleLength / 4;
-			nsegments = Math.ceil(f < 0 ? -f : f);
-		}
-		if(nsegments < 3) {
-			nsegments = 3;
-		}
-		var angle = angleLength / (nsegments - 1);
-		var _g = 0;
-		var _g1 = nsegments;
-		while(_g < _g1) {
-			var i = _g++;
-			var a = i * angle + angleStart;
-			var x = cx + Math.cos(a) * radius;
-			var y = cy + Math.sin(a) * radius;
-			this.addVertex(x,y,this.curR,this.curG,this.curB,this.curA,x * this.ma + y * this.mc + this.mx,x * this.mb + y * this.md + this.my);
-		}
-		this.addVertex(cx,cy,this.curR,this.curG,this.curB,this.curA,cx * this.ma + cy * this.mc + this.mx,cx * this.mb + cy * this.md + this.my);
-		this.flush();
-	}
-	,addVertex: function(x,y,r,g,b,a,u,v) {
-		if(v == null) {
-			v = 0.;
-		}
-		if(u == null) {
-			u = 0.;
-		}
-		var half = this.lineSize / 2.0;
-		if(x - half < this.xMin) {
-			this.xMin = x - half;
-		}
-		if(y - half < this.yMin) {
-			this.yMin = y - half;
-		}
-		if(x + half > this.xMax) {
-			this.xMax = x + half;
-		}
-		if(y + half > this.yMax) {
-			this.yMax = y + half;
-		}
-		if(x < this.xMinSize) {
-			this.xMinSize = x;
-		}
-		if(y < this.yMinSize) {
-			this.yMinSize = y;
-		}
-		if(x > this.xMaxSize) {
-			this.xMaxSize = x;
-		}
-		if(y > this.yMaxSize) {
-			this.yMaxSize = y;
-		}
-		if(this.doFill) {
-			var _this = this.content;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = x;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = y;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = u;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = v;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = r;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = g;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = b;
-			var this1 = _this.tmp;
-			if(this1.pos == this1.array.length) {
-				var newSize = this1.array.length << 1;
-				if(newSize < 128) {
-					newSize = 128;
-				}
-				var newArray = new Float32Array(newSize);
-				newArray.set(this1.array);
-				this1.array = newArray;
-			}
-			this1.array[this1.pos++] = a;
-			_this.bufferDirty = true;
-		}
-		var gp = new h2d_GPoint();
-		gp.load(x,y,this.lineR,this.lineG,this.lineB,this.lineA);
-		this.tmpPoints.push(gp);
-	}
-	,draw: function(ctx) {
-		if(!ctx.beginDrawBatchState(this)) {
-			return;
-		}
-		this.content.doRender(ctx);
-	}
-	,sync: function(ctx) {
-		h2d_Drawable.prototype.sync.call(this,ctx);
-		this.flush();
-		this.content.flush();
-	}
-	,__class__: h2d_Graphics
 });
 var h2d_LineHeightMode = $hxEnums["h2d.LineHeightMode"] = { __ename__:true,__constructs__:null
 	,Accurate: {_hx_name:"Accurate",_hx_index:0,__enum__:"h2d.LineHeightMode",toString:$estr}
@@ -74270,49 +77704,6 @@ haxe_EntryPoint.run = function() {
 		setTimeout(haxe_EntryPoint.run,nextTick * 1000);
 	}
 };
-var haxe_Exception = function(message,previous,native) {
-	Error.call(this,message);
-	this.message = message;
-	this.__previousException = previous;
-	this.__nativeException = native != null ? native : this;
-};
-$hxClasses["haxe.Exception"] = haxe_Exception;
-haxe_Exception.__name__ = "haxe.Exception";
-haxe_Exception.caught = function(value) {
-	if(((value) instanceof haxe_Exception)) {
-		return value;
-	} else if(((value) instanceof Error)) {
-		return new haxe_Exception(value.message,null,value);
-	} else {
-		return new haxe_ValueException(value,null,value);
-	}
-};
-haxe_Exception.thrown = function(value) {
-	if(((value) instanceof haxe_Exception)) {
-		return value.get_native();
-	} else if(((value) instanceof Error)) {
-		return value;
-	} else {
-		var e = new haxe_ValueException(value);
-		return e;
-	}
-};
-haxe_Exception.__super__ = Error;
-haxe_Exception.prototype = $extend(Error.prototype,{
-	unwrap: function() {
-		return this.__nativeException;
-	}
-	,toString: function() {
-		return this.get_message();
-	}
-	,get_message: function() {
-		return this.message;
-	}
-	,get_native: function() {
-		return this.__nativeException;
-	}
-	,__class__: haxe_Exception
-});
 var haxe__$Int64__$_$_$Int64 = function(high,low) {
 	this.high = high;
 	this.low = low;
@@ -76033,11 +79424,6 @@ var haxe_ds_StringMap = function() {
 $hxClasses["haxe.ds.StringMap"] = haxe_ds_StringMap;
 haxe_ds_StringMap.__name__ = "haxe.ds.StringMap";
 haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
-haxe_ds_StringMap.createCopy = function(h) {
-	var copy = new haxe_ds_StringMap();
-	for (var key in h) copy.h[key] = h[key];
-	return copy;
-};
 haxe_ds_StringMap.stringify = function(h) {
 	var s = "[";
 	var first = true;
@@ -112711,17 +116097,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeA",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e3 = tmp;
+	this._e3 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e3;
 	_this.posChanged = true;
 	_this.x = 60;
@@ -112735,17 +116111,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeB",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e4 = tmp;
+	this._e4 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e4;
 	_this.posChanged = true;
 	_this.x = 160;
@@ -112759,17 +116125,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeC",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e5 = tmp;
+	this._e5 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e5;
 	_this.posChanged = true;
 	_this.x = 260;
@@ -112794,17 +116150,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutRow",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e7 = tmp;
+	this._e7 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e7;
 	_this.posChanged = true;
 	_this.x = 60;
@@ -112818,17 +116164,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutGrid",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e8 = tmp;
+	this._e8 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e8;
 	_this.posChanged = true;
 	_this.x = 160;
@@ -112842,17 +116178,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutNested",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,90,22));
-	}
-	this._e9 = tmp;
+	this._e9 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
 	var _this = this._e9;
 	_this.posChanged = true;
 	_this.x = 260;
@@ -112874,17 +116200,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	var m = new haxe_ds_StringMap();
 	m.h["size"] = bh_multianim_SettingValue.RSVInt(200);
 	var _phResult1 = _phResult.buildPlaceholderViaSource("sliderX",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,200,16));
-	}
-	this._e11 = tmp;
+	this._e11 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,200,16));
 	var _this = this._e11;
 	_this.posChanged = true;
 	_this.x = 20;
@@ -112918,17 +116234,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	var m = new haxe_ds_StringMap();
 	m.h["size"] = bh_multianim_SettingValue.RSVInt(200);
 	var _phResult1 = _phResult.buildPlaceholderViaSource("sliderY",m);
-	var tmp;
-	if(_phResult1 != null) {
-		tmp = _phResult1;
-	} else {
-		var c = -65536;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		tmp = new h2d_Bitmap(h2d_Tile.fromColor(c,200,16));
-	}
-	this._e14 = tmp;
+	this._e14 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,200,16));
 	var _this = this._e14;
 	_this.posChanged = true;
 	_this.x = 20;
@@ -112947,11 +116253,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	_this.posChanged = true;
 	_this.y = 85;
 	this._e0.addChild(this._e15);
-	var c = -12285748;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,80,24);
+	var tile = bh_base_HeapsUtils_solidTile(-12285748,80,24);
 	this._e16 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e16;
 	_this.posChanged = true;
@@ -112980,11 +116282,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	_this.posChanged = true;
 	_this.y = 70;
 	this._e0.addChild(this._e18);
-	var c = -12303292;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,540,1);
+	var tile = bh_base_HeapsUtils_solidTile(-12303292,540,1);
 	this._e19 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e19;
 	_this.posChanged = true;
@@ -113032,17 +116330,19 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__name__ = "scr
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__super__ = h2d_Object;
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $extend(h2d_Object.prototype,{
-	_applyVisibility: function() {
-		this._sw21_armIdx = this._layout == 0 ? 0 : this._layout == 1 ? 1 : this._layout == 2 ? 2 : -1;
-		var tmp = this._pb;
-		var tmp1 = this._sw21_armIdx;
-		var tmp2 = this._sw21;
-		var _swp = new haxe_ds_StringMap();
-		_swp.h["theme"] = this._theme;
-		_swp.h["layout"] = this._layout;
-		_swp.h["countX"] = this._countX;
-		_swp.h["countY"] = this._countY;
-		tmp.rebuildSwitchArm("loadoutLab",0,tmp1,tmp2,_swp,this._swSink0);
+	_applyVisibility: function(_changedParam) {
+		if(_changedParam == null || _changedParam == "layout" || _changedParam == "countX" || _changedParam == "theme" || _changedParam == "countY") {
+			this._sw21_armIdx = this._layout == 0 ? 0 : this._layout == 1 ? 1 : this._layout == 2 ? 2 : -1;
+			var tmp = this._pb;
+			var tmp1 = this._sw21_armIdx;
+			var tmp2 = this._sw21;
+			var _swp = new haxe_ds_StringMap();
+			_swp.h["theme"] = this._theme;
+			_swp.h["layout"] = this._layout;
+			_swp.h["countX"] = this._countX;
+			_swp.h["countY"] = this._countY;
+			tmp.rebuildSwitchArm("loadoutLab",0,tmp1,tmp2,_swp,this._swSink0);
+		}
 	}
 	,_updateExpressions: function() {
 	}
@@ -113051,7 +116351,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return;
 		}
 		this._theme = v;
-		this._applyVisibility();
+		this._applyVisibility("theme");
 		this._fireRebuildListeners();
 	}
 	,setLayout: function(v) {
@@ -113059,7 +116359,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return;
 		}
 		this._layout = v;
-		this._applyVisibility();
+		this._applyVisibility("layout");
 		this._fireRebuildListeners();
 	}
 	,setCountX: function(v) {
@@ -113067,7 +116367,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return;
 		}
 		this._countX = v;
-		this._applyVisibility();
+		this._applyVisibility("countX");
 		this._fireRebuildListeners();
 	}
 	,setCountY: function(v) {
@@ -113075,7 +116375,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return;
 		}
 		this._countY = v;
-		this._applyVisibility();
+		this._applyVisibility("countY");
 		this._fireRebuildListeners();
 	}
 	,addRebuildListener: function(fn) {
@@ -113154,7 +116454,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 					_idx = 0;
 					break;
 				default:
-					throw haxe_Exception.thrown("unknown enum value \"" + Std.string(_value) + "\" for parameter \"" + "layout" + "\"");
+					_idx = -2147483648;
 				}
 			} else {
 				throw haxe_Exception.thrown("setParameter(\"" + "layout" + ("\", ...) requires Int or String, got " + Std.string(_value)));
@@ -113177,7 +116477,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 					_idx = 2;
 					break;
 				default:
-					throw haxe_Exception.thrown("unknown enum value \"" + Std.string(_value) + "\" for parameter \"" + "theme" + "\"");
+					_idx = -2147483648;
 				}
 			} else {
 				throw haxe_Exception.thrown("setParameter(\"" + "theme" + ("\", ...) requires Int or String, got " + Std.string(_value)));
@@ -113186,6 +116486,20 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			break;
 		default:
 			throw haxe_Exception.thrown("unknown parameter \"" + _name + "\" on " + "LoadoutCodegenProgrammables_LoadoutLabInstance");
+		}
+	}
+	,hasParameter: function(_name) {
+		switch(_name) {
+		case "countX":
+			return true;
+		case "countY":
+			return true;
+		case "layout":
+			return true;
+		case "theme":
+			return true;
+		default:
+			return false;
 		}
 	}
 	,get_yValue: function() {
@@ -113354,6 +116668,9 @@ screens_advanced_LoadoutRuntimeDemoScreen.prototype = $extend(screens_advanced_L
 		return this.demoResult;
 	}
 	,setUpdatableText: function(name,text) {
+		if(this.demoResult == null) {
+			return;
+		}
 		var u = this.demoResult.getUpdatable(name);
 		if(u != null) {
 			u.updateText(text);
@@ -113365,7 +116682,10 @@ screens_advanced_LoadoutRuntimeDemoScreen.prototype = $extend(screens_advanced_L
 		}
 		var key = "" + name + " " + idx;
 		if(this.demoResult.hasName(key)) {
-			this.demoResult.getUpdatable(key).updateText(text);
+			var u = this.demoResult.getUpdatable(key);
+			if(u != null) {
+				u.updateText(text);
+			}
 		}
 	}
 	,setIndexedText2D: function(name,x,y,text) {
@@ -113374,7 +116694,10 @@ screens_advanced_LoadoutRuntimeDemoScreen.prototype = $extend(screens_advanced_L
 		}
 		var key = "" + name + " " + x + " " + y;
 		if(this.demoResult.hasName(key)) {
-			this.demoResult.getUpdatable(key).updateText(text);
+			var u = this.demoResult.getUpdatable(key);
+			if(u != null) {
+				u.updateText(text);
+			}
 		}
 	}
 	,disposeLoadout: function() {
@@ -114060,11 +117383,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	this._maxMp = _maxMp;
 	this._name = _name;
 	this._level = _level;
-	var c = -13417387;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,40,40);
+	var tile = bh_base_HeapsUtils_solidTile(-13417387,40,40);
 	this._e0 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e0;
 	_this.posChanged = true;
@@ -114094,11 +117413,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 12;
 	this.addChild(this._e2);
-	var c = -15066598;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,100,6);
+	var tile = bh_base_HeapsUtils_solidTile(-15066598,100,6);
 	this._e3 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e3;
 	_this.posChanged = true;
@@ -114106,11 +117421,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 24;
 	this.addChild(this._e3);
-	var c = -48060;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,this._hp * 100 / this._maxHp | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-48060,this._hp * 100 / this._maxHp | 0 | 0,6);
 	this._e4 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e4;
 	_this.posChanged = true;
@@ -114130,11 +117441,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 22;
 	this.addChild(this._e5);
-	var c = -15066598;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,100,6);
+	var tile = bh_base_HeapsUtils_solidTile(-15066598,100,6);
 	this._e6 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e6;
 	_this.posChanged = true;
@@ -114142,11 +117449,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 32;
 	this.addChild(this._e6);
-	var c = -12285748;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,this._mp * 100 / this._maxMp | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-12285748,this._mp * 100 / this._maxMp | 0 | 0,6);
 	this._e7 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e7;
 	_this.posChanged = true;
@@ -114166,11 +117469,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 30;
 	this.addChild(this._e8);
-	var c = -12268476;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,8,8);
+	var tile = bh_base_HeapsUtils_solidTile(-12268476,8,8);
 	this._e9 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e9;
 	_this.posChanged = true;
@@ -114191,18 +117490,10 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 	,_updateExpressions: function() {
 		this._e1.set_text(Std.string(this._name));
 		this._e2.set_text(Std.string("Lv." + Std.string(this._level)));
-		var c = -48060;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		var tile = h2d_Tile.fromColor(c,this._hp * 100 / this._maxHp | 0 | 0,6);
+		var tile = bh_base_HeapsUtils_solidTile(-48060,this._hp * 100 / this._maxHp | 0 | 0,6);
 		this._e4.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e5.set_text(Std.string(Std.string(this._hp) + "/" + Std.string(this._maxHp)));
-		var c = -12285748;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		var tile = h2d_Tile.fromColor(c,this._mp * 100 / this._maxMp | 0 | 0,6);
+		var tile = bh_base_HeapsUtils_solidTile(-12285748,this._mp * 100 / this._maxMp | 0 | 0,6);
 		this._e7.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e8.set_text(Std.string(Std.string(this._mp) + "/" + Std.string(this._maxMp)));
 	}
@@ -114381,6 +117672,24 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 			throw haxe_Exception.thrown("unknown parameter \"" + _name + "\" on " + "PerfProgrammables_PerfComplexInstance");
 		}
 	}
+	,hasParameter: function(_name) {
+		switch(_name) {
+		case "hp":
+			return true;
+		case "level":
+			return true;
+		case "maxHp":
+			return true;
+		case "maxMp":
+			return true;
+		case "mp":
+			return true;
+		case "name":
+			return true;
+		default:
+			return false;
+		}
+	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfComplexInstance
 });
 var screens_advanced_PerfProgrammables_$PerfRepeatable = function(resourceLoader) {
@@ -114436,11 +117745,7 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			_rt_cont.posChanged = true;
 			_rt_cont.y = 0 * _rt_i;
 			this._e0.addChild(_rt_cont);
-			var c = -12294520;
-			if(c >>> 24 == 0) {
-				c |= -16777216;
-			}
-			var _rt_tile = h2d_Tile.fromColor(c,5,5);
+			var _rt_tile = bh_base_HeapsUtils_solidTile(-12294520,5,5);
 			var _rt_bmp = new h2d_Bitmap(_rt_tile.sub(0,0,_rt_tile.width,_rt_tile.height,0.0,0.0));
 			_rt_cont.addChild(_rt_bmp);
 			_rt_bmp.posChanged = true;
@@ -114507,6 +117812,13 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			throw haxe_Exception.thrown("unknown parameter \"" + _name + "\" on " + "PerfProgrammables_PerfRepeatableInstance");
 		}
 	}
+	,hasParameter: function(_name) {
+		if(_name == "value") {
+			return true;
+		} else {
+			return false;
+		}
+	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfRepeatableInstance
 });
 var screens_advanced_PerfProgrammables_$PerfSimple = function(resourceLoader) {
@@ -114542,11 +117854,7 @@ var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,
 	var _color = color;
 	this._value = _value;
 	this._color = _color;
-	var c = this._color;
-	if(c >>> 24 == 0) {
-		c |= -16777216;
-	}
-	var tile = h2d_Tile.fromColor(c,30,12);
+	var tile = bh_base_HeapsUtils_solidTile(this._color,30,12);
 	this._e0 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e0;
 	_this.posChanged = true;
@@ -114576,11 +117884,7 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 	_applyVisibility: function() {
 	}
 	,_updateExpressions: function() {
-		var c = this._color;
-		if(c >>> 24 == 0) {
-			c |= -16777216;
-		}
-		var tile = h2d_Tile.fromColor(c,30,12);
+		var tile = bh_base_HeapsUtils_solidTile(this._color,30,12);
 		this._e0.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e1.set_text(Std.string(Std.string(this._value)));
 	}
@@ -114635,13 +117939,19 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 			} else if(typeof(_value) == "number") {
 				_i = _value | 0;
 			} else if(typeof(_value) == "string") {
-				var _p = Std.parseInt(_value);
-				if(_p == null) {
-					throw haxe_Exception.thrown("setParameter(\"" + "color" + "\", ...) could not parse String as Int: " + Std.string(_value));
+				var _s = _value;
+				var _c = bh_multianim_MultiAnimParser.tryStringToColor(_s);
+				if(_c != null) {
+					_i = _c;
+				} else {
+					var _p = Std.parseInt(_s);
+					if(_p == null) {
+						throw haxe_Exception.thrown("setParameter(\"" + "color" + "\", ...) could not parse String as color: " + Std.string(_value));
+					}
+					_i = _p;
 				}
-				_i = _p;
 			} else {
-				throw haxe_Exception.thrown("setParameter(\"" + "color" + ("\", ...) requires Int, got " + Std.string(_value)));
+				throw haxe_Exception.thrown("setParameter(\"" + "color" + ("\", ...) requires Int or color String, got " + Std.string(_value)));
 			}
 			this.setColor(_i);
 			break;
@@ -114664,6 +117974,16 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 			break;
 		default:
 			throw haxe_Exception.thrown("unknown parameter \"" + _name + "\" on " + "PerfProgrammables_PerfSimpleInstance");
+		}
+	}
+	,hasParameter: function(_name) {
+		switch(_name) {
+		case "color":
+			return true;
+		case "value":
+			return true;
+		default:
+			return false;
 		}
 	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfSimpleInstance
@@ -114726,11 +118046,17 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.demoResult = ui.builderResults;
 		this.variantButtons = [ui.btnCompact,ui.btnWide,ui.btnTall];
 		this.addBuilderResult(this.demoResult);
-		this.panelContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("panelContainer").object);
+		var container = this.demoResult.getSingleItemByName("panelContainer");
+		if(container != null) {
+			this.panelContainer = bh_multianim_MultiAnimParser_toh2dObject(container.object);
+		}
 		this.currentPanels = [];
 		this.setVariant(0);
 	}
 	,setVariant: function(index) {
+		if(this.demoBuilder == null || this.panelContainer == null) {
+			return;
+		}
 		var _g = 0;
 		var _g1 = this.currentPanels;
 		while(_g < _g1.length) {
@@ -114766,12 +118092,21 @@ screens_advanced_SettingsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		_this.y = 0;
 		this.panelContainer.addChild(instance.object);
 		this.currentPanels.push(instance.object);
-		this.demoResult.getUpdatable("inspWidth").updateText("width: " + width);
-		this.demoResult.getUpdatable("inspHeight").updateText("height: " + height);
-		this.demoResult.getUpdatable("inspGap").updateText("gap: " + gap);
-		this.demoResult.getUpdatable("inspCategory").updateText("category: \"" + category + "\"");
+		this.updateStatus("inspWidth","width: " + width);
+		this.updateStatus("inspHeight","height: " + height);
+		this.updateStatus("inspGap","gap: " + gap);
+		this.updateStatus("inspCategory","category: \"" + category + "\"");
 		var total = 3 * width + 2 * gap;
-		this.demoResult.getUpdatable("logText").updateText("" + screens_advanced_SettingsDemoScreen.PANEL_LABELS[index] + ": 3 x " + width + "px + " + gap + "px gap = " + total + "px total");
+		this.updateStatus("logText","" + screens_advanced_SettingsDemoScreen.PANEL_LABELS[index] + ": 3 x " + width + "px + " + gap + "px gap = " + total + "px total");
+	}
+	,updateStatus: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
+		}
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
@@ -115517,8 +118852,15 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 		if(this.scaleBmp != null) {
 			this.scaleBmp.set_tile(centered);
 		}
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("selectedBitmap").updateText(TestBitmaps.getName(TestBitmaps.getType(index)));
+		this.updateText("selectedBitmap",TestBitmaps.getName(TestBitmaps.getType(index)));
+	}
+	,updateText: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,createCircle: function(color,radius) {
@@ -115536,8 +118878,8 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 		this.animTimer = 0;
 		var curves = this.demoBuilder.getCurves();
 		this.activeCurve = curves.h[name];
-		this.demoResult.getUpdatable("curveLabel").updateText(name + (this.inverse ? " (inverse)" : ""));
-		this.demoResult.getUpdatable("selectedCurve").updateText(name);
+		this.updateText("curveLabel",name + (this.inverse ? " (inverse)" : ""));
+		this.updateText("selectedCurve",name);
 		this.drawCurveGraph();
 	}
 	,drawCurveGraph: function() {
@@ -115641,7 +118983,7 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 			var checked = event.pressed;
 			if(source == this.inverseCheckbox) {
 				this.inverse = checked;
-				this.demoResult.getUpdatable("curveLabel").updateText(this.currentCurve + (this.inverse ? " (inverse)" : ""));
+				this.updateText("curveLabel",this.currentCurve + (this.inverse ? " (inverse)" : ""));
 				this.drawCurveGraph();
 			}
 			break;
@@ -115649,7 +118991,7 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = val;
-				this.demoResult.getUpdatable("speedValue").updateText("" + val + "%");
+				this.updateText("speedValue","" + val + "%");
 			}
 			break;
 		case 7:
@@ -117990,19 +121332,13 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 	}
 	,buildControls: function() {
 		var _gthis = this;
-		if(this.controlsResult != null) {
-			var _this = this.controlsResult.object;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		var generatedByMacroBuildWithParametersbuildControls1776Builder = function() {
+		var generatedByMacroBuildWithParametersbuildControls1670Builder = function() {
 			var pauseButton;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
 			var _g = new haxe_ds_StringMap();
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,_gthis.paused ? "Resume" : "Pause");
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Pause");
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				pauseButton = _el;
 				return _el.getObject();
@@ -118015,13 +121351,12 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersbuildControls1776Builder();
-		this.controlsResult = ui.builderResults;
-		this.addBuilderResult(this.controlsResult);
+		var ui = generatedByMacroBuildWithParametersbuildControls1670Builder();
+		this.addBuilderResult(ui.builderResults);
 		this.pauseButton = ui.pauseButton;
 		this.pauseButton.onClick = function() {
 			_gthis.paused = !_gthis.paused;
-			_gthis.buildControls();
+			_gthis.pauseButton.setText(_gthis.paused ? "Resume" : "Pause");
 		};
 	}
 	,buildHud: function(name) {
@@ -118145,7 +121480,6 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.loopTimer = 0;
 		this.paused = false;
 		this.pauseButton = null;
-		this.controlsResult = null;
 	}
 	,__class__: screens_gamelike_BattleHudDemoScreen
 });
@@ -118271,7 +121605,11 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			_g.push(_g2);
 		}
 		this.grid = _g;
-		this.mapContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("mapContainer").object);
+		var mapContainerEl = this.demoResult.getSingleItemByName("mapContainer");
+		if(mapContainerEl == null) {
+			return;
+		}
+		this.mapContainer = bh_multianim_MultiAnimParser_toh2dObject(mapContainerEl.object);
 		this.mapInteractive = new h2d_Interactive(640,448,this.mapContainer);
 		this.mapInteractive.onPush = function(e) {
 			if(e.button == 0) {
@@ -118306,6 +121644,9 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 	}
 	,rebuildAutotile: function() {
+		if(this.autotileBuilder == null || this.mapContainer == null) {
+			return;
+		}
 		if(this.tileGroup != null) {
 			var _this = this.tileGroup;
 			if(_this != null && _this.parent != null) {
@@ -118363,7 +121704,10 @@ screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 		}
 		var total = 1120;
-		this.demoResult.getUpdatable("statusText").updateText("Grass: " + grassCount + " / " + total + " tiles");
+		var updatable = this.demoResult.getUpdatable("statusText");
+		if(updatable != null) {
+			updatable.updateText("Grass: " + grassCount + " / " + total + " tiles");
+		}
 	}
 	,updateTileSelection: function() {
 		if(this.grassButton != null) {
@@ -119311,21 +122655,26 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.updateHandUI();
 	}
 	,setHandStatus: function(text) {
-		if(this.handResult != null) {
-			this.handResult.getUpdatable("statusText").updateText(text);
-		}
+		this.updateOnResult(this.handResult,"statusText",text);
 	}
 	,setHandEvent: function(text) {
-		if(this.handResult != null) {
-			this.handResult.getUpdatable("eventText").updateText(text);
-		}
+		this.updateOnResult(this.handResult,"eventText",text);
 	}
 	,updateHandUI: function() {
 		if(this.handResult == null) {
 			return;
 		}
 		var count = this.cardHand != null ? this.cardHand.getCardCount() : 0;
-		this.handResult.getUpdatable("handCount").updateText("Hand: " + count);
+		this.updateOnResult(this.handResult,"handCount","Hand: " + count);
+	}
+	,updateOnResult: function(result,fieldName,text) {
+		if(result == null) {
+			return;
+		}
+		var updatable = result.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
+		}
 	}
 	,updateControlStates: function() {
 		var isFan = this.currentLayoutMode == bh_ui_HandLayoutMode.Fan;
@@ -119483,7 +122832,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						this.tooltipHelper.startHover(id,"stateTooltip",params);
 					}
 					if(this.statesResult != null && data != null) {
-						this.statesResult.getUpdatable("statusText").updateText("State: " + data.title);
+						this.updateOnResult(this.statesResult,"statusText","State: " + data.title);
 					}
 					break;
 				case 12:
@@ -119492,7 +122841,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						this.tooltipHelper.cancelHover(id);
 					}
 					if(this.statesResult != null) {
-						this.statesResult.getUpdatable("statusText").updateText("Hover a card to see state description");
+						this.updateOnResult(this.statesResult,"statusText","Hover a card to see state description");
 					}
 					break;
 				default:
@@ -119872,7 +123221,7 @@ screens_gamelike_DialogueDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return _el.getObject();
 			});
 			_g.h["choice1Button"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("dialogueDemo",builderResults,{ placeholderObjects : _g});
+			var builderResults1 = _gthis1.buildWithParameters("dialogueDemo",builderResults,{ placeholderObjects : _g},null,true);
 			var retVal = { choice2Button : choice2Button, choice1Button : choice1Button, builderResults : builderResults1};
 			if(retVal.choice2Button == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "choice2Button" + " is null (check if placeholder object is named correctly)");
@@ -119913,35 +123262,44 @@ screens_gamelike_DialogueDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		if(this.currentNode == null) {
 			return;
 		}
-		this.demoResult.getUpdatable("speakerText").updateText(this.currentNode.speaker);
-		this.demoResult.getUpdatable("sceneText").updateText(this.currentNode.scene);
-		var portraitObj = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("portraitColor").object);
-		if(((portraitObj) instanceof h2d_Bitmap)) {
-			var bmp = portraitObj;
-			bmp.set_tile(h2d_Tile.fromColor(this.currentNode.portraitColor,80,80));
-		}
+		this.updateText("speakerText",this.currentNode.speaker);
+		this.updateText("sceneText",this.currentNode.scene);
+		this.demoResult.setParameter("portraitColor",this.currentNode.portraitColor);
 		this.fullText = this.currentNode.text;
 		this.displayedChars = 0;
 		this.charTimer = 0;
 		this.textComplete = false;
-		this.demoResult.getUpdatable("dialogueText").updateText("");
-		this.demoResult.getUpdatable("continueText").updateText("");
-		this.choice1Button.getObject().set_visible(false);
-		this.choice2Button.getObject().set_visible(false);
-		this.demoResult.getUpdatable("stateText").updateText("Node: " + this.currentNodeId);
+		this.updateText("dialogueText","");
+		this.updateText("continueText","");
+		if(this.choice1Button != null) {
+			this.choice1Button.getObject().set_visible(false);
+		}
+		if(this.choice2Button != null) {
+			this.choice2Button.getObject().set_visible(false);
+		}
+		this.updateText("stateText","Node: " + this.currentNodeId);
 	}
 	,showChoices: function() {
 		if(this.currentNode == null || this.demoResult == null) {
 			return;
 		}
-		if(this.currentNode.choice1 != null) {
+		if(this.currentNode.choice1 != null && this.choice1Button != null) {
 			this.choice1Button.getObject().set_visible(true);
 		}
-		if(this.currentNode.choice2 != null) {
+		if(this.currentNode.choice2 != null && this.choice2Button != null) {
 			this.choice2Button.getObject().set_visible(true);
 		}
 		if(this.currentNode.choice1 == null && this.currentNode.choice2 == null && this.currentNode.next != null) {
-			this.demoResult.getUpdatable("continueText").updateText("[Click to continue]");
+			this.updateText("continueText","[Click to continue]");
+		}
+	}
+	,updateText: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,update: function(dt) {
@@ -119952,8 +123310,7 @@ screens_gamelike_DialogueDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				this.displayedChars++;
 				this.charTimer -= 0.03;
 			}
-			var tmp = HxOverrides.substr(this.fullText,0,this.displayedChars);
-			this.demoResult.getUpdatable("dialogueText").updateText(tmp);
+			this.updateText("dialogueText",HxOverrides.substr(this.fullText,0,this.displayedChars));
 			if(this.displayedChars >= this.fullText.length) {
 				this.textComplete = true;
 				this.showChoices();
@@ -120464,8 +123821,15 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.setRectLog("" + this.rectCols + "x" + this.rectRows);
 	}
 	,setRectLog: function(text) {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("rectLog").updateText(text);
+		this.updateText("rectLog",text);
+	}
+	,updateText: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,setupHexGrid: function() {
@@ -120842,9 +124206,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.setHexLog(snap ? "Snap: on" : "Snap: off");
 	}
 	,setHexLog: function(text) {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("hexLog").updateText(text);
-		}
+		this.updateText("hexLog",text);
 	}
 	,setupGridToGrid: function() {
 		var _gthis = this;
@@ -121151,13 +124513,11 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			});
 		}
-		this.demoResult.getUpdatable("storageCount").updateText("Storage: " + sc);
-		this.demoResult.getUpdatable("loadoutCount").updateText("Loadout: " + lc);
+		this.updateText("storageCount","Storage: " + sc);
+		this.updateText("loadoutCount","Loadout: " + lc);
 	}
 	,setG2GLog: function(text) {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("g2gLog").updateText(text);
-		}
+		this.updateText("g2gLog",text);
 	}
 	,updateButtonStates: function() {
 		if(this.addRowBtn != null) {
@@ -121925,11 +125285,20 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		var tw = this.totalWeight();
 		var ic = this.invCount();
 		var ec = this.equipCount();
-		this.demoResult.getUpdatable("goldText").updateText("" + this.gold);
-		this.demoResult.getUpdatable("weightText").updateText("" + tw + " / " + 60 + " kg");
-		this.demoResult.getUpdatable("playerWeightText").updateText("Weight: " + tw + " / " + 60 + " kg");
-		this.demoResult.getUpdatable("playerCountText").updateText("Items: " + ic + " / " + 12 + "  Equipped: " + ec + " / " + screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length);
+		this.updateText("goldText","" + this.gold);
+		this.updateText("weightText","" + tw + " / " + 60 + " kg");
+		this.updateText("playerWeightText","Weight: " + tw + " / " + 60 + " kg");
+		this.updateText("playerCountText","Items: " + ic + " / " + 12 + "  Equipped: " + ec + " / " + screens_gamelike_InventoryDemoScreen.EQUIP_ACCEPTS.length);
 		this.updateSlotStates();
+	}
+	,updateText: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
+		}
 	}
 	,updateSlotStates: function() {
 		var tw = this.totalWeight();
@@ -121970,9 +125339,7 @@ screens_gamelike_InventoryDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		}
 	}
 	,setLog: function(text) {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("logText").updateText(text);
-		}
+		this.updateText("logText",text);
 	}
 	,onScreenEvent: function(event,source) {
 		if(event._hx_index == 0) {
@@ -122500,13 +125867,18 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.updateInfoText("Equipment tree reset!");
 	}
 	,updateInfoText: function(text) {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("skillInfoText").updateText(text);
-		}
+		this.updateText("skillInfoText",text);
 	}
 	,updateSkillPointsText: function() {
-		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("skillPointsText").updateText("Skill Points: " + this.skillPoints);
+		this.updateText("skillPointsText","Skill Points: " + this.skillPoints);
+	}
+	,updateText: function(fieldName,text) {
+		if(this.demoResult == null) {
+			return;
+		}
+		var updatable = this.demoResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,onScreenEvent: function(event,source) {
@@ -122632,7 +126004,11 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		this.effects = [];
 		this.slotInteractives = [];
 		this.refreshAnims = [];
-		var container = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
+		var containerEl = this.demoResult.getSingleItemByName("particleContainer");
+		if(containerEl == null) {
+			return;
+		}
+		var container = bh_multianim_MultiAnimParser_toh2dObject(containerEl.object);
 		var _g = 0;
 		while(_g < 8) {
 			var i = _g++;
@@ -122677,7 +126053,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 				e.remaining = def.duration;
 				if(e.cardResult != null) {
 					e.cardResult.setParameter("pct",100);
-					e.cardResult.getUpdatable("cardTimer").updateText("" + (def.duration | 0) + "s");
+					this.updateOn(e.cardResult,"cardTimer","" + (def.duration | 0) + "s");
 				}
 				this.spawnRefreshAnim(idx,e.isBuff);
 				this.setLog("Refreshed " + def.name + "!");
@@ -122691,8 +126067,8 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		_g.h["pct"] = 100;
 		_g.h["accentColor"] = def.color;
 		var cardResult1 = cardResult.buildWithParameters("statusCard",_g,null,null,true);
-		cardResult1.getUpdatable("cardName").updateText(def.name);
-		cardResult1.getUpdatable("cardTimer").updateText("" + (def.duration | 0) + "s");
+		this.updateOn(cardResult1,"cardName",def.name);
+		this.updateOn(cardResult1,"cardTimer","" + (def.duration | 0) + "s");
 		var iconType = screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP.h[def.name];
 		if(iconType != null) {
 			var iconResult = this.demoBuilder;
@@ -122708,7 +126084,11 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		}
 		var particleName = isBuff ? "buffSparkle" : "debuffSmoke";
 		var particles = this.demoBuilder.createParticles(particleName);
-		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
+		var particleContainerEl = this.demoResult.getSingleItemByName("particleContainer");
+		if(particleContainerEl == null) {
+			return;
+		}
+		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(particleContainerEl.object);
 		particleContainer.addChild(particles);
 		var effect = { name : def.name, desc : def.desc, color : def.color, duration : def.duration, remaining : def.duration, isBuff : isBuff, cardResult : cardResult1, particleObj : particles, fadeAlpha : 1.0, fading : false};
 		this.effects.push(effect);
@@ -122801,7 +126181,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 	}
 	,updateEffectCount: function() {
 		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("effectCountText").updateText("Effects: " + this.effects.length + " / " + 8);
+			this.updateOn(this.demoResult,"effectCountText","Effects: " + this.effects.length + " / " + 8);
 		}
 		this.updateButtonStates();
 	}
@@ -122820,12 +126200,11 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		_g.h["accentColor"] = e.color;
 		_g.h["pct"] = pct;
 		var result1 = result.buildWithParameters("effectTooltip",_g,null,null,true);
-		result1.getUpdatable("ttName").updateText(e.name);
-		var tmp = e.isBuff ? "[Buff]" : "[Debuff]";
-		result1.getUpdatable("ttType").updateText(tmp);
-		result1.getUpdatable("ttDesc").updateText(e.desc);
+		this.updateOn(result1,"ttName",e.name);
+		this.updateOn(result1,"ttType",e.isBuff ? "[Buff]" : "[Debuff]");
+		this.updateOn(result1,"ttDesc",e.desc);
 		var secs = Math.round(e.remaining * 10) / 10;
-		result1.getUpdatable("ttTimer").updateText("" + secs + "s remaining");
+		this.updateOn(result1,"ttTimer","" + secs + "s remaining");
 		if(e.cardResult != null) {
 			var cardBounds = e.cardResult.object.getBounds();
 			var tooltipSize = result1.object.getSize();
@@ -122862,7 +126241,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		var pct = Math.max(0,Math.min(100,e.remaining / e.duration * 100)) | 0;
 		this.tooltipResult.setParameter("pct",pct);
 		var secs = Math.round(e.remaining * 10) / 10;
-		this.tooltipResult.getUpdatable("ttTimer").updateText("" + secs + "s remaining");
+		this.updateOn(this.tooltipResult,"ttTimer","" + secs + "s remaining");
 	}
 	,updateGlowEffects: function(dt) {
 		this.glowTimer += dt;
@@ -122887,7 +126266,13 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 	}
 	,setLog: function(text) {
 		if(this.demoResult != null) {
-			this.demoResult.getUpdatable("logText").updateText(text);
+			this.updateOn(this.demoResult,"logText",text);
+		}
+	}
+	,updateOn: function(result,fieldName,text) {
+		var updatable = result.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,updateButtonStates: function() {
@@ -122904,7 +126289,14 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 		}
 	}
 	,spawnRefreshAnim: function(slotIndex,isBuff) {
-		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(this.demoResult.getSingleItemByName("particleContainer").object);
+		if(this.demoBuilder == null || this.demoResult == null) {
+			return;
+		}
+		var particleContainerEl = this.demoResult.getSingleItemByName("particleContainer");
+		if(particleContainerEl == null) {
+			return;
+		}
+		var particleContainer = bh_multianim_MultiAnimParser_toh2dObject(particleContainerEl.object);
 		var cx = slotIndex * 72 + 32.;
 		var cy = 44.;
 		var burstName = isBuff ? "buffRefreshBurst" : "debuffRefreshBurst";
@@ -122998,7 +126390,7 @@ screens_gamelike_StatusEffectsDemoScreen.prototype = $extend(DemoScreenBase.prot
 					var pct = Math.max(0,Math.min(100,e.remaining / e.duration * 100)) | 0;
 					e.cardResult.setParameter("pct",pct);
 					var secs = Math.max(0,Math.round(e.remaining * 10) / 10);
-					e.cardResult.getUpdatable("cardTimer").updateText("" + secs + "s");
+					this.updateOn(e.cardResult,"cardTimer","" + secs + "s");
 				}
 			}
 			--i;
@@ -124169,7 +127561,11 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.slotItems = _g;
 		this.statusTexts = [];
 		this.slotInteractives = [];
-		var container = bh_multianim_MultiAnimParser_toh2dObject(this.slotsResult.getSingleItemByName("slotContainer").object);
+		var containerEl = this.slotsResult.getSingleItemByName("slotContainer");
+		if(containerEl == null) {
+			return;
+		}
+		var container = bh_multianim_MultiAnimParser_toh2dObject(containerEl.object);
 		var font = bh_base_FontManager.getFontByName("m6x11");
 		var _g = 0;
 		while(_g < 10) {
@@ -124454,11 +127850,18 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.slotItems[9] != null) {
 			++count;
 		}
-		this.slotsResult.getUpdatable("slotCountText").updateText("Slots: " + count + " / " + 10 + " occupied");
+		this.updateText("slotCountText","Slots: " + count + " / " + 10 + " occupied");
 	}
 	,setLog: function(text) {
-		if(this.slotsResult != null) {
-			this.slotsResult.getUpdatable("logText").updateText(text);
+		this.updateText("logText",text);
+	}
+	,updateText: function(fieldName,text) {
+		if(this.slotsResult == null) {
+			return;
+		}
+		var updatable = this.slotsResult.getUpdatable(fieldName);
+		if(updatable != null) {
+			updatable.updateText(text);
 		}
 	}
 	,isAutoAddEnabled: function() {
@@ -124543,12 +127946,10 @@ screens_layout_SlotsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		if(this.slotsResult.getSlot("cs_d",2).isOccupied()) {
 			++occupied;
 		}
-		this.slotsResult.getUpdatable("comboInfoText").updateText("Occupied: " + occupied + " / 6  (only enabled slots accept clicks)");
+		this.updateText("comboInfoText","Occupied: " + occupied + " / 6  (only enabled slots accept clicks)");
 	}
 	,setComboLog: function(text) {
-		if(this.slotsResult != null) {
-			this.slotsResult.getUpdatable("comboStatusText").updateText(text);
-		}
+		this.updateText("comboStatusText",text);
 	}
 	,onScreenEvent: function(event,source) {
 	}
@@ -125238,7 +128639,7 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		var dialog = new screens_OkCancelDialog(this.screenManager,dialogScreenBuilder,okBuilder,cancelBuilder,"OK","Cancel",text);
 		dialog.closeTransition = closeTransition;
 		if(openTransition != null) {
-			this.screenManager.modalDialogWithTransition(dialog,this,dialogName,openTransition);
+			this.screenManager.modalDialogWithTransition(dialog,this,dialogName,null,openTransition);
 		} else {
 			this.screenManager.modalDialog(dialog,this,dialogName);
 		}
@@ -127194,6 +130595,8 @@ bh_base_OffsetCoord.ODD = -1;
 bh_base_HexLayout.pointy = new bh_base_HexOrientationData(Math.sqrt(3.0),Math.sqrt(3.0) / 2.0,0.0,1.5,Math.sqrt(3.0) / 3.0,-0.333333333333333315,0.0,0.66666666666666663,0.5);
 bh_base_HexLayout.flat = new bh_base_HexOrientationData(1.5,0.0,Math.sqrt(3.0) / 2.0,Math.sqrt(3.0),0.66666666666666663,0.0,-0.333333333333333315,Math.sqrt(3.0) / 3.0,0.0);
 h2d_Object.tmpPoint = new h2d_col_PointImpl(0.,0.);
+bh_base_TweenPropertyEntry._pool = [];
+bh_base_Tween._pool = [];
 h2d_filter_Filter.defaultUseScreenResolution = false;
 bh_base_filters__$PixelOutline_PixelOutlinePass.__meta__ = { obj : { ignore : ["shader"]}};
 h3d_shader_ScreenShader.SRC = "HXSMF2gzZC5zaGFkZXIuU2NyZWVuU2hhZGVyBwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACghfX2luaXRfXw4GAAALBnZlcnRleA4GAAACAgoAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAALAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAA";
@@ -127241,7 +130644,31 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
+bh_ui_UICardHandHelper.helperInstanceCounter = 0;
+bh_ui_UICardHandLayout._scratch = new bh_base_FPoint(0,0);
+bh_ui_UICardHandLayout._scratchSampleRates = [];
+bh_ui_UICardHandLayout._scratchSampleLengths = [];
+bh_ui_UICardHandLayout._scratchRates = [];
+bh_ui_UICardHandLayout._scratchAdjustedRates = [];
 bh_ui_UIInteractiveWrapper.VALID_CURSOR_SUFFIXES = ["hover","disabled"];
+bh_ui_UIMultiAnimGrid._scratchPoint = (function($this) {
+	var $r;
+	var x = 0;
+	var y = 0;
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	$r = new h2d_col_PointImpl(x,y);
+	return $r;
+}(this));
+bh_ui_UIMultiAnimGrid._scratchFPoint = new bh_base_FPoint(0,0);
+bh_ui_UIMultiAnimGrid._scratchFractionalHex = new bh_base_FractionalHex(0,0,0);
+bh_ui_UIMultiAnimGrid._scratchHex = new bh_base_Hex(0,0,0);
+bh_ui_UIMultiAnimGrid._scratchHex2 = new bh_base_Hex(0,0,0);
+bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP = new bh_base_FPoint(0,0);
 bh_ui_UIMultiAnimGrid.cardTargetCounter = 0;
 h2d_Flow.PADDING_IGNORE_PARENT = -2147483444;
 h2d_HtmlText.REG_SPACES = new EReg("[\r\n\t ]+","g");

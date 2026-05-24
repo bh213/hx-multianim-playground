@@ -205,14 +205,14 @@ version: 1.0
     text(m6x11, "shooting", #888888): 0, 0
     bitmap(generated(color(64, 64, #222233))): 0, 15
     stateAnim construct("state1",
-      "state1" => sheet "crew2", marine_r_shooting_u, 10, loop
-    ): 32, 63
+      "state1" => sheet "crew2", marine_r_shooting_u, 10, loop, center
+    ): 32, 47
 
     text(m6x11, "killed", #888888): 80, 0
     bitmap(generated(color(64, 64, #222233))): 80, 15
     stateAnim construct("state1",
-      "state1" => sheet "crew2", marine_l_killed, 10, loop
-    ): 112, 63
+      "state1" => sheet "crew2", marine_l_killed, 10, loop, center
+    ): 112, 47
   }
 
   // === Section 10: Ninepatch Sizes ===
@@ -244,6 +244,8 @@ version: 1.0
     pixels (
       line 0, 0, 40, 0, #ff4444
       line 0, 0, 0, 40, #44ff44
+      line 40, 0, 40, 40, #ff4444
+      line 0, 40, 40, 40, #44ff44
       line 0, 0, 40, 40, #4444ff
       line 40, 0, 0, 40, #ffff44
     ) {

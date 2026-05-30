@@ -36,6 +36,7 @@ class RichTextDemoScreen extends DemoScreenBase {
 	}
 
 	function showPopup(msg:String):Void {
+		if (result == null) return;
 		if (popupText != null) {
 			popupText.remove();
 		}

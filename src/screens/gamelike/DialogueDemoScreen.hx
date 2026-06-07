@@ -38,15 +38,20 @@ class DialogueDemoScreen extends DemoScreenBase {
 
 		demoBuilder = screenManager.buildFromResourceName("demos/gamelike/dialogue.manim", false);
 
-		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dialogueDemo", [], [
-			choice1Button => addButtonWithSingleBuilder(stdBuilder, "button", "Choice 1"),
-			choice2Button => addButtonWithSingleBuilder(stdBuilder, "button", "Choice 2"),
-		], true);
+		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "dialogueDemo", [], [], true);
 
 		demoResult = ui.builderResults;
-		choice1Button = ui.choice1Button;
-		choice2Button = ui.choice2Button;
 		addBuilderResult(demoResult);
+
+		// Choice buttons are built standalone (NOT as placeholders inside the incremental
+		// dialogueDemo) so that setText() actually re-renders their label. Positions match
+		// the former placeholder coords (dialogueDemo pos 50,80 + 120,305 / 410,305).
+		choice1Button = addButtonWithSingleBuilder(stdBuilder, "button", null, "Choice 1");
+		addElement(choice1Button, DefaultLayer);
+		choice1Button.getObject().setPosition(170, 385);
+		choice2Button = addButtonWithSingleBuilder(stdBuilder, "button", null, "Choice 2");
+		addElement(choice2Button, DefaultLayer);
+		choice2Button.getObject().setPosition(460, 385);
 
 		initDialogueNodes();
 		startNode("intro");
@@ -162,8 +167,8 @@ class DialogueDemoScreen extends DemoScreenBase {
 		updateText("speakerText", currentNode.speaker);
 		updateText("sceneText", currentNode.scene);
 
-		// Portrait color is a .manim parameter — the DSL handles bitmap regeneration
-		demoResult.setParameter("portraitColor", currentNode.portraitColor);
+		// Speaker drives the portrait; the .manim transition{} crossfades between speakers
+		demoResult.setParameter("speaker", speakerForColor(currentNode.portraitColor));
 
 		fullText = currentNode.text;
 		displayedChars = 0;
@@ -178,18 +183,34 @@ class DialogueDemoScreen extends DemoScreenBase {
 		updateText("stateText", 'Node: $currentNodeId');
 	}
 
+	function speakerForColor(c:Int):String {
+		return switch c {
+			case 0xFFFF7F50: "bartender";
+			case 0xFF7FDBDA: "narrator";
+			default: "oldman";
+		};
+	}
+
 	function showChoices():Void {
 		if (currentNode == null || demoResult == null) return;
 
+		// NOTE: make the button visible BEFORE setText. setParameter("buttonText")
+		// does not repaint a hidden object, and toggling visible afterward does not
+		// flush the pending change — so visibility must come first.
 		if (currentNode.choice1 != null && choice1Button != null) {
 			choice1Button.getObject().visible = true;
+			choice1Button.setText(currentNode.choice1.text);
 		}
 		if (currentNode.choice2 != null && choice2Button != null) {
 			choice2Button.getObject().visible = true;
+			choice2Button.setText(currentNode.choice2.text);
 		}
 
-		if (currentNode.choice1 == null && currentNode.choice2 == null && currentNode.next != null) {
-			updateText("continueText", "[Click to continue]");
+		// Continue-only node (no choices, just a linear `next`): reuse the first
+		// button as an explicit "Continue" advance so the branch can't dead-end.
+		if (currentNode.choice1 == null && currentNode.choice2 == null && currentNode.next != null && choice1Button != null) {
+			choice1Button.getObject().visible = true;
+			choice1Button.setText("Continue");
 		}
 	}
 
@@ -221,8 +242,13 @@ class DialogueDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIClick:
-				if (source == choice1Button && currentNode != null && currentNode.choice1 != null) {
-					startNode(currentNode.choice1.next);
+				if (source == choice1Button && currentNode != null) {
+					if (currentNode.choice1 != null) {
+						startNode(currentNode.choice1.next);
+					} else if (currentNode.next != null) {
+						// "Continue" advance on a linear node.
+						startNode(currentNode.next);
+					}
 				} else if (source == choice2Button && currentNode != null && currentNode.choice2 != null) {
 					startNode(currentNode.choice2.next);
 				}

@@ -28,6 +28,9 @@ class TextInputDemoScreen extends DemoScreenBase {
 	var lastNameInput:Null<UIMultiAnimTextInput>;
 	var emailInput:Null<UIMultiAnimTextInput>;
 
+	var multilineInput:Null<UIMultiAnimTextInput>;
+	var alphanumericInput:Null<UIMultiAnimTextInput>;
+
 	var enterAdvancesToggle:Null<UIStandardMultiCheckbox>;
 	var disableAllToggle:Null<UIStandardMultiCheckbox>;
 
@@ -52,6 +55,8 @@ class TextInputDemoScreen extends DemoScreenBase {
 			firstNameInput => addTextInput(stdBuilder, ""),
 			lastNameInput => addTextInput(stdBuilder, ""),
 			emailInput => addTextInput(stdBuilder, ""),
+			multilineInput => addTextInput(stdBuilder, ""),
+			alphanumericInput => addTextInput(stdBuilder, ""),
 			enterAdvancesToggle => addCheckbox(stdBuilder, false),
 			disableAllToggle => addCheckbox(stdBuilder, false),
 		]);
@@ -68,6 +73,8 @@ class TextInputDemoScreen extends DemoScreenBase {
 		firstNameInput = ui.firstNameInput;
 		lastNameInput = ui.lastNameInput;
 		emailInput = ui.emailInput;
+		multilineInput = ui.multilineInput;
+		alphanumericInput = ui.alphanumericInput;
 		enterAdvancesToggle = ui.enterAdvancesToggle;
 		disableAllToggle = ui.disableAllToggle;
 
@@ -113,11 +120,13 @@ class TextInputDemoScreen extends DemoScreenBase {
 		if (source == firstNameInput) return "First Name";
 		if (source == lastNameInput) return "Last Name";
 		if (source == emailInput) return "Email";
+		if (source == multilineInput) return "Multiline";
+		if (source == alphanumericInput) return "Alphanumeric";
 		return "Unknown";
 	}
 
 	function setAllDisabled(disabled:Bool):Void {
-		final inputs = [colorInput, greyInput, titleColorInput, titleGreyInput, maxLenInput, numericInput, firstNameInput, lastNameInput, emailInput];
+		final inputs = [colorInput, greyInput, titleColorInput, titleGreyInput, maxLenInput, numericInput, firstNameInput, lastNameInput, emailInput, multilineInput, alphanumericInput];
 		for (input in inputs) {
 			if (input != null)
 				input.disabled = disabled;
@@ -146,6 +155,8 @@ class TextInputDemoScreen extends DemoScreenBase {
 		firstNameInput = null;
 		lastNameInput = null;
 		emailInput = null;
+		multilineInput = null;
+		alphanumericInput = null;
 		enterAdvancesToggle = null;
 		disableAllToggle = null;
 		myTabGroup = null;

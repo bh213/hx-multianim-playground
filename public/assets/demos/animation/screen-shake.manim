@@ -1,0 +1,32 @@
+version: 1.0
+
+// Screen Shake Demo
+// Additive impact shake (bh.ui.ScreenShakeHelper). The #shakeStage point is the
+// h2d target the helper shakes; buttons trigger different shake patterns.
+
+#screenShakeDemo programmable() {
+    pos: 40, 80
+
+    text(exo2_16, "Screen Shake Helper", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "Additive impact shake — click a button to shake the stage below.", #aaaaaa, left, 700): 0, 30
+
+    // The stage: this whole #point is shaken by ScreenShakeHelper
+    #shakeStage point {
+        pos: 80, 80
+        ninepatch("ui", "Window_3x3_idle", 320, 200): 0, 0
+        bitmap(generated(colorWithText(140, 56, #4a90a4, "IMPACT", white, exo2_16))): 90, 36
+        bitmap(generated(color(48, 48, #cc4444))): 50, 130
+        bitmap(generated(color(48, 48, #44cc44))): 136, 130
+        bitmap(generated(color(48, 48, #4488ff))): 222, 130
+    }
+
+    // Triggers
+    placeholder(generated(cross(150, 28, #FF0000)), builderParameter("btnLight")): 0, 320
+    placeholder(generated(cross(150, 28, #FF0000)), builderParameter("btnHeavy")): 160, 320
+    placeholder(generated(cross(180, 28, #FF0000)), builderParameter("btnRecoil")): 320, 320
+    placeholder(generated(cross(180, 28, #FF0000)), builderParameter("btnLanding")): 510, 320
+    placeholder(generated(cross(150, 28, #FF0000)), builderParameter("btnCurve")): 0, 358
+
+    #shakeStatus(updatable) text(exo2_light_14, "Idle", #888888, left, 400): 170, 364
+}

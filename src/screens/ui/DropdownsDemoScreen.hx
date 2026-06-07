@@ -82,9 +82,11 @@ class DropdownsDemoScreen extends DemoScreenBase {
 		dropdownDisabled = ui.dropdownDisabled;
 		dropdownDisabled.disabled = true;
 		disableCheckbox = ui.disableCheckbox;
+		// dropdownDisabled is the dedicated always-disabled demo — exclude it from
+		// the global toggle so toggling off doesn't re-enable it.
 		allDropdowns = [
 			dropdownScrollable, dropdownAutoFew, dropdownAutoMany,
-			dropdownCustom, dropdownWide, dropdownLarge, dropdownDisabled,
+			dropdownCustom, dropdownWide, dropdownLarge,
 		];
 
 		addBuilderResult(demoResult);

@@ -4,7 +4,7 @@ import bh.ui.UIElement;
 import bh.ui.*;
 import bh.ui.UIMultiAnimSlider.UIStandardMultiAnimSlider;
 import bh.ui.UIMultiAnimCheckbox.UIStandardMultiCheckbox;
-import bh.ui.UIMultiAnimDropdown.UIStandardMultiAnimDropdown;
+import bh.ui.UIMultiAnimRadioButtons;
 import bh.ui.UIMultiAnimTextInput;
 import bh.multianim.MultiAnimBuilder;
 import bh.multianim.ProgrammableBuilder;
@@ -13,10 +13,11 @@ import bh.base.FontManager;
 
 class RichTextAutofitDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
+	var radioBuilder:Null<MultiAnimBuilder>;
 	var demoResult:Null<BuilderResult>;
 
 	// Controls
-	var modeDropdown:Null<UIStandardMultiAnimDropdown>;
+	var modeRadio:Null<UIMultiAnimRadioButtons>;
 	var widthSlider:Null<UIStandardMultiAnimSlider>;
 	var heightSlider:Null<UIStandardMultiAnimSlider>;
 	var chkPixellari:Null<UIStandardMultiCheckbox>;
@@ -33,10 +34,11 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 	var boundsGraphics:Null<h2d.Graphics>;
 	var currentText:Null<h2d.Text>;
 	var selectedFontName:String = "";
+	var overflow:Bool = false;
 
 	// State
 	var currentMode:Int = 0;
-	var currentTextStr:String = "Deal 50 fire damage";
+	var currentTextStr:String = "Deal 50 fire damage to all enemies\nwithin a 3 meter radius, then\nburn them for 10 turns.";
 	var needsRebuild:Bool = true;
 
 	static final MODE_ITEMS:Array<UIElementListItem> = [
@@ -50,16 +52,18 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 	static final FONT_NAMES:Array<String> = ["pixellari", "dd", "m6x11", "m5x7", "m3x6", "f7x5"];
 
 	static inline final DISPLAY_X = 40;
-	static inline final DISPLAY_Y = 245;
+	static inline final DISPLAY_Y = 315;
+	// Visual box height used in Width / Fill modes (where height is not a fit constraint).
+	static inline final UNBOUNDED_BOX_H = 80;
 
 	override public function load():Void {
 		setupDemo("Rich Text AutoFit", "Interactive autoFit explorer: choose bounds, fill mode, fonts, and text");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/graphics/rich-text-autofit.manim", false);
+		radioBuilder = screenManager.buildFromResourceName("radio.manim", false);
 
 		var ui = MacroUtils.macroBuildWithParameters(demoBuilder, "richTextAutofitDemo", [], [
-			modeDropdown => addDropdownWithSingleBuilder(stdBuilder, "dropdown", "list-panel", "list-item-120", "scrollbar", "scrollbar",
-				MODE_ITEMS, 0),
+			modeRadio => addRadio(radioBuilder, MODE_ITEMS, false, 0),
 			widthSlider => addSlider(stdBuilder, 200),
 			heightSlider => addSlider(stdBuilder, 40),
 			chkPixellari => addCheckbox(stdBuilder, true),
@@ -69,12 +73,12 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 			chkM3x6 => addCheckbox(stdBuilder, true),
 			chkF7x5 => addCheckbox(stdBuilder, true),
 			chkRichText => addCheckbox(stdBuilder, false),
-			textInput => addTextInput(stdBuilder, "Deal 50 fire damage"),
+			textInput => addTextInput(stdBuilder, "Deal 50 fire damage to all enemies\nwithin a 3 meter radius, then\nburn them for 10 turns."),
 		]);
 
 		demoResult = ui.builderResults;
 		addBuilderResult(demoResult);
-		modeDropdown = ui.modeDropdown;
+		modeRadio = ui.modeRadio;
 		widthSlider = ui.widthSlider;
 		heightSlider = ui.heightSlider;
 		chkPixellari = ui.chkPixellari;
@@ -93,7 +97,14 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 
 		boundsGraphics = new h2d.Graphics(displayContainer);
 
+		updateHeightDisabled();
 		needsRebuild = true;
+	}
+
+	// Height bound is only used by Box (1) and Fill Box (3) — disable the slider otherwise.
+	function updateHeightDisabled():Void {
+		if (heightSlider != null)
+			heightSlider.disabled = !(currentMode == 1 || currentMode == 3);
 	}
 
 	function getSelectedFonts():Array<h2d.Font> {
@@ -128,6 +139,8 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 			currentText = null;
 		}
 		selectedFontName = "";
+
+		overflow = false;
 
 		var fonts = getSelectedFonts();
 		if (fonts.length == 0) {
@@ -187,6 +200,11 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		// Determine which font was selected
 		selectedFontName = identifyFont(t.font, fonts);
 
+		// Detect overflow: even the smallest font may not fit the box.
+		// In Width / Fill modes height is not a fit constraint, so check against the visual box.
+		var boxH:Float = (currentMode == 1 || currentMode == 3) ? fitH : UNBOUNDED_BOX_H;
+		overflow = (t.textWidth > fitW + 0.5) || (t.textHeight > boxH + 0.5);
+
 		drawBounds();
 		updateStatus(null);
 	}
@@ -208,21 +226,16 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		var w:Float = widthSlider != null ? widthSlider.getIntValue() : 200;
 		var h:Float = heightSlider != null ? heightSlider.getIntValue() : 40;
 		var showHeight = currentMode == 1 || currentMode == 3; // Box or Fill Box
+		var boxH:Float = showHeight ? h : UNBOUNDED_BOX_H;
 
-		// Background
-		boundsGraphics.beginFill(0xFF222240, 1.0);
-		if (showHeight)
-			boundsGraphics.drawRect(0, 0, w, h);
-		else
-			boundsGraphics.drawRect(0, 0, w, 80);
+		// Background (tinted red when overflowing)
+		boundsGraphics.beginFill(overflow ? 0xFF402222 : 0xFF222240, 1.0);
+		boundsGraphics.drawRect(0, 0, w, boxH);
 		boundsGraphics.endFill();
 
-		// Border
-		boundsGraphics.lineStyle(1, 0xFF555588);
-		if (showHeight)
-			boundsGraphics.drawRect(0, 0, w, h);
-		else
-			boundsGraphics.drawRect(0, 0, w, 80);
+		// Border (red when overflowing)
+		boundsGraphics.lineStyle(1, overflow ? 0xFFFF5555 : 0xFF555588);
+		boundsGraphics.drawRect(0, 0, w, boxH);
 		boundsGraphics.lineStyle();
 	}
 
@@ -245,8 +258,9 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		var fontsStr = fontNames.join(", ");
 		var boundsStr = if (currentMode == 1 || currentMode == 3) '${w}x${h}' else '$w';
 		var richStr = (chkRichText != null && chkRichText.selected) ? " | Rich: ON" : "";
+		var overflowStr = overflow ? " | OVERFLOW: text exceeds bounds" : "";
 
-		updatable.updateText('Mode: $modeName | Bounds: $boundsStr | Fonts: $fontsStr | Selected: $selectedFontName$richStr');
+		updatable.updateText('Mode: $modeName | Bounds: $boundsStr | Fonts: $fontsStr | Selected: $selectedFontName$richStr$overflowStr');
 	}
 
 	function updateWidthLabel():Void {
@@ -274,8 +288,9 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 	override public function onScreenEvent(event:UIScreenEvent, source:Null<UIElement>):Void {
 		switch event {
 			case UIChangeItem(index, items):
-				if (source == modeDropdown && index >= 0 && index < MODE_ITEMS.length) {
+				if (source == modeRadio && index >= 0 && index < MODE_ITEMS.length) {
 					currentMode = index;
+					updateHeightDisabled();
 					needsRebuild = true;
 				}
 			case UIChangeValue(value):
@@ -321,8 +336,9 @@ class RichTextAutofitDemoScreen extends DemoScreenBase {
 		}
 		boundsGraphics = null;
 		demoBuilder = null;
+		radioBuilder = null;
 		demoResult = null;
-		modeDropdown = null;
+		modeRadio = null;
 		widthSlider = null;
 		heightSlider = null;
 		chkPixellari = null;

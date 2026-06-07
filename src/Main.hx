@@ -33,7 +33,7 @@ class Main extends hxd.App {
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
-		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "transitions",
+		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
 		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
 	];
 
@@ -100,7 +100,7 @@ class Main extends hxd.App {
 		currentScreenName = screenName;
 
 		if (screenName == DEFAULT_SCREEN) {
-			screenManager.switchTo(screenManager.getScreen(screenName), transition);
+			screenManager.switchTo(screenManager.getScreen(screenName), null, transition);
 		} else {
 			final targetScreen = screenManager.getScreen(screenName);
 			// Reload screen to avoid stale h2d.Graphics tiles on JS/WebGL
@@ -137,6 +137,9 @@ class Main extends hxd.App {
 		FontManager.registerFont("dd_thin", hxd.Res.fonts.digitaldisco_thin.toFont());
 		FontManager.registerFont("dd", hxd.Res.fonts.digitaldisco.toFont());
 		FontManager.registerFont("pixellari", hxd.Res.fonts.pixellari.toFont());
+		FontManager.registerFont("departuremono", hxd.Res.fonts.departuremono.toFont()); // monospace, has Unicode box-drawing glyphs
+		FontManager.registerFont("f3x5", hxd.Res.fonts.f3x5.toFont());
+		FontManager.registerFont("o4b03", hxd.Res.fonts.o4b03.toFont());
 
 		// Register SDF fonts
 		FontManager.registerFont("kreon_12", hxd.Res.fonts.kreon_30.toSdfFont(12, 3, 0.5, 0.1));
@@ -219,6 +222,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("animPath", new AnimPathDemoScreen(screenManager));
 		screenManager.addScreen("filters", new FiltersDemoScreen(screenManager));
 		screenManager.addScreen("floatingText", new FloatingTextDemoScreen(screenManager));
+		screenManager.addScreen("screenShake", new ScreenShakeDemoScreen(screenManager));
 		screenManager.addScreen("transitions", new TransitionsDemoScreen(screenManager));
 
 		// Game-like demos
@@ -422,12 +426,11 @@ class Main extends hxd.App {
 		try {
 			screenManager.update(dt);
 		} catch (e) {
+			// Runs ~60x/sec: a persistent throw would keep recurring, so surface the
+			// error on-screen only (no blocking js.Browser.alert spam every frame).
 			final msg = 'Error during update: $e';
 			trace(msg);
 			error(msg);
-			#if js
-			js.Browser.alert(msg);
-			#end
 		}
 	}
 

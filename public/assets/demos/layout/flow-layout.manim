@@ -158,4 +158,67 @@ version: 1.0
       }
     }
   }
+
+  // Section 8: Overflow scroll (maxWidth:80)
+  text(exo2_16, "Overflow scroll (maxWidth:80):", #cccccc): 0, 440
+
+  point {
+    pos: 0, 470
+    flow(maxWidth: 80, layout: horizontal, overflow: scroll) {
+      repeatable($i, range(0, $count)) {
+        staticRef($flowItem, w=>40, h=>20, color=>#4488cc, num=>$i);
+      }
+    }
+  }
+  @alpha(0.4) bitmap(generated(color(1, 24, #ffff00))): 80, 468
+
+  // Section 9: Overflow limit (maxWidth:80)
+  text(exo2_16, "Overflow limit (maxWidth:80):", #cccccc): 300, 440
+
+  point {
+    pos: 300, 470
+    flow(maxWidth: 80, layout: horizontal, overflow: limit) {
+      repeatable($i, range(0, $count)) {
+        staticRef($flowItem, w=>40, h=>20, color=>#cc8844, num=>$i);
+      }
+    }
+  }
+  @alpha(0.4) bitmap(generated(color(1, 24, #ffff00))): 380, 468
+
+  // Section 10: Per-child @flow.* annotations (halign / offset / absolute)
+  text(exo2_16, "Per-child @flow.* + verticalAlign:", #cccccc): 600, 440
+
+  point {
+    pos: 600, 470
+    flow(minWidth: 90, layout: vertical, verticalSpacing: 3, padding: 3, debug: true) {
+      staticRef($flowItem, w=>80, h=>14, color=>#cc4444, num=>0);
+      @flow.halign(right) staticRef($flowItem, w=>40, h=>14, color=>#44cc44, num=>1);
+      @flow.halign(middle) @flow.offset(0, 4) staticRef($flowItem, w=>50, h=>14, color=>#8844cc, num=>2);
+      @flow.absolute staticRef($flowItem, w=>16, h=>16, color=>#ffcc00, num=>9): 70, 2
+    }
+  }
+
+  // Section 11: Container alignment (horizontalAlign / verticalAlign apply to all children)
+  text(exo2_16, "Container align (middle):", #cccccc): 0, 560
+
+  point {
+    pos: 0, 590
+    flow(minWidth: 120, minHeight: 60, layout: vertical, verticalSpacing: 3, padding: 4, horizontalAlign: middle, verticalAlign: middle, debug: true) {
+      staticRef($flowItem, w=>30, h=>14, color=>#4488cc, num=>0);
+      staticRef($flowItem, w=>70, h=>14, color=>#44cc88, num=>1);
+      staticRef($flowItem, w=>50, h=>14, color=>#cc8844, num=>2);
+    }
+  }
+
+  // Section 12: fillWidth stretches each child's cell to the flow width
+  text(exo2_16, "fillWidth (stretch to flow):", #cccccc): 300, 560
+
+  point {
+    pos: 300, 590
+    flow(maxWidth: 140, layout: vertical, verticalSpacing: 3, padding: 4, fillWidth: true, background: ninepatch("ui", "Window_3x3_idle")) {
+      staticRef($flowItem, w=>20, h=>16, color=>#cc4488, num=>0);
+      staticRef($flowItem, w=>20, h=>16, color=>#44cc88, num=>1);
+      staticRef($flowItem, w=>20, h=>16, color=>#8844cc, num=>2);
+    }
+  }
 }

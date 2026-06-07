@@ -36,7 +36,8 @@ class CurvesDemoScreen extends DemoScreenBase {
 		"easeInCubic", "easeOutCubic", "easeInOutCubic",
 		"easeInBack", "easeOutBack", "easeInOutBack",
 		"easeOutBounce", "easeOutElastic",
-		"accelDecel", "snapBack", "cubicBezier", "custom"
+		"accelDecel", "snapBack", "cubicBezier", "custom",
+		"multiplied", "composed", "inverted", "scaled"
 	];
 
 	static final CURVE_ITEMS:Array<UIElementListItem> = [
@@ -44,7 +45,8 @@ class CurvesDemoScreen extends DemoScreenBase {
 		{name: "Ease In Cubic"}, {name: "Ease Out Cubic"}, {name: "Ease In/Out Cubic"},
 		{name: "Ease In Back"}, {name: "Ease Out Back"}, {name: "Ease In/Out Back"},
 		{name: "Ease Out Bounce"}, {name: "Ease Out Elastic"},
-		{name: "Accel/Decel"}, {name: "Snap Back"}, {name: "Cubic Bezier"}, {name: "Custom Points"}
+		{name: "Accel/Decel"}, {name: "Snap Back"}, {name: "Cubic Bezier"}, {name: "Custom Points"},
+		{name: "Multiply (op)"}, {name: "Apply (compose)"}, {name: "Invert (op)"}, {name: "Scale x0.6"}
 	];
 
 	static inline final ANIM_DURATION = 1.5;

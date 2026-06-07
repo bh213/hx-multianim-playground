@@ -53,6 +53,9 @@ class AnimPathDemoScreen extends DemoScreenBase {
 	// Animation objects
 	var circles:Array<h2d.Graphics> = [];
 	var animPaths:Array<AnimatedPath> = [];
+	// Indices whose path reached its end this frame; restarted AFTER the update loop
+	// so we never reassign animPaths[idx] while iterating it.
+	var pendingRestarts:Array<Int> = [];
 	var markerGraphics:Null<h2d.Graphics>;
 	var displayInteractive:Null<h2d.Interactive>;
 	var manimPaths:Null<MultiAnimPaths>;
@@ -293,6 +296,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		}
 		circles = [];
 		animPaths = [];
+		pendingRestarts = [];
 
 		if (manimPaths == null || demoBuilder == null) return;
 
@@ -385,7 +389,8 @@ class AnimPathDemoScreen extends DemoScreenBase {
 
 		ap.onEvent = (eventName, state) -> {
 			if (eventName == "pathEnd") {
-				restartPath(idx);
+				if (pendingRestarts.indexOf(idx) < 0)
+					pendingRestarts.push(idx);
 			}
 		};
 
@@ -424,6 +429,11 @@ class AnimPathDemoScreen extends DemoScreenBase {
 			if (ap != null) {
 				ap.update(dt);
 			}
+		}
+		if (pendingRestarts.length > 0) {
+			for (idx in pendingRestarts)
+				restartPath(idx);
+			pendingRestarts = [];
 		}
 	}
 
@@ -516,6 +526,7 @@ class AnimPathDemoScreen extends DemoScreenBase {
 		}
 		circles = [];
 		animPaths = [];
+		pendingRestarts = [];
 		startColorSwatches = [];
 		endColorSwatches = [];
 		demoBuilder = null;

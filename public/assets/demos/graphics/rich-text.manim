@@ -127,4 +127,10 @@ version: 1.0
   richText(dd, "Visit [link:shop][hl]the Shop[/][/] or open [link:inventory][hl]Inventory[/][/]", white, left, 520,
       styles: {hl: color(cyan)}): 648, 784
   text(m6x11, '[link:id]...[/] fires callback on click', #666666): 640, 812
+
+  // Section 17: Explicit line breaks with [br]
+  text(exo2_16, "Line Breaks [br]", #7fdbda): 0, 850
+  bitmap(generated(color(600, 58, #282838))): 0, 878
+  richText(dd, "First line[br]second line[br]third line", white, left, 600): 8, 882
+  text(m6x11, "[br] forces a line break (self-closing markup tag)", #666666): 0, 944
 }

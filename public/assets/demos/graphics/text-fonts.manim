@@ -105,4 +105,42 @@ version: 1.0
 
   bitmap(generated(color(300, 28, #002200))): 0, 1060
   @scale(2) text(pixellari, "Pixellari green glow", #88ff88, left, 300, dropShadowXY: 1.0, 1.0, dropShadowColor: #00ff44, dropShadowAlpha: 0.9): 4, 1064
+
+  // Section 6: Additional bitmap fonts
+  text(exo2_16, "More Bitmap Fonts:", #cccccc): 0, 1110
+
+  text(m6x11, "departuremono", #aaaaaa): 0, 1140
+  text(departuremono, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 1140
+
+  text(m6x11, "f3x5 (tiny)", #aaaaaa): 0, 1160
+  text(f3x5, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 1160
+
+  text(m6x11, "o4b03", #aaaaaa): 0, 1180
+  text(o4b03, "The quick brown fox jumps over the lazy dog 0123456789", #ffffff): 200, 1180
+
+  // Section 7: ASCII / Unicode box drawing (departuremono is monospace + has box glyphs)
+  text(exo2_16, "Box Drawing (departuremono):", #cccccc): 0, 1224
+
+  // Single-line box with a title divider
+  text(departuremono, "┌───────────────┐", #7fdbda): 0, 1294
+  text(departuremono, "│ Single  Box   │", #ffffff): 0, 1306
+  text(departuremono, "├───────────────┤", #7fdbda): 0, 1318
+  text(departuremono, "│ row a │ val 1 │", #cccccc): 0, 1330
+  text(departuremono, "│ row b │ val 2 │", #cccccc): 0, 1342
+  text(departuremono, "└───────────────┘", #7fdbda): 0, 1354
+
+  // Double-line box
+  text(departuremono, "╔═══════════════╗", #ffcc44): 240, 1294
+  text(departuremono, "║ Double  Box   ║", #ffffff): 240, 1306
+  text(departuremono, "╠═══════╦═══════╣", #ffcc44): 240, 1318
+  text(departuremono, "║ left  ║ right ║", #cccccc): 240, 1330
+  text(departuremono, "╚═══════╩═══════╝", #ffcc44): 240, 1354
+
+  // Rounded-corner box + tree connectors
+  text(departuremono, "╭───────────────╮", #88ff88): 480, 1294
+  text(departuremono, "│ Rounded Box   │", #ffffff): 480, 1306
+  text(departuremono, "╰───────────────╯", #88ff88): 480, 1318
+  text(departuremono, "├─ item one",        #cccccc): 480, 1336
+  text(departuremono, "├─ item two",        #cccccc): 480, 1348
+  text(departuremono, "└─ item three",      #cccccc): 480, 1360
 }

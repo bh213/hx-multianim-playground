@@ -516,7 +516,7 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		applyAnimFilter("filterBrightness", AFBrightness(1.5));
 		applyAnimFilter("filterSaturate", AFSaturate(0.0));
 		applyAnimFilter("filterGrayscale", AFGrayscale(1.0));
-		applyAnimFilter("filterHue", AFHue(120.0));
+		applyAnimFilter("filterHue", AFHue(120 * Math.PI / 180)); // hue rotation is in radians
 		applyAnimFilter("filterOutline", AFOutline(2.0, 0xFFFFFF00));
 		applyAnimFilter("filterPixelOutline", AFPixelOutline(0xFF00FF00));
 		applyAnimFilter("filterReplaceColor", AFReplaceColor([0xFF5B6EE1, 0xFF3F3F74], [0xFFE15B5B, 0xFF743F3F]));
@@ -524,7 +524,7 @@ class StateAnimDemoScreen extends DemoScreenBase {
 		// Combined filter examples
 		applyAnimFilterCombo("filterCombo1", AFTint(0xFFFF6644), AFOutline(1.0, 0xFFFFFFFF));
 		applyAnimFilterCombo("filterCombo2", AFGrayscale(1.0), AFPixelOutline(0xFFFF0000));
-		applyAnimFilterCombo("filterCombo3", AFHue(60.0), AFBrightness(1.3));
+		applyAnimFilterCombo("filterCombo3", AFHue(60 * Math.PI / 180), AFBrightness(1.3));
 
 	}
 

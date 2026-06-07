@@ -91,7 +91,9 @@ class ColorPickerDialog extends UIScreenBase {
 		final r = sliderR != null ? Std.int(sliderR.getFloatValue()) : 0;
 		final g = sliderG != null ? Std.int(sliderG.getFloatValue()) : 0;
 		final b = sliderB != null ? Std.int(sliderB.getFloatValue()) : 0;
-		return (r << 16) | (g << 8) | b;
+		// Include full alpha to match the repo's 0xAARRGGBB convention — consumers
+		// that honor the alpha byte (e.g. bitmap(generated(color(...)))) need it.
+		return 0xFF000000 | (r << 16) | (g << 8) | b;
 	}
 
 	function updatePreview():Void {
@@ -104,7 +106,7 @@ class ColorPickerDialog extends UIScreenBase {
 
 		final hexUpdatable = dialogResult.getUpdatable("hexValue");
 		if (hexUpdatable != null)
-			hexUpdatable.updateText("#" + StringTools.hex(color, 6));
+			hexUpdatable.updateText("#" + StringTools.hex(color & 0xFFFFFF, 6));
 
 		final rUpdatable = dialogResult.getUpdatable("rValue");
 		if (rUpdatable != null) rUpdatable.updateText(Std.string(sliderR != null ? Std.int(sliderR.getFloatValue()) : 0));

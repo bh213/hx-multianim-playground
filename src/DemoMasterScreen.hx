@@ -39,7 +39,7 @@ class DemoMasterScreen extends UIScreenBase {
 		switch event {
 			case UIClick:
 				if (source == backButton) {
-					screenManager.switchTo(screenManager.getScreen("nav"), SlideRight(0.25, EaseOutCubic));
+					screenManager.switchTo(screenManager.getScreen("nav"), null, SlideRight(0.25, EaseOutCubic));
 					#if js
 					Main.instance.currentScreenName = "nav";
 					js.Browser.window.location.hash = 'screen=nav';

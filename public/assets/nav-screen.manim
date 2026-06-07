@@ -59,7 +59,7 @@ layouts {
         point: 520, 568
         point: 680, 568
         point: 840, 568
-        // Animation & Effects (8, wraps to 2 rows)
+        // Animation & Effects (9, wraps to 2 rows)
         point: 40, 626
         point: 200, 626
         point: 360, 626
@@ -68,6 +68,7 @@ layouts {
         point: 840, 626
         point: 1000, 626
         point: 40, 658
+        point: 200, 658
         // Game-Like Demos (10, wraps to 2 rows)
         point: 40, 716
         point: 200, 716

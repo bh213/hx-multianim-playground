@@ -84,7 +84,7 @@ class DraggableDemoScreen extends DemoScreenBase {
 		addElementWithPos(drag, BX + 300, BY + 100, DefaultLayer);
 	}
 
-	// --- Mode 2: Horizontal constraint — always bounces back to start ---
+	// --- Mode 2: Horizontal constraint — locked to Y, X clamped to a rail, stays where released ---
 	function setupConstraintDrag():Void {
 		var drag = UIMultiAnimDraggable.create(new h2d.Bitmap(h2d.Tile.fromColor(0xFF44CC44, 50, 20)));
 		final minX = BX + 0;

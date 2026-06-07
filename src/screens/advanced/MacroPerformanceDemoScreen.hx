@@ -87,6 +87,15 @@ class MacroPerformanceDemoScreen extends DemoScreenBase {
 	}
 
 	function addObjects(type:String):Void {
+		// Mixing types would leave a heterogeneous batch in the result arrays, but
+		// updateObjects() assumes every entry is `currentType` (and would throw an
+		// unknown_param BuilderError). Clear first when switching type so only one
+		// homogeneous batch is ever live; same-type adds still accumulate.
+		final hasObjects = builderResults.length > 0 || incrementalResults.length > 0 || macroSimpleInstances.length > 0
+			|| macroComplexInstances.length > 0 || macroRepeatableInstances.length > 0;
+		if (hasObjects && type != currentType)
+			clearObjects();
+
 		final count = selectedCount;
 		currentType = type;
 

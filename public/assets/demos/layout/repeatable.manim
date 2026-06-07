@@ -1,5 +1,24 @@
 version: 1.0
 
+layouts {
+    // Hex ring: 7 hexes (center + 6 neighbors) via cube coordinates
+    hexgrid: pointy(22.0, 22.0) {
+        offset: 90, 700 {
+            #hexRing list {
+                point: $hex.cube(0, 0, 0)
+                point: $hex.cube(1, -1, 0)
+                point: $hex.cube(1, 0, -1)
+                point: $hex.cube(0, 1, -1)
+                point: $hex.cube(-1, 1, 0)
+                point: $hex.cube(-1, 0, 1)
+                point: $hex.cube(0, -1, 1)
+            }
+        }
+    }
+    // Sequence: 5 evenly-spaced points along a row
+    #seqRow sequence($i: 0..4) point: $i * 44, 0
+}
+
 #repeatableControls programmable() {
   text(m6x11, "Repeatable count:", #cccccc, left, 200): 0, 0
   #countText(updatable) text(m6x11, "3", #7fdbda, left, 50): 160, 0
@@ -78,6 +97,36 @@ version: 1.0
     repeatable($n, step($count, dx: 40)) {
       @alpha(1.0 - $n / 5) bitmap(generated(color(30, 30, #ff7f50))): 0, 0
       text(m6x11, $n, #ffffff, center, 30): 0, 10
+    }
+  }
+
+  // Section 7: 2D grid via the dedicated repeatable2d iterator (vs nested repeatable in Section 5)
+  text(exo2_16, "2D grid (repeatable2d):", #cccccc): 400, 430
+
+  point {
+    pos: 400, 460
+    repeatable2d($col, $row, range(0, $count), range(0, $count)) {
+      bitmap(generated(color(30, 30, #66aa55))): $col * 38, $row * 38
+      text(m6x11, ""+$col+","+$row, #ffffff, center, 30): $col * 38, $row * 38 + 10
+    }
+  }
+
+  // Section 8: Hex grid coordinate system via layout("hexRing")
+  text(exo2_16, "Hex grid (hexgrid + layout()):", #cccccc): 0, 600
+
+  repeatable($h, layout("hexRing")) {
+    bitmap(generated(color(36, 36, #7755cc))): -18, -18
+    text(m6x11, $h, #ffffff, center, 36): -18, -8
+  }
+
+  // Section 9: Named sequence() layout via layout("seqRow")
+  text(exo2_16, "sequence() layout:", #cccccc): 400, 600
+
+  point {
+    pos: 400, 630
+    repeatable($s, layout("seqRow")) {
+      bitmap(generated(color(40, 40, #cc7744))): 0, 0
+      text(m6x11, $s, #ffffff, center, 40): 0, 12
     }
   }
 }

@@ -30,7 +30,7 @@ version: 1.0
     #filterGrayscale stateanim("marine.anim", "idle", direction=>"r"): 482, 90
 
     // Row 2: hue, outline, pixelOutline, replaceColor
-    text(m6x11, "hue: 120", #888888): 10, 115
+    text(m6x11, "hue: 120 deg", #888888): 10, 115
     bitmap(generated(color(64, 64, #222233))): 10, 129
     #filterHue stateanim("marine.anim", "idle", direction=>"r"): 42, 177
 

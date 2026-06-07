@@ -6,6 +6,13 @@ version: 1.0
 #comboStatesShowcase programmable(mode:[idle, active, warning, error]=idle, level:[low, medium, high, critical]=low, state:[on, off, standby, unknown]=on) {
   pos: 40, 80
 
+  // Animate parameter-driven branch changes instead of instant pops.
+  transition {
+    mode: crossfade(0.15, easeoutquad)
+    level: slide(left, 0.2, 30, easeoutcubic)
+    state: flipX(0.25)
+  }
+
   // Section 1: @if per-state — each @(param=>value) is independent
   text(exo2_16, "@if per-state conditionals:", #cccccc): 0, 0
   point {
@@ -60,4 +67,30 @@ version: 1.0
   placeholder(generated(cross(120, 24, #FF0000)), builderParameter("cycleState")) {
     pos: 350, 234
   }
+
+  // Section 4: @switch — dedicated multi-state construct with block arms
+  text(exo2_16, "@switch(mode) multi-state:", #cccccc): 0, 300
+  point {
+    pos: 0, 330
+    bitmap(generated(color(120, 40, #222222))): 0, 0
+    @switch(mode) {
+      idle {
+        bitmap(generated(color(116, 36, #334455))): 2, 2
+        text(m6x11, "SWITCH: IDLE", #8888aa, center, 120): 0, 14
+      }
+      active {
+        bitmap(generated(color(116, 36, #335533))): 2, 2
+        text(m6x11, "SWITCH: ACTIVE", #88ff88, center, 120): 0, 14
+      }
+      warning {
+        bitmap(generated(color(116, 36, #555533))): 2, 2
+        text(m6x11, "SWITCH: WARN", #ffff88, center, 120): 0, 14
+      }
+      default {
+        bitmap(generated(color(116, 36, #553333))): 2, 2
+        text(m6x11, "SWITCH: ERROR", #ff8888, center, 120): 0, 14
+      }
+    }
+  }
+  text(exo2_light_14, "@switch shares the mode cycle button above", #888888, left, 300): 140, 342
 }

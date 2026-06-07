@@ -150,6 +150,7 @@ class NavScreen extends UIScreenBase {
 				{id: "animPath", title: "Anim Paths"},
 				{id: "filters", title: "Filters"},
 				{id: "floatingText", title: "Floating Text"},
+				{id: "screenShake", title: "Screen Shake"},
 				{id: "transitions", title: "Transitions"},
 			]
 		},

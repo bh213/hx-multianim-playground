@@ -137,9 +137,17 @@ class StatusEffectsDemoScreen extends DemoScreenBase {
 			final e = effects[idx];
 			if (e.name == def.name) {
 				e.remaining = def.duration;
+				// If it was mid fade-out, revive it — otherwise the fading branch in
+				// update() keeps lowering fadeAlpha and removes the just-"refreshed" card.
+				e.fading = false;
+				e.fadeAlpha = 1.0;
 				if (e.cardResult != null) {
+					e.cardResult.object.alpha = 1.0;
 					e.cardResult.setParameter("pct", 100);
 					updateOn(e.cardResult, "cardTimer", '${Std.int(def.duration)}s');
+				}
+				if (e.particleObj != null) {
+					e.particleObj.alpha = 1.0;
 				}
 				spawnRefreshAnim(idx, e.isBuff);
 				setLog('Refreshed ${def.name}!');

@@ -1,5 +1,12 @@
 version: 1.0
 
+// Inline atlas2: define named tile regions carved from the already-loaded "ui" sheet texture.
+#uiInline atlas2(sheet("ui")) {
+  chk-on: 1074, 0, 20, 20
+  chk-off: 1042, 40, 20, 20
+  drop: 1261, 20, 10, 10
+}
+
 #bitmapsAtlasShowcase programmable() {
   // Section 1: Generated color bitmaps
   text(exo2_16, "generated(color(w, h, color)):", #cccccc): 0, 0
@@ -136,4 +143,26 @@ version: 1.0
   text(m6x11, "2x", #888888): 30, 960
   text(m6x11, "3x", #888888): 80, 960
   text(m6x11, "4x", #888888): 150, 960
+
+  // Section 9: Inline atlas2 — named tiles defined in .manim (carved from the ui sheet)
+  text(exo2_16, 'Inline atlas2 — bitmap(sheet("uiInline", "name")):', #cccccc): 0, 1000
+
+  @scale(2) bitmap(sheet("uiInline", "chk-on")): 0, 1030
+  @scale(2) bitmap(sheet("uiInline", "chk-off")): 60, 1030
+  @scale(2) bitmap(sheet("uiInline", "drop")): 120, 1030
+
+  text(m6x11, "chk-on", #888888): 0, 1080
+  text(m6x11, "chk-off", #888888): 60, 1080
+  text(m6x11, "drop", #888888): 120, 1080
+
+  // Section 10: tileGroup — GPU-batched bitmaps merged into a single draw call
+  text(exo2_16, "tileGroup — GPU-batched bitmaps:", #cccccc): 0, 1110
+
+  tileGroup {
+    bitmap(generated(color(40, 40, #cc4444))): 0, 1140
+    bitmap(generated(color(40, 40, #44cc44))): 44, 1140
+    bitmap(generated(color(40, 40, #4444cc))): 88, 1140
+    bitmap(generated(color(40, 40, #cccc44))): 132, 1140
+  }
+  text(m6x11, "4 bitmaps batched into one TileGroup draw call", #888888): 0, 1190
 }

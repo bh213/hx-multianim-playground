@@ -3,12 +3,15 @@ version: 1.0
 // Dialogue Demo
 // Dialogue panel with speaker name, typewriter text, and branching choices.
 
-// ── Character portrait (color-driven via parameter) ──
-#dialoguePortrait programmable(portraitColor:color=#4a90a4) {
-    bitmap(generated(color(80, 80, $portraitColor))): 0, 0
+// ── Character portrait (speaker-driven, crossfades between speakers) ──
+#dialoguePortrait programmable(speaker:[oldman, bartender, narrator]=oldman) {
+    transition { speaker: crossfade(0.25, easeoutquad) }
+    @(speaker=>oldman)   bitmap(generated(color(80, 80, #4a90a4))): 0, 0
+    @(speaker=>bartender) bitmap(generated(color(80, 80, #ff7f50))): 0, 0
+    @(speaker=>narrator) bitmap(generated(color(80, 80, #7fdbda))): 0, 0
 }
 
-#dialogueDemo programmable(portraitColor:color=#4a90a4) {
+#dialogueDemo programmable(speaker:[oldman, bartender, narrator]=oldman) {
     pos: 50, 80
 
     // Title
@@ -22,7 +25,7 @@ version: 1.0
 
     // Character portrait area (color driven by dynamicRef parameter)
     ninepatch("ui", "Window_3x3_idle", 100, 100): 0, 170
-    dynamicRef($dialoguePortrait, portraitColor=>$portraitColor): 10, 180
+    dynamicRef($dialoguePortrait, speaker=>$speaker): 10, 180
 
     // Dialogue panel
     ninepatch("ui", "Window_3x3_idle", 580, 120): 120, 170
@@ -36,13 +39,9 @@ version: 1.0
     // Continue indicator
     #continueText(updatable) text(exo2_light_14, "", #7fdbda, right, 560): 135, 265
 
-    // Choice buttons
-    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice1Button")) {
-        pos: 120, 305
-    }
-    placeholder(generated(cross(270, 30, #FF0000)), builderParameter("choice2Button")) {
-        pos: 410, 305
-    }
+    // Choice buttons are built standalone in code (positioned at 170,385 / 460,385)
+    // so their setText() re-renders — placeholder buttons inside this incremental
+    // programmable would not repaint on their own setParameter.
 
     // Dialogue state info
     ninepatch("ui", "Window_3x3_idle", 700, 40): 0, 350

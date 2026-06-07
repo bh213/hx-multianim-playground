@@ -21,11 +21,11 @@ version: 1.0
     // Section: Autoscale (few items)
     text(exo2_16, "Autoscale (few items)", #7fdbda): 0, 140
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 162
-    text(exo2_light_14, "Panel sizes to fit items:", #cccccc): 0, 175
+    text(exo2_light_14, "Sizes to fit; auto-closes when pointer leaves:", #cccccc): 0, 175
 
     placeholder(generated(cross(120, 30, #FF0000)), builderParameter("dropdownAutoFew")) {
         pos: 0, 195
-        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>300}
+        settings{panelBuildName=>list-panel, itemBuildName=>list-item-120, panelMode=>scalable, height:int=>300, autoCloseOnLeave=>true, closeOnOutsideClick=>true}
     }
 
     #autoFewText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 180, 205
@@ -61,7 +61,7 @@ version: 1.0
 
     placeholder(generated(cross(180, 30, #FF0000)), builderParameter("dropdownWide")) {
         pos: 0, 615
-        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>180, itemBuildName=>list-item-w, width:int=>180, height:int=>150, font=>"pixellari", fontColor:int=>0x7fdbda12}
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>180, itemBuildName=>list-item-w, width:int=>180, height:int=>150, font=>"pixellari", fontColor:color=>#7fdbda}
     }
 
     #wideText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 240, 625
@@ -73,7 +73,7 @@ version: 1.0
 
     placeholder(generated(cross(200, 40, #FF0000)), builderParameter("dropdownLarge")) {
         pos: 0, 755
-        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>200, dropdown.btnHeight:int=>40, itemBuildName=>list-item-w, item.itemHeight:int=>28, width:int=>200, height:int=>150, font=>"exo2_16", fontColor:int=>0xffeb3b12}
+        settings{dropdownBuildName=>dropdown-w, dropdown.btnWidth:int=>200, dropdown.btnHeight:int=>40, itemBuildName=>list-item-w, item.itemHeight:int=>28, width:int=>200, height:int=>150, font=>"exo2_16", fontColor:color=>#ffeb3b}
     }
 
     #largeText(updatable) text(exo2_light_14, "Selected: None", #aaaaaa): 260, 770

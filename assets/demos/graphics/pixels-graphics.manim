@@ -8,10 +8,10 @@ version: 1.0
   point {
     pos: 0, 30
     pixels (
-      rect 0, 0, 20, 20, #ff4444
-      rect 20, 0, 20, 20, #44ff44
-      rect 0, 20, 20, 20, #4444ff
-      rect 20, 20, 20, 20, #ffff44
+      filledrect 0, 0, 20, 20, #ff4444
+      filledrect 20, 0, 20, 20, #44ff44
+      filledrect 0, 20, 20, 20, #4444ff
+      filledrect 20, 20, 20, 20, #ffff44
     ) {
       scale: 3
     }
@@ -124,6 +124,16 @@ version: 1.0
       );
     );
     text(m6x11, "Triangle", #888888): -26, 40
+  }
+
+  // Ellipse (filled + outline)
+  point {
+    pos: 720, 250
+    graphics (
+      ellipse(#44cc88, filled, 70, 40): 0, 0
+      ellipse(#cc8844, 2, 40, 22): 0, 0
+    );
+    text(m6x11, "Ellipse", #888888): -35, 40
   }
 
   // Section 3: Combined shapes

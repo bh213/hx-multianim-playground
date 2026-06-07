@@ -53,7 +53,7 @@ version: 1.0
     text(exo2_light_14, "Read-only", #aaaaaa): 0, 230
     placeholder(generated(cross(300, 24, #FF0000)), builderParameter("readOnlyInput")) {
         pos: 0, 248
-        settings{buildName=>textInputGrey, font=>dd, text=>"This is read-only", inputWidth=>240, width=>300}
+        settings{buildName=>textInputGrey, font=>dd, text=>"This is read-only", readOnly=>true, inputWidth=>240, width=>300}
     }
 
     text(exo2_light_14, "Disabled", #aaaaaa): 320, 230
@@ -101,4 +101,20 @@ version: 1.0
     text(exo2_16, "Events", #7fdbda): 0, 425
     bitmap(generated(color(600, 1, #7fdbda33))): 0, 447
     #eventLog(updatable) text(exo2_light_14, "Interact with inputs to see events here...", #ffffff, left, 580): 0, 460
+
+    // Section: Multiline & Alphanumeric
+    text(exo2_16, "Multiline & Alphanumeric", #7fdbda): 0, 500
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 522
+
+    text(exo2_light_14, "Multiline (Enter = newline)", #aaaaaa): 0, 530
+    placeholder(generated(cross(300, 60, #FF0000)), builderParameter("multilineInput")) {
+        pos: 0, 548
+        settings{buildName=>textInput, font=>dd, placeholder=>"Multiple lines...", multiline=>true, inputWidth=>240, width=>300}
+    }
+
+    text(exo2_light_14, "Alphanumeric only", #aaaaaa): 320, 530
+    placeholder(generated(cross(200, 24, #FF0000)), builderParameter("alphanumericInput")) {
+        pos: 320, 548
+        settings{buildName=>textInput, font=>dd, placeholder=>"Letters + digits...", filter=>alphanumeric, inputWidth=>140}
+    }
 }

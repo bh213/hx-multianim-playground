@@ -5565,8 +5565,8 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 		var dv = Math.pow(1 + this.group.speedIncr,dt);
 		this.vx *= dv;
 		this.vy *= dv;
-		this.vx += this.group.gravity * dt * this.group.sinGravityAngle;
-		this.vy += this.group.gravity * dt * this.group.cosGravityAngle;
+		this.vx += this.group.gravity * dt * this.group.cosGravityAngle;
+		this.vy += this.group.gravity * dt * this.group.sinGravityAngle;
 		this.group.applyForceFields(this,dt);
 		var effectiveVx = this.vx * velocityMult * this.group.shutdownSpeedMult;
 		var effectiveVy = this.vy * velocityMult * this.group.shutdownSpeedMult;
@@ -5730,10 +5730,10 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 	this.animStates = [];
 	this.subEmitters = [];
 	this.boundsLines = [];
-	this.boundsMaxY = 600;
-	this.boundsMinY = 0;
-	this.boundsMaxX = 800;
-	this.boundsMinX = 0;
+	this.boundsMaxY = Infinity;
+	this.boundsMinY = -Infinity;
+	this.boundsMaxX = Infinity;
+	this.boundsMinX = -Infinity;
 	this.boundsMode = bh_base_BoundsMode.None;
 	this.sizeCurve = null;
 	this.velocityCurve = null;
@@ -5750,9 +5750,9 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 	this.rotSpeedRand = 0;
 	this.rotSpeed = 0;
 	this.rotInit = 0;
-	this.sinGravityAngle = 0.0;
-	this.cosGravityAngle = 1.0;
-	this.gravityAngle = 0;
+	this.sinGravityAngle = 1.0;
+	this.cosGravityAngle = 0.0;
+	this.gravityAngle = Math.PI / 2;
 	this.gravity = 0;
 	this.speedIncr = 0;
 	this.speedRand = 0;
@@ -5850,7 +5850,6 @@ bh_base_ParticleGroup.prototype = {
 	}
 	,emitBurstAt: function(atX,atY,inheritVx,inheritVy,count) {
 		if(!this.started) {
-			this.batch.set_visible(true);
 			this.started = true;
 			this.globalTime = 0;
 		}
@@ -10838,7 +10837,11 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 				}
 				return new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TIdentifier(this.src.substring(idStart2,this.pos)),startLine,startCol);
 			}
-			this.pos++;
+			if(c == 65279) {
+				this.pos++;
+				continue;
+			}
+			throw haxe_Exception.thrown("" + this.sourceName + ":" + startLine + ":" + startCol + ": Unknown character \"" + String.fromCodePoint(c) + "\" (code " + c + ")");
 		}
 		return new bh_multianim__$MacroManimParser_Token(bh_multianim__$MacroManimParser_MacroTokenType.TEof,this.line,this.pos - this.lineStart + 1);
 	}
@@ -11983,7 +11986,22 @@ bh_multianim_MacroManimParser.prototype = {
 			this.advance();
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
 				this.validateRef(s);
-				coord = this.parseCoordinateMethodChain(s);
+				var isCoordChain;
+				var _g = this.tokens[this.tpos].type;
+				if(_g._hx_index == 32) {
+					var m = _g.s;
+					isCoordChain = bh_multianim_MacroManimParser.isKeyword(m,"extrapoint") ? true : s == "ctx" && (m == "hex" || m == "grid") ? true : this.tpos + 1 < this.tokens.length && this.tokens[this.tpos + 1].type._hx_index == 1;
+				} else {
+					isCoordChain = false;
+				}
+				if(isCoordChain) {
+					coord = this.parseCoordinateMethodChain(s);
+				} else {
+					var x = this.parseExpressionFromAtom(this.parsePropertyOrMethodChain(s),0,bh_multianim__$MacroManimParser_ExprType.EInt);
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					var y = this.parseIntegerOrReference();
+					coord = bh_multianim_Coordinates.OFFSET(x,y);
+				}
 			} else {
 				this.validateRef(s);
 				var x = this.parseExpressionFromAtom(bh_multianim_ReferenceableValue.RVReference(s),0,bh_multianim__$MacroManimParser_ExprType.EInt);
@@ -13027,14 +13045,15 @@ bh_multianim_MacroManimParser.prototype = {
 						if(enums.length > 0) {
 							this.eatComma();
 						}
-						enums.push(this.expectIdentifierOrString());
+						enums.push(this.parseConditionalValue());
 					}
-					this.validateConditionalEnumValues(paramName,defs,enums);
-					result.h[paramName] = bh_multianim_ConditionalValues.CoEnums(enums);
+					var value = this.makeBracketMultiValue(paramName,defs,enums);
+					result.h[paramName] = value;
 					break;
 				case 9:
 					this.advance();
 					var val = this.parseConditionalValue();
+					this.validateConditionalEnumValues(paramName,defs,[val]);
 					var paramDef = defs.h[paramName];
 					var cv = paramDef != null ? this.stringToConditional(val,paramDef.type) : this.stringToConditionalGeneric(val);
 					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv);
@@ -13081,6 +13100,7 @@ bh_multianim_MacroManimParser.prototype = {
 											result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val3,to1,false,false);
 										} else {
 											var valStr = this.rvToCondString(val3);
+											this.validateConditionalEnumValues(paramName,defs,[valStr]);
 											var paramDef1 = defs.h[paramName];
 											if(paramDef1 != null) {
 												var cv1 = this.stringToConditional(valStr,paramDef1.type);
@@ -13101,6 +13121,7 @@ bh_multianim_MacroManimParser.prototype = {
 							result.h[paramName] = bh_multianim_ConditionalValues.CoRange(val4,to2,false,false);
 						} else {
 							var valStr1 = this.rvToCondString(val4);
+							this.validateConditionalEnumValues(paramName,defs,[valStr1]);
 							var paramDef2 = defs.h[paramName];
 							if(paramDef2 != null) {
 								var cv3 = this.stringToConditional(valStr1,paramDef2.type);
@@ -13142,12 +13163,13 @@ bh_multianim_MacroManimParser.prototype = {
 						if(enums1.length > 0) {
 							this.eatComma();
 						}
-						enums1.push(this.expectIdentifierOrString());
+						enums1.push(this.parseConditionalValue());
 					}
-					this.validateConditionalEnumValues(paramName,defs,enums1);
-					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(bh_multianim_ConditionalValues.CoEnums(enums1));
+					var value1 = bh_multianim_ConditionalValues.CoNot(this.makeBracketMultiValue(paramName,defs,enums1));
+					result.h[paramName] = value1;
 				} else {
 					var val9 = this.parseConditionalValue();
+					this.validateConditionalEnumValues(paramName,defs,[val9]);
 					var paramDef3 = defs.h[paramName];
 					var cv4 = paramDef3 != null ? this.stringToConditional(val9,paramDef3.type) : this.stringToConditionalGeneric(val9);
 					result.h[paramName] = bh_multianim_ConditionalValues.CoNot(cv4);
@@ -13203,13 +13225,21 @@ bh_multianim_MacroManimParser.prototype = {
 	}
 	,stringToConditional: function(val,type) {
 		switch(type._hx_index) {
+		case 0:case 1:case 5:case 8:
+			var n = Std.parseInt(val);
+			if(n != null) {
+				return bh_multianim_ConditionalValues.CoValue(n);
+			} else {
+				return this.error("non-numeric conditional value \"" + val + "\" for a numeric parameter — int/uint/range/direction parameters only match numeric values, not strings");
+			}
+			break;
 		case 2:
 			var bits = type.bits;
 			var n = Std.parseInt(val);
 			if(n != null) {
 				return bh_multianim_ConditionalValues.CoFlag(n);
 			} else {
-				return bh_multianim_ConditionalValues.CoStringValue(val);
+				return this.error("non-numeric conditional value \"" + val + "\" for a flags parameter — flags parameters only match numeric values or bit[N] tests");
 			}
 			break;
 		case 3:
@@ -13220,6 +13250,18 @@ bh_multianim_MacroManimParser.prototype = {
 				return bh_multianim_ConditionalValues.CoStringValue(val);
 			}
 			break;
+		case 4:
+			var _g = type.from;
+			var _g = type.to;
+			var n = Std.parseInt(val);
+			if(n != null) {
+				return bh_multianim_ConditionalValues.CoValue(n);
+			} else {
+				return this.error("non-numeric conditional value \"" + val + "\" for a numeric parameter — int/uint/range/direction parameters only match numeric values, not strings");
+			}
+			break;
+		case 6:
+			return this.error("float parameters do not support equality conditionals (=> / !=) — float equality is unreliable; use a comparison (>=, <=, >, <) or a range (a..b) instead");
 		case 7:
 			switch(val.toLowerCase()) {
 			case "0":case "false":case "no":
@@ -13227,9 +13269,11 @@ bh_multianim_MacroManimParser.prototype = {
 			case "1":case "true":case "yes":
 				return bh_multianim_ConditionalValues.CoValue(1);
 			default:
-				return bh_multianim_ConditionalValues.CoStringValue(val);
+				return this.error("non-boolean conditional value \"" + val + "\" for a bool parameter — use true/false (or yes/no, 1/0)");
 			}
 			break;
+		case 9:
+			return bh_multianim_ConditionalValues.CoStringValue(val);
 		case 10:
 			var c = bh_multianim_MacroManimParser.tryStringToColor(val);
 			if(c != null) {
@@ -13260,6 +13304,34 @@ bh_multianim_MacroManimParser.prototype = {
 			return bh_multianim_ConditionalValues.CoValue(n);
 		} else {
 			return bh_multianim_ConditionalValues.CoStringValue(val);
+		}
+	}
+	,makeBracketMultiValue: function(paramName,defs,values) {
+		this.validateConditionalEnumValues(paramName,defs,values);
+		var paramDef = defs.h[paramName];
+		if(paramDef == null) {
+			var _g = [];
+			var _g1 = 0;
+			while(_g1 < values.length) {
+				var v = values[_g1];
+				++_g1;
+				_g.push(this.stringToConditionalGeneric(v));
+			}
+			return bh_multianim_ConditionalValues.CoAnyOf(_g);
+		}
+		var _g = paramDef.type;
+		if(_g._hx_index == 3) {
+			var _g1 = _g.values;
+			return bh_multianim_ConditionalValues.CoEnums(values);
+		} else {
+			var _g = [];
+			var _g1 = 0;
+			while(_g1 < values.length) {
+				var v = values[_g1];
+				++_g1;
+				_g.push(this.stringToConditional(v,paramDef.type));
+			}
+			return bh_multianim_ConditionalValues.CoAnyOf(_g);
 		}
 	}
 	,rvToCondString: function(rv) {
@@ -14082,6 +14154,9 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			var align = this.parseLayoutAlign();
 			this.eatSemicolon();
+			if(Object.prototype.hasOwnProperty.call(layouts.h,name)) {
+				this.error("layout \"" + name + "\" already defined — duplicate names silently shadow each other");
+			}
 			var value = { name : name, type : layoutType, grid : grid, hex : hex, offset : this.foldOffsets(offsets), alignX : align.alignX, alignY : align.alignY};
 			layouts.h[name] = value;
 		} else {
@@ -17854,17 +17929,11 @@ bh_multianim_MacroManimParser.prototype = {
 						pattern = bh_multianim_ConditionalValues.CoRange(this.parseRV(values[0]),this.parseRV(toStr),false,false);
 					} else if(Type.enumEq(this.tokens[this.tpos].type,bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) {
 						while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) values.push(this.parseSwitchArmValue());
-						switch(paramType._hx_index) {
-						case 3:
+						if(paramType._hx_index == 3) {
 							var _g1 = paramType.values;
 							this.validateConditionalEnumValues(paramName,defs,values);
 							pattern = bh_multianim_ConditionalValues.CoEnums(values);
-							break;
-						case 9:
-							this.validateConditionalEnumValues(paramName,defs,values);
-							pattern = bh_multianim_ConditionalValues.CoEnums(values);
-							break;
-						default:
+						} else {
 							var inner = [];
 							var _g2 = 0;
 							while(_g2 < values.length) {
@@ -17875,6 +17944,7 @@ bh_multianim_MacroManimParser.prototype = {
 							pattern = bh_multianim_ConditionalValues.CoAnyOf(inner);
 						}
 					} else {
+						this.validateConditionalEnumValues(paramName,defs,[values[0]]);
 						pattern = this.stringToConditional(values[0],paramType);
 					}
 				}
@@ -17890,17 +17960,11 @@ bh_multianim_MacroManimParser.prototype = {
 					pattern = bh_multianim_ConditionalValues.CoRange(this.parseRV(values1[0]),this.parseRV(toStr1),false,false);
 				} else if(Type.enumEq(this.tokens[this.tpos].type,bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) {
 					while(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TPipe)) values1.push(this.parseSwitchArmValue());
-					switch(paramType._hx_index) {
-					case 3:
+					if(paramType._hx_index == 3) {
 						var _g3 = paramType.values;
 						this.validateConditionalEnumValues(paramName,defs,values1);
 						pattern = bh_multianim_ConditionalValues.CoEnums(values1);
-						break;
-					case 9:
-						this.validateConditionalEnumValues(paramName,defs,values1);
-						pattern = bh_multianim_ConditionalValues.CoEnums(values1);
-						break;
-					default:
+					} else {
 						var inner1 = [];
 						var _g4 = 0;
 						while(_g4 < values1.length) {
@@ -17911,6 +17975,7 @@ bh_multianim_MacroManimParser.prototype = {
 						pattern = bh_multianim_ConditionalValues.CoAnyOf(inner1);
 					}
 				} else {
+					this.validateConditionalEnumValues(paramName,defs,[values1[0]]);
 					pattern = this.stringToConditional(values1[0],paramType);
 				}
 			}
@@ -18357,6 +18422,9 @@ bh_multianim_MacroManimParser.prototype = {
 					break;
 				}
 			}
+			if(Object.prototype.hasOwnProperty.call(constructs.h,stateName)) {
+				this.error("stateanim construct \"" + stateName + "\" already defined — duplicate names silently shadow each other");
+			}
 			constructs.h[stateName] = bh_multianim_StateAnimConstruct.IndexedSheet(sheet,name,fps,loop,center);
 		}
 		return constructs;
@@ -18590,6 +18658,9 @@ bh_multianim_MacroManimParser.prototype = {
 				} else {
 					this.error("unexpected path element: " + Std.string(this.tokens[this.tpos].type));
 				}
+			}
+			if(Object.prototype.hasOwnProperty.call(paths.h,pathName)) {
+				this.error("path \"" + pathName + "\" already defined — duplicate names silently shadow each other");
 			}
 			paths.h[pathName] = pathElements;
 		}
@@ -19299,6 +19370,9 @@ bh_multianim_MacroManimParser.prototype = {
 						segments[i].valueEnd = bh_multianim_ReferenceableValue.RVFloat((i + 1) / n);
 					}
 				}
+			}
+			if(Object.prototype.hasOwnProperty.call(curves.h,curveName)) {
+				this.error("curve \"" + curveName + "\" already defined — duplicate names silently shadow each other");
 			}
 			curves.h[curveName] = { easing : easing, points : points, segments : segments, operation : operation};
 		}
@@ -22104,7 +22178,26 @@ bh_multianim_BuilderResult.__name__ = "bh.multianim.BuilderResult";
 bh_multianim_BuilderResult.__interfaces__ = [bh_ui_UIInteractiveSource];
 bh_multianim_BuilderResult.prototype = {
 	getInteractives: function() {
-		return this.interactives.slice();
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.interactives;
+		while(_g1 < _g2.length) {
+			var o = _g2[_g1];
+			++_g1;
+			var n = o;
+			var attached = false;
+			while(n != null) {
+				if(n == this.object) {
+					attached = true;
+					break;
+				}
+				n = n.parent;
+			}
+			if(attached) {
+				_g.push(o);
+			}
+		}
+		return _g;
 	}
 	,get_isIncremental: function() {
 		return this.incrementalContext != null;
@@ -22547,17 +22640,82 @@ bh_multianim_MultiAnimBuilder.collectParamRefs = function(rv,result) {
 	}
 	switch(rv._hx_index) {
 	case 0:
-		var _g = rv.arrayRef;
+		var arrayRef = rv.arrayRef;
 		var idx = rv.index;
+		result.push(arrayRef);
 		bh_multianim_MultiAnimBuilder.collectParamRefs(idx,result);
+		break;
+	case 3:
+		var refArr = rv.refArr;
+		var _g = 0;
+		while(_g < refArr.length) {
+			var e = refArr[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(e,result);
+		}
 		break;
 	case 6:
 		var ref = rv.ref;
 		result.push(ref);
 		break;
+	case 8:
+		var _g = rv.ref;
+		var _g = rv.method;
+		var args = rv.args;
+		var _g = 0;
+		while(_g < args.length) {
+			var a = args[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(a,result);
+		}
+		break;
+	case 9:
+		var _g = rv.method;
+		var base = rv.base;
+		var args = rv.args;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(base,result);
+		var _g = 0;
+		while(_g < args.length) {
+			var a = args[_g];
+			++_g;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(a,result);
+		}
+		break;
 	case 10:
 		var e = rv.e;
 		bh_multianim_MultiAnimBuilder.collectParamRefs(e,result);
+		break;
+	case 11:
+		var name = rv.name;
+		var index = rv.index;
+		var defaultValue = rv.defaultValue;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(name,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(index,result);
+		if(defaultValue != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(defaultValue,result);
+		}
+		break;
+	case 12:
+		var name = rv.name;
+		var defaultValue = rv.defaultValue;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(name,result);
+		if(defaultValue != null) {
+			bh_multianim_MultiAnimBuilder.collectParamRefs(defaultValue,result);
+		}
+		break;
+	case 13:
+		var _g = rv.externalReference;
+		var _g = rv.palette;
+		var x = rv.x;
+		var y = rv.y;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(x,result);
+		bh_multianim_MultiAnimBuilder.collectParamRefs(y,result);
+		break;
+	case 14:
+		var _g = rv.externalReference;
+		var _g = rv.palette;
+		var index = rv.index;
+		bh_multianim_MultiAnimBuilder.collectParamRefs(index,result);
 		break;
 	case 15:
 		var cond = rv.condition;
@@ -28788,22 +28946,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var repeatTypeX = _g.repeatTypeX;
 			var repeatTypeY = _g.repeatTypeY;
 			var object = new h2d_Object();
-			var xRepeatCount = 0;
-			var yRepeatCount = 0;
-			var xDx = 0;
-			var xDy = 0;
-			var yDx = 0;
-			var yDy = 0;
-			var xLayoutName = null;
-			var yLayoutName = null;
-			var xArrayIterator = [];
-			var yArrayIterator = [];
-			var xValueVariableName = null;
-			var yValueVariableName = null;
-			var xRangeStart = 0;
-			var xRangeStep = 1;
-			var yRangeStart = 0;
-			var yRangeStep = 1;
 			var layouts = null;
 			var getLayoutsIfNeeded = function() {
 				if(layouts == null) {
@@ -28811,229 +28953,182 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				return layouts;
 			};
-			switch(repeatTypeX._hx_index) {
-			case 0:
-				var dirX = repeatTypeX.dx;
-				var dirY = repeatTypeX.dy;
-				var repeats = repeatTypeX.repeatCount;
-				xRepeatCount = this.resolveAsInteger(repeats);
-				xDx = dirX == null ? 0 : this.resolveAsInteger(dirX);
-				xDy = dirY == null ? 0 : this.resolveAsInteger(dirY);
-				break;
-			case 1:
-				var layoutName = repeatTypeX.layoutName;
-				var l = getLayoutsIfNeeded();
-				xRepeatCount = l.getLayoutSequenceLengthByLayoutName(layoutName);
-				xLayoutName = layoutName;
-				break;
-			case 2:
-				var variableName = repeatTypeX.valueVariableName;
-				var arrayName = repeatTypeX.arrayName;
-				xArrayIterator = this.resolveAsArray(bh_multianim_ReferenceableValue.RVArrayReference(arrayName));
-				xRepeatCount = xArrayIterator.length;
-				xValueVariableName = variableName;
-				break;
-			case 3:
-				var start = repeatTypeX.start;
-				var end = repeatTypeX.end;
-				var step = repeatTypeX.step;
-				xRangeStart = this.resolveAsInteger(start);
-				var rangeEnd = this.resolveAsInteger(end);
-				xRangeStep = this.resolveAsInteger(step);
-				xRepeatCount = Math.ceil((rangeEnd - xRangeStart) / xRangeStep);
-				xDx = 0;
-				xDy = 0;
-				break;
-			case 4:
-				var _g1 = repeatTypeX.bitmapVarName;
-				var _g1 = repeatTypeX.animFilename;
-				var _g1 = repeatTypeX.animationName;
-				var _g1 = repeatTypeX.selector;
-				throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
-			case 5:
-				var _g1 = repeatTypeX.bitmapVarName;
-				var _g1 = repeatTypeX.tilenameVarName;
-				var _g1 = repeatTypeX.sheetName;
-				var _g1 = repeatTypeX.tileFilter;
-				throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
-			}
-			switch(repeatTypeY._hx_index) {
-			case 0:
-				var dirX = repeatTypeY.dx;
-				var dirY = repeatTypeY.dy;
-				var repeats = repeatTypeY.repeatCount;
-				yRepeatCount = this.resolveAsInteger(repeats);
-				yDx = dirX == null ? 0 : this.resolveAsInteger(dirX);
-				yDy = dirY == null ? 0 : this.resolveAsInteger(dirY);
-				break;
-			case 1:
-				var layoutName = repeatTypeY.layoutName;
-				var l = getLayoutsIfNeeded();
-				yRepeatCount = l.getLayoutSequenceLengthByLayoutName(layoutName);
-				yLayoutName = layoutName;
-				break;
-			case 2:
-				var variableName = repeatTypeY.valueVariableName;
-				var arrayName = repeatTypeY.arrayName;
-				yArrayIterator = this.resolveAsArray(bh_multianim_ReferenceableValue.RVArrayReference(arrayName));
-				yRepeatCount = yArrayIterator.length;
-				yValueVariableName = variableName;
-				break;
-			case 3:
-				var start = repeatTypeY.start;
-				var end = repeatTypeY.end;
-				var step = repeatTypeY.step;
-				yRangeStart = this.resolveAsInteger(start);
-				var rangeEnd = this.resolveAsInteger(end);
-				yRangeStep = this.resolveAsInteger(step);
-				yRepeatCount = Math.ceil((rangeEnd - yRangeStart) / yRangeStep);
-				yDx = 0;
-				yDy = 0;
-				break;
-			case 4:
-				var _g1 = repeatTypeY.bitmapVarName;
-				var _g1 = repeatTypeY.animFilename;
-				var _g1 = repeatTypeY.animationName;
-				var _g1 = repeatTypeY.selector;
-				throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
-			case 5:
-				var _g1 = repeatTypeY.bitmapVarName;
-				var _g1 = repeatTypeY.tilenameVarName;
-				var _g1 = repeatTypeY.sheetName;
-				var _g1 = repeatTypeY.tileFilter;
-				throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
-			}
+			var resolveAxis = function(repeatType) {
+				var count = 0;
+				var dx = 0;
+				var dy = 0;
+				var layoutName = null;
+				var arrayIterator = [];
+				var valueVariableName = null;
+				var rangeStart = 0;
+				var rangeStep = 1;
+				var isRange = false;
+				switch(repeatType._hx_index) {
+				case 0:
+					var dirX = repeatType.dx;
+					var dirY = repeatType.dy;
+					var repeats = repeatType.repeatCount;
+					count = _gthis.resolveAsInteger(repeats);
+					dx = dirX == null ? 0 : _gthis.resolveAsInteger(dirX);
+					dy = dirY == null ? 0 : _gthis.resolveAsInteger(dirY);
+					break;
+				case 1:
+					var name = repeatType.layoutName;
+					count = getLayoutsIfNeeded().getLayoutSequenceLengthByLayoutName(name);
+					layoutName = name;
+					break;
+				case 2:
+					var variableName = repeatType.valueVariableName;
+					var arrayName = repeatType.arrayName;
+					arrayIterator = _gthis.resolveAsArray(bh_multianim_ReferenceableValue.RVArrayReference(arrayName));
+					count = arrayIterator.length;
+					valueVariableName = variableName;
+					break;
+				case 3:
+					var start = repeatType.start;
+					var end = repeatType.end;
+					var step = repeatType.step;
+					rangeStart = _gthis.resolveAsInteger(start);
+					var rangeEnd = _gthis.resolveAsInteger(end);
+					rangeStep = _gthis.resolveAsInteger(step);
+					count = Math.ceil((rangeEnd - rangeStart) / rangeStep);
+					isRange = true;
+					break;
+				case 4:
+					var _g = repeatType.bitmapVarName;
+					var _g = repeatType.animFilename;
+					var _g = repeatType.animationName;
+					var _g = repeatType.selector;
+					throw new bh_multianim_BuilderError("StateAnimIterator not supported in REPEAT2D",node,null);
+				case 5:
+					var _g = repeatType.bitmapVarName;
+					var _g = repeatType.tilenameVarName;
+					var _g = repeatType.sheetName;
+					var _g = repeatType.tileFilter;
+					throw new bh_multianim_BuilderError("TilesIterator not supported in REPEAT2D",node,null);
+				}
+				return { count : count, dx : dx, dy : dy, layoutName : layoutName, arrayIterator : arrayIterator, valueVariableName : valueVariableName, rangeStart : rangeStart, rangeStep : rangeStep, isRange : isRange};
+			};
+			var buildIterations = function(xAxis,yAxis,target,ir,bp) {
+				var gridCoordinateSystem = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
+				var hexCoordinateSystem = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
+				var yLayoutName = yAxis.layoutName;
+				var yIterator = yLayoutName == null ? null : getLayoutsIfNeeded().getIterator(yLayoutName);
+				var _g = 0;
+				var _g1 = yAxis.count;
+				while(_g < _g1) {
+					var yCount = _g++;
+					var resolvedY = yAxis.isRange ? yAxis.rangeStart + yCount * yAxis.rangeStep : yCount;
+					var yOffsetX = 0.0;
+					var yOffsetY = 0.0;
+					if(yIterator != null) {
+						var pt = yIterator.next();
+						yOffsetX = pt.x;
+						yOffsetY = pt.y;
+					} else {
+						yOffsetX = yAxis.dx * yCount;
+						yOffsetY = yAxis.dy * yCount;
+					}
+					var xLayoutName = xAxis.layoutName;
+					var xIterator = xLayoutName == null ? null : getLayoutsIfNeeded().getIterator(xLayoutName);
+					var _g2 = 0;
+					var _g3 = xAxis.count;
+					while(_g2 < _g3) {
+						var xCount = _g2++;
+						var resolvedX = xAxis.isRange ? xAxis.rangeStart + xCount * xAxis.rangeStep : xCount;
+						var xOffsetX = 0.0;
+						var xOffsetY = 0.0;
+						if(xIterator != null) {
+							var pt1 = xIterator.next();
+							xOffsetX = pt1.x;
+							xOffsetY = pt1.y;
+						} else {
+							xOffsetX = xAxis.dx * xCount;
+							xOffsetY = xAxis.dy * xCount;
+						}
+						_gthis.indexedParams.h[varNameX] = bh_multianim_ResolvedIndexParameters.Value(resolvedX);
+						_gthis.indexedParams.h[varNameY] = bh_multianim_ResolvedIndexParameters.Value(resolvedY);
+						var xValueVariableName = xAxis.valueVariableName;
+						var yValueVariableName = yAxis.valueVariableName;
+						if(xValueVariableName != null) {
+							_gthis.indexedParams.h[xValueVariableName] = bh_multianim_ResolvedIndexParameters.StringValue(xAxis.arrayIterator[xCount]);
+						}
+						if(yValueVariableName != null) {
+							_gthis.indexedParams.h[yValueVariableName] = bh_multianim_ResolvedIndexParameters.StringValue(yAxis.arrayIterator[yCount]);
+						}
+						var resolvedChildren = _gthis.resolveConditionalChildren(node.children);
+						var _g4 = 0;
+						while(_g4 < resolvedChildren.length) {
+							var childNode = resolvedChildren[_g4];
+							++_g4;
+							var obj = _gthis.build(childNode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(target),gridCoordinateSystem,hexCoordinateSystem,ir,bp);
+							if(obj == null) {
+								continue;
+							}
+							_gthis.addPosition(obj,xOffsetX + yOffsetX,xOffsetY + yOffsetY);
+						}
+						bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,_gthis.indexedParams);
+					}
+				}
+			};
+			var xAxis = resolveAxis(repeatTypeX);
+			var yAxis = resolveAxis(repeatTypeY);
 			if(Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameX) || Object.prototype.hasOwnProperty.call(this.indexedParams.h,varNameY)) {
 				throw new bh_multianim_BuilderError("cannot use repeatable2d index param \"" + varNameX + "\" or \"" + varNameY + "\" as it is already defined",node,null);
 			}
-			var yIterator = yLayoutName == null ? null : getLayoutsIfNeeded().getIterator(yLayoutName);
-			var _g1 = 0;
-			var _g2 = yRepeatCount;
-			while(_g1 < _g2) {
-				var yCount = _g1++;
-				var resolvedY;
-				if(repeatTypeY._hx_index == 3) {
-					var _g3 = repeatTypeY.start;
-					var _g4 = repeatTypeY.end;
-					var _g5 = repeatTypeY.step;
-					resolvedY = yRangeStart + yCount * yRangeStep;
-				} else {
-					resolvedY = yCount;
-				}
-				var gridCoordinateSystem1 = bh_multianim_MultiAnimParser.getGridCoordinateSystem(node);
-				var hexCoordinateSystem1 = bh_multianim_MultiAnimParser.getHexCoordinateSystem(node);
-				var yOffsetX = 0.0;
-				var yOffsetY = 0.0;
-				switch(repeatTypeY._hx_index) {
+			var repeatParamRefs = [];
+			var collectIteratorRefs = function(repeatType) {
+				switch(repeatType._hx_index) {
 				case 0:
-					var _g6 = repeatTypeY.dx;
-					var _g7 = repeatTypeY.dy;
-					var _g8 = repeatTypeY.repeatCount;
-					yOffsetX = yDx * yCount;
-					yOffsetY = yDy * yCount;
-					break;
-				case 1:
-					var _g9 = repeatTypeY.layoutName;
-					var pt = yIterator.next();
-					yOffsetX = pt.x;
-					yOffsetY = pt.y;
-					break;
-				case 2:
-					var _g10 = repeatTypeY.valueVariableName;
-					var _g11 = repeatTypeY.arrayName;
+					var dirX = repeatType.dx;
+					var dirY = repeatType.dy;
+					var repeats = repeatType.repeatCount;
+					bh_multianim_MultiAnimBuilder.collectParamRefs(repeats,repeatParamRefs);
+					if(dirX != null) {
+						bh_multianim_MultiAnimBuilder.collectParamRefs(dirX,repeatParamRefs);
+					}
+					if(dirY != null) {
+						bh_multianim_MultiAnimBuilder.collectParamRefs(dirY,repeatParamRefs);
+					}
 					break;
 				case 3:
-					var _g12 = repeatTypeY.start;
-					var _g13 = repeatTypeY.end;
-					var _g14 = repeatTypeY.step;
+					var start = repeatType.start;
+					var end = repeatType.end;
+					var step = repeatType.step;
+					bh_multianim_MultiAnimBuilder.collectParamRefs(start,repeatParamRefs);
+					bh_multianim_MultiAnimBuilder.collectParamRefs(end,repeatParamRefs);
+					bh_multianim_MultiAnimBuilder.collectParamRefs(step,repeatParamRefs);
 					break;
-				case 4:
-					var _g15 = repeatTypeY.bitmapVarName;
-					var _g16 = repeatTypeY.animFilename;
-					var _g17 = repeatTypeY.animationName;
-					var _g18 = repeatTypeY.selector;
-					break;
-				case 5:
-					var _g19 = repeatTypeY.bitmapVarName;
-					var _g20 = repeatTypeY.tilenameVarName;
-					var _g21 = repeatTypeY.sheetName;
-					var _g22 = repeatTypeY.tileFilter;
-					break;
+				default:
 				}
-				var xIterator = xLayoutName == null ? null : getLayoutsIfNeeded().getIterator(xLayoutName);
-				var _g23 = 0;
-				var _g24 = xRepeatCount;
-				while(_g23 < _g24) {
-					var xCount = _g23++;
-					var resolvedX;
-					if(repeatTypeX._hx_index == 3) {
-						var _g25 = repeatTypeX.start;
-						var _g26 = repeatTypeX.end;
-						var _g27 = repeatTypeX.step;
-						resolvedX = xRangeStart + xCount * xRangeStep;
-					} else {
-						resolvedX = xCount;
-					}
-					var xOffsetX = 0.0;
-					var xOffsetY = 0.0;
-					switch(repeatTypeX._hx_index) {
-					case 0:
-						var _g28 = repeatTypeX.dx;
-						var _g29 = repeatTypeX.dy;
-						var _g30 = repeatTypeX.repeatCount;
-						xOffsetX = xDx * xCount;
-						xOffsetY = xDy * xCount;
-						break;
-					case 1:
-						var _g31 = repeatTypeX.layoutName;
-						var pt1 = xIterator.next();
-						xOffsetX = pt1.x;
-						xOffsetY = pt1.y;
-						break;
-					case 2:
-						var _g32 = repeatTypeX.valueVariableName;
-						var _g33 = repeatTypeX.arrayName;
-						break;
-					case 3:
-						var _g34 = repeatTypeX.start;
-						var _g35 = repeatTypeX.end;
-						var _g36 = repeatTypeX.step;
-						break;
-					case 4:
-						var _g37 = repeatTypeX.bitmapVarName;
-						var _g38 = repeatTypeX.animFilename;
-						var _g39 = repeatTypeX.animationName;
-						var _g40 = repeatTypeX.selector;
-						break;
-					case 5:
-						var _g41 = repeatTypeX.bitmapVarName;
-						var _g42 = repeatTypeX.tilenameVarName;
-						var _g43 = repeatTypeX.sheetName;
-						var _g44 = repeatTypeX.tileFilter;
-						break;
-					}
-					this.indexedParams.h[varNameX] = bh_multianim_ResolvedIndexParameters.Value(resolvedX);
-					this.indexedParams.h[varNameY] = bh_multianim_ResolvedIndexParameters.Value(resolvedY);
-					if(xValueVariableName != null) {
-						this.indexedParams.h[xValueVariableName] = bh_multianim_ResolvedIndexParameters.StringValue(xArrayIterator[xCount]);
-					}
-					if(yValueVariableName != null) {
-						this.indexedParams.h[yValueVariableName] = bh_multianim_ResolvedIndexParameters.StringValue(yArrayIterator[yCount]);
-					}
-					var resolvedChildren = this.resolveConditionalChildren(node.children);
-					var _g45 = 0;
-					while(_g45 < resolvedChildren.length) {
-						var childNode = resolvedChildren[_g45];
-						++_g45;
-						var obj = this.build(childNode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(object),gridCoordinateSystem1,hexCoordinateSystem1,internalResults,builderParams);
-						if(obj == null) {
-							continue;
-						}
-						this.addPosition(obj,xOffsetX + yOffsetX,xOffsetY + yOffsetY);
-					}
-					bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,this.indexedParams);
-				}
+			};
+			collectIteratorRefs(repeatTypeX);
+			collectIteratorRefs(repeatTypeY);
+			if(this.incrementalMode && this.incrementalContext != null) {
+				bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs(node.children,repeatParamRefs);
+				HxOverrides.remove(repeatParamRefs,varNameX);
+				HxOverrides.remove(repeatParamRefs,varNameY);
 			}
+			var hasIncrementalRepeat = this.incrementalMode && this.incrementalContext != null && repeatParamRefs.length > 0;
+			var savedIncrementalMode = this.incrementalMode;
+			var savedIncrementalCtx = this.incrementalContext;
+			if(hasIncrementalRepeat) {
+				var excludeRefs = repeatParamRefs.concat([varNameY]);
+				var _g1 = 0;
+				var _g2 = node.children;
+				while(_g1 < _g2.length) {
+					var childNode = _g2[_g1];
+					++_g1;
+					this.markUntrackedParamsInSubtree(childNode,savedIncrementalCtx,varNameX,excludeRefs);
+				}
+				this.incrementalMode = false;
+			}
+			var savedSuppressConditionalTracking = this.suppressConditionalTracking;
+			if(this.incrementalMode && this.incrementalContext != null) {
+				this.suppressConditionalTracking = true;
+			}
+			buildIterations(xAxis,yAxis,object,internalResults,builderParams);
+			this.suppressConditionalTracking = savedSuppressConditionalTracking;
 			var _this = this.indexedParams;
 			if(Object.prototype.hasOwnProperty.call(_this.h,varNameX)) {
 				delete(_this.h[varNameX]);
@@ -29041,6 +29136,38 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var _this = this.indexedParams;
 			if(Object.prototype.hasOwnProperty.call(_this.h,varNameY)) {
 				delete(_this.h[varNameY]);
+			}
+			if(hasIncrementalRepeat) {
+				this.incrementalMode = savedIncrementalMode;
+				var capturedObject1 = object;
+				var capturedTypeX = repeatTypeX;
+				var capturedTypeY = repeatTypeY;
+				var capturedVarNameX = varNameX;
+				var capturedVarNameY = varNameY;
+				var capturedBP1 = builderParams;
+				var capturedIR1 = internalResults;
+				var capturedCtx1 = savedIncrementalCtx;
+				savedIncrementalCtx.trackExpression(function() {
+					var newXAxis = resolveAxis(capturedTypeX);
+					var newYAxis = resolveAxis(capturedTypeY);
+					capturedCtx1.cleanupDestroyedSubtree(capturedIR1,capturedObject1);
+					capturedObject1.removeChildren();
+					var savedMode = _gthis.incrementalMode;
+					var savedCtx = _gthis.incrementalContext;
+					_gthis.incrementalMode = false;
+					_gthis.incrementalContext = null;
+					buildIterations(newXAxis,newYAxis,capturedObject1,capturedIR1,capturedBP1);
+					var _this = _gthis.indexedParams;
+					if(Object.prototype.hasOwnProperty.call(_this.h,capturedVarNameX)) {
+						delete(_this.h[capturedVarNameX]);
+					}
+					var _this = _gthis.indexedParams;
+					if(Object.prototype.hasOwnProperty.call(_this.h,capturedVarNameY)) {
+						delete(_this.h[capturedVarNameY]);
+					}
+					_gthis.incrementalMode = savedMode;
+					_gthis.incrementalContext = savedCtx;
+				},repeatParamRefs,capturedObject1);
 			}
 			skipChildren = true;
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(object);
@@ -29414,12 +29541,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			if(savedIncMode) {
 				this.incrementalMode = savedIncMode;
+				var armRefs = [];
 				var switchParamRefs = [paramName];
 				var _g = 0;
 				while(_g < arms.length) {
 					var arm = arms[_g];
 					++_g;
-					bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs(arm.children,switchParamRefs);
+					var refs = [];
+					bh_multianim_MultiAnimBuilder.collectChildConditionalParamRefs(arm.children,refs);
 					var _g1 = 0;
 					var _g2 = arm.children;
 					while(_g1 < _g2.length) {
@@ -29430,22 +29559,53 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						while(_g3 < childRefs.length) {
 							var r = childRefs[_g3];
 							++_g3;
-							if(switchParamRefs.indexOf(r) < 0) {
-								switchParamRefs.push(r);
+							if(refs.indexOf(r) < 0) {
+								refs.push(r);
 							}
 						}
-						bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs(child,switchParamRefs);
+						bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs(child,refs);
+					}
+					armRefs.push(refs);
+					var _g4 = 0;
+					while(_g4 < refs.length) {
+						var r1 = refs[_g4];
+						++_g4;
+						if(switchParamRefs.indexOf(r1) < 0) {
+							switchParamRefs.push(r1);
+						}
 					}
 				}
 				var capturedArms = arms;
 				var capturedParamName = paramName;
 				var capturedContainer = container;
-				var capturedBP1 = builderParams;
-				var capturedIR1 = internalResults;
-				var capturedCtx1 = savedIncCtx;
+				var capturedBP2 = builderParams;
+				var capturedIR2 = internalResults;
+				var capturedCtx2 = savedIncCtx;
+				var capturedArmRefs = armRefs;
+				var currentArmIdx = matchedArm == null ? -1 : capturedArms.indexOf(matchedArm);
 				savedIncCtx.trackExpression(function() {
 					var newArm = _gthis.resolveMatchedSwitchArm(capturedParamName,capturedArms);
-					capturedCtx1.cleanupDestroyedSubtree(capturedIR1,capturedContainer);
+					var newArmIdx = newArm == null ? -1 : capturedArms.indexOf(newArm);
+					if(newArmIdx == currentArmIdx) {
+						var relevant = Object.prototype.hasOwnProperty.call(capturedCtx2.changedParams.h,capturedParamName);
+						if(!relevant && newArmIdx >= 0) {
+							var _g = 0;
+							var _g1 = capturedArmRefs[newArmIdx];
+							while(_g < _g1.length) {
+								var r = _g1[_g];
+								++_g;
+								if(Object.prototype.hasOwnProperty.call(capturedCtx2.changedParams.h,r)) {
+									relevant = true;
+									break;
+								}
+							}
+						}
+						if(!relevant) {
+							return;
+						}
+					}
+					currentArmIdx = newArmIdx;
+					capturedCtx2.cleanupDestroyedSubtree(capturedIR2,capturedContainer);
 					capturedContainer.removeChildren();
 					if(newArm != null) {
 						var savedMode = _gthis.incrementalMode;
@@ -29459,7 +29619,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						while(_g < _g1.length) {
 							var child = _g1[_g];
 							++_g;
-							_gthis.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(capturedContainer),gcs,hcs,capturedIR1,capturedBP1);
+							_gthis.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(capturedContainer),gcs,hcs,capturedIR2,capturedBP2);
 						}
 						_gthis.incrementalMode = savedMode;
 						_gthis.incrementalContext = savedCtx;
@@ -29548,11 +29708,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 					var indexedKey = "" + name + " " + idx;
 					if(Object.prototype.hasOwnProperty.call(names.h,indexedKey)) {
-						names.h[indexedKey].push(this.toNamedResult(updatableName,builtObject,node));
-					} else {
-						var v = [this.toNamedResult(updatableName,builtObject,node)];
-						names.h[indexedKey] = v;
+						throw new bh_multianim_BuilderError("indexed name \"" + name + "[" + idx + "]\" is built more than once with the same index — a 1-D indexed name whose index recurs (nested loops, or a duplicate-value iterator) collides. Give the inner loop a unique index or use a 2-D indexed name (#name[indexX, indexY]).",this.currentNode,"indexed_name_collision");
 					}
+					var v = [this.toNamedResult(updatableName,builtObject,node)];
+					names.h[indexedKey] = v;
 				}
 				break;
 			case 3:
@@ -29582,11 +29741,10 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 					var indexedKey = "" + name + " " + idxX + " " + idxY;
 					if(Object.prototype.hasOwnProperty.call(names.h,indexedKey)) {
-						names.h[indexedKey].push(this.toNamedResult(updatableName,builtObject,node));
-					} else {
-						var v = [this.toNamedResult(updatableName,builtObject,node)];
-						names.h[indexedKey] = v;
+						throw new bh_multianim_BuilderError("indexed name \"" + name + "[" + idxX + "," + idxY + "]\" is built more than once with the same index pair — the indices collide. Ensure each (indexX, indexY) is unique.",this.currentNode,"indexed_name_collision");
 					}
+					var v = [this.toNamedResult(updatableName,builtObject,node)];
+					names.h[indexedKey] = v;
 				}
 				break;
 			default:
@@ -29715,6 +29873,20 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				} else {
 					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
 				}
+				var _g1 = 0;
+				var _g2 = internalResults.slots;
+				while(_g1 < _g2.length) {
+					var __se = _g2[_g1];
+					++_g1;
+					var _g3 = __se.key;
+					if(_g3._hx_index == 1) {
+						var n = _g3.name;
+						var i = _g3.index;
+						if(n == baseName && i == index) {
+							throw new bh_multianim_BuilderError("indexed slot \"" + baseName + "[" + index + "]\" is built more than once with the same index — a 1-D indexed slot whose index recurs (nested loops, or a duplicate-value iterator) collides. Give the inner loop a unique index or use a 2-D indexed slot (#name[indexX, indexY]).",this.currentNode,"indexed_slot_collision");
+						}
+					}
+				}
 				internalResults.slots.push({ key : bh_multianim_SlotKey.Indexed(baseName,index), handle : new bh_multianim_SlotHandle(object,slotIncrementalCtx,slotContentTarget)});
 				break;
 			case 3:
@@ -29736,6 +29908,21 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					indexY = tmp;
 				} else {
 					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
+				}
+				var _g = 0;
+				var _g1 = internalResults.slots;
+				while(_g < _g1.length) {
+					var __se = _g1[_g];
+					++_g;
+					var _g2 = __se.key;
+					if(_g2._hx_index == 2) {
+						var n = _g2.name;
+						var ix = _g2.indexX;
+						var iy = _g2.indexY;
+						if(n == baseName && ix == indexX && iy == indexY) {
+							throw new bh_multianim_BuilderError("indexed slot \"" + baseName + "[" + indexX + "," + indexY + "]\" is built more than once with the same index pair — the indices collide. Ensure each (indexX, indexY) is unique.",this.currentNode,"indexed_slot_collision");
+						}
+					}
 				}
 				internalResults.slots.push({ key : bh_multianim_SlotKey.Indexed2D(baseName,indexX,indexY), handle : new bh_multianim_SlotHandle(object,slotIncrementalCtx,slotContentTarget)});
 				break;
@@ -29885,13 +30072,16 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var v = type.v;
 			var m = new h3d_MatrixImpl();
 			m.identity();
-			m.colorSaturate(this.resolveAsNumber(v));
+			m.colorSaturate(this.resolveAsNumber(v) - 1.0);
 			return new h2d_filter_ColorMatrix(m);
 		case 4:
 			var v = type.v;
 			var m = new h3d_MatrixImpl();
 			m.identity();
-			m.colorLightness(this.resolveAsNumber(v));
+			var b = this.resolveAsNumber(v);
+			m._11 = b;
+			m._22 = b;
+			m._33 = b;
 			return new h2d_filter_ColorMatrix(m);
 		case 5:
 			var v = type.v;
@@ -29903,7 +30093,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var v = type.v;
 			var m = new h3d_MatrixImpl();
 			m.identity();
-			m.colorHue(this.resolveAsNumber(v));
+			m.colorHue(this.resolveAsNumber(v) * 3.14159265358979323 / 180.0);
 			return new h2d_filter_ColorMatrix(m);
 		case 7:
 			var color = type.color;
@@ -30178,7 +30368,11 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			group.emitSync = this.resolveAsNumber(particlesDef.emitSync);
 		}
 		if(particlesDef.maxLife != null) {
-			group.life = this.resolveAsNumber(particlesDef.maxLife);
+			var resolvedLife = this.resolveAsNumber(particlesDef.maxLife);
+			if(resolvedLife <= 0) {
+				throw new bh_multianim_BuilderError("maxLife must be greater than 0, got " + resolvedLife,this.currentNode,null);
+			}
+			group.life = resolvedLife;
 		}
 		if(particlesDef.lifeRandom != null) {
 			group.lifeRand = this.resolveAsNumber(particlesDef.lifeRandom);
@@ -31576,7 +31770,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var node = this.multiParserResult.nodes.h[name];
 			if(node == null) {
-				throw haxe_Exception.thrown("buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could find element \"" + name + "\" to build");
+				throw haxe_Exception.thrown("buildWithParameters " + (inputParameters == null ? "null" : haxe_ds_StringMap.stringify(inputParameters.h)) + ": could not find element \"" + name + "\" to build");
 			}
 			var hasParams = inputParameters != null && bh_base_MapTools.count(inputParameters) > 0;
 			var definitions = this.getProgrammableParameterDefinitions(node,hasParams);
@@ -33710,7 +33904,7 @@ bh_paths_AnimatedPath.prototype = {
 		case 0:
 			var baseSpeed = _g.baseSpeed;
 			var currentRate = this.pathLength <= 0 ? 0. : Math.min(this.distance / this.pathLength,1.0);
-			var speedMultiplier = this.evaluateCurveSlot(this.speedCurveSegments,currentRate);
+			var speedMultiplier = this.evaluateCurveSlot(this.speedCurveSegments,this.reversed ? 1.0 - currentRate : currentRate);
 			effectiveSpeed = baseSpeed * speedMultiplier;
 			this.distance += dt * effectiveSpeed;
 			rate = this.pathLength <= 0 ? 0. : Math.min(this.distance / this.pathLength,1.0);
@@ -33726,9 +33920,10 @@ bh_paths_AnimatedPath.prototype = {
 			break;
 		}
 		while(this.currentEventIndex < this.timedEvents.length) {
-			var ev = this.timedEvents[this.currentEventIndex];
-			if(ev.atRate <= rate) {
-				this.computeState(this.reversed ? 1.0 - ev.atRate : ev.atRate);
+			var ev = this.reversed ? this.timedEvents[this.timedEvents.length - 1 - this.currentEventIndex] : this.timedEvents[this.currentEventIndex];
+			var triggerProgress = this.reversed ? 1.0 - ev.atRate : ev.atRate;
+			if(triggerProgress <= rate) {
+				this.computeState(ev.atRate);
 				this.currentState.speed = effectiveSpeed;
 				this.currentState.cycle = this.cycleCount;
 				this.fireEvent(ev.eventName);
@@ -33760,6 +33955,9 @@ bh_paths_AnimatedPath.prototype = {
 				if(this.pingPong) {
 					this.reversed = !this.reversed;
 				}
+				this.computeState(this.reversed ? 1.0 : 0.0);
+				this.currentState.speed = effectiveSpeed;
+				this.currentState.cycle = this.cycleCount;
 				this.fireEvent("cycleStart");
 				var _g = this.mode;
 				switch(_g._hx_index) {
@@ -34374,7 +34572,8 @@ bh_paths_MultiAnimPaths.prototype = {
 				var wl = _gthis.builder.resolveAsNumber(wavelength);
 				var cnt = _gthis.builder.resolveAsNumber(count);
 				var totalLength = wl * cnt;
-				var endPt1 = new bh_base_FPoint(point.x + totalLength * Math.cos(angle),point.y + totalLength * Math.sin(angle));
+				var residualLateral = amp * Math.sin(cnt * 2 * Math.PI);
+				var endPt1 = new bh_base_FPoint(point.x + totalLength * Math.cos(angle) - residualLateral * Math.sin(angle),point.y + totalLength * Math.sin(angle) + residualLateral * Math.cos(angle));
 				singlePaths.push(new bh_paths_SinglePath(point,endPt1,bh_paths_PathType.Wave(amp,wl,cnt,angle)));
 				point = endPt1;
 				break;
@@ -35382,6 +35581,39 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 				this.line++;
 				this.col = 1;
 				this.lineStart = this.pos;
+			} else if(c == 65279) {
+				this.pos++;
+				this.col++;
+			} else if(c == 47 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 47) {
+				while(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) != 10 && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) != 13) {
+					this.pos++;
+					this.col++;
+				}
+			} else if(c == 47 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 42) {
+				var commentLine = this.line;
+				var commentCol = this.col;
+				this.pos += 2;
+				this.col += 2;
+				var blockClosed = false;
+				while(this.pos < this.len) {
+					if((this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 42 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 47) {
+						this.pos += 2;
+						this.col += 2;
+						blockClosed = true;
+						break;
+					}
+					if((this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 10) {
+						this.line++;
+						this.col = 1;
+						this.lineStart = this.pos + 1;
+					} else {
+						this.col++;
+					}
+					this.pos++;
+				}
+				if(!blockClosed) {
+					throw haxe_Exception.thrown("" + this.sourceName + ":" + commentLine + ":" + commentCol + ": Unterminated block comment, missing closing */");
+				}
 			} else {
 				break;
 			}
@@ -35392,38 +35624,6 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APEof,startLine,startCol);
 		}
 		var c = this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1;
-		if(c == 47 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 47) {
-			while(this.pos < this.len && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) != 10 && (this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) != 13) {
-				this.pos++;
-				this.col++;
-			}
-			return this.nextToken();
-		}
-		if(c == 47 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 42) {
-			this.pos += 2;
-			this.col += 2;
-			var blockClosed = false;
-			while(this.pos < this.len) {
-				if((this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 42 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 47) {
-					this.pos += 2;
-					this.col += 2;
-					blockClosed = true;
-					break;
-				}
-				if((this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1) == 10) {
-					this.line++;
-					this.col = 1;
-					this.lineStart = this.pos + 1;
-				} else {
-					this.col++;
-				}
-				this.pos++;
-			}
-			if(!blockClosed) {
-				throw haxe_Exception.thrown("" + this.sourceName + ":" + startLine + ":" + startCol + ": Unterminated block comment, missing closing */");
-			}
-			return this.nextToken();
-		}
 		if(c == 33 && this.pos + 1 < this.len && HxOverrides.cca(this.src,this.pos + 1) == 61) {
 			this.pos += 2;
 			this.col += 2;
@@ -35615,7 +35815,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 				} else {
 					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
 				}
-				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(r << 16 | g << 8 | b),startLine,startCol);
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(-16777216 | r << 16 | g << 8 | b),startLine,startCol);
 			} else if(hexStr.length == 6) {
 				var s = "0x" + hexStr;
 				var tmp;
@@ -35625,7 +35825,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 				} else {
 					throw haxe_Exception.thrown("expected integer, got \"" + s + "\"");
 				}
-				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(tmp),startLine,startCol);
+				return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APColor(-16777216 | tmp),startLine,startCol);
 			} else if(hexStr.length == 8) {
 				var s = "0x" + hexStr.substring(0,2);
 				var rr;
@@ -35671,8 +35871,8 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			while(true) {
 				var tmp;
 				if(this.pos < this.len) {
-					var c = this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1;
-					tmp = c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c == 95 || c == 45 || c == 36;
+					var c1 = this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1;
+					tmp = c1 >= 97 && c1 <= 122 || c1 >= 65 && c1 <= 90 || c1 >= 48 && c1 <= 57 || c1 == 95 || c1 == 45 || c1 == 36;
 				} else {
 					tmp = false;
 				}
@@ -35686,9 +35886,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			var kw = bh_stateanim__$AnimParser_AnimLexerHC.keywordMap.h[s.toLowerCase()];
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APIdentifier(s,kw,bh_stateanim_APIdentifierType.AITString),startLine,startCol);
 		}
-		this.pos++;
-		this.col++;
-		return this.nextToken();
+		throw haxe_Exception.thrown("" + this.sourceName + ":" + startLine + ":" + startCol + ": Unknown character \"" + String.fromCodePoint(c) + "\" (code " + c + ")");
 	}
 	,__class__: bh_stateanim__$AnimParser_AnimLexerHC
 };
@@ -35887,7 +36085,7 @@ bh_stateanim_AnimParser.parseString = function(content,sourceName,resourceLoader
 		p.parse();
 		return p;
 	} catch( _g ) {
-		var e = haxe_Exception.caught(_g);
+		var e = haxe_Exception.caught(_g).unwrap();
 		throw haxe_Exception.thrown(e);
 	}
 };
@@ -36007,13 +36205,15 @@ bh_stateanim_AnimParser.buildAnimFilter = function(filter) {
 		var v = filter.v;
 		var m = new h3d_MatrixImpl();
 		m.identity();
-		m.colorLightness(v);
+		m._11 = v;
+		m._22 = v;
+		m._33 = v;
 		return new h2d_filter_ColorMatrix(m);
 	case 2:
 		var v = filter.v;
 		var m = new h3d_MatrixImpl();
 		m.identity();
-		m.colorSaturate(v);
+		m.colorSaturate(v - 1.0);
 		return new h2d_filter_ColorMatrix(m);
 	case 3:
 		var v = filter.v;
@@ -36025,7 +36225,7 @@ bh_stateanim_AnimParser.buildAnimFilter = function(filter) {
 		var v = filter.v;
 		var m = new h3d_MatrixImpl();
 		m.identity();
-		m.colorHue(v);
+		m.colorHue(v * 3.14159265358979323 / 180.0);
 		return new h2d_filter_ColorMatrix(m);
 	case 5:
 		var size = filter.size;
@@ -36422,23 +36622,56 @@ bh_stateanim_AnimParser.prototype = {
 			while(_g1 < _g2.length) {
 				var name = _g2[_g1];
 				++_g1;
-				var anim = bh_stateanim_AnimParser.findAnimationInternal(name,state,this.animations);
+				var anim;
+				try {
+					anim = bh_stateanim_AnimParser.findAnimationInternal(name,state,this.animations);
+				} catch( _g3 ) {
+					var _g4 = haxe_Exception.caught(_g3).unwrap();
+					if(typeof(_g4) == "string") {
+						var e = _g4;
+						anim = this.syntaxError(e);
+					} else {
+						throw _g3;
+					}
+				}
 				if(anim == null) {
 					this.syntaxError("no animation " + name + " defined for states " + (state == null ? "null" : haxe_ds_StringMap.stringify(state.h)));
 				} else {
 					anim.visited = true;
 				}
-				var _g3 = 0;
-				var _g4 = this.allowedExtraPoints;
-				while(_g3 < _g4.length) {
-					var ePoint = _g4[_g3];
-					++_g3;
-					var p = bh_stateanim_AnimParser.findExtraPoint(ePoint,state,anim,this.definedStates);
+				var _g5 = 0;
+				var _g6 = this.allowedExtraPoints;
+				while(_g5 < _g6.length) {
+					var ePoint = _g6[_g5];
+					++_g5;
+					var p;
+					try {
+						p = bh_stateanim_AnimParser.findExtraPoint(ePoint,state,anim,this.definedStates);
+					} catch( _g7 ) {
+						var _g8 = haxe_Exception.caught(_g7).unwrap();
+						if(typeof(_g8) == "string") {
+							var e1 = _g8;
+							p = this.syntaxError(e1);
+						} else {
+							throw _g7;
+						}
+					}
 					if(p != null) {
 						p.visited = true;
 					}
 				}
-				var playlist = bh_stateanim_AnimParser.findPlaylist(state,anim,this.definedStates);
+				var playlist;
+				try {
+					playlist = bh_stateanim_AnimParser.findPlaylist(state,anim,this.definedStates);
+				} catch( _g9 ) {
+					var _g10 = haxe_Exception.caught(_g9).unwrap();
+					if(typeof(_g10) == "string") {
+						var e2 = _g10;
+						playlist = this.syntaxError(e2);
+					} else {
+						throw _g9;
+					}
+				}
 				if(playlist == null) {
 					this.syntaxError("no playlist for " + (state == null ? "null" : haxe_ds_StringMap.stringify(state.h)) + ", id " + anim.name);
 				}
@@ -36479,6 +36712,47 @@ bh_stateanim_AnimParser.prototype = {
 				++_g3;
 				if(pl.visited == false) {
 					this.syntaxError("Playlist in anim " + anim.name + " not reachable " + (pl.states == null ? "null" : haxe_ds_StringMap.stringify(pl.states.h)));
+				}
+			}
+		}
+		var _g = 0;
+		var _g1 = this.animations;
+		while(_g < _g1.length) {
+			var anim = _g1[_g];
+			++_g;
+			this.validateComparisonConditionals(anim.states,"animation " + anim.name);
+			var _g2 = 0;
+			var _g3 = anim.playlist;
+			while(_g2 < _g3.length) {
+				var pl = _g3[_g2];
+				++_g2;
+				this.validateComparisonConditionals(pl.states,"playlist in animation " + anim.name);
+			}
+			var h = anim.extraPoint.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var ek = _g_key;
+				var ev = _g_value;
+				var _g4 = 0;
+				while(_g4 < ev.length) {
+					var ePoint = ev[_g4];
+					++_g4;
+					this.validateComparisonConditionals(ePoint.states,"extra point " + ek + " in animation " + anim.name);
+				}
+			}
+			if(anim.filters != null) {
+				var _g5 = 0;
+				var _g6 = anim.filters;
+				while(_g5 < _g6.length) {
+					var f = _g6[_g5];
+					++_g5;
+					this.validateComparisonConditionals(f.states,"filter in animation " + anim.name);
 				}
 			}
 		}
@@ -36667,6 +36941,74 @@ bh_stateanim_AnimParser.prototype = {
 		}
 		return states;
 	}
+	,validateComparisonConditionals: function(selector,context) {
+		if(selector == null) {
+			return;
+		}
+		var h = selector.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var stateName = _g_key;
+			var cond = _g_value;
+			this.validateComparisonConditionalValue(stateName,cond,context);
+		}
+	}
+	,validateComparisonConditionalValue: function(stateName,cond,context) {
+		switch(cond._hx_index) {
+		case 2:
+			var inner = cond.inner;
+			this.validateComparisonConditionalValue(stateName,inner,context);
+			break;
+		case 3:
+			var _g = cond.op;
+			var v = cond.value;
+			var f = parseFloat(v);
+			if(isNaN(f)) {
+				this.syntaxError("" + context + ": comparison operand \"" + v + "\" for state \"" + stateName + "\" is not numeric — the condition can never match");
+			}
+			this.requireNumericStateValue(stateName,context);
+			break;
+		case 4:
+			var min = cond.min;
+			var max = cond.max;
+			var tmp;
+			var f = parseFloat(min);
+			if(!isNaN(f)) {
+				var f = parseFloat(max);
+				tmp = isNaN(f);
+			} else {
+				tmp = true;
+			}
+			if(tmp) {
+				this.syntaxError("" + context + ": range bounds \"" + min + "\"..\"" + max + "\" for state \"" + stateName + "\" are not numeric — the condition can never match");
+			}
+			this.requireNumericStateValue(stateName,context);
+			break;
+		default:
+		}
+	}
+	,requireNumericStateValue: function(stateName,context) {
+		var values = this.definedStates.h[stateName];
+		if(values == null) {
+			return;
+		}
+		var _g = 0;
+		while(_g < values.length) {
+			var v = values[_g];
+			++_g;
+			var f = parseFloat(v);
+			if(!isNaN(f)) {
+				return;
+			}
+		}
+		this.syntaxError("" + context + ": state \"" + stateName + "\" has no numeric declared values (" + values.join(", ") + ") — a comparison/range condition on it can never match");
+	}
 	,parseStates: function() {
 		var states = new haxe_ds_StringMap();
 		while(true) if(this.tokens[this.tpos].type._hx_index == 13) {
@@ -36687,6 +37029,14 @@ bh_stateanim_AnimParser.prototype = {
 					switch(_g2._hx_index) {
 					case 18:
 						this.advance();
+						var h = states.h;
+						var inlStringMapKeyIterator_h = h;
+						var inlStringMapKeyIterator_keys = Object.keys(h);
+						var inlStringMapKeyIterator_length = inlStringMapKeyIterator_keys.length;
+						var inlStringMapKeyIterator_current = 0;
+						if(inlStringMapKeyIterator_current < inlStringMapKeyIterator_length) {
+							this.syntaxError("@else cannot follow @(...) in the same header — stack @(...) conditions for AND, or use @else on its own");
+						}
 						if(this.match(bh_stateanim_APToken.APOpen)) {
 							var elseStates = new haxe_ds_StringMap();
 							this.parseConditionalState(elseStates);
@@ -36695,6 +37045,14 @@ bh_stateanim_AnimParser.prototype = {
 						return new haxe_ds_StringMap();
 					case 19:
 						this.advance();
+						var h1 = states.h;
+						var inlStringMapKeyIterator_h1 = h1;
+						var inlStringMapKeyIterator_keys1 = Object.keys(h1);
+						var inlStringMapKeyIterator_length1 = inlStringMapKeyIterator_keys1.length;
+						var inlStringMapKeyIterator_current1 = 0;
+						if(inlStringMapKeyIterator_current1 < inlStringMapKeyIterator_length1) {
+							this.syntaxError("@default cannot follow @(...) in the same header — remove the condition or the @default");
+						}
 						return new haxe_ds_StringMap();
 					default:
 						return this.unexpectedError("expected (, else, or default after @");
@@ -37298,12 +37656,10 @@ bh_stateanim_AnimParser.prototype = {
 							case 6:
 								var _g13 = _g12.s;
 								var p = this.parseCoordinates();
-								if(this.match(bh_stateanim_APToken.APCurlyOpen)) {
-									var meta = this.parseEventMeta();
-									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta));
-								} else {
-									anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.PointEvent(eventName,new h2d_col_IPoint(p.x,p.y))));
+								if(this.tokens[this.tpos].type == bh_stateanim_APToken.APCurlyOpen) {
+									this.syntaxError("event \"" + eventName + "\": a point spec cannot be combined with a metadata block — use either \"event name x,y\" or \"event name { meta }\"");
 								}
+								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.PointEvent(eventName,new h2d_col_IPoint(p.x,p.y))));
 								break;
 							case 7:
 								var _g14 = _g12.s;
@@ -37320,12 +37676,10 @@ bh_stateanim_AnimParser.prototype = {
 											var randomRadius = _g16.s;
 											this.advance();
 											var r = parseFloat(randomRadius);
-											if(this.match(bh_stateanim_APToken.APCurlyOpen)) {
-												var meta1 = this.parseEventMeta();
-												anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta1));
-											} else {
-												anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.RandomPointEvent(eventName,new h2d_col_IPoint(p1.x,p1.y),r)));
+											if(this.tokens[this.tpos].type == bh_stateanim_APToken.APCurlyOpen) {
+												this.syntaxError("event \"" + eventName + "\": a random spec cannot be combined with a metadata block — use either \"event name random x,y,r\" or \"event name { meta }\"");
 											}
+											anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.RandomPointEvent(eventName,new h2d_col_IPoint(p1.x,p1.y),r)));
 										} else {
 											this.unexpectedError("expected radius");
 										}
@@ -37338,8 +37692,8 @@ bh_stateanim_AnimParser.prototype = {
 								break;
 							case 9:
 								this.advance();
-								var meta2 = this.parseEventMeta();
-								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta2));
+								var meta = this.parseEventMeta();
+								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEventData(eventName,meta));
 								break;
 							default:
 								anims.push(bh_stateanim_AnimPlaylistFrames.PlaylistEvent(bh_stateanim_AnimationPlaylistEvent.Trigger(eventName)));
@@ -38109,8 +38463,7 @@ bh_stateanim_AnimParser.prototype = {
 				}
 				var tmp = anim.loop;
 				var loopCount = tmp != null ? tmp : 0;
-				var resolved = bh_stateanim_AnimParser.resolveAnimFilters(anim.filters,stateSelector);
-				cacheArray.push({ name : name, states : states, loopCount : loopCount, extraPoints : extraPoints, filter : resolved.filter, tintColor : resolved.tintColor});
+				cacheArray.push({ name : name, states : states, loopCount : loopCount, extraPoints : extraPoints, filters : anim.filters});
 			}
 			this.cache.h[hex] = cacheArray;
 		}
@@ -38122,7 +38475,23 @@ bh_stateanim_AnimParser.prototype = {
 		while(_g < cacheEntries.length) {
 			var e = cacheEntries[_g];
 			++_g;
-			animSM.addAnimationState(e.name,e.states,e.loopCount,e.extraPoints,e.filter,e.tintColor);
+			var pts = new haxe_ds_StringMap();
+			var h = e.extraPoints.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var k = _g_key;
+				var p = _g_value;
+				var value = new h2d_col_IPoint(p.x,p.y);
+				pts.h[k] = value;
+			}
+			var resolved = bh_stateanim_AnimParser.resolveAnimFilters(e.filters,stateSelector);
+			animSM.addAnimationState(e.name,e.states,e.loopCount,pts,resolved.filter,resolved.tintColor);
 		}
 	}
 	,createAnimSM: function(stateSelector) {
@@ -38220,6 +38589,7 @@ var bh_stateanim_AnimationSM = function(selector,externallyDriven) {
 	if(externallyDriven == null) {
 		externallyDriven = false;
 	}
+	this.finishedFired = false;
 	this.loopsRemaining = 0;
 	this.animationStates = new haxe_ds_StringMap();
 	this.playWhenHidden = false;
@@ -38276,6 +38646,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		this.current = state;
 		this.elapsedTime = 0;
 		this.paused = false;
+		this.finishedFired = false;
 		this.currentStateIndex = 0;
 		this.loopsRemaining = state.loopCount;
 		this.clip.clearFrames();
@@ -38355,7 +38726,10 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					}
 					this.currentStateIndex = 0;
 				} else {
-					this.onFinished();
+					if(!this.finishedFired) {
+						this.finishedFired = true;
+						this.onFinished();
+					}
 					return;
 				}
 			}
@@ -48270,9 +48644,9 @@ bh_ui_screens_ScreenManager.prototype = {
 			var caller = _g.caller;
 			var previousMode1 = _g.previousMode;
 			var dialogName = _g.dialogName;
-			this.removeModalOverlay();
 			switch(newScreenMode._hx_index) {
 			case 0:
+				this.removeModalOverlay();
 				removedScreens = [oldDialog];
 				switch(previousMode1._hx_index) {
 				case 1:
@@ -48290,6 +48664,7 @@ bh_ui_screens_ScreenManager.prototype = {
 				break;
 			case 1:
 				var single = newScreenMode.single;
+				this.removeModalOverlay();
 				removedScreens = [oldDialog];
 				if(this.activeScreens.indexOf(single) == -1) {
 					var _g = new haxe_ds_ObjectMap();
@@ -48321,6 +48696,7 @@ bh_ui_screens_ScreenManager.prototype = {
 			case 2:
 				var master = newScreenMode.master;
 				var single = newScreenMode.single;
+				this.removeModalOverlay();
 				removedScreens = [oldDialog];
 				addedScreens = new haxe_ds_ObjectMap();
 				if(this.activeScreens.indexOf(single) == -1) {
@@ -48355,13 +48731,28 @@ bh_ui_screens_ScreenManager.prototype = {
 				var newCaller = newScreenMode.caller;
 				var newPreviousMode = newScreenMode.previousMode;
 				var newDialogName = newScreenMode.dialogName;
-				removedScreens = [oldDialog];
-				var _g = new haxe_ds_ObjectMap();
-				_g.set(newDialog,layerDialog);
-				addedScreens = _g;
-				overrideActiveScreenControllers = [newDialog];
-				var result = oldDialog.getController().exitResponse;
-				caller.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.OnDialogResult(dialogName,result)),null);
+				if(newDialog != oldDialog) {
+					this.removeModalOverlay();
+					removedScreens = [oldDialog];
+					var _g = new haxe_ds_ObjectMap();
+					_g.set(newDialog,layerDialog);
+					addedScreens = _g;
+					overrideActiveScreenControllers = [newDialog];
+					var returningToUnderlying;
+					if(previousMode1._hx_index == 3) {
+						var _g = previousMode1.caller;
+						var _g = previousMode1.previousMode;
+						var _g = previousMode1.dialogName;
+						var prevDialog = previousMode1.dialog;
+						returningToUnderlying = prevDialog == newDialog;
+					} else {
+						returningToUnderlying = false;
+					}
+					if(!returningToUnderlying) {
+						var result = oldDialog.getController().exitResponse;
+						caller.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.OnDialogResult(dialogName,result)),null);
+					}
+				}
 				break;
 			}
 			break;
@@ -48591,6 +48982,20 @@ bh_ui_screens_ScreenManager.prototype = {
 				if(this.activeScreenControllers.indexOf(single) == -1) {
 					this.activeScreenControllers.push(single);
 				}
+				break;
+			case 3:
+				var _g = previousMode.caller;
+				var _g = previousMode.previousMode;
+				var _g = previousMode.dialogName;
+				var prevDialog = previousMode.dialog;
+				if(this.activeScreens.indexOf(prevDialog) == -1) {
+					this.app.s2d.add(prevDialog.getSceneRoot(),this.sceneLayers.dialog);
+					this.activeScreens.push(prevDialog);
+					prevDialog.onScreenEvent(bh_ui_UIScreenEvent.UIEntering(null),null);
+					prevDialog.onScreenEvent(bh_ui_UIScreenEvent.UIOnControllerEvent(bh_ui_ControllerEvents.Entering),null);
+					prevDialog.getController().lifecycleEvent(bh_ui_controllers_UIControllerLifecycleEvent.LifecycleControllerStarted);
+				}
+				this.activeScreenControllers = [prevDialog];
 				break;
 			default:
 			}
@@ -63469,11 +63874,6 @@ h3d_MatrixImpl.prototype = {
 		tmp._42 = 0;
 		tmp._43 = 0;
 		this.multiply3x4(this,tmp);
-	}
-	,colorLightness: function(lightness) {
-		this._41 += lightness;
-		this._42 += lightness;
-		this._43 += lightness;
 	}
 	,__class__: h3d_MatrixImpl
 };
@@ -116320,6 +116720,8 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 		theme = 1;
 	}
 	this._rebuildListeners = [];
+	this._batchDirty = false;
+	this._batchMode = false;
 	this._sw21_armIdx = -1;
 	h2d_Object.call(this);
 	this._pb = _pb;
@@ -116604,16 +117006,35 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__super__ = h2d
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function(_changedParam) {
 		if(_changedParam == null || _changedParam == "layout" || _changedParam == "countX" || _changedParam == "theme" || _changedParam == "countY") {
+			var _oldArmIdx = this._sw21_armIdx;
 			this._sw21_armIdx = this._layout == 0 ? 0 : this._layout == 1 ? 1 : this._layout == 2 ? 2 : -1;
-			var tmp = this._pb;
-			var tmp1 = this._sw21_armIdx;
-			var tmp2 = this._sw21;
-			var _swp = new haxe_ds_StringMap();
-			_swp.h["theme"] = this._theme;
-			_swp.h["layout"] = this._layout;
-			_swp.h["countX"] = this._countX;
-			_swp.h["countY"] = this._countY;
-			tmp.rebuildSwitchArm("loadoutLab",0,tmp1,tmp2,_swp,this._swSink0);
+			var _newArmIdx = this._sw21_armIdx;
+			var _relevant = _changedParam == null || _newArmIdx != _oldArmIdx || _changedParam == "layout";
+			if(!_relevant) {
+				switch(_newArmIdx) {
+				case 0:
+					_relevant = _changedParam == "countX" || _changedParam == "theme";
+					break;
+				case 1:
+					_relevant = _changedParam == "theme";
+					break;
+				case 2:
+					_relevant = _changedParam == "countY" || _changedParam == "countX" || _changedParam == "theme";
+					break;
+				default:
+				}
+			}
+			if(_relevant) {
+				var tmp = this._pb;
+				var tmp1 = this._sw21_armIdx;
+				var tmp2 = this._sw21;
+				var _swp = new haxe_ds_StringMap();
+				_swp.h["theme"] = this._theme;
+				_swp.h["layout"] = this._layout;
+				_swp.h["countX"] = this._countX;
+				_swp.h["countY"] = this._countY;
+				tmp.rebuildSwitchArm("loadoutLab",0,tmp1,tmp2,_swp,this._swSink0);
+			}
 		}
 	}
 	,_updateExpressions: function() {
@@ -116623,32 +117044,70 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return;
 		}
 		this._theme = v;
-		this._applyVisibility("theme");
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility("theme");
+			this._fireRebuildListeners();
+		}
 	}
 	,setLayout: function(v) {
 		if(this._layout == v) {
 			return;
 		}
 		this._layout = v;
-		this._applyVisibility("layout");
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility("layout");
+			this._fireRebuildListeners();
+		}
 	}
 	,setCountX: function(v) {
 		if(this._countX == v) {
 			return;
 		}
 		this._countX = v;
-		this._applyVisibility("countX");
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility("countX");
+			this._fireRebuildListeners();
+		}
 	}
 	,setCountY: function(v) {
 		if(this._countY == v) {
 			return;
 		}
 		this._countY = v;
-		this._applyVisibility("countY");
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility("countY");
+			this._fireRebuildListeners();
+		}
+	}
+	,beginUpdate: function() {
+		if(this._batchMode) {
+			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
+		}
+		this._batchMode = true;
+		this._batchDirty = false;
+	}
+	,endUpdate: function() {
+		if(!this._batchMode) {
+			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
+		}
+		this._batchMode = false;
+		if(this._batchDirty) {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+		this._batchDirty = false;
+	}
+	,get_batchMode: function() {
+		return this._batchMode;
 	}
 	,addRebuildListener: function(fn) {
 		this._rebuildListeners.push(fn);
@@ -116824,7 +117283,13 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 		}
 		return null;
 	}
+	,getDynamicRefByIndex: function(name,index) {
+		return this.getDynamicRef(name + " " + index);
+	}
 	,hasDynamicRef: function(name) {
+		if(this._swSink0.hasDynamicRef(name)) {
+			return true;
+		}
 		return false;
 	}
 	,__class__: screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance
@@ -117661,6 +118126,8 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 		hp = 100;
 	}
 	this._rebuildListeners = [];
+	this._batchDirty = false;
+	this._batchMode = false;
 	h2d_Object.call(this);
 	this._pb = _pb;
 	var _hp = hp;
@@ -117713,7 +118180,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 24;
 	this.addChild(this._e3);
-	var tile = bh_base_HeapsUtils_solidTile(-48060,this._hp * 100 / this._maxHp | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0 | 0,6);
 	this._e4 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e4;
 	_this.posChanged = true;
@@ -117741,7 +118208,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 32;
 	this.addChild(this._e6);
-	var tile = bh_base_HeapsUtils_solidTile(-12285748,this._mp * 100 / this._maxMp | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0 | 0,6);
 	this._e7 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e7;
 	_this.posChanged = true;
@@ -117782,10 +118249,10 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 	,_updateExpressions: function() {
 		this._e1.set_text(Std.string(this._name));
 		this._e2.set_text(Std.string("Lv." + Std.string(this._level)));
-		var tile = bh_base_HeapsUtils_solidTile(-48060,this._hp * 100 / this._maxHp | 0 | 0,6);
+		var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0 | 0,6);
 		this._e4.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e5.set_text(Std.string(Std.string(this._hp) + "/" + Std.string(this._maxHp)));
-		var tile = bh_base_HeapsUtils_solidTile(-12285748,this._mp * 100 / this._maxMp | 0 | 0,6);
+		var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0 | 0,6);
 		this._e7.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 		this._e8.set_text(Std.string(Std.string(this._mp) + "/" + Std.string(this._maxMp)));
 	}
@@ -117794,54 +118261,100 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 			return;
 		}
 		this._hp = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setMaxHp: function(v) {
 		if(this._maxHp == v) {
 			return;
 		}
 		this._maxHp = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setMp: function(v) {
 		if(this._mp == v) {
 			return;
 		}
 		this._mp = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setMaxMp: function(v) {
 		if(this._maxMp == v) {
 			return;
 		}
 		this._maxMp = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setName: function(v) {
 		if(this._name == v) {
 			return;
 		}
 		this._name = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setLevel: function(v) {
 		if(this._level == v) {
 			return;
 		}
 		this._level = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+	}
+	,beginUpdate: function() {
+		if(this._batchMode) {
+			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
+		}
+		this._batchMode = true;
+		this._batchDirty = false;
+	}
+	,endUpdate: function() {
+		if(!this._batchMode) {
+			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
+		}
+		this._batchMode = false;
+		if(this._batchDirty) {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+		this._batchDirty = false;
+	}
+	,get_batchMode: function() {
+		return this._batchMode;
 	}
 	,addRebuildListener: function(fn) {
 		this._rebuildListeners.push(fn);
@@ -118005,6 +118518,12 @@ var screens_advanced_PerfProgrammables_$PerfRepeatableInstance = function(_pb,va
 		value = 3;
 	}
 	this._rebuildListeners = [];
+	this._batchDirty = false;
+	this._batchMode = false;
+	this._rebuildRepeat__e0_dy = 0;
+	this._rebuildRepeat__e0_dx = 0;
+	this._rebuildRepeat__e0_sp = 1;
+	this._rebuildRepeat__e0_s = 0;
 	this._rebuildRepeat__e0_n = -1;
 	h2d_Object.call(this);
 	this._pb = _pb;
@@ -118013,7 +118532,7 @@ var screens_advanced_PerfProgrammables_$PerfRepeatableInstance = function(_pb,va
 	this._e0 = new h2d_Object();
 	this.addChild(this._e0);
 	this._e0_sink = new bh_multianim_SwitchArmResults();
-	this._rebuildRepeat__e0(this._value | 0);
+	this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0);
 	this._applyVisibility();
 	this._updateExpressions();
 };
@@ -118022,11 +118541,18 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__name__ = "screens.a
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h2d_Object.prototype,{
-	_rebuildRepeat__e0: function(_rt_count) {
-		if(_rt_count == this._rebuildRepeat__e0_n) {
+	_rebuildRepeat__e0: function(_rt_count,_rt_start,_rt_step,_rt_dx,_rt_dy) {
+		if(_rt_count < 0) {
+			_rt_count = 0;
+		}
+		if(_rt_count == this._rebuildRepeat__e0_n && _rt_start == this._rebuildRepeat__e0_s && _rt_step == this._rebuildRepeat__e0_sp && _rt_dx == this._rebuildRepeat__e0_dx && _rt_dy == this._rebuildRepeat__e0_dy) {
 			return;
 		}
 		this._rebuildRepeat__e0_n = _rt_count;
+		this._rebuildRepeat__e0_s = _rt_start;
+		this._rebuildRepeat__e0_sp = _rt_step;
+		this._rebuildRepeat__e0_dx = _rt_dx;
+		this._rebuildRepeat__e0_dy = _rt_dy;
 		this._pb.resetRepeatSink(this._e0_sink,this._e0);
 		this._e0.removeChildren();
 		var _g = 0;
@@ -118035,9 +118561,9 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			var _rt_i = _g++;
 			var _rt_cont = new h2d_Object();
 			_rt_cont.posChanged = true;
-			_rt_cont.x = 6 * _rt_i;
+			_rt_cont.x = _rt_dx * _rt_i;
 			_rt_cont.posChanged = true;
-			_rt_cont.y = 0 * _rt_i;
+			_rt_cont.y = _rt_dy * _rt_i;
 			this._e0.addChild(_rt_cont);
 			var _rt_tile = bh_base_HeapsUtils_solidTile(-12294520,5,5);
 			var _rt_bmp = new h2d_Bitmap(_rt_tile.sub(0,0,_rt_tile.width,_rt_tile.height,0.0,0.0));
@@ -118049,7 +118575,7 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 		}
 	}
 	,_applyVisibility: function() {
-		this._rebuildRepeat__e0(this._value | 0);
+		this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0);
 	}
 	,_updateExpressions: function() {
 	}
@@ -118058,8 +118584,34 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			return;
 		}
 		this._value = v;
-		this._applyVisibility();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._fireRebuildListeners();
+		}
+	}
+	,beginUpdate: function() {
+		if(this._batchMode) {
+			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
+		}
+		this._batchMode = true;
+		this._batchDirty = false;
+	}
+	,endUpdate: function() {
+		if(!this._batchMode) {
+			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
+		}
+		this._batchMode = false;
+		if(this._batchDirty) {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+		this._batchDirty = false;
+	}
+	,get_batchMode: function() {
+		return this._batchMode;
 	}
 	,addRebuildListener: function(fn) {
 		this._rebuildListeners.push(fn);
@@ -118154,6 +118706,9 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 		}
 		return null;
 	}
+	,getDynamicRefByIndex: function(name,index) {
+		return this.getDynamicRef(name + " " + index);
+	}
 	,hasDynamicRef: function(name) {
 		if(this._e0_sink.hasDynamicRef(name)) {
 			return true;
@@ -118189,6 +118744,8 @@ var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,
 		value = 0;
 	}
 	this._rebuildListeners = [];
+	this._batchDirty = false;
+	this._batchMode = false;
 	h2d_Object.call(this);
 	this._pb = _pb;
 	var _value = value;
@@ -118234,18 +118791,48 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 			return;
 		}
 		this._value = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
 	}
 	,setColor: function(v) {
 		if(this._color == v) {
 			return;
 		}
 		this._color = v;
-		this._applyVisibility();
-		this._updateExpressions();
-		this._fireRebuildListeners();
+		if(this._batchMode) {
+			this._batchDirty = true;
+		} else {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+	}
+	,beginUpdate: function() {
+		if(this._batchMode) {
+			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
+		}
+		this._batchMode = true;
+		this._batchDirty = false;
+	}
+	,endUpdate: function() {
+		if(!this._batchMode) {
+			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
+		}
+		this._batchMode = false;
+		if(this._batchDirty) {
+			this._applyVisibility();
+			this._updateExpressions();
+			this._fireRebuildListeners();
+		}
+		this._batchDirty = false;
+	}
+	,get_batchMode: function() {
+		return this._batchMode;
 	}
 	,addRebuildListener: function(fn) {
 		this._rebuildListeners.push(fn);
@@ -119415,7 +120002,7 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			this.cellChecks.push([]);
 			this.cellColorButtons.push(null);
 		}
-		var generatedByMacroBuildWithParametersload3495Builder = function() {
+		var generatedByMacroBuildWithParametersload3551Builder = function() {
 			var sSize;
 			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
@@ -119445,11 +120032,11 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var o = generatedByMacroBuildWithParametersload3495Builder();
+		var o = generatedByMacroBuildWithParametersload3551Builder();
 		this.cellResults[0] = o.builderResults;
 		this.cellSliders[0] = [o.sSize];
 		this.cellColorButtons[0] = o.bColor;
-		var generatedByMacroBuildWithParametersload3788Builder = function() {
+		var generatedByMacroBuildWithParametersload3844Builder = function() {
 			var sRadius;
 			var sAlpha;
 			var cSmooth;
@@ -119512,12 +120099,12 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var g = generatedByMacroBuildWithParametersload3788Builder();
+		var g = generatedByMacroBuildWithParametersload3844Builder();
 		this.cellResults[1] = g.builderResults;
 		this.cellSliders[1] = [g.sAlpha,g.sRadius];
 		this.cellChecks[1] = [g.cSmooth,g.cKnockout];
 		this.cellColorButtons[1] = g.bColor;
-		var generatedByMacroBuildWithParametersload4277Builder = function() {
+		var generatedByMacroBuildWithParametersload4333Builder = function() {
 			var sRadius;
 			var sGain;
 			var _gthis1 = _gthis.demoBuilder;
@@ -119547,10 +120134,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var b = generatedByMacroBuildWithParametersload4277Builder();
+		var b = generatedByMacroBuildWithParametersload4333Builder();
 		this.cellResults[2] = b.builderResults;
 		this.cellSliders[2] = [b.sRadius,b.sGain];
-		var generatedByMacroBuildWithParametersload4517Builder = function() {
+		var generatedByMacroBuildWithParametersload4573Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -119569,10 +120156,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var s = generatedByMacroBuildWithParametersload4517Builder();
+		var s = generatedByMacroBuildWithParametersload4573Builder();
 		this.cellResults[3] = s.builderResults;
 		this.cellSliders[3] = [s.sValue];
-		var generatedByMacroBuildWithParametersload4705Builder = function() {
+		var generatedByMacroBuildWithParametersload4761Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -119591,10 +120178,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var br = generatedByMacroBuildWithParametersload4705Builder();
+		var br = generatedByMacroBuildWithParametersload4761Builder();
 		this.cellResults[4] = br.builderResults;
 		this.cellSliders[4] = [br.sValue];
-		var generatedByMacroBuildWithParametersload4897Builder = function() {
+		var generatedByMacroBuildWithParametersload4953Builder = function() {
 			var sRadius;
 			var sDist;
 			var sAngle;
@@ -119668,12 +120255,12 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var ds = generatedByMacroBuildWithParametersload4897Builder();
+		var ds = generatedByMacroBuildWithParametersload4953Builder();
 		this.cellResults[5] = ds.builderResults;
 		this.cellSliders[5] = [ds.sDist,ds.sAngle,ds.sAlpha,ds.sRadius];
 		this.cellChecks[5] = [ds.cSmooth];
 		this.cellColorButtons[5] = ds.bColor;
-		var generatedByMacroBuildWithParametersload5431Builder = function() {
+		var generatedByMacroBuildWithParametersload5487Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -119692,10 +120279,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var gs = generatedByMacroBuildWithParametersload5431Builder();
+		var gs = generatedByMacroBuildWithParametersload5487Builder();
 		this.cellResults[6] = gs.builderResults;
 		this.cellSliders[6] = [gs.sValue];
-		var generatedByMacroBuildWithParametersload5622Builder = function() {
+		var generatedByMacroBuildWithParametersload5678Builder = function() {
 			var sValue;
 			var _gthis1 = _gthis.demoBuilder;
 			var builderResults = new haxe_ds_StringMap();
@@ -119714,10 +120301,10 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var hu = generatedByMacroBuildWithParametersload5622Builder();
+		var hu = generatedByMacroBuildWithParametersload5678Builder();
 		this.cellResults[7] = hu.builderResults;
 		this.cellSliders[7] = [hu.sValue];
-		var generatedByMacroBuildWithParametersload5807Builder = function() {
+		var generatedByMacroBuildWithParametersload5863Builder = function() {
 			var sStrength;
 			var bColor;
 			var _gthis1 = _gthis.demoBuilder;
@@ -119747,7 +120334,7 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 			}
 			return retVal;
 		};
-		var po = generatedByMacroBuildWithParametersload5807Builder();
+		var po = generatedByMacroBuildWithParametersload5863Builder();
 		this.cellResults[8] = po.builderResults;
 		this.cellSliders[8] = [po.sStrength];
 		this.cellColorButtons[8] = po.bColor;
@@ -131539,7 +132126,7 @@ screens_animation_FiltersDemoScreen.PREVIEW_NAMES = ["outlinePreview","glowPrevi
 screens_animation_FiltersDemoScreen.SLIDER_PARAMS = [["outlineSize"],["glowAlpha","glowRadius"],["blurRadius","blurGain"],["satValue"],["brightValue"],["dsDist","dsAngle","dsAlpha","dsRadius"],["gsValue"],["hueValue"],["poStrength"]];
 screens_animation_FiltersDemoScreen.CHECK_PARAMS = [[],["glowSmooth","glowKnockout"],[],[],[],["dsSmooth"],[],[],[]];
 screens_animation_FiltersDemoScreen.VALUE_LABELS = [["sizeValue"],["alphaValue","radiusValue"],["radiusValue","gainValue"],["valueText"],["valueText"],["distValue","angleValue","alphaValue","radiusValue"],["valueText"],["valueText"],["strengthValue"]];
-screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[0.0],[1.5],[3,30,0.5,6],[1.0],[0.0],[0.5]];
+screens_animation_FiltersDemoScreen.SLIDER_DEFAULTS = [[1.0],[0.8,8],[4,1.0],[1.0],[1.5],[3,30,0.5,6],[1.0],[0.0],[0.5]];
 screens_animation_FiltersDemoScreen.COLOR_FILTER_INDICES = [0,1,5,8];
 screens_animation_FiltersDemoScreen.COLOR_PARAM_NAMES = ["outlineColor","glowColor","dsColor","poColor"];
 screens_animation_FiltersDemoScreen.COLOR_DEFAULTS = [-65536,-22016,-16777216,-16776961];

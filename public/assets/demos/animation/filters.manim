@@ -70,7 +70,7 @@ version: 1.0
 
 #saturatePreview programmable(
     bitmapType:[rectBlack, rectWhite, rectGreen, circleBlack, circleWhite, circleRed, star, skull, marine, dice]=rectBlack,
-    satValue:float=0.0) {
+    satValue:float=1.0) {
     point {
         filter: saturate($satValue)
         dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
@@ -202,12 +202,13 @@ version: 1.0
 #saturateCell programmable() {
     text(m6x11, "saturate", #aaaaaa, left, 180): 0, 0
 
+    // 0 = grayscale, 1 = normal, 2 = oversaturated
     text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
         pos: 40, 94
         settings{size:int=>100, min:float=>0, max:float=>2, step:float=>0.05}
     }
-    #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
+    #valueText(updatable) text(m6x11, "1.0", #cccccc, left, 45): 145, 94
 }
 
 #brightnessCell programmable() {
@@ -279,10 +280,11 @@ version: 1.0
 #hueCell programmable() {
     text(m6x11, "hue", #aaaaaa, left, 180): 0, 0
 
+    // Hue rotation in degrees (0..360)
     text(m6x11, "Value", #888888, left, 38): 0, 94
     placeholder(generated(cross(100, 14, #FF0000)), builderParameter("sValue")) {
         pos: 40, 94
-        settings{size:int=>100, min:float=>0, max:float=>6.28, step:float=>0.1}
+        settings{size:int=>100, min:float=>0, max:float=>360, step:float=>5}
     }
     #valueText(updatable) text(m6x11, "0.0", #cccccc, left, 45): 145, 94
 }

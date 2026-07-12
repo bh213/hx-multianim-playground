@@ -69,11 +69,11 @@ class FiltersDemoScreen extends DemoScreenBase {
 		[1.0],
 		[0.8, 8],
 		[4, 1.0],
-		[0.0],
+		[1.0], // saturate: 1 = normal (0 = grayscale)
 		[1.5],
 		[3, 30, 0.5, 6],
 		[1.0],
-		[0.0],
+		[0.0], // hue: degrees
 		[0.5],
 	];
 	// Color-using filter indices: outline=0, glow=1, dropShadow=5, pixelOutline=8

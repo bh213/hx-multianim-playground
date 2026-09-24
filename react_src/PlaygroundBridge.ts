@@ -74,7 +74,7 @@ export const CATEGORIES: CategoryInfo[] = [
         screens: [
             { name: 'inventory', displayName: 'Inventory Grid', category: 'Game-Like Demos', manimFile: 'demos/gamelike/inventory.manim' },
             { name: 'characterSheet', displayName: 'Character Sheet', category: 'Game-Like Demos', manimFile: 'demos/gamelike/character-sheet.manim' },
-            { name: 'blob47', displayName: 'Blob47 Autotile', category: 'Game-Like Demos', manimFile: 'demos/gamelike/blob47.manim' },
+            { name: 'autotile', displayName: 'Autotile Terrain', category: 'Game-Like Demos', manimFile: 'demos/gamelike/autotile.manim' },
             { name: 'battleHud', displayName: 'Battle HUD', category: 'Game-Like Demos', manimFile: 'demos/gamelike/battle-hud.manim' },
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },

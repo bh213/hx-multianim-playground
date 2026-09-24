@@ -34,7 +34,7 @@ class Main extends hxd.App {
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
 		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
-		"inventory", "characterSheet", "blob47", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
+		"inventory", "characterSheet", "autotile", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
 	];
 
 	function getFont() {
@@ -228,7 +228,7 @@ class Main extends hxd.App {
 		// Game-like demos
 		screenManager.addScreen("inventory", new InventoryDemoScreen(screenManager));
 		screenManager.addScreen("characterSheet", new CharacterSheetDemoScreen(screenManager));
-		screenManager.addScreen("blob47", new Blob47DemoScreen(screenManager));
+		screenManager.addScreen("autotile", new AutotileDemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));

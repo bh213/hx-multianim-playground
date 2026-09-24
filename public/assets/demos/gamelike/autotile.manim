@@ -1,0 +1,162 @@
+version: 1.0
+
+// Autotile Terrain Demo
+// Paint dirt onto grass. The same grid is rendered with either autotile format:
+//   corner - 16-tile corner set on a dual grid (one tile per grid corner). This tileset's
+//            dirt patch IS a corner set, so every shape renders cleanly.
+//   blob47 - one tile per cell from its 8 neighbours, using the tileset's larger dirt
+//            collection (caps, 1-wide strips, junctions) - 35 of the 47 tiles exist.
+// Tileset: Minifantasy - Forgotten Plains by Krishna Palacio
+
+// Grass under the terrain: a few plain-grass variants of the same tileset
+#fp atlas2("Tileset/Minifantasy_ForgottenPlainsTiles.png") {
+    grass: 32, 24, 8, 8, index: 0
+    grass: 32, 24, 8, 8, index: 1
+    grass: 32, 40, 8, 8, index: 2
+    grass: 32, 24, 8, 8, index: 3
+    grass: 32, 48, 8, 8, index: 4
+    grass: 32, 32, 8, 8, index: 5
+}
+
+// Dirt patch region [56, 24, 24, 40] = 3x5 tiles:
+//   [0] NW outer [1] N edge [2] NE outer / [3] W edge [4] center [5] E edge /
+//   [6] SW outer [7] S edge [8] SE outer / [9] inner NW [10] inner NE [11] diagonal NW+SE /
+//   [12] inner SW [13] inner SE [14] diagonal NE+SW
+
+// Corner index = dirt cells around a grid corner: NW 1 + NE 2 + SW 4 + SE 8
+#dirtCorner autotile {
+    format: corner
+    tileSize: 8
+    file: "Tileset/Minifantasy_ForgottenPlainsTiles.png"
+    region: [56, 24, 24, 40]
+    mapping: [
+        1:8,    // NW            -> SE outer (dirt top-left)
+        2:6,    // NE            -> SW outer (dirt top-right)
+        3:7,    // NW+NE         -> S edge
+        4:2,    // SW            -> NE outer (dirt bottom-left)
+        5:5,    // NW+SW         -> E edge
+        6:11,   // NE+SW         -> diagonal
+        7:13,   // all but SE    -> inner SE
+        8:0,    // SE            -> NW outer (dirt bottom-right)
+        9:14,   // NW+SE         -> diagonal
+        10:3,   // NE+SE         -> W edge
+        11:12,  // all but SW    -> inner SW
+        12:1,   // SW+SE         -> N edge
+        13:10,  // all but NE    -> inner NE
+        14:9,   // all but NW    -> inner NW
+        15:4    // all four      -> center
+    ]
+}
+
+// blob47 uses the tileset's full dirt collection: region [8, 8, 80, 96] (10 columns, index =
+// row * 10 + column) holds the patch above plus an isolated blob, strip caps, 1-wide strips and
+// 1-wide corners / T-junctions / cross. 35 of the 47 blob47 indices have an exact tile; the other
+// 12 (an edge plus an inner notch, or three notches) use the closest mapped tile.
+#dirtBlob47 autotile {
+    format: blob47
+    tileSize: 8
+    file: "Tileset/Minifantasy_ForgottenPlainsTiles.png"
+    region: [8, 8, 80, 96]
+    allowPartialMapping: true
+    // blob47 index (which neighbours are dirt) -> region tile
+    mapping: [
+        0:4,     // isolated               -> single blob
+        1:115,   // N only                 -> vertical strip, bottom cap
+        2:86,    // E only                 -> horizontal strip, left cap
+        3:116,   // N+E                    -> 1-wide corner
+        4:46,    // N+NE+E                 -> patch SW outer
+        5:95,    // S only                 -> vertical strip, top cap
+        6:105,   // N+S                    -> vertical strip
+        7:96,    // E+S                    -> 1-wide corner
+        8:106,   // N+E+S                  -> 1-wide T
+        10:26,   // E+SE+S                 -> patch NW outer
+        12:36,   // N+NE+E+SE+S            -> patch W edge
+        13:88,   // W only                 -> horizontal strip, right cap
+        14:118,  // N+W                    -> 1-wide corner
+        15:87,   // E+W                    -> horizontal strip
+        16:117,  // N+E+W                  -> 1-wide T
+        18:98,   // S+W                    -> 1-wide corner
+        19:108,  // N+S+W                  -> 1-wide T
+        20:97,   // E+S+W                  -> 1-wide T
+        21:107,  // N+E+S+W, no diagonals  -> 1-wide cross
+        25:101,  // all but NW, SW         -> junction, notches W
+        26:28,   // S+SW+W                 -> patch NE outer
+        30:58,   // all but NW, SE         -> diagonal notches
+        31:27,   // E+SE+S+SW+W            -> patch N edge
+        32:92,   // all but NE, NW         -> junction, notches N
+        33:56,   // all but NW             -> inner NW
+        34:48,   // N+W+NW                 -> patch SE outer
+        36:47,   // N+NE+E+W+NW            -> patch S edge
+        39:112,  // all but SE, SW         -> junction, notches S
+        40:68,   // all but NE, SW         -> diagonal notches
+        41:66,   // all but SW             -> inner SW
+        42:38,   // N+S+SW+W+NW            -> patch E edge
+        43:103,  // all but NE, SE         -> junction, notches E
+        44:67,   // all but SE             -> inner SE
+        45:57,   // all but NE             -> inner NE
+        46:37    // all neighbours         -> patch center
+    ]
+}
+
+#autotileDemo programmable() {
+    pos: 50, 80
+
+    // Title
+    text(exo2_16, "Autotile Terrain", #7fdbda): 0, 0
+    #statusText(updatable) text(exo2_14, "", #aaaaaa, left, 400): 240, 4
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Buttons
+    placeholder(generated(cross(80, 20, white)), builderParameter("randomizeBtn")) {
+        pos: 0, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(80, 20, white)), builderParameter("clearBtn")) {
+        pos: 90, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+
+    // Brush
+    text(exo2_14, "Brush:", #aaaaaa): 190, 38
+    placeholder(generated(cross(30, 26, white)), builderParameter("dirtBtn")) {
+        pos: 245, 32
+        settings{color=>#8B5A2B, width:int=>30, height:int=>26}
+    }
+    placeholder(generated(cross(30, 26, white)), builderParameter("grassBtn")) {
+        pos: 285, 32
+        settings{color=>#6FA430, width:int=>30, height:int=>26}
+    }
+
+    // Format
+    text(exo2_14, "Format:", #aaaaaa): 335, 38
+    placeholder(generated(cross(80, 20, white)), builderParameter("cornerBtn")) {
+        pos: 395, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(80, 20, white)), builderParameter("blob47Btn")) {
+        pos: 485, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+
+    // Map: grass background (40x28 cells, 8px tiles at 2x) baked into one TileGroup
+    point {
+        pos: 0, 70
+        @scale(2) tileGroup {
+            repeatable2d($gx, $gy, step(40, dx: 8), step(28, dy: 8)) {
+                bitmap(sheet("fp", "grass", ($gx * 7 + $gy * 13) % 6)): 0, 0
+            }
+        }
+    }
+
+    // Map container - autotile TileGroup goes here
+    #mapContainer(updatable) point: 0, 70
+
+    // Instructions
+    text(exo2_light_14, "Click or drag to paint | Pick a brush and a format above", #666666): 0, 525
+
+    // Format notes
+    text(exo2_14, "corner (16 tiles)", #7fdbda): 660, 70
+    text(exo2_light_14, "One tile per grid corner, offset by half a tile. The 15-tile dirt patch alone is a complete corner set: every shape renders, diagonal touches connect.", #aaaaaa, left, 220): 660, 90
+    text(exo2_14, "blob47 (47 tiles)", #7fdbda): 660, 190
+    text(exo2_light_14, "One tile per cell from its 8 neighbours, using the tileset's larger dirt collection (single blob, strip caps, 1-wide paths and junctions). 35 of the 47 tiles exist; the rest use the closest one. Diagonal-only touches do not connect.", #aaaaaa, left, 220): 660, 210
+}

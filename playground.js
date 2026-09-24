@@ -2138,7 +2138,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("transitions",new screens_animation_TransitionsDemoScreen(this.screenManager));
 		this.screenManager.addScreen("inventory",new screens_gamelike_InventoryDemoScreen(this.screenManager));
 		this.screenManager.addScreen("characterSheet",new screens_gamelike_CharacterSheetDemoScreen(this.screenManager));
-		this.screenManager.addScreen("blob47",new screens_gamelike_Blob47DemoScreen(this.screenManager));
+		this.screenManager.addScreen("autotile",new screens_gamelike_AutotileDemoScreen(this.screenManager));
 		this.screenManager.addScreen("battleHud",new screens_gamelike_BattleHudDemoScreen(this.screenManager));
 		this.screenManager.addScreen("skillTree",new screens_gamelike_SkillTreeDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogue",new screens_gamelike_DialogueDemoScreen(this.screenManager));
@@ -2212,7 +2212,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload6512Builder = function() {
+		var generatedByMacroBuildWithParametersload6515Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -2275,7 +2275,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6512Builder();
+		var ui = generatedByMacroBuildWithParametersload6515Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -3422,38 +3422,77 @@ bh_base_Atlas2.prototype = $extend(hxd_res_Resource.prototype,{
 var bh_base_Autotile = function() { };
 $hxClasses["bh.base.Autotile"] = bh_base_Autotile;
 bh_base_Autotile.__name__ = "bh.base.Autotile";
-bh_base_Autotile.getNeighborMask8 = function(grid,x,y) {
-	var height = grid.length;
-	if(height == 0) {
-		return 0;
+bh_base_Autotile.gridWidth = function(grid) {
+	var w = 0;
+	var _g = 0;
+	while(_g < grid.length) {
+		var row = grid[_g];
+		++_g;
+		if(row.length > w) {
+			w = row.length;
+		}
 	}
-	var width = grid[0].length;
+	return w;
+};
+bh_base_Autotile.getNeighborMask8 = function(grid,x,y) {
 	var mask = 0;
-	if(y > 0 && grid[y - 1][x] == 1) {
+	var y1 = y - 1;
+	if(y1 >= 0 && y1 < grid.length && x >= 0 && x < grid[y1].length && grid[y1][x] != 0) {
 		mask |= 1;
 	}
-	if(y > 0 && x < width - 1 && grid[y - 1][x + 1] == 1) {
+	var x1 = x + 1;
+	var y1 = y - 1;
+	if(y1 >= 0 && y1 < grid.length && x1 >= 0 && x1 < grid[y1].length && grid[y1][x1] != 0) {
 		mask |= 2;
 	}
-	if(x < width - 1 && grid[y][x + 1] == 1) {
+	var x1 = x + 1;
+	if(y >= 0 && y < grid.length && x1 >= 0 && x1 < grid[y].length && grid[y][x1] != 0) {
 		mask |= 4;
 	}
-	if(y < height - 1 && x < width - 1 && grid[y + 1][x + 1] == 1) {
+	var x1 = x + 1;
+	var y1 = y + 1;
+	if(y1 >= 0 && y1 < grid.length && x1 >= 0 && x1 < grid[y1].length && grid[y1][x1] != 0) {
 		mask |= 8;
 	}
-	if(y < height - 1 && grid[y + 1][x] == 1) {
+	var y1 = y + 1;
+	if(y1 >= 0 && y1 < grid.length && x >= 0 && x < grid[y1].length && grid[y1][x] != 0) {
 		mask |= 16;
 	}
-	if(y < height - 1 && x > 0 && grid[y + 1][x - 1] == 1) {
+	var x1 = x - 1;
+	var y1 = y + 1;
+	if(y1 >= 0 && y1 < grid.length && x1 >= 0 && x1 < grid[y1].length && grid[y1][x1] != 0) {
 		mask |= 32;
 	}
-	if(x > 0 && grid[y][x - 1] == 1) {
+	var x1 = x - 1;
+	if(y >= 0 && y < grid.length && x1 >= 0 && x1 < grid[y].length && grid[y][x1] != 0) {
 		mask |= 64;
 	}
-	if(y > 0 && x > 0 && grid[y - 1][x - 1] == 1) {
+	var x1 = x - 1;
+	var y1 = y - 1;
+	if(y1 >= 0 && y1 < grid.length && x1 >= 0 && x1 < grid[y1].length && grid[y1][x1] != 0) {
 		mask |= 128;
 	}
 	return mask;
+};
+bh_base_Autotile.getCornerIndex = function(grid,cornerX,cornerY) {
+	var index = 0;
+	var x = cornerX - 1;
+	var y = cornerY - 1;
+	if(y >= 0 && y < grid.length && x >= 0 && x < grid[y].length && grid[y][x] != 0) {
+		index |= 1;
+	}
+	var y = cornerY - 1;
+	if(y >= 0 && y < grid.length && cornerX >= 0 && cornerX < grid[y].length && grid[y][cornerX] != 0) {
+		index |= 2;
+	}
+	var x = cornerX - 1;
+	if(cornerY >= 0 && cornerY < grid.length && x >= 0 && x < grid[cornerY].length && grid[cornerY][x] != 0) {
+		index |= 4;
+	}
+	if(cornerY >= 0 && cornerY < grid.length && cornerX >= 0 && cornerX < grid[cornerY].length && grid[cornerY][cornerX] != 0) {
+		index |= 8;
+	}
+	return index;
 };
 bh_base_Autotile.getCrossIndex = function(mask8) {
 	var hasN = (mask8 & 1) != 0;
@@ -3511,26 +3550,20 @@ bh_base_Autotile.getBlob47Index = function(mask8) {
 	}
 	return bh_base_Autotile.blob47LUT[mask8];
 };
-bh_base_Autotile.getBlob47IndexWithFallback = function(mask8,maxTiles) {
-	if(bh_base_Autotile.blob47LUT == null) {
-		bh_base_Autotile.initBlob47LUT();
-	}
-	return bh_base_Autotile.applyBlob47Fallback(bh_base_Autotile.blob47LUT[mask8],maxTiles);
-};
-bh_base_Autotile.applyBlob47Fallback = function(tileIndex,maxTiles) {
-	if(bh_base_Autotile.blob47FallbackLUT == null) {
-		bh_base_Autotile.initBlob47FallbackLUT();
-	}
-	while(tileIndex >= maxTiles && tileIndex > 0) tileIndex = bh_base_Autotile.blob47FallbackLUT[tileIndex];
-	if(tileIndex >= maxTiles) {
-		return 0;
-	}
-	return tileIndex;
+bh_base_Autotile.getBlob47Mask = function(tileIndex) {
+	return bh_base_Autotile.blob47ReverseLUT[tileIndex];
 };
 bh_base_Autotile.applyBlob47FallbackWithMap = function(tileIndex,mapping) {
+	return bh_base_Autotile.getBlob47FallbackChain(tileIndex,mapping).result;
+};
+bh_base_Autotile.getBlob47FallbackChain = function(tileIndex,mapping) {
 	if(bh_base_Autotile.blob47LUT == null) {
 		bh_base_Autotile.initBlob47LUT();
 	}
+	if(mapping.h.hasOwnProperty(tileIndex)) {
+		return { result : tileIndex, skipped : []};
+	}
+	var skipped = [];
 	var mask = bh_base_Autotile.blob47ReverseLUT[tileIndex];
 	var allCardinals = mask & 85;
 	var cardinalBits = [];
@@ -3546,28 +3579,61 @@ bh_base_Autotile.applyBlob47FallbackWithMap = function(tileIndex,mapping) {
 	if((allCardinals & 64) != 0) {
 		cardinalBits.push(64);
 	}
-	var result = bh_base_Autotile.findBestCornerMatch(allCardinals,tileIndex,mapping);
-	if(result >= 0) {
-		return result;
+	var phase1 = [];
+	bh_base_Autotile.addCornerCandidates(allCardinals,mask,tileIndex,phase1,new haxe_ds_IntMap());
+	var _g = 0;
+	var _g1 = bh_base_Autotile.sortCandidates(phase1);
+	while(_g < _g1.length) {
+		var candidate = _g1[_g];
+		++_g;
+		if(mapping.h.hasOwnProperty(candidate)) {
+			return { result : candidate, skipped : skipped};
+		}
+		skipped.push(candidate);
 	}
 	var _g = 1;
 	var _g1 = cardinalBits.length;
 	while(_g < _g1) {
 		var removeCount = _g++;
-		var best = bh_base_Autotile.tryReducedCardinals(cardinalBits,removeCount,tileIndex,mapping);
-		if(best >= 0) {
-			return best;
+		var phase2 = [[]];
+		var seen = [new haxe_ds_IntMap()];
+		bh_base_Autotile.combineRemovals(cardinalBits,cardinalBits.length,removeCount,0,0,(function(seen,phase2) {
+			return function(removeMask) {
+				bh_base_Autotile.addCornerCandidates(allCardinals & ~removeMask,mask,tileIndex,phase2[0],seen[0]);
+			};
+		})(seen,phase2));
+		var _g2 = 0;
+		var _g3 = bh_base_Autotile.sortCandidates(phase2[0]);
+		while(_g2 < _g3.length) {
+			var candidate = _g3[_g2];
+			++_g2;
+			if(mapping.h.hasOwnProperty(candidate)) {
+				return { result : candidate, skipped : skipped};
+			}
+			if(skipped.indexOf(candidate) < 0) {
+				skipped.push(candidate);
+			}
 		}
 	}
-	if(tileIndex != 46 && mapping.h.hasOwnProperty(46)) {
-		return 46;
+	if(tileIndex != 46) {
+		if(mapping.h.hasOwnProperty(46)) {
+			return { result : 46, skipped : skipped};
+		}
+		if(skipped.indexOf(46) < 0) {
+			skipped.push(46);
+		}
 	}
-	if(tileIndex != 0 && mapping.h.hasOwnProperty(0)) {
-		return 0;
+	if(tileIndex != 0) {
+		if(mapping.h.hasOwnProperty(0)) {
+			return { result : 0, skipped : skipped};
+		}
+		if(skipped.indexOf(0) < 0) {
+			skipped.push(0);
+		}
 	}
-	return tileIndex;
+	return { result : tileIndex, skipped : skipped};
 };
-bh_base_Autotile.findBestCornerMatch = function(cardinals,skipTile,mapping) {
+bh_base_Autotile.addCornerCandidates = function(cardinals,wantedMask,skipTile,out,seen) {
 	var cornerBits = [];
 	if((cardinals & 1) != 0 && (cardinals & 4) != 0) {
 		cornerBits.push(2);
@@ -3581,70 +3647,70 @@ bh_base_Autotile.findBestCornerMatch = function(cardinals,skipTile,mapping) {
 	if((cardinals & 1) != 0 && (cardinals & 64) != 0) {
 		cornerBits.push(128);
 	}
-	var numCorners = cornerBits.length;
-	var bestTile = -1;
-	var bestCount = -1;
+	var wantedCorners = wantedMask & 170;
 	var _g = 0;
-	var _g1 = 1 << numCorners;
+	var _g1 = 1 << cornerBits.length;
 	while(_g < _g1) {
 		var subset = _g++;
 		var tryMask = cardinals;
-		var count = 0;
 		var _g2 = 0;
-		var _g3 = numCorners;
+		var _g3 = cornerBits.length;
 		while(_g2 < _g3) {
 			var ci = _g2++;
 			if((subset & 1 << ci) != 0) {
 				tryMask |= cornerBits[ci];
-				++count;
 			}
 		}
 		var tryTile = bh_base_Autotile.blob47LUT[tryMask];
-		if(tryTile != skipTile && mapping.h.hasOwnProperty(tryTile) && count > bestCount) {
-			bestCount = count;
-			bestTile = tryTile;
+		if(tryTile == skipTile || seen.h.hasOwnProperty(tryTile)) {
+			continue;
 		}
+		seen.h[tryTile] = true;
+		var corners = tryMask & 170;
+		var count = 0;
+		var x = cardinals;
+		while(x != 0) {
+			count += x & 1;
+			x >>>= 1;
+		}
+		var tmp = count;
+		var count1 = 0;
+		var x1 = corners ^ wantedCorners;
+		while(x1 != 0) {
+			count1 += x1 & 1;
+			x1 >>>= 1;
+		}
+		var tmp1 = count1;
+		var count2 = 0;
+		var x2 = corners;
+		while(x2 != 0) {
+			count2 += x2 & 1;
+			x2 >>>= 1;
+		}
+		out.push({ tile : tryTile, cardinals : tmp, mismatch : tmp1, corners : count2, order : out.length});
 	}
-	return bestTile;
 };
-bh_base_Autotile.tryReducedCardinals = function(cardinalBits,removeCount,skipTile,mapping) {
-	var bestTile = -1;
-	var bestScore = -1;
-	bh_base_Autotile.combineRemovals(cardinalBits,cardinalBits.length,removeCount,0,0,function(removeMask) {
-		var reduced = 85 & ~removeMask;
-		var keepCardinals = 0;
-		var _g = 0;
-		while(_g < cardinalBits.length) {
-			var b = cardinalBits[_g];
-			++_g;
-			if((b & removeMask) == 0) {
-				keepCardinals |= b;
-			}
+bh_base_Autotile.sortCandidates = function(candidates) {
+	candidates.sort(function(a,b) {
+		if(a.cardinals != b.cardinals) {
+			return b.cardinals - a.cardinals;
 		}
-		var result = bh_base_Autotile.findBestCornerMatch(keepCardinals,skipTile,mapping);
-		if(result >= 0) {
-			var rmask = bh_base_Autotile.blob47ReverseLUT[result];
-			var corners = 0;
-			if((rmask & 2) != 0) {
-				++corners;
-			}
-			if((rmask & 8) != 0) {
-				++corners;
-			}
-			if((rmask & 32) != 0) {
-				++corners;
-			}
-			if((rmask & 128) != 0) {
-				++corners;
-			}
-			var score = (cardinalBits.length - removeCount) * 10 + corners;
-			if(score > bestScore) {
-				bestScore = score;
-				bestTile = result;
-			}
+		if(a.mismatch != b.mismatch) {
+			return a.mismatch - b.mismatch;
 		}
+		if(a.corners != b.corners) {
+			return b.corners - a.corners;
+		}
+		return a.order - b.order;
 	});
-	return bestTile;
+	var _g = [];
+	var _g1 = 0;
+	while(_g1 < candidates.length) {
+		var c = candidates[_g1];
+		++_g1;
+		_g.push(c.tile);
+	}
+	return _g;
 };
 bh_base_Autotile.combineRemovals = function(bits,n,k,start,mask,cb) {
 	if(k == 0) {
@@ -3659,202 +3725,29 @@ bh_base_Autotile.combineRemovals = function(bits,n,k,start,mask,cb) {
 	}
 };
 bh_base_Autotile.initBlob47LUT = function() {
-	bh_base_Autotile.blob47LUT = [];
-	bh_base_Autotile.blob47LUT.length = 256;
-	var _g = 0;
-	while(_g < 256) {
-		var i = _g++;
-		bh_base_Autotile.blob47LUT[i] = bh_base_Autotile.calculateBlob47Tile(i);
+	var _g = [];
+	var _g1 = 0;
+	while(_g1 < 256) {
+		var mask = _g1++;
+		_g.push(bh_base_Autotile.blob47ReverseLUT.indexOf(bh_base_Autotile.reduceBlob47Mask(mask)));
 	}
-	bh_base_Autotile.blob47ReverseLUT = [0,1,4,5,7,16,17,20,21,23,28,29,31,64,65,68,69,71,80,81,84,85,87,92,93,95,112,113,116,117,119,124,125,127,193,197,199,209,213,215,221,223,241,245,247,253,255];
+	bh_base_Autotile.blob47LUT = _g;
 };
-bh_base_Autotile.initBlob47FallbackLUT = function() {
-	bh_base_Autotile.blob47FallbackLUT = [];
-	bh_base_Autotile.blob47FallbackLUT.length = 47;
-	bh_base_Autotile.blob47FallbackLUT[0] = 0;
-	bh_base_Autotile.blob47FallbackLUT[1] = 0;
-	bh_base_Autotile.blob47FallbackLUT[2] = 0;
-	bh_base_Autotile.blob47FallbackLUT[3] = 0;
-	bh_base_Autotile.blob47FallbackLUT[4] = 3;
-	bh_base_Autotile.blob47FallbackLUT[5] = 0;
-	bh_base_Autotile.blob47FallbackLUT[6] = 1;
-	bh_base_Autotile.blob47FallbackLUT[7] = 2;
-	bh_base_Autotile.blob47FallbackLUT[8] = 3;
-	bh_base_Autotile.blob47FallbackLUT[9] = 8;
-	bh_base_Autotile.blob47FallbackLUT[10] = 7;
-	bh_base_Autotile.blob47FallbackLUT[11] = 8;
-	bh_base_Autotile.blob47FallbackLUT[12] = 9;
-	bh_base_Autotile.blob47FallbackLUT[13] = 0;
-	bh_base_Autotile.blob47FallbackLUT[14] = 1;
-	bh_base_Autotile.blob47FallbackLUT[15] = 2;
-	bh_base_Autotile.blob47FallbackLUT[16] = 3;
-	bh_base_Autotile.blob47FallbackLUT[17] = 16;
-	bh_base_Autotile.blob47FallbackLUT[18] = 5;
-	bh_base_Autotile.blob47FallbackLUT[19] = 6;
-	bh_base_Autotile.blob47FallbackLUT[20] = 7;
-	bh_base_Autotile.blob47FallbackLUT[21] = 8;
-	bh_base_Autotile.blob47FallbackLUT[22] = 21;
-	bh_base_Autotile.blob47FallbackLUT[23] = 20;
-	bh_base_Autotile.blob47FallbackLUT[24] = 21;
-	bh_base_Autotile.blob47FallbackLUT[25] = 22;
-	bh_base_Autotile.blob47FallbackLUT[26] = 18;
-	bh_base_Autotile.blob47FallbackLUT[27] = 19;
-	bh_base_Autotile.blob47FallbackLUT[28] = 20;
-	bh_base_Autotile.blob47FallbackLUT[29] = 21;
-	bh_base_Autotile.blob47FallbackLUT[30] = 22;
-	bh_base_Autotile.blob47FallbackLUT[31] = 23;
-	bh_base_Autotile.blob47FallbackLUT[32] = 24;
-	bh_base_Autotile.blob47FallbackLUT[33] = 25;
-	bh_base_Autotile.blob47FallbackLUT[34] = 14;
-	bh_base_Autotile.blob47FallbackLUT[35] = 16;
-	bh_base_Autotile.blob47FallbackLUT[36] = 17;
-	bh_base_Autotile.blob47FallbackLUT[37] = 19;
-	bh_base_Autotile.blob47FallbackLUT[38] = 21;
-	bh_base_Autotile.blob47FallbackLUT[39] = 22;
-	bh_base_Autotile.blob47FallbackLUT[40] = 24;
-	bh_base_Autotile.blob47FallbackLUT[41] = 25;
-	bh_base_Autotile.blob47FallbackLUT[42] = 27;
-	bh_base_Autotile.blob47FallbackLUT[43] = 29;
-	bh_base_Autotile.blob47FallbackLUT[44] = 30;
-	bh_base_Autotile.blob47FallbackLUT[45] = 32;
-	bh_base_Autotile.blob47FallbackLUT[46] = 41;
-};
-bh_base_Autotile.calculateBlob47Tile = function(mask) {
-	var hasN = (mask & 1) != 0;
-	var hasNE = (mask & 2) != 0;
-	var hasE = (mask & 4) != 0;
-	var hasSE = (mask & 8) != 0;
-	var hasS = (mask & 16) != 0;
-	var hasSW = (mask & 32) != 0;
-	var hasW = (mask & 64) != 0;
-	var hasNW = (mask & 128) != 0;
-	var effectiveNE = hasNE && hasN && hasE;
-	var effectiveSE = hasSE && hasS && hasE;
-	var effectiveSW = hasSW && hasS && hasW;
-	var effectiveNW = hasNW && hasN && hasW;
-	var reduced = 0;
-	if(hasN) {
-		reduced |= 1;
-	}
-	if(effectiveNE) {
+bh_base_Autotile.reduceBlob47Mask = function(mask) {
+	var reduced = mask & 85;
+	if((mask & 2) != 0 && (mask & 1) != 0 && (mask & 4) != 0) {
 		reduced |= 2;
 	}
-	if(hasE) {
-		reduced |= 4;
-	}
-	if(effectiveSE) {
+	if((mask & 8) != 0 && (mask & 16) != 0 && (mask & 4) != 0) {
 		reduced |= 8;
 	}
-	if(hasS) {
-		reduced |= 16;
-	}
-	if(effectiveSW) {
+	if((mask & 32) != 0 && (mask & 16) != 0 && (mask & 64) != 0) {
 		reduced |= 32;
 	}
-	if(hasW) {
-		reduced |= 64;
-	}
-	if(effectiveNW) {
+	if((mask & 128) != 0 && (mask & 1) != 0 && (mask & 64) != 0) {
 		reduced |= 128;
 	}
-	switch(reduced) {
-	case 0:
-		return 0;
-	case 1:
-		return 1;
-	case 4:
-		return 2;
-	case 5:
-		return 3;
-	case 7:
-		return 4;
-	case 16:
-		return 5;
-	case 17:
-		return 6;
-	case 20:
-		return 7;
-	case 21:
-		return 8;
-	case 23:
-		return 9;
-	case 28:
-		return 10;
-	case 29:
-		return 11;
-	case 31:
-		return 12;
-	case 64:
-		return 13;
-	case 65:
-		return 14;
-	case 68:
-		return 15;
-	case 69:
-		return 16;
-	case 71:
-		return 17;
-	case 80:
-		return 18;
-	case 81:
-		return 19;
-	case 84:
-		return 20;
-	case 85:
-		return 21;
-	case 87:
-		return 22;
-	case 92:
-		return 23;
-	case 93:
-		return 24;
-	case 95:
-		return 25;
-	case 112:
-		return 26;
-	case 113:
-		return 27;
-	case 116:
-		return 28;
-	case 117:
-		return 29;
-	case 119:
-		return 30;
-	case 124:
-		return 31;
-	case 125:
-		return 32;
-	case 127:
-		return 33;
-	case 193:
-		return 34;
-	case 197:
-		return 35;
-	case 199:
-		return 36;
-	case 209:
-		return 37;
-	case 213:
-		return 38;
-	case 215:
-		return 39;
-	case 221:
-		return 40;
-	case 223:
-		return 41;
-	case 241:
-		return 42;
-	case 245:
-		return 43;
-	case 247:
-		return 44;
-	case 253:
-		return 45;
-	case 255:
-		return 46;
-	default:
-		return 21;
-	}
+	return reduced;
 };
 var hxd_Cursor = $hxEnums["hxd.Cursor"] = { __ename__:true,__constructs__:null
 	,Default: {_hx_name:"Default",_hx_index:0,__enum__:"hxd.Cursor",toString:$estr}
@@ -4019,6 +3912,21 @@ function bh_base_HeapsUtils_solidTile(color,width,height) {
 }
 function bh_base_HeapsUtils_solidBitmap(color,width,height,parent) {
 	return new h2d_Bitmap(bh_base_HeapsUtils_solidTile(color,width,height),parent);
+}
+function bh_base_HeapsUtils_crossTile(color,width,height,thickness) {
+	var pl = new bh_base_PixelLines(width,height);
+	var _g = 0;
+	var _g1 = thickness;
+	while(_g < _g1) {
+		var t = _g++;
+		pl.rect(t,t,width - 1 - t * 2,height - 1 - t * 2,color);
+		pl.line(t,0,width - 1,height - 1 - t,color);
+		pl.line(0,t,width - 1 - t,height - 1,color);
+		pl.line(t,height - 1,width - 1,t,color);
+		pl.line(0,height - 1 - t,width - 1 - t,0,color);
+	}
+	pl.updateBitmap();
+	return pl.tile;
 }
 var bh_base_RelativeHex = {};
 bh_base_RelativeHex.fromRelativeHex = function(hex) {
@@ -5405,7 +5313,10 @@ var bh_base_ParseError = function(pos) {
 $hxClasses["bh.base.ParseError"] = bh_base_ParseError;
 bh_base_ParseError.__name__ = "bh.base.ParseError";
 bh_base_ParseError.prototype = {
-	__class__: bh_base_ParseError
+	toString: function() {
+		return "Parser error";
+	}
+	,__class__: bh_base_ParseError
 };
 var bh_base_ParseUnexpected = function(token,pos) {
 	bh_base_ParseError.call(this,pos);
@@ -5415,7 +5326,10 @@ $hxClasses["bh.base.ParseUnexpected"] = bh_base_ParseUnexpected;
 bh_base_ParseUnexpected.__name__ = "bh.base.ParseUnexpected";
 bh_base_ParseUnexpected.__super__ = bh_base_ParseError;
 bh_base_ParseUnexpected.prototype = $extend(bh_base_ParseError.prototype,{
-	__class__: bh_base_ParseUnexpected
+	toString: function() {
+		return "Unexpected " + Std.string(this.token);
+	}
+	,__class__: bh_base_ParseUnexpected
 });
 var bh_base_ParsePosition = function(source,line,col) {
 	this.psource = source;
@@ -5844,6 +5758,8 @@ bh_base_ParticleGroup.prototype = {
 					p.visible = true;
 					this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnBirth);
 				}
+			} else {
+				p.visible = false;
 			}
 			this.batch.add(p);
 		}
@@ -6632,7 +6548,11 @@ $hxClasses["bh.base.PixelLines"] = bh_base_PixelLines;
 bh_base_PixelLines.__name__ = "bh.base.PixelLines";
 bh_base_PixelLines.__super__ = h2d_Bitmap;
 bh_base_PixelLines.prototype = $extend(h2d_Bitmap.prototype,{
-	line: function(x0,y0,x1,y1,colorARGB) {
+	clear: function() {
+		this.data.clear(0);
+		this.data.lock();
+	}
+	,line: function(x0,y0,x1,y1,colorARGB) {
 		this.data.lock();
 		this.data.line(x0,y0,x1,y1,colorARGB);
 	}
@@ -6752,11 +6672,9 @@ var bh_base_ResolvedGeneratedTileType = $hxEnums["bh.base.ResolvedGeneratedTileT
 	,Cross: ($_=function(width,height,color,thickness) { return {_hx_index:0,width:width,height:height,color:color,thickness:thickness,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="Cross",$_.__params__ = ["width","height","color","thickness"],$_)
 	,SolidColor: ($_=function(width,height,color) { return {_hx_index:1,width:width,height:height,color:color,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="SolidColor",$_.__params__ = ["width","height","color"],$_)
 	,SolidColorWithText: ($_=function(width,height,color,text,textColor,font) { return {_hx_index:2,width:width,height:height,color:color,text:text,textColor:textColor,font:font,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="SolidColorWithText",$_.__params__ = ["width","height","color","text","textColor","font"],$_)
-	,AutotileRef: ($_=function(format,tileIndex,tileSize,edgeColor,fillColor) { return {_hx_index:3,format:format,tileIndex:tileIndex,tileSize:tileSize,edgeColor:edgeColor,fillColor:fillColor,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRef",$_.__params__ = ["format","tileIndex","tileSize","edgeColor","fillColor"],$_)
-	,AutotileRegionSheet: ($_=function(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scale,font,fontColor) { return {_hx_index:4,baseTile:baseTile,regionX:regionX,regionY:regionY,regionW:regionW,regionH:regionH,tileSize:tileSize,tileCount:tileCount,scale:scale,font:font,fontColor:fontColor,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRegionSheet",$_.__params__ = ["baseTile","regionX","regionY","regionW","regionH","tileSize","tileCount","scale","font","fontColor"],$_)
-	,PreloadedTile: ($_=function(tile) { return {_hx_index:5,tile:tile,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="PreloadedTile",$_.__params__ = ["tile"],$_)
+	,AutotileRegionSheet: ($_=function(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scale,font,fontColor) { return {_hx_index:3,baseTile:baseTile,regionX:regionX,regionY:regionY,regionW:regionW,regionH:regionH,tileSize:tileSize,tileCount:tileCount,scale:scale,font:font,fontColor:fontColor,__enum__:"bh.base.ResolvedGeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRegionSheet",$_.__params__ = ["baseTile","regionX","regionY","regionW","regionH","tileSize","tileCount","scale","font","fontColor"],$_)
 };
-bh_base_ResolvedGeneratedTileType.__constructs__ = [bh_base_ResolvedGeneratedTileType.Cross,bh_base_ResolvedGeneratedTileType.SolidColor,bh_base_ResolvedGeneratedTileType.SolidColorWithText,bh_base_ResolvedGeneratedTileType.AutotileRef,bh_base_ResolvedGeneratedTileType.AutotileRegionSheet,bh_base_ResolvedGeneratedTileType.PreloadedTile];
+bh_base_ResolvedGeneratedTileType.__constructs__ = [bh_base_ResolvedGeneratedTileType.Cross,bh_base_ResolvedGeneratedTileType.SolidColor,bh_base_ResolvedGeneratedTileType.SolidColorWithText,bh_base_ResolvedGeneratedTileType.AutotileRegionSheet];
 bh_base_ResolvedGeneratedTileType.__empty_constructs__ = [];
 var bh_base_ResourceLoader = function() { };
 $hxClasses["bh.base.ResourceLoader"] = bh_base_ResourceLoader;
@@ -6780,10 +6698,10 @@ bh_base_CachingResourceLoader.__name__ = "bh.base.CachingResourceLoader";
 bh_base_CachingResourceLoader.__interfaces__ = [bh_base_ResourceLoader];
 bh_base_CachingResourceLoader.prototype = {
 	loadSheet2Impl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 70, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 67, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
 	}
 	,loadSheetImpl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 74, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 71, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
 	}
 	,loadTileImpl: function(filename) {
 		var res = this.loadHXDResourceImpl(filename);
@@ -6793,16 +6711,16 @@ bh_base_CachingResourceLoader.prototype = {
 		return res.toTile();
 	}
 	,loadMultiAnimImpl: function(name) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 84, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 81, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
 	}
 	,loadHXDResourceImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 88, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 85, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
 	}
 	,loadFontImpl: function(font) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 92, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 89, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
 	}
 	,loadAnimSMImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 96, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 93, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
 	}
 	,cachedGet: function(cache,cacheKey,get) {
 		var value = cache.get(cacheKey);
@@ -10687,6 +10605,9 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 								--depth;
 							} else if(bc == 39) {
 								throw haxe_Exception.thrown("" + this.sourceName + ":" + interpLine + ":" + interpCol + ": Unclosed string interpolation, expected }");
+							} else if(bc == 10) {
+								this.line++;
+								this.lineStart = this.pos + 1;
 							}
 							if(depth > 0) {
 								this.pos++;
@@ -10745,7 +10666,7 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 							var ct = codeTokens[_g1];
 							++_g1;
 							ct.line = part.codeLine;
-							ct.col = part.codeCol + ct.col;
+							ct.col = part.codeCol + 1 + ct.col;
 						}
 						var _g2 = 0;
 						var _g3 = codeTokens.length;
@@ -12574,9 +12495,9 @@ bh_multianim_MacroManimParser.prototype = {
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 							var name = this.parseStringOrReference();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-							var selector = this.parseAutotileTileSelector();
+							var index = this.parseIntegerOrReference();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-							return bh_multianim_GeneratedTileType.AutotileRef(name,selector);
+							return bh_multianim_GeneratedTileType.AutotileRef(name,index);
 						} else {
 							var s = _g1;
 							if(bh_multianim_MacroManimParser.isKeyword(s,"autotileregionsheet")) {
@@ -12601,9 +12522,6 @@ bh_multianim_MacroManimParser.prototype = {
 		} else {
 			return this.error("unknown generated tile type");
 		}
-	}
-	,parseAutotileTileSelector: function() {
-		return bh_multianim_AutotileTileSelector.ByIndex(this.parseIntegerOrReference());
 	}
 	,parseDefines: function() {
 		var defines = new haxe_ds_StringMap();
@@ -14437,6 +14355,9 @@ bh_multianim_MacroManimParser.prototype = {
 															if(parent == null) {
 																this.error("@switch cannot be used at root level");
 															}
+															if(!(updatableName._hx_index == 0 && updatableName.name == null)) {
+																this.error("#name cannot be applied to @switch — name the elements inside the arms instead");
+															}
 															this.advance();
 															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
 															var switchParam = this.expectIdentifierOrString();
@@ -14503,6 +14424,9 @@ bh_multianim_MacroManimParser.prototype = {
 															} else {
 																var s11 = _g1;
 																if(bh_multianim_MacroManimParser.isKeyword(s11,"final")) {
+																	if(atCount > 0) {
+																		this.error("@final cannot be combined with other @ modifiers or conditionals — a @final is always unconditional");
+																	}
 																	this.advance();
 																	var name = this.expectIdentifierOrString();
 																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TEquals);
@@ -15139,9 +15063,24 @@ bh_multianim_MacroManimParser.prototype = {
 														slotScopeSaved = true;
 														currentDefs = parsed.defs;
 														this.activeDefs = parsed.defs;
-														this.scopeVars = [];
+														this.scopeVars = slotSavedActiveFinalNames != null ? slotSavedActiveFinalNames.slice() : [];
 														this.activeFinals = new haxe_ds_StringMap();
-														this.activeFinalNames = [];
+														if(slotSavedActiveFinals != null) {
+															var h = slotSavedActiveFinals.h;
+															var _g_h = h;
+															var _g_keys = Object.keys(h);
+															var _g_length = _g_keys.length;
+															var _g_current = 0;
+															while(_g_current < _g_length) {
+																var key = _g_keys[_g_current++];
+																var _g_key = key;
+																var _g_value = _g_h[key];
+																var k = _g_key;
+																var v = _g_value;
+																this.activeFinals.h[k] = v;
+															}
+														}
+														this.activeFinalNames = slotSavedActiveFinalNames != null ? slotSavedActiveFinalNames.slice() : [];
 														this.namedElements = [];
 														node = this.createNode(bh_multianim_NodeType.SLOT(parsed.defs,parsed.order),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 													} else {
@@ -15327,6 +15266,9 @@ bh_multianim_MacroManimParser.prototype = {
 																var s = _g1;
 																if(bh_multianim_MacroManimParser.isKeyword(s,"programmable")) {
 																	this.advance();
+																	if(parent != null) {
+																		this.error("programmable must be a root node — programmables cannot be nested; embed one via staticRef/dynamicRef instead");
+																	}
 																	var isTileGroup = false;
 																	var _g = this.tokens[this.tpos].type;
 																	if(_g._hx_index == 32) {
@@ -15648,11 +15590,21 @@ bh_multianim_MacroManimParser.prototype = {
 																												case 1:
 																													this.advance();
 																													var _g = this.tokens[this.tpos].type;
-																													if(_g._hx_index == 32) {
-																														var _g2 = _g.s;
-																														var s2 = _g2;
-																														if(bh_multianim_MacroManimParser.isKeyword(s2,"2d")) {
+																													switch(_g._hx_index) {
+																													case 29:
+																														if(_g.s == "2") {
 																															this.advance();
+																															var _g2 = this.tokens[this.tpos].type;
+																															if(_g2._hx_index == 32) {
+																																var d = _g2.s;
+																																if(d.toLowerCase() == "d") {
+																																	this.advance();
+																																} else {
+																																	this.error("expected 2d or file in palette()");
+																																}
+																															} else {
+																																this.error("expected 2d or file in palette()");
+																															}
 																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 																															var width = this.parseInteger();
 																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
@@ -15660,18 +15612,22 @@ bh_multianim_MacroManimParser.prototype = {
 																															var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
 																															paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors2D(colors,width)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																														} else {
-																															var s2 = _g2;
-																															if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
-																																this.advance();
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																																var filename = this.parseStringOrReference();
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																																paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																															} else {
-																																paletteNode = this.error("expected 2d or file in palette()");
-																															}
+																															paletteNode = this.error("expected 2d or file in palette()");
 																														}
-																													} else {
+																														break;
+																													case 32:
+																														var s2 = _g.s;
+																														if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
+																															this.advance();
+																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																															var filename = this.parseStringOrReference();
+																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																															paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																														} else {
+																															paletteNode = this.error("expected 2d or file in palette()");
+																														}
+																														break;
+																													default:
 																														paletteNode = this.error("expected 2d or file in palette()");
 																													}
 																													break;
@@ -15861,6 +15817,9 @@ bh_multianim_MacroManimParser.prototype = {
 																																				var s = _g1;
 																																				if(bh_multianim_MacroManimParser.isKeyword(s,"transition")) {
 																																					this.advance();
+																																					if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
+																																						this.error("@ modifiers are not supported on transition {} — transition declarations are unconditional");
+																																					}
 																																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 																																					if(parent == null) {
 																																						this.error("transition must be inside a programmable");
@@ -15934,6 +15893,9 @@ bh_multianim_MacroManimParser.prototype = {
 																																					var s = _g1;
 																																					if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
 																																						this.advance();
+																																						if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
+																																							this.error("@ modifiers are not supported on settings {} — settings are static and unconditional");
+																																						}
 																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
 																																						if(parent == null) {
 																																							this.error("settings must have a parent");
@@ -16096,15 +16058,6 @@ bh_multianim_MacroManimParser.prototype = {
 				var _ = _g++;
 				this.scopeVars.pop();
 			}
-			if(slotScopeSaved) {
-				currentDefs = slotSavedCurrentDefs;
-				this.activeDefs = slotSavedActiveDefs;
-				this.scopeVars = slotSavedScopeVars;
-				this.activeFinals = slotSavedActiveFinals;
-				this.activeFinalNames = slotSavedActiveFinalNames;
-				this.namedElements = slotSavedNamedElements;
-				slotScopeSaved = false;
-			}
 			break;
 		case 11:
 			this.advance();
@@ -16117,6 +16070,15 @@ bh_multianim_MacroManimParser.prototype = {
 			break;
 		default:
 			this.error("expected : or { or ;, got " + Std.string(this.tokens[this.tpos].type));
+		}
+		if(slotScopeSaved) {
+			currentDefs = slotSavedCurrentDefs;
+			this.activeDefs = slotSavedActiveDefs;
+			this.scopeVars = slotSavedScopeVars;
+			this.activeFinals = slotSavedActiveFinals;
+			this.activeFinalNames = slotSavedActiveFinalNames;
+			this.namedElements = slotSavedNamedElements;
+			slotScopeSaved = false;
 		}
 		return node;
 	}
@@ -19397,13 +19359,19 @@ bh_multianim_MacroManimParser.prototype = {
 		return { timeStart : timeStart, timeEnd : timeEnd, easing : easing, valueStart : valueStart, valueEnd : valueEnd};
 	}
 	,parseAutotile: function() {
+		var _gthis = this;
 		var format = null;
 		var source = null;
 		var tileSize = null;
-		var depth = null;
 		var mapping = null;
 		var region = null;
 		var allowPartialMapping = false;
+		var setSource = function(s) {
+			if(source != null) {
+				_gthis.error("autotile has more than one source (use exactly one of sheet:, file:, tiles:, demo:)");
+			}
+			source = s;
+		};
 		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 			var _g = this.tokens[this.tpos].type;
 			if(_g._hx_index == 32) {
@@ -19425,11 +19393,17 @@ bh_multianim_MacroManimParser.prototype = {
 								this.advance();
 								format = bh_multianim_AutotileFormat.Blob47;
 							} else {
-								this.error("expected cross or blob47");
+								var s22 = _g3;
+								if(bh_multianim_MacroManimParser.isKeyword(s22,"corner")) {
+									this.advance();
+									format = bh_multianim_AutotileFormat.Corner;
+								} else {
+									this.error("expected cross, blob47 or corner");
+								}
 							}
 						}
 					} else {
-						this.error("expected cross or blob47");
+						this.error("expected cross, blob47 or corner");
 					}
 				} else {
 					var s1 = _g1;
@@ -19441,33 +19415,22 @@ bh_multianim_MacroManimParser.prototype = {
 						var _g4 = this.tokens[this.tpos].type;
 						if(_g4._hx_index == 32) {
 							var _g5 = _g4.s;
-							var s22 = _g5;
-							if(bh_multianim_MacroManimParser.isKeyword(s22,"prefix")) {
+							var s23 = _g5;
+							if(bh_multianim_MacroManimParser.isKeyword(s23,"prefix")) {
 								this.advance();
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 								var prefix = this.parseStringOrReference();
-								source = bh_multianim_AutotileSource.ATSAtlas(sheet,prefix);
+								setSource(bh_multianim_AutotileSource.ATSAtlas(sheet,prefix));
 							} else {
-								var s23 = _g5;
-								if(bh_multianim_MacroManimParser.isKeyword(s23,"region")) {
-									this.advance();
-									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TBracketOpen);
-									var regionVals = [];
-									while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
-										this.eatComma();
-										if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TBracketClosed)) {
-											break;
-										}
-										regionVals.push(this.parseIntegerOrReference());
-									}
-									source = bh_multianim_AutotileSource.ATSAtlasRegion(sheet,regionVals);
+								var s24 = _g5;
+								if(bh_multianim_MacroManimParser.isKeyword(s24,"region")) {
+									this.error("autotile \"sheet: ..., region: [...]\" is not supported - use file: \"image.png\" with region: [x, y, w, h]");
 								} else {
-									this.error("expected prefix or region after sheet");
+									this.error("expected prefix: after sheet");
 								}
 							}
 						} else {
-							this.error("expected prefix or region after sheet");
+							this.error("expected prefix: after sheet");
 						}
 					} else {
 						var s3 = _g1;
@@ -19475,14 +19438,17 @@ bh_multianim_MacroManimParser.prototype = {
 							this.advance();
 							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 							var filename = this.parseStringOrReference();
-							source = bh_multianim_AutotileSource.ATSFile(filename);
+							setSource(bh_multianim_AutotileSource.ATSFile(filename));
 						} else {
 							var s4 = _g1;
 							if(bh_multianim_MacroManimParser.isKeyword(s4,"tiles")) {
 								this.advance();
 								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 								var tiles = this.parseTileSources();
-								source = bh_multianim_AutotileSource.ATSTiles(tiles);
+								if(tiles.length == 0) {
+									this.error("autotile tiles: needs at least one tile source");
+								}
+								setSource(bh_multianim_AutotileSource.ATSTiles(tiles));
 							} else {
 								var s5 = _g1;
 								if(bh_multianim_MacroManimParser.isKeyword(s5,"demo")) {
@@ -19491,7 +19457,7 @@ bh_multianim_MacroManimParser.prototype = {
 									var edgeColor = this.parseColorOrReference();
 									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
 									var fillColor = this.parseColorOrReference();
-									source = bh_multianim_AutotileSource.ATSDemo(edgeColor,fillColor);
+									setSource(bh_multianim_AutotileSource.ATSDemo(edgeColor,fillColor));
 								} else {
 									var s6 = _g1;
 									if(bh_multianim_MacroManimParser.isKeyword(s6,"tilesize")) {
@@ -19501,9 +19467,7 @@ bh_multianim_MacroManimParser.prototype = {
 									} else {
 										var s7 = _g1;
 										if(bh_multianim_MacroManimParser.isKeyword(s7,"depth")) {
-											this.advance();
-											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-											depth = this.parseIntegerOrReference();
+											this.error("autotile depth: was removed (elevation rendering is not supported)");
 										} else {
 											var s8 = _g1;
 											if(bh_multianim_MacroManimParser.isKeyword(s8,"mapping")) {
@@ -19531,6 +19495,9 @@ bh_multianim_MacroManimParser.prototype = {
 															}
 															region.push(this.parseIntegerOrReference());
 														}
+														if(region.length != 4) {
+															this.error("autotile region: expects [x, y, width, height], got " + region.length + " values");
+														}
 													} else {
 														this.error("unexpected autotile property: " + Std.string(this.tokens[this.tpos].type));
 													}
@@ -19552,14 +19519,61 @@ bh_multianim_MacroManimParser.prototype = {
 			return null;
 		}
 		if(source == null) {
-			this.error("autotile requires source");
+			this.error("autotile requires a source (sheet:, file:, tiles: or demo:)");
 			return null;
 		}
 		if(tileSize == null) {
 			this.error("autotile requires tileSize");
 			return null;
 		}
-		return { format : format, source : source, tileSize : tileSize, depth : depth, mapping : mapping, region : region, allowPartialMapping : allowPartialMapping};
+		var fmt = format;
+		var src = source;
+		if(region != null) {
+			if(src._hx_index == 1) {
+				var _g = src.filename;
+			} else {
+				this.error("autotile region: only applies to a file: source");
+			}
+		}
+		if(allowPartialMapping && fmt != bh_multianim_AutotileFormat.Blob47) {
+			this.error("autotile allowPartialMapping: only applies to format: blob47");
+		}
+		if(mapping != null) {
+			if(src._hx_index == 3) {
+				var _g = src.edgeColor;
+				var _g = src.fillColor;
+				this.error("autotile demo: source generates its own tiles and does not take mapping:");
+			}
+			var indexCount;
+			switch(fmt._hx_index) {
+			case 0:
+				indexCount = 13;
+				break;
+			case 1:
+				indexCount = 47;
+				break;
+			case 2:
+				indexCount = 16;
+				break;
+			}
+			var map = mapping;
+			var _g_map = map;
+			var _g_keys = map.keys();
+			while(_g_keys.hasNext()) {
+				var key = _g_keys.next();
+				var _g_value = _g_map.get(key);
+				var _g_key = key;
+				var key1 = _g_key;
+				var target = _g_value;
+				if(key1 < 0 || key1 >= indexCount) {
+					this.error("autotile mapping key " + key1 + " is not a valid index for this format (0-" + (indexCount - 1) + ")");
+				}
+				if(target < 0) {
+					this.error("autotile mapping " + key1 + ":" + target + " - source index must be >= 0");
+				}
+			}
+		}
+		return { format : fmt, source : src, tileSize : tileSize, mapping : mapping, region : region, allowPartialMapping : allowPartialMapping};
 	}
 	,parseAutotileMapping: function() {
 		var map = new haxe_ds_IntMap();
@@ -19570,12 +19584,16 @@ bh_multianim_MacroManimParser.prototype = {
 				break;
 			}
 			var idx = this.parseInteger();
+			var key = seqIdx;
+			var target = idx;
 			if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TColon)) {
-				var target = this.parseInteger();
-				map.h[idx] = target;
-			} else {
-				map.h[seqIdx] = idx;
+				key = idx;
+				target = this.parseInteger();
 			}
+			if(map.h.hasOwnProperty(key)) {
+				this.error("autotile mapping has more than one entry for index " + key);
+			}
+			map.h[key] = target;
 			++seqIdx;
 		}
 		return map;
@@ -20493,19 +20511,6 @@ bh_multianim_IncrementalUpdateContext.isDescendantOf = function(obj,ancestor) {
 	}
 	return false;
 };
-bh_multianim_IncrementalUpdateContext.isEffectivelyVisible = function(obj) {
-	if(obj.parent == null) {
-		return false;
-	}
-	var cur = obj;
-	while(cur != null) {
-		if(!cur.visible) {
-			return false;
-		}
-		cur = cur.parent;
-	}
-	return true;
-};
 bh_multianim_IncrementalUpdateContext.prototype = {
 	syncFinalsFromBuilder: function(live) {
 		var h = live.h;
@@ -20603,7 +20608,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	,removeRebuildListener: function(fn) {
 		HxOverrides.remove(this.rebuildListeners,fn);
 	}
-	,cleanupDestroyedSubtree: function(ir,container) {
+	,pruneDiscardedDynamicRefChildren: function(ir,container) {
 		var removedChildContexts = [];
 		var h = ir.dynamicRefs.h;
 		var _g_h = h;
@@ -20622,12 +20627,15 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				++_g;
 				var obj = result.object;
 				var isUnder = obj == container || obj.parent != null && bh_multianim_IncrementalUpdateContext.isDescendantOf(obj,container);
-				if(isUnder && result.incrementalContext != null) {
+				if(!isUnder) {
+					continue;
+				}
+				if(result.incrementalContext != null) {
 					removedChildContexts.push(result.incrementalContext);
+					result.incrementalContext.cancelAllTransitions();
 				}
 			}
 		}
-		bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(ir,container);
 		if(removedChildContexts.length > 0) {
 			var i = 0;
 			while(i < this.dynamicRefBindings.length) {
@@ -20649,6 +20657,10 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				}
 			}
 		}
+	}
+	,cleanupDestroyedSubtree: function(ir,container) {
+		this.pruneDiscardedDynamicRefChildren(ir,container);
+		bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(ir,container);
 		var ni = 0;
 		while(ni < this.dynamicNameBindings.length) {
 			var dnbContainer = this.dynamicNameBindings[ni].container;
@@ -21143,6 +21155,26 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	,setTweenManager: function(tm) {
 		this.tweenManager = tm;
 	}
+	,cancelAllTransitions: function() {
+		var _g = 0;
+		var _g1 = this.activeTransitionTweens;
+		while(_g < _g1.length) {
+			var entry = _g1[_g];
+			++_g;
+			if(entry.restore != null) {
+				entry.restore();
+			}
+			if(entry.tween != null) {
+				entry.tween.onComplete = null;
+				entry.tween.cancel();
+			}
+			if(entry.sequence != null) {
+				entry.sequence.onComplete = null;
+				entry.sequence.cancel();
+			}
+		}
+		this.activeTransitionTweens = [];
+	}
 	,findTransitionSpec: function(node) {
 		if(this.transitionsDef == null) {
 			return null;
@@ -21588,6 +21620,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 	}
 	,materializeDeferred: function(entry) {
 		var _gthis = this;
+		this.pruneDiscardedDynamicRefChildren(entry.internalResults,entry.wrapper);
 		bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(entry.internalResults,entry.wrapper);
 		entry.wrapper.removeChildren();
 		this.rebuildDeferredContent(entry);
@@ -21595,6 +21628,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		if(paramRefs.length > 0) {
 			var capturedEntry = entry;
 			this.trackExpression(function() {
+				_gthis.pruneDiscardedDynamicRefChildren(capturedEntry.internalResults,capturedEntry.wrapper);
 				bh_multianim_MultiAnimBuilder.removeRegistrationsUnder(capturedEntry.internalResults,capturedEntry.wrapper);
 				capturedEntry.wrapper.removeChildren();
 				_gthis.rebuildDeferredContent(capturedEntry);
@@ -21606,7 +21640,15 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 		this.builder.incrementalMode = false;
 		this.builder.incrementalContext = null;
 		this.builder.builderParams = entry.builderParams;
-		this.builder.build(entry.node,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(entry.wrapper),entry.gridCS,entry.hexCS,entry.internalResults,entry.builderParams);
+		this.builder.deferredForwardingCtx = this;
+		try {
+			this.builder.build(entry.node,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(entry.wrapper),entry.gridCS,entry.hexCS,entry.internalResults,entry.builderParams);
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.builder.deferredForwardingCtx = null;
+			throw haxe_Exception.thrown(e);
+		}
+		this.builder.deferredForwardingCtx = null;
 		this.builder.incrementalMode = false;
 		this.builder.incrementalContext = null;
 	}
@@ -21791,7 +21833,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 					var tracked = _g1[_g];
 					++_g;
 					var obj = tracked.object;
-					if(obj != null && !bh_multianim_IncrementalUpdateContext.isEffectivelyVisible(obj)) {
+					if(obj != null && obj.parent == null) {
 						continue;
 					}
 					this.trackedRelevantScanCount++;
@@ -21804,7 +21846,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 					var tracked = _g1[_g];
 					++_g;
 					var obj = tracked.object;
-					if(obj != null && !bh_multianim_IncrementalUpdateContext.isEffectivelyVisible(obj)) {
+					if(obj != null && obj.parent == null) {
 						continue;
 					}
 					this.trackedRelevantScanCount++;
@@ -22488,9 +22530,12 @@ bh_multianim_SwitchArmResults.prototype = {
 var bh_multianim_MultiAnimBuilder = function(data,resourceLoader,sourceName) {
 	this.tweenManager = null;
 	this.currentInternalResults = null;
+	this.pendingChainArmLosing = false;
+	this.deferredForwardingCtx = null;
 	this.incrementalContext = null;
 	this.suppressConditionalTracking = false;
 	this.incrementalMode = false;
+	this.autotileTileCache = new haxe_ds_StringMap();
 	this.inlineAtlases = new haxe_ds_StringMap();
 	this.buildingRefs = [];
 	this.stateStackPool = [];
@@ -23665,6 +23710,86 @@ bh_multianim_MultiAnimBuilder.collectNodeParamRefs = function(node) {
 		}
 	}
 	return refs;
+};
+bh_multianim_MultiAnimBuilder.autotileTileCount = function(format) {
+	switch(format._hx_index) {
+	case 0:
+		return 13;
+	case 1:
+		return 47;
+	case 2:
+		return 16;
+	}
+};
+bh_multianim_MultiAnimBuilder.autotileFormatName = function(format) {
+	switch(format._hx_index) {
+	case 0:
+		return "cross";
+	case 1:
+		return "blob47";
+	case 2:
+		return "corner";
+	}
+};
+bh_multianim_MultiAnimBuilder.getAutotileDemoEdges = function(format,tileIndex) {
+	var mask;
+	switch(format._hx_index) {
+	case 0:
+		mask = bh_multianim_MultiAnimBuilder.crossDemoMask(tileIndex);
+		break;
+	case 1:
+		mask = bh_base_Autotile.getBlob47Mask(tileIndex);
+		break;
+	case 2:
+		mask = 0;
+		break;
+	}
+	var hasN = (mask & 1) != 0;
+	var hasE = (mask & 4) != 0;
+	var hasS = (mask & 16) != 0;
+	var hasW = (mask & 64) != 0;
+	return { n : !hasN, s : !hasS, e : !hasE, w : !hasW, innerNE : hasN && hasE && (mask & 2) == 0, innerNW : hasN && hasW && (mask & 128) == 0, innerSE : hasS && hasE && (mask & 8) == 0, innerSW : hasS && hasW && (mask & 32) == 0};
+};
+bh_multianim_MultiAnimBuilder.crossDemoMask = function(tileIndex) {
+	var n = 1;
+	var ne = 2;
+	var e = 4;
+	var se = 8;
+	var s = 16;
+	var sw = 32;
+	var w = 64;
+	var nw = 128;
+	var all = n | ne | e | se | s | sw | w | nw;
+	switch(tileIndex) {
+	case 0:
+		return all & ~(n | ne | nw);
+	case 1:
+		return all & ~(w | nw | sw);
+	case 2:
+		return all;
+	case 3:
+		return all & ~(e | ne | se);
+	case 4:
+		return all & ~(s | se | sw);
+	case 5:
+		return e | se | s;
+	case 6:
+		return w | sw | s;
+	case 7:
+		return n | ne | e;
+	case 8:
+		return n | nw | w;
+	case 9:
+		return all & ~ne;
+	case 10:
+		return all & ~nw;
+	case 11:
+		return all & ~se;
+	case 12:
+		return all & ~sw;
+	default:
+		return all;
+	}
 };
 bh_multianim_MultiAnimBuilder.dynamicToResolvedWithDef = function(type,value) {
 	switch(type._hx_index) {
@@ -25065,20 +25190,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var h = type.height;
 			var color = type.color;
 			var thickness = type.thickness;
-			var c = color;
-			var pl = new bh_base_PixelLines(w,h);
-			var _g = 0;
-			var _g1 = thickness;
-			while(_g < _g1) {
-				var t = _g++;
-				pl.rect(t,t,w - 1 - t * 2,h - 1 - t * 2,c);
-				pl.line(t,0,w - 1,h - 1 - t,c);
-				pl.line(0,t,w - 1 - t,h - 1,c);
-				pl.line(t,h - 1,w - 1,t,c);
-				pl.line(0,h - 1 - t,w - 1 - t,0,c);
-			}
-			pl.updateBitmap();
-			return pl.tile;
+			return bh_base_HeapsUtils_crossTile(color,w,h,thickness);
 		case 1:
 			var w = type.width;
 			var h = type.height;
@@ -25093,13 +25205,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var fontName = type.font;
 			return this.generateTileWithText(w,h,bgColor,text,textColor,fontName);
 		case 3:
-			var format = type.format;
-			var tileIndex = type.tileIndex;
-			var tileSize = type.tileSize;
-			var edgeColor = type.edgeColor;
-			var fillColor = type.fillColor;
-			return this.generateAutotileDemoTile(format,tileIndex,tileSize,edgeColor,fillColor);
-		case 4:
 			var baseTile = type.baseTile;
 			var regionX = type.regionX;
 			var regionY = type.regionY;
@@ -25111,123 +25216,6 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var font = type.font;
 			var fontColor = type.fontColor;
 			return this.generateAutotileRegionSheetTile(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scale,font,fontColor);
-		case 5:
-			var tile = type.tile;
-			return tile;
-		}
-	}
-	,resolveAutotileRef: function(autotileName,selector) {
-		var name = this.resolveAsString(autotileName);
-		var node = this.multiParserResult.nodes.h[name];
-		if(node == null) {
-			throw new bh_multianim_BuilderError("autotile reference: could not find autotile \"" + name + "\"",this.currentNode,null);
-		}
-		var autotileDef;
-		var _g = node.type;
-		if(_g._hx_index == 27) {
-			var def = _g.autotileDef;
-			autotileDef = def;
-		} else {
-			throw new bh_multianim_BuilderError("autotile reference: \"" + name + "\" is not an autotile definition",node,null);
-		}
-		var format = autotileDef.format;
-		var edgeMask = null;
-		var tileIndex;
-		switch(selector._hx_index) {
-		case 0:
-			var index = selector.index;
-			tileIndex = this.resolveAsInteger(index);
-			break;
-		case 1:
-			var edges = selector.edges;
-			edgeMask = edges;
-			switch(format._hx_index) {
-			case 0:
-				tileIndex = bh_base_Autotile.getCrossIndex(edges);
-				break;
-			case 1:
-				tileIndex = bh_base_Autotile.getBlob47Index(edges);
-				break;
-			}
-			break;
-		}
-		var _g = autotileDef.source;
-		switch(_g._hx_index) {
-		case 0:
-			var sheet = _g.sheet;
-			var prefix = _g.prefix;
-			var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-			var sheetName = this.resolveAsString(sheet);
-			var prefixStr = this.resolveAsString(prefix);
-			var mappedIndex = tileIndex;
-			var mapping2 = autotileDef.mapping;
-			if(mapping2 != null) {
-				var actualIndex = tileIndex;
-				if(format == bh_multianim_AutotileFormat.Blob47 && autotileDef.allowPartialMapping && !mapping2.h.hasOwnProperty(actualIndex)) {
-					actualIndex = bh_base_Autotile.applyBlob47FallbackWithMap(tileIndex,mapping2);
-				}
-				if(!mapping2.h.hasOwnProperty(actualIndex)) {
-					throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " not found in mapping",node,null);
-				}
-				mappedIndex = mapping2.h[actualIndex];
-			}
-			var tileName = prefixStr + mappedIndex;
-			var tile = this.loadTileImpl(sheetName,tileName).tile;
-			return bh_base_ResolvedGeneratedTileType.PreloadedTile(tile);
-		case 1:
-			var sheet = _g.sheet;
-			var region = _g.region;
-			throw new bh_multianim_BuilderError("autotile reference: \"" + name + "\" uses sheet region - use tiles: or demo: syntax instead",node,null);
-		case 2:
-			var filename = _g.filename;
-			var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-			var baseTile = this.resourceLoader.loadTile(this.resolveAsString(filename));
-			var regionTile = baseTile;
-			var regionX = 0;
-			var regionY = 0;
-			var region = autotileDef.region;
-			if(region != null) {
-				regionX = this.resolveAsInteger(region[0]);
-				regionY = this.resolveAsInteger(region[1]);
-				var regionW = this.resolveAsInteger(region[2]);
-				var regionH = this.resolveAsInteger(region[3]);
-				regionTile = baseTile.sub(regionX,regionY,regionW,regionH);
-			}
-			var mappedIndex = tileIndex;
-			var mapping = autotileDef.mapping;
-			if(mapping != null) {
-				var actualIndex = tileIndex;
-				if(format == bh_multianim_AutotileFormat.Blob47 && autotileDef.allowPartialMapping && !mapping.h.hasOwnProperty(actualIndex)) {
-					actualIndex = bh_base_Autotile.applyBlob47FallbackWithMap(tileIndex,mapping);
-				}
-				if(!mapping.h.hasOwnProperty(actualIndex)) {
-					throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " not found in mapping",node,null);
-				}
-				mappedIndex = mapping.h[actualIndex];
-			}
-			var cols = regionTile.width / tileSize | 0;
-			var tileX = mappedIndex % cols * tileSize;
-			var tileY = (mappedIndex / cols | 0) * tileSize;
-			var tile = regionTile.sub(tileX,tileY,tileSize,tileSize);
-			return bh_base_ResolvedGeneratedTileType.PreloadedTile(tile);
-		case 3:
-			var tiles = _g.tiles;
-			var actualIndex = tileIndex;
-			if(format == bh_multianim_AutotileFormat.Blob47 && actualIndex >= tiles.length) {
-				actualIndex = bh_base_Autotile.applyBlob47Fallback(tileIndex,tiles.length);
-			}
-			if(actualIndex < 0 || actualIndex >= tiles.length) {
-				throw new bh_multianim_BuilderError("autotile reference: tile index " + tileIndex + " out of bounds for \"" + name + "\" (has " + tiles.length + " tiles)",node,null);
-			}
-			var tile = this.loadTileSource(tiles[actualIndex]);
-			return bh_base_ResolvedGeneratedTileType.PreloadedTile(tile);
-		case 4:
-			var edgeColor = _g.edgeColor;
-			var fillColor = _g.fillColor;
-			var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-			var edgeColorInt = this.resolveAsColorInteger(edgeColor);
-			var fillColorInt = this.resolveAsColorInteger(fillColor);
-			return bh_base_ResolvedGeneratedTileType.AutotileRef(format,tileIndex,tileSize,edgeColorInt,fillColorInt);
 		}
 	}
 	,resolveAutotileRegionSheet: function(autotileName,scale,font,fontColor) {
@@ -25235,62 +25223,27 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var scaleVal = this.resolveAsInteger(scale);
 		var fontName = this.resolveAsString(font);
 		var fontColorVal = this.resolveAsColorInteger(fontColor);
-		var node = this.multiParserResult.nodes.h[name];
-		if(node == null) {
-			throw new bh_multianim_BuilderError("autotileRegionSheet: could not find autotile \"" + name + "\"",this.currentNode,null);
-		}
-		var autotileDef;
-		var _g = node.type;
-		if(_g._hx_index == 27) {
-			var def = _g.autotileDef;
-			autotileDef = def;
-		} else {
-			throw new bh_multianim_BuilderError("autotileRegionSheet: \"" + name + "\" is not an autotile definition",node,null);
-		}
-		var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-		var tileCount;
-		switch(autotileDef.format._hx_index) {
-		case 0:
-			tileCount = 13;
-			break;
-		case 1:
-			tileCount = 47;
-			break;
-		}
-		var _g = autotileDef.source;
+		var at = this.getAutotileDef(name);
+		var tileSize = this.resolveAsInteger(at.def.tileSize);
+		var tileCount = bh_multianim_MultiAnimBuilder.autotileTileCount(at.def.format);
+		var _g = at.def.source;
 		switch(_g._hx_index) {
 		case 0:
 			var _g1 = _g.sheet;
 			var _g1 = _g.prefix;
-			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses atlas prefix - no region to display",node,null);
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" has no image region to display (only file: sources do)",at.node,null);
 		case 1:
-			var sheet = _g.sheet;
-			var region = _g.region;
-			var baseTile = this.resourceLoader.loadTile(this.resolveAsString(sheet));
-			var regionX = this.resolveAsInteger(region[0]);
-			var regionY = this.resolveAsInteger(region[1]);
-			var regionW = this.resolveAsInteger(region[2]);
-			var regionH = this.resolveAsInteger(region[3]);
-			return bh_base_ResolvedGeneratedTileType.AutotileRegionSheet(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scaleVal,fontName,fontColorVal);
-		case 2:
 			var filename = _g.filename;
 			var baseTile = this.resourceLoader.loadTile(this.resolveAsString(filename));
-			if(autotileDef.region == null) {
-				throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" has no region defined",node,null);
-			}
-			var r = autotileDef.region;
-			var regionX = this.resolveAsInteger(r[0]);
-			var regionY = this.resolveAsInteger(r[1]);
-			var regionW = this.resolveAsInteger(r[2]);
-			var regionH = this.resolveAsInteger(r[3]);
-			return bh_base_ResolvedGeneratedTileType.AutotileRegionSheet(baseTile,regionX,regionY,regionW,regionH,tileSize,tileCount,scaleVal,fontName,fontColorVal);
-		case 3:
+			var r = this.resolveAutotileRegion(name,at.node,at.def,baseTile,tileSize);
+			return bh_base_ResolvedGeneratedTileType.AutotileRegionSheet(baseTile,r.x,r.y,r.w,r.h,tileSize,tileCount,scaleVal,fontName,fontColorVal);
+		case 2:
 			var _g1 = _g.tiles;
-			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses explicit tiles - no region to display",node,null);
-		case 4:
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" has no image region to display (only file: sources do)",at.node,null);
+		case 3:
 			var _g1 = _g.edgeColor;
 			var _g1 = _g.fillColor;
-			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" uses demo source - no region to display",node,null);
+			throw new bh_multianim_BuilderError("autotileRegionSheet: autotile \"" + name + "\" has no image region to display (only file: sources do)",at.node,null);
 		}
 	}
 	,generateTileWithText: function(w,h,bgColor,text,textColor,fontName) {
@@ -25420,47 +25373,53 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			tile = this.loadTileImpl(this.resolveAsString(sheet),this.resolveAsString(name),this.resolveAsInteger(index)).tile;
 			break;
 		case 3:
-			var type = tileSource.type;
-			var resolvedType;
-			switch(type._hx_index) {
-			case 0:
-				var width = type.width;
-				var height = type.height;
-				var color = type.color;
-				var thickness = type.thickness;
-				resolvedType = bh_base_ResolvedGeneratedTileType.Cross(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color),this.resolveAsInteger(thickness));
-				break;
-			case 1:
-				var width = type.width;
-				var height = type.height;
-				var color = type.color;
-				resolvedType = bh_base_ResolvedGeneratedTileType.SolidColor(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color));
-				break;
-			case 2:
-				var width = type.width;
-				var height = type.height;
-				var color = type.color;
-				var text = type.text;
-				var textColor = type.textColor;
-				var font = type.font;
-				resolvedType = bh_base_ResolvedGeneratedTileType.SolidColorWithText(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color),this.resolveAsString(text),this.resolveAsColorInteger(textColor),this.resolveAsString(font));
-				break;
-			case 3:
-				var autotileName = type.autotileName;
-				var selector = type.selector;
-				resolvedType = this.resolveAutotileRef(autotileName,selector);
-				break;
-			case 4:
-				var autotileName = type.autotileName;
-				var scale = type.scale;
-				var font = type.font;
-				var fontColor = type.fontColor;
-				resolvedType = this.resolveAutotileRegionSheet(autotileName,scale,font,fontColor);
-				break;
+			var _g = tileSource.type;
+			if(_g._hx_index == 3) {
+				var autotileName = _g.autotileName;
+				var index = _g.index;
+				tile = this.getAutotileTile(this.resolveAsString(autotileName),this.resolveAsInteger(index));
+			} else {
+				var type = _g;
+				var resolvedType;
+				switch(type._hx_index) {
+				case 0:
+					var width = type.width;
+					var height = type.height;
+					var color = type.color;
+					var thickness = type.thickness;
+					resolvedType = bh_base_ResolvedGeneratedTileType.Cross(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color),this.resolveAsInteger(thickness));
+					break;
+				case 1:
+					var width = type.width;
+					var height = type.height;
+					var color = type.color;
+					resolvedType = bh_base_ResolvedGeneratedTileType.SolidColor(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color));
+					break;
+				case 2:
+					var width = type.width;
+					var height = type.height;
+					var color = type.color;
+					var text = type.text;
+					var textColor = type.textColor;
+					var font = type.font;
+					resolvedType = bh_base_ResolvedGeneratedTileType.SolidColorWithText(this.resolveAsInteger(width),this.resolveAsInteger(height),this.resolveAsColorInteger(color),this.resolveAsString(text),this.resolveAsColorInteger(textColor),this.resolveAsString(font));
+					break;
+				case 3:
+					var _g = type.autotileName;
+					var _g = type.index;
+					throw new bh_multianim_BuilderError("unreachable: autotile ref handled above",this.currentNode,null);
+				case 4:
+					var autotileName = type.autotileName;
+					var scale = type.scale;
+					var font = type.font;
+					var fontColor = type.fontColor;
+					resolvedType = this.resolveAutotileRegionSheet(autotileName,scale,font,fontColor);
+					break;
+				}
+				tile = this.resourceLoader.getOrCreatePlaceholder(resolvedType,function(resolvedType) {
+					return _gthis.generatePlaceholderBitmap(resolvedType);
+				});
 			}
-			tile = this.resourceLoader.getOrCreatePlaceholder(resolvedType,function(resolvedType) {
-				return _gthis.generatePlaceholderBitmap(resolvedType);
-			});
 			break;
 		case 4:
 			var tile1 = tileSource.tile;
@@ -25564,6 +25523,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				isFill = false;
 			}
 		}
+		t.set_font(this.resourceLoader.loadFont(this.resolveAsString(textDef.fontName)));
 		var allFonts = [];
 		allFonts.push(t.font);
 		var _g = 0;
@@ -25834,6 +25794,70 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		case 3:
 			return true;
 		}
+	}
+	,computeLosingChainArms: function(children) {
+		var flags = null;
+		var prevSiblingMatched = false;
+		var anyConditionalSiblingMatched = false;
+		var _g = 0;
+		var _g1 = children.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var losing = false;
+			var _g2 = children[i].conditionals;
+			switch(_g2._hx_index) {
+			case 0:
+				var conditions = _g2.values;
+				var anyMode = _g2.anyMode;
+				var matched = this.matchConditions(conditions,anyMode,this.indexedParams);
+				prevSiblingMatched = matched;
+				if(matched) {
+					anyConditionalSiblingMatched = true;
+				}
+				break;
+			case 1:
+				var extraConditions = _g2.values;
+				if(!prevSiblingMatched) {
+					if(extraConditions == null) {
+						prevSiblingMatched = true;
+						anyConditionalSiblingMatched = true;
+					} else {
+						var matched1 = this.matchConditions(extraConditions,false,this.indexedParams);
+						losing = !matched1;
+						prevSiblingMatched = matched1;
+						if(matched1) {
+							anyConditionalSiblingMatched = true;
+						}
+					}
+				} else {
+					losing = true;
+					prevSiblingMatched = true;
+				}
+				break;
+			case 2:
+				losing = anyConditionalSiblingMatched;
+				anyConditionalSiblingMatched = false;
+				break;
+			case 3:
+				prevSiblingMatched = false;
+				anyConditionalSiblingMatched = false;
+				break;
+			}
+			if(losing) {
+				if(flags == null) {
+					var _g3 = [];
+					var _g4 = 0;
+					var _g5 = children.length;
+					while(_g4 < _g5) {
+						var _ = _g4++;
+						_g3.push(false);
+					}
+					flags = _g3;
+				}
+				flags[i] = true;
+			}
+		}
+		return flags;
 	}
 	,resolveConditionalChildren: function(children) {
 		if(this.incrementalMode && !this.suppressConditionalTracking) {
@@ -27558,6 +27582,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 	}
 	,cleanupTileGroupRepeatExtraVars: function(info) {
+		if(info.valueVariableName != null) {
+			var key = info.valueVariableName;
+			var _this = this.indexedParams;
+			if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
+				delete(_this.h[key]);
+			}
+		}
 		if(info.bitmapVarName != null) {
 			var key = info.bitmapVarName;
 			var _this = this.indexedParams;
@@ -27631,9 +27662,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var repeatType = _g.repeatType;
 			var info = this.resolveTileGroupRepeatAxis(repeatType,node,true);
 			var iterator = info.layoutName == null ? null : this.getLayouts().getIterator(info.layoutName);
-			var this1 = this.indexedParams;
-			var key = bh_multianim_MultiAnimParser_getNameString(node.updatableName);
-			if(Object.prototype.hasOwnProperty.call(this1.h,key)) {
+			if(Object.prototype.hasOwnProperty.call(this.indexedParams.h,varName)) {
 				throw new bh_multianim_BuilderError("cannot use repeatable index param \"" + varName + "\" as it is already defined",node,null);
 			}
 			var _g1 = 0;
@@ -27753,6 +27782,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			if(Object.prototype.hasOwnProperty.call(_this.h,varNameY)) {
 				delete(_this.h[varNameY]);
 			}
+			this.cleanupTileGroupRepeatExtraVars(xInfo);
+			this.cleanupTileGroupRepeatExtraVars(yInfo);
 			skipChildren = true;
 			tileGroupTile = null;
 			break;
@@ -27892,6 +27923,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 	}
 	,build: function(node,buildMode,gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams) {
 		var _gthis = this;
+		var chainArmLosing = this.pendingChainArmLosing;
+		this.pendingChainArmLosing = false;
 		var nodeVisible = this.shouldBuildInFullMode(node,this.indexedParams);
 		if(!nodeVisible && (!this.incrementalMode || this.suppressConditionalTracking)) {
 			return null;
@@ -27932,7 +27965,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 		};
 		var tmp;
-		if(!nodeVisible && this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && node.type._hx_index != 16) {
+		if((!nodeVisible || chainArmLosing) && this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && node.type._hx_index != 16) {
 			var _g = node.type;
 			var tmp1;
 			if(_g._hx_index == 33) {
@@ -27946,8 +27979,9 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		} else {
 			tmp = false;
 		}
-		if(tmp) {
+		if(tmp && node.flowProperties == null) {
 			var sentinel = new h2d_Object();
+			sentinel.set_visible(false);
 			addChild(sentinel);
 			var wrapper = new h2d_Object();
 			addChild(wrapper);
@@ -28564,9 +28598,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var object = needsWrapper ? new h2d_Object() : null;
 			var buildTarget = needsWrapper ? object : current;
 			var ownPos = needsWrapper ? null : this.calculatePosition(node.pos,bh_multianim_MultiAnimParser.getGridCoordinateSystem(node),bh_multianim_MultiAnimParser.getHexCoordinateSystem(node));
-			var this1 = this.indexedParams;
-			var key = bh_multianim_MultiAnimParser_getNameString(node.updatableName);
-			if(Object.prototype.hasOwnProperty.call(this1.h,key)) {
+			if(Object.prototype.hasOwnProperty.call(this.indexedParams.h,varName)) {
 				throw new bh_multianim_BuilderError("cannot use repeatable index param \"" + varName + "\" as it is already defined",node,null);
 			}
 			var savedIncrementalMode = this.incrementalMode;
@@ -28668,6 +28700,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				delete(_this.h[varName]);
 			}
 			switch(repeatType._hx_index) {
+			case 2:
+				var _g1 = repeatType.arrayName;
+				var valueVariableName = repeatType.valueVariableName;
+				var _this = this.indexedParams;
+				if(Object.prototype.hasOwnProperty.call(_this.h,valueVariableName)) {
+					delete(_this.h[valueVariableName]);
+				}
+				break;
 			case 4:
 				var _g1 = repeatType.animFilename;
 				var _g1 = repeatType.animationName;
@@ -28901,6 +28941,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 						delete(_this.h[capturedVarName]);
 					}
 					switch(capturedRepeatType._hx_index) {
+					case 2:
+						var _g = capturedRepeatType.arrayName;
+						var valueVariableName = capturedRepeatType.valueVariableName;
+						var _this = _gthis.indexedParams;
+						if(Object.prototype.hasOwnProperty.call(_this.h,valueVariableName)) {
+							delete(_this.h[valueVariableName]);
+						}
+						break;
 					case 4:
 						var _g = capturedRepeatType.animFilename;
 						var _g = capturedRepeatType.animationName;
@@ -29068,6 +29116,20 @@ bh_multianim_MultiAnimBuilder.prototype = {
 							_gthis.addPosition(obj,xOffsetX + yOffsetX,xOffsetY + yOffsetY);
 						}
 						bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,_gthis.indexedParams);
+					}
+				}
+				if(xAxis.valueVariableName != null) {
+					var key = xAxis.valueVariableName;
+					var _this = _gthis.indexedParams;
+					if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
+						delete(_this.h[key]);
+					}
+				}
+				if(yAxis.valueVariableName != null) {
+					var key = yAxis.valueVariableName;
+					var _this = _gthis.indexedParams;
+					if(Object.prototype.hasOwnProperty.call(_this.h,key)) {
+						delete(_this.h[key]);
 					}
 				}
 			};
@@ -29425,7 +29487,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			} else {
 				existingArr.push(result);
 			}
-			if(this.incrementalMode && this.incrementalContext != null && result.incrementalContext != null) {
+			var forwardingCtx = this.incrementalMode && this.incrementalContext != null ? this.incrementalContext : this.deferredForwardingCtx;
+			if(forwardingCtx != null && result.incrementalContext != null) {
 				var tmp = builder.multiParserResult.nodes;
 				var childNode = tmp != null ? tmp.h[reference] : null;
 				var childDefs = childNode != null ? builder.getProgrammableParameterDefinitions(childNode) : new haxe_ds_StringMap();
@@ -29492,7 +29555,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 								})(capturedValue);
 							}
 						}
-						this.incrementalContext.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs,result.object);
+						forwardingCtx.trackDynamicRef(result.incrementalContext,childParam,resolveFn,refs,result.object);
 					}
 				}
 			}
@@ -29635,6 +29698,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var conditionalSentinel = null;
 		if(this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && current != null) {
 			conditionalSentinel = new h2d_Object();
+			conditionalSentinel.set_visible(false);
 			addChild(conditionalSentinel);
 		}
 		addChild(object);
@@ -29824,11 +29888,17 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		if(!skipChildren) {
 			var resolvedChildren = this.resolveConditionalChildren(node.children);
+			var losingChainArms = this.incrementalMode && !this.suppressConditionalTracking ? this.computeLosingChainArms(resolvedChildren) : null;
 			var _g = 0;
-			while(_g < resolvedChildren.length) {
-				var childNode = resolvedChildren[_g];
-				++_g;
+			var _g1 = resolvedChildren.length;
+			while(_g < _g1) {
+				var i = _g++;
+				var childNode = resolvedChildren[i];
+				this.pendingChainArmLosing = losingChainArms != null && losingChainArms[i];
 				this.build(childNode,selectedBuildMode,bh_multianim_MultiAnimParser.getGridCoordinateSystem(childNode),bh_multianim_MultiAnimParser.getHexCoordinateSystem(childNode),internalResults,builderParams);
+			}
+			if(slotIncrementalCtx != null) {
+				slotIncrementalCtx.syncFinalsFromBuilder(this.indexedParams);
 			}
 			bh_multianim_MultiAnimBuilder.cleanupFinalVars(resolvedChildren,this.indexedParams);
 		}
@@ -30244,6 +30314,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var pos = this.calculatePosition(rootNode.pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.addPosition(root,pos.x,pos.y);
 			var _g = 0;
+			var _g1 = rootNode.children;
+			while(_g < _g1.length) {
+				var child = _g1[_g];
+				++_g;
+				this.validateTileGroupSubtree(child,[]);
+			}
+			var _g = 0;
 			var _g1 = this.resolveConditionalChildren(rootNode.children);
 			while(_g < _g1.length) {
 				var child = _g1[_g];
@@ -30264,12 +30341,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var pos = this.calculatePosition(rootNode.pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.addPosition(root,pos.x,pos.y);
+			var rootChildren = this.resolveConditionalChildren(rootNode.children);
+			var losingChainArms = this.incrementalMode && !this.suppressConditionalTracking ? this.computeLosingChainArms(rootChildren) : null;
 			var _g = 0;
-			var _g1 = this.resolveConditionalChildren(rootNode.children);
-			while(_g < _g1.length) {
-				var child = _g1[_g];
-				++_g;
-				this.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.LayersMode(root),gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
+			var _g1 = rootChildren.length;
+			while(_g < _g1) {
+				var i = _g++;
+				this.pendingChainArmLosing = losingChainArms != null && losingChainArms[i];
+				this.build(rootChildren[i],bh_multianim__$MultiAnimBuilder_InternalBuildMode.LayersMode(root),gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
 			}
 		} else {
 			var root = this.build(rootNode,bh_multianim__$MultiAnimBuilder_InternalBuildMode.RootMode,gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
@@ -30285,12 +30364,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			var pos = this.calculatePosition(rootNode.pos,gridCoordinateSystem,hexCoordinateSystem);
 			this.addPosition(root,pos.x,pos.y);
+			var rootChildren = this.resolveConditionalChildren(rootNode.children);
+			var losingChainArms = this.incrementalMode && !this.suppressConditionalTracking ? this.computeLosingChainArms(rootChildren) : null;
 			var _g = 0;
-			var _g1 = this.resolveConditionalChildren(rootNode.children);
-			while(_g < _g1.length) {
-				var child = _g1[_g];
-				++_g;
-				this.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(root),gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
+			var _g1 = rootChildren.length;
+			while(_g < _g1) {
+				var i = _g++;
+				this.pendingChainArmLosing = losingChainArms != null && losingChainArms[i];
+				this.build(rootChildren[i],bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(root),gridCoordinateSystem,hexCoordinateSystem,internalResults,builderParams);
 			}
 		}
 		var finalObject;
@@ -31082,458 +31163,326 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		throw new bh_multianim_BuilderError("curve reference must have either curveName or inlineEasing",this.currentNode,null);
 	}
 	,buildAutotile: function(name,grid) {
-		var node = this.multiParserResult.nodes.h[name];
-		if(node == null) {
-			throw new bh_multianim_BuilderError("could not get autotile node #" + name,this.currentNode,null);
-		}
-		var _g = node.type;
-		if(_g._hx_index == 27) {
-			var autotileDef = _g.autotileDef;
-			return this.buildAutotileImpl(autotileDef,grid,null);
-		} else {
-			throw new bh_multianim_BuilderError("" + name + " has to be autotile",node,null);
-		}
-	}
-	,buildAutotileImpl: function(autotileDef,grid,elevationBaseY) {
+		var at = this.getAutotileDef(name);
+		var tiles = this.getAutotileTiles(name,at.node,at.def);
+		var tileSize = this.resolveAsInteger(at.def.tileSize);
 		var tileGroup = new h2d_TileGroup();
-		var tiles = this.loadAutotileTiles(autotileDef);
-		var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-		var _depth = autotileDef.depth;
-		var depth = _depth != null ? this.resolveAsInteger(_depth) : 0;
-		var mappingAppliedDuringLoading;
-		var _g = autotileDef.source;
-		if(_g._hx_index == 2) {
-			var _g1 = _g.filename;
-			mappingAppliedDuringLoading = autotileDef.mapping != null;
-		} else {
-			mappingAppliedDuringLoading = false;
-		}
-		var mapping = mappingAppliedDuringLoading ? null : autotileDef.mapping;
-		var height = grid.length;
-		if(height == 0) {
-			return tileGroup;
-		}
-		var width = grid[0].length;
-		var _g = 0;
-		var _g1 = height;
-		while(_g < _g1) {
-			var y = _g++;
-			var _g2 = 0;
-			var _g3 = width;
-			while(_g2 < _g3) {
-				var x = _g2++;
-				if(grid[y][x] == 0) {
-					continue;
-				}
-				var mask8 = bh_base_Autotile.getNeighborMask8(grid,x,y);
-				var tileIndex;
-				switch(autotileDef.format._hx_index) {
-				case 0:
-					tileIndex = bh_base_Autotile.getCrossIndex(mask8);
-					break;
-				case 1:
-					tileIndex = bh_base_Autotile.getBlob47IndexWithFallback(mask8,tiles.length);
-					break;
-				}
-				if(mapping != null) {
-					var actualIndex = tileIndex;
-					if(autotileDef.format == bh_multianim_AutotileFormat.Blob47 && autotileDef.allowPartialMapping && !mapping.h.hasOwnProperty(actualIndex)) {
-						actualIndex = bh_base_Autotile.applyBlob47FallbackWithMap(tileIndex,mapping);
+		switch(at.def.format._hx_index) {
+		case 0:case 1:
+			var isCross = at.def.format == bh_multianim_AutotileFormat.Cross;
+			var _g = 0;
+			var _g1 = grid.length;
+			while(_g < _g1) {
+				var y = _g++;
+				var _g2 = 0;
+				var _g3 = grid[y].length;
+				while(_g2 < _g3) {
+					var x = _g2++;
+					if(grid[y][x] == 0) {
+						continue;
 					}
-					var mapped = mapping.h[actualIndex];
-					if(mapped != null) {
-						tileIndex = mapped;
+					var mask8 = bh_base_Autotile.getNeighborMask8(grid,x,y);
+					var index = isCross ? bh_base_Autotile.getCrossIndex(mask8) : bh_base_Autotile.getBlob47Index(mask8);
+					var tile = tiles[index];
+					if(tile != null) {
+						tileGroup.content.add(x * tileSize,y * tileSize,tileGroup.curColor.x,tileGroup.curColor.y,tileGroup.curColor.z,tileGroup.curColor.w,tile);
 					}
-				}
-				if(tileIndex >= 0 && tileIndex < tiles.length) {
-					var tile = tiles[tileIndex];
-					var renderX = x * tileSize;
-					var renderY = y * tileSize;
-					if(elevationBaseY != null && depth > 0) {
-						var hasS = (mask8 & 16) == 0;
-						if(hasS && tileIndex < tiles.length) {
-							var _g4 = 0;
-							var _g5 = (depth / tileSize | 0) + 1;
-							while(_g4 < _g5) {
-								var d = _g4++;
-								tileGroup.content.add(renderX,renderY + tileSize + d * tileSize,tileGroup.curColor.x,tileGroup.curColor.y,tileGroup.curColor.z,tileGroup.curColor.w,tile);
-							}
-						}
-					}
-					tileGroup.content.add(renderX,renderY,tileGroup.curColor.x,tileGroup.curColor.y,tileGroup.curColor.z,tileGroup.curColor.w,tile);
 				}
 			}
+			break;
+		case 2:
+			var half = tileSize / 2 | 0;
+			var width = bh_base_Autotile.gridWidth(grid);
+			var _g = 0;
+			var _g1 = grid.length + 1;
+			while(_g < _g1) {
+				var cy = _g++;
+				var _g2 = 0;
+				var _g3 = width + 1;
+				while(_g2 < _g3) {
+					var cx = _g2++;
+					var index = bh_base_Autotile.getCornerIndex(grid,cx,cy);
+					if(index == 0) {
+						continue;
+					}
+					var tile = tiles[index];
+					if(tile != null) {
+						tileGroup.content.add(cx * tileSize - half,cy * tileSize - half,tileGroup.curColor.x,tileGroup.curColor.y,tileGroup.curColor.z,tileGroup.curColor.w,tile);
+					}
+				}
+			}
+			break;
 		}
 		return tileGroup;
 	}
-	,loadAutotileTiles: function(autotileDef) {
-		var tileSize = this.resolveAsInteger(autotileDef.tileSize);
-		var _g = autotileDef.source;
+	,getAutotileTile: function(name,index) {
+		var at = this.getAutotileDef(name);
+		var tiles = this.getAutotileTiles(name,at.node,at.def);
+		if(index < 0 || index >= tiles.length) {
+			var node = at.node;
+			throw new bh_multianim_BuilderError("autotile \"" + name + "\": index " + index + " is out of range for " + bh_multianim_MultiAnimBuilder.autotileFormatName(at.def.format) + " (0-" + (tiles.length - 1) + ")",node,"autotile_index");
+		}
+		var tile = tiles[index];
+		if(tile != null) {
+			return tile;
+		}
+		var tileSize = this.resolveAsInteger(at.def.tileSize);
+		return h2d_Tile.fromColor(0,tileSize,tileSize,0.0);
+	}
+	,getAutotileDef: function(name) {
+		var node = this.multiParserResult.nodes.h[name];
+		if(node == null) {
+			throw new bh_multianim_BuilderError("autotile \"" + name + "\" not found",this.currentNode,"missing_ref");
+		}
+		var _g = node.type;
+		if(_g._hx_index == 27) {
+			var def = _g.autotileDef;
+			return { node : node, def : def};
+		} else {
+			throw new bh_multianim_BuilderError("\"" + name + "\" is not an autotile definition",node,null);
+		}
+	}
+	,getAutotileTiles: function(name,node,def) {
+		var cached = this.autotileTileCache.h[name];
+		if(cached != null) {
+			return cached;
+		}
+		var format = def.format;
+		var count = bh_multianim_MultiAnimBuilder.autotileTileCount(format);
+		var formatName = bh_multianim_MultiAnimBuilder.autotileFormatName(format);
+		var tileSize = this.resolveAsInteger(def.tileSize);
+		if(tileSize <= 0) {
+			throw new bh_multianim_BuilderError("autotile \"" + name + "\": tileSize must be > 0, got " + tileSize,node,null);
+		}
+		var source = this.resolveAutotileSource(name,node,def,tileSize);
+		var mapping;
+		var explicitMapping = def.mapping;
+		if(explicitMapping != null) {
+			mapping = explicitMapping;
+		} else {
+			if(source.exact && source.count > count) {
+				throw new bh_multianim_BuilderError("autotile \"" + name + "\": " + source.desc + " lists " + source.count + " tiles but " + formatName + " has only " + count + " indices (0-" + (count - 1) + ") - add a mapping: to pick tiles",node,"autotile_index");
+			}
+			mapping = new haxe_ds_IntMap();
+			var n = source.count < 0 ? count : Math.min(count,source.count) | 0;
+			var _g = 0;
+			var _g1 = n;
+			while(_g < _g1) {
+				var i = _g++;
+				mapping.h[i] = i;
+			}
+		}
+		var optionalIndex = format == bh_multianim_AutotileFormat.Corner ? 0 : -1;
+		var partial = format == bh_multianim_AutotileFormat.Blob47 && def.allowPartialMapping == true;
+		var tiles = [];
+		var _g = 0;
+		var _g1 = count;
+		while(_g < _g1) {
+			var i = _g++;
+			var sourceIndex = mapping.h[i];
+			if(sourceIndex == null && partial) {
+				var key = bh_base_Autotile.applyBlob47FallbackWithMap(i,mapping);
+				sourceIndex = mapping.h[key];
+			}
+			if(sourceIndex == null) {
+				if(i == optionalIndex) {
+					tiles.push(null);
+					continue;
+				}
+				var where = explicitMapping != null ? "mapping: has no entry for it" : "" + source.desc + " does not provide it";
+				var hint = format == bh_multianim_AutotileFormat.Blob47 ? " (or set allowPartialMapping: true to use the closest mapped tile)" : "";
+				throw new bh_multianim_BuilderError("autotile \"" + name + "\": no tile for " + formatName + " index " + i + " - " + where + hint,node,"autotile_missing_tile");
+			}
+			var j = sourceIndex;
+			if(source.count >= 0 && j >= source.count) {
+				throw new bh_multianim_BuilderError("autotile \"" + name + "\": " + formatName + " index " + i + " maps to source tile " + j + ", but " + source.desc + " has only " + source.count + " tiles (0-" + (source.count - 1) + ")",node,"autotile_index");
+			}
+			var tile = source.get(j);
+			if(tile == null) {
+				if(i == optionalIndex) {
+					tiles.push(null);
+					continue;
+				}
+				throw new bh_multianim_BuilderError("autotile \"" + name + "\": " + source.desc + " has no source tile " + j + " (needed for " + formatName + " index " + i + ")",node,"autotile_missing_tile");
+			}
+			tiles.push(tile);
+		}
+		this.autotileTileCache.h[name] = tiles;
+		return tiles;
+	}
+	,resolveAutotileSource: function(name,node,def,tileSize) {
+		var _g = def.source;
 		switch(_g._hx_index) {
 		case 0:
 			var sheet = _g.sheet;
 			var prefix = _g.prefix;
-			var atlas = this.getOrLoadSheet(this.resolveAsString(sheet));
-			var prefixStr = this.resolveAsString(prefix);
-			var tileCount;
-			switch(autotileDef.format._hx_index) {
-			case 0:
-				tileCount = 13;
-				break;
-			case 1:
-				tileCount = 47;
-				break;
-			}
-			var _g1 = [];
-			var _g2 = 0;
-			var _g3 = tileCount;
-			while(_g2 < _g3) {
-				var i = _g2++;
-				_g1.push(atlas.get(prefixStr + (i == null ? "null" : "" + i)).tile);
-			}
-			return _g1;
-		case 1:
-			var sheet = _g.sheet;
-			var region = _g.region;
 			var sheetName = this.resolveAsString(sheet);
-			var baseTile = this.resourceLoader.loadTile(sheetName);
-			var rx = this.resolveAsInteger(region[0]);
-			var ry = this.resolveAsInteger(region[1]);
-			var rw = this.resolveAsInteger(region[2]);
-			var rh = this.resolveAsInteger(region[3]);
-			var tilesPerRow = rw / tileSize | 0;
-			var tileCount;
-			switch(autotileDef.format._hx_index) {
-			case 0:
-				tileCount = 13;
-				break;
-			case 1:
-				tileCount = 47;
-				break;
-			}
-			var _g1 = [];
-			var _g2 = 0;
-			var _g3 = tileCount;
-			while(_g2 < _g3) {
-				var i = _g2++;
-				_g1.push(baseTile.sub(rx + i % tilesPerRow * tileSize,ry + (i / tilesPerRow | 0) * tileSize,tileSize,tileSize));
-			}
-			return _g1;
-		case 2:
+			var prefixStr = this.resolveAsString(prefix);
+			var atlas = this.getOrLoadSheet(sheetName);
+			return { count : -1, exact : false, desc : "sheet: \"" + sheetName + "\" prefix: \"" + prefixStr + "\"", get : function(j) {
+				var frame = atlas.get(prefixStr + j);
+				if(frame == null) {
+					return null;
+				} else {
+					return frame.tile;
+				}
+			}};
+		case 1:
 			var filename = _g.filename;
-			var baseTile = this.resourceLoader.loadTile(this.resolveAsString(filename));
-			var tileCount;
-			switch(autotileDef.format._hx_index) {
-			case 0:
-				tileCount = 13;
-				break;
-			case 1:
-				tileCount = 47;
-				break;
-			}
-			var _region = autotileDef.region;
-			var regionX = _region != null ? this.resolveAsInteger(_region[0]) : 0;
-			var regionY = _region != null ? this.resolveAsInteger(_region[1]) : 0;
-			var regionW = _region != null ? this.resolveAsInteger(_region[2]) : baseTile.width | 0;
-			var tilesPerRow = regionW / tileSize | 0;
-			var _mapping = autotileDef.mapping;
-			if(_mapping != null) {
-				var result = [];
-				var _g1 = 0;
-				var _g2 = tileCount;
-				while(_g1 < _g2) {
-					var i = _g1++;
-					var mappedIdx = 0;
-					var mv = _mapping.h[i];
-					if(mv != null) {
-						mappedIdx = mv;
-					} else if(autotileDef.format == bh_multianim_AutotileFormat.Blob47 && autotileDef.allowPartialMapping) {
-						var fallbackIdx = bh_base_Autotile.applyBlob47FallbackWithMap(i,_mapping);
-						var fv = _mapping.h[fallbackIdx];
-						mappedIdx = fv != null ? fv : 0;
-					} else {
-						throw new bh_multianim_BuilderError("autotile: tile index " + i + " not found in mapping",this.currentNode,null);
-					}
-					result.push(baseTile.sub(regionX + mappedIdx % tilesPerRow * tileSize,regionY + (mappedIdx / tilesPerRow | 0) * tileSize,tileSize,tileSize));
-				}
-				return result;
-			} else {
-				var _g1 = [];
-				var _g2 = 0;
-				var _g3 = tileCount;
-				while(_g2 < _g3) {
-					var i = _g2++;
-					_g1.push(baseTile.sub(regionX + i % tilesPerRow * tileSize,regionY + (i / tilesPerRow | 0) * tileSize,tileSize,tileSize));
-				}
-				return _g1;
-			}
-			break;
-		case 3:
-			var tiles = _g.tiles;
+			var file = this.resolveAsString(filename);
+			var base = this.resourceLoader.loadTile(file);
+			var r = this.resolveAutotileRegion(name,node,def,base,tileSize);
+			var cols = r.w / tileSize | 0;
+			var regionCount = cols * (r.h / tileSize | 0);
+			return { count : regionCount, exact : false, desc : "file: \"" + file + "\" region [" + r.x + ", " + r.y + ", " + r.w + ", " + r.h + "]", get : function(j) {
+				return base.sub(r.x + j % cols * tileSize,r.y + (j / cols | 0) * tileSize,tileSize,tileSize);
+			}};
+		case 2:
+			var list = _g.tiles;
 			var _g1 = [];
 			var _g2 = 0;
-			while(_g2 < tiles.length) {
-				var ts = tiles[_g2];
+			while(_g2 < list.length) {
+				var ts = list[_g2];
 				++_g2;
 				_g1.push(this.loadTileSource(ts));
 			}
-			return _g1;
-		case 4:
+			var loaded = _g1;
+			return { count : loaded.length, exact : true, desc : "tiles: (" + loaded.length + " tiles)", get : function(j) {
+				return loaded[j];
+			}};
+		case 3:
 			var edgeColor = _g.edgeColor;
 			var fillColor = _g.fillColor;
-			var edge = this.resolveAsColorInteger(edgeColor);
-			var fill = this.resolveAsColorInteger(fillColor);
-			var tileCount;
-			switch(autotileDef.format._hx_index) {
-			case 0:
-				tileCount = 13;
-				break;
-			case 1:
-				tileCount = 47;
-				break;
-			}
-			var _g = [];
-			var _g1 = 0;
-			var _g2 = tileCount;
-			while(_g1 < _g2) {
-				var i = _g1++;
-				_g.push(this.generateAutotileDemoTile(autotileDef.format,i,tileSize,edge,fill));
-			}
-			return _g;
+			var demo = this.generateAutotileDemoTiles(def.format,tileSize,this.resolveAsColorInteger(edgeColor),this.resolveAsColorInteger(fillColor));
+			return { count : demo.length, exact : true, desc : "demo:", get : function(j) {
+				return demo[j];
+			}};
 		}
 	}
-	,generateAutotileDemoTile: function(format,tileIndex,tileSize,edgeColor,fillColor) {
+	,resolveAutotileRegion: function(name,node,def,base,tileSize) {
+		var imageW = base.width | 0;
+		var imageH = base.height | 0;
+		var region = def.region;
+		if(region == null) {
+			return { x : 0, y : 0, w : imageW - imageW % tileSize, h : imageH - imageH % tileSize};
+		}
+		var r = { x : this.resolveAsInteger(region[0]), y : this.resolveAsInteger(region[1]), w : this.resolveAsInteger(region[2]), h : this.resolveAsInteger(region[3])};
+		if(r.x < 0 || r.y < 0 || r.w <= 0 || r.h <= 0 || r.x + r.w > imageW || r.y + r.h > imageH) {
+			throw new bh_multianim_BuilderError("autotile \"" + name + "\": region [" + r.x + ", " + r.y + ", " + r.w + ", " + r.h + "] does not fit the " + imageW + "x" + imageH + " image",node,"autotile_region");
+		}
+		if(r.w % tileSize != 0 || r.h % tileSize != 0) {
+			throw new bh_multianim_BuilderError("autotile \"" + name + "\": region size " + r.w + "x" + r.h + " is not a whole number of " + tileSize + "px tiles",node,"autotile_region");
+		}
+		return r;
+	}
+	,generateAutotileDemoTiles: function(format,tileSize,edgeColor,fillColor) {
+		var count = bh_multianim_MultiAnimBuilder.autotileTileCount(format);
+		var perRow = 8;
+		var rows = (count + perRow - 1) / perRow | 0;
+		var pl = new bh_base_PixelLines(perRow * tileSize,rows * tileSize);
+		pl.clear();
+		var _g = 0;
+		var _g1 = count;
+		while(_g < _g1) {
+			var i = _g++;
+			this.drawAutotileDemoTile(pl,i % perRow * tileSize,(i / perRow | 0) * tileSize,format,i,tileSize,edgeColor,fillColor);
+		}
+		pl.updateBitmap();
+		var sheet = pl.tile;
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = count;
+		while(_g1 < _g2) {
+			var i = _g1++;
+			_g.push(sheet.sub(i % perRow * tileSize,(i / perRow | 0) * tileSize,tileSize,tileSize));
+		}
+		return _g;
+	}
+	,drawAutotileDemoTile: function(pl,ox,oy,format,tileIndex,tileSize,edgeColor,fillColor) {
 		var borderWidth = Math.max(1,tileSize / 8) | 0;
+		if(format == bh_multianim_AutotileFormat.Corner) {
+			var half = tileSize / 2 | 0;
+			var nw = (tileIndex & 1) != 0;
+			var ne = (tileIndex & 2) != 0;
+			var sw = (tileIndex & 4) != 0;
+			var se = (tileIndex & 8) != 0;
+			if(nw) {
+				pl.filledRect(ox,oy,half,half,fillColor);
+			}
+			if(ne) {
+				pl.filledRect(ox + half,oy,tileSize - half,half,fillColor);
+			}
+			if(sw) {
+				pl.filledRect(ox,oy + half,half,tileSize - half,fillColor);
+			}
+			if(se) {
+				pl.filledRect(ox + half,oy + half,tileSize - half,tileSize - half,fillColor);
+			}
+			if(nw != ne) {
+				pl.filledRect(nw ? ox + half - borderWidth : ox + half,oy,borderWidth,half,edgeColor);
+			}
+			if(sw != se) {
+				pl.filledRect(sw ? ox + half - borderWidth : ox + half,oy + half,borderWidth,tileSize - half,edgeColor);
+			}
+			if(nw != sw) {
+				pl.filledRect(ox,nw ? oy + half - borderWidth : oy + half,half,borderWidth,edgeColor);
+			}
+			if(ne != se) {
+				pl.filledRect(ox + half,ne ? oy + half - borderWidth : oy + half,tileSize - half,borderWidth,edgeColor);
+			}
+			return;
+		}
 		var cornerSize = Math.max(2,tileSize / 2) | 0;
-		var pl = new bh_base_PixelLines(tileSize,tileSize);
-		pl.filledRect(0,0,tileSize,tileSize,fillColor);
-		var edges = this.getAutotileEdges(format,tileIndex);
+		var edges = bh_multianim_MultiAnimBuilder.getAutotileDemoEdges(format,tileIndex);
+		pl.filledRect(ox,oy,tileSize,tileSize,fillColor);
 		if(edges.n) {
-			pl.filledRect(0,0,tileSize,borderWidth,edgeColor);
+			pl.filledRect(ox,oy,tileSize,borderWidth,edgeColor);
 		}
 		if(edges.s) {
-			pl.filledRect(0,tileSize - borderWidth,tileSize,borderWidth,edgeColor);
+			pl.filledRect(ox,oy + tileSize - borderWidth,tileSize,borderWidth,edgeColor);
 		}
 		if(edges.w) {
-			pl.filledRect(0,0,borderWidth,tileSize,edgeColor);
+			pl.filledRect(ox,oy,borderWidth,tileSize,edgeColor);
 		}
 		if(edges.e) {
-			pl.filledRect(tileSize - borderWidth,0,borderWidth,tileSize,edgeColor);
+			pl.filledRect(ox + tileSize - borderWidth,oy,borderWidth,tileSize,edgeColor);
 		}
-		if(edges.n && edges.w) {
-			var _g = 0;
-			var _g1 = cornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = cornerSize - i;
-				pl.filledRect(0,i,lineLen,1,edgeColor);
+		var _g = 0;
+		var _g1 = cornerSize;
+		while(_g < _g1) {
+			var i = _g++;
+			var lineLen = cornerSize - i;
+			if(edges.n && edges.w) {
+				pl.filledRect(ox,oy + i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.n && edges.e) {
-			var _g = 0;
-			var _g1 = cornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = cornerSize - i;
-				pl.filledRect(tileSize - lineLen,i,lineLen,1,edgeColor);
+			if(edges.n && edges.e) {
+				pl.filledRect(ox + tileSize - lineLen,oy + i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.s && edges.w) {
-			var _g = 0;
-			var _g1 = cornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = cornerSize - i;
-				pl.filledRect(0,tileSize - 1 - i,lineLen,1,edgeColor);
+			if(edges.s && edges.w) {
+				pl.filledRect(ox,oy + tileSize - 1 - i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.s && edges.e) {
-			var _g = 0;
-			var _g1 = cornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = cornerSize - i;
-				pl.filledRect(tileSize - lineLen,tileSize - 1 - i,lineLen,1,edgeColor);
+			if(edges.s && edges.e) {
+				pl.filledRect(ox + tileSize - lineLen,oy + tileSize - 1 - i,lineLen,1,edgeColor);
 			}
 		}
 		var innerCornerSize = Math.max(2,tileSize / 4) | 0;
-		if(edges.innerNE) {
-			var _g = 0;
-			var _g1 = innerCornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = innerCornerSize - i;
-				pl.filledRect(tileSize - lineLen,i,lineLen,1,edgeColor);
+		var _g = 0;
+		var _g1 = innerCornerSize;
+		while(_g < _g1) {
+			var i = _g++;
+			var lineLen = innerCornerSize - i;
+			if(edges.innerNE) {
+				pl.filledRect(ox + tileSize - lineLen,oy + i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.innerNW) {
-			var _g = 0;
-			var _g1 = innerCornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = innerCornerSize - i;
-				pl.filledRect(0,i,lineLen,1,edgeColor);
+			if(edges.innerNW) {
+				pl.filledRect(ox,oy + i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.innerSE) {
-			var _g = 0;
-			var _g1 = innerCornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = innerCornerSize - i;
-				pl.filledRect(tileSize - lineLen,tileSize - 1 - i,lineLen,1,edgeColor);
+			if(edges.innerSE) {
+				pl.filledRect(ox + tileSize - lineLen,oy + tileSize - 1 - i,lineLen,1,edgeColor);
 			}
-		}
-		if(edges.innerSW) {
-			var _g = 0;
-			var _g1 = innerCornerSize;
-			while(_g < _g1) {
-				var i = _g++;
-				var lineLen = innerCornerSize - i;
-				pl.filledRect(0,tileSize - 1 - i,lineLen,1,edgeColor);
+			if(edges.innerSW) {
+				pl.filledRect(ox,oy + tileSize - 1 - i,lineLen,1,edgeColor);
 			}
-		}
-		pl.updateBitmap();
-		return pl.tile;
-	}
-	,getAutotileEdges: function(format,tileIndex) {
-		switch(format._hx_index) {
-		case 0:
-			return this.getCrossEdges(tileIndex);
-		case 1:
-			return this.getBlob47Edges(tileIndex);
-		}
-	}
-	,getCrossEdges: function(idx) {
-		switch(idx) {
-		case 0:
-			return { n : true, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 1:
-			return { n : false, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 2:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 3:
-			return { n : false, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 4:
-			return { n : false, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 5:
-			return { n : true, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 6:
-			return { n : true, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 7:
-			return { n : false, s : true, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 8:
-			return { n : false, s : true, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 9:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : false, innerSE : false, innerSW : false};
-		case 10:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : true, innerSE : false, innerSW : false};
-		case 11:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : true, innerSW : false};
-		case 12:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : true};
-		default:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		}
-	}
-	,getBlob47Edges: function(idx) {
-		switch(idx) {
-		case 0:
-			return { n : true, s : true, e : true, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 1:
-			return { n : false, s : true, e : true, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 2:
-			return { n : true, s : true, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 3:
-			return { n : false, s : true, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 4:
-			return { n : false, s : true, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 5:
-			return { n : true, s : false, e : true, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 6:
-			return { n : false, s : false, e : true, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 7:
-			return { n : true, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 8:
-			return { n : false, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 9:
-			return { n : false, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 10:
-			return { n : true, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 11:
-			return { n : false, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 12:
-			return { n : false, s : false, e : false, w : true, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 13:
-			return { n : true, s : true, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 14:
-			return { n : false, s : true, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 15:
-			return { n : true, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 16:
-			return { n : false, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 17:
-			return { n : false, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 18:
-			return { n : true, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 19:
-			return { n : false, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 20:
-			return { n : true, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 21:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : true, innerSE : true, innerSW : true};
-		case 22:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : true, innerSE : true, innerSW : true};
-		case 23:
-			return { n : true, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 24:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : true, innerSE : false, innerSW : true};
-		case 25:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : true, innerSE : false, innerSW : true};
-		case 26:
-			return { n : true, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 27:
-			return { n : false, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 28:
-			return { n : true, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 29:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : true, innerSE : true, innerSW : false};
-		case 30:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : true, innerSE : true, innerSW : false};
-		case 31:
-			return { n : true, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 32:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : true, innerSE : false, innerSW : false};
-		case 33:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : true, innerSE : false, innerSW : false};
-		case 34:
-			return { n : false, s : true, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 35:
-			return { n : false, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 36:
-			return { n : false, s : true, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 37:
-			return { n : false, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 38:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : false, innerSE : true, innerSW : true};
-		case 39:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : true, innerSW : true};
-		case 40:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : false, innerSE : false, innerSW : true};
-		case 41:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : true};
-		case 42:
-			return { n : false, s : false, e : true, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		case 43:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : false, innerSE : true, innerSW : false};
-		case 44:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : true, innerSW : false};
-		case 45:
-			return { n : false, s : false, e : false, w : false, innerNE : true, innerNW : false, innerSE : false, innerSW : false};
-		case 46:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
-		default:
-			return { n : false, s : false, e : false, w : false, innerNE : false, innerNW : false, innerSE : false, innerSW : false};
 		}
 	}
 	,updateIndexedParamsFromDynamicMap: function(node,input,definitions,extraInput,resolveExtraInput) {
@@ -31836,42 +31785,48 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var gridCS = bh_multianim_MultiAnimParser.getGridCoordinateSystem(switchNode);
 			var hexCS = bh_multianim_MultiAnimParser.getHexCoordinateSystem(switchNode);
 			this.pushBuilderState();
-			var resolvedParams = new haxe_ds_StringMap();
-			var progDefs = this.getProgrammableParameterDefinitions(progNode,false);
-			var h = parentParams.h;
-			var _g_h = h;
-			var _g_keys = Object.keys(h);
-			var _g_length = _g_keys.length;
-			var _g_current = 0;
-			while(_g_current < _g_length) {
-				var key = _g_keys[_g_current++];
-				var _g_key = key;
-				var _g_value = _g_h[key];
-				var key1 = _g_key;
-				var value = _g_value;
-				var def = progDefs.h[key1];
-				if(def != null) {
-					var value1 = bh_multianim_MultiAnimBuilder.dynamicToResolvedWithDef(def.type,value);
-					resolvedParams.h[key1] = value1;
-				} else {
-					var value2 = bh_multianim_MultiAnimBuilder.dynamicToResolvedInferred(value);
-					resolvedParams.h[key1] = value2;
+			try {
+				var resolvedParams = new haxe_ds_StringMap();
+				var progDefs = this.getProgrammableParameterDefinitions(progNode,false);
+				var h = parentParams.h;
+				var _g_h = h;
+				var _g_keys = Object.keys(h);
+				var _g_length = _g_keys.length;
+				var _g_current = 0;
+				while(_g_current < _g_length) {
+					var key = _g_keys[_g_current++];
+					var _g_key = key;
+					var _g_value = _g_h[key];
+					var key1 = _g_key;
+					var value = _g_value;
+					var def = progDefs.h[key1];
+					if(def != null) {
+						var value1 = bh_multianim_MultiAnimBuilder.dynamicToResolvedWithDef(def.type,value);
+						resolvedParams.h[key1] = value1;
+					} else {
+						var value2 = bh_multianim_MultiAnimBuilder.dynamicToResolvedInferred(value);
+						resolvedParams.h[key1] = value2;
+					}
 				}
+				this.indexedParams = resolvedParams;
+				this.incrementalMode = false;
+				this.incrementalContext = null;
+				var bp = { callback : parentBP != null && parentBP.callback != null ? parentBP.callback : $bind(this,this.defaultCallback), placeholderObjects : parentBP != null ? parentBP.placeholderObjects : null, scene : parentBP != null ? parentBP.scene : null};
+				this.builderParams = bp;
+				var ir = sink != null ? sink.ir : { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap(), htmlTextsWithLinks : []};
+				var _g = 0;
+				var _g1 = arm.children;
+				while(_g < _g1.length) {
+					var child = _g1[_g];
+					++_g;
+					this.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(container),gridCS,hexCS,ir,bp);
+				}
+				this.popBuilderState();
+			} catch( _g ) {
+				var e = haxe_Exception.caught(_g).unwrap();
+				this.popBuilderState();
+				throw haxe_Exception.thrown(e);
 			}
-			this.indexedParams = resolvedParams;
-			this.incrementalMode = false;
-			this.incrementalContext = null;
-			var bp = { callback : parentBP != null && parentBP.callback != null ? parentBP.callback : $bind(this,this.defaultCallback), placeholderObjects : parentBP != null ? parentBP.placeholderObjects : null, scene : parentBP != null ? parentBP.scene : null};
-			this.builderParams = bp;
-			var ir = sink != null ? sink.ir : { names : new haxe_ds_StringMap(), interactives : [], slots : [], dynamicRefs : new haxe_ds_StringMap(), htmlTextsWithLinks : []};
-			var _g = 0;
-			var _g1 = arm.children;
-			while(_g < _g1.length) {
-				var child = _g1[_g];
-				++_g;
-				this.build(child,bh_multianim__$MultiAnimBuilder_InternalBuildMode.ObjectMode(container),gridCS,hexCS,ir,bp);
-			}
-			this.popBuilderState();
 		}
 	}
 	,markUntrackedParamsInSubtree: function(node,ctx,excludeVar,rebuildRefs) {
@@ -32447,20 +32402,6 @@ var bh_multianim_BuiltHeapsComponent = $hxEnums["bh.multianim.BuiltHeapsComponen
 };
 bh_multianim_BuiltHeapsComponent.__constructs__ = [bh_multianim_BuiltHeapsComponent.HeapsObject,bh_multianim_BuiltHeapsComponent.Pixels,bh_multianim_BuiltHeapsComponent.StateAnim,bh_multianim_BuiltHeapsComponent.HeapsBitmap,bh_multianim_BuiltHeapsComponent.HeapsText,bh_multianim_BuiltHeapsComponent.NinePatch,bh_multianim_BuiltHeapsComponent.HeapsFlow,bh_multianim_BuiltHeapsComponent.HeapsLayers,bh_multianim_BuiltHeapsComponent.HeapsMask,bh_multianim_BuiltHeapsComponent.Particles];
 bh_multianim_BuiltHeapsComponent.__empty_constructs__ = [];
-var bh_multianim_MultiAnimUnexpected = function(token,pos,message) {
-	bh_base_ParseUnexpected.call(this,token,pos);
-	this.token = token;
-	this.message = message;
-};
-$hxClasses["bh.multianim.MultiAnimUnexpected"] = bh_multianim_MultiAnimUnexpected;
-bh_multianim_MultiAnimUnexpected.__name__ = "bh.multianim.MultiAnimUnexpected";
-bh_multianim_MultiAnimUnexpected.__super__ = bh_base_ParseUnexpected;
-bh_multianim_MultiAnimUnexpected.prototype = $extend(bh_base_ParseUnexpected.prototype,{
-	toString: function() {
-		return "" + this.message + ": unexpected " + Std.string(this.token) + " at " + this.pos.format();
-	}
-	,__class__: bh_multianim_MultiAnimUnexpected
-});
 var bh_multianim_InvalidSyntax = function(error,pos) {
 	bh_base_ParseError.call(this,pos);
 	this.error = "Error " + error + ", " + pos.format();
@@ -32773,17 +32714,11 @@ var bh_multianim_RepeatType = $hxEnums["bh.multianim.RepeatType"] = { __ename__:
 };
 bh_multianim_RepeatType.__constructs__ = [bh_multianim_RepeatType.StepIterator,bh_multianim_RepeatType.LayoutIterator,bh_multianim_RepeatType.ArrayIterator,bh_multianim_RepeatType.RangeIterator,bh_multianim_RepeatType.StateAnimIterator,bh_multianim_RepeatType.TilesIterator];
 bh_multianim_RepeatType.__empty_constructs__ = [];
-var bh_multianim_AutotileTileSelector = $hxEnums["bh.multianim.AutotileTileSelector"] = { __ename__:true,__constructs__:null
-	,ByIndex: ($_=function(index) { return {_hx_index:0,index:index,__enum__:"bh.multianim.AutotileTileSelector",toString:$estr}; },$_._hx_name="ByIndex",$_.__params__ = ["index"],$_)
-	,ByEdges: ($_=function(edges) { return {_hx_index:1,edges:edges,__enum__:"bh.multianim.AutotileTileSelector",toString:$estr}; },$_._hx_name="ByEdges",$_.__params__ = ["edges"],$_)
-};
-bh_multianim_AutotileTileSelector.__constructs__ = [bh_multianim_AutotileTileSelector.ByIndex,bh_multianim_AutotileTileSelector.ByEdges];
-bh_multianim_AutotileTileSelector.__empty_constructs__ = [];
 var bh_multianim_GeneratedTileType = $hxEnums["bh.multianim.GeneratedTileType"] = { __ename__:true,__constructs__:null
 	,Cross: ($_=function(width,height,color,thickness) { return {_hx_index:0,width:width,height:height,color:color,thickness:thickness,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="Cross",$_.__params__ = ["width","height","color","thickness"],$_)
 	,SolidColor: ($_=function(width,height,color) { return {_hx_index:1,width:width,height:height,color:color,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="SolidColor",$_.__params__ = ["width","height","color"],$_)
 	,SolidColorWithText: ($_=function(width,height,color,text,textColor,font) { return {_hx_index:2,width:width,height:height,color:color,text:text,textColor:textColor,font:font,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="SolidColorWithText",$_.__params__ = ["width","height","color","text","textColor","font"],$_)
-	,AutotileRef: ($_=function(autotileName,selector) { return {_hx_index:3,autotileName:autotileName,selector:selector,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRef",$_.__params__ = ["autotileName","selector"],$_)
+	,AutotileRef: ($_=function(autotileName,index) { return {_hx_index:3,autotileName:autotileName,index:index,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRef",$_.__params__ = ["autotileName","index"],$_)
 	,AutotileRegionSheet: ($_=function(autotileName,scale,font,fontColor) { return {_hx_index:4,autotileName:autotileName,scale:scale,font:font,fontColor:fontColor,__enum__:"bh.multianim.GeneratedTileType",toString:$estr}; },$_._hx_name="AutotileRegionSheet",$_.__params__ = ["autotileName","scale","font","fontColor"],$_)
 };
 bh_multianim_GeneratedTileType.__constructs__ = [bh_multianim_GeneratedTileType.Cross,bh_multianim_GeneratedTileType.SolidColor,bh_multianim_GeneratedTileType.SolidColorWithText,bh_multianim_GeneratedTileType.AutotileRef,bh_multianim_GeneratedTileType.AutotileRegionSheet];
@@ -32809,17 +32744,17 @@ bh_multianim_PaletteType.__empty_constructs__ = [];
 var bh_multianim_AutotileFormat = $hxEnums["bh.multianim.AutotileFormat"] = { __ename__:true,__constructs__:null
 	,Cross: {_hx_name:"Cross",_hx_index:0,__enum__:"bh.multianim.AutotileFormat",toString:$estr}
 	,Blob47: {_hx_name:"Blob47",_hx_index:1,__enum__:"bh.multianim.AutotileFormat",toString:$estr}
+	,Corner: {_hx_name:"Corner",_hx_index:2,__enum__:"bh.multianim.AutotileFormat",toString:$estr}
 };
-bh_multianim_AutotileFormat.__constructs__ = [bh_multianim_AutotileFormat.Cross,bh_multianim_AutotileFormat.Blob47];
-bh_multianim_AutotileFormat.__empty_constructs__ = [bh_multianim_AutotileFormat.Cross,bh_multianim_AutotileFormat.Blob47];
+bh_multianim_AutotileFormat.__constructs__ = [bh_multianim_AutotileFormat.Cross,bh_multianim_AutotileFormat.Blob47,bh_multianim_AutotileFormat.Corner];
+bh_multianim_AutotileFormat.__empty_constructs__ = [bh_multianim_AutotileFormat.Cross,bh_multianim_AutotileFormat.Blob47,bh_multianim_AutotileFormat.Corner];
 var bh_multianim_AutotileSource = $hxEnums["bh.multianim.AutotileSource"] = { __ename__:true,__constructs__:null
 	,ATSAtlas: ($_=function(sheet,prefix) { return {_hx_index:0,sheet:sheet,prefix:prefix,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSAtlas",$_.__params__ = ["sheet","prefix"],$_)
-	,ATSAtlasRegion: ($_=function(sheet,region) { return {_hx_index:1,sheet:sheet,region:region,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSAtlasRegion",$_.__params__ = ["sheet","region"],$_)
-	,ATSFile: ($_=function(filename) { return {_hx_index:2,filename:filename,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSFile",$_.__params__ = ["filename"],$_)
-	,ATSTiles: ($_=function(tiles) { return {_hx_index:3,tiles:tiles,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSTiles",$_.__params__ = ["tiles"],$_)
-	,ATSDemo: ($_=function(edgeColor,fillColor) { return {_hx_index:4,edgeColor:edgeColor,fillColor:fillColor,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSDemo",$_.__params__ = ["edgeColor","fillColor"],$_)
+	,ATSFile: ($_=function(filename) { return {_hx_index:1,filename:filename,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSFile",$_.__params__ = ["filename"],$_)
+	,ATSTiles: ($_=function(tiles) { return {_hx_index:2,tiles:tiles,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSTiles",$_.__params__ = ["tiles"],$_)
+	,ATSDemo: ($_=function(edgeColor,fillColor) { return {_hx_index:3,edgeColor:edgeColor,fillColor:fillColor,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSDemo",$_.__params__ = ["edgeColor","fillColor"],$_)
 };
-bh_multianim_AutotileSource.__constructs__ = [bh_multianim_AutotileSource.ATSAtlas,bh_multianim_AutotileSource.ATSAtlasRegion,bh_multianim_AutotileSource.ATSFile,bh_multianim_AutotileSource.ATSTiles,bh_multianim_AutotileSource.ATSDemo];
+bh_multianim_AutotileSource.__constructs__ = [bh_multianim_AutotileSource.ATSAtlas,bh_multianim_AutotileSource.ATSFile,bh_multianim_AutotileSource.ATSTiles,bh_multianim_AutotileSource.ATSDemo];
 bh_multianim_AutotileSource.__empty_constructs__ = [];
 var bh_multianim_Atlas2Source = $hxEnums["bh.multianim.Atlas2Source"] = { __ename__:true,__constructs__:null
 	,A2SFile: ($_=function(filename) { return {_hx_index:0,filename:filename,__enum__:"bh.multianim.Atlas2Source",toString:$estr}; },$_._hx_name="A2SFile",$_.__params__ = ["filename"],$_)
@@ -33602,9 +33537,30 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var pos = content.pos;
 			var oldIndexed = this.builder.indexedParams;
 			var _g1 = new haxe_ds_StringMap();
-			_g1.h["i"] = bh_multianim_ResolvedIndexParameters.Value(index);
-			this.builder.indexedParams = _g1;
-			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			var h = this.builder.indexedParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var k = _g_key;
+				var v = _g_value;
+				_g1.h[k] = v;
+			}
+			var m = _g1;
+			m.h["i"] = bh_multianim_ResolvedIndexParameters.Value(index);
+			this.builder.indexedParams = m;
+			var pos1;
+			try {
+				pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			} catch( _g1 ) {
+				var e = haxe_Exception.caught(_g1).unwrap();
+				this.builder.indexedParams = oldIndexed;
+				throw haxe_Exception.thrown(e);
+			}
 			this.builder.indexedParams = oldIndexed;
 			var pt1 = pos1;
 			pt1.x += offset.x;
@@ -33622,9 +33578,30 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var pos = list[index].pos;
 			var oldIndexed = this.builder.indexedParams;
 			var _g1 = new haxe_ds_StringMap();
-			_g1.h["i"] = bh_multianim_ResolvedIndexParameters.Value(0);
-			this.builder.indexedParams = _g1;
-			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			var h = this.builder.indexedParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var k = _g_key;
+				var v = _g_value;
+				_g1.h[k] = v;
+			}
+			var m = _g1;
+			m.h["i"] = bh_multianim_ResolvedIndexParameters.Value(0);
+			this.builder.indexedParams = m;
+			var pos1;
+			try {
+				pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			} catch( _g1 ) {
+				var e = haxe_Exception.caught(_g1).unwrap();
+				this.builder.indexedParams = oldIndexed;
+				throw haxe_Exception.thrown(e);
+			}
 			this.builder.indexedParams = oldIndexed;
 			var pt1 = pos1;
 			pt1.x += offset.x;
@@ -33645,9 +33622,30 @@ bh_multianim_layouts_MultiAnimLayouts.prototype = {
 			var pos = content.pos;
 			var oldIndexed = this.builder.indexedParams;
 			var _g1 = new haxe_ds_StringMap();
-			_g1.h[variable] = bh_multianim_ResolvedIndexParameters.Value(from + index);
-			this.builder.indexedParams = _g1;
-			var pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			var h = this.builder.indexedParams.h;
+			var _g_h = h;
+			var _g_keys = Object.keys(h);
+			var _g_length = _g_keys.length;
+			var _g_current = 0;
+			while(_g_current < _g_length) {
+				var key = _g_keys[_g_current++];
+				var _g_key = key;
+				var _g_value = _g_h[key];
+				var k = _g_key;
+				var v = _g_value;
+				_g1.h[k] = v;
+			}
+			var m = _g1;
+			m.h[variable] = bh_multianim_ResolvedIndexParameters.Value(from + index);
+			this.builder.indexedParams = m;
+			var pos1;
+			try {
+				pos1 = this.builder.calculatePosition(pos,gridCoordinateSystem,hexCoordinateSystem);
+			} catch( _g1 ) {
+				var e = haxe_Exception.caught(_g1).unwrap();
+				this.builder.indexedParams = oldIndexed;
+				throw haxe_Exception.thrown(e);
+			}
 			this.builder.indexedParams = oldIndexed;
 			var pt1 = pos1;
 			pt1.x += offset.x;
@@ -34313,271 +34311,277 @@ bh_paths_MultiAnimPaths.__name__ = "bh.paths.MultiAnimPaths";
 bh_paths_MultiAnimPaths.prototype = {
 	getPath: function(name,normalization) {
 		var _gthis = this;
-		var oldIndexed = this.builder.indexedParams;
-		this.builder.indexedParams = new haxe_ds_StringMap();
-		var gridCoordinateSystem = null;
-		var hexCoordinateSystem = null;
 		var def = this.pathDefs.h[name];
 		if(def == null) {
 			throw haxe_Exception.thrown("path not found: " + name);
 		}
+		var oldIndexed = this.builder.indexedParams;
+		this.builder.indexedParams = new haxe_ds_StringMap();
+		var gridCoordinateSystem = null;
+		var hexCoordinateSystem = null;
 		var singlePaths = [];
 		var point = new bh_base_FPoint(0,0);
 		var angle = 0.;
-		var _g = 0;
-		while(_g < def.length) {
-			var path = def[_g];
-			++_g;
-			switch(path._hx_index) {
-			case 0:
-				var end = path.end;
-				var mode = path.mode;
-				var end1 = _gthis.builder.calculatePosition(end,gridCoordinateSystem,hexCoordinateSystem);
-				var finalEnd;
-				if(mode == null) {
-					finalEnd = new bh_base_FPoint(point.x + end1.x,point.y + end1.y);
-				} else {
-					switch(mode._hx_index) {
-					case 0:
-						finalEnd = end1;
-						break;
-					case 1:
+		try {
+			var _g = 0;
+			while(_g < def.length) {
+				var path = def[_g];
+				++_g;
+				switch(path._hx_index) {
+				case 0:
+					var end = path.end;
+					var mode = path.mode;
+					var end1 = _gthis.builder.calculatePosition(end,gridCoordinateSystem,hexCoordinateSystem);
+					var finalEnd;
+					if(mode == null) {
 						finalEnd = new bh_base_FPoint(point.x + end1.x,point.y + end1.y);
-						break;
+					} else {
+						switch(mode._hx_index) {
+						case 0:
+							finalEnd = end1;
+							break;
+						case 1:
+							finalEnd = new bh_base_FPoint(point.x + end1.x,point.y + end1.y);
+							break;
+						}
 					}
-				}
-				singlePaths.push(new bh_paths_SinglePath(point,finalEnd,bh_paths_PathType.Line));
-				angle = Math.atan2(finalEnd.y - point.y,finalEnd.x - point.x);
-				point = finalEnd;
-				break;
-			case 1:
-				var distance = path.distance;
-				var distance1 = _gthis.builder.resolveAsNumber(distance);
-				var end2 = new bh_base_FPoint(point.x + distance1 * Math.cos(angle),point.y + distance1 * Math.sin(angle));
-				singlePaths.push(new bh_paths_SinglePath(point,end2,bh_paths_PathType.Line));
-				point = end2;
-				break;
-			case 2:
-				var angleDelta = path.angleDelta;
-				var angleDelta1 = _gthis.builder.resolveAsNumber(angleDelta);
-				var da = angle + angleDelta1 * 3.14159265358979323 / 180.0;
-				da %= 6.28318530717958623;
-				if(da > 3.14159265358979323) {
-					da -= 6.28318530717958623;
-				} else if(da <= -3.14159265358979312) {
-					da += 6.28318530717958623;
-				}
-				angle = da;
-				break;
-			case 3:
-				var name = path.checkpointName;
-				singlePaths.push(new bh_paths_SinglePath(point,point,bh_paths_PathType.Checkpoint(name)));
-				break;
-			case 4:
-				var end3 = path.end;
-				var control = path.control;
-				var mode1 = path.mode;
-				var smoothing = path.smoothing;
-				var end4 = _gthis.builder.calculatePosition(end3,gridCoordinateSystem,hexCoordinateSystem);
-				var control1 = _gthis.builder.calculatePosition(control,gridCoordinateSystem,hexCoordinateSystem);
-				var finalEnd1;
-				if(mode1 == null) {
-					finalEnd1 = new bh_base_FPoint(point.x + end4.x,point.y + end4.y);
-				} else {
-					switch(mode1._hx_index) {
-					case 0:
-						finalEnd1 = end4;
-						break;
-					case 1:
+					singlePaths.push(new bh_paths_SinglePath(point,finalEnd,bh_paths_PathType.Line));
+					angle = Math.atan2(finalEnd.y - point.y,finalEnd.x - point.x);
+					point = finalEnd;
+					break;
+				case 1:
+					var distance = path.distance;
+					var distance1 = _gthis.builder.resolveAsNumber(distance);
+					var end2 = new bh_base_FPoint(point.x + distance1 * Math.cos(angle),point.y + distance1 * Math.sin(angle));
+					singlePaths.push(new bh_paths_SinglePath(point,end2,bh_paths_PathType.Line));
+					point = end2;
+					break;
+				case 2:
+					var angleDelta = path.angleDelta;
+					var angleDelta1 = _gthis.builder.resolveAsNumber(angleDelta);
+					var da = angle + angleDelta1 * 3.14159265358979323 / 180.0;
+					da %= 6.28318530717958623;
+					if(da > 3.14159265358979323) {
+						da -= 6.28318530717958623;
+					} else if(da <= -3.14159265358979312) {
+						da += 6.28318530717958623;
+					}
+					angle = da;
+					break;
+				case 3:
+					var name = path.checkpointName;
+					singlePaths.push(new bh_paths_SinglePath(point,point,bh_paths_PathType.Checkpoint(name)));
+					break;
+				case 4:
+					var end3 = path.end;
+					var control = path.control;
+					var mode1 = path.mode;
+					var smoothing = path.smoothing;
+					var end4 = _gthis.builder.calculatePosition(end3,gridCoordinateSystem,hexCoordinateSystem);
+					var control1 = _gthis.builder.calculatePosition(control,gridCoordinateSystem,hexCoordinateSystem);
+					var finalEnd1;
+					if(mode1 == null) {
 						finalEnd1 = new bh_base_FPoint(point.x + end4.x,point.y + end4.y);
-						break;
+					} else {
+						switch(mode1._hx_index) {
+						case 0:
+							finalEnd1 = end4;
+							break;
+						case 1:
+							finalEnd1 = new bh_base_FPoint(point.x + end4.x,point.y + end4.y);
+							break;
+						}
 					}
-				}
-				var finalControl;
-				if(mode1 == null) {
-					finalControl = new bh_base_FPoint(point.x + control1.x,point.y + control1.y);
-				} else {
-					switch(mode1._hx_index) {
-					case 0:
-						finalControl = control1;
-						break;
-					case 1:
+					var finalControl;
+					if(mode1 == null) {
 						finalControl = new bh_base_FPoint(point.x + control1.x,point.y + control1.y);
-						break;
+					} else {
+						switch(mode1._hx_index) {
+						case 0:
+							finalControl = control1;
+							break;
+						case 1:
+							finalControl = new bh_base_FPoint(point.x + control1.x,point.y + control1.y);
+							break;
+						}
 					}
-				}
-				var pxDistance = this.getSmoothingDistance(smoothing,point,finalControl);
-				if(pxDistance > 0) {
-					var px = new bh_base_FPoint(point.x + pxDistance * Math.cos(angle),point.y + pxDistance * Math.sin(angle));
-					singlePaths.push(new bh_paths_SinglePath(point,finalEnd1,bh_paths_PathType.Bezier3(px,finalControl,finalEnd1)));
-				} else {
-					singlePaths.push(new bh_paths_SinglePath(point,finalEnd1,bh_paths_PathType.Bezier3(point,finalControl,finalEnd1)));
-				}
-				angle = Math.atan2(finalEnd1.y - finalControl.y,finalEnd1.x - finalControl.x);
-				point = finalEnd1;
-				break;
-			case 5:
-				var end5 = path.end;
-				var control11 = path.control1;
-				var control2 = path.control2;
-				var mode2 = path.mode;
-				var smoothing1 = path.smoothing;
-				var end6 = _gthis.builder.calculatePosition(end5,gridCoordinateSystem,hexCoordinateSystem);
-				var control12 = _gthis.builder.calculatePosition(control11,gridCoordinateSystem,hexCoordinateSystem);
-				var control21 = _gthis.builder.calculatePosition(control2,gridCoordinateSystem,hexCoordinateSystem);
-				var finalEnd2;
-				if(mode2 == null) {
-					finalEnd2 = new bh_base_FPoint(point.x + end6.x,point.y + end6.y);
-				} else {
-					switch(mode2._hx_index) {
-					case 0:
-						finalEnd2 = end6;
-						break;
-					case 1:
+					var pxDistance = this.getSmoothingDistance(smoothing,point,finalControl);
+					if(pxDistance > 0) {
+						var px = new bh_base_FPoint(point.x + pxDistance * Math.cos(angle),point.y + pxDistance * Math.sin(angle));
+						singlePaths.push(new bh_paths_SinglePath(point,finalEnd1,bh_paths_PathType.Bezier3(px,finalControl,finalEnd1)));
+					} else {
+						singlePaths.push(new bh_paths_SinglePath(point,finalEnd1,bh_paths_PathType.Bezier3(point,finalControl,finalEnd1)));
+					}
+					angle = Math.atan2(finalEnd1.y - finalControl.y,finalEnd1.x - finalControl.x);
+					point = finalEnd1;
+					break;
+				case 5:
+					var end5 = path.end;
+					var control11 = path.control1;
+					var control2 = path.control2;
+					var mode2 = path.mode;
+					var smoothing1 = path.smoothing;
+					var end6 = _gthis.builder.calculatePosition(end5,gridCoordinateSystem,hexCoordinateSystem);
+					var control12 = _gthis.builder.calculatePosition(control11,gridCoordinateSystem,hexCoordinateSystem);
+					var control21 = _gthis.builder.calculatePosition(control2,gridCoordinateSystem,hexCoordinateSystem);
+					var finalEnd2;
+					if(mode2 == null) {
 						finalEnd2 = new bh_base_FPoint(point.x + end6.x,point.y + end6.y);
-						break;
+					} else {
+						switch(mode2._hx_index) {
+						case 0:
+							finalEnd2 = end6;
+							break;
+						case 1:
+							finalEnd2 = new bh_base_FPoint(point.x + end6.x,point.y + end6.y);
+							break;
+						}
 					}
-				}
-				var finalControl1;
-				if(mode2 == null) {
-					finalControl1 = new bh_base_FPoint(point.x + control12.x,point.y + control12.y);
-				} else {
-					switch(mode2._hx_index) {
-					case 0:
-						finalControl1 = control12;
-						break;
-					case 1:
+					var finalControl1;
+					if(mode2 == null) {
 						finalControl1 = new bh_base_FPoint(point.x + control12.x,point.y + control12.y);
-						break;
+					} else {
+						switch(mode2._hx_index) {
+						case 0:
+							finalControl1 = control12;
+							break;
+						case 1:
+							finalControl1 = new bh_base_FPoint(point.x + control12.x,point.y + control12.y);
+							break;
+						}
 					}
-				}
-				var finalControl2;
-				if(mode2 == null) {
-					finalControl2 = new bh_base_FPoint(point.x + control21.x,point.y + control21.y);
-				} else {
-					switch(mode2._hx_index) {
-					case 0:
-						finalControl2 = control21;
-						break;
-					case 1:
+					var finalControl2;
+					if(mode2 == null) {
 						finalControl2 = new bh_base_FPoint(point.x + control21.x,point.y + control21.y);
-						break;
+					} else {
+						switch(mode2._hx_index) {
+						case 0:
+							finalControl2 = control21;
+							break;
+						case 1:
+							finalControl2 = new bh_base_FPoint(point.x + control21.x,point.y + control21.y);
+							break;
+						}
 					}
-				}
-				var pxDistance1 = this.getSmoothingDistance(smoothing1,point,finalControl1);
-				if(pxDistance1 > 0) {
-					var px1 = new bh_base_FPoint(point.x + pxDistance1 * Math.cos(angle),point.y + pxDistance1 * Math.sin(angle));
-					singlePaths.push(new bh_paths_SinglePath(point,finalEnd2,bh_paths_PathType.Bezier4(px1,finalControl1,finalControl2,finalEnd2)));
-				} else {
-					singlePaths.push(new bh_paths_SinglePath(point,finalEnd2,bh_paths_PathType.Bezier4(point,finalControl1,finalControl2,finalEnd2)));
-				}
-				angle = Math.atan2(finalEnd2.y - finalControl2.y,finalEnd2.x - finalControl2.x);
-				point = finalEnd2;
-				break;
-			case 6:
-				var radius = path.radius;
-				var angleDelta2 = path.angleDelta;
-				var radius1 = _gthis.builder.resolveAsNumber(radius);
-				var angleDeltaF = _gthis.builder.resolveAsNumber(angleDelta2);
-				var angleDeltaRad = angleDeltaF * 3.14159265358979323 / 180.0;
-				var da1 = angle + (angleDeltaF > 0 ? Math.PI / 2 : -Math.PI / 2);
-				da1 %= 6.28318530717958623;
-				if(da1 > 3.14159265358979323) {
-					da1 -= 6.28318530717958623;
-				} else if(da1 <= -3.14159265358979312) {
-					da1 += 6.28318530717958623;
-				}
-				var perpAngle = da1;
-				var centerX = point.x + radius1 * Math.cos(perpAngle);
-				var centerY = point.y + radius1 * Math.sin(perpAngle);
-				var center = new bh_base_FPoint(centerX,centerY);
-				var startAngle = Math.atan2(point.y - centerY,point.x - centerX);
-				var endAngle = startAngle + angleDeltaRad;
-				var end7 = new bh_base_FPoint(centerX + radius1 * Math.cos(endAngle),centerY + radius1 * Math.sin(endAngle));
-				singlePaths.push(new bh_paths_SinglePath(point,end7,bh_paths_PathType.Arc(center,startAngle,radius1,angleDeltaF)));
-				var da2 = angle + angleDeltaRad;
-				da2 %= 6.28318530717958623;
-				if(da2 > 3.14159265358979323) {
-					da2 -= 6.28318530717958623;
-				} else if(da2 <= -3.14159265358979312) {
-					da2 += 6.28318530717958623;
-				}
-				angle = da2;
-				point = end7;
-				break;
-			case 7:
-				var closeTarget = singlePaths.length > 0 ? singlePaths[0].start : new bh_base_FPoint(0,0);
-				singlePaths.push(new bh_paths_SinglePath(point,closeTarget,bh_paths_PathType.Line));
-				angle = Math.atan2(closeTarget.y - point.y,closeTarget.x - point.x);
-				point = closeTarget;
-				break;
-			case 8:
-				var target = path.target;
-				var mode3 = path.mode;
-				var target1 = _gthis.builder.calculatePosition(target,gridCoordinateSystem,hexCoordinateSystem);
-				var finalTarget;
-				if(mode3 == null) {
-					finalTarget = new bh_base_FPoint(point.x + target1.x,point.y + target1.y);
-				} else {
-					switch(mode3._hx_index) {
-					case 0:
-						finalTarget = target1;
-						break;
-					case 1:
+					var pxDistance1 = this.getSmoothingDistance(smoothing1,point,finalControl1);
+					if(pxDistance1 > 0) {
+						var px1 = new bh_base_FPoint(point.x + pxDistance1 * Math.cos(angle),point.y + pxDistance1 * Math.sin(angle));
+						singlePaths.push(new bh_paths_SinglePath(point,finalEnd2,bh_paths_PathType.Bezier4(px1,finalControl1,finalControl2,finalEnd2)));
+					} else {
+						singlePaths.push(new bh_paths_SinglePath(point,finalEnd2,bh_paths_PathType.Bezier4(point,finalControl1,finalControl2,finalEnd2)));
+					}
+					angle = Math.atan2(finalEnd2.y - finalControl2.y,finalEnd2.x - finalControl2.x);
+					point = finalEnd2;
+					break;
+				case 6:
+					var radius = path.radius;
+					var angleDelta2 = path.angleDelta;
+					var radius1 = _gthis.builder.resolveAsNumber(radius);
+					var angleDeltaF = _gthis.builder.resolveAsNumber(angleDelta2);
+					var angleDeltaRad = angleDeltaF * 3.14159265358979323 / 180.0;
+					var da1 = angle + (angleDeltaF > 0 ? Math.PI / 2 : -Math.PI / 2);
+					da1 %= 6.28318530717958623;
+					if(da1 > 3.14159265358979323) {
+						da1 -= 6.28318530717958623;
+					} else if(da1 <= -3.14159265358979312) {
+						da1 += 6.28318530717958623;
+					}
+					var perpAngle = da1;
+					var centerX = point.x + radius1 * Math.cos(perpAngle);
+					var centerY = point.y + radius1 * Math.sin(perpAngle);
+					var center = new bh_base_FPoint(centerX,centerY);
+					var startAngle = Math.atan2(point.y - centerY,point.x - centerX);
+					var endAngle = startAngle + angleDeltaRad;
+					var end7 = new bh_base_FPoint(centerX + radius1 * Math.cos(endAngle),centerY + radius1 * Math.sin(endAngle));
+					singlePaths.push(new bh_paths_SinglePath(point,end7,bh_paths_PathType.Arc(center,startAngle,radius1,angleDeltaF)));
+					var da2 = angle + angleDeltaRad;
+					da2 %= 6.28318530717958623;
+					if(da2 > 3.14159265358979323) {
+						da2 -= 6.28318530717958623;
+					} else if(da2 <= -3.14159265358979312) {
+						da2 += 6.28318530717958623;
+					}
+					angle = da2;
+					point = end7;
+					break;
+				case 7:
+					var closeTarget = singlePaths.length > 0 ? singlePaths[0].start : new bh_base_FPoint(0,0);
+					singlePaths.push(new bh_paths_SinglePath(point,closeTarget,bh_paths_PathType.Line));
+					angle = Math.atan2(closeTarget.y - point.y,closeTarget.x - point.x);
+					point = closeTarget;
+					break;
+				case 8:
+					var target = path.target;
+					var mode3 = path.mode;
+					var target1 = _gthis.builder.calculatePosition(target,gridCoordinateSystem,hexCoordinateSystem);
+					var finalTarget;
+					if(mode3 == null) {
 						finalTarget = new bh_base_FPoint(point.x + target1.x,point.y + target1.y);
-						break;
+					} else {
+						switch(mode3._hx_index) {
+						case 0:
+							finalTarget = target1;
+							break;
+						case 1:
+							finalTarget = new bh_base_FPoint(point.x + target1.x,point.y + target1.y);
+							break;
+						}
 					}
+					angle = Math.atan2(finalTarget.y - point.y,finalTarget.x - point.x);
+					point = finalTarget;
+					break;
+				case 9:
+					var radiusStart = path.radiusStart;
+					var radiusEnd = path.radiusEnd;
+					var angleDelta3 = path.angleDelta;
+					var rStart = _gthis.builder.resolveAsNumber(radiusStart);
+					var rEnd = _gthis.builder.resolveAsNumber(radiusEnd);
+					var angleDeltaF1 = _gthis.builder.resolveAsNumber(angleDelta3);
+					var angleDeltaRad1 = angleDeltaF1 * 3.14159265358979323 / 180.0;
+					var da3 = angle + (angleDeltaF1 > 0 ? Math.PI / 2 : -Math.PI / 2);
+					da3 %= 6.28318530717958623;
+					if(da3 > 3.14159265358979323) {
+						da3 -= 6.28318530717958623;
+					} else if(da3 <= -3.14159265358979312) {
+						da3 += 6.28318530717958623;
+					}
+					var perpAngle1 = da3;
+					var centerX1 = point.x + rStart * Math.cos(perpAngle1);
+					var centerY1 = point.y + rStart * Math.sin(perpAngle1);
+					var center1 = new bh_base_FPoint(centerX1,centerY1);
+					var startAngle1 = Math.atan2(point.y - centerY1,point.x - centerX1);
+					var endAngle1 = startAngle1 + angleDeltaRad1;
+					var endPt = new bh_base_FPoint(centerX1 + rEnd * Math.cos(endAngle1),centerY1 + rEnd * Math.sin(endAngle1));
+					singlePaths.push(new bh_paths_SinglePath(point,endPt,bh_paths_PathType.Spiral(center1,startAngle1,rStart,rEnd,angleDeltaF1)));
+					var da4 = angle + angleDeltaRad1;
+					da4 %= 6.28318530717958623;
+					if(da4 > 3.14159265358979323) {
+						da4 -= 6.28318530717958623;
+					} else if(da4 <= -3.14159265358979312) {
+						da4 += 6.28318530717958623;
+					}
+					angle = da4;
+					point = endPt;
+					break;
+				case 10:
+					var amplitude = path.amplitude;
+					var wavelength = path.wavelength;
+					var count = path.count;
+					var amp = _gthis.builder.resolveAsNumber(amplitude);
+					var wl = _gthis.builder.resolveAsNumber(wavelength);
+					var cnt = _gthis.builder.resolveAsNumber(count);
+					var totalLength = wl * cnt;
+					var residualLateral = amp * Math.sin(cnt * 2 * Math.PI);
+					var endPt1 = new bh_base_FPoint(point.x + totalLength * Math.cos(angle) - residualLateral * Math.sin(angle),point.y + totalLength * Math.sin(angle) + residualLateral * Math.cos(angle));
+					singlePaths.push(new bh_paths_SinglePath(point,endPt1,bh_paths_PathType.Wave(amp,wl,cnt,angle)));
+					point = endPt1;
+					break;
 				}
-				angle = Math.atan2(finalTarget.y - point.y,finalTarget.x - point.x);
-				point = finalTarget;
-				break;
-			case 9:
-				var radiusStart = path.radiusStart;
-				var radiusEnd = path.radiusEnd;
-				var angleDelta3 = path.angleDelta;
-				var rStart = _gthis.builder.resolveAsNumber(radiusStart);
-				var rEnd = _gthis.builder.resolveAsNumber(radiusEnd);
-				var angleDeltaF1 = _gthis.builder.resolveAsNumber(angleDelta3);
-				var angleDeltaRad1 = angleDeltaF1 * 3.14159265358979323 / 180.0;
-				var da3 = angle + (angleDeltaF1 > 0 ? Math.PI / 2 : -Math.PI / 2);
-				da3 %= 6.28318530717958623;
-				if(da3 > 3.14159265358979323) {
-					da3 -= 6.28318530717958623;
-				} else if(da3 <= -3.14159265358979312) {
-					da3 += 6.28318530717958623;
-				}
-				var perpAngle1 = da3;
-				var centerX1 = point.x + rStart * Math.cos(perpAngle1);
-				var centerY1 = point.y + rStart * Math.sin(perpAngle1);
-				var center1 = new bh_base_FPoint(centerX1,centerY1);
-				var startAngle1 = Math.atan2(point.y - centerY1,point.x - centerX1);
-				var endAngle1 = startAngle1 + angleDeltaRad1;
-				var endPt = new bh_base_FPoint(centerX1 + rEnd * Math.cos(endAngle1),centerY1 + rEnd * Math.sin(endAngle1));
-				singlePaths.push(new bh_paths_SinglePath(point,endPt,bh_paths_PathType.Spiral(center1,startAngle1,rStart,rEnd,angleDeltaF1)));
-				var da4 = angle + angleDeltaRad1;
-				da4 %= 6.28318530717958623;
-				if(da4 > 3.14159265358979323) {
-					da4 -= 6.28318530717958623;
-				} else if(da4 <= -3.14159265358979312) {
-					da4 += 6.28318530717958623;
-				}
-				angle = da4;
-				point = endPt;
-				break;
-			case 10:
-				var amplitude = path.amplitude;
-				var wavelength = path.wavelength;
-				var count = path.count;
-				var amp = _gthis.builder.resolveAsNumber(amplitude);
-				var wl = _gthis.builder.resolveAsNumber(wavelength);
-				var cnt = _gthis.builder.resolveAsNumber(count);
-				var totalLength = wl * cnt;
-				var residualLateral = amp * Math.sin(cnt * 2 * Math.PI);
-				var endPt1 = new bh_base_FPoint(point.x + totalLength * Math.cos(angle) - residualLateral * Math.sin(angle),point.y + totalLength * Math.sin(angle) + residualLateral * Math.cos(angle));
-				singlePaths.push(new bh_paths_SinglePath(point,endPt1,bh_paths_PathType.Wave(amp,wl,cnt,angle)));
-				point = endPt1;
-				break;
 			}
+		} catch( _g ) {
+			var e = haxe_Exception.caught(_g).unwrap();
+			this.builder.indexedParams = oldIndexed;
+			throw haxe_Exception.thrown(e);
 		}
 		this.builder.indexedParams = oldIndexed;
 		var path = new bh_paths_Path(singlePaths);
@@ -35708,6 +35712,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 			this.pos++;
 			this.col++;
 			var buf_b = "";
+			var closed = false;
 			while(this.pos < this.len) {
 				var sc = this.pos < this.len ? HxOverrides.cca(this.src,this.pos) : -1;
 				if(sc == 92 && this.pos + 1 < this.len) {
@@ -35736,11 +35741,21 @@ bh_stateanim__$AnimParser_AnimLexerHC.prototype = {
 				if(sc == 34) {
 					this.pos++;
 					this.col++;
+					closed = true;
 					break;
+				}
+				if(sc == 10) {
+					this.line++;
+					this.col = 1;
+					this.lineStart = this.pos + 1;
+				} else {
+					this.col++;
 				}
 				buf_b += String.fromCodePoint(sc);
 				this.pos++;
-				this.col++;
+			}
+			if(!closed) {
+				throw haxe_Exception.thrown("" + this.sourceName + ":" + startLine + ":" + startCol + ": Unterminated string, missing closing double quote");
 			}
 			return new bh_stateanim__$AnimParser_AnimToken(bh_stateanim_APToken.APIdentifier(buf_b,null,bh_stateanim_APIdentifierType.AITQuotedString),startLine,startCol);
 		}
@@ -36674,6 +36689,8 @@ bh_stateanim_AnimParser.prototype = {
 				}
 				if(playlist == null) {
 					this.syntaxError("no playlist for " + (state == null ? "null" : haxe_ds_StringMap.stringify(state.h)) + ", id " + anim.name);
+				} else {
+					playlist.visited = true;
 				}
 			}
 		}
@@ -36682,7 +36699,7 @@ bh_stateanim_AnimParser.prototype = {
 		while(_g < _g1.length) {
 			var anim = _g1[_g];
 			++_g;
-			if(anim.visited == false) {
+			if(anim.visited != true) {
 				this.syntaxError("animation " + anim.name + " not reachable");
 			}
 			var h = anim.extraPoint.h;
@@ -36700,7 +36717,7 @@ bh_stateanim_AnimParser.prototype = {
 				while(_g2 < ev.length) {
 					var ePoint = ev[_g2];
 					++_g2;
-					if(ePoint.visited == false) {
+					if(ePoint.visited != true) {
 						this.syntaxError("Extra point " + ek + " in anim " + anim.name + " not reachable " + (ePoint.states == null ? "null" : haxe_ds_StringMap.stringify(ePoint.states.h)));
 					}
 				}
@@ -36710,7 +36727,7 @@ bh_stateanim_AnimParser.prototype = {
 			while(_g3 < _g4.length) {
 				var pl = _g4[_g3];
 				++_g3;
-				if(pl.visited == false) {
+				if(pl.visited != true) {
 					this.syntaxError("Playlist in anim " + anim.name + " not reachable " + (pl.states == null ? "null" : haxe_ds_StringMap.stringify(pl.states.h)));
 				}
 			}
@@ -48150,6 +48167,13 @@ bh_ui_screens_ScreenManager.createLoader = function() {
 	};
 	return loader;
 };
+bh_ui_screens_ScreenManager.thrownValue = function(e) {
+	if(((e) instanceof haxe_ValueException)) {
+		return e.value;
+	} else {
+		return e;
+	}
+};
 bh_ui_screens_ScreenManager.prototype = {
 	get_sceneHeight: function() {
 		return this.app.s2d.height;
@@ -48350,16 +48374,13 @@ bh_ui_screens_ScreenManager.prototype = {
 			if(throwOnError) {
 				throw haxe_Exception.thrown(e);
 			}
-			if(((e) instanceof bh_stateanim_InvalidSyntax)) {
-				var invalidSyntax = js_Boot.__cast(e , bh_stateanim_InvalidSyntax);
-				return { success : false, error : invalidSyntax.toString(), file : invalidSyntax.pos.psource, line : invalidSyntax.pos.line, col : invalidSyntax.pos.col};
+			var thrown = bh_ui_screens_ScreenManager.thrownValue(e);
+			if(((thrown) instanceof bh_base_ParseError)) {
+				var parseError = js_Boot.__cast(thrown , bh_base_ParseError);
+				return { success : false, error : parseError.toString(), file : parseError.pos.psource, line : parseError.pos.line, col : parseError.pos.col};
 			}
-			if(((e) instanceof bh_multianim_MultiAnimUnexpected)) {
-				var multiAnimUnexpected = js_Boot.__cast(e , bh_multianim_MultiAnimUnexpected);
-				return { success : false, error : multiAnimUnexpected.toString(), file : multiAnimUnexpected.pos.psource, line : multiAnimUnexpected.pos.line, col : multiAnimUnexpected.pos.col};
-			}
-			if(((e) instanceof bh_multianim_BuilderError)) {
-				var builderErr = js_Boot.__cast(e , bh_multianim_BuilderError);
+			if(((thrown) instanceof bh_multianim_BuilderError)) {
+				var builderErr = js_Boot.__cast(thrown , bh_multianim_BuilderError);
 				var pos = builderErr.parsedPos();
 				return { success : false, error : builderErr.toString(), file : pos != null ? pos.file : null, line : pos != null ? pos.line : null, col : pos != null ? pos.col : null};
 			}
@@ -81827,7 +81848,14 @@ var hxd_BitmapData = function(width,height) {
 $hxClasses["hxd.BitmapData"] = hxd_BitmapData;
 hxd_BitmapData.__name__ = "hxd.BitmapData";
 hxd_BitmapData.prototype = {
-	line: function(x0,y0,x1,y1,color) {
+	clear: function(color) {
+		this.fill(0,0,this.ctx.canvas.width,this.ctx.canvas.height,color);
+	}
+	,fill: function(x,y,width,height,color) {
+		this.ctx.fillStyle = "rgba(" + (color >> 16 & 255) + ", " + (color >> 8 & 255) + ", " + (color & 255) + ", " + (color >>> 24) / 255 + ")";
+		this.ctx.fillRect(x,y,width,height);
+	}
+	,line: function(x0,y0,x1,y1,color) {
 		var dx = x1 - x0;
 		var dy = y1 - y0;
 		if(dx == 0) {
@@ -116720,7 +116748,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 		theme = 1;
 	}
 	this._rebuildListeners = [];
-	this._batchDirty = false;
+	this._batchChanged = [];
 	this._batchMode = false;
 	this._sw21_armIdx = -1;
 	h2d_Object.call(this);
@@ -116771,7 +116799,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeA",m);
-	this._e3 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e3 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e3;
 	_this.posChanged = true;
 	_this.x = 60;
@@ -116785,7 +116813,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeB",m);
-	this._e4 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e4 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e4;
 	_this.posChanged = true;
 	_this.x = 160;
@@ -116799,7 +116827,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnThemeC",m);
-	this._e5 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e5 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e5;
 	_this.posChanged = true;
 	_this.x = 260;
@@ -116824,7 +116852,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutRow",m);
-	this._e7 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e7 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e7;
 	_this.posChanged = true;
 	_this.x = 60;
@@ -116838,7 +116866,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutGrid",m);
-	this._e8 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e8 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e8;
 	_this.posChanged = true;
 	_this.x = 160;
@@ -116852,7 +116880,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	m.h["height"] = bh_multianim_SettingValue.RSVInt(22);
 	m.h["font"] = bh_multianim_SettingValue.RSVString("m6x11");
 	var _phResult1 = _phResult.buildPlaceholderViaSource("btnLayoutNested",m);
-	this._e9 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,90,22));
+	this._e9 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,90,22,1));
 	var _this = this._e9;
 	_this.posChanged = true;
 	_this.x = 260;
@@ -116874,7 +116902,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	var m = new haxe_ds_StringMap();
 	m.h["size"] = bh_multianim_SettingValue.RSVInt(200);
 	var _phResult1 = _phResult.buildPlaceholderViaSource("sliderX",m);
-	this._e11 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,200,16));
+	this._e11 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,200,16,1));
 	var _this = this._e11;
 	_this.posChanged = true;
 	_this.x = 20;
@@ -116908,7 +116936,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 	var m = new haxe_ds_StringMap();
 	m.h["size"] = bh_multianim_SettingValue.RSVInt(200);
 	var _phResult1 = _phResult.buildPlaceholderViaSource("sliderY",m);
-	this._e14 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_solidTile(-65536,200,16));
+	this._e14 = _phResult1 != null ? _phResult1 : new h2d_Bitmap(bh_base_HeapsUtils_crossTile(-65536,200,16,1));
 	var _this = this._e14;
 	_this.posChanged = true;
 	_this.x = 20;
@@ -117037,7 +117065,7 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			}
 		}
 	}
-	,_updateExpressions: function() {
+	,_updateExpressions: function(_changedParam) {
 	}
 	,setTheme: function(v) {
 		if(this._theme == v) {
@@ -117045,7 +117073,9 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 		}
 		this._theme = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("theme") < 0) {
+				this._batchChanged.push("theme");
+			}
 		} else {
 			this._applyVisibility("theme");
 			this._fireRebuildListeners();
@@ -117057,7 +117087,9 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 		}
 		this._layout = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("layout") < 0) {
+				this._batchChanged.push("layout");
+			}
 		} else {
 			this._applyVisibility("layout");
 			this._fireRebuildListeners();
@@ -117069,7 +117101,9 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 		}
 		this._countX = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("countX") < 0) {
+				this._batchChanged.push("countX");
+			}
 		} else {
 			this._applyVisibility("countX");
 			this._fireRebuildListeners();
@@ -117081,7 +117115,9 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 		}
 		this._countY = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("countY") < 0) {
+				this._batchChanged.push("countY");
+			}
 		} else {
 			this._applyVisibility("countY");
 			this._fireRebuildListeners();
@@ -117092,19 +117128,31 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
 		}
 		this._batchMode = true;
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,endUpdate: function() {
 		if(!this._batchMode) {
 			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
 		}
 		this._batchMode = false;
-		if(this._batchDirty) {
-			this._applyVisibility();
-			this._updateExpressions();
+		if(this._batchChanged.length > 0) {
+			var _g = 0;
+			var _g1 = this._batchChanged;
+			while(_g < _g1.length) {
+				var _bp = _g1[_g];
+				++_g;
+				this._applyVisibility(_bp);
+			}
+			var _g = 0;
+			var _g1 = this._batchChanged;
+			while(_g < _g1.length) {
+				var _bp = _g1[_g];
+				++_g;
+				this._updateExpressions(_bp);
+			}
 			this._fireRebuildListeners();
 		}
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,get_batchMode: function() {
 		return this._batchMode;
@@ -118126,7 +118174,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 		hp = 100;
 	}
 	this._rebuildListeners = [];
-	this._batchDirty = false;
+	this._batchChanged = [];
 	this._batchMode = false;
 	h2d_Object.call(this);
 	this._pb = _pb;
@@ -118180,7 +118228,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 24;
 	this.addChild(this._e3);
-	var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0,6);
 	this._e4 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e4;
 	_this.posChanged = true;
@@ -118208,7 +118256,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 	_this.posChanged = true;
 	_this.y = 32;
 	this.addChild(this._e6);
-	var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0 | 0,6);
+	var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0,6);
 	this._e7 = new h2d_Bitmap(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
 	var _this = this._e7;
 	_this.posChanged = true;
@@ -118246,15 +118294,27 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function() {
 	}
-	,_updateExpressions: function() {
-		this._e1.set_text(Std.string(this._name));
-		this._e2.set_text(Std.string("Lv." + Std.string(this._level)));
-		var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0 | 0,6);
-		this._e4.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
-		this._e5.set_text(Std.string(Std.string(this._hp) + "/" + Std.string(this._maxHp)));
-		var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0 | 0,6);
-		this._e7.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
-		this._e8.set_text(Std.string(Std.string(this._mp) + "/" + Std.string(this._maxMp)));
+	,_updateExpressions: function(_changedParam) {
+		if(_changedParam == null || _changedParam == "name") {
+			this._e1.set_text(Std.string(this._name));
+		}
+		if(_changedParam == null || _changedParam == "level") {
+			this._e2.set_text(Std.string("Lv." + Std.string(this._level)));
+		}
+		if(_changedParam == null || _changedParam == "hp" || _changedParam == "maxHp") {
+			var tile = bh_base_HeapsUtils_solidTile(-48060,(this._hp | 0) * 100 / (this._maxHp | 0) | 0,6);
+			this._e4.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
+		}
+		if(_changedParam == null || _changedParam == "hp" || _changedParam == "maxHp") {
+			this._e5.set_text(Std.string(Std.string(this._hp) + "/" + Std.string(this._maxHp)));
+		}
+		if(_changedParam == null || _changedParam == "mp" || _changedParam == "maxMp") {
+			var tile = bh_base_HeapsUtils_solidTile(-12285748,(this._mp | 0) * 100 / (this._maxMp | 0) | 0,6);
+			this._e7.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
+		}
+		if(_changedParam == null || _changedParam == "mp" || _changedParam == "maxMp") {
+			this._e8.set_text(Std.string(Std.string(this._mp) + "/" + Std.string(this._maxMp)));
+		}
 	}
 	,setHp: function(v) {
 		if(this._hp == v) {
@@ -118262,10 +118322,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._hp = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("hp") < 0) {
+				this._batchChanged.push("hp");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("hp");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118275,10 +118337,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._maxHp = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("maxHp") < 0) {
+				this._batchChanged.push("maxHp");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("maxHp");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118288,10 +118352,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._mp = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("mp") < 0) {
+				this._batchChanged.push("mp");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("mp");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118301,10 +118367,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._maxMp = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("maxMp") < 0) {
+				this._batchChanged.push("maxMp");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("maxMp");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118314,10 +118382,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._name = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("name") < 0) {
+				this._batchChanged.push("name");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("name");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118327,10 +118397,12 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 		}
 		this._level = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("level") < 0) {
+				this._batchChanged.push("level");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("level");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118339,19 +118411,25 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
 		}
 		this._batchMode = true;
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,endUpdate: function() {
 		if(!this._batchMode) {
 			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
 		}
 		this._batchMode = false;
-		if(this._batchDirty) {
+		if(this._batchChanged.length > 0) {
 			this._applyVisibility();
-			this._updateExpressions();
+			var _g = 0;
+			var _g1 = this._batchChanged;
+			while(_g < _g1.length) {
+				var _bp = _g1[_g];
+				++_g;
+				this._updateExpressions(_bp);
+			}
 			this._fireRebuildListeners();
 		}
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,get_batchMode: function() {
 		return this._batchMode;
@@ -118518,7 +118596,7 @@ var screens_advanced_PerfProgrammables_$PerfRepeatableInstance = function(_pb,va
 		value = 3;
 	}
 	this._rebuildListeners = [];
-	this._batchDirty = false;
+	this._batchChanged = [];
 	this._batchMode = false;
 	this._rebuildRepeat__e0_dy = 0;
 	this._rebuildRepeat__e0_dx = 0;
@@ -118532,7 +118610,7 @@ var screens_advanced_PerfProgrammables_$PerfRepeatableInstance = function(_pb,va
 	this._e0 = new h2d_Object();
 	this.addChild(this._e0);
 	this._e0_sink = new bh_multianim_SwitchArmResults();
-	this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0);
+	this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0,false);
 	this._applyVisibility();
 	this._updateExpressions();
 };
@@ -118541,11 +118619,11 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__name__ = "screens.a
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h2d_Object.prototype,{
-	_rebuildRepeat__e0: function(_rt_count,_rt_start,_rt_step,_rt_dx,_rt_dy) {
+	_rebuildRepeat__e0: function(_rt_count,_rt_start,_rt_step,_rt_dx,_rt_dy,_rt_force) {
 		if(_rt_count < 0) {
 			_rt_count = 0;
 		}
-		if(_rt_count == this._rebuildRepeat__e0_n && _rt_start == this._rebuildRepeat__e0_s && _rt_step == this._rebuildRepeat__e0_sp && _rt_dx == this._rebuildRepeat__e0_dx && _rt_dy == this._rebuildRepeat__e0_dy) {
+		if(!_rt_force && _rt_count == this._rebuildRepeat__e0_n && _rt_start == this._rebuildRepeat__e0_s && _rt_step == this._rebuildRepeat__e0_sp && _rt_dx == this._rebuildRepeat__e0_dx && _rt_dy == this._rebuildRepeat__e0_dy) {
 			return;
 		}
 		this._rebuildRepeat__e0_n = _rt_count;
@@ -118575,9 +118653,9 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 		}
 	}
 	,_applyVisibility: function() {
-		this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0);
+		this._rebuildRepeat__e0(this._value | 0 | 0,0,1,6,0,false);
 	}
-	,_updateExpressions: function() {
+	,_updateExpressions: function(_changedParam) {
 	}
 	,setValue: function(v) {
 		if(this._value == v) {
@@ -118585,7 +118663,9 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 		}
 		this._value = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("value") < 0) {
+				this._batchChanged.push("value");
+			}
 		} else {
 			this._applyVisibility();
 			this._fireRebuildListeners();
@@ -118596,19 +118676,25 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
 		}
 		this._batchMode = true;
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,endUpdate: function() {
 		if(!this._batchMode) {
 			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
 		}
 		this._batchMode = false;
-		if(this._batchDirty) {
+		if(this._batchChanged.length > 0) {
 			this._applyVisibility();
-			this._updateExpressions();
+			var _g = 0;
+			var _g1 = this._batchChanged;
+			while(_g < _g1.length) {
+				var _bp = _g1[_g];
+				++_g;
+				this._updateExpressions(_bp);
+			}
 			this._fireRebuildListeners();
 		}
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,get_batchMode: function() {
 		return this._batchMode;
@@ -118744,7 +118830,7 @@ var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,
 		value = 0;
 	}
 	this._rebuildListeners = [];
-	this._batchDirty = false;
+	this._batchChanged = [];
 	this._batchMode = false;
 	h2d_Object.call(this);
 	this._pb = _pb;
@@ -118781,10 +118867,14 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function() {
 	}
-	,_updateExpressions: function() {
-		var tile = bh_base_HeapsUtils_solidTile(this._color,30,12);
-		this._e0.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
-		this._e1.set_text(Std.string(Std.string(this._value)));
+	,_updateExpressions: function(_changedParam) {
+		if(_changedParam == null || _changedParam == "color") {
+			var tile = bh_base_HeapsUtils_solidTile(this._color,30,12);
+			this._e0.set_tile(tile.sub(0,0,tile.width,tile.height,0.0,0.0));
+		}
+		if(_changedParam == null || _changedParam == "value") {
+			this._e1.set_text(Std.string(Std.string(this._value)));
+		}
 	}
 	,setValue: function(v) {
 		if(this._value == v) {
@@ -118792,10 +118882,12 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 		}
 		this._value = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("value") < 0) {
+				this._batchChanged.push("value");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("value");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118805,10 +118897,12 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 		}
 		this._color = v;
 		if(this._batchMode) {
-			this._batchDirty = true;
+			if(this._batchChanged.indexOf("color") < 0) {
+				this._batchChanged.push("color");
+			}
 		} else {
 			this._applyVisibility();
-			this._updateExpressions();
+			this._updateExpressions("color");
 			this._fireRebuildListeners();
 		}
 	}
@@ -118817,19 +118911,25 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 			throw haxe_Exception.thrown("beginUpdate: already in batch; nesting is not supported");
 		}
 		this._batchMode = true;
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,endUpdate: function() {
 		if(!this._batchMode) {
 			throw haxe_Exception.thrown("endUpdate: no matching beginUpdate");
 		}
 		this._batchMode = false;
-		if(this._batchDirty) {
+		if(this._batchChanged.length > 0) {
 			this._applyVisibility();
-			this._updateExpressions();
+			var _g = 0;
+			var _g1 = this._batchChanged;
+			while(_g < _g1.length) {
+				var _bp = _g1[_g];
+				++_g;
+				this._updateExpressions(_bp);
+			}
 			this._fireRebuildListeners();
 		}
-		this._batchDirty = false;
+		this._batchChanged.length = 0;
 	}
 	,get_batchMode: function() {
 		return this._batchMode;
@@ -122369,6 +122469,444 @@ screens_animation_TransitionsDemoScreen.prototype = $extend(DemoScreenBase.proto
 	}
 	,__class__: screens_animation_TransitionsDemoScreen
 });
+var screens_gamelike_AutotileDemoScreen = function(screenManager,scrollConfig,layers) {
+	this.autotileName = "dirtCorner";
+	this.brush = 1;
+	this.isPainting = false;
+	DemoScreenBase.call(this,screenManager,scrollConfig,layers);
+};
+$hxClasses["screens.gamelike.AutotileDemoScreen"] = screens_gamelike_AutotileDemoScreen;
+screens_gamelike_AutotileDemoScreen.__name__ = "screens.gamelike.AutotileDemoScreen";
+screens_gamelike_AutotileDemoScreen.__super__ = DemoScreenBase;
+screens_gamelike_AutotileDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Autotile Terrain","Paint terrain and compare the corner and blob47 autotile formats");
+		this.builder = this.screenManager.buildFromResourceName("demos/gamelike/autotile.manim",false);
+		this.buttonsBuilder = this.screenManager.buildFromResourceName("buttons.manim",false);
+		var generatedByMacroBuildWithParametersload1832Builder = function() {
+			var randomizeBtn;
+			var grassBtn;
+			var dirtBtn;
+			var cornerBtn;
+			var clearBtn;
+			var blob47Btn;
+			var _gthis1 = _gthis.builder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Randomize");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				randomizeBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["randomizeBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				grassBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["grassBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dirtBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["dirtBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Corner");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				cornerBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["cornerBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Clear");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				clearBtn = _el;
+				return _el.getObject();
+			});
+			_g.h["clearBtn"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Blob47");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				blob47Btn = _el;
+				return _el.getObject();
+			});
+			_g.h["blob47Btn"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("autotileDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { randomizeBtn : randomizeBtn, grassBtn : grassBtn, dirtBtn : dirtBtn, cornerBtn : cornerBtn, clearBtn : clearBtn, blob47Btn : blob47Btn, builderResults : builderResults1};
+			if(retVal.randomizeBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "randomizeBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.grassBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "grassBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dirtBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dirtBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.cornerBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "cornerBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.clearBtn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "clearBtn" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.blob47Btn == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "blob47Btn" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload1832Builder();
+		this.demoResult = ui.builderResults;
+		this.randomizeButton = ui.randomizeBtn;
+		this.clearButton = ui.clearBtn;
+		this.dirtButton = ui.dirtBtn;
+		this.grassButton = ui.grassBtn;
+		this.cornerButton = ui.cornerBtn;
+		this.blob47Button = ui.blob47Btn;
+		this.addBuilderResult(this.demoResult);
+		var mapContainerEl = this.demoResult.getSingleItemByName("mapContainer");
+		if(mapContainerEl == null) {
+			return;
+		}
+		var mapContainer = bh_multianim_MultiAnimParser_toh2dObject(mapContainerEl.object);
+		var mapW = 640;
+		var mapH = 448;
+		this.mapClip = new h2d_Mask(mapW,mapH,mapContainer);
+		this.mapInteractive = new h2d_Interactive(mapW,mapH,mapContainer);
+		this.mapInteractive.onPush = function(e) {
+			if(e.button == 0) {
+				_gthis.isPainting = true;
+				_gthis.paintAt(e.relX,e.relY);
+			}
+		};
+		this.mapInteractive.onRelease = function(_) {
+			_gthis.isPainting = false;
+		};
+		this.mapInteractive.onMove = function(e) {
+			if(_gthis.isPainting) {
+				_gthis.paintAt(e.relX,e.relY);
+			}
+		};
+		this.mapInteractive.onOut = function(_) {
+			_gthis.isPainting = false;
+		};
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < 28) {
+			var _ = _g1++;
+			var _g2 = [];
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g2.push(0);
+			_g.push(_g2);
+		}
+		this.grid = _g;
+		this.randomize();
+		this.updateSelection();
+	}
+	,paintAt: function(relX,relY) {
+		var gx = relX / 16 | 0;
+		var gy = relY / 16 | 0;
+		if(gx >= 0 && gx < 40 && gy >= 0 && gy < 28 && this.grid[gy][gx] != this.brush) {
+			this.grid[gy][gx] = this.brush;
+			this.refresh();
+		}
+	}
+	,refresh: function() {
+		this.rebuildAutotile();
+		this.updateStatus();
+	}
+	,rebuildAutotile: function() {
+		if(this.builder == null || this.mapClip == null) {
+			return;
+		}
+		if(this.tileGroup != null) {
+			var _this = this.tileGroup;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+		}
+		this.tileGroup = this.builder.buildAutotile(this.autotileName,this.grid);
+		var _this = this.tileGroup;
+		_this.posChanged = true;
+		_this.scaleX = 2;
+		_this.posChanged = true;
+		_this.scaleY = 2;
+		this.mapClip.addChild(this.tileGroup);
+	}
+	,randomize: function() {
+		var _g = 0;
+		while(_g < 28) {
+			var y = _g++;
+			var _g1 = 0;
+			while(_g1 < 40) {
+				var x = _g1++;
+				this.grid[y][x] = Std.random(100) < 48 ? 1 : 0;
+			}
+		}
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < 28) {
+			var y = _g1++;
+			var _g2 = [];
+			var _g3 = 0;
+			while(_g3 < 40) {
+				var x = _g3++;
+				_g2.push(this.countDirtAround(x,y) >= 5 ? 1 : 0);
+			}
+			_g.push(_g2);
+		}
+		var next = _g;
+		this.grid = next;
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < 28) {
+			var y = _g1++;
+			var _g2 = [];
+			var _g3 = 0;
+			while(_g3 < 40) {
+				var x = _g3++;
+				_g2.push(this.countDirtAround(x,y) >= 5 ? 1 : 0);
+			}
+			_g.push(_g2);
+		}
+		var next = _g;
+		this.grid = next;
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < 28) {
+			var y = _g1++;
+			var _g2 = [];
+			var _g3 = 0;
+			while(_g3 < 40) {
+				var x = _g3++;
+				_g2.push(this.countDirtAround(x,y) >= 5 ? 1 : 0);
+			}
+			_g.push(_g2);
+		}
+		var next = _g;
+		this.grid = next;
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < 28) {
+			var y = _g1++;
+			var _g2 = [];
+			var _g3 = 0;
+			while(_g3 < 40) {
+				var x = _g3++;
+				_g2.push(this.countDirtAround(x,y) >= 5 ? 1 : 0);
+			}
+			_g.push(_g2);
+		}
+		var next = _g;
+		this.grid = next;
+		this.refresh();
+	}
+	,countDirtAround: function(x,y) {
+		var count = 0;
+		var nx = x + (-1);
+		var ny = y + (-1);
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x;
+		var ny = y + (-1);
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x + 1;
+		var ny = y + (-1);
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x + (-1);
+		var ny = y;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x;
+		var ny = y;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x + 1;
+		var ny = y;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x + (-1);
+		var ny = y + 1;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x;
+		var ny = y + 1;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		var nx = x + 1;
+		var ny = y + 1;
+		if(nx >= 0 && nx < 40 && ny >= 0 && ny < 28 && this.grid[ny][nx] == 1) {
+			++count;
+		}
+		return count;
+	}
+	,clearMap: function() {
+		var _g = 0;
+		while(_g < 28) {
+			var y = _g++;
+			var _g1 = 0;
+			while(_g1 < 40) {
+				var x = _g1++;
+				this.grid[y][x] = 0;
+			}
+		}
+		this.refresh();
+	}
+	,updateStatus: function() {
+		if(this.demoResult == null) {
+			return;
+		}
+		var dirtCount = 0;
+		var _g = 0;
+		while(_g < 28) {
+			var y = _g++;
+			var _g1 = 0;
+			while(_g1 < 40) {
+				var x = _g1++;
+				if(this.grid[y][x] == 1) {
+					++dirtCount;
+				}
+			}
+		}
+		var format = this.autotileName == "dirtCorner" ? "corner" : "blob47";
+		var updatable = this.demoResult.getUpdatable("statusText");
+		if(updatable != null) {
+			updatable.updateText("Dirt: " + dirtCount + " / " + 1120 + " cells  |  format: " + format);
+		}
+	}
+	,updateSelection: function() {
+		if(this.dirtButton != null) {
+			var tmp = this.brush == 1 ? 1.0 : 0.4;
+			this.dirtButton.getObject().alpha = tmp;
+		}
+		if(this.grassButton != null) {
+			var tmp = this.brush == 0 ? 1.0 : 0.4;
+			this.grassButton.getObject().alpha = tmp;
+		}
+		if(this.cornerButton != null) {
+			var tmp = this.autotileName == "dirtCorner" ? 1.0 : 0.4;
+			this.cornerButton.getObject().alpha = tmp;
+		}
+		if(this.blob47Button != null) {
+			var tmp = this.autotileName == "dirtBlob47" ? 1.0 : 0.4;
+			this.blob47Button.getObject().alpha = tmp;
+		}
+	}
+	,setFormat: function(name) {
+		if(this.autotileName == name) {
+			return;
+		}
+		this.autotileName = name;
+		this.updateSelection();
+		this.refresh();
+	}
+	,onScreenEvent: function(event,source) {
+		if(event._hx_index == 0) {
+			if(source == this.randomizeButton) {
+				this.randomize();
+			} else if(source == this.clearButton) {
+				this.clearMap();
+			} else if(source == this.dirtButton) {
+				this.brush = 1;
+				this.updateSelection();
+			} else if(source == this.grassButton) {
+				this.brush = 0;
+				this.updateSelection();
+			} else if(source == this.cornerButton) {
+				this.setFormat("dirtCorner");
+			} else if(source == this.blob47Button) {
+				this.setFormat("dirtBlob47");
+			}
+		}
+		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		if(this.mapInteractive != null) {
+			var _this = this.mapInteractive;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.mapInteractive = null;
+		}
+		if(this.tileGroup != null) {
+			var _this = this.tileGroup;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.tileGroup = null;
+		}
+		if(this.mapClip != null) {
+			var _this = this.mapClip;
+			if(_this != null && _this.parent != null) {
+				_this.parent.removeChild(_this);
+			}
+			this.mapClip = null;
+		}
+		this.builder = null;
+		this.buttonsBuilder = null;
+		this.demoResult = null;
+		this.randomizeButton = null;
+		this.clearButton = null;
+		this.dirtButton = null;
+		this.grassButton = null;
+		this.cornerButton = null;
+		this.blob47Button = null;
+		this.grid = null;
+	}
+	,__class__: screens_gamelike_AutotileDemoScreen
+});
 var screens_gamelike_BattleHudDemoScreen = function(screenManager,scrollConfig,layers) {
 	this.isDead = false;
 	this.loopTimer = 0;
@@ -122561,289 +123099,6 @@ screens_gamelike_BattleHudDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.pauseButton = null;
 	}
 	,__class__: screens_gamelike_BattleHudDemoScreen
-});
-var screens_gamelike_Blob47DemoScreen = function(screenManager,scrollConfig,layers) {
-	this.paintValue = 0;
-	this.isPainting = false;
-	DemoScreenBase.call(this,screenManager,scrollConfig,layers);
-};
-$hxClasses["screens.gamelike.Blob47DemoScreen"] = screens_gamelike_Blob47DemoScreen;
-screens_gamelike_Blob47DemoScreen.__name__ = "screens.gamelike.Blob47DemoScreen";
-screens_gamelike_Blob47DemoScreen.__super__ = DemoScreenBase;
-screens_gamelike_Blob47DemoScreen.prototype = $extend(DemoScreenBase.prototype,{
-	load: function() {
-		var _gthis = this;
-		this.setupDemo("Blob47 Autotile","Interactive terrain painter with blob47 autotiling");
-		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/blob47.manim",false);
-		this.autotileBuilder = this.screenManager.buildFromResourceName("demos/gamelike/blob47.manim",false);
-		this.buttonsBuilder = this.screenManager.buildFromResourceName("buttons.manim",false);
-		var generatedByMacroBuildWithParametersload1468Builder = function() {
-			var randomizeBtn;
-			var grassBtn;
-			var dirtBtn;
-			var clearBtn;
-			var _gthis1 = _gthis.demoBuilder;
-			var builderResults = new haxe_ds_StringMap();
-			var _g = new haxe_ds_StringMap();
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Randomize");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				randomizeBtn = _el;
-				return _el.getObject();
-			});
-			_g.h["randomizeBtn"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				grassBtn = _el;
-				return _el.getObject();
-			});
-			_g.h["grassBtn"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"color",settings,null);
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				dirtBtn = _el;
-				return _el.getObject();
-			});
-			_g.h["dirtBtn"] = value;
-			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
-				var _el = _gthis.addButtonWithSingleBuilder(_gthis.buttonsBuilder,"main",settings,"Clear");
-				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
-				clearBtn = _el;
-				return _el.getObject();
-			});
-			_g.h["clearBtn"] = value;
-			var builderResults1 = _gthis1.buildWithParameters("blob47Demo",builderResults,{ placeholderObjects : _g});
-			var retVal = { randomizeBtn : randomizeBtn, grassBtn : grassBtn, dirtBtn : dirtBtn, clearBtn : clearBtn, builderResults : builderResults1};
-			if(retVal.randomizeBtn == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "randomizeBtn" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.grassBtn == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "grassBtn" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.dirtBtn == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dirtBtn" + " is null (check if placeholder object is named correctly)");
-			}
-			if(retVal.clearBtn == null) {
-				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "clearBtn" + " is null (check if placeholder object is named correctly)");
-			}
-			return retVal;
-		};
-		var ui = generatedByMacroBuildWithParametersload1468Builder();
-		this.demoResult = ui.builderResults;
-		this.randomizeButton = ui.randomizeBtn;
-		this.clearButton = ui.clearBtn;
-		this.grassButton = ui.grassBtn;
-		this.dirtButton = ui.dirtBtn;
-		this.addBuilderResult(this.demoResult);
-		var _g = [];
-		var _g1 = 0;
-		while(_g1 < 28) {
-			var _ = _g1++;
-			var _g2 = [];
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g2.push(1);
-			_g.push(_g2);
-		}
-		this.grid = _g;
-		var mapContainerEl = this.demoResult.getSingleItemByName("mapContainer");
-		if(mapContainerEl == null) {
-			return;
-		}
-		this.mapContainer = bh_multianim_MultiAnimParser_toh2dObject(mapContainerEl.object);
-		this.mapInteractive = new h2d_Interactive(640,448,this.mapContainer);
-		this.mapInteractive.onPush = function(e) {
-			if(e.button == 0) {
-				_gthis.isPainting = true;
-				_gthis.paintAt(e.relX,e.relY);
-			}
-		};
-		this.mapInteractive.onRelease = function(_) {
-			_gthis.isPainting = false;
-		};
-		this.mapInteractive.onMove = function(e) {
-			if(_gthis.isPainting) {
-				_gthis.paintAt(e.relX,e.relY);
-			}
-		};
-		this.mapInteractive.onOut = function(_) {
-			_gthis.isPainting = false;
-		};
-		this.rebuildAutotile();
-		this.updateStatus();
-		this.updateTileSelection();
-	}
-	,paintAt: function(relX,relY) {
-		var gx = relX / 16 | 0;
-		var gy = relY / 16 | 0;
-		if(gx >= 0 && gx < 40 && gy >= 0 && gy < 28) {
-			if(this.grid[gy][gx] != this.paintValue) {
-				this.grid[gy][gx] = this.paintValue;
-				this.rebuildAutotile();
-				this.updateStatus();
-			}
-		}
-	}
-	,rebuildAutotile: function() {
-		if(this.autotileBuilder == null || this.mapContainer == null) {
-			return;
-		}
-		if(this.tileGroup != null) {
-			var _this = this.tileGroup;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-		}
-		this.tileGroup = this.autotileBuilder.buildAutotile("blob47Grass",this.grid);
-		var _this = this.tileGroup;
-		_this.posChanged = true;
-		_this.scaleX = 2;
-		_this.posChanged = true;
-		_this.scaleY = 2;
-		this.mapContainer.addChild(this.tileGroup);
-	}
-	,randomize: function() {
-		var _g = 0;
-		while(_g < 28) {
-			var y = _g++;
-			var _g1 = 0;
-			while(_g1 < 40) {
-				var x = _g1++;
-				this.grid[y][x] = Std.random(100) < 55 ? 1 : 0;
-			}
-		}
-		this.rebuildAutotile();
-		this.updateStatus();
-	}
-	,clearMap: function() {
-		var _g = 0;
-		while(_g < 28) {
-			var y = _g++;
-			var _g1 = 0;
-			while(_g1 < 40) {
-				var x = _g1++;
-				this.grid[y][x] = this.paintValue;
-			}
-		}
-		this.rebuildAutotile();
-		this.updateStatus();
-	}
-	,updateStatus: function() {
-		if(this.demoResult == null) {
-			return;
-		}
-		var grassCount = 0;
-		var _g = 0;
-		while(_g < 28) {
-			var y = _g++;
-			var _g1 = 0;
-			while(_g1 < 40) {
-				var x = _g1++;
-				if(this.grid[y][x] == 1) {
-					++grassCount;
-				}
-			}
-		}
-		var total = 1120;
-		var updatable = this.demoResult.getUpdatable("statusText");
-		if(updatable != null) {
-			updatable.updateText("Grass: " + grassCount + " / " + total + " tiles");
-		}
-	}
-	,updateTileSelection: function() {
-		if(this.grassButton != null) {
-			var tmp = this.paintValue == 1 ? 1.0 : 0.4;
-			this.grassButton.getObject().alpha = tmp;
-		}
-		if(this.dirtButton != null) {
-			var tmp = this.paintValue == 0 ? 1.0 : 0.4;
-			this.dirtButton.getObject().alpha = tmp;
-		}
-	}
-	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 0) {
-			if(source == this.randomizeButton) {
-				this.randomize();
-			} else if(source == this.clearButton) {
-				this.clearMap();
-				this.paintValue = 1 - this.paintValue;
-				this.updateTileSelection();
-			} else if(source == this.grassButton) {
-				this.paintValue = 1;
-				this.updateTileSelection();
-			} else if(source == this.dirtButton) {
-				this.paintValue = 0;
-				this.updateTileSelection();
-			}
-		}
-		DemoScreenBase.prototype.onScreenEvent.call(this,event,source);
-	}
-	,onClear: function() {
-		DemoScreenBase.prototype.onClear.call(this);
-		if(this.mapInteractive != null) {
-			var _this = this.mapInteractive;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-			this.mapInteractive = null;
-		}
-		if(this.tileGroup != null) {
-			var _this = this.tileGroup;
-			if(_this != null && _this.parent != null) {
-				_this.parent.removeChild(_this);
-			}
-			this.tileGroup = null;
-		}
-		this.demoBuilder = null;
-		this.autotileBuilder = null;
-		this.buttonsBuilder = null;
-		this.demoResult = null;
-		this.randomizeButton = null;
-		this.clearButton = null;
-		this.grassButton = null;
-		this.dirtButton = null;
-		this.grid = null;
-		this.mapContainer = null;
-	}
-	,__class__: screens_gamelike_Blob47DemoScreen
 });
 var screens_gamelike_CardsDemoScreen = function(screenManager,scrollConfig,layers) {
 	this.currentHandPath = "handCurve";
@@ -131697,9 +131952,9 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","loadoutRuntime","loadoutCodegen","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","screenShake","transitions","inventory","characterSheet","blob47","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent","projectList"];
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","loadoutRuntime","loadoutCodegen","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","particles","paths","curves","animPath","filters","floatingText","screenShake","transitions","inventory","characterSheet","autotile","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent","projectList"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "loadoutRuntime", title : "Loadout Lab (runtime)"},{ id : "loadoutCodegen", title : "Loadout Lab (codegen)"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "richText", title : "Rich Text"},{ id : "richTextAutofit", title : "Rich Text Autofit"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"},{ id : "floatingText", title : "Floating Text"},{ id : "screenShake", title : "Screen Shake"},{ id : "transitions", title : "Transitions"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "blob47", title : "Blob47 Autotile"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"},{ id : "projectList", title : "Project List"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "loadoutRuntime", title : "Loadout Lab (runtime)"},{ id : "loadoutCodegen", title : "Loadout Lab (codegen)"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "richText", title : "Rich Text"},{ id : "richTextAutofit", title : "Rich Text Autofit"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"},{ id : "floatingText", title : "Floating Text"},{ id : "screenShake", title : "Screen Shake"},{ id : "transitions", title : "Transitions"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "autotile", title : "Autotile Terrain"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"},{ id : "projectList", title : "Project List"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -131710,6 +131965,7 @@ Xml.DocType = 4;
 Xml.ProcessingInstruction = 5;
 Xml.Document = 6;
 hxd_res_Resource.LIVE_UPDATE = true;
+bh_base_Autotile.blob47ReverseLUT = [0,1,4,5,7,16,17,20,21,23,28,29,31,64,65,68,69,71,80,81,84,85,87,92,93,95,112,113,116,117,119,124,125,127,193,197,199,209,213,215,221,223,241,245,247,253,255];
 bh_base_CursorManager.cursorRegistry = new haxe_ds_StringMap();
 bh_base_CursorManager.defaultCursor = hxd_Cursor.Default;
 bh_base_CursorManager.defaultInteractiveCursor = hxd_Cursor.Button;

@@ -936,7 +936,7 @@ class CardsDemoScreen extends DemoScreenBase {
 	}
 
 	override public function onMouseClick(pos:Point, button:Int, release:Bool):Bool {
-		if (activeTab == 1 && release && cardHand != null && cardHand.onMouseRelease(pos.x, pos.y))
+		if (activeTab == 1 && release && cardHand != null && cardHand.onMouseRelease(pos.x, pos.y, button))
 			return false;
 		return super.onMouseClick(pos, button, release);
 	}

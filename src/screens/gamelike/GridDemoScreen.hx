@@ -1001,9 +1001,11 @@ class GridDemoScreen extends DemoScreenBase {
 	// ========== Cleanup ==========
 
 	override public function onClear():Void {
+		// hexGrid first: dispose() completes a pending removeCellAnimated at once, and its
+		// callback (onHexEvent) re-adds the cell only while hexGrid is set
+		hexGrid = null;
 		super.onClear(); // auto-disposes registered components (grids, card hand)
 		rectGrid = null;
-		hexGrid = null;
 		cardHand = null;
 		hideHexTooltip();
 		splashCells = [];

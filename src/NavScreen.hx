@@ -144,6 +144,7 @@ class NavScreen extends UIScreenBase {
 			name: "Animation & Effects",
 			screens: [
 				{id: "stateAnim", title: "State Animations"},
+				{id: "animLayers", title: "Layers in .anim"},
 				{id: "particles", title: "Particles"},
 				{id: "paths", title: "Paths"},
 				{id: "curves", title: "Curves"},
@@ -160,6 +161,7 @@ class NavScreen extends UIScreenBase {
 				{id: "inventory", title: "Inventory Grid"},
 				{id: "characterSheet", title: "Character Sheet"},
 				{id: "autotile", title: "Autotile Terrain"},
+				{id: "tilemap", title: "Tile Map"},
 				{id: "battleHud", title: "Battle HUD"},
 				{id: "skillTree", title: "Equipment Tree"},
 				{id: "dialogue", title: "Dialogue Box"},

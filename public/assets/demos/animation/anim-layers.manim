@@ -1,0 +1,52 @@
+version: 1.0
+
+// Layers in .anim
+// marineLayers.anim declares `layers: body, hat, glow`: each animation is written in layer
+// blocks, and the state machine draws one clip per layer, every one on the same frame of the
+// animation's timeline (the body). One clock, so a hat cannot drift from the body it sits on.
+// The selectors below name parameters: changing one changes that state on the running machine
+// (AnimationSM.setState), keeping the frame and the time, so a hat appears mid-walk.
+// The marine's own frames stand in for a body, a hat and a glow.
+
+#animLayersDemo programmable(hat:string="none", glow:string="off", dir:string="l", anim:string="walk") {
+    pos: 50, 80
+
+    text(exo2_16, "Layers in .anim", #7fdbda): 0, 0
+    #statusText(updatable) text(exo2_14, "", #aaaaaa, left, 500): 200, 4
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    placeholder(generated(cross(90, 20, white)), builderParameter("hatBtn")) {
+        pos: 0, 30
+        settings{width:int=>100, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(90, 20, white)), builderParameter("glowBtn")) {
+        pos: 110, 30
+        settings{width:int=>100, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(90, 20, white)), builderParameter("dirBtn")) {
+        pos: 220, 30
+        settings{width:int=>100, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(90, 20, white)), builderParameter("animBtn")) {
+        pos: 330, 30
+        settings{width:int=>100, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+
+    // The one the buttons drive, large
+    bitmap(generated(color(300, 260, #1a1a2e))): 0, 80
+    text(exo2_14, "hat => $hat   glow => $glow   direction => $dir", #7fdbda): 10, 90
+    @scale(3) stateanim("marineLayers.anim", $anim, "direction"=>$dir, "hat"=>$hat, "glow"=>$glow): 150, 300
+
+    // Every combination, still
+    text(exo2_14, "Every combination of the states", #7fdbda): 330, 80
+    bitmap(generated(color(380, 260, #1a1a2e))): 330, 100
+    @scale(2) stateanim("marineLayers.anim", "pose", "direction"=>"l", "hat"=>"none", "glow"=>"off"): 400, 290
+    @scale(2) stateanim("marineLayers.anim", "pose", "direction"=>"l", "hat"=>"cap", "glow"=>"off"): 520, 290
+    @scale(2) stateanim("marineLayers.anim", "pose", "direction"=>"r", "hat"=>"cap", "glow"=>"on"): 640, 290
+    text(exo2_light_14, "no hat", #aaaaaa): 375, 330
+    text(exo2_light_14, "hat", #aaaaaa): 505, 330
+    text(exo2_light_14, "hat, glow (blend: add)", #aaaaaa): 590, 330
+
+    text(exo2_14, "In the .anim", #7fdbda): 0, 360
+    text(exo2_light_14, "layers: body, hat, glow — then in each animation: layer body { sheet: ... }, layer hat @(hat != none) { sheet: ... }, layer glow @(glow => on) { sheet: ... blend: add }. The timeline is the first layer with a block; the others must have as many frames.", #aaaaaa, left, 700): 0, 380
+}

@@ -13,6 +13,7 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 	var demoResult:Null<BuilderResult>;
 	var animBar:Null<UIMultiAnimProgressBar>;
 	var pixelBar:Null<UIMultiAnimProgressBar>;
+	var stdAnimBar:Null<UIMultiAnimProgressBar>;
 	var animTimer:Float = 0;
 	var animValue:Int = 0;
 
@@ -30,11 +31,17 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 			thinBar1 => addProgressBar(demoBuilder, 30),
 			thinBar2 => addProgressBar(demoBuilder, 65),
 			thinBar3 => addProgressBar(demoBuilder, 95),
+			// The standard bar from std.manim, drawn from the ui atlas
+			stdBar1 => addProgressBar(stdBuilder, 25),
+			stdBar2 => addProgressBar(stdBuilder, 60),
+			stdBar3 => addProgressBar(stdBuilder, 90),
+			stdAnimBar => addProgressBar(stdBuilder, 0),
 		]);
 
 		demoResult = ui.builderResults;
 		animBar = ui.animBar;
 		pixelBar = ui.pixelBar;
+		stdAnimBar = ui.stdAnimBar;
 
 		addBuilderResult(demoResult);
 	}
@@ -53,6 +60,9 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 			}
 			if (pixelBar != null) {
 				pixelBar.setIntValue(animValue);
+			}
+			if (stdAnimBar != null) {
+				stdAnimBar.setIntValue(animValue);
 			}
 			updateValueText();
 		}
@@ -76,6 +86,7 @@ class ProgressBarDemoScreen extends DemoScreenBase {
 		demoResult = null;
 		animBar = null;
 		pixelBar = null;
+		stdAnimBar = null;
 		animTimer = 0;
 		animValue = 0;
 	}

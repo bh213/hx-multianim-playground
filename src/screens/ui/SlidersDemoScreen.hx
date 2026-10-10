@@ -21,6 +21,8 @@ class SlidersDemoScreen extends DemoScreenBase {
 	var sliderRange1:Null<UIStandardMultiAnimSlider>;
 	var sliderStep100:Null<UIStandardMultiAnimSlider>;
 	var sliderStep25:Null<UIStandardMultiAnimSlider>;
+	var sliderV1:Null<UIStandardMultiAnimSlider>;
+	var sliderV2:Null<UIStandardMultiAnimSlider>;
 
 	var disableCheckbox:Null<UIStandardMultiCheckbox>;
 	var allSliders:Array<UIStandardMultiAnimSlider> = [];
@@ -40,6 +42,8 @@ class SlidersDemoScreen extends DemoScreenBase {
 			sliderRange1 => addSlider(stdBuilder, 0),
 			sliderStep100 => addSlider(stdBuilder, 0),
 			sliderStep25 => addSlider(stdBuilder, 0),
+			sliderV1 => addSlider(stdBuilder, 0),
+			sliderV2 => addSlider(stdBuilder, 0),
 			disableCheckbox => addCheckbox(stdBuilder, false),
 		]);
 
@@ -53,11 +57,14 @@ class SlidersDemoScreen extends DemoScreenBase {
 		sliderRange1 = ui.sliderRange1;
 		sliderStep100 = ui.sliderStep100;
 		sliderStep25 = ui.sliderStep25;
+		sliderV1 = ui.sliderV1;
+		sliderV2 = ui.sliderV2;
 		disableCheckbox = ui.disableCheckbox;
 		allSliders = [
 			ui.slider1, ui.slider2, ui.slider3,
 			ui.sliderScale2, ui.sliderScale05,
 			ui.sliderStep1, ui.sliderRange1, ui.sliderStep100, ui.sliderStep25,
+			ui.sliderV1, ui.sliderV2,
 		];
 
 		sliderScale2.getObject().scaleX = 2;
@@ -92,6 +99,8 @@ class SlidersDemoScreen extends DemoScreenBase {
 				else if (source == sliderRange1) updateValueDisplay("valueRange1", value);
 				else if (source == sliderStep100) updateValueDisplay("valueStep100", value);
 				else if (source == sliderStep25) updateValueDisplay("valueStep25", value);
+				else if (source == sliderV1) updateValueDisplay("valueV1", value);
+				else if (source == sliderV2) updateValueDisplay("valueV2", value);
 			case UIToggle(pressed):
 				if (source == disableCheckbox) {
 					for (s in allSliders)
@@ -123,6 +132,8 @@ class SlidersDemoScreen extends DemoScreenBase {
 		sliderRange1 = null;
 		sliderStep100 = null;
 		sliderStep25 = null;
+		sliderV1 = null;
+		sliderV2 = null;
 		disableCheckbox = null;
 		allSliders = [];
 	}

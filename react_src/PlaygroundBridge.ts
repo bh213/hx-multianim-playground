@@ -26,6 +26,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'scrollableList', displayName: 'Scrollable List', category: 'UI Components', manimFile: 'demos/ui/scrollable-list.manim' },
             { name: 'radio', displayName: 'Radio Buttons', category: 'UI Components', manimFile: 'demos/ui/radios-demo.manim' },
             { name: 'progressBar', displayName: 'Progress Bars', category: 'UI Components', manimFile: 'demos/ui/progress-bar.manim' },
+            { name: 'cursors', displayName: 'Cursors', category: 'UI Components', manimFile: 'demos/ui/cursors.manim' },
             { name: 'draggable', displayName: 'Draggable', category: 'UI Components', manimFile: 'demos/ui/draggable.manim' },
             { name: 'dialogs', displayName: 'Dialogs', category: 'UI Components', manimFile: 'demos/ui/dialogs.manim' },
             { name: 'tabs', displayName: 'Tabs', category: 'UI Components', manimFile: 'demos/ui/tabs-demo.manim' },
@@ -59,6 +60,7 @@ export const CATEGORIES: CategoryInfo[] = [
         name: 'Animation & Effects',
         screens: [
             { name: 'stateAnim', displayName: 'State Animations', category: 'Animation & Effects', manimFile: 'demos/animation/state-anim.manim' },
+            { name: 'animLayers', displayName: 'Layers in .anim', category: 'Animation & Effects', manimFile: 'demos/animation/anim-layers.manim' },
             { name: 'particles', displayName: 'Particles', category: 'Animation & Effects', manimFile: 'demos/animation/particles-basics.manim' },
             { name: 'paths', displayName: 'Paths', category: 'Animation & Effects', manimFile: 'demos/animation/paths.manim' },
             { name: 'curves', displayName: 'Curves', category: 'Animation & Effects', manimFile: 'demos/animation/curves.manim' },
@@ -75,6 +77,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'inventory', displayName: 'Inventory Grid', category: 'Game-Like Demos', manimFile: 'demos/gamelike/inventory.manim' },
             { name: 'characterSheet', displayName: 'Character Sheet', category: 'Game-Like Demos', manimFile: 'demos/gamelike/character-sheet.manim' },
             { name: 'autotile', displayName: 'Autotile Terrain', category: 'Game-Like Demos', manimFile: 'demos/gamelike/autotile.manim' },
+            { name: 'tilemap', displayName: 'Tile Map', category: 'Game-Like Demos', manimFile: 'demos/gamelike/tilemap.manim' },
             { name: 'battleHud', displayName: 'Battle HUD', category: 'Game-Like Demos', manimFile: 'demos/gamelike/battle-hud.manim' },
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },

@@ -33,8 +33,8 @@ class Main extends hxd.App {
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
-		"stateAnim", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
-		"inventory", "characterSheet", "autotile", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
+		"stateAnim", "animLayers", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
+		"inventory", "characterSheet", "autotile", "tilemap", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
 	];
 
 	function getFont() {
@@ -192,6 +192,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("scrollableList", new ScrollableListDemoScreen(screenManager));
 		screenManager.addScreen("radio", new RadioDemoScreen(screenManager));
 		screenManager.addScreen("progressBar", new ProgressBarDemoScreen(screenManager));
+		screenManager.addScreen("cursors", new CursorsDemoScreen(screenManager));
 		screenManager.addScreen("draggable", new DraggableDemoScreen(screenManager));
 		screenManager.addScreen("dialogs", new DialogsDemoScreen(screenManager));
 		screenManager.addScreen("tabs", new TabsDemoScreen(screenManager));
@@ -216,6 +217,7 @@ class Main extends hxd.App {
 
 		// Animation demos
 		screenManager.addScreen("stateAnim", new StateAnimDemoScreen(screenManager));
+		screenManager.addScreen("animLayers", new AnimLayersDemoScreen(screenManager));
 		screenManager.addScreen("particles", new ParticlesDemoScreen(screenManager));
 		screenManager.addScreen("paths", new PathsDemoScreen(screenManager));
 		screenManager.addScreen("curves", new CurvesDemoScreen(screenManager));
@@ -229,6 +231,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("inventory", new InventoryDemoScreen(screenManager));
 		screenManager.addScreen("characterSheet", new CharacterSheetDemoScreen(screenManager));
 		screenManager.addScreen("autotile", new AutotileDemoScreen(screenManager));
+		screenManager.addScreen("tilemap", new TilemapDemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));

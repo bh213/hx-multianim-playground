@@ -65,6 +65,36 @@ paths {
 
   @scale(3) ninepatch("ui", "Window_3x3_idle", 60, 30): 200, 520
   text(m6x11, "scale 3", #888888): 200, 620
+
+  // Section 4: tiled beside stretched — the same cell, its middle and edges repeated or stretched
+  text(exo2_16, "Tiled (the default) beside stretched:", #cccccc): 0, 660
+  @scale(3) ninepatch("ui", "button-hover", 90, 40): 0, 690
+  text(m6x11, "button-hover, tile", #888888): 0, 816
+  @scale(3) ninepatch("ui", "button-hover", 90, 40, stretch): 300, 690
+  text(m6x11, "button-hover, stretch", #888888): 300, 816
+  @scale(3) ninepatch("ui", "Droppanel_3x3_idle", 90, 40, tile): 600, 690
+  text(m6x11, "Droppanel, tile", #888888): 600, 816
+
+  // Section 5: the sheet and the cell as parameters — one programmable, four styles
+  text(exo2_16, "Sheet and cell from a parameter (\"button-\" + $style):", #cccccc): 0, 850
+  staticRef($styledButton, style => "idle"): 0, 880
+  staticRef($styledButton, style => "hover"): 140, 880
+  staticRef($styledButton, style => "pressed"): 280, 880
+  staticRef($styledButton, style => "disabled"): 420, 880
+
+  // Section 6: the frames of an indexed name — one each, and all of them played in a loop
+  text(exo2_16, "Frames of an indexed name (index: 0..3) and the loop (fps: 6):", #cccccc): 0, 940
+  @scale(2) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 50, 30, index: 0): 0, 970
+  @scale(2) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 50, 30, index: 1): 120, 970
+  @scale(2) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 50, 30, index: 2): 240, 970
+  @scale(2) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 50, 30, index: 3): 360, 970
+  @scale(2) ninepatch("ui", "Animated button test - Altcolor/Button_Warning_3x3_idle", 80, 30, fps: 6): 520, 970
+  text(m6x11, "fps: 6", #888888): 520, 1036
+}
+
+#styledButton programmable(style:string="idle") {
+  ninepatch("ui", "button-" + $style, 120, 40): 0, 0
+  text(m6x11, $style, #ffffff, center, 120): 0, 14
 }
 
 #resizablePanel programmable(width:60..510=210, height:60..210=150) {

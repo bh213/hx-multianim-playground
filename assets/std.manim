@@ -267,10 +267,60 @@ version: 1.0
   #scrollbar @layer(100) point: $width - 4, 0
 }
 
-#scrollbar programmable(panelHeight:uint=100, scrollableHeight:uint=200, scrollPosition:uint = 0) {
+// A scrollbar that is dragged (UIMultiAnimScrollbar's contract): a status parameter and a #thumb.
+// The track is drawn behind the thumb; the thumb's height and place are the art's own formula.
+#scrollbar programmable(status:[normal, hover, pressed]=normal, disabled:bool=false, panelHeight:uint=100, scrollableHeight:uint=200, scrollPosition:uint=0) {
+  #track ninepatch("ui", "Sliderbar_V_1x3", 8, $panelHeight, stretch): -2, 0
+  @(status=>normal) #thumb ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeight): 0, $scrollPosition * $panelHeight / $scrollableHeight
+  @(status=>hover) #thumb ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeight) {
+    pos: 0, $scrollPosition * $panelHeight / $scrollableHeight
+    filter: brightness(1.5)
+  }
+  @(status=>pressed) #thumb ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeight) {
+    pos: 0, $scrollPosition * $panelHeight / $scrollableHeight
+    filter: brightness(0.7)
+  }
+  @(disabled=>true) apply { alpha: 0.5 }
+  settings{scrollSpeed:float=>250, arrowStep:int=>20}
+}
 
-ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeight): 0, $scrollPosition*$panelHeight/$scrollableHeight
+// The position-only scrollbar of older files: it shows where the list is and is not dragged.
+#scrollbarStatic programmable(panelHeight:uint=100, scrollableHeight:uint=200, scrollPosition:uint = 0) {
+  ninepatch("ui", "scrollbar-1", 4, $panelHeight * $panelHeight / $scrollableHeight): 0, $scrollPosition*$panelHeight/$scrollableHeight
   settings{scrollSpeed:float=>250}
+}
+
+// A progress bar from the atlas: a track and a fill stretched to the value. The widget passes
+// `value`; `width` and `height` come from settings (settings{width:int=>300}) or the defaults.
+#progressBar programmable(value:0..100=0, width:uint=200, height:uint=12) {
+  ninepatch("ui", "Sliderbar_H_3x1", $width, $height, stretch): 0, 0
+  @(value > 0) ninepatch("ui", "scrollbar-1", $value * ($width - 4) / 100, $height - 4, stretch): 2, 2
+}
+
+// A vertical slider: #start above #end, so the widget drags it along y (SliderDirection.Auto).
+#sliderVertical programmable(status:[hover, pressed, normal]=normal, value:0..100=0, size:[100,200]=100, disabled:[true, false]=false) {
+  @(size=>200) point {
+    ninepatch("ui", "Sliderbar_V_1x3", 8, 210) {
+      grid: 1, 2
+      #start point: $grid.pos(-1, 0)
+      #end point: $grid.pos(-1, 100)
+      #slider @(status=>hover) bitmap(sheet("ui", "Slider_button_hover")): $grid.pos(-1, $value)
+      #slider @(status=>normal) bitmap(sheet("ui", "Slider_button_idle")): $grid.pos(-1, $value)
+      #slider @(status=>pressed) bitmap(sheet("ui", "Slider_button_pressed")): $grid.pos(-1, $value)
+      #slider @(status=>*, disabled=>true) bitmap(sheet("ui", "Slider_button_disabled")): $grid.pos(-1, $value)
+    }
+  }
+  @(size=>100) point {
+    ninepatch("ui", "Sliderbar_V_1x3", 8, 110) {
+      grid: 1, 1
+      #start point: $grid.pos(-1, 0)
+      #end point: $grid.pos(-1, 100)
+      #slider @(status=>hover) bitmap(sheet("ui", "Slider_button_hover")): $grid.pos(-1, $value)
+      #slider @(status=>normal) bitmap(sheet("ui", "Slider_button_idle")): $grid.pos(-1, $value)
+      #slider @(status=>pressed) bitmap(sheet("ui", "Slider_button_pressed")): $grid.pos(-1, $value)
+      #slider @(status=>*, disabled=>true) bitmap(sheet("ui", "Slider_button_disabled")): $grid.pos(-1, $value)
+    }
+  }
 }
 
 

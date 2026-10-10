@@ -1,0 +1,69 @@
+version: 1.0
+
+// Cursors Demo
+// A `cursor { }` block makes cursors from the file's art (atlas cells and images); the screen
+// manager registers them by name when the file loads, so `cursor => "name"` on an interactive
+// finds them like an OS cursor name.
+
+#demoCursors cursor {
+  arrowIcon: sheet("ui", "icon_forward_idle"), hot: 1, 5
+  dropIcon: sheet("ui", "icon_drop"), hot: 5, 5
+  dot: file("dot.png"), hot: 8, 8
+  star: file("star.png"), hot: 24, 24
+}
+
+#cursorsDemo programmable() {
+    pos: 50, 80
+
+    text(exo2_16, "Cursors from the file's art", #7fdbda): 0, 0
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+    text(exo2_light_14, "#demoCursors cursor { name: sheet(...)|file(...), hot: x, y } — each region names one with cursor => metadata.", #aaaaaa, left, 700): 0, 35
+
+    // Atlas cells
+    point {
+        pos: 0, 70
+        bitmap(generated(color(160, 45, #3a4a3a))): 0, 0
+        text(m6x11, "cursor: arrowIcon", #88cc88, left, 150): 10, 16
+        interactive(160, 45, "curArrow", cursor => "arrowIcon"): 0, 0
+    }
+    point {
+        pos: 180, 70
+        bitmap(generated(color(160, 45, #4a3a3a))): 0, 0
+        text(m6x11, "cursor: dropIcon", #cc8888, left, 150): 10, 16
+        interactive(160, 45, "curDrop", cursor => "dropIcon"): 0, 0
+    }
+    // Images
+    point {
+        pos: 360, 70
+        bitmap(generated(color(160, 45, #3a3a4a))): 0, 0
+        text(m6x11, "cursor: dot", #8888cc, left, 150): 10, 16
+        interactive(160, 45, "curDot", cursor => "dot"): 0, 0
+    }
+    point {
+        pos: 540, 70
+        bitmap(generated(color(160, 45, #4a4a3a))): 0, 0
+        text(m6x11, "cursor: star", #cccc88, left, 150): 10, 16
+        interactive(160, 45, "curStar", cursor => "star"): 0, 0
+    }
+
+    // A state cursor and an OS one beside them
+    text(exo2_16, "Per state, and the OS cursors", #7fdbda): 0, 140
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 162
+    point {
+        pos: 0, 175
+        bitmap(generated(color(340, 45, #3a4a4a))): 0, 0
+        text(m6x11, "cursor: pointer, cursor.hover: star", #88cccc, left, 330): 10, 16
+        interactive(340, 45, "curHover", cursor => "pointer", cursor.hover => "star"): 0, 0
+    }
+    placeholder(generated(cross(160, 30, white)), builderParameter("button")) {
+        pos: 360, 182
+        settings{buildName=>button, width:int=>160}
+    }
+    text(m6x11, "a button: the OS pointer", #888888): 540, 192
+
+    // What is registered
+    text(exo2_16, "Registered cursor names", #7fdbda): 0, 250
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 272
+    #namesText(updatable) text(exo2_light_14, "", #cccccc, left, 700): 0, 285
+    #statusText(updatable) text(exo2_light_14, "Hover a region", #ffffff, left, 700): 0, 330
+}

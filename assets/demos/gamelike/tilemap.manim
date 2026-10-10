@@ -1,0 +1,184 @@
+version: 1.0
+
+// Tile Map Demo
+// A map of character rows drawn from a tileset: three terrains (grass variants, a dirt corner
+// autotile, animated water with a sandy shore where it meets grass), a plateau one level up with
+// its rim and its side, stairs and flowers as a layer of cells, metadata the game reads
+// (swim, wall, climb), and marks. Paint it live: the chunk a cell is in is drawn again, not the map.
+// In a .manim, `tilemap(meadow): x, y` places it; here Haxe builds it with buildTilemap("meadow")
+// to paint it, and puts it under #mapContainer.
+// Tileset: Minifantasy - Forgotten Plains by Krishna Palacio
+
+#fp atlas2("Tileset/Minifantasy_ForgottenPlainsTiles.png") {
+    grass: 32, 24, 8, 8, index: 0
+    grass: 32, 40, 8, 8, index: 1
+    grass: 32, 48, 8, 8, index: 2
+    grass: 32, 32, 8, 8, index: 3
+    flower: 16, 8, 8, 8
+    face: 296, 112, 8, 8, index: 0
+    face: 296, 120, 8, 8, index: 1
+    faceEnd: 288, 112, 8, 8, index: 0
+    faceEnd: 288, 120, 8, 8, index: 1
+    stairs: 88, 160, 8, 8
+}
+
+// The dirt patch of the sheet is a corner set: one tile per grid corner
+#dirtCorner autotile {
+    format: corner
+    tileSize: 8
+    file: "Tileset/Minifantasy_ForgottenPlainsTiles.png"
+    region: [56, 24, 24, 40]
+    mapping: [1:8, 2:6, 3:7, 4:2, 5:5, 6:11, 7:13, 8:0, 9:14, 10:3, 11:12, 12:1, 13:10, 14:9, 15:4]
+}
+
+// The sheet has no water: demo autotiles, two frames of it, and a sandy shore for where it meets grass
+#water autotile { format: corner tileSize: 8 demo: #2A4A9A, #4A78D0 }
+#waterB autotile { format: corner tileSize: 8 demo: #2A4A9A, #5A88E0 }
+#shore autotile { format: corner tileSize: 8 demo: #D8C47A, #4A78D0 }
+#shoreB autotile { format: corner tileSize: 8 demo: #D8C47A, #5A88E0 }
+#rim autotile { format: corner tileSize: 8 demo: #3A2A1A, #00000000 }
+
+#plains tileset {
+    tileSize: 8
+    atlas: "fp"
+    edge: rim
+    terrain grass { cells: "grass" metadata { cost:int => 1 } }
+    terrain dirt { autotile: dirtCorner metadata { cost:int => 2 } }
+    terrain water { autotile: water, waterB duration: 600 metadata { swim:bool => true, cost:int => 4 } }
+    transition grass, water { autotile: shore, shoreB }
+    rise 1 { side: "face" left: "faceEnd" span: 2 metadata { wall:bool => true } }
+    cell stairs { metadata { wall:bool => false, climb:bool => true } }
+}
+
+#meadow tilemap {
+    tileset: plains
+    size: 40, 24
+    legend { ".": grass, "d": dirt, "~": water }
+    terrain: [
+        "........................................",
+        "........................................",
+        "...dddddddddd...........................",
+        "...dddddddddd..............~~~~.........",
+        "...dddddddddd...........~~~~~~~~~~......",
+        "...dddddddddd...........~~~~~~~~~~......",
+        "...dddddddddd...........~~~~~~~~~~......",
+        "........................~~~~~~~~~~......",
+        "........................~~~~~~~~~~......",
+        "........................~~~~~~~~~~......",
+        "........................................",
+        "........................................",
+        "........................................",
+        "............dddddd......................",
+        "............dddddd......................",
+        "........................................",
+        "..............................~~~~~~....",
+        "..............................~~~~~~....",
+        "..............................~~~~~~....",
+        "..............................~~~~~~....",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+    ]
+    levels: [
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000011111111111111000000000000000000",
+        "0000000011111111111111000000000000000000",
+        "0000000011111111111111000000000000000000",
+        "0000000011111111111111000000000000000000",
+        "0000000011111111111111000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+    ]
+    layer props {
+        legend { "f": flower, "s": stairs }
+        rows: [
+            "                                        ",
+            "                                        ",
+            "                                    f   ",
+            "                f                       ",
+            "                                        ",
+            "                                        ",
+            "                                        ",
+            "                                        ",
+            "                    f                   ",
+            "          f                             ",
+            "  f                                     ",
+            "                                        ",
+            "                                      f ",
+            "                                        ",
+            "                          f             ",
+            " f                                      ",
+            "                                        ",
+            "                                        ",
+            "              s                         ",
+            "                                        ",
+            "     f                                  ",
+            "                      f                 ",
+            "                                        ",
+            "                                        ",
+        ]
+    }
+    marks { spawn: 2, 22  exit: 37, 1, 2, 2 }
+}
+
+#tilemapDemo programmable() {
+    pos: 50, 80
+
+    text(exo2_16, "Tile Map", #7fdbda): 0, 0
+    #statusText(updatable) text(exo2_14, "", #aaaaaa, left, 560): 150, 4
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // Brushes: a terrain, or the ground raised and lowered
+    text(exo2_14, "Paint:", #aaaaaa): 0, 38
+    placeholder(generated(cross(30, 26, white)), builderParameter("grassBtn")) {
+        pos: 50, 32
+        settings{color=>#6FA430, width:int=>30, height:int=>26}
+    }
+    placeholder(generated(cross(30, 26, white)), builderParameter("dirtBtn")) {
+        pos: 90, 32
+        settings{color=>#8B5A2B, width:int=>30, height:int=>26}
+    }
+    placeholder(generated(cross(30, 26, white)), builderParameter("waterBtn")) {
+        pos: 130, 32
+        settings{color=>#4A78D0, width:int=>30, height:int=>26}
+    }
+    placeholder(generated(cross(80, 20, white)), builderParameter("raiseBtn")) {
+        pos: 180, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(80, 20, white)), builderParameter("lowerBtn")) {
+        pos: 270, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+    placeholder(generated(cross(80, 20, white)), builderParameter("resetBtn")) {
+        pos: 380, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+
+    // The map goes here, built in Haxe so it can be painted
+    #mapContainer(updatable) point: 0, 70
+
+    #cellText(updatable) text(exo2_light_14, "Move over the map to read a cell", #aaaaaa, left, 640): 0, 465
+
+    text(exo2_14, "What is in the file", #7fdbda): 660, 70
+    text(exo2_light_14, "A tileset says what to draw with: terrains bottom first, a transition for the shore, the rim of a higher level and the side below it, and metadata the game reads. A map is rows of characters: terrain, levels, layers of cells, marks.", #aaaaaa, left, 220): 660, 90
+    text(exo2_14, "Painting", #7fdbda): 660, 240
+    text(exo2_light_14, "setTerrain and setLevel change the map's own rows. The map is drawn in chunks of 8 cells here: only the chunk a cell is in is drawn again. Raise a cell next to the plateau and watch its side follow.", #aaaaaa, left, 220): 660, 260
+}

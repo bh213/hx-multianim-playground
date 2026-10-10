@@ -105,4 +105,27 @@ version: 1.0
     // Current animated value display
     ninepatch("ui", "Window_3x3_idle", 300, 40): 0, 510
     #valueText(updatable) text(exo2_20, "Animated: 0%", #ffffff, left, 280): 15, 518
+
+    // Section: the standard #progressBar from std.manim, drawn from the ui atlas
+    text(exo2_16, "std.manim #progressBar (ui atlas, value changed in place)", #7fdbda): 0, 570
+    bitmap(generated(color(600, 1, #7fdbda33))): 0, 592
+    text(exo2_light_14, "A track and a fill stretched to the value; width and height from settings:", #cccccc): 0, 605
+
+    placeholder(generated(cross(200, 12, #FF0000)), builderParameter("stdBar1")) {
+        pos: 0, 630
+        settings{buildName=>progressBar}
+    }
+    placeholder(generated(cross(300, 12, #FF0000)), builderParameter("stdBar2")) {
+        pos: 220, 630
+        settings{buildName=>progressBar, width:int=>300}
+    }
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("stdBar3")) {
+        pos: 0, 655
+        settings{buildName=>progressBar, height:int=>20}
+    }
+    placeholder(generated(cross(300, 20, #FF0000)), builderParameter("stdAnimBar")) {
+        pos: 220, 655
+        settings{buildName=>progressBar, width:int=>300, height:int=>20}
+    }
+    text(exo2_light_14, "25%, 60%, 90%, and the animated value", #aaaaaa): 0, 690
 }

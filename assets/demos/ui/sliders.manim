@@ -99,6 +99,25 @@ version: 1.0
     ninepatch("ui", "Window_3x3_idle", 120, 30): 230, 653
     #valueStep25(updatable) text(exo2_14, "0", #ffffff, center, 100): 240, 660
 
+    // Section: Vertical sliders (std.manim #sliderVertical: #start above #end, dragged along y)
+    text(exo2_16, "Vertical Sliders", #7fdbda): 400, 410
+    bitmap(generated(color(300, 1, #7fdbda33))): 400, 432
+    text(exo2_light_14, "100px", #cccccc): 400, 445
+    placeholder(generated(cross(20, 110, #FF0000)), builderParameter("sliderV1")) {
+        pos: 410, 465
+        settings{buildName=>sliderVertical, size:int=>100}
+    }
+    ninepatch("ui", "Window_3x3_idle", 80, 30): 440, 500
+    #valueV1(updatable) text(exo2_14, "0", #ffffff, center, 60): 450, 507
+
+    text(exo2_light_14, "200px, 0-10 step 1", #cccccc): 550, 445
+    placeholder(generated(cross(20, 210, #FF0000)), builderParameter("sliderV2")) {
+        pos: 560, 465
+        settings{buildName=>sliderVertical, size:int=>200, min:float=>0, max:float=>10, step:float=>1}
+    }
+    ninepatch("ui", "Window_3x3_idle", 80, 30): 590, 550
+    #valueV2(updatable) text(exo2_14, "0", #ffffff, center, 60): 600, 557
+
     // Disable toggle section
     text(exo2_16, "Disable Toggle", #7fdbda): 0, 710
     bitmap(generated(color(700, 1, #7fdbda33))): 0, 732

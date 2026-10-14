@@ -35,6 +35,7 @@ class Main extends hxd.App {
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
 		"stateAnim", "animLayers", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
 		"inventory", "characterSheet", "autotile", "tilemap", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
+		"sound",
 	];
 
 	function getFont() {
@@ -233,6 +234,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("autotile", new AutotileDemoScreen(screenManager));
 		screenManager.addScreen("tilemap", new TilemapDemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
+		screenManager.addScreen("sound", new SoundDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));
 		screenManager.addScreen("dialogue", new DialogueDemoScreen(screenManager));
 		screenManager.addScreen("statusEffects", new StatusEffectsDemoScreen(screenManager));

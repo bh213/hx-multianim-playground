@@ -85,6 +85,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'cards', displayName: 'Cards', category: 'Game-Like Demos', manimFile: 'demos/gamelike/cards-demo.manim' },
             { name: 'gridComponent', displayName: 'Grid Component', category: 'Game-Like Demos', manimFile: 'demos/gamelike/grid-demo.manim' },
             { name: 'projectList', displayName: 'Project List', category: 'Game-Like Demos', manimFile: 'demos/gamelike/project-list.manim' },
+            { name: 'sound', displayName: 'Sound', category: 'Game-Like Demos', manimFile: 'demos/gamelike/sound.manim' },
         ]
     }
 ];
@@ -132,12 +133,22 @@ export class PlaygroundBridge {
     private loadFile(url: string): ArrayBuffer {
         const content = this.findFileContent(url);
         if (content) return this.stringToArrayBuffer(content);
-        // Fallback: synchronous HTTP
+        // Fallback: synchronous HTTP. The engine reads bytes (an atlas, a PNG, a sound), and a
+        // synchronous request cannot ask for an arraybuffer, so the response is read as a binary
+        // string (one character a byte, x-user-defined) and the bytes taken from its char codes.
+        // Re-encoding the text as UTF-8 would break every byte over 127.
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url, false);
+        xhr.overrideMimeType('text/plain; charset=x-user-defined');
         xhr.send();
-        if (xhr.status === 200) return this.stringToArrayBuffer(xhr.response);
+        if (xhr.status === 200) return this.binaryStringToArrayBuffer(xhr.responseText);
         return new ArrayBuffer(0);
+    }
+
+    private binaryStringToArrayBuffer(s: string): ArrayBuffer {
+        const bytes = new Uint8Array(s.length);
+        for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+        return bytes.buffer;
     }
 
     private findFileContent(url: string): string | null {

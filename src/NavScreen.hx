@@ -169,6 +169,7 @@ class NavScreen extends UIScreenBase {
 			{id: "cards", title: "Cards"},
 				{id: "gridComponent", title: "Grid Component"},
 				{id: "projectList", title: "Project List"},
+				{id: "sound", title: "Sound"},
 			]
 		}
 	];

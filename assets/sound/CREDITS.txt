@@ -1,0 +1,9 @@
+Sounds in this folder: coin.wav, explosion.wav, hurt.wav, jump.wav, power_up.wav, tap.wav
+
+From Brackeys' Platformer Assets (https://brackeys.itch.io/brackeys-platformer-bundle),
+sounds by Asbjorn Thirslund (Brackeys).
+
+License: Creative Commons Zero (CC0) — public domain dedication, no attribution required.
+http://creativecommons.org/publicdomain/zero/1.0/
+
+Used by the playground's Sound demo (demos/gamelike/sound.manim).

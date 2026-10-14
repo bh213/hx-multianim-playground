@@ -1,0 +1,74 @@
+version: 1.0
+
+// Sound — six CC0 sounds (Brackeys' platformer pack, assets/sound/CREDITS.txt):
+// the widgets sound with no code (the `ui` bank), the buttons fire sounds by name,
+// the slider is a VCA, pause and slow motion are the clock.
+
+// ── The widgets' bank: hover, click, open, close, change play by themselves ──
+#ui sounds {
+    bus: ui
+    hover  { file: "assets/sound/tap.wav", volume: -8db }
+    click  { file: "assets/sound/coin.wav", volume: -4db }
+    open   { file: "assets/sound/power_up.wav", volume: -6db }
+    close  { file: "assets/sound/power_up.wav", volume: -10db, pitch: -20% }
+    change { file: "assets/sound/tap.wav", cooldown: 60ms }
+}
+
+// ── The game's sounds, fired from code by name ──
+#fx sounds {
+    bus: sfx
+    coin { file: "assets/sound/coin.wav", pitch: -5%..5% }
+    jump { file: "assets/sound/jump.wav" }
+    hit  { file: "assets/sound/hurt.wav", volume: -6db..0db, pitch: -10%..10%, voices: 3, steal: oldest, cooldown: 40ms }
+    explosion {
+        voices: 2, steal: oldest, fade: out 200ms
+        layer boom   { file: "assets/sound/explosion.wav" }
+        layer debris { file: "assets/sound/hurt.wav", delay: 80..160ms, chance: 70%, volume: -10db, pitch: -30% }
+    }
+}
+
+// ── The mix: two buses, one VCA for the slider, two snapshots the clock drives ──
+#main mix {
+    bus sfx { voices: 16 }
+    bus ui
+    vca Effects: sfx, ui
+    snapshot paused { sfx: pause, ui: -6db, fade: 150ms }
+    snapshot slow   { sfx: pitch clock }
+}
+
+// ── The page ──
+#soundDemo programmable() {
+    pos: 30, 110
+    text(m6x11, "Hover and click the widgets: their sounds come from the ui bank, with no code.", #aaaaaa): 0, 0
+
+    text(m6x11, "Fired from code by name (fx.coin, fx.jump, fx.hit, fx.explosion):", #dddddd): 0, 28
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("coinButton")) { pos: 0, 48 }
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("jumpButton")) { pos: 220, 48 }
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("hitButton")) { pos: 440, 48 }
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("boomButton")) { pos: 660, 48 }
+    text(m6x11, "hit: three voices, the oldest stolen, 40 ms cooldown, so mash it. explosion: a boom and, 70% of the time, debris after a delay.", #888888): 0, 86
+
+    text(m6x11, "A dropdown opens, picks and closes:", #dddddd): 0, 116
+    placeholder(generated(cross(200, 30, #FF0000)), builderParameter("dropdown")) { pos: 0, 136 }
+
+    text(m6x11, "Effects volume (a VCA over both buses):", #dddddd): 300, 116
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("volumeSlider")) { pos: 300, 140 }
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("pauseBox")) { pos: 300, 176 }
+    text(m6x11, "Pause: the clock pauses, the paused snapshot freezes sfx and ducks ui", #dddddd): 326, 178
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("slowBox")) { pos: 300, 204 }
+    text(m6x11, "Slow motion: the clock at half speed, the slow snapshot pitches sfx with it", #dddddd): 326, 206
+
+    text(m6x11, "What the audio did (audio.history, as the DevBridge's audio_log sees it):", #dddddd): 0, 250
+}
+
+// The history lines, built incrementally so the screen changes them in place every frame
+#soundLog programmable(log1:string="", log2:string="", log3:string="", log4:string="", log5:string="", log6:string="") {
+    pos: 30, 382
+    text(m6x11, $log1, #88ff88): 0, 0
+    text(m6x11, $log2, #88ff88): 0, 18
+    text(m6x11, $log3, #88ff88): 0, 36
+    text(m6x11, $log4, #88ff88): 0, 54
+    text(m6x11, $log5, #88ff88): 0, 72
+    text(m6x11, $log6, #88ff88): 0, 90
+}

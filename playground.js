@@ -34,6 +34,7 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.contentTarget = null;
 	this.initialSyncDone = false;
 	this._autoSyncInitialState = false;
+	this.music = null;
 	this.modalOverlayConfig = null;
 	this.tabAutoWired = false;
 	this.tabGroup = null;
@@ -84,6 +85,35 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 $hxClasses["bh.ui.screens.UIScreenBase"] = bh_ui_screens_UIScreenBase;
 bh_ui_screens_UIScreenBase.__name__ = "bh.ui.screens.UIScreenBase";
 bh_ui_screens_UIScreenBase.__interfaces__ = [bh_ui_UIComponentHost,bh_ui_controllers_UIControllerScreenIntegration,bh_ui_screens_UIScreen];
+bh_ui_screens_UIScreenBase.widgetSoundKey = function(event) {
+	switch(event._hx_index) {
+	case 0:
+		return "click";
+	case 2:
+		if(event.over == true) {
+			return "hover";
+		} else {
+			return null;
+		}
+		break;
+	case 3:
+		return "open";
+	case 4:
+		return "close";
+	case 6:
+		var _g = event.pressed;
+		return "toggle";
+	case 7:
+		var _g = event.value;
+		return "change";
+	case 9:
+		var _g = event.index;
+		var _g = event.items;
+		return "change";
+	default:
+		return null;
+	}
+};
 bh_ui_screens_UIScreenBase.explicitlyPrefixed = function(settings,prefixed,prefix,multiForward) {
 	if(prefixed == null) {
 		return null;
@@ -216,6 +246,7 @@ bh_ui_screens_UIScreenBase.prototype = {
 	,onClear: function() {
 	}
 	,dispatchScreenEvent: function(event,source) {
+		this.playWidgetSound(event,source);
 		if(this.autoStatusHelper != null) {
 			this.autoStatusHelper.handleEvent(event);
 		}
@@ -240,6 +271,28 @@ bh_ui_screens_UIScreenBase.prototype = {
 		if(!consumed) {
 			this.onScreenEvent(event,source);
 		}
+	}
+	,playWidgetSound: function(event,source) {
+		if(this.screenManager == null) {
+			return;
+		}
+		var settings = null;
+		var inner = event;
+		if(event._hx_index == 17) {
+			var _g = event.id;
+			var e = event.event;
+			var metadata = event.metadata;
+			inner = e;
+			settings = metadata;
+		} else if(source != null && js_Boot.__implements(source,bh_ui_UIElementRootSettings)) {
+			settings = (js_Boot.__cast(source , bh_ui_UIElementRootSettings)).getRootSettings();
+		}
+		var key = bh_ui_screens_UIScreenBase.widgetSoundKey(inner);
+		if(key == null) {
+			return;
+		}
+		var own = settings != null && settings.has("sound." + key) ? settings.getStringOrDefault("sound." + key,"none") : null;
+		this.screenManager.audio.playUi(key,own);
 	}
 	,dispatchMouseMove: function(pos) {
 		var consumed = false;
@@ -1085,7 +1138,16 @@ bh_ui_screens_UIScreenBase.prototype = {
 	}
 	,addBuilderResult: function(r,layer) {
 		this.addObjectToLayer(r.object,layer);
+		this.readMusicSetting(r);
 		return r;
+	}
+	,readMusicSetting: function(r) {
+		if(this.music == null && r.rootSettings != null && r.rootSettings.has("music")) {
+			var said = r.rootSettings.getStringOrDefault("music","");
+			if(said != "") {
+				this.music = said;
+			}
+		}
 	}
 	,addInteractive: function(obj,prefix,source) {
 		var wrapper = new bh_ui_UIInteractiveWrapper(obj,prefix,source);
@@ -2099,11 +2161,11 @@ Main.prototype = $extend(hxd_App.prototype,{
 		_this.y = 30;
 	}
 	,reload: function(screen) {
-		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 52, className : "Main", methodName : "reload"});
+		haxe_Log.trace("haxe Reloading with screen: " + screen,{ fileName : "src/Main.hx", lineNumber : 53, className : "Main", methodName : "reload"});
 		try {
 			var res = this.screenManager.reload(null,false);
 			if(!res.success) {
-				haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 56, className : "Main", methodName : "reload"});
+				haxe_Log.trace("error loading main: " + res.error,{ fileName : "src/Main.hx", lineNumber : 57, className : "Main", methodName : "reload"});
 				this.error("Error loading screen: " + res.error);
 				return res;
 			}
@@ -2129,7 +2191,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during reload: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 77, className : "Main", methodName : "reload"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 78, className : "Main", methodName : "reload"});
 			this.error(msg);
 			window.alert(Std.string(msg));
 			return { success : false, error : msg, file : null, line : null, col : null};
@@ -2257,6 +2319,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.screenManager.addScreen("autotile",new screens_gamelike_AutotileDemoScreen(this.screenManager));
 		this.screenManager.addScreen("tilemap",new screens_gamelike_TilemapDemoScreen(this.screenManager));
 		this.screenManager.addScreen("battleHud",new screens_gamelike_BattleHudDemoScreen(this.screenManager));
+		this.screenManager.addScreen("sound",new screens_gamelike_SoundDemoScreen(this.screenManager));
 		this.screenManager.addScreen("skillTree",new screens_gamelike_SkillTreeDemoScreen(this.screenManager));
 		this.screenManager.addScreen("dialogue",new screens_gamelike_DialogueDemoScreen(this.screenManager));
 		this.screenManager.addScreen("statusEffects",new screens_gamelike_StatusEffectsDemoScreen(this.screenManager));
@@ -2299,7 +2362,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g);
 			var msg = "Error during update: " + Std.string(e);
-			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 435, className : "Main", methodName : "update"});
+			haxe_Log.trace(msg,{ fileName : "src/Main.hx", lineNumber : 437, className : "Main", methodName : "update"});
 			this.error(msg);
 		}
 	}
@@ -2329,7 +2392,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 		this.cards = [];
 		this.currentSlide = 0;
 		this.slideTimer = 0.0;
-		var generatedByMacroBuildWithParametersload6605Builder = function() {
+		var generatedByMacroBuildWithParametersload6640Builder = function() {
 			var viewDemoButton;
 			var prevBtn;
 			var playBtn;
@@ -2392,7 +2455,7 @@ NavScreen.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload6605Builder();
+		var ui = generatedByMacroBuildWithParametersload6640Builder();
 		this.navResult = ui.builderResults;
 		this.viewDemoButton = ui.viewDemoButton;
 		this.prevBtn = ui.prevBtn;
@@ -3227,6 +3290,1028 @@ Xml.prototype = {
 		return haxe_xml_Printer.print(this);
 	}
 	,__class__: Xml
+};
+var bh_audio__$Audio_SoundEntry = function(block,def) {
+	this.lastPlay = null;
+	this.block = block;
+	this.def = def;
+	var _g = [];
+	var _g1 = 0;
+	var _g2 = def.layers;
+	while(_g1 < _g2.length) {
+		var _ = _g2[_g1];
+		++_g1;
+		_g.push([]);
+	}
+	this.bags = _g;
+	var _g = [];
+	var _g1 = 0;
+	var _g2 = def.layers;
+	while(_g1 < _g2.length) {
+		var _ = _g2[_g1];
+		++_g1;
+		_g.push(0);
+	}
+	this.turns = _g;
+};
+$hxClasses["bh.audio._Audio.SoundEntry"] = bh_audio__$Audio_SoundEntry;
+bh_audio__$Audio_SoundEntry.__name__ = "bh.audio._Audio.SoundEntry";
+bh_audio__$Audio_SoundEntry.prototype = {
+	__class__: bh_audio__$Audio_SoundEntry
+};
+var bh_audio_SoundInstance = function(name,startedAt,volume,fadeOut) {
+	this.stopped = false;
+	this.pending = 0;
+	this.voices = [];
+	this.name = name;
+	this.startedAt = startedAt;
+	this.volume = volume;
+	this.fadeOut = fadeOut;
+};
+$hxClasses["bh.audio.SoundInstance"] = bh_audio_SoundInstance;
+bh_audio_SoundInstance.__name__ = "bh.audio.SoundInstance";
+bh_audio_SoundInstance.prototype = {
+	isAlive: function() {
+		if(this.stopped) {
+			return false;
+		}
+		if(this.pending > 0) {
+			return true;
+		}
+		var _g = 0;
+		var _g1 = this.voices;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			if(v.isPlaying()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	,stop: function(fadeOut) {
+		if(this.stopped) {
+			return;
+		}
+		this.stopped = true;
+		this.pending = 0;
+		var _g = 0;
+		var _g1 = this.voices;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			var tmp = fadeOut;
+			v.stop(tmp != null ? tmp : this.fadeOut);
+		}
+	}
+	,__class__: bh_audio_SoundInstance
+};
+var bh_audio_Audio = function(backend) {
+	this.onHistory = null;
+	this.nextHistoryId = 1;
+	this.history = [];
+	this.musicVoice = null;
+	this.musicPlaying = null;
+	this.tracks = new haxe_ds_StringMap();
+	this.knownBuses = [];
+	this.snapshotsOn = [];
+	this.vcaValues = new haxe_ds_StringMap();
+	this.mixName = null;
+	this.mix = null;
+	this.pending = [];
+	this.paramValues = new haxe_ds_StringMap();
+	this.params = new haxe_ds_StringMap();
+	this.entries = new haxe_ds_StringMap();
+	this.banks = new haxe_ds_StringMap();
+	this.clock = null;
+	this.instances = [];
+	this.time = 0;
+	this.randomFunc = function() {
+		return Math.random();
+	};
+	this.backend = backend;
+};
+$hxClasses["bh.audio.Audio"] = bh_audio_Audio;
+bh_audio_Audio.__name__ = "bh.audio.Audio";
+bh_audio_Audio.prototype = {
+	addBank: function(name,def) {
+		if(Object.prototype.hasOwnProperty.call(this.banks.h,name)) {
+			this.removeBank(name);
+		}
+		this.banks.h[name] = def;
+		var _g = 0;
+		var _g1 = def.params;
+		while(_g < _g1.length) {
+			var p = _g1[_g];
+			++_g;
+			this.paramValues.h[p.name] = p.values;
+			if(!Object.prototype.hasOwnProperty.call(this.params.h,p.name) || p.values.indexOf(this.params.h[p.name]) == -1) {
+				this.params.h[p.name] = p.values[0];
+			}
+		}
+		this.ensureBus(def.bus);
+		var _g = 0;
+		var _g1 = def.sounds;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			var full = "" + name + "." + s.name;
+			var list = this.entries.h[full];
+			if(list == null) {
+				list = [];
+				this.entries.h[full] = list;
+			}
+			list.push(new bh_audio__$Audio_SoundEntry(name,s));
+			this.ensureBus(s.bus);
+			var _g2 = 0;
+			var _g3 = s.layers;
+			while(_g2 < _g3.length) {
+				var l = _g3[_g2];
+				++_g2;
+				var _g4 = 0;
+				var _g5 = l.files;
+				while(_g4 < _g5.length) {
+					var f = _g5[_g4];
+					++_g4;
+					this.backend.prepare(f);
+				}
+			}
+		}
+	}
+	,addBanks: function(builder) {
+		var n = 0;
+		var _g = 0;
+		var _g1 = builder.mixBlockNames();
+		while(_g < _g1.length) {
+			var block = _g1[_g];
+			++_g;
+			this.addMix(block,builder.buildMix(block));
+			++n;
+		}
+		var _g = 0;
+		var _g1 = builder.musicBlockNames();
+		while(_g < _g1.length) {
+			var block = _g1[_g];
+			++_g;
+			this.addMusic(block,builder.buildMusic(block));
+			++n;
+		}
+		var _g = 0;
+		var _g1 = builder.soundBlockNames();
+		while(_g < _g1.length) {
+			var block = _g1[_g];
+			++_g;
+			this.addBank(block,builder.buildSounds(block));
+			++n;
+		}
+		return n;
+	}
+	,removeBank: function(name) {
+		var _this = this.banks;
+		var tmp;
+		if(Object.prototype.hasOwnProperty.call(_this.h,name)) {
+			delete(_this.h[name]);
+			tmp = true;
+		} else {
+			tmp = false;
+		}
+		if(!tmp) {
+			return false;
+		}
+		var _g = 0;
+		var _g1 = [];
+		var h = this.entries.h;
+		var k_h = h;
+		var k_keys = Object.keys(h);
+		var k_length = k_keys.length;
+		var k_current = 0;
+		while(k_current < k_length) {
+			var k = k_keys[k_current++];
+			_g1.push(k);
+		}
+		var _g2 = _g1;
+		while(_g < _g2.length) {
+			var full = _g2[_g];
+			++_g;
+			var _g1 = [];
+			var _g3 = 0;
+			var _g4 = this.entries.h[full];
+			while(_g3 < _g4.length) {
+				var v = _g4[_g3];
+				++_g3;
+				if(v.block != name) {
+					_g1.push(v);
+				}
+			}
+			var kept = _g1;
+			if(kept.length == 0) {
+				var _this = this.entries;
+				if(Object.prototype.hasOwnProperty.call(_this.h,full)) {
+					delete(_this.h[full]);
+				}
+			} else {
+				this.entries.h[full] = kept;
+			}
+		}
+		return true;
+	}
+	,soundNames: function() {
+		var _g = [];
+		var h = this.entries.h;
+		var k_h = h;
+		var k_keys = Object.keys(h);
+		var k_length = k_keys.length;
+		var k_current = 0;
+		while(k_current < k_length) {
+			var k = k_keys[k_current++];
+			_g.push(k);
+		}
+		var names = _g;
+		names.sort(Reflect.compare);
+		return names;
+	}
+	,has: function(name) {
+		return Object.prototype.hasOwnProperty.call(this.entries.h,name);
+	}
+	,addMix: function(name,def) {
+		var again = this.mixName == name;
+		var oldVcas = haxe_ds_StringMap.createCopy(this.vcaValues.h);
+		var oldOn = this.snapshotsOn.slice();
+		this.mix = def;
+		this.mixName = name;
+		this.vcaValues.h = Object.create(null);
+		this.snapshotsOn.length = 0;
+		var _g = 0;
+		var _g1 = def.vcas;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			var this1 = this.vcaValues;
+			var key = v.name;
+			var value = again && Object.prototype.hasOwnProperty.call(oldVcas.h,v.name);
+			this1.h[key] = value ? oldVcas.h[v.name] : 1;
+		}
+		if(again) {
+			var _g = 0;
+			while(_g < oldOn.length) {
+				var sn = oldOn[_g];
+				++_g;
+				if(this.snapshotDef(sn) != null) {
+					this.snapshotsOn.push(sn);
+				}
+			}
+		}
+		var _g = 0;
+		var _g1 = def.buses;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			if(this.knownBuses.indexOf(b.name) == -1) {
+				this.knownBuses.push(b.name);
+			}
+		}
+		if(this.knownBuses.indexOf("") == -1) {
+			this.knownBuses.push("");
+		}
+		this.refreshAll(0);
+		this.applyClock();
+	}
+	,vcaNames: function() {
+		if(this.mix == null) {
+			return [];
+		} else {
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this.mix.vcas;
+			while(_g1 < _g2.length) {
+				var v = _g2[_g1];
+				++_g1;
+				_g.push(v.name);
+			}
+			return _g;
+		}
+	}
+	,snapshotNames: function() {
+		if(this.mix == null) {
+			return [];
+		} else {
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this.mix.snapshots;
+			while(_g1 < _g2.length) {
+				var s = _g2[_g1];
+				++_g1;
+				_g.push(s.name);
+			}
+			return _g;
+		}
+	}
+	,setVca: function(name,value) {
+		if(!Object.prototype.hasOwnProperty.call(this.vcaValues.h,name)) {
+			throw haxe_Exception.thrown("audio: no vca \"" + name + "\" (" + this.vcaNames().join(", ") + ")");
+		}
+		var min = 0;
+		var max = 1;
+		if(max == null) {
+			max = 1.;
+		}
+		if(min == null) {
+			min = 0.;
+		}
+		if(value < min) {
+			value = min;
+		} else if(value > max) {
+			value = max;
+		}
+		if(this.vcaValues.h[name] == value) {
+			return;
+		}
+		this.vcaValues.h[name] = value;
+		this.note("vca",name,"" + value);
+		var _g = 0;
+		var _g1 = this.mix.vcas;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			if(v.name == name) {
+				var _g2 = 0;
+				var _g3 = v.buses;
+				while(_g2 < _g3.length) {
+					var bus = _g3[_g2];
+					++_g2;
+					this.refreshBus(bus,0);
+				}
+			}
+		}
+	}
+	,snapshot: function(name,on) {
+		var def = this.snapshotDef(name);
+		if(def == null) {
+			throw haxe_Exception.thrown("audio: no snapshot \"" + name + "\" (" + this.snapshotNames().join(", ") + ")");
+		}
+		if(this.snapshotsOn.indexOf(name) != -1 == on) {
+			return;
+		}
+		if(on) {
+			this.snapshotsOn.push(name);
+		} else {
+			HxOverrides.remove(this.snapshotsOn,name);
+		}
+		this.note("snapshot",name,on ? "on" : "off");
+		var _g = 0;
+		var _g1 = def.buses;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			this.refreshBus(b.bus,def.fade);
+		}
+	}
+	,hasSnapshot: function(name) {
+		return this.snapshotDef(name) != null;
+	}
+	,snapshotDef: function(name) {
+		if(this.mix == null) {
+			return null;
+		}
+		var _g = 0;
+		var _g1 = this.mix.snapshots;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			if(s.name == name) {
+				return s;
+			}
+		}
+		return null;
+	}
+	,busState: function(bus) {
+		var volume = 1.0;
+		var db = 0.0;
+		var paused = false;
+		var lowpass = null;
+		var pitchClock = false;
+		var voices = 0;
+		if(this.mix != null && bus != null) {
+			var _g = 0;
+			var _g1 = this.mix.buses;
+			while(_g < _g1.length) {
+				var b = _g1[_g];
+				++_g;
+				if(b.name == bus) {
+					voices = b.voices;
+				}
+			}
+			var _g = 0;
+			var _g1 = this.mix.vcas;
+			while(_g < _g1.length) {
+				var v = _g1[_g];
+				++_g;
+				if(v.buses.indexOf(bus) != -1) {
+					volume *= this.vcaValues.h[v.name];
+				}
+			}
+			var _g = 0;
+			var _g1 = this.snapshotsOn;
+			while(_g < _g1.length) {
+				var sn = _g1[_g];
+				++_g;
+				var def = this.snapshotDef(sn);
+				if(def == null) {
+					continue;
+				}
+				var _g2 = 0;
+				var _g3 = def.buses;
+				while(_g2 < _g3.length) {
+					var sb = _g3[_g2];
+					++_g2;
+					if(sb.bus == bus) {
+						var _g4 = 0;
+						var _g5 = sb.changes;
+						while(_g4 < _g5.length) {
+							var c = _g5[_g4];
+							++_g4;
+							switch(c._hx_index) {
+							case 0:
+								paused = true;
+								break;
+							case 1:
+								var d = c.db;
+								db += d;
+								break;
+							case 2:
+								var g = c.gainHF;
+								lowpass = lowpass == null ? g : Math.min(lowpass,g);
+								break;
+							case 3:
+								pitchClock = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		volume *= Math.pow(10,db / 20);
+		if(this.clock != null && this.clock.paused && !this.hasSnapshot("paused")) {
+			paused = true;
+		}
+		var pitch = pitchClock && this.clock != null ? Math.max(this.clock.scale,0.05) : 1.0;
+		return { volume : volume, fade : 0, paused : paused, lowpass : lowpass, pitch : pitch, voices : voices};
+	}
+	,refreshBus: function(bus,fade) {
+		var state = this.busState(bus);
+		state.fade = fade;
+		this.backend.setBus(bus,state);
+	}
+	,refreshAll: function(fade) {
+		var _g = 0;
+		var _g1 = this.knownBuses;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			this.refreshBus(b == "" ? null : b,fade);
+		}
+	}
+	,ensureBus: function(bus) {
+		var tmp = bus;
+		var key = tmp != null ? tmp : "";
+		if(this.knownBuses.indexOf(key) != -1) {
+			return;
+		}
+		this.knownBuses.push(key);
+		this.refreshBus(bus,0);
+	}
+	,set_clock: function(c) {
+		if(this.clock != null) {
+			this.clock.removeListener($bind(this,this.onClock));
+		}
+		this.clock = c;
+		if(c != null) {
+			c.addListener($bind(this,this.onClock));
+		}
+		this.applyClock();
+		return c;
+	}
+	,onClock: function(c) {
+		this.applyClock();
+	}
+	,applyClock: function() {
+		if(this.clock == null) {
+			return;
+		}
+		if(this.hasSnapshot("paused")) {
+			this.snapshot("paused",this.clock.paused);
+		} else {
+			this.refreshAll(0);
+		}
+		if(this.mix != null) {
+			var _g = 0;
+			var _g1 = this.snapshotsOn;
+			while(_g < _g1.length) {
+				var sn = _g1[_g];
+				++_g;
+				var def = this.snapshotDef(sn);
+				if(def == null) {
+					continue;
+				}
+				var _g2 = 0;
+				var _g3 = def.buses;
+				while(_g2 < _g3.length) {
+					var sb = _g3[_g2];
+					++_g2;
+					if(Lambda.exists(sb.changes,function(c) {
+						if(c._hx_index == 3) {
+							return true;
+						} else {
+							return false;
+						}
+					})) {
+						this.refreshBus(sb.bus,0);
+					}
+				}
+			}
+		}
+	}
+	,addMusic: function(name,def) {
+		var tmp = def.bus;
+		this.ensureBus(tmp != null ? tmp : "music");
+		var _g = 0;
+		var _g1 = def.tracks;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var tmp = def.bus;
+			this.tracks.h["" + name + "." + t.name] = { def : t, bus : tmp != null ? tmp : "music"};
+			this.backend.prepare(t.file);
+		}
+	}
+	,trackNames: function() {
+		var _g = [];
+		var h = this.tracks.h;
+		var k_h = h;
+		var k_keys = Object.keys(h);
+		var k_length = k_keys.length;
+		var k_current = 0;
+		while(k_current < k_length) {
+			var k = k_keys[k_current++];
+			_g.push(k);
+		}
+		var names = _g;
+		names.sort(Reflect.compare);
+		return names;
+	}
+	,playMusic: function(name,crossfade) {
+		var track = this.tracks.h[name];
+		if(track == null) {
+			throw haxe_Exception.thrown("audio: no track \"" + name + "\" (the tracks are: " + this.trackNames().join(", ") + ")");
+		}
+		if(this.musicPlaying == name && this.musicVoice != null && this.musicVoice.isPlaying()) {
+			return;
+		}
+		var tmp = crossfade;
+		var fade = tmp != null ? tmp : 0.5;
+		if(this.musicVoice != null) {
+			this.musicVoice.stop(fade);
+		}
+		this.musicPlaying = name;
+		this.musicVoice = this.backend.play({ sound : name, layer : "", path : track.def.file, volume : 1, pitch : 1, bus : track.bus, priority : 2, fadeIn : fade, loop : track.def.loop});
+		this.note("music",name,"crossfade " + fade);
+	}
+	,stopMusic: function(fade) {
+		if(this.musicVoice == null) {
+			return;
+		}
+		var tmp = fade;
+		this.musicVoice.stop(tmp != null ? tmp : 0.5);
+		var tmp = this.musicPlaying;
+		this.note("music",tmp != null ? tmp : "","stopped");
+		this.musicVoice = null;
+		this.musicPlaying = null;
+	}
+	,playUi: function(key,own) {
+		if(own != null) {
+			if(own == "none" || own == "") {
+				return null;
+			}
+			return this.play(own);
+		}
+		var name = "ui" + "." + key;
+		if(this.has(name)) {
+			return this.play(name);
+		} else {
+			return null;
+		}
+	}
+	,note: function(kind,name,detail) {
+		var entry = { id : this.nextHistoryId++, time : this.time, kind : kind, name : name, detail : detail};
+		this.history.push(entry);
+		if(this.history.length > 200) {
+			this.history.shift();
+		}
+		if(this.onHistory != null) {
+			this.onHistory(entry);
+		}
+	}
+	,historySince: function(sinceId) {
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = this.history;
+		while(_g1 < _g2.length) {
+			var e = _g2[_g1];
+			++_g1;
+			if(e.id > sinceId) {
+				_g.push(e);
+			}
+		}
+		return _g;
+	}
+	,play: function(name) {
+		var list = this.entries.h[name];
+		if(list == null) {
+			throw haxe_Exception.thrown("audio: no sound \"" + name + "\" (the sounds are: " + this.soundNames().join(", ") + ")");
+		}
+		var entry = this.pickVariant(list);
+		if(entry == null) {
+			this.note("drop",name,"no variant matches and no default");
+			return null;
+		}
+		var def = entry.def;
+		if(def.cooldown > 0 && entry.lastPlay != null && this.time - entry.lastPlay < def.cooldown) {
+			this.note("drop",name,"cooldown");
+			return null;
+		}
+		if(def.voices > 0) {
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this.instances;
+			while(_g1 < _g2.length) {
+				var i = _g2[_g1];
+				++_g1;
+				if(i.name == name && i.isAlive()) {
+					_g.push(i);
+				}
+			}
+			var live = _g;
+			while(live.length >= def.voices) switch(def.steal._hx_index) {
+			case 0:
+				var oldest = live[0];
+				var _g = 0;
+				while(_g < live.length) {
+					var i = live[_g];
+					++_g;
+					if(i.startedAt < oldest.startedAt) {
+						oldest = i;
+					}
+				}
+				oldest.stop();
+				HxOverrides.remove(live,oldest);
+				break;
+			case 1:
+				var quietest = live[0];
+				var _g1 = 0;
+				while(_g1 < live.length) {
+					var i1 = live[_g1];
+					++_g1;
+					if(i1.volume < quietest.volume) {
+						quietest = i1;
+					}
+				}
+				quietest.stop();
+				HxOverrides.remove(live,quietest);
+				break;
+			case 2:
+				this.note("drop",name,"at " + def.voices + " voices");
+				return null;
+			}
+		}
+		entry.lastPlay = this.time;
+		var bank = this.banks.h[entry.block];
+		var tmp = def.bus;
+		var bus = tmp != null ? tmp : bank != null ? bank.bus : null;
+		var loudest = 0.0;
+		var starts = [];
+		var _g = 0;
+		var _g1 = def.layers.length;
+		while(_g < _g1) {
+			var li = _g++;
+			var layer = def.layers[li];
+			if(layer.chance < 1 && this.randomFunc() >= layer.chance) {
+				continue;
+			}
+			var path = this.pickFile(entry,li);
+			var volume = Math.pow(10,this.roll(layer.volumeMinDb,layer.volumeMaxDb) / 20);
+			if(volume > loudest) {
+				loudest = volume;
+			}
+			starts.push({ start : { sound : name, layer : layer.name, path : path, volume : volume, pitch : this.roll(layer.pitchMin,layer.pitchMax), bus : bus, priority : def.priority, fadeIn : def.fadeIn, loop : false}, delay : this.roll(layer.delayMin,layer.delayMax)});
+		}
+		var instance = new bh_audio_SoundInstance(name,this.time,loudest,def.fadeOut);
+		this.instances.push(instance);
+		this.note("play",name,starts.length == 1 ? starts[0].start.path : "" + starts.length + " layers");
+		var _g = 0;
+		while(_g < starts.length) {
+			var s = starts[_g];
+			++_g;
+			if(s.delay <= 0) {
+				instance.voices.push(this.backend.play(s.start));
+			} else {
+				instance.pending++;
+				this.pending.push({ instance : instance, at : this.time + s.delay, start : s.start});
+			}
+		}
+		return instance;
+	}
+	,update: function(dt) {
+		this.time += dt;
+		this.backend.update(dt);
+		var i = 0;
+		while(i < this.pending.length) {
+			var p = this.pending[i];
+			if(p.at <= this.time) {
+				this.pending.splice(i,1);
+				if(!p.instance.stopped) {
+					p.instance.pending--;
+					p.instance.voices.push(this.backend.play(p.start));
+				}
+			} else {
+				++i;
+			}
+		}
+		var j = 0;
+		while(j < this.instances.length) if(this.instances[j].isAlive()) {
+			++j;
+		} else {
+			this.instances.splice(j,1);
+		}
+	}
+	,roll: function(min,max) {
+		if(min == max) {
+			return min;
+		} else {
+			return min + this.randomFunc() * (max - min);
+		}
+	}
+	,pickFile: function(entry,li) {
+		var layer = entry.def.layers[li];
+		var files = layer.files;
+		if(files.length == 1) {
+			return files[0];
+		}
+		switch(layer.pick._hx_index) {
+		case 0:
+			return files[(this.randomFunc() * files.length | 0) % files.length];
+		case 1:
+			var bag = entry.bags[li];
+			if(bag.length == 0) {
+				bag = files.slice();
+				entry.bags[li] = bag;
+			}
+			return bag.splice((this.randomFunc() * bag.length | 0) % bag.length,1)[0];
+		case 2:
+			var i = entry.turns[li];
+			entry.turns[li] = (i + 1) % files.length;
+			return files[i];
+		}
+	}
+	,pickVariant: function(list) {
+		var fallback = null;
+		var _g = 0;
+		while(_g < list.length) {
+			var e = list[_g];
+			++_g;
+			var _g1 = e.def.conditional;
+			switch(_g1._hx_index) {
+			case 0:
+				var conditions = _g1.values;
+				var anyMode = _g1.anyMode;
+				if(this.matches(conditions,anyMode)) {
+					return e;
+				}
+				break;
+			case 3:
+				if(fallback == null) {
+					fallback = e;
+				}
+				break;
+			default:
+			}
+		}
+		return fallback;
+	}
+	,matches: function(conditions,anyMode) {
+		var h = conditions.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var param = _g_key;
+			var cv = _g_value;
+			var value = this.params.h[param];
+			var ok = value != null && this.matchOne(cv,value);
+			if(anyMode && ok) {
+				return true;
+			}
+			if(!anyMode && !ok) {
+				return false;
+			}
+		}
+		return !anyMode;
+	}
+	,matchOne: function(cv,value) {
+		var _gthis = this;
+		switch(cv._hx_index) {
+		case 0:
+			var a = cv.a;
+			return a.indexOf(value) != -1;
+		case 2:
+			var _g = cv.idx;
+			var v = cv.value;
+			return v == value;
+		case 5:
+			return true;
+		case 6:
+			var s = cv.s;
+			return s == value;
+		case 7:
+			var inner = cv.value;
+			return !this.matchOne(inner,value);
+		case 8:
+			var values = cv.values;
+			return Lambda.exists(values,function(v) {
+				return _gthis.matchOne(v,value);
+			});
+		default:
+			return false;
+		}
+	}
+	,__class__: bh_audio_Audio
+};
+var bh_audio_AudioVoice = function() { };
+$hxClasses["bh.audio.AudioVoice"] = bh_audio_AudioVoice;
+bh_audio_AudioVoice.__name__ = "bh.audio.AudioVoice";
+bh_audio_AudioVoice.__isInterface__ = true;
+bh_audio_AudioVoice.prototype = {
+	__class__: bh_audio_AudioVoice
+};
+var bh_audio_AudioBackend = function() { };
+$hxClasses["bh.audio.AudioBackend"] = bh_audio_AudioBackend;
+bh_audio_AudioBackend.__name__ = "bh.audio.AudioBackend";
+bh_audio_AudioBackend.__isInterface__ = true;
+bh_audio_AudioBackend.prototype = {
+	__class__: bh_audio_AudioBackend
+};
+var bh_audio__$HeapsBackend_HeapsVoice = function(channel,bus,basePitch) {
+	this.pitchEffect = null;
+	this.channel = channel;
+	this.bus = bus;
+	this.basePitch = basePitch;
+};
+$hxClasses["bh.audio._HeapsBackend.HeapsVoice"] = bh_audio__$HeapsBackend_HeapsVoice;
+bh_audio__$HeapsBackend_HeapsVoice.__name__ = "bh.audio._HeapsBackend.HeapsVoice";
+bh_audio__$HeapsBackend_HeapsVoice.__interfaces__ = [bh_audio_AudioVoice];
+bh_audio__$HeapsBackend_HeapsVoice.prototype = {
+	setBusPitch: function(rate) {
+		var value = this.basePitch * rate;
+		if(this.pitchEffect == null) {
+			if(value == 1) {
+				return;
+			}
+			this.pitchEffect = this.channel.addEffect(new hxd_snd_effect_Pitch(value));
+		} else {
+			this.pitchEffect.value = value;
+		}
+	}
+	,isPlaying: function() {
+		return !this.channel.isReleased();
+	}
+	,stop: function(fadeOut) {
+		var _gthis = this;
+		if(this.channel.isReleased()) {
+			return;
+		}
+		if(fadeOut > 0) {
+			this.channel.fadeTo(0,fadeOut,function() {
+				_gthis.channel.stop();
+			});
+		} else {
+			this.channel.stop();
+		}
+	}
+	,__class__: bh_audio__$HeapsBackend_HeapsVoice
+};
+var bh_audio_HeapsBackend = function(loader) {
+	this.voices = [];
+	this.states = new haxe_ds_StringMap();
+	this.lowPasses = new haxe_ds_StringMap();
+	this.soundGroups = new haxe_ds_StringMap();
+	this.groups = new haxe_ds_StringMap();
+	this.loader = loader;
+};
+$hxClasses["bh.audio.HeapsBackend"] = bh_audio_HeapsBackend;
+bh_audio_HeapsBackend.__name__ = "bh.audio.HeapsBackend";
+bh_audio_HeapsBackend.__interfaces__ = [bh_audio_AudioBackend];
+bh_audio_HeapsBackend.prototype = {
+	prepare: function(path) {
+		this.loader.loadSound(path);
+	}
+	,group: function(bus) {
+		var tmp = bus;
+		var name = tmp != null ? tmp : "default";
+		var g = this.groups.h[name];
+		if(g == null) {
+			g = new hxd_snd_ChannelGroup(name);
+			this.groups.h[name] = g;
+		}
+		return g;
+	}
+	,soundGroup: function(bus) {
+		var tmp = bus;
+		var name = tmp != null ? tmp : "default";
+		var g = this.soundGroups.h[name];
+		if(g == null) {
+			g = new hxd_snd_SoundGroup(name);
+			this.soundGroups.h[name] = g;
+		}
+		return g;
+	}
+	,play: function(start) {
+		var sound = this.loader.loadSound(start.path);
+		var tmp = start.bus;
+		var name = tmp != null ? tmp : "default";
+		var channel = sound.play(start.loop,start.fadeIn > 0 ? 0 : start.volume,this.group(start.bus),this.soundGroup(start.bus));
+		channel.priority = start.priority;
+		if(start.fadeIn > 0) {
+			channel.fadeTo(start.volume,start.fadeIn);
+		}
+		var voice = new bh_audio__$HeapsBackend_HeapsVoice(channel,name,start.pitch);
+		var state = this.states.h[name];
+		voice.setBusPitch(state != null ? state.pitch : 1);
+		if(state != null && state.paused) {
+			channel.set_pause(true);
+		}
+		this.voices.push(voice);
+		return voice;
+	}
+	,setBus: function(bus,state) {
+		var tmp = bus;
+		var name = tmp != null ? tmp : "default";
+		var was = this.states.h[name];
+		this.states.h[name] = state;
+		var g = this.group(bus);
+		if(was == null || was.volume != state.volume) {
+			if(state.fade > 0) {
+				g.fadeTo(state.volume,state.fade);
+			} else {
+				g.set_volume(state.volume);
+			}
+		}
+		var tmp = state.voices > 0 ? state.voices : -1;
+		this.soundGroup(bus).maxAudible = tmp;
+		if(state.lowpass != null) {
+			var lp = this.lowPasses.h[name];
+			if(lp == null) {
+				lp = g.addEffect(new hxd_snd_effect_LowPass());
+				this.lowPasses.h[name] = lp;
+			}
+			lp.gainHF = state.lowpass;
+		} else {
+			var lp = this.lowPasses.h[name];
+			if(lp != null) {
+				g.removeEffect(lp);
+				var _this = this.lowPasses;
+				if(Object.prototype.hasOwnProperty.call(_this.h,name)) {
+					delete(_this.h[name]);
+				}
+			}
+		}
+		var _g = 0;
+		var _g1 = this.voices;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			if(v.bus == name) {
+				if(was == null || was.paused != state.paused) {
+					v.channel.set_pause(state.paused);
+				}
+				if(was == null || was.pitch != state.pitch) {
+					v.setBusPitch(state.pitch);
+				}
+			}
+		}
+	}
+	,update: function(dt) {
+		var i = 0;
+		while(i < this.voices.length) if(this.voices[i].isPlaying()) {
+			++i;
+		} else {
+			this.voices.splice(i,1);
+		}
+	}
+	,__class__: bh_audio_HeapsBackend
 };
 var h2d_col_PointImpl = function(x,y) {
 	if(y == null) {
@@ -5509,6 +6594,59 @@ bh_base_Autotile.reduceBlob47Mask = function(mask) {
 	}
 	return reduced;
 };
+var bh_base_Clock = function() {
+	this.listeners = [];
+	this.scale = 1.0;
+	this.paused = false;
+};
+$hxClasses["bh.base.Clock"] = bh_base_Clock;
+bh_base_Clock.__name__ = "bh.base.Clock";
+bh_base_Clock.prototype = {
+	set_paused: function(v) {
+		if(this.paused == v) {
+			return v;
+		}
+		this.paused = v;
+		this.tell();
+		return v;
+	}
+	,set_scale: function(v) {
+		if(v < 0) {
+			v = 0;
+		}
+		if(this.scale == v) {
+			return v;
+		}
+		this.scale = v;
+		this.tell();
+		return v;
+	}
+	,addListener: function(listener) {
+		this.listeners.push(listener);
+	}
+	,removeListener: function(listener) {
+		var _g = 0;
+		var _g1 = this.listeners.length;
+		while(_g < _g1) {
+			var i = _g++;
+			if(this.listeners[i] == listener) {
+				this.listeners.splice(i,1);
+				return true;
+			}
+		}
+		return false;
+	}
+	,tell: function() {
+		var _g = 0;
+		var _g1 = this.listeners;
+		while(_g < _g1.length) {
+			var listener = _g1[_g];
+			++_g;
+			listener(this);
+		}
+	}
+	,__class__: bh_base_Clock
+};
 var hxd_Cursor = $hxEnums["hxd.Cursor"] = { __ename__:true,__constructs__:null
 	,Default: {_hx_name:"Default",_hx_index:0,__enum__:"hxd.Cursor",toString:$estr}
 	,Button: {_hx_name:"Button",_hx_index:1,__enum__:"hxd.Cursor",toString:$estr}
@@ -6189,6 +7327,9 @@ h2d_BatchElement.prototype = {
 	,__class__: h2d_BatchElement
 };
 var bh_base__$Particles_Particle = function(group) {
+	this.tintB = 1;
+	this.tintG = 1;
+	this.tintR = 1;
 	this.currentColorSegmentIndex = 0;
 	this.animOverrideReleasable = false;
 	this.animOverrideActive = false;
@@ -6317,10 +7458,14 @@ bh_base__$Particles_Particle.prototype = $extend(h2d_BatchElement.prototype,{
 				var g = g1 + (g2 - g1) * curveValue | 0;
 				var b = b1 + (b2 - b1) * curveValue | 0;
 				var col = r << 16 | g << 8 | b;
-				this.r = (col >> 16 & 255) / 255.0;
-				this.g = (col >> 8 & 255) / 255.0;
-				this.b = (col & 255) / 255.0;
+				this.r = (col >> 16 & 255) / 255.0 * this.tintR;
+				this.g = (col >> 8 & 255) / 255.0 * this.tintG;
+				this.b = (col & 255) / 255.0 * this.tintB;
 			}
+		} else {
+			this.r = this.tintR;
+			this.g = this.tintG;
+			this.b = this.tintB;
 		}
 		if(this.group.animStates.length > 0) {
 			var stateIdx = this.currentAnimStateIndex;
@@ -6434,6 +7579,7 @@ var bh_base_ParticleGroup = function(id,p,tiles) {
 	this.forceFields = [];
 	this.colorCurveSegments = [];
 	this.colorEnabled = false;
+	this.tint = null;
 	this.isRelative = true;
 	this.animationRepeat = 1;
 	this.fadePower = 1;
@@ -6544,7 +7690,14 @@ bh_base_ParticleGroup.prototype = {
 			this.batch.add(p);
 		}
 	}
-	,emitBurstAt: function(atX,atY,inheritVx,inheritVy,count) {
+	,emitBurstAt: function(atX,atY,inheritVx,inheritVy,count,tint) {
+		if(tint == null) {
+			this.emitBurstTinted(atX,atY,inheritVx,inheritVy,count,-1,-1,-1);
+		} else {
+			this.emitBurstTinted(atX,atY,inheritVx,inheritVy,count,(tint >> 16 & 255) / 255.0,(tint >> 8 & 255) / 255.0,(tint & 255) / 255.0);
+		}
+	}
+	,emitBurstTinted: function(atX,atY,inheritVx,inheritVy,count,tintR,tintG,tintB) {
 		if(!this.started) {
 			if(this.nparts > 0) {
 				if(this.enabled) {
@@ -6566,6 +7719,11 @@ bh_base_ParticleGroup.prototype = {
 				p.y += atY;
 				p.vx += inheritVx;
 				p.vy += inheritVy;
+				if(tintR >= 0) {
+					p.tintR = tintR;
+					p.tintG = tintG;
+					p.tintB = tintB;
+				}
 				p.visible = true;
 				this.triggerSubEmitters(p,bh_base_SubEmitTrigger.OnBirth);
 			}
@@ -6573,8 +7731,8 @@ bh_base_ParticleGroup.prototype = {
 			this.liveCount++;
 		}
 	}
-	,emitBurst: function(count) {
-		this.emitBurstAt(0,0,0,0,count);
+	,emitBurst: function(count,tint) {
+		this.emitBurstAt(0,0,0,0,count,tint);
 	}
 	,init: function(p) {
 		var g = this;
@@ -6721,6 +7879,16 @@ bh_base_ParticleGroup.prototype = {
 			p.r = (initColor >> 16 & 255) / 255.0;
 			p.g = (initColor >> 8 & 255) / 255.0;
 			p.b = (initColor & 255) / 255.0;
+		}
+		var groupTint = this.tint;
+		if(groupTint != null) {
+			p.tintR = (groupTint >> 16 & 255) / 255.0;
+			p.tintG = (groupTint >> 8 & 255) / 255.0;
+			p.tintB = (groupTint & 255) / 255.0;
+		} else {
+			p.tintR = 1;
+			p.tintG = 1;
+			p.tintB = 1;
 		}
 		p.currentColorSegmentIndex = 0;
 		p.currentAnimStateIndex = 0;
@@ -6998,7 +8166,7 @@ bh_base_ParticleGroup.prototype = {
 			if(subGroup == null) {
 				continue;
 			}
-			subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount);
+			subGroup.emitBurstTinted(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount,p.tintR,p.tintG,p.tintB);
 		}
 	}
 	,matchesTrigger: function(configured,actual) {
@@ -7035,7 +8203,7 @@ bh_base_ParticleGroup.prototype = {
 					if(this.randomFunc() <= se.probability) {
 						var subGroup = this.parts.getGroup(se.groupId);
 						if(subGroup != null) {
-							subGroup.emitBurstAt(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount);
+							subGroup.emitBurstTinted(p.x + se.offsetX,p.y + se.offsetY,p.vx * se.inheritVelocity,p.vy * se.inheritVelocity,se.burstCount,p.tintR,p.tintG,p.tintB);
 						}
 					}
 				}
@@ -7418,17 +8586,22 @@ var bh_base_CachingResourceLoader = function() {
 	this.placeholderCache = new haxe_ds_EnumValueMap();
 	this.tileCache = new haxe_ds_StringMap();
 	this.multiAnimCache = new haxe_ds_StringMap();
+	this.audio = null;
+	this.soundCache = new haxe_ds_StringMap();
 	this.animSMCache = new haxe_ds_StringMap();
 };
 $hxClasses["bh.base.CachingResourceLoader"] = bh_base_CachingResourceLoader;
 bh_base_CachingResourceLoader.__name__ = "bh.base.CachingResourceLoader";
 bh_base_CachingResourceLoader.__interfaces__ = [bh_base_ResourceLoader];
 bh_base_CachingResourceLoader.prototype = {
-	loadSheet2Impl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 67, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
+	getAudio: function() {
+		return this.audio;
+	}
+	,loadSheet2Impl: function(sheetName) {
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 83, className : "bh.base.CachingResourceLoader", methodName : "loadSheet2Impl"});
 	}
 	,loadSheetImpl: function(sheetName) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 71, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 87, className : "bh.base.CachingResourceLoader", methodName : "loadSheetImpl"});
 	}
 	,loadTileImpl: function(filename) {
 		var res = this.loadHXDResourceImpl(filename);
@@ -7438,16 +8611,23 @@ bh_base_CachingResourceLoader.prototype = {
 		return res.toTile();
 	}
 	,loadMultiAnimImpl: function(name) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 81, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 97, className : "bh.base.CachingResourceLoader", methodName : "loadMultiAnimImpl"});
 	}
 	,loadHXDResourceImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 85, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 101, className : "bh.base.CachingResourceLoader", methodName : "loadHXDResourceImpl"});
 	}
 	,loadFontImpl: function(font) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 89, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 105, className : "bh.base.CachingResourceLoader", methodName : "loadFontImpl"});
+	}
+	,loadSoundImpl: function(filename) {
+		var res = this.loadHXDResourceImpl(filename);
+		if(res == null) {
+			throw haxe_Exception.thrown("could not load sound \"" + filename + "\"");
+		}
+		return res.toSound();
 	}
 	,loadAnimSMImpl: function(filename) {
-		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 93, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "../hx-multianim/src/bh/base/ResourceLoader.hx", lineNumber : 118, className : "bh.base.CachingResourceLoader", methodName : "loadAnimSMImpl"});
 	}
 	,cachedGet: function(cache,cacheKey,get) {
 		var value = cache.get(cacheKey);
@@ -7476,6 +8656,12 @@ bh_base_CachingResourceLoader.prototype = {
 			return _gthis.loadFontImpl(fontname);
 		});
 	}
+	,loadSound: function(filename) {
+		var _gthis = this;
+		return this.cachedGet(this.soundCache,filename,function(filename) {
+			return _gthis.loadSoundImpl(filename);
+		});
+	}
 	,loadAnimParser: function(filename) {
 		var _gthis = this;
 		return this.cachedGet(this.animSMCache,filename,function(filename) {
@@ -7497,6 +8683,7 @@ bh_base_CachingResourceLoader.prototype = {
 		this.atlasCache.h = Object.create(null);
 		this.atlas2Cache.h = Object.create(null);
 		this.fontCache.h = Object.create(null);
+		this.soundCache.h = Object.create(null);
 		this.placeholderCache.clear();
 		this.multiAnimCache.h = Object.create(null);
 		this.multiAnimCycleDetection = [];
@@ -17425,15 +18612,15 @@ bh_multianim_MacroManimParser.prototype = {
 		}
 		var tmp;
 		switch(type._hx_index) {
-		case 29:
+		case 32:
 			var _g = type.tilesetDef;
 			tmp = $hxEnums[type.__enum__].__constructs__[type._hx_index]._hx_name;
 			break;
-		case 30:
+		case 33:
 			var _g = type.tilemapDef;
 			tmp = $hxEnums[type.__enum__].__constructs__[type._hx_index]._hx_name;
 			break;
-		case 38:
+		case 41:
 			var _g = type.paramName;
 			var _g = type.arms;
 			tmp = $hxEnums[type.__enum__].__constructs__[type._hx_index]._hx_name;
@@ -18360,7 +19547,7 @@ bh_multianim_MacroManimParser.prototype = {
 														var checkNode = parent;
 														while(checkNode != null) {
 															var _g = checkNode.type;
-															if(_g._hx_index == 34) {
+															if(_g._hx_index == 37) {
 																var _g2 = _g.parameters;
 																var _g3 = _g.paramOrder;
 																insideSlot = true;
@@ -18910,414 +20097,456 @@ bh_multianim_MacroManimParser.prototype = {
 																												return cursorNode;
 																											} else {
 																												var s = _g1;
-																												if(bh_multianim_MacroManimParser.isKeyword(s,"palette")) {
+																												if(bh_multianim_MacroManimParser.isKeyword(s,"sounds")) {
 																													this.advance();
 																													if(this.currentName == null) {
-																														this.error("palette requires a #name");
+																														this.error("sounds requires a #name");
 																													}
 																													if(parent != null) {
-																														this.error("palette must be a root node");
+																														this.error("sounds must be a root node");
 																													}
-																													var paletteNode;
-																													switch(this.tokens[this.tpos].type._hx_index) {
-																													case 1:
-																														this.advance();
-																														var _g = this.tokens[this.tpos].type;
-																														switch(_g._hx_index) {
-																														case 29:
-																															if(_g.s == "2") {
-																																this.advance();
-																																var _g2 = this.tokens[this.tpos].type;
-																																if(_g2._hx_index == 32) {
-																																	var d = _g2.s;
-																																	if(d.toLowerCase() == "d") {
-																																		this.advance();
-																																	} else {
-																																		this.error("expected 2d or file in palette()");
-																																	}
-																																} else {
-																																	this.error("expected 2d or file in palette()");
-																																}
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																																var width = this.parseInteger();
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
-																																paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors2D(colors,width)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																															} else {
-																																paletteNode = this.error("expected 2d or file in palette()");
-																															}
-																															break;
-																														case 32:
-																															var s2 = _g.s;
-																															if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
-																																this.advance();
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																																var filename = this.parseStringOrReference();
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																																paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																															} else {
-																																paletteNode = this.error("expected 2d or file in palette()");
-																															}
-																															break;
-																														default:
-																															paletteNode = this.error("expected 2d or file in palette()");
-																														}
-																														break;
-																													case 5:
-																														this.advance();
-																														var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
-																														paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors(colors)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																														break;
-																													default:
-																														paletteNode = this.error("expected { or ( after palette");
-																													}
-																													return paletteNode;
+																													this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																													var soundsDef = this.parseSounds(this.currentName);
+																													return this.createNode(bh_multianim_NodeType.SOUNDS(soundsDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																												} else {
 																													var s = _g1;
-																													if(bh_multianim_MacroManimParser.isKeyword(s,"pixels")) {
+																													if(bh_multianim_MacroManimParser.isKeyword(s,"mix")) {
 																														this.advance();
-																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																														var shapes = this.parsePixelShapes();
-																														node = this.createNode(bh_multianim_NodeType.PIXELS(shapes),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																														if(this.currentName == null) {
+																															this.error("mix requires a #name");
+																														}
+																														if(parent != null) {
+																															this.error("mix must be a root node");
+																														}
+																														this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																														var mixDef = this.parseMix(this.currentName);
+																														return this.createNode(bh_multianim_NodeType.MIX(mixDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																													} else {
 																														var s = _g1;
-																														if(bh_multianim_MacroManimParser.isKeyword(s,"paths")) {
+																														if(bh_multianim_MacroManimParser.isKeyword(s,"music")) {
 																															this.advance();
 																															if(this.currentName == null) {
-																																this.currentName = "paths";
+																																this.error("music requires a #name");
 																															}
 																															if(parent != null) {
-																																this.error("paths must be a root node");
+																																this.error("music must be a root node");
 																															}
 																															this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																															var pathsDef = this.parsePaths();
-																															var n = bh_multianim_NodeType.PATHS(pathsDef);
-																															var n1;
-																															switch(updatableName._hx_index) {
-																															case 0:
-																																var _g = updatableName.name;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																																break;
-																															case 1:
-																																var _g = updatableName.name;
-																																n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultPathNodeName);
-																																break;
-																															case 2:
-																																var _g = updatableName.name;
-																																var _g = updatableName.indexVar;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																																break;
-																															case 3:
-																																var _g = updatableName.name;
-																																var _g = updatableName.indexVarX;
-																																var _g = updatableName.indexVarY;
-																																n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
-																																break;
-																															}
-																															var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
-																															return n2;
+																															var musicDef = this.parseMusic(this.currentName);
+																															return this.createNode(bh_multianim_NodeType.MUSIC(musicDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																														} else {
 																															var s = _g1;
-																															if(bh_multianim_MacroManimParser.isKeyword(s,"animated_path") || bh_multianim_MacroManimParser.isKeyword(s,"animatedPath") || bh_multianim_MacroManimParser.isKeyword(s,"animatedpath")) {
+																															if(bh_multianim_MacroManimParser.isKeyword(s,"palette")) {
 																																this.advance();
 																																if(this.currentName == null) {
-																																	this.error("animated_path requires a #name");
+																																	this.error("palette requires a #name");
 																																}
 																																if(parent != null) {
-																																	this.error("animated_path must be a root node");
+																																	this.error("palette must be a root node");
 																																}
-																																this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																var apDef = this.parseAnimatedPath();
-																																var n = this.createNode(bh_multianim_NodeType.ANIMATED_PATH(apDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																return n;
+																																var paletteNode;
+																																switch(this.tokens[this.tpos].type._hx_index) {
+																																case 1:
+																																	this.advance();
+																																	var _g = this.tokens[this.tpos].type;
+																																	switch(_g._hx_index) {
+																																	case 29:
+																																		if(_g.s == "2") {
+																																			this.advance();
+																																			var _g2 = this.tokens[this.tpos].type;
+																																			if(_g2._hx_index == 32) {
+																																				var d = _g2.s;
+																																				if(d.toLowerCase() == "d") {
+																																					this.advance();
+																																				} else {
+																																					this.error("expected 2d or file in palette()");
+																																				}
+																																			} else {
+																																				this.error("expected 2d or file in palette()");
+																																			}
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																																			var width = this.parseInteger();
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																			var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
+																																			paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors2D(colors,width)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																		} else {
+																																			paletteNode = this.error("expected 2d or file in palette()");
+																																		}
+																																		break;
+																																	case 32:
+																																		var s2 = _g.s;
+																																		if(bh_multianim_MacroManimParser.isKeyword(s2,"file")) {
+																																			this.advance();
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																																			var filename = this.parseStringOrReference();
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																																			paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteImageFile(filename)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																		} else {
+																																			paletteNode = this.error("expected 2d or file in palette()");
+																																		}
+																																		break;
+																																	default:
+																																		paletteNode = this.error("expected 2d or file in palette()");
+																																	}
+																																	break;
+																																case 5:
+																																	this.advance();
+																																	var colors = this.parseColorsList(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed);
+																																	paletteNode = this.createNode(bh_multianim_NodeType.PALETTE(bh_multianim_PaletteType.PaletteColors(colors)),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																	break;
+																																default:
+																																	paletteNode = this.error("expected { or ( after palette");
+																																}
+																																return paletteNode;
 																															} else {
 																																var s = _g1;
-																																if(bh_multianim_MacroManimParser.isKeyword(s,"curves")) {
+																																if(bh_multianim_MacroManimParser.isKeyword(s,"pixels")) {
 																																	this.advance();
-																																	if(this.currentName == null) {
-																																		this.currentName = "curves";
-																																	}
-																																	if(parent != null) {
-																																		this.error("curves must be a root node");
-																																	}
-																																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																	var curvesDef = this.parseCurves();
-																																	var n = bh_multianim_NodeType.CURVES(curvesDef);
-																																	var n1;
-																																	switch(updatableName._hx_index) {
-																																	case 0:
-																																		var _g = updatableName.name;
-																																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																		break;
-																																	case 1:
-																																		var _g = updatableName.name;
-																																		n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																		break;
-																																	case 2:
-																																		var _g = updatableName.name;
-																																		var _g = updatableName.indexVar;
-																																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																		break;
-																																	case 3:
-																																		var _g = updatableName.name;
-																																		var _g = updatableName.indexVarX;
-																																		var _g = updatableName.indexVarY;
-																																		n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
-																																		break;
-																																	}
-																																	var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
-																																	return n2;
+																																	this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																																	var shapes = this.parsePixelShapes();
+																																	node = this.createNode(bh_multianim_NodeType.PIXELS(shapes),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																} else {
 																																	var s = _g1;
-																																	if(bh_multianim_MacroManimParser.isKeyword(s,"tileset")) {
+																																	if(bh_multianim_MacroManimParser.isKeyword(s,"paths")) {
 																																		this.advance();
 																																		if(this.currentName == null) {
-																																			this.error("tileset requires a #name");
+																																			this.currentName = "paths";
 																																		}
 																																		if(parent != null) {
-																																			this.error("tileset must be a root node");
+																																			this.error("paths must be a root node");
 																																		}
 																																		this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																		var n = this.createNode(bh_multianim_NodeType.TILESET(this.parseTileset()),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																		return n;
+																																		var pathsDef = this.parsePaths();
+																																		var n = bh_multianim_NodeType.PATHS(pathsDef);
+																																		var n1;
+																																		switch(updatableName._hx_index) {
+																																		case 0:
+																																			var _g = updatableName.name;
+																																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																																			break;
+																																		case 1:
+																																			var _g = updatableName.name;
+																																			n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultPathNodeName);
+																																			break;
+																																		case 2:
+																																			var _g = updatableName.name;
+																																			var _g = updatableName.indexVar;
+																																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																																			break;
+																																		case 3:
+																																			var _g = updatableName.name;
+																																			var _g = updatableName.indexVarX;
+																																			var _g = updatableName.indexVarY;
+																																			n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultPathNodeName);
+																																			break;
+																																		}
+																																		var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
+																																		return n2;
 																																	} else {
 																																		var s = _g1;
-																																		if(bh_multianim_MacroManimParser.isKeyword(s,"tilemap")) {
+																																		if(bh_multianim_MacroManimParser.isKeyword(s,"animated_path") || bh_multianim_MacroManimParser.isKeyword(s,"animatedPath") || bh_multianim_MacroManimParser.isKeyword(s,"animatedpath")) {
 																																			this.advance();
-																																			if(this.tokens[this.tpos].type._hx_index == 5) {
-																																				if(this.currentName == null) {
-																																					this.error("tilemap requires a #name");
-																																				}
-																																				if(parent != null) {
-																																					this.error("a tilemap { } definition must be a root node; place it with tilemap(name)");
-																																				}
-																																				var tilemapLine = this.tokens[this.tpos].line;
-																																				this.advance();
-																																				var tmDef = { tileset : "", width : 0, height : 0, legend : new haxe_ds_StringMap(), terrain : [], levels : [], levelLegend : new haxe_ds_StringMap(), levelPlatforms : new haxe_ds_StringMap(), layers : [], marks : [], line : tilemapLine};
-																																				var n = this.createNode(bh_multianim_NodeType.TILEMAP(tmDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																				this.parseTilemap(tmDef,n,currentDefs);
-																																				return n;
-																																			} else {
-																																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																																				var extRef = null;
-																																				var _g = this.tokens[this.tpos].type;
-																																				if(_g._hx_index == 32) {
-																																					var s2 = _g.s;
-																																					if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
-																																						this.advance();
-																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-																																						extRef = this.expectIdentifierOrString();
-																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-																																					}
-																																				}
-																																				var mapName = this.expectIdentifierOrString();
-																																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-																																				node = this.createNode(bh_multianim_NodeType.TILEMAP_REF(extRef,mapName),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																			if(this.currentName == null) {
+																																				this.error("animated_path requires a #name");
 																																			}
+																																			if(parent != null) {
+																																				this.error("animated_path must be a root node");
+																																			}
+																																			this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																			var apDef = this.parseAnimatedPath();
+																																			var n = this.createNode(bh_multianim_NodeType.ANIMATED_PATH(apDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																			return n;
 																																		} else {
 																																			var s = _g1;
-																																			if(bh_multianim_MacroManimParser.isKeyword(s,"autotile")) {
+																																			if(bh_multianim_MacroManimParser.isKeyword(s,"curves")) {
 																																				this.advance();
 																																				if(this.currentName == null) {
-																																					this.error("autotile requires a #name");
+																																					this.currentName = "curves";
 																																				}
 																																				if(parent != null) {
-																																					this.error("autotile must be a root node");
+																																					this.error("curves must be a root node");
 																																				}
 																																				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																				var atDef = this.parseAutotile();
-																																				var n = this.createNode(bh_multianim_NodeType.AUTOTILE(atDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																				return n;
+																																				var curvesDef = this.parseCurves();
+																																				var n = bh_multianim_NodeType.CURVES(curvesDef);
+																																				var n1;
+																																				switch(updatableName._hx_index) {
+																																				case 0:
+																																					var _g = updatableName.name;
+																																					n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																					break;
+																																				case 1:
+																																					var _g = updatableName.name;
+																																					n1 = bh_multianim_UpdatableNameType.UNTUpdatable(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																					break;
+																																				case 2:
+																																					var _g = updatableName.name;
+																																					var _g = updatableName.indexVar;
+																																					n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																					break;
+																																				case 3:
+																																					var _g = updatableName.name;
+																																					var _g = updatableName.indexVarX;
+																																					var _g = updatableName.indexVarY;
+																																					n1 = bh_multianim_UpdatableNameType.UNTObject(bh_multianim_MacroManimParser.defaultCurveNodeName);
+																																					break;
+																																				}
+																																				var n2 = this.createNode(n,parent,conditional,scale,rotation,alpha,tint,layerIndex,n1);
+																																				return n2;
 																																			} else {
 																																				var s = _g1;
-																																				if(bh_multianim_MacroManimParser.isKeyword(s,"atlas2")) {
+																																				if(bh_multianim_MacroManimParser.isKeyword(s,"tileset")) {
 																																					this.advance();
 																																					if(this.currentName == null) {
-																																						this.error("atlas2 requires a #name");
+																																						this.error("tileset requires a #name");
 																																					}
 																																					if(parent != null) {
-																																						this.error("atlas2 must be a root node");
+																																						this.error("tileset must be a root node");
 																																					}
-																																					var a2Def = this.parseAtlas2();
-																																					var n = this.createNode(bh_multianim_NodeType.ATLAS2(a2Def),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																					var n = this.createNode(bh_multianim_NodeType.TILESET(this.parseTileset()),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																					return n;
 																																				} else {
 																																					var s = _g1;
-																																					if(bh_multianim_MacroManimParser.isKeyword(s,"data")) {
+																																					if(bh_multianim_MacroManimParser.isKeyword(s,"tilemap")) {
 																																						this.advance();
-																																						if(this.currentName == null) {
-																																							this.error("data requires a #name");
+																																						if(this.tokens[this.tpos].type._hx_index == 5) {
+																																							if(this.currentName == null) {
+																																								this.error("tilemap requires a #name");
+																																							}
+																																							if(parent != null) {
+																																								this.error("a tilemap { } definition must be a root node; place it with tilemap(name)");
+																																							}
+																																							var tilemapLine = this.tokens[this.tpos].line;
+																																							this.advance();
+																																							var tmDef = { tileset : "", width : 0, height : 0, legend : new haxe_ds_StringMap(), terrain : [], levels : [], levelLegend : new haxe_ds_StringMap(), levelPlatforms : new haxe_ds_StringMap(), layers : [], marks : [], line : tilemapLine};
+																																							var n = this.createNode(bh_multianim_NodeType.TILEMAP(tmDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																							this.parseTilemap(tmDef,n,currentDefs);
+																																							return n;
+																																						} else {
+																																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																																							var extRef = null;
+																																							var _g = this.tokens[this.tpos].type;
+																																							if(_g._hx_index == 32) {
+																																								var s2 = _g.s;
+																																								if(bh_multianim_MacroManimParser.isKeyword(s2,"external")) {
+																																									this.advance();
+																																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+																																									extRef = this.expectIdentifierOrString();
+																																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+																																								}
+																																							}
+																																							var mapName = this.expectIdentifierOrString();
+																																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+																																							node = this.createNode(bh_multianim_NodeType.TILEMAP_REF(extRef,mapName),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																						}
-																																						if(parent != null) {
-																																							this.error("data must be a root node");
-																																						}
-																																						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																						var dataDef = this.parseData();
-																																						var n = this.createNode(bh_multianim_NodeType.DATA(dataDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																						return n;
 																																					} else {
 																																						var s = _g1;
-																																						if(bh_multianim_MacroManimParser.isKeyword(s,"rect") || bh_multianim_MacroManimParser.isKeyword(s,"circle") || bh_multianim_MacroManimParser.isKeyword(s,"line") || bh_multianim_MacroManimParser.isKeyword(s,"polygon") || bh_multianim_MacroManimParser.isKeyword(s,"ellipse") || bh_multianim_MacroManimParser.isKeyword(s,"roundrect") || bh_multianim_MacroManimParser.isKeyword(s,"arc")) {
+																																						if(bh_multianim_MacroManimParser.isKeyword(s,"autotile")) {
 																																							this.advance();
-																																							var element;
-																																							switch(s.toLowerCase()) {
-																																							case "arc":
-																																								element = this.parseGraphicsArc();
-																																								break;
-																																							case "circle":
-																																								element = this.parseGraphicsCircle();
-																																								break;
-																																							case "ellipse":
-																																								element = this.parseGraphicsEllipse();
-																																								break;
-																																							case "line":
-																																								element = this.parseGraphicsLine();
-																																								break;
-																																							case "polygon":
-																																								element = this.parseGraphicsPolygon();
-																																								break;
-																																							case "rect":
-																																								element = this.parseGraphicsRect();
-																																								break;
-																																							case "roundrect":
-																																								element = this.parseGraphicsRoundRect();
-																																								break;
-																																							default:
-																																								this.error("unexpected graphics shorthand: " + s);
-																																								element = null;
+																																							if(this.currentName == null) {
+																																								this.error("autotile requires a #name");
 																																							}
-																																							var nodePos = element.pos;
-																																							element.pos = bh_multianim_Coordinates.ZERO;
-																																							var n = this.createNode(bh_multianim_NodeType.GRAPHICS([element]),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
-																																							n.pos = nodePos;
-																																							this.eatSemicolon();
+																																							if(parent != null) {
+																																								this.error("autotile must be a root node");
+																																							}
+																																							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																							var atDef = this.parseAutotile();
+																																							var n = this.createNode(bh_multianim_NodeType.AUTOTILE(atDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
 																																							return n;
 																																						} else {
 																																							var s = _g1;
-																																							if(bh_multianim_MacroManimParser.isKeyword(s,"transition")) {
+																																							if(bh_multianim_MacroManimParser.isKeyword(s,"atlas2")) {
 																																								this.advance();
-																																								if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
-																																									this.error("@ modifiers are not supported on transition {} — transition declarations are unconditional");
+																																								if(this.currentName == null) {
+																																									this.error("atlas2 requires a #name");
 																																								}
-																																								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																								if(parent == null) {
-																																									this.error("transition must be inside a programmable");
+																																								if(parent != null) {
+																																									this.error("atlas2 must be a root node");
 																																								}
-																																								var transParamDefs;
-																																								var _g = parent.type;
-																																								if(_g._hx_index == 9) {
-																																									var _g2 = _g.isTileGroup;
-																																									var _g2 = _g.paramOrder;
-																																									var defs = _g.parameters;
-																																									transParamDefs = defs;
-																																								} else {
-																																									this.error("transition block only valid inside programmable");
-																																									transParamDefs = null;
-																																								}
-																																								if(parent.transitions == null) {
-																																									parent.transitions = new haxe_ds_StringMap();
-																																								}
-																																								while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
-																																									var paramName = this.expectIdentifierOrString();
-																																									if(transParamDefs != null && !Object.prototype.hasOwnProperty.call(transParamDefs.h,paramName)) {
-																																										this.error("transition references unknown parameter \"" + paramName + "\"");
-																																									}
-																																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
-																																									var transType = this.parseTransitionType();
-																																									if(Object.prototype.hasOwnProperty.call(parent.transitions.h,paramName)) {
-																																										this.error("duplicate transition for parameter \"" + paramName + "\"");
-																																									}
-																																									parent.transitions.h[paramName] = transType;
-																																									if(transType._hx_index == 5) {
-																																										var _g = transType.direction;
-																																										var _g2 = transType.duration;
-																																										var _g3 = transType.distance;
-																																										var _g4 = transType.easing;
-																																										var p = parent.parent;
-																																										while(p != null) {
-																																											var _g5 = p.type;
-																																											if(_g5._hx_index == 0) {
-																																												var _g6 = _g5.maxWidth;
-																																												var _g7 = _g5.maxHeight;
-																																												var _g8 = _g5.minWidth;
-																																												var _g9 = _g5.minHeight;
-																																												var _g10 = _g5.lineHeight;
-																																												var _g11 = _g5.colWidth;
-																																												var _g12 = _g5.layout;
-																																												var _g13 = _g5.paddingTop;
-																																												var _g14 = _g5.paddingBottom;
-																																												var _g15 = _g5.paddingLeft;
-																																												var _g16 = _g5.paddingRight;
-																																												var _g17 = _g5.horizontalSpacing;
-																																												var _g18 = _g5.verticalSpacing;
-																																												var _g19 = _g5.debug;
-																																												var _g20 = _g5.multiline;
-																																												var _g21 = _g5.bgSheet;
-																																												var _g22 = _g5.bgTile;
-																																												var _g23 = _g5.overflow;
-																																												var _g24 = _g5.fillWidth;
-																																												var _g25 = _g5.fillHeight;
-																																												var _g26 = _g5.reverse;
-																																												var _g27 = _g5.hAlign;
-																																												var _g28 = _g5.vAlign;
-																																												var _g29 = _g5.bgMode;
-																																												break;
-																																											}
-																																											p = p.parent;
-																																										}
-																																									}
-																																									this.eatComma();
-																																								}
-																																								return null;
+																																								var a2Def = this.parseAtlas2();
+																																								var n = this.createNode(bh_multianim_NodeType.ATLAS2(a2Def),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																								return n;
 																																							} else {
 																																								var s = _g1;
-																																								if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																								if(bh_multianim_MacroManimParser.isKeyword(s,"data")) {
 																																									this.advance();
-																																									if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
-																																										this.error("@ modifiers are not supported on settings {} — settings are static and unconditional");
+																																									if(this.currentName == null) {
+																																										this.error("data requires a #name");
+																																									}
+																																									if(parent != null) {
+																																										this.error("data must be a root node");
 																																									}
 																																									this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
-																																									if(parent == null) {
-																																										this.error("settings must have a parent");
-																																									}
-																																									if(parent.settings == null) {
-																																										parent.settings = new haxe_ds_StringMap();
-																																									}
-																																									while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
-																																										var key = this.expectIdentifierOrString();
-																																										if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
-																																											var suffix = this.expectIdentifierOrString();
-																																											key = key + "." + suffix;
-																																										}
-																																										switch(this.tokens[this.tpos].type._hx_index) {
-																																										case 11:
-																																											this.advance();
-																																											var tv = this.parseTypedSettingValue();
-																																											if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																												this.error("setting " + key + " already defined");
-																																											}
-																																											parent.settings.h[key] = { type : tv.type, value : tv.value};
+																																									var dataDef = this.parseData();
+																																									var n = this.createNode(bh_multianim_NodeType.DATA(dataDef),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																									return n;
+																																								} else {
+																																									var s = _g1;
+																																									if(bh_multianim_MacroManimParser.isKeyword(s,"rect") || bh_multianim_MacroManimParser.isKeyword(s,"circle") || bh_multianim_MacroManimParser.isKeyword(s,"line") || bh_multianim_MacroManimParser.isKeyword(s,"polygon") || bh_multianim_MacroManimParser.isKeyword(s,"ellipse") || bh_multianim_MacroManimParser.isKeyword(s,"roundrect") || bh_multianim_MacroManimParser.isKeyword(s,"arc")) {
+																																										this.advance();
+																																										var element;
+																																										switch(s.toLowerCase()) {
+																																										case "arc":
+																																											element = this.parseGraphicsArc();
 																																											break;
-																																										case 15:
-																																											this.advance();
-																																											var value = this.parseAnything();
-																																											if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
-																																												this.error("setting " + key + " already defined");
-																																											}
-																																											var this1 = parent.settings;
-																																											var value1 = { type : this.inferSettingType(value), value : value};
-																																											this1.h[key] = value1;
+																																										case "circle":
+																																											element = this.parseGraphicsCircle();
+																																											break;
+																																										case "ellipse":
+																																											element = this.parseGraphicsEllipse();
+																																											break;
+																																										case "line":
+																																											element = this.parseGraphicsLine();
+																																											break;
+																																										case "polygon":
+																																											element = this.parseGraphicsPolygon();
+																																											break;
+																																										case "rect":
+																																											element = this.parseGraphicsRect();
+																																											break;
+																																										case "roundrect":
+																																											element = this.parseGraphicsRoundRect();
 																																											break;
 																																										default:
-																																											this.error("expected :type=> or => after setting key");
+																																											this.error("unexpected graphics shorthand: " + s);
+																																											element = null;
 																																										}
-																																										this.eatComma();
+																																										var nodePos = element.pos;
+																																										element.pos = bh_multianim_Coordinates.ZERO;
+																																										var n = this.createNode(bh_multianim_NodeType.GRAPHICS([element]),parent,conditional,scale,rotation,alpha,tint,layerIndex,updatableName);
+																																										n.pos = nodePos;
+																																										this.eatSemicolon();
+																																										return n;
+																																									} else {
+																																										var s = _g1;
+																																										if(bh_multianim_MacroManimParser.isKeyword(s,"transition")) {
+																																											this.advance();
+																																											if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
+																																												this.error("@ modifiers are not supported on transition {} — transition declarations are unconditional");
+																																											}
+																																											this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																											if(parent == null) {
+																																												this.error("transition must be inside a programmable");
+																																											}
+																																											var transParamDefs;
+																																											var _g = parent.type;
+																																											if(_g._hx_index == 9) {
+																																												var _g2 = _g.isTileGroup;
+																																												var _g2 = _g.paramOrder;
+																																												var defs = _g.parameters;
+																																												transParamDefs = defs;
+																																											} else {
+																																												this.error("transition block only valid inside programmable");
+																																												transParamDefs = null;
+																																											}
+																																											if(parent.transitions == null) {
+																																												parent.transitions = new haxe_ds_StringMap();
+																																											}
+																																											while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+																																												var paramName = this.expectIdentifierOrString();
+																																												if(transParamDefs != null && !Object.prototype.hasOwnProperty.call(transParamDefs.h,paramName)) {
+																																													this.error("transition references unknown parameter \"" + paramName + "\"");
+																																												}
+																																												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+																																												var transType = this.parseTransitionType();
+																																												if(Object.prototype.hasOwnProperty.call(parent.transitions.h,paramName)) {
+																																													this.error("duplicate transition for parameter \"" + paramName + "\"");
+																																												}
+																																												parent.transitions.h[paramName] = transType;
+																																												if(transType._hx_index == 5) {
+																																													var _g = transType.direction;
+																																													var _g2 = transType.duration;
+																																													var _g3 = transType.distance;
+																																													var _g4 = transType.easing;
+																																													var p = parent.parent;
+																																													while(p != null) {
+																																														var _g5 = p.type;
+																																														if(_g5._hx_index == 0) {
+																																															var _g6 = _g5.maxWidth;
+																																															var _g7 = _g5.maxHeight;
+																																															var _g8 = _g5.minWidth;
+																																															var _g9 = _g5.minHeight;
+																																															var _g10 = _g5.lineHeight;
+																																															var _g11 = _g5.colWidth;
+																																															var _g12 = _g5.layout;
+																																															var _g13 = _g5.paddingTop;
+																																															var _g14 = _g5.paddingBottom;
+																																															var _g15 = _g5.paddingLeft;
+																																															var _g16 = _g5.paddingRight;
+																																															var _g17 = _g5.horizontalSpacing;
+																																															var _g18 = _g5.verticalSpacing;
+																																															var _g19 = _g5.debug;
+																																															var _g20 = _g5.multiline;
+																																															var _g21 = _g5.bgSheet;
+																																															var _g22 = _g5.bgTile;
+																																															var _g23 = _g5.overflow;
+																																															var _g24 = _g5.fillWidth;
+																																															var _g25 = _g5.fillHeight;
+																																															var _g26 = _g5.reverse;
+																																															var _g27 = _g5.hAlign;
+																																															var _g28 = _g5.vAlign;
+																																															var _g29 = _g5.bgMode;
+																																															break;
+																																														}
+																																														p = p.parent;
+																																													}
+																																												}
+																																												this.eatComma();
+																																											}
+																																											return null;
+																																										} else {
+																																											var s = _g1;
+																																											if(bh_multianim_MacroManimParser.isKeyword(s,"settings")) {
+																																												this.advance();
+																																												if(conditional._hx_index != 3 || alpha != null || scale != null || rotation != null || tint != null || layerIndex != -1 || hasFlowProps) {
+																																													this.error("@ modifiers are not supported on settings {} — settings are static and unconditional");
+																																												}
+																																												this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+																																												if(parent == null) {
+																																													this.error("settings must have a parent");
+																																												}
+																																												if(parent.settings == null) {
+																																													parent.settings = new haxe_ds_StringMap();
+																																												}
+																																												while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+																																													var key = this.expectIdentifierOrString();
+																																													if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDot)) {
+																																														var suffix = this.expectIdentifierOrString();
+																																														key = key + "." + suffix;
+																																													}
+																																													switch(this.tokens[this.tpos].type._hx_index) {
+																																													case 11:
+																																														this.advance();
+																																														var tv = this.parseTypedSettingValue();
+																																														if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																															this.error("setting " + key + " already defined");
+																																														}
+																																														parent.settings.h[key] = { type : tv.type, value : tv.value};
+																																														break;
+																																													case 15:
+																																														this.advance();
+																																														var value = this.parseAnything();
+																																														if(Object.prototype.hasOwnProperty.call(parent.settings.h,key)) {
+																																															this.error("setting " + key + " already defined");
+																																														}
+																																														var this1 = parent.settings;
+																																														var value1 = { type : this.inferSettingType(value), value : value};
+																																														this1.h[key] = value1;
+																																														break;
+																																													default:
+																																														this.error("expected :type=> or => after setting key");
+																																													}
+																																													this.eatComma();
+																																												}
+																																												return null;
+																																											} else {
+																																												node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
+																																											}
+																																										}
 																																									}
-																																									return null;
-																																								} else {
-																																									node = this.error("expected valid node type, got " + Std.string(this.tokens[this.tpos].type));
 																																								}
 																																							}
 																																						}
@@ -23135,6 +24364,753 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 		}
 	}
+	,parseUnitNumber: function() {
+		var value = this.parseFloat_();
+		var unit = "";
+		var _g = this.tokens[this.tpos].type;
+		switch(_g._hx_index) {
+		case 17:
+			this.advance();
+			unit = "%";
+			break;
+		case 32:
+			var u = _g.s;
+			if(u.toLowerCase() == "db" || u.toLowerCase() == "ms" || u.toLowerCase() == "s") {
+				this.advance();
+				unit = u.toLowerCase();
+			}
+			break;
+		default:
+		}
+		return { value : value, unit : unit};
+	}
+	,parseUnitRange: function(what,allowed,bare) {
+		var a = this.parseUnitNumber();
+		var b = a;
+		if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TDoubleDot)) {
+			b = this.parseUnitNumber();
+		}
+		var unit = a.unit != "" ? a.unit : b.unit;
+		if(unit == "") {
+			unit = bare;
+		}
+		if(allowed.indexOf(unit) == -1) {
+			this.error("" + what + ": expected a number in " + allowed.join(" or ") + ", got \"" + unit + "\"");
+		}
+		if(a.unit != "" && b.unit != "" && a.unit != b.unit) {
+			this.error("" + what + ": both ends of a range take the same unit, got " + a.unit + " and " + b.unit);
+		}
+		var min = a.value;
+		var max = b.value;
+		if(max < min) {
+			this.error("" + what + ": a range runs low to high, got " + min + ".." + max);
+		}
+		return { min : min, max : max, unit : unit};
+	}
+	,parseSecondsRange: function(what) {
+		var r = this.parseUnitRange(what,["ms","s"],"ms");
+		if(r.min < 0) {
+			this.error("" + what + ": a time is not negative");
+		}
+		var k = r.unit == "s" ? 1.0 : 0.001;
+		return { min : r.min * k, max : r.max * k};
+	}
+	,parseSounds: function(blockName) {
+		var _gthis = this;
+		var def = { bus : null, params : [], defs : new haxe_ds_StringMap(), sounds : []};
+		var parseLayerKey = function(key,layer,where,inLayer) {
+			switch(key.toLowerCase()) {
+			case "chance":
+				if(!inLayer) {
+					_gthis.error("" + where + ": chance: is a layer's (put the files in a layer)");
+				}
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var r = _gthis.parseUnitRange("" + where + ": chance",["%",""],"");
+				if(r.min != r.max) {
+					_gthis.error("" + where + ": chance is one number");
+				}
+				layer.chance = r.unit == "%" ? r.min / 100 : r.min;
+				if(layer.chance < 0 || layer.chance > 1) {
+					_gthis.error("" + where + ": chance is 0% to 100%");
+				}
+				break;
+			case "delay":
+				if(!inLayer) {
+					_gthis.error("" + where + ": delay: is a layer's (put the files in a layer)");
+				}
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var r = _gthis.parseSecondsRange("" + where + ": delay");
+				layer.delayMin = r.min;
+				layer.delayMax = r.max;
+				break;
+			case "file":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				if(layer.files.length > 0) {
+					_gthis.error("" + where + ": files given twice");
+				}
+				layer.files = [_gthis.expectIdentifierOrString()];
+				break;
+			case "files":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				if(layer.files.length > 0) {
+					_gthis.error("" + where + ": files given twice");
+				}
+				layer.files = _gthis.parseStringArray();
+				if(layer.files.length == 0) {
+					_gthis.error("" + where + ": files: [] is empty");
+				}
+				break;
+			case "pick":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var how = _gthis.expectIdentifierOrString().toLowerCase();
+				var parseLayerKey;
+				switch(how) {
+				case "random":
+					parseLayerKey = bh_multianim_SoundPick.PickRandom;
+					break;
+				case "shuffle":
+					parseLayerKey = bh_multianim_SoundPick.PickShuffle;
+					break;
+				case "turn":
+					parseLayerKey = bh_multianim_SoundPick.PickTurn;
+					break;
+				default:
+					parseLayerKey = _gthis.error("" + where + ": pick: random, shuffle or turn, got \"" + how + "\"");
+				}
+				layer.pick = parseLayerKey;
+				break;
+			case "pitch":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var r = _gthis.parseUnitRange("" + where + ": pitch",["%",""],"");
+				if(r.unit == "%") {
+					layer.pitchMin = 1 + r.min / 100;
+					layer.pitchMax = 1 + r.max / 100;
+				} else {
+					layer.pitchMin = r.min;
+					layer.pitchMax = r.max;
+				}
+				if(layer.pitchMin <= 0) {
+					_gthis.error("" + where + ": a pitch stays above zero");
+				}
+				break;
+			case "volume":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var r = _gthis.parseUnitRange("" + where + ": volume",["db"],"db");
+				layer.volumeMinDb = r.min;
+				layer.volumeMaxDb = r.max;
+				break;
+			default:
+				return false;
+			}
+			_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+			return true;
+		};
+		var newLayer = function(name,line) {
+			return { name : name, files : [], pick : bh_multianim_SoundPick.PickRandom, volumeMinDb : 0, volumeMaxDb : 0, pitchMin : 1, pitchMax : 1, delayMin : 0, delayMax : 0, chance : 1, line : line};
+		};
+		var parseSound = function(name,conditional,line) {
+			var where = "" + blockName + "." + name;
+			var own = newLayer("",line);
+			var sound = { name : name, bus : null, layers : [], voices : 0, steal : bh_multianim_SoundSteal.StealOldest, cooldown : 0, priority : 1, fadeIn : 0, fadeOut : 0, conditional : conditional, line : line};
+			var ownKeys = false;
+			while(!_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+				var keyLine = _gthis.tokens[_gthis.tpos].line;
+				var key = _gthis.expectIdentifierOrString();
+				switch(key.toLowerCase()) {
+				case "bus":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					sound.bus = _gthis.expectIdentifierOrString();
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				case "cooldown":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					var r = _gthis.parseSecondsRange("" + where + ": cooldown");
+					if(r.min != r.max) {
+						_gthis.error("" + where + ": cooldown is one time");
+					}
+					sound.cooldown = r.min;
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				case "fade":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					var any = false;
+					while(true) {
+						var _g = _gthis.tokens[_gthis.tpos].type;
+						if(_g._hx_index == 32) {
+							var d = _g.s;
+							if(bh_multianim_MacroManimParser.isKeyword(d,"in") || bh_multianim_MacroManimParser.isKeyword(d,"out")) {
+								_gthis.advance();
+								var r1 = _gthis.parseSecondsRange("" + where + ": fade " + d);
+								if(r1.min != r1.max) {
+									_gthis.error("" + where + ": fade " + d + " is one time");
+								}
+								if(bh_multianim_MacroManimParser.isKeyword(d,"in")) {
+									sound.fadeIn = r1.min;
+								} else {
+									sound.fadeOut = r1.min;
+								}
+								any = true;
+							} else {
+								break;
+							}
+						} else {
+							break;
+						}
+					}
+					if(!any) {
+						_gthis.error("" + where + ": fade: in <time> and/or out <time>");
+					}
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				case "layer":
+					var layerName = _gthis.expectIdentifierOrString();
+					var _g1 = 0;
+					var _g2 = sound.layers;
+					while(_g1 < _g2.length) {
+						var l = _g2[_g1];
+						++_g1;
+						if(l.name == layerName) {
+							_gthis.error("" + where + ": layer " + layerName + " is given twice");
+						}
+					}
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+					var layer = newLayer(layerName,keyLine);
+					while(!_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+						var k = _gthis.expectIdentifierOrString();
+						if(!parseLayerKey(k,layer,"" + where + " layer " + layerName,true)) {
+							_gthis.error("" + where + " layer " + layerName + ": unknown key \"" + k + "\" (file, files, pick, volume, pitch, delay, chance)");
+						}
+					}
+					if(layer.files.length == 0) {
+						_gthis.error("" + where + " layer " + layerName + ": no file");
+					}
+					sound.layers.push(layer);
+					break;
+				case "priority":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					var p = _gthis.expectIdentifierOrString().toLowerCase();
+					var parseSound;
+					switch(p) {
+					case "high":
+						parseSound = 2;
+						break;
+					case "low":
+						parseSound = 0;
+						break;
+					case "normal":
+						parseSound = 1;
+						break;
+					default:
+						parseSound = _gthis.error("" + where + ": priority: low, normal or high, got \"" + p + "\"");
+					}
+					sound.priority = parseSound;
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				case "steal":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					var how = _gthis.expectIdentifierOrString().toLowerCase();
+					var parseSound1;
+					switch(how) {
+					case "none":
+						parseSound1 = bh_multianim_SoundSteal.StealNone;
+						break;
+					case "oldest":
+						parseSound1 = bh_multianim_SoundSteal.StealOldest;
+						break;
+					case "quietest":
+						parseSound1 = bh_multianim_SoundSteal.StealQuietest;
+						break;
+					default:
+						parseSound1 = _gthis.error("" + where + ": steal: oldest, quietest or none, got \"" + how + "\"");
+					}
+					sound.steal = parseSound1;
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				case "voices":
+					_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					sound.voices = _gthis.parseInteger();
+					if(sound.voices < 0) {
+						_gthis.error("" + where + ": voices is 0 (no limit) or more");
+					}
+					_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					break;
+				default:
+					if(!parseLayerKey(key,own,where,false)) {
+						_gthis.error("" + where + ": unknown key \"" + key + "\" (file, files, pick, volume, pitch, bus, voices, steal, cooldown, priority, fade, layer)");
+					}
+					ownKeys = true;
+				}
+			}
+			if(own.files.length > 0) {
+				if(sound.layers.length > 0) {
+					_gthis.error("" + where + ": a sound has its own files or layers, not both");
+				}
+				sound.layers.push(own);
+			} else if(ownKeys && sound.layers.length > 0) {
+				_gthis.error("" + where + ": volume, pitch and pick go on the layers when a sound has layers");
+			}
+			if(sound.layers.length == 0) {
+				_gthis.error("" + where + ": no file (file: \"…\", files: […] or a layer { })");
+			}
+			return sound;
+		};
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			var line = this.tokens[this.tpos].line;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 14:
+				this.advance();
+				break;
+			case 32:
+				var _g1 = _g.s;
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"bus") && this.isPropertyColon()) {
+					this.advance();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					if(def.bus != null) {
+						this.error("" + blockName + ": bus given twice");
+					}
+					def.bus = this.expectIdentifierOrString();
+					this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				} else {
+					var s1 = _g1;
+					if(bh_multianim_MacroManimParser.isKeyword(s1,"param")) {
+						this.advance();
+						var paramName = this.expectIdentifierOrString();
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+						var values = this.parseStringArray();
+						if(values.length == 0) {
+							this.error("" + blockName + ": param " + paramName + ": [] names no values");
+						}
+						if(Object.prototype.hasOwnProperty.call(def.defs.h,paramName)) {
+							this.error("" + blockName + ": param " + paramName + " is given twice");
+						}
+						def.params.push({ name : paramName, values : values, line : line});
+						def.defs.h[paramName] = { name : paramName, type : bh_multianim_DefinitionType.PPTEnum(values), defaultValue : bh_multianim_ResolvedIndexParameters.Index(0,values[0])};
+						this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+					} else {
+						var soundName = this.expectIdentifierOrString();
+						var conditional = bh_multianim_NodeConditionalValues.NoConditional;
+						if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TAt)) {
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+							var conditions = this.parseConditionalParameters(def.defs);
+							var h = conditions.h;
+							var _g_h = h;
+							var _g_keys = Object.keys(h);
+							var _g_length = _g_keys.length;
+							var _g_current = 0;
+							while(_g_current < _g_length) {
+								var key = _g_keys[_g_current++];
+								var _g_key = key;
+								var _g_value = _g_h[key];
+								var paramName1 = _g_key;
+								var cv = _g_value;
+								if(!Object.prototype.hasOwnProperty.call(def.defs.h,paramName1)) {
+									this.error("" + blockName + "." + soundName + ": @(" + paramName1 + " => …) names no param of the block (param " + paramName1 + ": [a, b] above it)");
+								}
+								switch(cv._hx_index) {
+								case 0:
+									var _g2 = cv.a;
+									break;
+								case 2:
+									var _g3 = cv.idx;
+									var _g4 = cv.value;
+									break;
+								case 5:
+									break;
+								case 6:
+									var _g5 = cv.s;
+									break;
+								case 7:
+									var _g6 = cv.value;
+									break;
+								case 8:
+									var _g7 = cv.values;
+									break;
+								default:
+									this.error("" + blockName + "." + soundName + ": a variant is chosen by a param's label, @(" + paramName1 + " => stone) or [stone, dirt]");
+								}
+							}
+							conditional = bh_multianim_NodeConditionalValues.Conditional(conditions,false);
+						}
+						var _g8 = 0;
+						var _g9 = def.sounds;
+						while(_g8 < _g9.length) {
+							var other = _g9[_g8];
+							++_g8;
+							if(other.name == soundName && other.conditional._hx_index == 3 && conditional._hx_index == 3) {
+								this.error("" + blockName + "." + soundName + " is given twice (variants take a @(param => label) each)");
+							}
+						}
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+						def.sounds.push(parseSound(soundName,conditional,line));
+					}
+				}
+				break;
+			default:
+				var soundName1 = this.expectIdentifierOrString();
+				var conditional1 = bh_multianim_NodeConditionalValues.NoConditional;
+				if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TAt)) {
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+					var conditions1 = this.parseConditionalParameters(def.defs);
+					var h1 = conditions1.h;
+					var _g_h1 = h1;
+					var _g_keys1 = Object.keys(h1);
+					var _g_length1 = _g_keys1.length;
+					var _g_current1 = 0;
+					while(_g_current1 < _g_length1) {
+						var key1 = _g_keys1[_g_current1++];
+						var _g_key1 = key1;
+						var _g_value1 = _g_h1[key1];
+						var paramName2 = _g_key1;
+						var cv1 = _g_value1;
+						if(!Object.prototype.hasOwnProperty.call(def.defs.h,paramName2)) {
+							this.error("" + blockName + "." + soundName1 + ": @(" + paramName2 + " => …) names no param of the block (param " + paramName2 + ": [a, b] above it)");
+						}
+						switch(cv1._hx_index) {
+						case 0:
+							var _g10 = cv1.a;
+							break;
+						case 2:
+							var _g11 = cv1.idx;
+							var _g12 = cv1.value;
+							break;
+						case 5:
+							break;
+						case 6:
+							var _g13 = cv1.s;
+							break;
+						case 7:
+							var _g14 = cv1.value;
+							break;
+						case 8:
+							var _g15 = cv1.values;
+							break;
+						default:
+							this.error("" + blockName + "." + soundName1 + ": a variant is chosen by a param's label, @(" + paramName2 + " => stone) or [stone, dirt]");
+						}
+					}
+					conditional1 = bh_multianim_NodeConditionalValues.Conditional(conditions1,false);
+				}
+				var _g16 = 0;
+				var _g17 = def.sounds;
+				while(_g16 < _g17.length) {
+					var other1 = _g17[_g16];
+					++_g16;
+					if(other1.name == soundName1 && other1.conditional._hx_index == 3 && conditional1._hx_index == 3) {
+						this.error("" + blockName + "." + soundName1 + " is given twice (variants take a @(param => label) each)");
+					}
+				}
+				this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+				def.sounds.push(parseSound(soundName1,conditional1,line));
+			}
+		}
+		if(def.sounds.length == 0) {
+			this.error("" + blockName + ": sounds block has no sounds (name { file: \"…\" })");
+		}
+		return def;
+	}
+	,parseMix: function(blockName) {
+		var def = { buses : [], vcas : [], snapshots : []};
+		var hasBus = function(name) {
+			var _g = 0;
+			var _g1 = def.buses;
+			while(_g < _g1.length) {
+				var b = _g1[_g];
+				++_g;
+				if(b.name == name) {
+					return true;
+				}
+			}
+			return false;
+		};
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			var line = this.tokens[this.tpos].line;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 14:
+				this.advance();
+				break;
+			case 32:
+				var _g1 = _g.s;
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"bus")) {
+					this.advance();
+					var busName = this.expectIdentifierOrString();
+					if(hasBus(busName)) {
+						this.error("" + blockName + ": bus " + busName + " is given twice");
+					}
+					var voices = 0;
+					if(this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen)) {
+						while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+							var key = this.expectIdentifierOrString();
+							if(key.toLowerCase() == "voices") {
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								voices = this.parseInteger();
+								if(voices < 0) {
+									this.error("" + blockName + ": bus " + busName + ": voices is 0 (no limit) or more");
+								}
+							} else {
+								this.error("" + blockName + ": bus " + busName + ": unknown key \"" + key + "\" (voices)");
+							}
+							this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+						}
+					}
+					def.buses.push({ name : busName, voices : voices, line : line});
+					this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				} else {
+					var s1 = _g1;
+					if(bh_multianim_MacroManimParser.isKeyword(s1,"vca")) {
+						this.advance();
+						var vcaName = this.expectIdentifierOrString();
+						var _g2 = 0;
+						var _g3 = def.vcas;
+						while(_g2 < _g3.length) {
+							var v = _g3[_g2];
+							++_g2;
+							if(v.name == vcaName) {
+								this.error("" + blockName + ": vca " + vcaName + " is given twice");
+							}
+						}
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+						var buses = [];
+						_hx_loop4: while(true) {
+							var busName1 = this.expectIdentifierOrString();
+							if(!hasBus(busName1)) {
+								this.error("" + blockName + ": vca " + vcaName + ": no bus " + busName1 + " (bus " + busName1 + " above it)");
+							}
+							if(buses.indexOf(busName1) != -1) {
+								this.error("" + blockName + ": vca " + vcaName + ": bus " + busName1 + " twice");
+							}
+							buses.push(busName1);
+							if(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma)) {
+								break;
+							}
+							var _g4 = this.tokens[this.tpos].type;
+							switch(_g4._hx_index) {
+							case 32:
+								var n = _g4.s;
+								if(!(!bh_multianim_MacroManimParser.isKeyword(n,"bus") && !bh_multianim_MacroManimParser.isKeyword(n,"vca") && !bh_multianim_MacroManimParser.isKeyword(n,"snapshot"))) {
+									break _hx_loop4;
+								}
+								break;
+							case 35:
+								var _g5 = _g4.s;
+								break;
+							default:
+								break _hx_loop4;
+							}
+						}
+						def.vcas.push({ name : vcaName, buses : buses, line : line});
+					} else {
+						var s2 = _g1;
+						if(bh_multianim_MacroManimParser.isKeyword(s2,"snapshot")) {
+							this.advance();
+							var snapName = this.expectIdentifierOrString();
+							var _g6 = 0;
+							var _g7 = def.snapshots;
+							while(_g6 < _g7.length) {
+								var sn = _g7[_g6];
+								++_g6;
+								if(sn.name == snapName) {
+									this.error("" + blockName + ": snapshot " + snapName + " is given twice");
+								}
+							}
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+							var snap = { name : snapName, buses : [], fade : 0, line : line};
+							var where = "" + blockName + ": snapshot " + snapName;
+							while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+								var key1 = this.expectIdentifierOrString();
+								this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+								if(bh_multianim_MacroManimParser.isKeyword(key1,"fade")) {
+									var r = this.parseSecondsRange("" + where + ": fade");
+									if(r.min != r.max) {
+										this.error("" + where + ": fade is one time");
+									}
+									snap.fade = r.min;
+									this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+									continue;
+								}
+								if(!hasBus(key1)) {
+									this.error("" + where + ": no bus " + key1 + " (bus " + key1 + " above it)");
+								}
+								var _g8 = 0;
+								var _g9 = snap.buses;
+								while(_g8 < _g9.length) {
+									var b = _g9[_g8];
+									++_g8;
+									if(b.bus == key1) {
+										this.error("" + where + ": bus " + key1 + " twice");
+									}
+								}
+								var changes = [];
+								_hx_loop8: while(true) {
+									var _g10 = this.tokens[this.tpos].type;
+									switch(_g10._hx_index) {
+									case 6:
+										break _hx_loop8;
+									case 7:
+										this.advance();
+										break _hx_loop8;
+									case 20:
+										var n1 = this.parseUnitNumber();
+										if(n1.unit != "db" && n1.unit != "") {
+											this.error("" + where + ": " + key1 + ": a level is in db, got \"" + n1.unit + "\"");
+										}
+										changes.push(bh_multianim_MixChange.ChangeVolume(n1.value));
+										break;
+									case 29:
+										var _g11 = _g10.s;
+										var n2 = this.parseUnitNumber();
+										if(n2.unit != "db" && n2.unit != "") {
+											this.error("" + where + ": " + key1 + ": a level is in db, got \"" + n2.unit + "\"");
+										}
+										changes.push(bh_multianim_MixChange.ChangeVolume(n2.value));
+										break;
+									case 30:
+										var _g12 = _g10.s;
+										var n3 = this.parseUnitNumber();
+										if(n3.unit != "db" && n3.unit != "") {
+											this.error("" + where + ": " + key1 + ": a level is in db, got \"" + n3.unit + "\"");
+										}
+										changes.push(bh_multianim_MixChange.ChangeVolume(n3.value));
+										break;
+									case 32:
+										var _g13 = _g10.s;
+										var w = _g13;
+										if(bh_multianim_MacroManimParser.isKeyword(w,"pause")) {
+											this.advance();
+											changes.push(bh_multianim_MixChange.ChangePause);
+										} else {
+											var w1 = _g13;
+											if(bh_multianim_MacroManimParser.isKeyword(w1,"lowpass")) {
+												this.advance();
+												var g = this.parseFloat_();
+												if(g < 0 || g > 1) {
+													this.error("" + where + ": " + key1 + ": lowpass keeps a share of the highs, 0 to 1");
+												}
+												changes.push(bh_multianim_MixChange.ChangeLowPass(g));
+											} else {
+												var w2 = _g13;
+												if(bh_multianim_MacroManimParser.isKeyword(w2,"pitch")) {
+													this.advance();
+													this.expectKeyword("clock");
+													changes.push(bh_multianim_MixChange.ChangePitchClock);
+												} else if(this.isPropertyColon()) {
+													break _hx_loop8;
+												} else {
+													this.error("" + where + ": " + key1 + ": expected pause, a level in db, lowpass <share> or pitch clock, got " + Std.string(this.tokens[this.tpos].type));
+												}
+											}
+										}
+										break;
+									case 35:
+										var _g14 = _g10.s;
+										if(this.isPropertyColon()) {
+											break _hx_loop8;
+										} else {
+											this.error("" + where + ": " + key1 + ": expected pause, a level in db, lowpass <share> or pitch clock, got " + Std.string(this.tokens[this.tpos].type));
+										}
+										break;
+									default:
+										this.error("" + where + ": " + key1 + ": expected pause, a level in db, lowpass <share> or pitch clock, got " + Std.string(this.tokens[this.tpos].type));
+									}
+								}
+								if(changes.length == 0) {
+									this.error("" + where + ": " + key1 + ": says nothing (pause, -6db, lowpass 0.3, pitch clock)");
+								}
+								snap.buses.push({ bus : key1, changes : changes});
+							}
+							if(snap.buses.length == 0) {
+								this.error("" + where + ": changes no bus");
+							}
+							def.snapshots.push(snap);
+						} else {
+							this.error("" + blockName + ": expected bus, vca or snapshot, got " + Std.string(this.tokens[this.tpos].type));
+						}
+					}
+				}
+				break;
+			default:
+				this.error("" + blockName + ": expected bus, vca or snapshot, got " + Std.string(this.tokens[this.tpos].type));
+			}
+		}
+		if(def.buses.length == 0) {
+			this.error("" + blockName + ": mix block has no buses (bus sfx)");
+		}
+		return def;
+	}
+	,parseMusic: function(blockName) {
+		var def = { bus : null, tracks : []};
+		while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+			var line = this.tokens[this.tpos].line;
+			var _g = this.tokens[this.tpos].type;
+			switch(_g._hx_index) {
+			case 14:
+				this.advance();
+				break;
+			case 32:
+				var _g1 = _g.s;
+				var s = _g1;
+				if(bh_multianim_MacroManimParser.isKeyword(s,"bus") && this.isPropertyColon()) {
+					this.advance();
+					this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+					if(def.bus != null) {
+						this.error("" + blockName + ": bus given twice");
+					}
+					def.bus = this.expectIdentifierOrString();
+					this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+				} else {
+					var s1 = _g1;
+					if(bh_multianim_MacroManimParser.isKeyword(s1,"track")) {
+						this.advance();
+						var trackName = this.expectIdentifierOrString();
+						var _g2 = 0;
+						var _g3 = def.tracks;
+						while(_g2 < _g3.length) {
+							var t = _g3[_g2];
+							++_g2;
+							if(t.name == trackName) {
+								this.error("" + blockName + "." + trackName + " is given twice");
+							}
+						}
+						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyOpen);
+						var file = null;
+						var loop = true;
+						while(!this.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
+							var key = this.expectIdentifierOrString();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+							switch(key.toLowerCase()) {
+							case "file":
+								if(file != null) {
+									this.error("" + blockName + "." + trackName + ": file given twice");
+								}
+								file = this.expectIdentifierOrString();
+								break;
+							case "loop":
+								loop = this.parseBool();
+								break;
+							default:
+								this.error("" + blockName + "." + trackName + ": unknown key \"" + key + "\" (file, loop)");
+							}
+							this.match(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+						}
+						var trackFile = file != null ? file : this.error("" + blockName + "." + trackName + ": no file");
+						def.tracks.push({ name : trackName, file : trackFile, loop : loop, line : line});
+					} else {
+						this.error("" + blockName + ": expected bus: or track name { }, got " + Std.string(this.tokens[this.tpos].type));
+					}
+				}
+				break;
+			default:
+				this.error("" + blockName + ": expected bus: or track name { }, got " + Std.string(this.tokens[this.tpos].type));
+			}
+		}
+		if(def.tracks.length == 0) {
+			this.error("" + blockName + ": music block has no tracks (track title { file: \"…\" })");
+		}
+		return def;
+	}
 	,parseTileset: function() {
 		var _gthis = this;
 		var tileSize = null;
@@ -26066,7 +28042,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 			var _g1 = _g.paramOrder;
 			var defs = _g.parameters;
 			return defs.h[name];
-		case 34:
+		case 37:
 			var _g1 = _g.paramOrder;
 			var defs = _g.parameters;
 			if(defs == null) {
@@ -26097,7 +28073,7 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				_g1.push(k);
 			}
 			return _g1;
-		case 34:
+		case 37:
 			var _g1 = _g.paramOrder;
 			var defs = _g.parameters;
 			if(defs == null) {
@@ -27675,7 +29651,7 @@ bh_multianim_MultiAnimBuilder.cleanupFinalVars = function(children,indexedParams
 		var childNode = children[_g];
 		++_g;
 		var _g1 = childNode.type;
-		if(_g1._hx_index == 37) {
+		if(_g1._hx_index == 40) {
 			var _g2 = _g1.value;
 			var name = _g1.name;
 			if(Object.prototype.hasOwnProperty.call(indexedParams.h,name)) {
@@ -28535,7 +30511,7 @@ bh_multianim_MultiAnimBuilder.collectSwitchArmExtraParamRefs = function(node,out
 			}
 		}
 		break;
-	case 36:
+	case 39:
 		var _g1 = _g.externalReference;
 		var programmableRef = _g.programmableReference;
 		var parameters = _g.parameters;
@@ -28674,7 +30650,7 @@ bh_multianim_MultiAnimBuilder.collectNodeParamRefs = function(node) {
 			bh_multianim_MultiAnimBuilder.collectParamRefs(fps,refs);
 		}
 		break;
-	case 27:
+	case 30:
 		var elements = _g.elements;
 		var _g1 = 0;
 		while(_g1 < elements.length) {
@@ -28684,7 +30660,7 @@ bh_multianim_MultiAnimBuilder.collectNodeParamRefs = function(node) {
 			bh_multianim_MultiAnimBuilder.collectGraphicsElementParamRefs(item.element,refs);
 		}
 		break;
-	case 38:
+	case 41:
 		var paramName = _g.paramName;
 		var arms = _g.arms;
 		if(refs.indexOf(paramName) < 0) {
@@ -28905,7 +30881,7 @@ bh_multianim_MultiAnimBuilder.findNthSwitchNode = function(node,ordinal) {
 };
 bh_multianim_MultiAnimBuilder.findNthSwitchNodeImpl = function(node,ordinal,count) {
 	var _g = node.type;
-	if(_g._hx_index == 38) {
+	if(_g._hx_index == 41) {
 		var _g1 = _g.paramName;
 		var _g1 = _g.arms;
 		if(count[0] == ordinal) {
@@ -31066,7 +33042,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				this.validateTileGroupSubtree(child,innerScope);
 			}
 			break;
-		case 38:
+		case 41:
 			var paramName = _g.paramName;
 			var arms = _g.arms;
 			if(loopVarScope.indexOf(paramName) < 0) {
@@ -31815,7 +33791,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			break;
-		case 27:
+		case 30:
 			var elements = _g.elements;
 			var gfxRefs = [];
 			var _g = 0;
@@ -32989,13 +34965,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.addNinePatchToTileGroup(node,this.resolveAsString(sheet),this.resolveAsString(tilename),width,height,currentPos,tileGroup,index == null ? 0 : this.resolveAsInteger(index),this.ninePatchTiled(mode,false));
 			tileGroupTile = null;
 			break;
-		case 37:
+		case 40:
 			var name = _g.name;
 			var expr = _g.value;
 			this.evaluateAndStoreFinal(name,expr,node);
 			tileGroupTile = null;
 			break;
-		case 38:
+		case 41:
 			var paramName = _g.paramName;
 			var arms = _g.arms;
 			var matchedArm = this.resolveMatchedSwitchArm(paramName,arms);
@@ -33300,7 +35276,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		if((!nodeVisible || chainArmLosing) && this.incrementalMode && !this.suppressConditionalTracking && node.conditionals != bh_multianim_NodeConditionalValues.NoConditional && this.incrementalContext != null && node.type._hx_index != 16) {
 			var _g = node.type;
 			var tmp1;
-			if(_g._hx_index == 37) {
+			if(_g._hx_index == 40) {
 				var _g1 = _g.name;
 				var _g1 = _g.value;
 				tmp1 = true;
@@ -34734,43 +36710,52 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var _g1 = _g.cursors;
 			throw new bh_multianim_BuilderError("cursor not allowed as non-root node",node,null);
 		case 27:
+			var _g1 = _g.def;
+			throw new bh_multianim_BuilderError("sounds not allowed as non-root node",node,null);
+		case 28:
+			var _g1 = _g.def;
+			throw new bh_multianim_BuilderError("mix not allowed as non-root node",node,null);
+		case 29:
+			var _g1 = _g.def;
+			throw new bh_multianim_BuilderError("music not allowed as non-root node",node,null);
+		case 30:
 			var elements = _g.elements;
 			var g = new bh_multianim_KeepGraphics();
 			this.drawGraphicsElements(g,elements,gridCoordinateSystem,hexCoordinateSystem);
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(g);
 			break;
-		case 28:
+		case 31:
 			var _g1 = _g.autotileDef;
 			throw new bh_multianim_BuilderError("autotile not allowed as non-root node",node,null);
-		case 29:
+		case 32:
 			var _g1 = _g.tilesetDef;
 			throw new bh_multianim_BuilderError("tileset not allowed as non-root node",node,null);
-		case 30:
+		case 33:
 			var _g1 = _g.tilemapDef;
 			throw new bh_multianim_BuilderError("a tilemap { } definition is placed with tilemap(name)",node,null);
-		case 31:
+		case 34:
 			var extRef = _g.externalReference;
 			var mapName = _g.name;
 			skipChildren = true;
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(extRef == null ? this.buildTilemap(mapName) : this.importedBuilder(extRef,node).buildTilemap(mapName));
 			break;
-		case 32:
+		case 35:
 			var _g1 = _g.atlas2Def;
 			throw new bh_multianim_BuilderError("atlas2 is a definition node, not a renderable element",node,null);
-		case 33:
+		case 36:
 			var _g1 = _g.dataDef;
 			throw new bh_multianim_BuilderError("data is a definition node, not a renderable element",node,null);
-		case 34:
+		case 37:
 			var parameters = _g.parameters;
 			var paramOrder = _g.paramOrder;
 			var container = new h2d_Object();
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(container);
 			break;
-		case 35:
+		case 38:
 			var obj = new bh_multianim_SlotContentRoot();
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(obj);
 			break;
-		case 36:
+		case 39:
 			var externalReference = _g.externalReference;
 			var progRefRV = _g.programmableReference;
 			var parameters = _g.parameters;
@@ -34912,12 +36897,12 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			builtObject = bh_multianim_BuiltHeapsComponent.HeapsObject(outputObject);
 			break;
-		case 37:
+		case 40:
 			var name = _g.name;
 			var expr = _g.value;
 			this.evaluateAndStoreFinal(name,expr,node);
 			return null;
-		case 38:
+		case 41:
 			var paramName = _g.paramName;
 			var arms = _g.arms;
 			var container = new h2d_Object();
@@ -35175,7 +37160,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		var savedSlotIncrementalContext = null;
 		var savedSlotIndexedParams = null;
 		var _g = node.type;
-		if(_g._hx_index == 34) {
+		if(_g._hx_index == 37) {
 			var _g1 = _g.paramOrder;
 			var parameters = _g.parameters;
 			if(parameters != null) {
@@ -35242,7 +37227,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.indexedParams = savedSlotIndexedParams;
 		}
 		var _g = node.type;
-		if(_g._hx_index == 34) {
+		if(_g._hx_index == 37) {
 			var _g1 = _g.paramOrder;
 			var parameters = _g.parameters;
 			var slotContentTarget = null;
@@ -36646,7 +38631,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw new bh_multianim_BuilderError("autotile \"" + name + "\" not found",this.currentNode,"missing_ref");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 28) {
+		if(_g._hx_index == 31) {
 			var def = _g.autotileDef;
 			return { node : node, def : def};
 		} else {
@@ -36659,7 +38644,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw new bh_multianim_BuilderError("tileset \"" + name + "\" not found",this.currentNode,"missing_ref");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 29) {
+		if(_g._hx_index == 32) {
 			var def = _g.tilesetDef;
 			return { node : node, def : def};
 		} else {
@@ -36672,7 +38657,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			throw new bh_multianim_BuilderError("tilemap \"" + name + "\" not found",this.currentNode,"missing_ref");
 		}
 		var _g = node.type;
-		if(_g._hx_index == 30) {
+		if(_g._hx_index == 33) {
 			var def = _g.tilemapDef;
 			return { node : node, def : def};
 		} else {
@@ -37647,7 +39632,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 		}
 		var arms;
 		var _g = switchNode.type;
-		if(_g._hx_index == 38) {
+		if(_g._hx_index == 41) {
 			var _g1 = _g.paramName;
 			var a = _g.arms;
 			arms = a;
@@ -37923,7 +39908,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			break;
-		case 36:
+		case 39:
 			var _g1 = _g.externalReference;
 			var programmableRef = _g.programmableReference;
 			var parameters = _g.parameters;
@@ -38211,6 +40196,126 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 		}
 	}
+	,buildSounds: function(name) {
+		var node = this.multiParserResult.nodes.h[name];
+		if(node == null) {
+			throw new bh_multianim_BuilderError("could not get sounds node #" + name,this.currentNode,null);
+		}
+		var _g = node.type;
+		if(_g._hx_index == 27) {
+			var def = _g.def;
+			return def;
+		} else {
+			throw new bh_multianim_BuilderError("" + name + " has to be a sounds block",node,null);
+		}
+	}
+	,buildMix: function(name) {
+		var node = this.multiParserResult.nodes.h[name];
+		if(node == null) {
+			throw new bh_multianim_BuilderError("could not get mix node #" + name,this.currentNode,null);
+		}
+		var _g = node.type;
+		if(_g._hx_index == 28) {
+			var def = _g.def;
+			return def;
+		} else {
+			throw new bh_multianim_BuilderError("" + name + " has to be a mix block",node,null);
+		}
+	}
+	,buildMusic: function(name) {
+		var node = this.multiParserResult.nodes.h[name];
+		if(node == null) {
+			throw new bh_multianim_BuilderError("could not get music node #" + name,this.currentNode,null);
+		}
+		var _g = node.type;
+		if(_g._hx_index == 29) {
+			var def = _g.def;
+			return def;
+		} else {
+			throw new bh_multianim_BuilderError("" + name + " has to be a music block",node,null);
+		}
+	}
+	,musicBlockNames: function() {
+		var names = [];
+		var h = this.multiParserResult.nodes.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var name = _g_key;
+			var node = _g_value;
+			var _g = node.type;
+			var tmp;
+			if(_g._hx_index == 29) {
+				var _g1 = _g.def;
+				tmp = true;
+			} else {
+				tmp = false;
+			}
+			if(tmp) {
+				names.push(name);
+			}
+		}
+		return names;
+	}
+	,mixBlockNames: function() {
+		var names = [];
+		var h = this.multiParserResult.nodes.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var name = _g_key;
+			var node = _g_value;
+			var _g = node.type;
+			var tmp;
+			if(_g._hx_index == 28) {
+				var _g1 = _g.def;
+				tmp = true;
+			} else {
+				tmp = false;
+			}
+			if(tmp) {
+				names.push(name);
+			}
+		}
+		return names;
+	}
+	,soundBlockNames: function() {
+		var names = [];
+		var h = this.multiParserResult.nodes.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var name = _g_key;
+			var node = _g_value;
+			var _g = node.type;
+			var tmp;
+			if(_g._hx_index == 27) {
+				var _g1 = _g.def;
+				tmp = true;
+			} else {
+				tmp = false;
+			}
+			if(tmp) {
+				names.push(name);
+			}
+		}
+		return names;
+	}
 	,cursorBlockNames: function() {
 		var names = [];
 		var h = this.multiParserResult.nodes.h;
@@ -38292,7 +40397,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return null;
 		}
 		var _g = node.type;
-		if(_g._hx_index == 32) {
+		if(_g._hx_index == 35) {
 			var atlas2Def = _g.atlas2Def;
 			var sourceTile;
 			var _g = atlas2Def.source;
@@ -38769,6 +40874,28 @@ var bh_multianim_NinePatchMode = $hxEnums["bh.multianim.NinePatchMode"] = { __en
 };
 bh_multianim_NinePatchMode.__constructs__ = [bh_multianim_NinePatchMode.NPStretch,bh_multianim_NinePatchMode.NPTile];
 bh_multianim_NinePatchMode.__empty_constructs__ = [bh_multianim_NinePatchMode.NPStretch,bh_multianim_NinePatchMode.NPTile];
+var bh_multianim_SoundPick = $hxEnums["bh.multianim.SoundPick"] = { __ename__:true,__constructs__:null
+	,PickRandom: {_hx_name:"PickRandom",_hx_index:0,__enum__:"bh.multianim.SoundPick",toString:$estr}
+	,PickShuffle: {_hx_name:"PickShuffle",_hx_index:1,__enum__:"bh.multianim.SoundPick",toString:$estr}
+	,PickTurn: {_hx_name:"PickTurn",_hx_index:2,__enum__:"bh.multianim.SoundPick",toString:$estr}
+};
+bh_multianim_SoundPick.__constructs__ = [bh_multianim_SoundPick.PickRandom,bh_multianim_SoundPick.PickShuffle,bh_multianim_SoundPick.PickTurn];
+bh_multianim_SoundPick.__empty_constructs__ = [bh_multianim_SoundPick.PickRandom,bh_multianim_SoundPick.PickShuffle,bh_multianim_SoundPick.PickTurn];
+var bh_multianim_SoundSteal = $hxEnums["bh.multianim.SoundSteal"] = { __ename__:true,__constructs__:null
+	,StealOldest: {_hx_name:"StealOldest",_hx_index:0,__enum__:"bh.multianim.SoundSteal",toString:$estr}
+	,StealQuietest: {_hx_name:"StealQuietest",_hx_index:1,__enum__:"bh.multianim.SoundSteal",toString:$estr}
+	,StealNone: {_hx_name:"StealNone",_hx_index:2,__enum__:"bh.multianim.SoundSteal",toString:$estr}
+};
+bh_multianim_SoundSteal.__constructs__ = [bh_multianim_SoundSteal.StealOldest,bh_multianim_SoundSteal.StealQuietest,bh_multianim_SoundSteal.StealNone];
+bh_multianim_SoundSteal.__empty_constructs__ = [bh_multianim_SoundSteal.StealOldest,bh_multianim_SoundSteal.StealQuietest,bh_multianim_SoundSteal.StealNone];
+var bh_multianim_MixChange = $hxEnums["bh.multianim.MixChange"] = { __ename__:true,__constructs__:null
+	,ChangePause: {_hx_name:"ChangePause",_hx_index:0,__enum__:"bh.multianim.MixChange",toString:$estr}
+	,ChangeVolume: ($_=function(db) { return {_hx_index:1,db:db,__enum__:"bh.multianim.MixChange",toString:$estr}; },$_._hx_name="ChangeVolume",$_.__params__ = ["db"],$_)
+	,ChangeLowPass: ($_=function(gainHF) { return {_hx_index:2,gainHF:gainHF,__enum__:"bh.multianim.MixChange",toString:$estr}; },$_._hx_name="ChangeLowPass",$_.__params__ = ["gainHF"],$_)
+	,ChangePitchClock: {_hx_name:"ChangePitchClock",_hx_index:3,__enum__:"bh.multianim.MixChange",toString:$estr}
+};
+bh_multianim_MixChange.__constructs__ = [bh_multianim_MixChange.ChangePause,bh_multianim_MixChange.ChangeVolume,bh_multianim_MixChange.ChangeLowPass,bh_multianim_MixChange.ChangePitchClock];
+bh_multianim_MixChange.__empty_constructs__ = [bh_multianim_MixChange.ChangePause,bh_multianim_MixChange.ChangePitchClock];
 var bh_multianim_AutotileSource = $hxEnums["bh.multianim.AutotileSource"] = { __ename__:true,__constructs__:null
 	,ATSAtlas: ($_=function(sheet,prefix) { return {_hx_index:0,sheet:sheet,prefix:prefix,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSAtlas",$_.__params__ = ["sheet","prefix"],$_)
 	,ATSAtlasIndexed: ($_=function(sheet,name) { return {_hx_index:1,sheet:sheet,name:name,__enum__:"bh.multianim.AutotileSource",toString:$estr}; },$_._hx_name="ATSAtlasIndexed",$_.__params__ = ["sheet","name"],$_)
@@ -38841,20 +40968,23 @@ var bh_multianim_NodeType = $hxEnums["bh.multianim.NodeType"] = { __ename__:true
 	,INTERACTIVE: ($_=function(width,height,id,debug,metadata) { return {_hx_index:24,width:width,height:height,id:id,debug:debug,metadata:metadata,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="INTERACTIVE",$_.__params__ = ["width","height","id","debug","metadata"],$_)
 	,PALETTE: ($_=function(paletteType) { return {_hx_index:25,paletteType:paletteType,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="PALETTE",$_.__params__ = ["paletteType"],$_)
 	,CURSORS: ($_=function(cursors) { return {_hx_index:26,cursors:cursors,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="CURSORS",$_.__params__ = ["cursors"],$_)
-	,GRAPHICS: ($_=function(elements) { return {_hx_index:27,elements:elements,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="GRAPHICS",$_.__params__ = ["elements"],$_)
-	,AUTOTILE: ($_=function(autotileDef) { return {_hx_index:28,autotileDef:autotileDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="AUTOTILE",$_.__params__ = ["autotileDef"],$_)
-	,TILESET: ($_=function(tilesetDef) { return {_hx_index:29,tilesetDef:tilesetDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILESET",$_.__params__ = ["tilesetDef"],$_)
-	,TILEMAP: ($_=function(tilemapDef) { return {_hx_index:30,tilemapDef:tilemapDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILEMAP",$_.__params__ = ["tilemapDef"],$_)
-	,TILEMAP_REF: ($_=function(externalReference,name) { return {_hx_index:31,externalReference:externalReference,name:name,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILEMAP_REF",$_.__params__ = ["externalReference","name"],$_)
-	,ATLAS2: ($_=function(atlas2Def) { return {_hx_index:32,atlas2Def:atlas2Def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ATLAS2",$_.__params__ = ["atlas2Def"],$_)
-	,DATA: ($_=function(dataDef) { return {_hx_index:33,dataDef:dataDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DATA",$_.__params__ = ["dataDef"],$_)
-	,SLOT: ($_=function(parameters,paramOrder) { return {_hx_index:34,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SLOT",$_.__params__ = ["parameters","paramOrder"],$_)
-	,SLOT_CONTENT: {_hx_name:"SLOT_CONTENT",_hx_index:35,__enum__:"bh.multianim.NodeType",toString:$estr}
-	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:36,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
-	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:37,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
-	,SWITCH: ($_=function(paramName,arms) { return {_hx_index:38,paramName:paramName,arms:arms,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SWITCH",$_.__params__ = ["paramName","arms"],$_)
+	,SOUNDS: ($_=function(def) { return {_hx_index:27,def:def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SOUNDS",$_.__params__ = ["def"],$_)
+	,MIX: ($_=function(def) { return {_hx_index:28,def:def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="MIX",$_.__params__ = ["def"],$_)
+	,MUSIC: ($_=function(def) { return {_hx_index:29,def:def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="MUSIC",$_.__params__ = ["def"],$_)
+	,GRAPHICS: ($_=function(elements) { return {_hx_index:30,elements:elements,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="GRAPHICS",$_.__params__ = ["elements"],$_)
+	,AUTOTILE: ($_=function(autotileDef) { return {_hx_index:31,autotileDef:autotileDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="AUTOTILE",$_.__params__ = ["autotileDef"],$_)
+	,TILESET: ($_=function(tilesetDef) { return {_hx_index:32,tilesetDef:tilesetDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILESET",$_.__params__ = ["tilesetDef"],$_)
+	,TILEMAP: ($_=function(tilemapDef) { return {_hx_index:33,tilemapDef:tilemapDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILEMAP",$_.__params__ = ["tilemapDef"],$_)
+	,TILEMAP_REF: ($_=function(externalReference,name) { return {_hx_index:34,externalReference:externalReference,name:name,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="TILEMAP_REF",$_.__params__ = ["externalReference","name"],$_)
+	,ATLAS2: ($_=function(atlas2Def) { return {_hx_index:35,atlas2Def:atlas2Def,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="ATLAS2",$_.__params__ = ["atlas2Def"],$_)
+	,DATA: ($_=function(dataDef) { return {_hx_index:36,dataDef:dataDef,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DATA",$_.__params__ = ["dataDef"],$_)
+	,SLOT: ($_=function(parameters,paramOrder) { return {_hx_index:37,parameters:parameters,paramOrder:paramOrder,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SLOT",$_.__params__ = ["parameters","paramOrder"],$_)
+	,SLOT_CONTENT: {_hx_name:"SLOT_CONTENT",_hx_index:38,__enum__:"bh.multianim.NodeType",toString:$estr}
+	,DYNAMIC_REF: ($_=function(externalReference,programmableReference,parameters) { return {_hx_index:39,externalReference:externalReference,programmableReference:programmableReference,parameters:parameters,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="DYNAMIC_REF",$_.__params__ = ["externalReference","programmableReference","parameters"],$_)
+	,FINAL_VAR: ($_=function(name,value) { return {_hx_index:40,name:name,value:value,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="FINAL_VAR",$_.__params__ = ["name","value"],$_)
+	,SWITCH: ($_=function(paramName,arms) { return {_hx_index:41,paramName:paramName,arms:arms,__enum__:"bh.multianim.NodeType",toString:$estr}; },$_._hx_name="SWITCH",$_.__params__ = ["paramName","arms"],$_)
 };
-bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.RICHTEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.CURSORS,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.TILESET,bh_multianim_NodeType.TILEMAP,bh_multianim_NodeType.TILEMAP_REF,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR,bh_multianim_NodeType.SWITCH];
+bh_multianim_NodeType.__constructs__ = [bh_multianim_NodeType.FLOW,bh_multianim_NodeType.SPACER,bh_multianim_NodeType.BITMAP,bh_multianim_NodeType.POINT,bh_multianim_NodeType.STATEANIM,bh_multianim_NodeType.STATEANIM_CONSTRUCT,bh_multianim_NodeType.PIXELS,bh_multianim_NodeType.TEXT,bh_multianim_NodeType.RICHTEXT,bh_multianim_NodeType.PROGRAMMABLE,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.RELATIVE_LAYOUTS,bh_multianim_NodeType.PATHS,bh_multianim_NodeType.ANIMATED_PATH,bh_multianim_NodeType.CURVES,bh_multianim_NodeType.PARTICLES,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.MASK,bh_multianim_NodeType.REPEAT,bh_multianim_NodeType.REPEAT2D,bh_multianim_NodeType.STATIC_REF,bh_multianim_NodeType.PLACEHOLDER,bh_multianim_NodeType.NINEPATCH,bh_multianim_NodeType.INTERACTIVE,bh_multianim_NodeType.PALETTE,bh_multianim_NodeType.CURSORS,bh_multianim_NodeType.SOUNDS,bh_multianim_NodeType.MIX,bh_multianim_NodeType.MUSIC,bh_multianim_NodeType.GRAPHICS,bh_multianim_NodeType.AUTOTILE,bh_multianim_NodeType.TILESET,bh_multianim_NodeType.TILEMAP,bh_multianim_NodeType.TILEMAP_REF,bh_multianim_NodeType.ATLAS2,bh_multianim_NodeType.DATA,bh_multianim_NodeType.SLOT,bh_multianim_NodeType.SLOT_CONTENT,bh_multianim_NodeType.DYNAMIC_REF,bh_multianim_NodeType.FINAL_VAR,bh_multianim_NodeType.SWITCH];
 bh_multianim_NodeType.__empty_constructs__ = [bh_multianim_NodeType.POINT,bh_multianim_NodeType.TILEGROUP,bh_multianim_NodeType.APPLY,bh_multianim_NodeType.LAYERS,bh_multianim_NodeType.SLOT_CONTENT];
 var bh_multianim_NodeConditionalValues = $hxEnums["bh.multianim.NodeConditionalValues"] = { __ename__:true,__constructs__:null
 	,Conditional: ($_=function(values,anyMode) { return {_hx_index:0,values:values,anyMode:anyMode,__enum__:"bh.multianim.NodeConditionalValues",toString:$estr}; },$_._hx_name="Conditional",$_.__params__ = ["values","anyMode"],$_)
@@ -41687,23 +43817,24 @@ var bh_stateanim_APKeywords = $hxEnums["bh.stateanim.APKeywords"] = { __ename__:
 	,APRandom: {_hx_name:"APRandom",_hx_index:13,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APFrames: {_hx_name:"APFrames",_hx_index:14,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 	,APMetadata: {_hx_name:"APMetadata",_hx_index:15,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APAnim: {_hx_name:"APAnim",_hx_index:16,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APFinal: {_hx_name:"APFinal",_hx_index:17,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APElse: {_hx_name:"APElse",_hx_index:18,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APDefault: {_hx_name:"APDefault",_hx_index:19,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APFilters: {_hx_name:"APFilters",_hx_index:20,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APFilter: {_hx_name:"APFilter",_hx_index:21,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APNone: {_hx_name:"APNone",_hx_index:22,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APFlipX: {_hx_name:"APFlipX",_hx_index:23,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APFlipY: {_hx_name:"APFlipY",_hx_index:24,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APOffset: {_hx_name:"APOffset",_hx_index:25,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APLayers: {_hx_name:"APLayers",_hx_index:26,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APLayer: {_hx_name:"APLayer",_hx_index:27,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APTimeline: {_hx_name:"APTimeline",_hx_index:28,__enum__:"bh.stateanim.APKeywords",toString:$estr}
-	,APBlend: {_hx_name:"APBlend",_hx_index:29,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APSounds: {_hx_name:"APSounds",_hx_index:16,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APAnim: {_hx_name:"APAnim",_hx_index:17,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFinal: {_hx_name:"APFinal",_hx_index:18,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APElse: {_hx_name:"APElse",_hx_index:19,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APDefault: {_hx_name:"APDefault",_hx_index:20,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFilters: {_hx_name:"APFilters",_hx_index:21,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFilter: {_hx_name:"APFilter",_hx_index:22,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APNone: {_hx_name:"APNone",_hx_index:23,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFlipX: {_hx_name:"APFlipX",_hx_index:24,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APFlipY: {_hx_name:"APFlipY",_hx_index:25,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APOffset: {_hx_name:"APOffset",_hx_index:26,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APLayers: {_hx_name:"APLayers",_hx_index:27,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APLayer: {_hx_name:"APLayer",_hx_index:28,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APTimeline: {_hx_name:"APTimeline",_hx_index:29,__enum__:"bh.stateanim.APKeywords",toString:$estr}
+	,APBlend: {_hx_name:"APBlend",_hx_index:30,__enum__:"bh.stateanim.APKeywords",toString:$estr}
 };
-bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone,bh_stateanim_APKeywords.APFlipX,bh_stateanim_APKeywords.APFlipY,bh_stateanim_APKeywords.APOffset,bh_stateanim_APKeywords.APLayers,bh_stateanim_APKeywords.APLayer,bh_stateanim_APKeywords.APTimeline,bh_stateanim_APKeywords.APBlend];
-bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone,bh_stateanim_APKeywords.APFlipX,bh_stateanim_APKeywords.APFlipY,bh_stateanim_APKeywords.APOffset,bh_stateanim_APKeywords.APLayers,bh_stateanim_APKeywords.APLayer,bh_stateanim_APKeywords.APTimeline,bh_stateanim_APKeywords.APBlend];
+bh_stateanim_APKeywords.__constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APSounds,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone,bh_stateanim_APKeywords.APFlipX,bh_stateanim_APKeywords.APFlipY,bh_stateanim_APKeywords.APOffset,bh_stateanim_APKeywords.APLayers,bh_stateanim_APKeywords.APLayer,bh_stateanim_APKeywords.APTimeline,bh_stateanim_APKeywords.APBlend];
+bh_stateanim_APKeywords.__empty_constructs__ = [bh_stateanim_APKeywords.APSheet,bh_stateanim_APKeywords.APFile,bh_stateanim_APKeywords.APStates,bh_stateanim_APKeywords.APAllowedExtraPoints,bh_stateanim_APKeywords.APExtrapoints,bh_stateanim_APKeywords.APPlaylist,bh_stateanim_APKeywords.APCenter,bh_stateanim_APKeywords.APLoop,bh_stateanim_APKeywords.APAnimation,bh_stateanim_APKeywords.APName,bh_stateanim_APKeywords.APFps,bh_stateanim_APKeywords.APEvent,bh_stateanim_APKeywords.APDuration,bh_stateanim_APKeywords.APRandom,bh_stateanim_APKeywords.APFrames,bh_stateanim_APKeywords.APMetadata,bh_stateanim_APKeywords.APSounds,bh_stateanim_APKeywords.APAnim,bh_stateanim_APKeywords.APFinal,bh_stateanim_APKeywords.APElse,bh_stateanim_APKeywords.APDefault,bh_stateanim_APKeywords.APFilters,bh_stateanim_APKeywords.APFilter,bh_stateanim_APKeywords.APNone,bh_stateanim_APKeywords.APFlipX,bh_stateanim_APKeywords.APFlipY,bh_stateanim_APKeywords.APOffset,bh_stateanim_APKeywords.APLayers,bh_stateanim_APKeywords.APLayer,bh_stateanim_APKeywords.APTimeline,bh_stateanim_APKeywords.APBlend];
 var bh_stateanim__$AnimParser_AnimToken = function(type,line,col) {
 	this.end = 0;
 	this.start = 0;
@@ -42242,6 +44373,8 @@ var bh_stateanim_AnimParser = function(tokens,sourceName,resourceLoader,withSpan
 	this.defaultLoop = null;
 	this.defaultFps = null;
 	this.constants = new haxe_ds_StringMap();
+	this.soundsDefined = false;
+	this.sounds = new haxe_ds_StringMap();
 	this.metadata = null;
 	this.metadataMap = new haxe_ds_StringMap();
 	this.center = null;
@@ -42577,7 +44710,7 @@ bh_stateanim_AnimParser.prototype = {
 					this.attachAnnotations(this.annotations,"");
 				} else {
 					switch(_g2._hx_index) {
-					case 8:case 16:
+					case 8:case 17:
 						if(_g3._hx_index != 0) {
 							this.attachAnnotations(this.annotations,"");
 						}
@@ -42790,17 +44923,35 @@ bh_stateanim_AnimParser.prototype = {
 					case 16:
 						if(_g7._hx_index == 0) {
 							var blockToken2 = this.tpos;
+							this.advance();
+							this.expect(bh_stateanim_APToken.APCurlyOpen);
+							if(animationParsingStarted) {
+								this.syntaxError("sounds must be defined before animations");
+							}
+							if(this.soundsDefined) {
+								this.syntaxError("sounds already defined");
+							}
+							this.soundsDefined = true;
+							this.parseSounds();
+							this.markSpan("sounds",blockToken2);
+						} else {
+							this.unexpectedError();
+						}
+						break;
+					case 17:
+						if(_g7._hx_index == 0) {
+							var blockToken3 = this.tpos;
 							var index1 = this.animations.length;
 							this.advance();
 							animationParsingStarted = true;
 							this.parseAnimShorthand("animations." + index1);
-							this.markSpan("animations." + index1,blockToken2);
+							this.markSpan("animations." + index1,blockToken3);
 							this.attachAnnotations(this.animations[index1].annotations,"animations." + index1 + ".");
 						} else {
 							this.unexpectedError();
 						}
 						break;
-					case 23:
+					case 24:
 						if(_g7._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -42815,7 +44966,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 24:
+					case 25:
 						if(_g7._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -42830,7 +44981,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 26:
+					case 27:
 						if(_g7._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -42870,7 +45021,7 @@ bh_stateanim_AnimParser.prototype = {
 						}
 					} else {
 						switch(_g14._hx_index) {
-						case 17:
+						case 18:
 							this.attachAnnotations(this.annotations,"");
 							this.advance();
 							if(animationParsingStarted) {
@@ -42884,7 +45035,7 @@ bh_stateanim_AnimParser.prototype = {
 							}
 							this.constants.h[constName] = constVal;
 							break;
-						case 18:case 19:
+						case 19:case 20:
 							this.unexpectedError("@else and @default belong to a condition, not the top level");
 							break;
 						default:
@@ -43515,7 +45666,7 @@ bh_stateanim_AnimParser.prototype = {
 					return this.unexpectedError("expected (, else, or default after @");
 				} else {
 					switch(_g2._hx_index) {
-					case 18:
+					case 19:
 						this.advance();
 						var h = states.h;
 						var inlStringMapKeyIterator_h = h;
@@ -43531,7 +45682,7 @@ bh_stateanim_AnimParser.prototype = {
 							return elseStates;
 						}
 						return new haxe_ds_StringMap();
-					case 19:
+					case 20:
 						this.advance();
 						var h1 = states.h;
 						var inlStringMapKeyIterator_h1 = h1;
@@ -43699,6 +45850,33 @@ bh_stateanim_AnimParser.prototype = {
 			}
 			this.expect(bh_stateanim_APToken.APBracketClosed);
 			return list;
+		}
+	}
+	,parseSounds: function() {
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
+			var key = this.expectIdentifier();
+			this.expect(bh_stateanim_APToken.APColon);
+			var value;
+			var _g = this.tokens[this.tpos].type;
+			if(_g._hx_index == 7) {
+				var _g1 = _g.s;
+				var _g2 = _g.keyword;
+				switch(_g.identType._hx_index) {
+				case 0:case 2:
+					var s = _g1;
+					this.advance();
+					value = s;
+					break;
+				default:
+					value = this.syntaxError("sounds: " + key + ": expected the sound's name in quotes (\"block.sound\")");
+				}
+			} else {
+				value = this.syntaxError("sounds: " + key + ": expected the sound's name in quotes (\"block.sound\")");
+			}
+			if(Object.prototype.hasOwnProperty.call(this.sounds.h,key)) {
+				this.syntaxError("sounds: " + key + " is given twice");
+			}
+			this.sounds.h[key] = value;
 		}
 	}
 	,parseMetadata: function() {
@@ -43886,7 +46064,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 20:
+					case 21:
 						if(_g3._hx_index == 0) {
 							var blockToken2 = this.tpos;
 							this.advance();
@@ -43897,7 +46075,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 23:
+					case 24:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -43912,7 +46090,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 24:
+					case 25:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -43927,7 +46105,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 27:
+					case 28:
 						if(_g3._hx_index == 0) {
 							var blockToken3 = this.tpos;
 							this.advance();
@@ -43973,7 +46151,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 28:
+					case 29:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -44139,7 +46317,7 @@ bh_stateanim_AnimParser.prototype = {
 							}
 							overrideFps = fps;
 							break;
-						case 23:
+						case 24:
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
 							var from2 = this.tpos;
@@ -44147,7 +46325,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.markSpan("" + path + ".flipX",from2);
 							overrideFlipX = value2;
 							break;
-						case 24:
+						case 25:
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
 							var from3 = this.tpos;
@@ -44353,7 +46531,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 21:
+					case 22:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							var filter = this.parseFilterEntry();
@@ -44362,7 +46540,7 @@ bh_stateanim_AnimParser.prototype = {
 							this.unexpectedError();
 						}
 						break;
-					case 29:
+					case 30:
 						if(_g3._hx_index == 0) {
 							if(layer != null) {
 								this.advance();
@@ -44454,7 +46632,7 @@ bh_stateanim_AnimParser.prototype = {
 							return { from : from, to : to, duration : duration, offset : offset};
 						}
 						break;
-					case 25:
+					case 26:
 						if(_g3._hx_index == 0) {
 							this.advance();
 							this.expect(bh_stateanim_APToken.APColon);
@@ -44584,7 +46762,7 @@ bh_stateanim_AnimParser.prototype = {
 					var _g3 = _g.identType;
 					if(_g2 != null) {
 						switch(_g2._hx_index) {
-						case 18:case 19:
+						case 19:case 20:
 							isElseOrDefault = true;
 							break;
 						default:
@@ -45339,6 +47517,12 @@ bh_stateanim_AnimParser.prototype = {
 	,createAnimSM: function(stateSelector) {
 		var animSM = new bh_stateanim_AnimationSM(stateSelector);
 		animSM.source = this;
+		if(this.soundsDefined) {
+			animSM.sounds = this.sounds;
+			if(this.resourceLoader != null) {
+				animSM.audio = this.resourceLoader.getAudio();
+			}
+		}
 		if(this.layerNames.length > 0) {
 			animSM.setupLayers(this.layerNames);
 		}
@@ -45435,6 +47619,9 @@ var bh_stateanim_AnimationSM = function(selector,externallyDriven) {
 	if(externallyDriven == null) {
 		externallyDriven = false;
 	}
+	this.audio = null;
+	this.sounds = null;
+	this.eventListeners = null;
 	this.playCount = 0;
 	this.finishedFired = false;
 	this.loopsRemaining = 0;
@@ -45953,17 +48140,17 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 				switch(event._hx_index) {
 				case 0:
 					var name = event.data;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.Trigger(name));
+					this.fireAnimationEvent(bh_stateanim_AnimationEvent.Trigger(name));
 					break;
 				case 1:
 					var name1 = event.name;
 					var meta = event.meta;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.TriggerData(name1,meta));
+					this.fireAnimationEvent(bh_stateanim_AnimationEvent.TriggerData(name1,meta));
 					break;
 				case 2:
 					var name2 = event.name;
 					var point = event.point;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name2,point));
+					this.fireAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name2,point));
 					break;
 				case 3:
 					var name3 = event.name;
@@ -45974,7 +48161,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 					var randomPoint = new h2d_col_IPoint(point1.x,point1.y);
 					randomPoint.x += r * Math.cos(randomAngle) | 0;
 					randomPoint.y += r * Math.sin(randomAngle) | 0;
-					this.onAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name3,randomPoint));
+					this.fireAnimationEvent(bh_stateanim_AnimationEvent.PointEvent(name3,randomPoint));
 					break;
 				}
 				if(this.playCount != playback) {
@@ -46014,6 +48201,41 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 	,onFinished: function() {
 	}
 	,onAnimationEvent: function(event) {
+	}
+	,fireAnimationEvent: function(event) {
+		this.onAnimationEvent(event);
+		if(this.eventListeners != null) {
+			var _g = 0;
+			var _g1 = this.eventListeners;
+			while(_g < _g1.length) {
+				var listener = _g1[_g];
+				++_g;
+				listener(event);
+			}
+		}
+		if(this.sounds != null && this.audio != null) {
+			var name;
+			switch(event._hx_index) {
+			case 0:
+				var name1 = event.data;
+				name = Std.string(name1);
+				break;
+			case 1:
+				var _g = event.meta;
+				var name1 = event.name;
+				name = name1;
+				break;
+			case 2:
+				var _g = event.point;
+				var name1 = event.name;
+				name = name1;
+				break;
+			}
+			var sound = name != null ? this.sounds.h[name] : null;
+			if(sound != null) {
+				this.audio.play(sound);
+			}
+		}
 	}
 	,__class__: bh_stateanim_AnimationSM
 });
@@ -46594,7 +48816,7 @@ bh_ui_UICardHandHelper.prototype = {
 		this.targeting.getObject().set_visible(visible);
 	}
 	,handleScreenEvent: function(event) {
-		if(event._hx_index == 14) {
+		if(event._hx_index == 17) {
 			var innerEvent = event.event;
 			var id = event.id;
 			var meta = event.metadata;
@@ -48517,25 +50739,35 @@ bh_ui_ControllerEvents.__empty_constructs__ = [bh_ui_ControllerEvents.Leaving,bh
 var bh_ui_UIScreenEvent = $hxEnums["bh.ui.UIScreenEvent"] = { __ename__:true,__constructs__:null
 	,UIClick: {_hx_name:"UIClick",_hx_index:0,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
 	,UIPush: {_hx_name:"UIPush",_hx_index:1,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UICustomEvent: ($_=function(eventName,data) { return {_hx_index:2,eventName:eventName,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UICustomEvent",$_.__params__ = ["eventName","data"],$_)
-	,UIToggle: ($_=function(pressed) { return {_hx_index:3,pressed:pressed,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIToggle",$_.__params__ = ["pressed"],$_)
-	,UIChangeValue: ($_=function(value) { return {_hx_index:4,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeValue",$_.__params__ = ["value"],$_)
-	,UIChangeFloatValue: ($_=function(value) { return {_hx_index:5,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeFloatValue",$_.__params__ = ["value"],$_)
-	,UIChangeItem: ($_=function(index,items) { return {_hx_index:6,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeItem",$_.__params__ = ["index","items"],$_)
-	,UIDoubleClickItem: ($_=function(index,items) { return {_hx_index:7,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIDoubleClickItem",$_.__params__ = ["index","items"],$_)
-	,UIClickItem: ($_=function(index,items) { return {_hx_index:8,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
-	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:9,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
-	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:10,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
-	,UIEntering: ($_=function(data) { return {_hx_index:11,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIEntering",$_.__params__ = ["data"],$_)
-	,UILeaving: {_hx_name:"UILeaving",_hx_index:12,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UIClickOutside: {_hx_name:"UIClickOutside",_hx_index:13,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
-	,UIInteractiveEvent: ($_=function(event,id,metadata) { return {_hx_index:14,event:event,id:id,metadata:metadata,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIInteractiveEvent",$_.__params__ = ["event","id","metadata"],$_)
-	,UITextChange: ($_=function(text) { return {_hx_index:15,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextChange",$_.__params__ = ["text"],$_)
-	,UITextSubmit: ($_=function(text) { return {_hx_index:16,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextSubmit",$_.__params__ = ["text"],$_)
-	,UIFocusChange: ($_=function(focused) { return {_hx_index:17,focused:focused,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIFocusChange",$_.__params__ = ["focused"],$_)
+	,UIHover: ($_=function(over) { return {_hx_index:2,over:over,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIHover",$_.__params__ = ["over"],$_)
+	,UIOpen: {_hx_name:"UIOpen",_hx_index:3,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIClose: {_hx_name:"UIClose",_hx_index:4,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UICustomEvent: ($_=function(eventName,data) { return {_hx_index:5,eventName:eventName,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UICustomEvent",$_.__params__ = ["eventName","data"],$_)
+	,UIToggle: ($_=function(pressed) { return {_hx_index:6,pressed:pressed,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIToggle",$_.__params__ = ["pressed"],$_)
+	,UIChangeValue: ($_=function(value) { return {_hx_index:7,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeValue",$_.__params__ = ["value"],$_)
+	,UIChangeFloatValue: ($_=function(value) { return {_hx_index:8,value:value,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeFloatValue",$_.__params__ = ["value"],$_)
+	,UIChangeItem: ($_=function(index,items) { return {_hx_index:9,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIChangeItem",$_.__params__ = ["index","items"],$_)
+	,UIDoubleClickItem: ($_=function(index,items) { return {_hx_index:10,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIDoubleClickItem",$_.__params__ = ["index","items"],$_)
+	,UIClickItem: ($_=function(index,items) { return {_hx_index:11,index:index,items:items,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIClickItem",$_.__params__ = ["index","items"],$_)
+	,UIKeyPress: ($_=function(keyCode,release) { return {_hx_index:12,keyCode:keyCode,release:release,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIKeyPress",$_.__params__ = ["keyCode","release"],$_)
+	,UIOnControllerEvent: ($_=function(event) { return {_hx_index:13,event:event,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIOnControllerEvent",$_.__params__ = ["event"],$_)
+	,UIEntering: ($_=function(data) { return {_hx_index:14,data:data,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIEntering",$_.__params__ = ["data"],$_)
+	,UILeaving: {_hx_name:"UILeaving",_hx_index:15,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIClickOutside: {_hx_name:"UIClickOutside",_hx_index:16,__enum__:"bh.ui.UIScreenEvent",toString:$estr}
+	,UIInteractiveEvent: ($_=function(event,id,metadata) { return {_hx_index:17,event:event,id:id,metadata:metadata,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIInteractiveEvent",$_.__params__ = ["event","id","metadata"],$_)
+	,UITextChange: ($_=function(text) { return {_hx_index:18,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextChange",$_.__params__ = ["text"],$_)
+	,UITextSubmit: ($_=function(text) { return {_hx_index:19,text:text,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UITextSubmit",$_.__params__ = ["text"],$_)
+	,UIFocusChange: ($_=function(focused) { return {_hx_index:20,focused:focused,__enum__:"bh.ui.UIScreenEvent",toString:$estr}; },$_._hx_name="UIFocusChange",$_.__params__ = ["focused"],$_)
 };
-bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent,bh_ui_UIScreenEvent.UITextChange,bh_ui_UIScreenEvent.UITextSubmit,bh_ui_UIScreenEvent.UIFocusChange];
-bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
+bh_ui_UIScreenEvent.__constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIHover,bh_ui_UIScreenEvent.UIOpen,bh_ui_UIScreenEvent.UIClose,bh_ui_UIScreenEvent.UICustomEvent,bh_ui_UIScreenEvent.UIToggle,bh_ui_UIScreenEvent.UIChangeValue,bh_ui_UIScreenEvent.UIChangeFloatValue,bh_ui_UIScreenEvent.UIChangeItem,bh_ui_UIScreenEvent.UIDoubleClickItem,bh_ui_UIScreenEvent.UIClickItem,bh_ui_UIScreenEvent.UIKeyPress,bh_ui_UIScreenEvent.UIOnControllerEvent,bh_ui_UIScreenEvent.UIEntering,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside,bh_ui_UIScreenEvent.UIInteractiveEvent,bh_ui_UIScreenEvent.UITextChange,bh_ui_UIScreenEvent.UITextSubmit,bh_ui_UIScreenEvent.UIFocusChange];
+bh_ui_UIScreenEvent.__empty_constructs__ = [bh_ui_UIScreenEvent.UIClick,bh_ui_UIScreenEvent.UIPush,bh_ui_UIScreenEvent.UIOpen,bh_ui_UIScreenEvent.UIClose,bh_ui_UIScreenEvent.UILeaving,bh_ui_UIScreenEvent.UIClickOutside];
+var bh_ui_UIElementRootSettings = function() { };
+$hxClasses["bh.ui.UIElementRootSettings"] = bh_ui_UIElementRootSettings;
+bh_ui_UIElementRootSettings.__name__ = "bh.ui.UIElementRootSettings";
+bh_ui_UIElementRootSettings.__isInterface__ = true;
+bh_ui_UIElementRootSettings.prototype = {
+	__class__: bh_ui_UIElementRootSettings
+};
 var bh_ui_UIElementIdentifiable = function() { };
 $hxClasses["bh.ui.UIElementIdentifiable"] = bh_ui_UIElementIdentifiable;
 bh_ui_UIElementIdentifiable.__name__ = "bh.ui.UIElementIdentifiable";
@@ -48938,12 +51170,15 @@ var bh_ui_UIStandardMultiAnimButton = function(builder,name,buttonText,extraPara
 };
 $hxClasses["bh.ui.UIStandardMultiAnimButton"] = bh_ui_UIStandardMultiAnimButton;
 bh_ui_UIStandardMultiAnimButton.__name__ = "bh.ui.UIStandardMultiAnimButton";
-bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementText,bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimButton.__interfaces__ = [bh_ui_UIElementRootSettings,bh_ui_UIElementText,bh_ui_UIElementCursor,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimButton.create = function(builder,name,buttonText,extraParams) {
 	return new bh_ui_UIStandardMultiAnimButton(builder,name,buttonText,extraParams);
 };
 bh_ui_UIStandardMultiAnimButton.prototype = {
-	setText: function(text) {
+	getRootSettings: function() {
+		return this.result.rootSettings;
+	}
+	,setText: function(text) {
 		this.buttonText = text;
 		this.result.setParameter("buttonText",text);
 	}
@@ -49005,9 +51240,11 @@ bh_ui_UIStandardMultiAnimButton.prototype = {
 			break;
 		case 4:
 			this.result.setParameter("status","hover");
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIHover(true),this);
 			break;
 		case 5:
 			this.result.setParameter("status","normal");
+			wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIHover(false),this);
 			break;
 		case 6:
 			var up = _g.keyCode;
@@ -49057,12 +51294,15 @@ var bh_ui_UIStandardMultiCheckbox = function(builder,name,startsChecked,extraPar
 };
 $hxClasses["bh.ui.UIStandardMultiCheckbox"] = bh_ui_UIStandardMultiCheckbox;
 bh_ui_UIStandardMultiCheckbox.__name__ = "bh.ui.UIStandardMultiCheckbox";
-bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiCheckbox.__interfaces__ = [bh_ui_UIElementRootSettings,bh_ui_UIElementCursor,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementSelectable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiCheckbox.create = function(builder,name,checked,extraParams) {
 	return new bh_ui_UIStandardMultiCheckbox(builder,name,checked,extraParams);
 };
 bh_ui_UIStandardMultiCheckbox.prototype = {
-	clear: function() {
+	getRootSettings: function() {
+		return this.result.rootSettings;
+	}
+	,clear: function() {
 	}
 	,getCursor: function() {
 		if(this.disabled) {
@@ -49963,7 +52203,7 @@ var bh_ui_UIStandardMultiAnimDropdown = function(builder,builtPanel,items,initia
 };
 $hxClasses["bh.ui.UIStandardMultiAnimDropdown"] = bh_ui_UIStandardMultiAnimDropdown;
 bh_ui_UIStandardMultiAnimDropdown.__name__ = "bh.ui.UIStandardMultiAnimDropdown";
-bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementPriority,bh_ui_UIElementCursor,bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimDropdown.__interfaces__ = [bh_ui_UIElementRootSettings,bh_ui_UIElementPriority,bh_ui_UIElementCursor,bh_ui_UIElementCustomAddToLayer,bh_ui_UIElementSubElements,bh_ui_UIElementListValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementUpdatable,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimDropdown.createWithPrebuiltPanel = function(builder,panel,items,initialIndex) {
 	if(initialIndex == null) {
 		initialIndex = 0;
@@ -49971,7 +52211,10 @@ bh_ui_UIStandardMultiAnimDropdown.createWithPrebuiltPanel = function(builder,pan
 	return new bh_ui_UIStandardMultiAnimDropdown(builder,panel,items,initialIndex);
 };
 bh_ui_UIStandardMultiAnimDropdown.prototype = {
-	clear: function() {
+	getRootSettings: function() {
+		return this.result.rootSettings;
+	}
+	,clear: function() {
 		this.items = [];
 		this.panelScreen = null;
 		this.panelLayer = null;
@@ -50041,7 +52284,7 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 			this.set_currentItemIndex(newIndex);
 			this.triggerItemChanged(newIndex,wrapper.control);
 			if(this.isOpen()) {
-				this.startClose();
+				this.startClose(wrapper.control);
 			}
 		}
 	}
@@ -50086,28 +52329,28 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 			var button = _g.button;
 			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
 			if(!this.isOpen()) {
-				this.startOpen();
+				this.startOpen(wrapper.control);
 			} else {
-				this.startClose();
+				this.startClose(wrapper.control);
 			}
 			break;
 		case 2:
 			var _g1 = _g.button;
 			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
 			if(this.closeOnOutsideClick && this.isOpen()) {
-				this.startClose();
+				this.startClose(wrapper.control);
 			}
 			break;
 		case 3:
 			var _g1 = _g.button;
 			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
 			if(this.closeOnOutsideClick && this.isOpen()) {
-				this.startClose();
+				this.startClose(wrapper.control);
 			}
 			break;
 		case 4:
 			if(this.autoOpen && !this.isOpen()) {
-				this.startOpen();
+				this.startOpen(wrapper.control);
 				if(this.closeOnOutsideClick) {
 					wrapper.control.trackOutsideClick(true);
 				}
@@ -50116,7 +52359,7 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 			break;
 		case 5:
 			if(this.autoCloseOnLeave && this.isOpen()) {
-				this.startClose();
+				this.startClose(wrapper.control);
 			}
 			this.set_status(bh_ui_StandardUIElementStates.SUINormal);
 			break;
@@ -50143,9 +52386,12 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		}
 		return value;
 	}
-	,startOpen: function() {
+	,startOpen: function(control) {
 		if(this.panelObject == null) {
 			return;
+		}
+		if(control != null) {
+			control.pushEvent(bh_ui_UIScreenEvent.UIOpen,this);
 		}
 		this.ensurePanelAboveHostLayer();
 		this.panel.set_currentHoverIndex(-1);
@@ -50161,9 +52407,12 @@ bh_ui_UIStandardMultiAnimDropdown.prototype = {
 		this.eventPriority = 100;
 		this.result.setParameter("panel","open");
 	}
-	,startClose: function() {
+	,startClose: function(control) {
 		if(this.panelObject == null) {
 			return;
+		}
+		if(control != null) {
+			control.pushEvent(bh_ui_UIScreenEvent.UIClose,this);
 		}
 		var tmp = this.transitionTimerOverride;
 		var effectiveTimer = tmp != null ? tmp : this.transitionTimerBase;
@@ -53640,6 +55889,7 @@ var bh_ui_SliderDirection = $hxEnums["bh.ui.SliderDirection"] = { __ename__:true
 bh_ui_SliderDirection.__constructs__ = [bh_ui_SliderDirection.Auto,bh_ui_SliderDirection.Horizontal,bh_ui_SliderDirection.Vertical];
 bh_ui_SliderDirection.__empty_constructs__ = [bh_ui_SliderDirection.Auto,bh_ui_SliderDirection.Horizontal,bh_ui_SliderDirection.Vertical];
 var bh_ui_UIStandardMultiAnimSlider = function(builder,name,size,initialValue,extraParams) {
+	this.lastSentValue = null;
 	this.tmpPoint = new h2d_col_PointImpl(0.,0.);
 	this.direction = bh_ui_SliderDirection.Auto;
 	this.step = 0;
@@ -53658,7 +55908,7 @@ var bh_ui_UIStandardMultiAnimSlider = function(builder,name,size,initialValue,ex
 };
 $hxClasses["bh.ui.UIStandardMultiAnimSlider"] = bh_ui_UIStandardMultiAnimSlider;
 bh_ui_UIStandardMultiAnimSlider.__name__ = "bh.ui.UIStandardMultiAnimSlider";
-bh_ui_UIStandardMultiAnimSlider.__interfaces__ = [bh_ui_UIElementCursor,bh_ui_UIElementSyncRedraw,bh_ui_UIElementFloatValue,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
+bh_ui_UIStandardMultiAnimSlider.__interfaces__ = [bh_ui_UIElementRootSettings,bh_ui_UIElementCursor,bh_ui_UIElementSyncRedraw,bh_ui_UIElementFloatValue,bh_ui_UIElementNumberValue,bh_ui_StandardUIElementEvents,bh_ui_UIElementDisablable,bh_ui_UIElement];
 bh_ui_UIStandardMultiAnimSlider.create = function(builder,name,size,initialValue,extraParams) {
 	if(initialValue == null) {
 		initialValue = 0;
@@ -53666,7 +55916,14 @@ bh_ui_UIStandardMultiAnimSlider.create = function(builder,name,size,initialValue
 	return new bh_ui_UIStandardMultiAnimSlider(builder,name,size,initialValue,extraParams);
 };
 bh_ui_UIStandardMultiAnimSlider.prototype = {
-	clear: function() {
+	getRootSettings: function() {
+		if(this.currentResult != null) {
+			return this.currentResult.rootSettings;
+		} else {
+			return null;
+		}
+	}
+	,clear: function() {
 		this.currentResult = null;
 		this.builder = null;
 	}
@@ -53891,6 +56148,10 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 		}
 	}
 	,triggerOnChange: function(value,wrapper) {
+		if(this.lastSentValue != null && this.lastSentValue == value) {
+			return;
+		}
+		this.lastSentValue = value;
 		this.onChange(Math.round(value) | 0,wrapper);
 		this.onFloatChange(value,wrapper);
 		wrapper.control.pushEvent(bh_ui_UIScreenEvent.UIChangeValue(Math.round(value) | 0),this);
@@ -53913,6 +56174,7 @@ bh_ui_UIStandardMultiAnimSlider.prototype = {
 		if(this.step > 0) {
 			this.currentValue = this.snapToStep(this.currentValue);
 		}
+		this.lastSentValue = this.currentValue;
 		this.requestRedraw = true;
 	}
 	,getFloatValue: function() {
@@ -54820,7 +57082,7 @@ bh_ui_UIPanelHelper.prototype = {
 	,handleOutsideClick: function(event) {
 		var closed = false;
 		if(this.isOpen() && this.activeCloseMode == bh_ui_PanelCloseMode.OutsideClick) {
-			if(event._hx_index == 14) {
+			if(event._hx_index == 17) {
 				var _g = event.id;
 				var _g1 = event.metadata;
 				switch(event.event._hx_index) {
@@ -54834,7 +57096,7 @@ bh_ui_UIPanelHelper.prototype = {
 						closed = true;
 					}
 					break;
-				case 13:
+				case 16:
 					var id = _g;
 					if(id == this.activeInteractiveId) {
 						this._pendingClose = true;
@@ -54858,7 +57120,7 @@ bh_ui_UIPanelHelper.prototype = {
 			if(panel.closeMode != bh_ui_PanelCloseMode.OutsideClick) {
 				continue;
 			}
-			if(event._hx_index == 14) {
+			if(event._hx_index == 17) {
 				var _g = event.id;
 				var _g1 = event.metadata;
 				switch(event.event._hx_index) {
@@ -54870,7 +57132,7 @@ bh_ui_UIPanelHelper.prototype = {
 						panel.pendingClose = true;
 					}
 					break;
-				case 13:
+				case 16:
 					var id1 = _g;
 					if(id1 == panel.interactiveId) {
 						panel.pendingClose = true;
@@ -55316,7 +57578,7 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 		}
 	}
 	,handleEvent: function(event) {
-		if(event._hx_index == 14) {
+		if(event._hx_index == 17) {
 			var _g = event.metadata;
 			var innerEvent = event.event;
 			var id = event.id;
@@ -55342,14 +57604,14 @@ bh_ui_UIRichInteractiveHelper.prototype = {
 					binding.source.setParameter(binding.stateParam,"pressed");
 				}
 				break;
-			case 11:
+			case 14:
 				var _g = innerEvent.data;
 				if(binding.currentState == bh_ui_InteractiveState.Normal) {
 					binding.currentState = bh_ui_InteractiveState.Hover;
 					binding.source.setParameter(binding.stateParam,"hover");
 				}
 				break;
-			case 12:
+			case 15:
 				if(binding.currentState == bh_ui_InteractiveState.Hover || binding.currentState == bh_ui_InteractiveState.Pressed) {
 					binding.currentState = bh_ui_InteractiveState.Normal;
 					binding.source.setParameter(binding.stateParam,"normal");
@@ -55998,6 +58260,7 @@ var bh_ui_screens_ScreenManager = function(app,loader,sceneLayerConfig) {
 	this.transitionCleanup = null;
 	this.isTransitioning = false;
 	this.screenChangeListeners = [];
+	this.clock = new bh_base_Clock();
 	this.tweens = new bh_base_TweenManager();
 	this.builders = new haxe_ds_ObjectMap();
 	this.failedScreens = new haxe_ds_StringMap();
@@ -56008,6 +58271,9 @@ var bh_ui_screens_ScreenManager = function(app,loader,sceneLayerConfig) {
 	this.app = app;
 	var tmp = loader;
 	this.loader = tmp != null ? tmp : bh_ui_screens_ScreenManager.createLoader();
+	this.audio = new bh_audio_Audio(new bh_audio_HeapsBackend(this.loader));
+	this.audio.set_clock(this.clock);
+	this.loader.audio = this.audio;
 	this.window = hxd_Window.getInstance();
 	var sl = sceneLayerConfig;
 	var tmp = sl != null ? sl.content : null;
@@ -56137,7 +58403,70 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		return "unknown";
 	}
+	,musicFor: function(screenMode) {
+		switch(screenMode._hx_index) {
+		case 0:
+			return null;
+		case 1:
+			var single = screenMode.single;
+			if(((single) instanceof bh_ui_screens_UIScreenBase)) {
+				return (js_Boot.__cast(single , bh_ui_screens_UIScreenBase)).music;
+			} else {
+				return null;
+			}
+			break;
+		case 2:
+			var master = screenMode.master;
+			var single = screenMode.single;
+			var tmp = ((single) instanceof bh_ui_screens_UIScreenBase) ? (js_Boot.__cast(single , bh_ui_screens_UIScreenBase)).music : null;
+			if(tmp != null) {
+				return tmp;
+			} else if(((master) instanceof bh_ui_screens_UIScreenBase)) {
+				return (js_Boot.__cast(master , bh_ui_screens_UIScreenBase)).music;
+			} else {
+				return null;
+			}
+			break;
+		case 3:
+			var _g = screenMode.caller;
+			var _g = screenMode.dialogName;
+			var dialog = screenMode.dialog;
+			var previousMode = screenMode.previousMode;
+			var tmp = ((dialog) instanceof bh_ui_screens_UIScreenBase) ? (js_Boot.__cast(dialog , bh_ui_screens_UIScreenBase)).music : null;
+			if(tmp != null) {
+				return tmp;
+			} else {
+				return this.musicFor(previousMode);
+			}
+			break;
+		}
+	}
+	,applyScreenAudio: function(newMode) {
+		if(this.audio.hasSnapshot("dialog")) {
+			var tmp;
+			if(newMode._hx_index == 3) {
+				var _g = newMode.dialog;
+				var _g = newMode.caller;
+				var _g = newMode.previousMode;
+				var _g = newMode.dialogName;
+				tmp = true;
+			} else {
+				tmp = false;
+			}
+			this.audio.snapshot("dialog",tmp);
+		}
+		var music = this.musicFor(newMode);
+		if(music == null) {
+			return;
+		}
+		if(music == "none") {
+			this.audio.stopMusic();
+		} else {
+			this.audio.playMusic(music);
+		}
+	}
 	,notifyScreenChange: function(previousMode,newMode,entering,leaving) {
+		this.applyScreenAudio(newMode);
 		if(this.screenChangeListeners.length == 0) {
 			return;
 		}
@@ -56219,6 +58548,7 @@ bh_ui_screens_ScreenManager.prototype = {
 	,update: function(dt) {
 		this.fitModalOverlayToScene();
 		this.tweens.update(dt);
+		this.audio.update(dt);
 		var _g = 0;
 		var _g1 = this.activeScreens;
 		while(_g < _g1.length) {
@@ -56281,6 +58611,7 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		built.tweenManager = this.tweens;
 		built.registerCursors();
+		this.audio.addBanks(built);
 		this.builders.set(resource,built);
 		return built;
 	}
@@ -58086,6 +60417,403 @@ format_gif_Tools.extractFullRGBA = function(data,frameIndex) {
 	}
 	return bytes;
 };
+var format_mp3_SamplingRate = $hxEnums["format.mp3.SamplingRate"] = { __ename__:true,__constructs__:null
+	,SR_8000: {_hx_name:"SR_8000",_hx_index:0,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_11025: {_hx_name:"SR_11025",_hx_index:1,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_12000: {_hx_name:"SR_12000",_hx_index:2,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_22050: {_hx_name:"SR_22050",_hx_index:3,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_24000: {_hx_name:"SR_24000",_hx_index:4,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_32000: {_hx_name:"SR_32000",_hx_index:5,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_44100: {_hx_name:"SR_44100",_hx_index:6,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_48000: {_hx_name:"SR_48000",_hx_index:7,__enum__:"format.mp3.SamplingRate",toString:$estr}
+	,SR_Bad: {_hx_name:"SR_Bad",_hx_index:8,__enum__:"format.mp3.SamplingRate",toString:$estr}
+};
+format_mp3_SamplingRate.__constructs__ = [format_mp3_SamplingRate.SR_8000,format_mp3_SamplingRate.SR_11025,format_mp3_SamplingRate.SR_12000,format_mp3_SamplingRate.SR_22050,format_mp3_SamplingRate.SR_24000,format_mp3_SamplingRate.SR_32000,format_mp3_SamplingRate.SR_44100,format_mp3_SamplingRate.SR_48000,format_mp3_SamplingRate.SR_Bad];
+format_mp3_SamplingRate.__empty_constructs__ = [format_mp3_SamplingRate.SR_8000,format_mp3_SamplingRate.SR_11025,format_mp3_SamplingRate.SR_12000,format_mp3_SamplingRate.SR_22050,format_mp3_SamplingRate.SR_24000,format_mp3_SamplingRate.SR_32000,format_mp3_SamplingRate.SR_44100,format_mp3_SamplingRate.SR_48000,format_mp3_SamplingRate.SR_Bad];
+var format_mp3_Bitrate = $hxEnums["format.mp3.Bitrate"] = { __ename__:true,__constructs__:null
+	,BR_8: {_hx_name:"BR_8",_hx_index:0,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_16: {_hx_name:"BR_16",_hx_index:1,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_24: {_hx_name:"BR_24",_hx_index:2,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_32: {_hx_name:"BR_32",_hx_index:3,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_40: {_hx_name:"BR_40",_hx_index:4,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_48: {_hx_name:"BR_48",_hx_index:5,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_56: {_hx_name:"BR_56",_hx_index:6,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_64: {_hx_name:"BR_64",_hx_index:7,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_80: {_hx_name:"BR_80",_hx_index:8,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_96: {_hx_name:"BR_96",_hx_index:9,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_112: {_hx_name:"BR_112",_hx_index:10,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_128: {_hx_name:"BR_128",_hx_index:11,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_144: {_hx_name:"BR_144",_hx_index:12,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_160: {_hx_name:"BR_160",_hx_index:13,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_176: {_hx_name:"BR_176",_hx_index:14,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_192: {_hx_name:"BR_192",_hx_index:15,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_224: {_hx_name:"BR_224",_hx_index:16,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_256: {_hx_name:"BR_256",_hx_index:17,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_288: {_hx_name:"BR_288",_hx_index:18,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_320: {_hx_name:"BR_320",_hx_index:19,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_352: {_hx_name:"BR_352",_hx_index:20,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_384: {_hx_name:"BR_384",_hx_index:21,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_416: {_hx_name:"BR_416",_hx_index:22,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_448: {_hx_name:"BR_448",_hx_index:23,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_Free: {_hx_name:"BR_Free",_hx_index:24,__enum__:"format.mp3.Bitrate",toString:$estr}
+	,BR_Bad: {_hx_name:"BR_Bad",_hx_index:25,__enum__:"format.mp3.Bitrate",toString:$estr}
+};
+format_mp3_Bitrate.__constructs__ = [format_mp3_Bitrate.BR_8,format_mp3_Bitrate.BR_16,format_mp3_Bitrate.BR_24,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_40,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_144,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_176,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_288,format_mp3_Bitrate.BR_320,format_mp3_Bitrate.BR_352,format_mp3_Bitrate.BR_384,format_mp3_Bitrate.BR_416,format_mp3_Bitrate.BR_448,format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_Bad];
+format_mp3_Bitrate.__empty_constructs__ = [format_mp3_Bitrate.BR_8,format_mp3_Bitrate.BR_16,format_mp3_Bitrate.BR_24,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_40,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_144,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_176,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_288,format_mp3_Bitrate.BR_320,format_mp3_Bitrate.BR_352,format_mp3_Bitrate.BR_384,format_mp3_Bitrate.BR_416,format_mp3_Bitrate.BR_448,format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_Bad];
+var format_mp3_MPEG = function() { };
+$hxClasses["format.mp3.MPEG"] = format_mp3_MPEG;
+format_mp3_MPEG.__name__ = "format.mp3.MPEG";
+format_mp3_MPEG.enum2Num = function(m) {
+	switch(m._hx_index) {
+	case 0:
+		return 3;
+	case 1:
+		return 2;
+	case 2:
+		return 0;
+	case 3:
+		return format_mp3_MPEG.Reserved;
+	}
+};
+format_mp3_MPEG.num2Enum = function(m) {
+	switch(m) {
+	case 0:
+		return format_mp3_MPEGVersion.MPEG_V25;
+	case 2:
+		return format_mp3_MPEGVersion.MPEG_V2;
+	case 3:
+		return format_mp3_MPEGVersion.MPEG_V1;
+	default:
+		return format_mp3_MPEGVersion.MPEG_Reserved;
+	}
+};
+format_mp3_MPEG.srEnum2Num = function(sr) {
+	switch(sr._hx_index) {
+	case 0:
+		return 8000;
+	case 1:
+		return 11025;
+	case 2:
+		return 12000;
+	case 3:
+		return 22050;
+	case 4:
+		return 24000;
+	case 5:
+		return 32000;
+	case 6:
+		return 44100;
+	case 7:
+		return 48000;
+	case 8:
+		return -1;
+	}
+};
+format_mp3_MPEG.bitrateEnum2Num = function(br) {
+	switch(br._hx_index) {
+	case 0:
+		return 8;
+	case 1:
+		return 16;
+	case 2:
+		return 24;
+	case 3:
+		return 32;
+	case 4:
+		return 40;
+	case 5:
+		return 48;
+	case 6:
+		return 56;
+	case 7:
+		return 64;
+	case 8:
+		return 80;
+	case 9:
+		return 96;
+	case 10:
+		return 112;
+	case 11:
+		return 128;
+	case 12:
+		return 144;
+	case 13:
+		return 160;
+	case 14:
+		return 176;
+	case 15:
+		return 192;
+	case 16:
+		return 224;
+	case 17:
+		return 256;
+	case 18:
+		return 288;
+	case 19:
+		return 320;
+	case 20:
+		return 352;
+	case 21:
+		return 384;
+	case 22:
+		return 416;
+	case 23:
+		return 448;
+	case 24:
+		return 0;
+	case 25:
+		return -1;
+	}
+};
+var format_mp3_CLayer = function() { };
+$hxClasses["format.mp3.CLayer"] = format_mp3_CLayer;
+format_mp3_CLayer.__name__ = "format.mp3.CLayer";
+format_mp3_CLayer.num2Enum = function(l) {
+	switch(l) {
+	case 1:
+		return format_mp3_Layer.Layer3;
+	case 2:
+		return format_mp3_Layer.Layer2;
+	case 3:
+		return format_mp3_Layer.Layer1;
+	default:
+		return format_mp3_Layer.LayerReserved;
+	}
+};
+var format_mp3_CChannelMode = function() { };
+$hxClasses["format.mp3.CChannelMode"] = format_mp3_CChannelMode;
+format_mp3_CChannelMode.__name__ = "format.mp3.CChannelMode";
+format_mp3_CChannelMode.num2Enum = function(c) {
+	switch(c) {
+	case 0:
+		return format_mp3_ChannelMode.Stereo;
+	case 1:
+		return format_mp3_ChannelMode.JointStereo;
+	case 2:
+		return format_mp3_ChannelMode.DualChannel;
+	case 3:
+		return format_mp3_ChannelMode.Mono;
+	default:
+		throw haxe_Exception.thrown("assert");
+	}
+};
+var format_mp3_CEmphasis = function() { };
+$hxClasses["format.mp3.CEmphasis"] = format_mp3_CEmphasis;
+format_mp3_CEmphasis.__name__ = "format.mp3.CEmphasis";
+format_mp3_CEmphasis.num2Enum = function(c) {
+	switch(c) {
+	case 0:
+		return format_mp3_Emphasis.NoEmphasis;
+	case 1:
+		return format_mp3_Emphasis.Ms50_15;
+	case 2:
+		return format_mp3_Emphasis.InvalidEmphasis;
+	case 3:
+		return format_mp3_Emphasis.CCIT_J17;
+	default:
+		throw haxe_Exception.thrown("assert");
+	}
+};
+var format_mp3_MPEGVersion = $hxEnums["format.mp3.MPEGVersion"] = { __ename__:true,__constructs__:null
+	,MPEG_V1: {_hx_name:"MPEG_V1",_hx_index:0,__enum__:"format.mp3.MPEGVersion",toString:$estr}
+	,MPEG_V2: {_hx_name:"MPEG_V2",_hx_index:1,__enum__:"format.mp3.MPEGVersion",toString:$estr}
+	,MPEG_V25: {_hx_name:"MPEG_V25",_hx_index:2,__enum__:"format.mp3.MPEGVersion",toString:$estr}
+	,MPEG_Reserved: {_hx_name:"MPEG_Reserved",_hx_index:3,__enum__:"format.mp3.MPEGVersion",toString:$estr}
+};
+format_mp3_MPEGVersion.__constructs__ = [format_mp3_MPEGVersion.MPEG_V1,format_mp3_MPEGVersion.MPEG_V2,format_mp3_MPEGVersion.MPEG_V25,format_mp3_MPEGVersion.MPEG_Reserved];
+format_mp3_MPEGVersion.__empty_constructs__ = [format_mp3_MPEGVersion.MPEG_V1,format_mp3_MPEGVersion.MPEG_V2,format_mp3_MPEGVersion.MPEG_V25,format_mp3_MPEGVersion.MPEG_Reserved];
+var format_mp3_Layer = $hxEnums["format.mp3.Layer"] = { __ename__:true,__constructs__:null
+	,LayerReserved: {_hx_name:"LayerReserved",_hx_index:0,__enum__:"format.mp3.Layer",toString:$estr}
+	,Layer3: {_hx_name:"Layer3",_hx_index:1,__enum__:"format.mp3.Layer",toString:$estr}
+	,Layer2: {_hx_name:"Layer2",_hx_index:2,__enum__:"format.mp3.Layer",toString:$estr}
+	,Layer1: {_hx_name:"Layer1",_hx_index:3,__enum__:"format.mp3.Layer",toString:$estr}
+};
+format_mp3_Layer.__constructs__ = [format_mp3_Layer.LayerReserved,format_mp3_Layer.Layer3,format_mp3_Layer.Layer2,format_mp3_Layer.Layer1];
+format_mp3_Layer.__empty_constructs__ = [format_mp3_Layer.LayerReserved,format_mp3_Layer.Layer3,format_mp3_Layer.Layer2,format_mp3_Layer.Layer1];
+var format_mp3_ChannelMode = $hxEnums["format.mp3.ChannelMode"] = { __ename__:true,__constructs__:null
+	,Stereo: {_hx_name:"Stereo",_hx_index:0,__enum__:"format.mp3.ChannelMode",toString:$estr}
+	,JointStereo: {_hx_name:"JointStereo",_hx_index:1,__enum__:"format.mp3.ChannelMode",toString:$estr}
+	,DualChannel: {_hx_name:"DualChannel",_hx_index:2,__enum__:"format.mp3.ChannelMode",toString:$estr}
+	,Mono: {_hx_name:"Mono",_hx_index:3,__enum__:"format.mp3.ChannelMode",toString:$estr}
+};
+format_mp3_ChannelMode.__constructs__ = [format_mp3_ChannelMode.Stereo,format_mp3_ChannelMode.JointStereo,format_mp3_ChannelMode.DualChannel,format_mp3_ChannelMode.Mono];
+format_mp3_ChannelMode.__empty_constructs__ = [format_mp3_ChannelMode.Stereo,format_mp3_ChannelMode.JointStereo,format_mp3_ChannelMode.DualChannel,format_mp3_ChannelMode.Mono];
+var format_mp3_Emphasis = $hxEnums["format.mp3.Emphasis"] = { __ename__:true,__constructs__:null
+	,NoEmphasis: {_hx_name:"NoEmphasis",_hx_index:0,__enum__:"format.mp3.Emphasis",toString:$estr}
+	,Ms50_15: {_hx_name:"Ms50_15",_hx_index:1,__enum__:"format.mp3.Emphasis",toString:$estr}
+	,CCIT_J17: {_hx_name:"CCIT_J17",_hx_index:2,__enum__:"format.mp3.Emphasis",toString:$estr}
+	,InvalidEmphasis: {_hx_name:"InvalidEmphasis",_hx_index:3,__enum__:"format.mp3.Emphasis",toString:$estr}
+};
+format_mp3_Emphasis.__constructs__ = [format_mp3_Emphasis.NoEmphasis,format_mp3_Emphasis.Ms50_15,format_mp3_Emphasis.CCIT_J17,format_mp3_Emphasis.InvalidEmphasis];
+format_mp3_Emphasis.__empty_constructs__ = [format_mp3_Emphasis.NoEmphasis,format_mp3_Emphasis.Ms50_15,format_mp3_Emphasis.CCIT_J17,format_mp3_Emphasis.InvalidEmphasis];
+var format_mp3_FrameType = $hxEnums["format.mp3.FrameType"] = { __ename__:true,__constructs__:null
+	,FT_MP3: {_hx_name:"FT_MP3",_hx_index:0,__enum__:"format.mp3.FrameType",toString:$estr}
+	,FT_NONE: {_hx_name:"FT_NONE",_hx_index:1,__enum__:"format.mp3.FrameType",toString:$estr}
+};
+format_mp3_FrameType.__constructs__ = [format_mp3_FrameType.FT_MP3,format_mp3_FrameType.FT_NONE];
+format_mp3_FrameType.__empty_constructs__ = [format_mp3_FrameType.FT_MP3,format_mp3_FrameType.FT_NONE];
+var format_mp3_Reader = function(i) {
+	this.i = i;
+	i.set_bigEndian(true);
+	this.bits = new format_tools_BitsInput(i);
+	this.samples = 0;
+	this.sampleSize = 0;
+	this.any_read = false;
+};
+$hxClasses["format.mp3.Reader"] = format_mp3_Reader;
+format_mp3_Reader.__name__ = "format.mp3.Reader";
+format_mp3_Reader.prototype = {
+	skipID3v2: function() {
+		this.id3v2_version = this.i.readUInt16();
+		this.id3v2_flags = this.i.readByte();
+		var size = this.i.readByte() & 127;
+		size = size << 7 | this.i.readByte() & 127;
+		size = size << 7 | this.i.readByte() & 127;
+		size = size << 7 | this.i.readByte() & 127;
+		this.id3v2_data = this.i.read(size);
+	}
+	,seekFrame: function() {
+		var found = false;
+		try {
+			var b;
+			while(true) {
+				b = this.i.readByte();
+				if(!this.any_read) {
+					this.any_read = true;
+					if(b == 73) {
+						b = this.i.readByte();
+						if(b == 68) {
+							b = this.i.readByte();
+							if(b == 51) {
+								this.skipID3v2();
+							}
+						}
+					}
+				}
+				if(b == 255) {
+					this.bits.nbits = 0;
+					b = this.bits.readBits(3);
+					if(b == 7) {
+						return format_mp3_FrameType.FT_MP3;
+					}
+				}
+			}
+		} catch( _g ) {
+			if(((haxe_Exception.caught(_g).unwrap()) instanceof haxe_io_Eof)) {
+				return format_mp3_FrameType.FT_NONE;
+			} else {
+				throw _g;
+			}
+		}
+	}
+	,readFrames: function() {
+		var frames = [];
+		var ft;
+		while(true) {
+			ft = this.seekFrame();
+			if(!(ft != format_mp3_FrameType.FT_NONE)) {
+				break;
+			}
+			switch(ft._hx_index) {
+			case 0:
+				var f = this.readFrame();
+				if(f != null) {
+					frames.push(f);
+				}
+				break;
+			case 1:
+				break;
+			}
+		}
+		return frames;
+	}
+	,readFrameHeader: function() {
+		var version = this.bits.readBits(2);
+		var layer = this.bits.readBits(2);
+		var hasCrc = !this.bits.readBit();
+		if(version == format_mp3_MPEG.Reserved || layer == format_mp3_CLayer.LReserved) {
+			return null;
+		}
+		var bitrateIdx = this.bits.readBits(4);
+		var bitrate = format_mp3_Tools.getBitrate(version,layer,bitrateIdx);
+		var samplingRateIdx = this.bits.readBits(2);
+		var samplingRate = format_mp3_Tools.getSamplingRate(version,samplingRateIdx);
+		var isPadded = this.bits.readBit();
+		var privateBit = this.bits.readBit();
+		if(bitrate == format_mp3_Bitrate.BR_Bad || bitrate == format_mp3_Bitrate.BR_Free || samplingRate == format_mp3_SamplingRate.SR_Bad) {
+			return null;
+		}
+		var channelMode = this.bits.readBits(2);
+		var isIntensityStereo = this.bits.readBit();
+		var isMSStereo = this.bits.readBit();
+		var isCopyrighted = this.bits.readBit();
+		var isOriginal = this.bits.readBit();
+		var emphasis = this.bits.readBits(2);
+		var crc16 = 0;
+		if(hasCrc) {
+			crc16 = this.i.readUInt16();
+		}
+		return { version : format_mp3_MPEG.num2Enum(version), layer : format_mp3_CLayer.num2Enum(layer), hasCrc : hasCrc, crc16 : crc16, bitrate : bitrate, samplingRate : samplingRate, isPadded : isPadded, privateBit : privateBit, channelMode : format_mp3_CChannelMode.num2Enum(channelMode), isIntensityStereo : isIntensityStereo, isMSStereo : isMSStereo, isCopyrighted : isCopyrighted, isOriginal : isOriginal, emphasis : format_mp3_CEmphasis.num2Enum(emphasis)};
+	}
+	,readFrame: function() {
+		var header = this.readFrameHeader();
+		if(header == null || format_mp3_Tools.isInvalidFrameHeader(header)) {
+			return null;
+		}
+		try {
+			var data = this.i.read(format_mp3_Tools.getSampleDataSizeHdr(header));
+			this.samples += format_mp3_Tools.getSampleCountHdr(header);
+			this.sampleSize += data.length;
+			return { header : header, data : data};
+		} catch( _g ) {
+			if(((haxe_Exception.caught(_g).unwrap()) instanceof haxe_io_Eof)) {
+				return null;
+			} else {
+				throw _g;
+			}
+		}
+	}
+	,read: function() {
+		var fs = this.readFrames();
+		return { frames : fs, sampleCount : this.samples, sampleSize : this.sampleSize, id3v2 : this.id3v2_data == null ? null : { versionBytes : this.id3v2_version, flagByte : this.id3v2_flags, data : this.id3v2_data}};
+	}
+	,__class__: format_mp3_Reader
+};
+var format_mp3_Tools = function() { };
+$hxClasses["format.mp3.Tools"] = format_mp3_Tools;
+format_mp3_Tools.__name__ = "format.mp3.Tools";
+format_mp3_Tools.getBitrate = function(mpegVersion,layerIdx,bitrateIdx) {
+	if(mpegVersion == format_mp3_MPEG.Reserved || layerIdx == format_mp3_CLayer.LReserved) {
+		return format_mp3_Bitrate.BR_Bad;
+	}
+	return (mpegVersion == 3 ? format_mp3_MPEG.V1_Bitrates : format_mp3_MPEG.V2_Bitrates)[layerIdx][bitrateIdx];
+};
+format_mp3_Tools.getSamplingRate = function(mpegVersion,samplingRateIdx) {
+	return format_mp3_MPEG.SamplingRates[mpegVersion][samplingRateIdx];
+};
+format_mp3_Tools.isInvalidFrameHeader = function(hdr) {
+	if(!(hdr.version == format_mp3_MPEGVersion.MPEG_Reserved || hdr.layer == format_mp3_Layer.LayerReserved || hdr.bitrate == format_mp3_Bitrate.BR_Bad || hdr.bitrate == format_mp3_Bitrate.BR_Free)) {
+		return hdr.samplingRate == format_mp3_SamplingRate.SR_Bad;
+	} else {
+		return true;
+	}
+};
+format_mp3_Tools.getSampleDataSize = function(mpegVersion,bitrate,samplingRate,isPadded,hasCrc) {
+	return ((mpegVersion == 3 ? 144 : 72) * bitrate * 1000 / samplingRate | 0) + (isPadded ? 1 : 0) - (hasCrc ? 2 : 0) - 4;
+};
+format_mp3_Tools.getSampleDataSizeHdr = function(hdr) {
+	return format_mp3_Tools.getSampleDataSize(format_mp3_MPEG.enum2Num(hdr.version),format_mp3_MPEG.bitrateEnum2Num(hdr.bitrate),format_mp3_MPEG.srEnum2Num(hdr.samplingRate),hdr.isPadded,hdr.hasCrc);
+};
+format_mp3_Tools.getSampleCount = function(mpegVersion) {
+	if(mpegVersion == 3) {
+		return 1152;
+	} else {
+		return 576;
+	}
+};
+format_mp3_Tools.getSampleCountHdr = function(hdr) {
+	return format_mp3_Tools.getSampleCount(format_mp3_MPEG.enum2Num(hdr.version));
+};
 var format_png_Color = $hxEnums["format.png.Color"] = { __ename__:true,__constructs__:null
 	,ColGrey: ($_=function(alpha) { return {_hx_index:0,alpha:alpha,__enum__:"format.png.Color",toString:$estr}; },$_._hx_name="ColGrey",$_.__params__ = ["alpha"],$_)
 	,ColTrue: ($_=function(alpha) { return {_hx_index:1,alpha:alpha,__enum__:"format.png.Color",toString:$estr}; },$_._hx_name="ColTrue",$_.__params__ = ["alpha"],$_)
@@ -59569,11 +62297,162 @@ format_tga_Reader.prototype = {
 	}
 	,__class__: format_tga_Reader
 };
+var format_tools_BitsInput = function(i) {
+	this.i = i;
+	this.nbits = 0;
+	this.bits = 0;
+};
+$hxClasses["format.tools.BitsInput"] = format_tools_BitsInput;
+format_tools_BitsInput.__name__ = "format.tools.BitsInput";
+format_tools_BitsInput.prototype = {
+	readBits: function(n) {
+		if(this.nbits >= n) {
+			var c = this.nbits - n;
+			var k = this.bits >>> c & (1 << n) - 1;
+			this.nbits = c;
+			return k;
+		}
+		var k = this.i.readByte();
+		if(this.nbits >= 24) {
+			if(n > 31) {
+				throw haxe_Exception.thrown("Bits error");
+			}
+			var c = 8 + this.nbits - n;
+			var d = this.bits & (1 << this.nbits) - 1;
+			d = d << 8 - c | k << c;
+			this.bits = k;
+			this.nbits = c;
+			return d;
+		}
+		this.bits = this.bits << 8 | k;
+		this.nbits += 8;
+		return this.readBits(n);
+	}
+	,readBit: function() {
+		if(this.nbits == 0) {
+			this.bits = this.i.readByte();
+			this.nbits = 8;
+		}
+		this.nbits--;
+		return (this.bits >>> this.nbits & 1) == 1;
+	}
+	,__class__: format_tools_BitsInput
+};
 var format_tools_Inflate = function() { };
 $hxClasses["format.tools.Inflate"] = format_tools_Inflate;
 format_tools_Inflate.__name__ = "format.tools.Inflate";
 format_tools_Inflate.run = function(bytes) {
 	return haxe_zip_Uncompress.run(bytes);
+};
+var format_wav_WAVEFormat = $hxEnums["format.wav.WAVEFormat"] = { __ename__:true,__constructs__:null
+	,WF_PCM: {_hx_name:"WF_PCM",_hx_index:0,__enum__:"format.wav.WAVEFormat",toString:$estr}
+};
+format_wav_WAVEFormat.__constructs__ = [format_wav_WAVEFormat.WF_PCM];
+format_wav_WAVEFormat.__empty_constructs__ = [format_wav_WAVEFormat.WF_PCM];
+var format_wav_Reader = function(i) {
+	this.i = i;
+	i.set_bigEndian(false);
+};
+$hxClasses["format.wav.Reader"] = format_wav_Reader;
+format_wav_Reader.__name__ = "format.wav.Reader";
+format_wav_Reader.prototype = {
+	read: function() {
+		if(this.i.readString(4) != "RIFF") {
+			throw haxe_Exception.thrown("RIFF header expected");
+		}
+		var len = this.i.readInt32();
+		if(this.i.readString(4) != "WAVE") {
+			throw haxe_Exception.thrown("WAVE signature not found");
+		}
+		var fmt = this.i.readString(4);
+		_hx_loop1: while(fmt != "fmt ") switch(fmt) {
+		case "JUNK":
+			var junkLen = this.i.readInt32();
+			this.i.read(junkLen);
+			fmt = this.i.readString(4);
+			break;
+		case "bext":
+			var bextLen = this.i.readInt32();
+			this.i.read(bextLen);
+			fmt = this.i.readString(4);
+			break;
+		default:
+			break _hx_loop1;
+		}
+		if(fmt != "fmt ") {
+			throw haxe_Exception.thrown("unsupported wave chunk " + fmt);
+		}
+		var fmtlen = this.i.readInt32();
+		var format;
+		switch(this.i.readUInt16()) {
+		case 1:case 3:
+			format = format_wav_WAVEFormat.WF_PCM;
+			break;
+		default:
+			throw haxe_Exception.thrown("only PCM (uncompressed) WAV files are supported");
+		}
+		var channels = this.i.readUInt16();
+		var samplingRate = this.i.readInt32();
+		var byteRate = this.i.readInt32();
+		var blockAlign = this.i.readUInt16();
+		var bitsPerSample = this.i.readUInt16();
+		if(fmtlen > 16) {
+			this.i.read(fmtlen - 16);
+		}
+		var nextChunk = this.i.readString(4);
+		while(nextChunk != "data") {
+			this.i.read(this.i.readInt32());
+			nextChunk = this.i.readString(4);
+		}
+		if(nextChunk != "data") {
+			throw haxe_Exception.thrown("expected data subchunk");
+		}
+		var datalen = this.i.readInt32();
+		var data;
+		try {
+			data = this.i.read(datalen);
+		} catch( _g ) {
+			if(((haxe_Exception.caught(_g).unwrap()) instanceof haxe_io_Eof)) {
+				throw haxe_Exception.thrown("Invalid chunk data length");
+			} else {
+				throw _g;
+			}
+		}
+		var cuePoints = [];
+		try {
+			while(true) {
+				var nextChunk = this.i.readString(4);
+				if(nextChunk == "cue ") {
+					this.i.readInt32();
+					var nbCuePoints = this.i.readInt32();
+					var _g = 0;
+					var _g1 = nbCuePoints;
+					while(_g < _g1) {
+						var _ = _g++;
+						var cueId = this.i.readInt32();
+						this.i.readInt32();
+						this.i.readString(4);
+						this.i.readInt32();
+						this.i.readInt32();
+						var cueSampleOffset = this.i.readInt32();
+						cuePoints.push({ id : cueId, sampleOffset : cueSampleOffset});
+					}
+				} else {
+					var n = this.i.readInt32();
+					if(n < 0) {
+						break;
+					}
+					this.i.read(n);
+				}
+			}
+		} catch( _g ) {
+			if(!((haxe_Exception.caught(_g).unwrap()) instanceof haxe_io_Eof)) {
+				throw _g;
+			}
+		}
+		return { header : { format : format, channels : channels, samplingRate : samplingRate, byteRate : byteRate, blockAlign : blockAlign, bitsPerSample : bitsPerSample}, data : data, cuePoints : cuePoints};
+	}
+	,__class__: format_wav_Reader
 };
 var h2d_BlendMode = $hxEnums["h2d.BlendMode"] = { __ename__:true,__constructs__:null
 	,None: {_hx_name:"None",_hx_index:0,__enum__:"h2d.BlendMode",toString:$estr}
@@ -94591,6 +97470,22 @@ hxd_impl_Allocator.prototype = {
 	}
 	,__class__: hxd_impl_Allocator
 };
+var hxd_impl_ArrayIterator_$hxd_$snd_$Channel = function(a) {
+	this.i = 0;
+	this.a = a;
+	this.l = this.a.length;
+};
+$hxClasses["hxd.impl.ArrayIterator_hxd_snd_Channel"] = hxd_impl_ArrayIterator_$hxd_$snd_$Channel;
+hxd_impl_ArrayIterator_$hxd_$snd_$Channel.__name__ = "hxd.impl.ArrayIterator_hxd_snd_Channel";
+hxd_impl_ArrayIterator_$hxd_$snd_$Channel.prototype = {
+	hasNext: function() {
+		return this.i < this.l;
+	}
+	,next: function() {
+		return this.a[this.i++];
+	}
+	,__class__: hxd_impl_ArrayIterator_$hxd_$snd_$Channel
+};
 var hxd_impl_AsyncLoader = function() { };
 $hxClasses["hxd.impl.AsyncLoader"] = hxd_impl_AsyncLoader;
 hxd_impl_AsyncLoader.__name__ = "hxd.impl.AsyncLoader";
@@ -94643,6 +97538,9 @@ hxd_res_Any.prototype = $extend(hxd_res_Resource.prototype,{
 	}
 	,toImage: function() {
 		return this.loader.loadCache(this.entry.get_path(),hxd_res_Image);
+	}
+	,toSound: function() {
+		return this.loader.loadCache(this.entry.get_path(),hxd_res_Sound);
 	}
 	,to: function(c) {
 		return this.loader.loadCache(this.entry.get_path(),c);
@@ -97758,6 +100656,2209 @@ hxd_res_NanoJpeg.prototype = {
 	}
 	,__class__: hxd_res_NanoJpeg
 };
+var hxd_res_Sound = function(entry) {
+	this.lastPlay = 0.;
+	hxd_res_Resource.call(this,entry);
+};
+$hxClasses["hxd.res.Sound"] = hxd_res_Sound;
+hxd_res_Sound.__name__ = "hxd.res.Sound";
+hxd_res_Sound.__super__ = hxd_res_Resource;
+hxd_res_Sound.prototype = $extend(hxd_res_Resource.prototype,{
+	getData: function() {
+		if(this.data != null) {
+			return this.data;
+		}
+		var bytes = this.entry.getBytes();
+		switch(bytes.b[0]) {
+		case 73:case 255:
+			this.data = new hxd_snd_Mp3Data(bytes);
+			break;
+		case 79:
+			throw haxe_Exception.thrown("OGG format requires -lib stb_ogg_sound (for " + this.entry.get_path() + ")");
+		case 82:
+			this.data = new hxd_snd_WavData(bytes);
+			break;
+		default:
+		}
+		if(this.data == null) {
+			throw haxe_Exception.thrown("Unsupported sound format " + this.entry.get_path());
+		}
+		if(hxd_res_Sound.ENABLE_AUTO_WATCH) {
+			this.watch($bind(this,this.watchCallb));
+		}
+		return this.data;
+	}
+	,play: function(loop,volume,channelGroup,soundGroup) {
+		if(volume == null) {
+			volume = 1.;
+		}
+		if(loop == null) {
+			loop = false;
+		}
+		this.lastPlay = HxOverrides.now() / 1000;
+		this.channel = hxd_snd_Manager.get().play(this,channelGroup,soundGroup);
+		this.channel.loop = loop;
+		this.channel.set_volume(volume);
+		return this.channel;
+	}
+	,watchCallb: function() {
+		var old = this.data;
+		this.data = null;
+		var data = this.getData();
+		if(old != null) {
+			if(old.channels != data.channels || old.samples != data.samples || old.sampleFormat != data.sampleFormat || old.samplingRate != data.samplingRate) {
+				var manager = hxd_snd_Manager.get();
+				var ch = manager.getAll(this);
+				while(ch.hasNext()) {
+					var ch1 = ch.next();
+					ch1.duration = data.get_duration();
+					ch1.set_position(ch1.position);
+				}
+			}
+		}
+	}
+	,__class__: hxd_res_Sound
+});
+var hxd_snd_ChannelBase = function() {
+	this.volume = 1.;
+	this.bindedEffects = [];
+	this.effects = [];
+	this.mute = false;
+	this.priority = 0.;
+};
+$hxClasses["hxd.snd.ChannelBase"] = hxd_snd_ChannelBase;
+hxd_snd_ChannelBase.__name__ = "hxd.snd.ChannelBase";
+hxd_snd_ChannelBase.prototype = {
+	set_volume: function(v) {
+		this.currentFade = null;
+		return this.volume = v;
+	}
+	,fadeTo: function(volume,time,onEnd) {
+		if(time == null) {
+			time = 1.;
+		}
+		this.currentFade = { start : HxOverrides.now() / 1000, duration : time, startVolume : this.volume, targetVolume : volume, onEnd : onEnd};
+	}
+	,updateCurrentVolume: function(now) {
+		if(this.currentFade != null) {
+			var f = this.currentFade;
+			var dt = now - f.start;
+			if(dt >= f.duration) {
+				this.set_volume(f.targetVolume);
+				if(f.onEnd != null) {
+					f.onEnd();
+				}
+			} else {
+				this.set_volume(f.startVolume + dt / f.duration * (f.targetVolume - f.startVolume));
+				this.currentFade = f;
+			}
+		}
+		this.currentVolume = this.volume;
+	}
+	,addEffect: function(e) {
+		if(e == null) {
+			throw haxe_Exception.thrown("Can't add null effect");
+		}
+		if(this.effects.indexOf(e) >= 0) {
+			throw haxe_Exception.thrown("effect already added on this channel");
+		}
+		this.effects.push(e);
+		return e;
+	}
+	,removeEffect: function(e) {
+		HxOverrides.remove(this.effects,e);
+	}
+	,__class__: hxd_snd_ChannelBase
+};
+var hxd_snd_Channel = function() {
+	this.queue = [];
+	this.positionChanged = false;
+	this.isLoading = false;
+	this.isVirtual = false;
+	this.lastStamp = 0.0;
+	this.audibleVolume = 1.0;
+	this.allowVirtual = true;
+	this.loop = false;
+	this.pause = false;
+	this.position = 0.0;
+	hxd_snd_ChannelBase.call(this);
+	this.id = hxd_snd_Channel.ID++;
+};
+$hxClasses["hxd.snd.Channel"] = hxd_snd_Channel;
+hxd_snd_Channel.__name__ = "hxd.snd.Channel";
+hxd_snd_Channel.__super__ = hxd_snd_ChannelBase;
+hxd_snd_Channel.prototype = $extend(hxd_snd_ChannelBase.prototype,{
+	onEnd: function() {
+	}
+	,set_position: function(v) {
+		this.lastStamp = HxOverrides.now() / 1000;
+		this.positionChanged = true;
+		if(v > this.duration) {
+			v = this.duration;
+		} else if(v < 0) {
+			v = 0;
+		}
+		return this.position = v;
+	}
+	,set_pause: function(v) {
+		if(!v) {
+			this.lastStamp = HxOverrides.now() / 1000;
+		}
+		return this.pause = v;
+	}
+	,updateCurrentVolume: function(now) {
+		if(this.pause && this.currentFade != null) {
+			var f = this.currentFade;
+			this.currentFade = null;
+			this.updateCurrentVolume(now);
+			this.currentFade = f;
+		}
+		hxd_snd_ChannelBase.prototype.updateCurrentVolume.call(this,now);
+		this.channelGroup.updateCurrentVolume(now);
+		this.currentVolume *= this.channelGroup.currentVolume * this.soundGroup.volume;
+		if(this.manager != null) {
+			var _g = 0;
+			var _g1 = this.channelGroup.effects;
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				this.currentVolume *= e.getVolumeModifier();
+			}
+			var _g = 0;
+			var _g1 = this.effects;
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				this.currentVolume *= e.getVolumeModifier();
+			}
+		}
+	}
+	,calcAudibleVolume: function(now) {
+		this.updateCurrentVolume(now);
+		this.audibleVolume = this.currentVolume;
+		if(this.manager != null) {
+			var _g = 0;
+			var _g1 = this.channelGroup.effects;
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				this.audibleVolume = e.applyAudibleVolumeModifier(this.audibleVolume);
+			}
+			var _g = 0;
+			var _g1 = this.effects;
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				this.audibleVolume = e.applyAudibleVolumeModifier(this.audibleVolume);
+			}
+		}
+	}
+	,stop: function() {
+		if(this.manager != null) {
+			this.manager.releaseChannel(this);
+		}
+	}
+	,isReleased: function() {
+		return this.manager == null;
+	}
+	,__class__: hxd_snd_Channel
+});
+var hxd_snd_ChannelGroup = function(name) {
+	hxd_snd_ChannelBase.call(this);
+	this.name = name;
+};
+$hxClasses["hxd.snd.ChannelGroup"] = hxd_snd_ChannelGroup;
+hxd_snd_ChannelGroup.__name__ = "hxd.snd.ChannelGroup";
+hxd_snd_ChannelGroup.__super__ = hxd_snd_ChannelBase;
+hxd_snd_ChannelGroup.prototype = $extend(hxd_snd_ChannelBase.prototype,{
+	__class__: hxd_snd_ChannelGroup
+});
+var hxd_snd_SampleFormat = $hxEnums["hxd.snd.SampleFormat"] = { __ename__:true,__constructs__:null
+	,UI8: {_hx_name:"UI8",_hx_index:0,__enum__:"hxd.snd.SampleFormat",toString:$estr}
+	,I16: {_hx_name:"I16",_hx_index:1,__enum__:"hxd.snd.SampleFormat",toString:$estr}
+	,F32: {_hx_name:"F32",_hx_index:2,__enum__:"hxd.snd.SampleFormat",toString:$estr}
+};
+hxd_snd_SampleFormat.__constructs__ = [hxd_snd_SampleFormat.UI8,hxd_snd_SampleFormat.I16,hxd_snd_SampleFormat.F32];
+hxd_snd_SampleFormat.__empty_constructs__ = [hxd_snd_SampleFormat.UI8,hxd_snd_SampleFormat.I16,hxd_snd_SampleFormat.F32];
+var hxd_snd_Data = function() { };
+$hxClasses["hxd.snd.Data"] = hxd_snd_Data;
+hxd_snd_Data.__name__ = "hxd.snd.Data";
+hxd_snd_Data.prototype = {
+	isLoading: function() {
+		return false;
+	}
+	,decode: function(out,outPos,sampleStart,sampleCount) {
+		var bpp = this.getBytesPerSample();
+		if(sampleStart < 0 || sampleCount < 0 || outPos < 0 || outPos + sampleCount * bpp > out.length) {
+			var s = "sampleStart = " + sampleStart;
+			s += " sampleCount = " + sampleCount;
+			s += " outPos = " + outPos;
+			s += " bpp = " + bpp;
+			s += " out.length = " + out.length;
+			throw haxe_Exception.thrown(s);
+		}
+		if(sampleStart + sampleCount >= this.samples) {
+			var count = 0;
+			if(sampleStart < this.samples) {
+				count = this.samples - sampleStart;
+				this.decodeBuffer(out,outPos,sampleStart,count);
+			}
+			out.fill(outPos + count * bpp,(sampleCount - count) * bpp,0);
+			return;
+		}
+		this.decodeBuffer(out,outPos,sampleStart,sampleCount);
+	}
+	,resample: function(rate,format,channels) {
+		if(this.sampleFormat == format && this.samplingRate == rate && this.channels == channels) {
+			return this;
+		}
+		var newSamples = Math.ceil(this.samples * (rate / this.samplingRate));
+		var bpp = this.getBytesPerSample();
+		var data = new haxe_io_Bytes(new ArrayBuffer(bpp * this.samples));
+		this.decodeBuffer(data,0,0,this.samples);
+		var out = channels * newSamples;
+		var out1;
+		switch(format._hx_index) {
+		case 0:
+			out1 = 1;
+			break;
+		case 1:
+			out1 = 2;
+			break;
+		case 2:
+			out1 = 4;
+			break;
+		}
+		var out2 = new haxe_io_Bytes(new ArrayBuffer(out * out1));
+		this.resampleBuffer(out2,0,data,0,rate,format,channels,this.samples);
+		var data = new hxd_snd_WavData(null);
+		data.channels = channels;
+		data.samples = newSamples;
+		data.sampleFormat = format;
+		data.samplingRate = rate;
+		data.rawData = out2;
+		return data;
+	}
+	,resampleBuffer: function(out,outPos,input,inPos,rate,format,channels,samples) {
+		var bpp = this.getBytesPerSample();
+		var newSamples = Math.ceil(samples * (rate / this.samplingRate));
+		var resample = samples != newSamples;
+		if(!resample && this.sampleFormat == hxd_snd_SampleFormat.I16 && format == hxd_snd_SampleFormat.I16 && channels == 1 && this.channels == 2) {
+			var r = inPos;
+			var w = outPos;
+			var _g = 0;
+			var _g1 = samples;
+			while(_g < _g1) {
+				var i = _g++;
+				var sl = input.getUInt16(r);
+				r += 2;
+				var sr = input.getUInt16(r);
+				r += 2;
+				var s;
+				if((sl ^ sr) >= 32768) {
+					if((sl & 32768) != 0) {
+						sl |= -65536;
+					}
+					if((sr & 32768) != 0) {
+						sr |= -65536;
+					}
+					s = sl + sr >> 1 & 65535;
+				} else {
+					s = sl + sr >> 1;
+				}
+				out.setUInt16(w,s);
+				w += 2;
+			}
+			return;
+		}
+		var srcChannels = this.channels;
+		var commonChannels = channels < srcChannels ? channels : srcChannels;
+		var extraChannels = channels - commonChannels;
+		var sval = 0.;
+		var ival = 0;
+		var _g = 0;
+		var _g1 = newSamples;
+		while(_g < _g1) {
+			var i = _g++;
+			var targetSample = i / (newSamples - 1) * (samples - 1);
+			var isample = targetSample | 0;
+			var offset = targetSample - isample;
+			var srcPos = inPos + isample * bpp;
+			if(isample == samples - 1) {
+				resample = false;
+			}
+			var _g2 = 0;
+			var _g3 = commonChannels;
+			while(_g2 < _g3) {
+				var k = _g2++;
+				var sval1;
+				var sval2 = 0.;
+				switch(this.sampleFormat._hx_index) {
+				case 0:
+					sval1 = input.b[srcPos] / 255;
+					if(resample) {
+						sval2 = input.b[srcPos + bpp] / 255;
+					}
+					++srcPos;
+					break;
+				case 1:
+					var v = input.getUInt16(srcPos);
+					sval1 = ((v & 32768) == 0 ? v : v | -65536) / 32768;
+					if(resample) {
+						var v1 = input.getUInt16(srcPos + bpp);
+						sval2 = ((v1 & 32768) == 0 ? v1 : v1 | -65536) / 32768;
+					}
+					srcPos += 2;
+					break;
+				case 2:
+					sval1 = input.getFloat(srcPos);
+					if(resample) {
+						sval2 = input.getFloat(srcPos + bpp);
+					}
+					srcPos += 4;
+					break;
+				}
+				sval = resample ? sval1 + offset * (sval2 - sval1) : sval1;
+				switch(format._hx_index) {
+				case 0:
+					ival = (sval + 1) * 128 | 0;
+					if(ival > 255) {
+						ival = 255;
+					}
+					out.b[outPos++] = ival;
+					break;
+				case 1:
+					ival = sval * 32768 | 0;
+					if(ival > 32767) {
+						ival = 32767;
+					}
+					ival &= 65535;
+					out.setUInt16(outPos,ival);
+					outPos += 2;
+					break;
+				case 2:
+					out.setFloat(outPos,sval);
+					outPos += 4;
+					break;
+				}
+			}
+			var _g4 = 0;
+			var _g5 = extraChannels;
+			while(_g4 < _g5) {
+				var i1 = _g4++;
+				switch(format._hx_index) {
+				case 0:
+					out.b[outPos++] = ival;
+					break;
+				case 1:
+					out.setUInt16(outPos,ival);
+					outPos += 2;
+					break;
+				case 2:
+					out.setFloat(outPos,sval);
+					outPos += 4;
+					break;
+				}
+			}
+		}
+	}
+	,decodeBuffer: function(out,outPos,sampleStart,sampleCount) {
+		throw haxe_Exception.thrown("Not implemented");
+	}
+	,getBytesPerSample: function() {
+		var tmp;
+		switch(this.sampleFormat._hx_index) {
+		case 0:
+			tmp = 1;
+			break;
+		case 1:
+			tmp = 2;
+			break;
+		case 2:
+			tmp = 4;
+			break;
+		}
+		return this.channels * tmp;
+	}
+	,load: function(onEnd) {
+		onEnd();
+	}
+	,get_duration: function() {
+		return this.samples / this.samplingRate;
+	}
+	,__class__: hxd_snd_Data
+};
+var hxd_snd_EffectDriver = function() {
+};
+$hxClasses["hxd.snd.EffectDriver"] = hxd_snd_EffectDriver;
+hxd_snd_EffectDriver.__name__ = "hxd.snd.EffectDriver";
+hxd_snd_EffectDriver.prototype = {
+	acquire: function() {
+	}
+	,release: function() {
+	}
+	,update: function(e) {
+	}
+	,bind: function(e,source) {
+	}
+	,apply: function(e,source) {
+	}
+	,unbind: function(e,source) {
+	}
+	,__class__: hxd_snd_EffectDriver
+};
+var hxd_snd_DriverFeature = $hxEnums["hxd.snd.DriverFeature"] = { __ename__:true,__constructs__:null
+	,MasterVolume: {_hx_name:"MasterVolume",_hx_index:0,__enum__:"hxd.snd.DriverFeature",toString:$estr}
+};
+hxd_snd_DriverFeature.__constructs__ = [hxd_snd_DriverFeature.MasterVolume];
+hxd_snd_DriverFeature.__empty_constructs__ = [hxd_snd_DriverFeature.MasterVolume];
+var hxd_snd_Driver = function() { };
+$hxClasses["hxd.snd.Driver"] = hxd_snd_Driver;
+hxd_snd_Driver.__name__ = "hxd.snd.Driver";
+hxd_snd_Driver.__isInterface__ = true;
+hxd_snd_Driver.prototype = {
+	__class__: hxd_snd_Driver
+};
+var hxd_snd_Effect = function(type) {
+	this.refs = 0;
+	this.priority = 0;
+	this.retainTime = 0.0;
+	this.lastStamp = 0.0;
+	var managerDriver = hxd_snd_Manager.get().driver;
+	if(managerDriver != null) {
+		this.driver = managerDriver.getEffectDriver(type);
+	}
+};
+$hxClasses["hxd.snd.Effect"] = hxd_snd_Effect;
+hxd_snd_Effect.__name__ = "hxd.snd.Effect";
+hxd_snd_Effect.prototype = {
+	applyAudibleVolumeModifier: function(v) {
+		return v;
+	}
+	,getVolumeModifier: function() {
+		return 1;
+	}
+	,__class__: hxd_snd_Effect
+};
+var hxd_snd_Listener = function() {
+	this.position = new h3d_VectorImpl(0.,0.,0.);
+	this.velocity = new h3d_VectorImpl(0.,0.,0.);
+	var x = 1;
+	var y = 0;
+	var z = 0;
+	if(z == null) {
+		z = 0.;
+	}
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	this.direction = new h3d_VectorImpl(x,y,z);
+	var x = 0;
+	var y = 0;
+	var z = 1;
+	if(z == null) {
+		z = 0.;
+	}
+	if(y == null) {
+		y = 0.;
+	}
+	if(x == null) {
+		x = 0.;
+	}
+	this.up = new h3d_VectorImpl(x,y,z);
+};
+$hxClasses["hxd.snd.Listener"] = hxd_snd_Listener;
+hxd_snd_Listener.__name__ = "hxd.snd.Listener";
+hxd_snd_Listener.prototype = {
+	__class__: hxd_snd_Listener
+};
+var hxd_snd_Source = function(driver) {
+	this.start = 0;
+	this.playing = false;
+	this.volume = -1.0;
+	this.id = hxd_snd_Source.ID++;
+	this.handle = driver.createSource();
+	this.buffers = [];
+};
+$hxClasses["hxd.snd.Source"] = hxd_snd_Source;
+hxd_snd_Source.__name__ = "hxd.snd.Source";
+hxd_snd_Source.prototype = {
+	__class__: hxd_snd_Source
+};
+var hxd_snd_Buffer = function(driver) {
+	this.handle = driver.createBuffer();
+	this.refs = 0;
+	this.lastStop = HxOverrides.now() / 1000;
+};
+$hxClasses["hxd.snd.Buffer"] = hxd_snd_Buffer;
+hxd_snd_Buffer.__name__ = "hxd.snd.Buffer";
+hxd_snd_Buffer.prototype = {
+	dispose: function() {
+		hxd_snd_Manager.get().driver.destroyBuffer(this.handle);
+	}
+	,__class__: hxd_snd_Buffer
+};
+var hxd_snd_Manager = function() {
+	this.suspended = false;
+	this.timeOffset = 0.;
+	try {
+		this.driver = new hxd_snd_webaudio_Driver();
+	} catch( _g ) {
+		if(typeof(haxe_Exception.caught(_g).unwrap()) == "string") {
+			this.driver = null;
+		} else {
+			throw _g;
+		}
+	}
+	this.masterVolume = 1.0;
+	this.hasMasterVolume = this.driver == null ? true : this.driver.hasFeature(hxd_snd_DriverFeature.MasterVolume);
+	this.masterSoundGroup = new hxd_snd_SoundGroup("master");
+	this.masterChannelGroup = new hxd_snd_ChannelGroup("master");
+	this.listener = new hxd_snd_Listener();
+	this.soundBufferMap = new haxe_ds_StringMap();
+	this.soundBufferKeys = [];
+	this.freeStreamBuffers = [];
+	this.effectGC = [];
+	this.soundBufferCount = 0;
+	if(this.driver != null) {
+		this.sources = [];
+		var _g = 0;
+		var _g1 = hxd_snd_Manager.MAX_SOURCES;
+		while(_g < _g1) {
+			var i = _g++;
+			this.sources.push(new hxd_snd_Source(this.driver));
+		}
+	}
+	this.cachedBytes = new haxe_io_Bytes(new ArrayBuffer(24));
+	this.resampleBytes = new haxe_io_Bytes(new ArrayBuffer(hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT * 2));
+};
+$hxClasses["hxd.snd.Manager"] = hxd_snd_Manager;
+hxd_snd_Manager.__name__ = "hxd.snd.Manager";
+hxd_snd_Manager.get = function() {
+	if(hxd_snd_Manager.instance == null) {
+		hxd_snd_Manager.instance = new hxd_snd_Manager();
+		hxd_snd_Manager.instance.updateEvent = haxe_MainLoop.add(($_=hxd_snd_Manager.instance,$bind($_,$_.update)));
+		hxd_snd_Manager.instance.updateEvent.isBlocking = false;
+	}
+	return hxd_snd_Manager.instance;
+};
+hxd_snd_Manager.regEffect = function(list,e) {
+	var l = list;
+	while(l != null) {
+		if(l == e) {
+			return list;
+		}
+		l = l.next;
+	}
+	e.next = list;
+	return e;
+};
+hxd_snd_Manager.prototype = {
+	getTmpBytes: function(size) {
+		if(this.cachedBytes.length < size) {
+			this.cachedBytes = new haxe_io_Bytes(new ArrayBuffer(size));
+		}
+		return this.cachedBytes;
+	}
+	,getResampleBytes: function(size) {
+		if(this.resampleBytes.length < size) {
+			this.resampleBytes = new haxe_io_Bytes(new ArrayBuffer(size));
+		}
+		return this.resampleBytes;
+	}
+	,getAll: function(sound) {
+		var ch = this.channels;
+		var result = [];
+		while(ch != null) {
+			if(ch.sound == sound) {
+				result.push(ch);
+			}
+			ch = ch.next;
+		}
+		return new hxd_impl_ArrayIterator_$hxd_$snd_$Channel(result);
+	}
+	,play: function(sound,channelGroup,soundGroup) {
+		if(soundGroup == null) {
+			soundGroup = this.masterSoundGroup;
+		}
+		if(channelGroup == null) {
+			channelGroup = this.masterChannelGroup;
+		}
+		var sdat = sound.getData();
+		if(sdat.samples == 0) {
+			throw haxe_Exception.thrown(Std.string(sound) + " has no samples");
+		}
+		var c = new hxd_snd_Channel();
+		c.sound = sound;
+		c.duration = sdat.get_duration();
+		c.manager = this;
+		c.soundGroup = soundGroup;
+		c.channelGroup = channelGroup;
+		c.next = this.channels;
+		c.isLoading = sdat.isLoading();
+		c.isVirtual = this.driver == null;
+		c.lastStamp = HxOverrides.now() / 1000;
+		this.channels = c;
+		return c;
+	}
+	,updateVirtualChannels: function(now) {
+		var c = this.channels;
+		while(c != null) {
+			if(c.pause || !c.isVirtual || c.isLoading) {
+				c = c.next;
+				continue;
+			}
+			var a = now - c.lastStamp;
+			c.set_position(c.position + (a < 0.0 ? 0.0 : a));
+			c.lastStamp = now;
+			var next = c.next;
+			while(c.position >= c.duration) {
+				c.set_position(c.position - c.duration);
+				c.onEnd();
+				if(next != null && next.manager == null) {
+					next = null;
+				}
+				if(c.queue.length > 0) {
+					c.sound = c.queue.shift();
+					c.duration = c.sound.getData().get_duration();
+				} else if(!c.loop) {
+					this.releaseChannel(c);
+					break;
+				}
+			}
+			c = next;
+		}
+	}
+	,update: function() {
+		if(this.timeOffset != 0) {
+			var c = this.channels;
+			while(c != null) {
+				c.lastStamp += this.timeOffset;
+				if(c.currentFade != null) {
+					c.currentFade.start += this.timeOffset;
+				}
+				c = c.next;
+			}
+			var _g = 0;
+			var _g1 = this.sources;
+			while(_g < _g1.length) {
+				var s = _g1[_g];
+				++_g;
+				var _g2 = 0;
+				var _g3 = s.buffers;
+				while(_g2 < _g3.length) {
+					var b = _g3[_g2];
+					++_g2;
+					b.lastStop += this.timeOffset;
+				}
+			}
+			this.timeOffset = 0;
+		}
+		this.now = HxOverrides.now() / 1000;
+		if(this.driver == null) {
+			this.updateVirtualChannels(this.now);
+			return;
+		}
+		var _g = 0;
+		var _g1 = this.sources;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			var c = s.channel;
+			if(c == null) {
+				continue;
+			}
+			if(c.positionChanged) {
+				this.releaseSource(s);
+				continue;
+			}
+			var lastBuffer = null;
+			var count = this.driver.getProcessedBuffers(s.handle);
+			var _g2 = 0;
+			var _g3 = count;
+			while(_g2 < _g3) {
+				var i = _g2++;
+				var b = this.unqueueBuffer(s);
+				if(b == null) {
+					continue;
+				}
+				lastBuffer = b;
+				if(b.isEnd) {
+					c.sound = b.sound;
+					c.duration = b.sound.getData().get_duration();
+					c.set_position(c.duration);
+					c.positionChanged = false;
+					c.onEnd();
+					s.start = 0;
+				}
+			}
+			if(s.buffers.length == 0) {
+				if(!lastBuffer.isEnd) {
+					c.set_position((lastBuffer.start + lastBuffer.samples) / lastBuffer.sampleRate);
+					this.releaseSource(s);
+				} else if(c.queue.length > 0) {
+					c.sound = c.queue.shift();
+					c.duration = c.sound.getData().get_duration();
+					c.set_position(0);
+					this.releaseSource(s);
+				} else if(c.loop) {
+					c.set_position(0);
+					this.releaseSource(s);
+				} else {
+					this.releaseChannel(c);
+				}
+				continue;
+			}
+			c.sound = s.buffers[0].sound;
+			c.duration = c.sound.getData().get_duration();
+			var playedSamples = this.driver.getPlayedSampleCount(s.handle);
+			if(playedSamples < 0) {
+				haxe_Log.trace("playedSamples should positive : bug in driver",{ fileName : "hxd/snd/Manager.hx", lineNumber : 361, className : "hxd.snd.Manager", methodName : "update"});
+				playedSamples = 0;
+			}
+			c.set_position(s.start / this.targetRate + playedSamples / s.buffers[0].sampleRate);
+			c.positionChanged = false;
+			if(s.buffers.length < hxd_snd_Manager.BUFFER_QUEUE_LENGTH) {
+				var b1 = s.buffers[s.buffers.length - 1];
+				if(!b1.isEnd) {
+					this.queueBuffer(s,b1.sound,b1.start + b1.samples);
+				} else if(c.queue.length > 0) {
+					var snd = c.queue[0];
+					if(this.queueBuffer(s,snd,0)) {
+						c.queue.shift();
+					}
+				} else if(c.loop) {
+					this.queueBuffer(s,b1.sound,0);
+				}
+			}
+		}
+		var c = this.channels;
+		while(c != null) {
+			c.calcAudibleVolume(this.now);
+			if(c.isLoading && !c.sound.getData().isLoading()) {
+				c.isLoading = false;
+			}
+			c.isVirtual = this.suspended || c.pause || c.mute || c.channelGroup.mute || c.allowVirtual && c.audibleVolume < hxd_snd_Manager.VIRTUAL_VOLUME_THRESHOLD || c.isLoading;
+			c = c.next;
+		}
+		var list = this.channels;
+		var cmp = $bind(this,this.sortChannel);
+		var tmp;
+		if(list == null) {
+			tmp = null;
+		} else {
+			var insize = 1;
+			var nmerges;
+			var psize = 0;
+			var qsize = 0;
+			var p;
+			var q;
+			var e;
+			var tail;
+			while(true) {
+				p = list;
+				list = null;
+				tail = null;
+				nmerges = 0;
+				while(p != null) {
+					++nmerges;
+					q = p;
+					psize = 0;
+					var _g = 0;
+					var _g1 = insize;
+					while(_g < _g1) {
+						var i = _g++;
+						++psize;
+						q = q.next;
+						if(q == null) {
+							break;
+						}
+					}
+					qsize = insize;
+					while(psize > 0 || qsize > 0 && q != null) {
+						if(psize == 0) {
+							e = q;
+							q = q.next;
+							--qsize;
+						} else if(qsize == 0 || q == null || cmp(p,q) <= 0) {
+							e = p;
+							p = p.next;
+							--psize;
+						} else {
+							e = q;
+							q = q.next;
+							--qsize;
+						}
+						if(tail != null) {
+							tail.next = e;
+						} else {
+							list = e;
+						}
+						tail = e;
+					}
+					p = q;
+				}
+				tail.next = null;
+				if(nmerges <= 1) {
+					break;
+				}
+				insize *= 2;
+			}
+			tmp = list;
+		}
+		this.channels = tmp;
+		var audibleCount = 0;
+		var c = this.channels;
+		while(c != null && !c.isVirtual) {
+			if(++audibleCount > this.sources.length) {
+				c.isVirtual = true;
+			} else if(c.soundGroup.maxAudible >= 0) {
+				if(c.soundGroup.lastUpdate != this.now) {
+					c.soundGroup.lastUpdate = this.now;
+					c.soundGroup.numAudible = 0;
+				}
+				if(++c.soundGroup.numAudible > c.soundGroup.maxAudible) {
+					c.isVirtual = true;
+					--audibleCount;
+				}
+			}
+			c = c.next;
+		}
+		var _g = 0;
+		var _g1 = this.sources;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			if(s.channel == null || !s.channel.isVirtual) {
+				continue;
+			}
+			this.releaseSource(s);
+		}
+		var c = this.channels;
+		while(c != null) {
+			if(c.source != null || c.isVirtual) {
+				c = c.next;
+				continue;
+			}
+			var s = null;
+			var _g = 0;
+			var _g1 = this.sources;
+			while(_g < _g1.length) {
+				var s2 = _g1[_g];
+				++_g;
+				if(s2.channel == null) {
+					s = s2;
+					break;
+				}
+			}
+			if(s == null) {
+				throw haxe_Exception.thrown("could not get a source");
+			}
+			s.channel = c;
+			c.source = s;
+			this.checkTargetFormat(c.sound.getData(),c.soundGroup.mono);
+			s.start = Math.floor(c.position * this.targetRate);
+			if(s.start < 0) {
+				s.start = 0;
+			}
+			this.queueBuffer(s,c.sound,s.start);
+			c.positionChanged = false;
+			c = c.next;
+		}
+		var usedEffects = null;
+		var volume = this.hasMasterVolume ? 1. : this.masterVolume;
+		var _g = 0;
+		var _g1 = this.sources;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			var c = s.channel;
+			if(c == null) {
+				continue;
+			}
+			var v = c.currentVolume * volume;
+			if(s.volume != v) {
+				if(v < 0) {
+					v = 0;
+				}
+				s.volume = v;
+				this.driver.setSourceVolume(s.handle,v);
+			}
+			if(!s.playing) {
+				this.driver.playSource(s.handle);
+				s.playing = true;
+			}
+			var i = c.bindedEffects.length;
+			while(--i >= 0) {
+				var e = c.bindedEffects[i];
+				if(c.effects.indexOf(e) < 0 && c.channelGroup.effects.indexOf(e) < 0) {
+					this.unbindEffect(c,s,e);
+				}
+			}
+			var _g2 = 0;
+			var _g3 = c.channelGroup.effects;
+			while(_g2 < _g3.length) {
+				var e1 = _g3[_g2];
+				++_g2;
+				if(c.bindedEffects.indexOf(e1) < 0) {
+					this.bindEffect(c,s,e1);
+				}
+			}
+			var _g4 = 0;
+			var _g5 = c.effects;
+			while(_g4 < _g5.length) {
+				var e2 = _g5[_g4];
+				++_g4;
+				if(c.bindedEffects.indexOf(e2) < 0) {
+					this.bindEffect(c,s,e2);
+				}
+			}
+			var _g6 = 0;
+			var _g7 = c.bindedEffects;
+			while(_g6 < _g7.length) {
+				var e3 = _g7[_g6];
+				++_g6;
+				usedEffects = hxd_snd_Manager.regEffect(usedEffects,e3);
+			}
+		}
+		var list = usedEffects;
+		var cmp = $bind(this,this.sortEffect);
+		if(list == null) {
+			usedEffects = null;
+		} else {
+			var insize = 1;
+			var nmerges;
+			var psize = 0;
+			var qsize = 0;
+			var p;
+			var q;
+			var e;
+			var tail;
+			while(true) {
+				p = list;
+				list = null;
+				tail = null;
+				nmerges = 0;
+				while(p != null) {
+					++nmerges;
+					q = p;
+					psize = 0;
+					var _g = 0;
+					var _g1 = insize;
+					while(_g < _g1) {
+						var i = _g++;
+						++psize;
+						q = q.next;
+						if(q == null) {
+							break;
+						}
+					}
+					qsize = insize;
+					while(psize > 0 || qsize > 0 && q != null) {
+						if(psize == 0) {
+							e = q;
+							q = q.next;
+							--qsize;
+						} else if(qsize == 0 || q == null || cmp(p,q) <= 0) {
+							e = p;
+							p = p.next;
+							--psize;
+						} else {
+							e = q;
+							q = q.next;
+							--qsize;
+						}
+						if(tail != null) {
+							tail.next = e;
+						} else {
+							list = e;
+						}
+						tail = e;
+					}
+					p = q;
+				}
+				tail.next = null;
+				if(nmerges <= 1) {
+					break;
+				}
+				insize *= 2;
+			}
+			usedEffects = list;
+		}
+		var e = usedEffects;
+		while(e != null) {
+			e.driver.update(e);
+			e = e.next;
+		}
+		var _g = 0;
+		var _g1 = this.sources;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			var c = s.channel;
+			if(c == null) {
+				continue;
+			}
+			var _g2 = 0;
+			var _g3 = c.bindedEffects;
+			while(_g2 < _g3.length) {
+				var e = _g3[_g2];
+				++_g2;
+				e.driver.apply(e,s.handle);
+			}
+		}
+		var _g = 0;
+		var _g1 = this.effectGC;
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			if(this.now - e.lastStamp > e.retainTime) {
+				e.driver.release();
+				HxOverrides.remove(this.effectGC,e);
+				break;
+			}
+		}
+		this.updateVirtualChannels(this.now);
+		var _this = this.listener.direction;
+		var k = _this.x * _this.x + _this.y * _this.y + _this.z * _this.z;
+		if(k < 1e-20) {
+			k = 0;
+		} else {
+			k = 1. / Math.sqrt(k);
+		}
+		_this.x *= k;
+		_this.y *= k;
+		_this.z *= k;
+		var _this = this.listener.up;
+		var k = _this.x * _this.x + _this.y * _this.y + _this.z * _this.z;
+		if(k < 1e-20) {
+			k = 0;
+		} else {
+			k = 1. / Math.sqrt(k);
+		}
+		_this.x *= k;
+		_this.y *= k;
+		_this.z *= k;
+		if(this.hasMasterVolume) {
+			this.driver.setMasterVolume(this.masterVolume);
+		}
+		this.driver.setListenerParams(this.listener.position,this.listener.direction,this.listener.up,this.listener.velocity);
+		this.driver.update();
+		if(this.soundBufferCount >= hxd_snd_Manager.SOUND_BUFFER_CACHE_SIZE) {
+			var now = HxOverrides.now() / 1000;
+			var i = 0;
+			while(i < this.soundBufferKeys.length) {
+				var k = this.soundBufferKeys[i];
+				var b = this.soundBufferMap.h[k];
+				++i;
+				if(b.refs > 0 || b.lastStop + 60.0 > now) {
+					continue;
+				}
+				var _this = this.soundBufferMap;
+				if(Object.prototype.hasOwnProperty.call(_this.h,k)) {
+					delete(_this.h[k]);
+				}
+				HxOverrides.remove(this.soundBufferKeys,k);
+				--i;
+				b.dispose();
+				--this.soundBufferCount;
+			}
+		}
+	}
+	,progressiveDecodeBuffer: function(s,snd,start) {
+		var data = snd.getData();
+		var samples = Math.ceil(hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT / hxd_snd_Manager.BUFFER_STREAM_SPLIT);
+		if(s.streamStart != start || s.streamSound != snd) {
+			s.streamSound = snd;
+			s.streamStart = start;
+			s.streamPos = start;
+		}
+		var end = start + hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT;
+		if(s.streamPos == end) {
+			return true;
+		}
+		var bpp = data.getBytesPerSample();
+		var reqSize = hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT * bpp;
+		if(s.streamBuffer == null || s.streamBuffer.length < reqSize) {
+			s.streamBuffer = new haxe_io_Bytes(new ArrayBuffer(reqSize));
+			s.streamPos = start;
+		}
+		var remain = end - s.streamPos;
+		if(remain > samples) {
+			remain = samples;
+		}
+		data.decode(s.streamBuffer,(s.streamPos - start) * bpp,s.streamPos,remain);
+		s.streamPos += remain;
+		return s.streamPos == end;
+	}
+	,queueBuffer: function(s,snd,start) {
+		var data = snd.getData();
+		var sgroup = s.channel.soundGroup;
+		var b = null;
+		if(data.get_duration() <= hxd_snd_Manager.STREAM_DURATION) {
+			b = this.getSoundBuffer(snd,sgroup);
+			this.driver.queueBuffer(s.handle,b.handle,start,true);
+		} else {
+			if(s.buffers.length > 0 && hxd_snd_Manager.BUFFER_STREAM_SPLIT > 1 && !this.progressiveDecodeBuffer(s,snd,start)) {
+				return false;
+			}
+			b = this.getStreamBuffer(s,snd,sgroup,start);
+			this.driver.queueBuffer(s.handle,b.handle,0,b.isEnd);
+		}
+		s.buffers.push(b);
+		return true;
+	}
+	,unqueueBuffer: function(s) {
+		var b = s.buffers.shift();
+		if(b == null) {
+			return null;
+		}
+		this.driver.unqueueBuffer(s.handle,b.handle);
+		if(b.isStream) {
+			this.freeStreamBuffers.unshift(b);
+		} else if(--b.refs == 0) {
+			b.lastStop = HxOverrides.now() / 1000;
+		}
+		return b;
+	}
+	,bindEffect: function(c,s,e) {
+		if(e.refs == 0 && !HxOverrides.remove(this.effectGC,e)) {
+			e.driver.acquire();
+		}
+		++e.refs;
+		e.driver.bind(e,s.handle);
+		c.bindedEffects.push(e);
+	}
+	,unbindEffect: function(c,s,e) {
+		e.driver.unbind(e,s.handle);
+		HxOverrides.remove(c.bindedEffects,e);
+		if(--e.refs == 0) {
+			e.lastStamp = this.now;
+			this.effectGC.push(e);
+		}
+	}
+	,releaseSource: function(s) {
+		if(s.channel != null) {
+			var _g = 0;
+			var _g1 = s.channel.bindedEffects.slice();
+			while(_g < _g1.length) {
+				var e = _g1[_g];
+				++_g;
+				this.unbindEffect(s.channel,s,e);
+			}
+			s.channel.bindedEffects = [];
+			s.channel.source = null;
+			s.channel = null;
+		}
+		if(s.playing) {
+			s.playing = false;
+			this.driver.stopSource(s.handle);
+			s.volume = -1.0;
+		}
+		while(s.buffers.length > 0) this.unqueueBuffer(s);
+	}
+	,checkTargetFormat: function(dat,forceMono) {
+		if(forceMono == null) {
+			forceMono = false;
+		}
+		this.targetRate = dat.samplingRate;
+		this.targetChannels = forceMono || dat.channels == 1 ? 1 : 2;
+		var tmp;
+		switch(dat.sampleFormat._hx_index) {
+		case 0:
+			tmp = hxd_snd_SampleFormat.UI8;
+			break;
+		case 1:
+			tmp = hxd_snd_SampleFormat.I16;
+			break;
+		case 2:
+			tmp = hxd_snd_SampleFormat.F32;
+			break;
+		}
+		this.targetFormat = tmp;
+		if(this.targetChannels == dat.channels && this.targetFormat == dat.sampleFormat) {
+			return this.targetRate == dat.samplingRate;
+		} else {
+			return false;
+		}
+	}
+	,getSoundBuffer: function(snd,grp) {
+		var _gthis = this;
+		var data = snd.getData();
+		var mono = grp.mono;
+		var key = snd.entry.get_path();
+		if(mono && data.channels != 1) {
+			key += "mono";
+		}
+		var b = this.soundBufferMap.h[key];
+		if(b == null) {
+			b = new hxd_snd_Buffer(this.driver);
+			b.isStream = false;
+			b.isEnd = true;
+			b.sound = snd;
+			data.load(function() {
+				_gthis.fillSoundBuffer(b,data,mono);
+			});
+			this.soundBufferMap.h[key] = b;
+			this.soundBufferKeys.push(key);
+			++this.soundBufferCount;
+		}
+		++b.refs;
+		return b;
+	}
+	,fillSoundBuffer: function(buf,dat,forceMono) {
+		if(forceMono == null) {
+			forceMono = false;
+		}
+		if(!this.checkTargetFormat(dat,forceMono)) {
+			dat = dat.resample(this.targetRate,this.targetFormat,this.targetChannels);
+		}
+		var length = dat.samples * dat.getBytesPerSample();
+		var bytes = this.getTmpBytes(length);
+		dat.decode(bytes,0,0,dat.samples);
+		this.driver.setBufferData(buf.handle,bytes,length,this.targetFormat,this.targetChannels,this.targetRate);
+		buf.sampleRate = this.targetRate;
+		buf.samples = dat.samples;
+	}
+	,getStreamBuffer: function(src,snd,grp,start) {
+		var data = snd.getData();
+		var b = this.freeStreamBuffers.shift();
+		if(b == null) {
+			b = new hxd_snd_Buffer(this.driver);
+			b.isStream = true;
+		}
+		var samples = hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT;
+		if(start + samples >= data.samples) {
+			samples = data.samples - start;
+			b.isEnd = true;
+		} else {
+			b.isEnd = false;
+		}
+		b.sound = snd;
+		b.samples = samples;
+		b.start = start;
+		var size = samples * data.getBytesPerSample();
+		var bytes;
+		if(src.streamSound == snd && src.streamStart == start) {
+			while(!this.progressiveDecodeBuffer(src,snd,start)) {
+			}
+			bytes = src.streamBuffer;
+		} else {
+			bytes = this.getTmpBytes(size);
+			data.decode(bytes,0,start,samples);
+		}
+		if(!this.checkTargetFormat(data,grp.mono)) {
+			var size1 = Math.ceil(samples * (this.targetRate / data.samplingRate)) * this.targetChannels;
+			var size2;
+			switch(this.targetFormat._hx_index) {
+			case 0:
+				size2 = 1;
+				break;
+			case 1:
+				size2 = 2;
+				break;
+			case 2:
+				size2 = 4;
+				break;
+			}
+			size = size1 * size2;
+			var resampleBytes = this.getResampleBytes(size);
+			data.resampleBuffer(resampleBytes,0,bytes,0,this.targetRate,this.targetFormat,this.targetChannels,samples);
+			bytes = resampleBytes;
+		}
+		this.driver.setBufferData(b.handle,bytes,size,this.targetFormat,this.targetChannels,this.targetRate);
+		b.sampleRate = this.targetRate;
+		return b;
+	}
+	,sortChannel: function(a,b) {
+		if(a.isVirtual != b.isVirtual) {
+			if(a.isVirtual) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}
+		if(a.channelGroup.priority != b.channelGroup.priority) {
+			if(a.channelGroup.priority < b.channelGroup.priority) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}
+		if(a.priority != b.priority) {
+			if(a.priority < b.priority) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}
+		if(a.audibleVolume != b.audibleVolume) {
+			if(a.audibleVolume < b.audibleVolume) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}
+		if(a.id < b.id) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+	,sortEffect: function(a,b) {
+		return b.priority - a.priority;
+	}
+	,releaseChannel: function(c) {
+		if(c.manager == null) {
+			return;
+		}
+		if(this.channels == c) {
+			this.channels = c.next;
+		} else {
+			var prev = this.channels;
+			while(prev.next != c) prev = prev.next;
+			prev.next = c.next;
+		}
+		var _g = 0;
+		var _g1 = c.effects;
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			c.removeEffect(e);
+		}
+		if(c.source != null) {
+			this.releaseSource(c.source);
+		}
+		c.next = null;
+		c.manager = null;
+		c.effects = null;
+		c.bindedEffects = null;
+		c.currentFade = null;
+		var snd = c.sound;
+		if(snd != null && snd.channel == c) {
+			snd.channel = null;
+		}
+	}
+	,__class__: hxd_snd_Manager
+};
+var hxd_snd_Mp3Data = function(bytes) {
+	var mp = new format_mp3_Reader(new haxe_io_BytesInput(bytes)).read();
+	this.samples = mp.sampleCount;
+	var frame = mp.frames[0].data;
+	var lame = -1;
+	var _g = 0;
+	var _g1 = frame.length - 24;
+	while(_g < _g1) {
+		var i = _g++;
+		if(frame.b[i] == 76 && frame.b[i + 1] == 65 && frame.b[i + 2] == 77 && frame.b[i + 3] == 69) {
+			lame = i;
+			break;
+		}
+	}
+	if(lame >= 0) {
+		var startEnd = frame.b[lame + 21] << 16 | frame.b[lame + 22] << 8 | frame.b[lame + 23];
+		var start = startEnd >> 12;
+		var end = startEnd & 4095;
+		this.samples -= start + end + 1152;
+	}
+	var header = mp.frames[0].header;
+	this.sampleFormat = hxd_snd_SampleFormat.F32;
+	this.samplingRate = format_mp3_MPEG.srEnum2Num(header.samplingRate);
+	this.channels = header.channelMode == format_mp3_ChannelMode.Mono ? 1 : 2;
+	var ctx = hxd_snd_webaudio_Context.get();
+	if(ctx == null) {
+		return;
+	}
+	ctx.decodeAudioData(bytes.b.bufferValue,$bind(this,this.processBuffer));
+	var decodedRate = ctx.sampleRate | 0;
+	this.samples = Math.ceil(this.samples * decodedRate / this.samplingRate);
+	this.samplingRate = decodedRate;
+};
+$hxClasses["hxd.snd.Mp3Data"] = hxd_snd_Mp3Data;
+hxd_snd_Mp3Data.__name__ = "hxd.snd.Mp3Data";
+hxd_snd_Mp3Data.__super__ = hxd_snd_Data;
+hxd_snd_Mp3Data.prototype = $extend(hxd_snd_Data.prototype,{
+	isLoading: function() {
+		return this.buffer == null;
+	}
+	,load: function(onEnd) {
+		if(this.buffer != null) {
+			onEnd();
+		} else {
+			this.onEnd = onEnd;
+		}
+	}
+	,processBuffer: function(buf) {
+		var left = buf.getChannelData(0);
+		this.samples = buf.length;
+		if(this.channels == 1) {
+			this.buffer = haxe_io_Bytes.ofData(left.buffer);
+			return;
+		}
+		var right = buf.numberOfChannels < 2 ? left : buf.getChannelData(1);
+		var join = new Float32Array(left.length * 2);
+		var w = 0;
+		var _g = 0;
+		var _g1 = buf.length;
+		while(_g < _g1) {
+			var i = _g++;
+			join[w++] = left[i];
+			join[w++] = right[i];
+		}
+		this.buffer = haxe_io_Bytes.ofData(join.buffer);
+		if(this.onEnd != null) {
+			this.onEnd();
+			this.onEnd = null;
+		}
+	}
+	,decodeBuffer: function(out,outPos,sampleStart,sampleCount) {
+		if(this.buffer == null) {
+			out.fill(outPos,sampleCount * 4 * this.channels,0);
+		} else {
+			out.blit(outPos,this.buffer,sampleStart * 4 * this.channels,sampleCount * 4 * this.channels);
+		}
+	}
+	,__class__: hxd_snd_Mp3Data
+});
+var hxd_snd_SoundGroup = function(name) {
+	this.name = name;
+	this.maxAudible = -1;
+	this.volume = 1;
+	this.mono = false;
+};
+$hxClasses["hxd.snd.SoundGroup"] = hxd_snd_SoundGroup;
+hxd_snd_SoundGroup.__name__ = "hxd.snd.SoundGroup";
+hxd_snd_SoundGroup.prototype = {
+	__class__: hxd_snd_SoundGroup
+};
+var hxd_snd_WavData = function(bytes) {
+	if(bytes != null) {
+		this.init(new format_wav_Reader(new haxe_io_BytesInput(bytes)).read());
+	}
+};
+$hxClasses["hxd.snd.WavData"] = hxd_snd_WavData;
+hxd_snd_WavData.__name__ = "hxd.snd.WavData";
+hxd_snd_WavData.__super__ = hxd_snd_Data;
+hxd_snd_WavData.prototype = $extend(hxd_snd_Data.prototype,{
+	init: function(d) {
+		var h = d.header;
+		this.samplingRate = h.samplingRate;
+		this.channels = h.channels;
+		var tmp;
+		switch(h.bitsPerSample) {
+		case 8:
+			tmp = hxd_snd_SampleFormat.UI8;
+			break;
+		case 16:
+			tmp = hxd_snd_SampleFormat.I16;
+			break;
+		default:
+			throw haxe_Exception.thrown("Unsupported WAV " + h.bitsPerSample + " bits");
+		}
+		this.sampleFormat = tmp;
+		this.rawData = d.data;
+		this.samples = this.rawData.length / this.getBytesPerSample() | 0;
+	}
+	,decodeBuffer: function(out,outPos,sampleStart,sampleCount) {
+		var bpp = this.getBytesPerSample();
+		out.blit(outPos,this.rawData,sampleStart * bpp,sampleCount * bpp);
+	}
+	,__class__: hxd_snd_WavData
+});
+var hxd_snd_effect_LowPass = function() {
+	hxd_snd_Effect.call(this,"lowpass");
+	this.priority = 100;
+	this.gainHF = 1.0;
+};
+$hxClasses["hxd.snd.effect.LowPass"] = hxd_snd_effect_LowPass;
+hxd_snd_effect_LowPass.__name__ = "hxd.snd.effect.LowPass";
+hxd_snd_effect_LowPass.__super__ = hxd_snd_Effect;
+hxd_snd_effect_LowPass.prototype = $extend(hxd_snd_Effect.prototype,{
+	__class__: hxd_snd_effect_LowPass
+});
+var hxd_snd_effect_Pitch = function(value) {
+	if(value == null) {
+		value = 1.0;
+	}
+	hxd_snd_Effect.call(this,"pitch");
+	this.value = value;
+};
+$hxClasses["hxd.snd.effect.Pitch"] = hxd_snd_effect_Pitch;
+hxd_snd_effect_Pitch.__name__ = "hxd.snd.effect.Pitch";
+hxd_snd_effect_Pitch.__super__ = hxd_snd_Effect;
+hxd_snd_effect_Pitch.prototype = $extend(hxd_snd_Effect.prototype,{
+	__class__: hxd_snd_effect_Pitch
+});
+var hxd_snd_effect_Spatialization = function() {
+	hxd_snd_Effect.call(this,"spatialization");
+	this.position = new h3d_VectorImpl(0.,0.,0.);
+	this.velocity = new h3d_VectorImpl(0.,0.,0.);
+	this.direction = new h3d_VectorImpl(0.,0.,0.);
+	this.referenceDistance = 1.0;
+	this.rollOffFactor = 1.0;
+};
+$hxClasses["hxd.snd.effect.Spatialization"] = hxd_snd_effect_Spatialization;
+hxd_snd_effect_Spatialization.__name__ = "hxd.snd.effect.Spatialization";
+hxd_snd_effect_Spatialization.__super__ = hxd_snd_Effect;
+hxd_snd_effect_Spatialization.prototype = $extend(hxd_snd_Effect.prototype,{
+	getVolumeModifier: function() {
+		if(this.fadeDistance == null) {
+			return 1.;
+		}
+		var _this = hxd_snd_Manager.get().listener.position;
+		var v = this.position;
+		var dx = v.x - _this.x;
+		var dy = v.y - _this.y;
+		var dz = v.z - _this.z;
+		var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if(this.maxDistance != null) {
+			dist -= this.maxDistance;
+		} else {
+			dist -= this.referenceDistance;
+		}
+		var volume = 1 - dist / this.fadeDistance;
+		if(volume > 1) {
+			volume = 1;
+		}
+		if(volume < 0) {
+			volume = 0;
+		}
+		return volume;
+	}
+	,applyAudibleVolumeModifier: function(v) {
+		var _this = hxd_snd_Manager.get().listener.position;
+		var v1 = this.position;
+		var dx = v1.x - _this.x;
+		var dy = v1.y - _this.y;
+		var dz = v1.z - _this.z;
+		var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var b = this.referenceDistance;
+		if(dist < b) {
+			dist = b;
+		}
+		if(this.maxDistance != null) {
+			var b = this.maxDistance;
+			if(dist > b) {
+				dist = b;
+			}
+		}
+		var volume = this.referenceDistance / (this.referenceDistance + this.rollOffFactor * (dist - this.referenceDistance));
+		return v * volume;
+	}
+	,__class__: hxd_snd_effect_Spatialization
+});
+var hxd_snd_webaudio_BufferHandle = function() {
+};
+$hxClasses["hxd.snd.webaudio.BufferHandle"] = hxd_snd_webaudio_BufferHandle;
+hxd_snd_webaudio_BufferHandle.__name__ = "hxd.snd.webaudio.BufferHandle";
+hxd_snd_webaudio_BufferHandle.prototype = {
+	__class__: hxd_snd_webaudio_BufferHandle
+};
+var hxd_snd_webaudio_SourceHandle = function() {
+	this.buffers = [];
+	this.sampleOffset = 0;
+	this.pitch = 1;
+	this.firstPlay = true;
+};
+$hxClasses["hxd.snd.webaudio.SourceHandle"] = hxd_snd_webaudio_SourceHandle;
+hxd_snd_webaudio_SourceHandle.__name__ = "hxd.snd.webaudio.SourceHandle";
+hxd_snd_webaudio_SourceHandle.prototype = {
+	updateDestination: function() {
+		this.destination = this.gain;
+		if(this.lowPass != null) {
+			this.lowPass.connect(this.destination);
+			this.destination = this.lowPass;
+		}
+		if(this.panner != null) {
+			this.panner.connect(this.destination);
+			this.destination = this.panner;
+		}
+		this.gain.connect(hxd_snd_webaudio_Context.destination);
+		var _g = 0;
+		var _g1 = this.buffers;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			if(b.node != null) {
+				b.restart(this);
+			}
+		}
+	}
+	,applyPitch: function() {
+		var t = 0.;
+		var _g = 0;
+		var _g1 = this.buffers;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			t = b.readjust(t,this);
+		}
+	}
+	,__class__: hxd_snd_webaudio_SourceHandle
+};
+var hxd_snd_webaudio_BufferPlayback = function() {
+};
+$hxClasses["hxd.snd.webaudio.BufferPlayback"] = hxd_snd_webaudio_BufferPlayback;
+hxd_snd_webaudio_BufferPlayback.__name__ = "hxd.snd.webaudio.BufferPlayback";
+hxd_snd_webaudio_BufferPlayback.prototype = {
+	get_currentSample: function() {
+		if(this.consumed) {
+			return this.buffer.samples;
+		}
+		if(this.node == null || !this.dirty || this.node.context.currentTime < this.lastTime) {
+			return 0;
+		}
+		this.lastSamples += Math.floor((this.node.context.currentTime - this.lastTime) * this.buffer.inst.sampleRate * this.node.playbackRate.value);
+		this.lastTime = this.node.context.currentTime;
+		return this.lastSamples;
+	}
+	,set: function(buf,grainOffset) {
+		this.buffer = buf;
+		this.offset = isNaN(grainOffset) ? 0 : grainOffset;
+		this.dirty = false;
+		this.consumed = false;
+		this.starts = 0;
+		this.ends = 0;
+	}
+	,start: function(ctx,source,time) {
+		this.dirty = true;
+		this.consumed = false;
+		if(this.node != null) {
+			this.stop();
+		}
+		if(source.firstPlay && this.buffer.samples > 10) {
+			source.firstPlay = false;
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = this.buffer.inst.numberOfChannels;
+			while(_g1 < _g2) {
+				var i = _g1++;
+				_g.push(this.buffer.inst.getChannelData(i));
+			}
+			var channels = _g;
+			var j = 0;
+			var fade = 0.;
+			while(j < 10) {
+				var i = 0;
+				while(i < channels.length) {
+					channels[i][j] *= fade;
+					++i;
+				}
+				++j;
+				fade += 0.1;
+				if(fade > 1) {
+					fade = 1;
+				}
+			}
+		}
+		this.node = ctx.createBufferSource();
+		this.node.buffer = this.buffer.inst;
+		this.node.addEventListener("ended",$bind(this,this.onBufferConsumed));
+		this.node.connect(source.destination);
+		this.node.playbackRate.value = source.pitch;
+		this.node.start(time,this.offset);
+		this.lastSamples = 0;
+		this.lastTime = time;
+		this.starts = time;
+		return this.ends = time + (this.buffer.inst.duration - this.offset) / source.pitch;
+	}
+	,readjust: function(time,source) {
+		if(this.consumed || this.node == null) {
+			return this.ends;
+		}
+		var ctx = source.driver.ctx;
+		var shiftTime = ctx.currentTime;
+		this.node.playbackRate.setValueAtTime(source.pitch,shiftTime);
+		var elapsed = shiftTime - this.starts;
+		if(elapsed < 0) {
+			return this.start(ctx,source,time == 0 ? shiftTime : time);
+		}
+		this.starts = shiftTime - elapsed / source.pitch;
+		return this.ends = this.starts + (this.buffer.inst.duration - this.offset) / source.pitch;
+	}
+	,restart: function(source) {
+		if(this.consumed || this.node == null) {
+			return;
+		}
+		var ctx = hxd_snd_webaudio_Context.get();
+		if(ctx.currentTime > this.starts) {
+			this.offset += (ctx.currentTime - this.starts) * source.pitch;
+			this.start(ctx,source,ctx.currentTime);
+		} else {
+			this.start(ctx,source,this.starts);
+		}
+	}
+	,stop: function(immediate) {
+		if(immediate == null) {
+			immediate = true;
+		}
+		if(this.node != null) {
+			this.node.removeEventListener("ended",$bind(this,this.onBufferConsumed));
+			if(immediate) {
+				this.node.disconnect();
+			} else {
+				this.node.stop();
+			}
+			this.node = null;
+		}
+	}
+	,onBufferConsumed: function(e) {
+		this.node.removeEventListener("ended",$bind(this,this.onBufferConsumed));
+		this.node.disconnect();
+		this.node = null;
+		this.consumed = true;
+	}
+	,clear: function() {
+		this.buffer = null;
+		this.node = null;
+	}
+	,__class__: hxd_snd_webaudio_BufferPlayback
+};
+var hxd_snd_webaudio_Context = function() { };
+$hxClasses["hxd.snd.webaudio.Context"] = hxd_snd_webaudio_Context;
+hxd_snd_webaudio_Context.__name__ = "hxd.snd.webaudio.Context";
+hxd_snd_webaudio_Context.get = function() {
+	if(hxd_snd_webaudio_Context.ctx == null) {
+		try {
+			hxd_snd_webaudio_Context.ctx = new AudioContext();
+		} catch( _g ) {
+			try {
+				hxd_snd_webaudio_Context.ctx = new window.webkitAudioContext();
+			} catch( _g1 ) {
+				hxd_snd_webaudio_Context.ctx = null;
+			}
+		}
+		if(hxd_snd_webaudio_Context.ctx == null) {
+			throw haxe_Exception.thrown("WebAudio API not available in this browser!");
+		}
+		if(hxd_snd_webaudio_Context.ctx.state == "suspended") {
+			hxd_snd_webaudio_Context.waitForPageInput();
+		}
+		hxd_snd_webaudio_Context.ctx.addEventListener("statechange",function(_) {
+			if(hxd_snd_webaudio_Context.ctx.state == "suspended") {
+				hxd_snd_webaudio_Context.waitForPageInput();
+			}
+		});
+		hxd_snd_webaudio_Context.bufferPool = [];
+		hxd_snd_webaudio_Context.gainPool = [];
+		hxd_snd_webaudio_Context.masterGain = hxd_snd_webaudio_Context.ctx.createGain();
+		hxd_snd_webaudio_Context.masterGain.connect(hxd_snd_webaudio_Context.ctx.destination);
+		hxd_snd_webaudio_Context.destination = hxd_snd_webaudio_Context.masterGain;
+	}
+	return hxd_snd_webaudio_Context.ctx;
+};
+hxd_snd_webaudio_Context.waitForPageInput = function() {
+	if(!hxd_snd_webaudio_Context.suspended) {
+		window.document.addEventListener("click",hxd_snd_webaudio_Context.resumeContext);
+		window.document.addEventListener("keydown",hxd_snd_webaudio_Context.resumeContext);
+		window.document.body.addEventListener("keydown",hxd_snd_webaudio_Context.resumeContext);
+		window.document.body.addEventListener("touchend",hxd_snd_webaudio_Context.resumeContext);
+		hxd_snd_webaudio_Context.suspended = true;
+	}
+};
+hxd_snd_webaudio_Context.resumeContext = function(_) {
+	if(hxd_snd_webaudio_Context.suspended) {
+		if(hxd_snd_webaudio_Context.ctx != null) {
+			hxd_snd_webaudio_Context.ctx.resume();
+		}
+		window.document.removeEventListener("click",hxd_snd_webaudio_Context.resumeContext);
+		window.document.removeEventListener("keydown",hxd_snd_webaudio_Context.resumeContext);
+		window.document.body.removeEventListener("keydown",hxd_snd_webaudio_Context.resumeContext);
+		window.document.body.removeEventListener("touchend",hxd_snd_webaudio_Context.resumeContext);
+		hxd_snd_webaudio_Context.suspended = false;
+	}
+};
+hxd_snd_webaudio_Context.getBuffer = function(channels,sampleCount,rate) {
+	var _g = 0;
+	var _g1 = hxd_snd_webaudio_Context.bufferPool;
+	while(_g < _g1.length) {
+		var pool = _g1[_g];
+		++_g;
+		if(pool.channels == channels && pool.samples == sampleCount && pool.rate == rate) {
+			if(pool.pool.length != 0) {
+				return pool.pool.pop();
+			} else {
+				return hxd_snd_webaudio_Context.ctx.createBuffer(channels,sampleCount,rate);
+			}
+		}
+	}
+	var pool = new hxd_snd_webaudio__$Context_BufferPool(channels,sampleCount,rate);
+	hxd_snd_webaudio_Context.bufferPool.push(pool);
+	return hxd_snd_webaudio_Context.ctx.createBuffer(channels,sampleCount,rate);
+};
+hxd_snd_webaudio_Context.putBuffer = function(buf) {
+	var rate = buf.sampleRate | 0;
+	var _g = 0;
+	var _g1 = hxd_snd_webaudio_Context.bufferPool;
+	while(_g < _g1.length) {
+		var pool = _g1[_g];
+		++_g;
+		if(pool.channels == buf.numberOfChannels && pool.samples == buf.length && pool.rate == rate) {
+			pool.pool.push(buf);
+			break;
+		}
+	}
+};
+var hxd_snd_webaudio__$Context_BufferPool = function(channels,samples,rate) {
+	this.pool = [];
+	this.channels = channels;
+	this.samples = samples;
+	this.rate = rate;
+};
+$hxClasses["hxd.snd.webaudio._Context.BufferPool"] = hxd_snd_webaudio__$Context_BufferPool;
+hxd_snd_webaudio__$Context_BufferPool.__name__ = "hxd.snd.webaudio._Context.BufferPool";
+hxd_snd_webaudio__$Context_BufferPool.prototype = {
+	__class__: hxd_snd_webaudio__$Context_BufferPool
+};
+var hxd_snd_webaudio_Driver = function() {
+	this.playbackPool = [];
+	this.ctx = hxd_snd_webaudio_Context.get();
+};
+$hxClasses["hxd.snd.webaudio.Driver"] = hxd_snd_webaudio_Driver;
+hxd_snd_webaudio_Driver.__name__ = "hxd.snd.webaudio.Driver";
+hxd_snd_webaudio_Driver.__interfaces__ = [hxd_snd_Driver];
+hxd_snd_webaudio_Driver.prototype = {
+	hasFeature: function(d) {
+		return true;
+	}
+	,setMasterVolume: function(value) {
+		hxd_snd_webaudio_Context.masterGain.gain.value = value;
+	}
+	,setListenerParams: function(position,direction,up,velocity) {
+		this.ctx.listener.setPosition(-position.x,position.y,position.z);
+		this.ctx.listener.setOrientation(-direction.x,direction.y,direction.z,-up.x,up.y,up.z);
+	}
+	,createSource: function() {
+		var s = new hxd_snd_webaudio_SourceHandle();
+		s.driver = this;
+		s.gain = hxd_snd_webaudio_Context.gainPool.length != 0 ? hxd_snd_webaudio_Context.gainPool.pop() : hxd_snd_webaudio_Context.ctx.createGain();
+		s.updateDestination();
+		return s;
+	}
+	,playSource: function(source) {
+		if(!source.playing) {
+			source.playing = true;
+			if(source.buffers.length != 0) {
+				var time = this.ctx.currentTime;
+				var _g = 0;
+				var _g1 = source.buffers;
+				while(_g < _g1.length) {
+					var b = _g1[_g];
+					++_g;
+					if(b.consumed) {
+						continue;
+					}
+					time = b.start(this.ctx,source,time);
+				}
+			}
+		}
+	}
+	,stopSource: function(source) {
+		source.playing = false;
+		source.sampleOffset = 0;
+	}
+	,setSourceVolume: function(source,value) {
+		source.gain.gain.value = value;
+	}
+	,createBuffer: function() {
+		var b = new hxd_snd_webaudio_BufferHandle();
+		b.samples = 0;
+		return b;
+	}
+	,setBufferData: function(buffer,data,size,format,channelCount,samplingRate) {
+		var sampleCount;
+		switch(format._hx_index) {
+		case 0:
+			sampleCount = 1;
+			break;
+		case 1:
+			sampleCount = 2;
+			break;
+		case 2:
+			sampleCount = 4;
+			break;
+		}
+		var sampleCount1 = size / sampleCount / channelCount | 0;
+		buffer.samples = sampleCount1;
+		if(sampleCount1 == 0) {
+			return;
+		}
+		if(buffer.inst == null) {
+			buffer.inst = hxd_snd_webaudio_Context.getBuffer(channelCount,sampleCount1,samplingRate);
+		} else if(buffer.inst.sampleRate != samplingRate || buffer.inst.numberOfChannels != channelCount || buffer.inst.length != sampleCount1) {
+			hxd_snd_webaudio_Context.putBuffer(buffer.inst);
+			buffer.inst = hxd_snd_webaudio_Context.getBuffer(channelCount,sampleCount1,samplingRate);
+		}
+		switch(format._hx_index) {
+		case 0:
+			var ui8 = new Uint8Array(data.b.bufferValue);
+			if(channelCount == 1) {
+				var chn = buffer.inst.getChannelData(0);
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					chn[i] = (ui8[i] - 128) / 128;
+				}
+			} else {
+				var left = buffer.inst.getChannelData(0);
+				var right = buffer.inst.getChannelData(1);
+				var r = 0;
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					left[i] = (ui8[r] - 128) / 128;
+					right[i] = (ui8[r + 1] - 128) / 128;
+					r += channelCount;
+				}
+			}
+			break;
+		case 1:
+			var i16 = new Int16Array(data.b.bufferValue);
+			if(channelCount == 1) {
+				var chn = buffer.inst.getChannelData(0);
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					chn[i] = i16[i] / 32768;
+				}
+			} else {
+				var left = buffer.inst.getChannelData(0);
+				var right = buffer.inst.getChannelData(1);
+				var r = 0;
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					left[i] = i16[r] / 32768;
+					right[i] = i16[r + 1] / 32768;
+					r += channelCount;
+				}
+			}
+			break;
+		case 2:
+			var f32 = new Float32Array(data.b.bufferValue);
+			if(channelCount == 1) {
+				var chn = buffer.inst.getChannelData(0);
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					chn[i] = f32[i];
+				}
+			} else {
+				var left = buffer.inst.getChannelData(0);
+				var right = buffer.inst.getChannelData(1);
+				var r = 0;
+				var _g = 0;
+				var _g1 = sampleCount1;
+				while(_g < _g1) {
+					var i = _g++;
+					left[i] = f32[r];
+					right[i] = f32[r + 1];
+					r += channelCount;
+				}
+			}
+			break;
+		}
+	}
+	,destroyBuffer: function(buffer) {
+		if(buffer.inst != null) {
+			hxd_snd_webaudio_Context.putBuffer(buffer.inst);
+		}
+		buffer.inst = null;
+	}
+	,queueBuffer: function(source,buffer,sampleStart,endOfStream) {
+		var buf = this.playbackPool.length != 0 ? this.playbackPool.pop() : new hxd_snd_webaudio_BufferPlayback();
+		if(buffer.inst == null) {
+			return;
+		}
+		buf.set(buffer,sampleStart / buffer.inst.length * buffer.inst.duration);
+		buffer.isEnd = endOfStream;
+		source.buffers.push(buf);
+		if(source.playing) {
+			if(source.buffers.length != 1) {
+				var t = source.buffers[source.buffers.length - 2].ends;
+				var tmp = this.ctx;
+				var tmp1;
+				if(isFinite(t)) {
+					var b = this.ctx.currentTime;
+					tmp1 = t < b ? b : t;
+				} else {
+					tmp1 = this.ctx.currentTime;
+				}
+				buf.start(tmp,source,tmp1);
+			} else {
+				buf.start(this.ctx,source,this.ctx.currentTime);
+			}
+		}
+	}
+	,unqueueBuffer: function(source,buffer) {
+		var i = 0;
+		while(i < source.buffers.length) {
+			var b = source.buffers[i];
+			if(b.buffer == buffer) {
+				source.buffers.splice(i,1);
+				b.stop(!buffer.isEnd);
+				b.clear();
+				this.playbackPool.push(b);
+				break;
+			}
+		}
+		if(buffer.isEnd || !source.playing) {
+			source.sampleOffset = 0;
+		} else {
+			source.sampleOffset += buffer.samples;
+		}
+	}
+	,getProcessedBuffers: function(source) {
+		var cnt = 0;
+		var _g = 0;
+		var _g1 = source.buffers;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			if(b.consumed) {
+				++cnt;
+			}
+		}
+		return cnt;
+	}
+	,getPlayedSampleCount: function(source) {
+		var consumed = 0;
+		var buf = null;
+		var _g = 0;
+		var _g1 = source.buffers;
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			if(b.consumed) {
+				consumed += b.buffer.samples;
+			} else if(b.dirty) {
+				buf = b;
+				break;
+			}
+		}
+		if(buf != null) {
+			return source.sampleOffset + consumed + buf.get_currentSample();
+		}
+		return source.sampleOffset + consumed;
+	}
+	,update: function() {
+	}
+	,getEffectDriver: function(type) {
+		switch(type) {
+		case "lowpass":
+			return new hxd_snd_webaudio_LowPassDriver();
+		case "pitch":
+			return new hxd_snd_webaudio_PitchDriver();
+		case "spatialization":
+			return new hxd_snd_webaudio_SpatializationDriver();
+		default:
+			return new hxd_snd_EffectDriver();
+		}
+	}
+	,__class__: hxd_snd_webaudio_Driver
+};
+var hxd_snd_webaudio_LowPassDriver = function() {
+	this.pool = [];
+	hxd_snd_EffectDriver.call(this);
+};
+$hxClasses["hxd.snd.webaudio.LowPassDriver"] = hxd_snd_webaudio_LowPassDriver;
+hxd_snd_webaudio_LowPassDriver.__name__ = "hxd.snd.webaudio.LowPassDriver";
+hxd_snd_webaudio_LowPassDriver.__super__ = hxd_snd_EffectDriver;
+hxd_snd_webaudio_LowPassDriver.prototype = $extend(hxd_snd_EffectDriver.prototype,{
+	get: function(ctx) {
+		if(this.pool.length != 0) {
+			return this.pool.pop();
+		}
+		var node = ctx.createBiquadFilter();
+		node.type = "lowpass";
+		return node;
+	}
+	,bind: function(e,source) {
+		source.lowPass = this.get(source.driver.ctx);
+		source.updateDestination();
+		this.apply(e,source);
+	}
+	,apply: function(e,source) {
+		var min = 40;
+		var max = source.driver.ctx.sampleRate / 2;
+		var octaves = Math.log(max / min) / Math.LN2;
+		source.lowPass.frequency.value = max * Math.pow(2,octaves * (e.gainHF - 1));
+	}
+	,unbind: function(e,source) {
+		this.pool.push(source.lowPass);
+		source.lowPass.disconnect();
+		source.lowPass = null;
+		if(source.driver != null) {
+			source.updateDestination();
+		}
+	}
+	,__class__: hxd_snd_webaudio_LowPassDriver
+});
+var hxd_snd_webaudio_PitchDriver = function() {
+	hxd_snd_EffectDriver.call(this);
+};
+$hxClasses["hxd.snd.webaudio.PitchDriver"] = hxd_snd_webaudio_PitchDriver;
+hxd_snd_webaudio_PitchDriver.__name__ = "hxd.snd.webaudio.PitchDriver";
+hxd_snd_webaudio_PitchDriver.__super__ = hxd_snd_EffectDriver;
+hxd_snd_webaudio_PitchDriver.prototype = $extend(hxd_snd_EffectDriver.prototype,{
+	apply: function(e,source) {
+		if(source.pitch != e.value) {
+			source.pitch = e.value;
+			source.applyPitch();
+		}
+	}
+	,unbind: function(e,source) {
+		source.pitch = 1;
+		source.applyPitch();
+	}
+	,__class__: hxd_snd_webaudio_PitchDriver
+});
+var hxd_snd_webaudio_SpatializationDriver = function() {
+	this.pool = [];
+	hxd_snd_EffectDriver.call(this);
+};
+$hxClasses["hxd.snd.webaudio.SpatializationDriver"] = hxd_snd_webaudio_SpatializationDriver;
+hxd_snd_webaudio_SpatializationDriver.__name__ = "hxd.snd.webaudio.SpatializationDriver";
+hxd_snd_webaudio_SpatializationDriver.__super__ = hxd_snd_EffectDriver;
+hxd_snd_webaudio_SpatializationDriver.prototype = $extend(hxd_snd_EffectDriver.prototype,{
+	get: function(ctx) {
+		if(this.pool.length != 0) {
+			return this.pool.pop();
+		}
+		var node = ctx.createPanner();
+		return node;
+	}
+	,bind: function(e,source) {
+		source.panner = this.get(source.driver.ctx);
+		source.updateDestination();
+		this.apply(e,source);
+	}
+	,apply: function(e,source) {
+		source.panner.setPosition(-e.position.x,e.position.y,e.position.z);
+		source.panner.setOrientation(-e.direction.x,e.direction.y,e.direction.z);
+		source.panner.rolloffFactor = e.rollOffFactor;
+		source.panner.refDistance = e.referenceDistance;
+		var maxDist = e.maxDistance == null ? 3.40282347e38 : e.maxDistance;
+		source.panner.maxDistance = maxDist;
+	}
+	,unbind: function(e,source) {
+		this.pool.push(source.panner);
+		source.panner.disconnect();
+		source.panner = null;
+		if(source.driver != null) {
+			source.updateDestination();
+		}
+	}
+	,__class__: hxd_snd_webaudio_SpatializationDriver
+});
 var hxsl_BufferKind = $hxEnums["hxsl.BufferKind"] = { __ename__:true,__constructs__:null
 	,Uniform: {_hx_name:"Uniform",_hx_index:0,__enum__:"hxsl.BufferKind",toString:$estr}
 	,Storage: {_hx_name:"Storage",_hx_index:1,__enum__:"hxsl.BufferKind",toString:$estr}
@@ -123522,19 +128623,19 @@ screens_ColorPickerDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototy
 				}
 			}
 			break;
-		case 4:
+		case 7:
 			var value = event.value;
 			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
 				this.updatePreview();
 			}
 			break;
-		case 5:
+		case 8:
 			var value = event.value;
 			if(source == this.sliderR || source == this.sliderG || source == this.sliderB) {
 				this.updatePreview();
 			}
 			break;
-		case 9:
+		case 12:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -123615,7 +128716,7 @@ screens_OkCancelDialog.prototype = $extend(bh_ui_screens_UIScreenBase.prototype,
 				this.closeWith(false);
 			}
 			break;
-		case 9:
+		case 12:
 			var keyCode = event.keyCode;
 			var release = event.release;
 			if(keyCode == 13) {
@@ -123674,7 +128775,7 @@ screens_advanced_ConditionalsDemoScreen.prototype = $extend(DemoScreenBase.proto
 		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				this.currentValue = val;
@@ -123732,7 +128833,7 @@ screens_advanced_ExpressionsDemoScreen.prototype = $extend(DemoScreenBase.protot
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				if(this.demoResult != null) {
@@ -123812,7 +128913,7 @@ screens_advanced_IncrementalDemoScreen.prototype = $extend(DemoScreenBase.protot
 		this.addObjectToLayer(this.statusText,bh_ui_screens_LayersEnum.DefaultLayer);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var val = event.value;
 			if(source == this.valueSlider) {
 				this.currentValue = val;
@@ -123860,7 +128961,7 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 		if(this.richHelper != null) {
 			this.richHelper.handleEvent(event);
 		}
-		if(event._hx_index == 14) {
+		if(event._hx_index == 17) {
 			var _g = event.event;
 			var _g1 = event.id;
 			var _g2 = event.metadata;
@@ -123870,13 +128971,13 @@ screens_advanced_InteractivesDemoScreen.prototype = $extend(DemoScreenBase.proto
 				var metadata = _g2;
 				this.handleClick(id,metadata);
 				break;
-			case 11:
+			case 14:
 				var _g3 = _g.data;
 				var id = _g1;
 				var metadata = _g2;
 				this.updateStatus("statusText","Hovering: " + id + " " + this.formatMeta(metadata));
 				break;
-			case 12:
+			case 15:
 				this.updateStatus("statusText","Hover or click any interactive region");
 				break;
 			default:
@@ -124124,11 +129225,11 @@ screens_advanced_LoadoutLabDemoBase.prototype = $extend(DemoScreenBase.prototype
 		case 0:
 			this.handleWidgetClick(src);
 			break;
-		case 4:
+		case 7:
 			var value = event.value;
 			this.handleSliderChange(src,value);
 			break;
-		case 14:
+		case 17:
 			var _g = event.event;
 			var _g1 = event.id;
 			var _g2 = event.metadata;
@@ -124137,13 +129238,13 @@ screens_advanced_LoadoutLabDemoBase.prototype = $extend(DemoScreenBase.prototype
 				var id = _g1;
 				this.handleClick(id);
 				break;
-			case 11:
+			case 14:
 				var _g3 = _g.data;
 				var id = _g1;
 				var metadata = _g2;
 				this.showHover(id,metadata);
 				break;
-			case 12:
+			case 15:
 				this.clearHover();
 				break;
 			default:
@@ -125659,7 +130760,7 @@ screens_advanced_MacroPerformanceDemoScreen.prototype = $extend(DemoScreenBase.p
 				this.clearObjects();
 			}
 			break;
-		case 6:
+		case 9:
 			var _g = event.items;
 			var index = event.index;
 			if(source == this.countDropdown && index >= 0 && index < screens_advanced_MacroPerformanceDemoScreen.COUNT_VALUES.length) {
@@ -127416,7 +132517,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				return;
 			}
 			break;
-		case 3:
+		case 6:
 			var checked = event.pressed;
 			if(source == this.alphaChk) {
 				this.applyAlpha = checked;
@@ -127435,7 +132536,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 4:
+		case 7:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = val;
@@ -127448,7 +132549,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.countDropdown && index >= 0 && index < screens_animation_AnimPathDemoScreen.COUNT_VALUES.length) {
@@ -127461,7 +132562,7 @@ screens_animation_AnimPathDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.rebuildCircles();
 			}
 			break;
-		case 7:
+		case 10:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.pathList && index >= 0 && index < screens_animation_AnimPathDemoScreen.PATH_NAMES.length) {
@@ -127790,7 +132891,7 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var checked = event.pressed;
 			if(source == this.inverseCheckbox) {
 				this.inverse = checked;
@@ -127798,14 +132899,14 @@ screens_animation_CurvesDemoScreen.prototype = $extend(DemoScreenBase.prototype,
 				this.drawCurveGraph();
 			}
 			break;
-		case 4:
+		case 7:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = val;
 				this.updateText("speedValue","" + val + "%");
 			}
 			break;
-		case 7:
+		case 10:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.curveList && index >= 0 && index < screens_animation_CurvesDemoScreen.CURVE_TYPES.length) {
@@ -128398,36 +133499,36 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				this.openColorPicker(ci);
 			}
 			break;
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			var cellIdx = this.findCellForSource(source);
 			if(cellIdx >= 0) {
 				this.buildPreview(cellIdx);
 			}
 			break;
-		case 4:
-			var value = event.value;
-			var cellIdx = this.findCellForSource(source);
-			if(cellIdx >= 0) {
-				this.buildPreview(cellIdx);
-				var sIdx = this.findSliderIdx(cellIdx,source);
-				if(sIdx >= 0) {
-					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
-				}
-			}
-			break;
-		case 5:
-			var value = event.value;
-			var cellIdx = this.findCellForSource(source);
-			if(cellIdx >= 0) {
-				this.buildPreview(cellIdx);
-				var sIdx = this.findSliderIdx(cellIdx,source);
-				if(sIdx >= 0) {
-					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
-				}
-			}
-			break;
 		case 7:
+			var value = event.value;
+			var cellIdx = this.findCellForSource(source);
+			if(cellIdx >= 0) {
+				this.buildPreview(cellIdx);
+				var sIdx = this.findSliderIdx(cellIdx,source);
+				if(sIdx >= 0) {
+					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
+				}
+			}
+			break;
+		case 8:
+			var value = event.value;
+			var cellIdx = this.findCellForSource(source);
+			if(cellIdx >= 0) {
+				this.buildPreview(cellIdx);
+				var sIdx = this.findSliderIdx(cellIdx,source);
+				if(sIdx >= 0) {
+					this.setCellText(cellIdx,screens_animation_FiltersDemoScreen.VALUE_LABELS[cellIdx][sIdx],this.formatFloat(this.cellSliders[cellIdx][sIdx].getFloatValue()));
+				}
+			}
+			break;
+		case 10:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList && index >= 0 && index < TestBitmaps.ALL_TYPES.length) {
@@ -128446,7 +133547,7 @@ screens_animation_FiltersDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
-		case 10:
+		case 13:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -128629,7 +133730,7 @@ screens_animation_FloatingTextDemoScreen.prototype = $extend(DemoScreenBase.prot
 				this.updateStatusText();
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.styleDropdown && index >= 0 && index < screens_animation_FloatingTextDemoScreen.STYLE_ITEMS.length) {
@@ -128862,7 +133963,7 @@ screens_animation_ParticlesDemoScreen.prototype = $extend(DemoScreenBase.prototy
 		}
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 6) {
+		if(event._hx_index == 9) {
 			var index = event.index;
 			var items = event.items;
 			if(source == this.tabs) {
@@ -129070,7 +134171,7 @@ screens_animation_PathsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 4:
+		case 7:
 			var val = event.value;
 			if(source == this.speedSlider) {
 				this.speed = 0.8 * val;
@@ -129895,7 +134996,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var checked = event.pressed;
 			if(source == this.extDrivenChk) {
 				this.isExtDriven = checked;
@@ -129919,7 +135020,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				}
 			}
 			break;
-		case 4:
+		case 7:
 			var value = event.value;
 			if(source == this.speedSlider) {
 				this.speedPct = value;
@@ -129932,7 +135033,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				this.setUpdatable(this.interactiveResult,"progressValue","" + value + "%");
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.tabs) {
@@ -129944,7 +135045,7 @@ screens_animation_StateAnimDemoScreen.prototype = $extend(DemoScreenBase.prototy
 				}
 			}
 			break;
-		case 7:
+		case 10:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.animList && index >= 0 && index < screens_animation_StateAnimDemoScreen.MARINE_ANIMS.length) {
@@ -131899,7 +137000,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.updateHandUI();
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 6) {
+		if(event._hx_index == 9) {
 			var index = event.index;
 			var items = event.items;
 			if(source == this.tabs) {
@@ -131917,12 +137018,12 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 		}
 		if(this.activeTab == 0) {
-			if(event._hx_index == 14) {
+			if(event._hx_index == 17) {
 				var _g = event.event;
 				var _g1 = event.id;
 				var _g2 = event.metadata;
 				switch(_g._hx_index) {
-				case 11:
+				case 14:
 					var _g2 = _g.data;
 					var id = _g1;
 					var data = this.getTooltipData(id);
@@ -131937,7 +137038,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						this.updateOnResult(this.statesResult,"statusText","State: " + data.title);
 					}
 					break;
-				case 12:
+				case 15:
 					var id = _g1;
 					if(this.tooltipHelper != null) {
 						this.tooltipHelper.cancelHover(id);
@@ -131973,7 +137074,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					this.toggleDisableCard();
 				}
 				break;
-			case 3:
+			case 6:
 				var pressed = event.pressed;
 				if(source == this.arrowToggle && this.cardHand != null) {
 					this.cardHand.setArrowVisible(pressed);
@@ -131983,7 +137084,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					this.recreateCardHand();
 				}
 				break;
-			case 4:
+			case 7:
 				var value = event.value;
 				if(this.cardHand != null) {
 					if(source == this.drawSlider) {
@@ -132019,7 +137120,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					}
 				}
 				break;
-			case 6:
+			case 9:
 				var index = event.index;
 				var items = event.items;
 				if(this.cardHand != null && index >= 0 && index < items.length) {
@@ -132065,12 +137166,12 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 					}
 				}
 				break;
-			case 14:
+			case 17:
 				var _g = event.event;
 				var _g1 = event.id;
 				var _g2 = event.metadata;
 				switch(_g._hx_index) {
-				case 11:
+				case 14:
 					var _g2 = _g.data;
 					var id = _g1;
 					var desc = this.getHelpText(id);
@@ -132080,7 +137181,7 @@ screens_gamelike_CardsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 						this.handTooltipHelper.startHover(id,"helpTip",params);
 					}
 					break;
-				case 12:
+				case 15:
 					var id = _g1;
 					if(this.handTooltipHelper != null) {
 						this.handTooltipHelper.cancelHover(id);
@@ -133718,7 +138819,7 @@ screens_gamelike_GridDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.snapCheckbox) {
 				this.setArrowSnap(pressed);
@@ -134598,7 +139699,7 @@ screens_gamelike_ProjectListDemoScreen.prototype = $extend(DemoScreenBase.protot
 				}
 			}
 			break;
-		case 6:
+		case 9:
 			var _g = event.items;
 			var index = event.index;
 			if(source == this.scrollableList) {
@@ -134606,7 +139707,7 @@ screens_gamelike_ProjectListDemoScreen.prototype = $extend(DemoScreenBase.protot
 				this.updateButtons(index);
 			}
 			break;
-		case 7:
+		case 10:
 			var _g = event.items;
 			var index = event.index;
 			if(source == this.scrollableList) {
@@ -134996,7 +140097,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 				this.addSkillPoint();
 			}
 			break;
-		case 14:
+		case 17:
 			var _g = event.event;
 			var _g1 = event.id;
 			var _g2 = event.metadata;
@@ -135008,7 +140109,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 					this.onNodeClick(nodeIdx);
 				}
 				break;
-			case 11:
+			case 14:
 				var _g2 = _g.data;
 				var id = _g1;
 				var nodeIdx = Std.parseInt(id);
@@ -135016,7 +140117,7 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 					this.onNodeHover(nodeIdx);
 				}
 				break;
-			case 12:
+			case 15:
 				this.clearHover();
 				this.updateInfoText("Hover over equipment to see details");
 				break;
@@ -135038,6 +140139,206 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.unlocked = null;
 	}
 	,__class__: screens_gamelike_SkillTreeDemoScreen
+});
+var screens_gamelike_SoundDemoScreen = function(screenManager,scrollConfig,layers) {
+	this.lines = [];
+	this.lastHistoryId = 0;
+	DemoScreenBase.call(this,screenManager,scrollConfig,layers);
+};
+$hxClasses["screens.gamelike.SoundDemoScreen"] = screens_gamelike_SoundDemoScreen;
+screens_gamelike_SoundDemoScreen.__name__ = "screens.gamelike.SoundDemoScreen";
+screens_gamelike_SoundDemoScreen.__super__ = DemoScreenBase;
+screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
+	load: function() {
+		var _gthis = this;
+		this.setupDemo("Sound","Six CC0 sounds: the widgets sound by themselves, the buttons fire sounds by name, the slider is a VCA, pause and slow motion are the clock");
+		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/sound.manim",false);
+		var generatedByMacroBuildWithParametersload1727Builder = function() {
+			var volumeSlider;
+			var slowBox;
+			var pauseBox;
+			var jumpButton;
+			var hitButton;
+			var dropdown;
+			var coinButton;
+			var boomButton;
+			var _gthis1 = _gthis.demoBuilder;
+			var builderResults = new haxe_ds_StringMap();
+			var _g = new haxe_ds_StringMap();
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,100);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				volumeSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["volumeSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				slowBox = _el;
+				return _el.getObject();
+			});
+			_g.h["slowBox"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				pauseBox = _el;
+				return _el.getObject();
+			});
+			_g.h["pauseBox"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Jump");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				jumpButton = _el;
+				return _el.getObject();
+			});
+			_g.h["jumpButton"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Hit");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				hitButton = _el;
+				return _el.getObject();
+			});
+			_g.h["hitButton"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_SoundDemoScreen.ITEMS,settings,0);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				dropdown = _el;
+				return _el.getObject();
+			});
+			_g.h["dropdown"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Coin");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				coinButton = _el;
+				return _el.getObject();
+			});
+			_g.h["coinButton"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addButtonWithSingleBuilder(_gthis.stdBuilder,"button",settings,"Explosion");
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				boomButton = _el;
+				return _el.getObject();
+			});
+			_g.h["boomButton"] = value;
+			var builderResults1 = _gthis1.buildWithParameters("soundDemo",builderResults,{ placeholderObjects : _g});
+			var retVal = { volumeSlider : volumeSlider, slowBox : slowBox, pauseBox : pauseBox, jumpButton : jumpButton, hitButton : hitButton, dropdown : dropdown, coinButton : coinButton, boomButton : boomButton, builderResults : builderResults1};
+			if(retVal.volumeSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "volumeSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.slowBox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "slowBox" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.pauseBox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "pauseBox" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.jumpButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "jumpButton" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.hitButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "hitButton" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.dropdown == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdown" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.coinButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "coinButton" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.boomButton == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "boomButton" + " is null (check if placeholder object is named correctly)");
+			}
+			return retVal;
+		};
+		var ui = generatedByMacroBuildWithParametersload1727Builder();
+		this.addBuilderResult(ui.builderResults);
+		this.panel = this.demoBuilder.buildWithParameters("soundLog",new haxe_ds_StringMap(),null,null,true);
+		this.addBuilderResult(this.panel);
+		this.coinButton = ui.coinButton;
+		this.jumpButton = ui.jumpButton;
+		this.hitButton = ui.hitButton;
+		this.boomButton = ui.boomButton;
+		this.dropdown = ui.dropdown;
+		this.volumeSlider = ui.volumeSlider;
+		this.pauseBox = ui.pauseBox;
+		this.slowBox = ui.slowBox;
+		var audio = this.screenManager.audio;
+		this.coinButton.onClick = function() {
+			audio.play("fx.coin");
+		};
+		this.jumpButton.onClick = function() {
+			audio.play("fx.jump");
+		};
+		this.hitButton.onClick = function() {
+			audio.play("fx.hit");
+		};
+		this.boomButton.onClick = function() {
+			audio.play("fx.explosion");
+		};
+	}
+	,onScreenEvent: function(event,source) {
+		switch(event._hx_index) {
+		case 6:
+			var _g = event.pressed;
+			var on = _g;
+			if(source == this.pauseBox) {
+				this.screenManager.clock.set_paused(on);
+			} else {
+				var on = _g;
+				if(source == this.slowBox) {
+					this.screenManager.clock.set_scale(on ? 0.5 : 1.0);
+					this.screenManager.audio.snapshot("slow",on);
+				}
+			}
+			break;
+		case 8:
+			var v = event.value;
+			if(source == this.volumeSlider) {
+				this.screenManager.audio.setVca("Effects",v / 100);
+			}
+			break;
+		default:
+		}
+	}
+	,update: function(dt) {
+		DemoScreenBase.prototype.update.call(this,dt);
+		if(this.panel == null) {
+			return;
+		}
+		var changed = false;
+		var _g = 0;
+		var _g1 = this.screenManager.audio.historySince(this.lastHistoryId);
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			this.lastHistoryId = e.id;
+			var t = Std.string(Math.round(e.time * 100) / 100);
+			this.lines.push("" + t + "  " + e.kind + "  " + e.name + "  " + e.detail);
+			changed = true;
+		}
+		while(this.lines.length > 6) {
+			this.lines.shift();
+			changed = true;
+		}
+		if(changed) {
+			this.panel.setParameter("log" + 1,0 < this.lines.length ? this.lines[0] : "");
+			this.panel.setParameter("log" + 2,1 < this.lines.length ? this.lines[1] : "");
+			this.panel.setParameter("log" + 3,2 < this.lines.length ? this.lines[2] : "");
+			this.panel.setParameter("log" + 4,3 < this.lines.length ? this.lines[3] : "");
+			this.panel.setParameter("log" + 5,4 < this.lines.length ? this.lines[4] : "");
+			this.panel.setParameter("log" + 6,5 < this.lines.length ? this.lines[5] : "");
+		}
+	}
+	,onClear: function() {
+		DemoScreenBase.prototype.onClear.call(this);
+		this.screenManager.clock.set_paused(false);
+		this.screenManager.clock.set_scale(1.0);
+		if(this.screenManager.audio.hasSnapshot("slow")) {
+			this.screenManager.audio.snapshot("slow",false);
+		}
+		this.panel = null;
+		this.demoBuilder = null;
+	}
+	,__class__: screens_gamelike_SoundDemoScreen
 });
 var screens_gamelike_StatusEffectsDemoScreen = function(screenManager,scrollConfig,layers) {
 	this.glowTimer = 0;
@@ -136384,13 +141685,13 @@ screens_graphics_RichTextAutofitDemoScreen.prototype = $extend(DemoScreenBase.pr
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.chkPixellari || source == this.chkDd || source == this.chkM6x11 || source == this.chkM5x7 || source == this.chkM3x6 || source == this.chkF7x5 || source == this.chkRichText) {
 				this.needsRebuild = true;
 			}
 			break;
-		case 4:
+		case 7:
 			var value = event.value;
 			if(source == this.widthSlider || source == this.heightSlider) {
 				this.updateWidthLabel();
@@ -136398,7 +141699,7 @@ screens_graphics_RichTextAutofitDemoScreen.prototype = $extend(DemoScreenBase.pr
 				this.needsRebuild = true;
 			}
 			break;
-		case 5:
+		case 8:
 			var value = event.value;
 			if(source == this.widthSlider || source == this.heightSlider) {
 				this.updateWidthLabel();
@@ -136406,7 +141707,7 @@ screens_graphics_RichTextAutofitDemoScreen.prototype = $extend(DemoScreenBase.pr
 				this.needsRebuild = true;
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.modeRadio && index >= 0 && index < screens_graphics_RichTextAutofitDemoScreen.MODE_ITEMS.length) {
@@ -136415,14 +141716,14 @@ screens_graphics_RichTextAutofitDemoScreen.prototype = $extend(DemoScreenBase.pr
 				this.needsRebuild = true;
 			}
 			break;
-		case 15:
+		case 18:
 			var text = event.text;
 			if(source == this.textInput) {
 				this.currentTextStr = text;
 				this.needsRebuild = true;
 			}
 			break;
-		case 16:
+		case 19:
 			var text = event.text;
 			if(source == this.textInput) {
 				this.currentTextStr = text;
@@ -136759,7 +142060,7 @@ screens_layout_DynamicRefsDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 		this.addBuilderResult(this.demoResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var value = event.value;
 			if(source == this.slider && this.demoResult != null) {
 				this.demoResult.setParameter("barValue",value);
@@ -136828,7 +142129,7 @@ screens_layout_FlowLayoutDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.addBuilderResult(this.showcaseResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var value = event.value;
 			if(source == this.countSlider) {
 				this.buildShowcase(value);
@@ -136910,7 +142211,7 @@ screens_layout_RepeatableDemoScreen.prototype = $extend(DemoScreenBase.prototype
 		this.addBuilderResult(this.showcaseResult);
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 4) {
+		if(event._hx_index == 7) {
 			var value = event.value;
 			if(source == this.countSlider) {
 				this.buildShowcase(value);
@@ -137731,7 +143032,7 @@ screens_ui_ButtonsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				var _g = 0;
@@ -137896,7 +143197,7 @@ screens_ui_CheckboxesDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.updateCount();
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 6) {
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				this.disabledCheckbox1.set_disabled(pressed);
@@ -138025,18 +143326,18 @@ screens_ui_CursorsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 14) {
+		if(event._hx_index == 17) {
 			var _g = event.event;
 			var _g1 = event.id;
 			var _g2 = event.metadata;
 			switch(_g._hx_index) {
-			case 11:
+			case 14:
 				var _g3 = _g.data;
 				var id = _g1;
 				var metadata = _g2;
 				this.updateStatus("Hovering " + id + ": " + screens_ui_CursorsDemoScreen.describe(metadata));
 				break;
-			case 12:
+			case 15:
 				this.updateStatus("Hover a region");
 				break;
 			default:
@@ -138160,7 +143461,7 @@ screens_ui_DialogsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.openDialog("redWarning","dialogRedOverlay","Red warning overlay with slide",bh_ui_screens_ScreenTransition.SlideUp(0.3,bh_multianim_EasingType.EaseOutCubic),bh_ui_screens_ScreenTransition.SlideDown(0.2,bh_multianim_EasingType.EaseInQuad));
 			}
 			break;
-		case 10:
+		case 13:
 			var controllerEvent = event.event;
 			if(controllerEvent._hx_index == 2) {
 				var dialogName = controllerEvent.dialogName;
@@ -138444,7 +143745,7 @@ screens_ui_DraggableDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		}
 	}
 	,onScreenEvent: function(event,source) {
-		if(event._hx_index == 3) {
+		if(event._hx_index == 6) {
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				var _g = 0;
@@ -138592,7 +143893,7 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				var _g = 0;
@@ -138604,7 +143905,7 @@ screens_ui_DropdownsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.dropdownScrollable) {
@@ -138947,13 +144248,13 @@ screens_ui_RadioDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				this.disabledRadio.set_disabled(pressed);
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.radioVertical) {
@@ -139042,7 +144343,7 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				if(this.scrollableList != null) {
@@ -139050,14 +144351,14 @@ screens_ui_ScrollableListDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				}
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList) {
 				this.updateSelectedText(index);
 			}
 			break;
-		case 7:
+		case 10:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.scrollableList) {
@@ -139296,7 +144597,7 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableCheckbox) {
 				var _g = 0;
@@ -139308,7 +144609,7 @@ screens_ui_SlidersDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 4:
+		case 7:
 			var value = event.value;
 			if(source == this.slider1) {
 				this.updateValueDisplay("value1",value);
@@ -139445,7 +144746,7 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.disableToggle) {
 				if(this.basicTabs != null) {
@@ -139459,7 +144760,7 @@ screens_ui_TabsDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				}
 			}
 			break;
-		case 6:
+		case 9:
 			var index = event.index;
 			var items = event.items;
 			if(source == this.basicTabs) {
@@ -139730,7 +145031,7 @@ screens_ui_TextInputDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
-		case 3:
+		case 6:
 			var pressed = event.pressed;
 			if(source == this.enterAdvancesToggle) {
 				if(this.myTabGroup != null) {
@@ -139742,15 +145043,15 @@ screens_ui_TextInputDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				this.updateEventLog("All inputs disabled: " + (pressed == null ? "null" : "" + pressed));
 			}
 			break;
-		case 15:
+		case 18:
 			var text = event.text;
 			this.updateEventLog("TextChange: \"" + text + "\"");
 			break;
-		case 16:
+		case 19:
 			var text = event.text;
 			this.updateEventLog("TextSubmit (Enter): \"" + text + "\"");
 			break;
-		case 17:
+		case 20:
 			var focused = event.focused;
 			var name = this.getInputName(source);
 			this.updateEventLog("FocusChange: " + name + " " + (focused ? "focused" : "blurred"));
@@ -139914,7 +145215,7 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				return;
 			}
 		}
-		if(event._hx_index == 14) {
+		if(event._hx_index == 17) {
 			var _g = event.event;
 			var _g1 = event.id;
 			var _g2 = event.metadata;
@@ -139924,13 +145225,13 @@ screens_ui_TooltipsPanelsDemoScreen.prototype = $extend(DemoScreenBase.prototype
 				var metadata = _g2;
 				this.handleClick(id,metadata);
 				break;
-			case 11:
+			case 14:
 				var _g3 = _g.data;
 				var id = _g1;
 				var metadata = _g2;
 				this.handleEnter(id,metadata);
 				break;
-			case 12:
+			case 15:
 				var id = _g1;
 				this.handleLeave(id);
 				break;
@@ -140225,9 +145526,9 @@ hx__registerFont = function(name,data) {
 };
 js_Boot.__toStr = ({ }).toString;
 Main.DEFAULT_SCREEN = "nav";
-Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","loadoutRuntime","loadoutCodegen","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","animLayers","particles","paths","curves","animPath","filters","floatingText","screenShake","transitions","inventory","characterSheet","autotile","tilemap","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent","projectList"];
+Main.SCREEN_ORDER = ["nav","featureShowcase","incremental","interactives","conditionals","expressions","settings","macroPerformance","loadoutRuntime","loadoutCodegen","buttons","checkboxes","sliders","dropdowns","scrollableList","radio","progressBar","draggable","dialogs","tabs","textInput","tooltipsPanels","staticRefs","dynamicRefs","flowLayout","repeatable","slots","comboStates","bitmapsAtlas","ninepatch","textFonts","richText","richTextAutofit","pixelsGraphics","stateAnim","animLayers","particles","paths","curves","animPath","filters","floatingText","screenShake","transitions","inventory","characterSheet","autotile","tilemap","battleHud","skillTree","dialogue","statusEffects","cards","gridComponent","projectList","sound"];
 NavScreen.SLIDE_DATA = [{ title : "Sprite Animations", desc : "State machine animations from .anim files\nwith direction states, loop control, and frame events", syntax : "stateAnim construct(\"s\", \"s\" => sheet \"crew2\", anim, 10, loop)", target : "stateAnim"},{ title : "Visual Filters", desc : "9 GPU filters: glow, outline, blur, saturate,\nbrightness, dropShadow, hue, grayscale, pixelOutline", syntax : "filter: glow(color: #ffaa00, alpha: 0.8, radius: 8)", target : "filters"},{ title : "9-Patch Panels", desc : "Scalable UI panels from sprite sheets.\nDefine once, render at any size", syntax : "ninepatch(\"ui\", \"Window_3x3_idle\", 200, 60)", target : "ninepatch"},{ title : "Runtime Conditionals", desc : "Parameter switching with @() conditionals.\nExpressions, comparisons, ranges, and negation", syntax : "@(param=>A) text(...)  @(param=>!C) text(...)", target : "conditionals"},{ title : "Repeatable Patterns", desc : "Generate grids and sequences with repeatable loops.\nUse $i in expressions for alpha, position, color", syntax : "repeatable($i, step(20)) { @alpha(1.0 - $i/5.0) ... }", target : "repeatable"},{ title : "Pixel Art & Text", desc : "Procedural line drawing with pixels blocks.\nMulti-font text rendering with alignment options", syntax : "pixels( line 0,0, 40,40, #ff4444 )", target : "pixelsGraphics"},{ title : "Particle Effects", desc : "GPU particle systems with sub-emitters.\nFirework bursts spawn on particle death", syntax : "subEmitters: [{ groupId: \"burst\", trigger: ondeath, burstCount: 18 }]", target : "particles"}];
-NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "loadoutRuntime", title : "Loadout Lab (runtime)"},{ id : "loadoutCodegen", title : "Loadout Lab (codegen)"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "richText", title : "Rich Text"},{ id : "richTextAutofit", title : "Rich Text Autofit"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "animLayers", title : "Layers in .anim"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"},{ id : "floatingText", title : "Floating Text"},{ id : "screenShake", title : "Screen Shake"},{ id : "transitions", title : "Transitions"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "autotile", title : "Autotile Terrain"},{ id : "tilemap", title : "Tile Map"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"},{ id : "projectList", title : "Project List"}]}];
+NavScreen.CATEGORIES = [{ name : "Advanced Features", screens : [{ id : "featureShowcase", title : "Feature Showcase"},{ id : "incremental", title : "Incremental"},{ id : "interactives", title : "Interactives"},{ id : "conditionals", title : "Conditionals"},{ id : "expressions", title : "Expressions"},{ id : "settings", title : "Settings"},{ id : "macroPerformance", title : "Macro Performance"},{ id : "loadoutRuntime", title : "Loadout Lab (runtime)"},{ id : "loadoutCodegen", title : "Loadout Lab (codegen)"}]},{ name : "UI Components", screens : [{ id : "buttons", title : "Buttons"},{ id : "checkboxes", title : "Checkboxes"},{ id : "sliders", title : "Sliders"},{ id : "dropdowns", title : "Dropdowns"},{ id : "scrollableList", title : "Scrollable List"},{ id : "radio", title : "Radio Buttons"},{ id : "progressBar", title : "Progress Bars"},{ id : "draggable", title : "Draggable"},{ id : "dialogs", title : "Dialogs"},{ id : "tabs", title : "Tabs"},{ id : "textInput", title : "Text Input"},{ id : "tooltipsPanels", title : "Tooltips & Panels"}]},{ name : "Layout & Composition", screens : [{ id : "staticRefs", title : "Static Refs"},{ id : "dynamicRefs", title : "Dynamic Refs"},{ id : "flowLayout", title : "Flow Layout"},{ id : "repeatable", title : "Repeatable"},{ id : "slots", title : "Slots"},{ id : "comboStates", title : "Combo States"}]},{ name : "Graphics & Rendering", screens : [{ id : "bitmapsAtlas", title : "Bitmaps & Atlas"},{ id : "ninepatch", title : "Ninepatch"},{ id : "textFonts", title : "Text & Fonts"},{ id : "richText", title : "Rich Text"},{ id : "richTextAutofit", title : "Rich Text Autofit"},{ id : "pixelsGraphics", title : "Pixels & Graphics"}]},{ name : "Animation & Effects", screens : [{ id : "stateAnim", title : "State Animations"},{ id : "animLayers", title : "Layers in .anim"},{ id : "particles", title : "Particles"},{ id : "paths", title : "Paths"},{ id : "curves", title : "Curves"},{ id : "animPath", title : "Anim Paths"},{ id : "filters", title : "Filters"},{ id : "floatingText", title : "Floating Text"},{ id : "screenShake", title : "Screen Shake"},{ id : "transitions", title : "Transitions"}]},{ name : "Game-Like Demos", screens : [{ id : "inventory", title : "Inventory Grid"},{ id : "characterSheet", title : "Character Sheet"},{ id : "autotile", title : "Autotile Terrain"},{ id : "tilemap", title : "Tile Map"},{ id : "battleHud", title : "Battle HUD"},{ id : "skillTree", title : "Equipment Tree"},{ id : "dialogue", title : "Dialogue Box"},{ id : "statusEffects", title : "Status Effects"},{ id : "cards", title : "Cards"},{ id : "gridComponent", title : "Grid Component"},{ id : "projectList", title : "Project List"},{ id : "sound", title : "Sound"}]}];
 TestBitmaps.ALL_TYPES = ["rectBlack","rectWhite","rectGreen","circleBlack","circleWhite","circleRed","star","skull","marine","dice"];
 TestBitmaps.ALL_NAMES = ["Black Rect","White Rect","Green Rect","Black Circle","White Circle","Red Circle","Star","Skull","Marine","Dice"];
 Xml.Element = 0;
@@ -140317,6 +145618,7 @@ bh_stateanim__$AnimParser_AnimLexerHC.keywordMap = (function($this) {
 	_g.h["random"] = bh_stateanim_APKeywords.APRandom;
 	_g.h["frames"] = bh_stateanim_APKeywords.APFrames;
 	_g.h["metadata"] = bh_stateanim_APKeywords.APMetadata;
+	_g.h["sounds"] = bh_stateanim_APKeywords.APSounds;
 	_g.h["anim"] = bh_stateanim_APKeywords.APAnim;
 	_g.h["final"] = bh_stateanim_APKeywords.APFinal;
 	_g.h["else"] = bh_stateanim_APKeywords.APElse;
@@ -140361,6 +145663,11 @@ bh_ui_UIMultiAnimGrid._scratchHex = new bh_base_Hex(0,0,0);
 bh_ui_UIMultiAnimGrid._scratchHex2 = new bh_base_Hex(0,0,0);
 bh_ui_UIMultiAnimGrid._scratchSceneToLocalFP = new bh_base_FPoint(0,0);
 bh_ui_UIMultiAnimGrid.cardTargetCounter = 0;
+format_mp3_MPEG.Reserved = 1;
+format_mp3_MPEG.V1_Bitrates = [[format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_40,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_320,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_320,format_mp3_Bitrate.BR_384,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_288,format_mp3_Bitrate.BR_320,format_mp3_Bitrate.BR_352,format_mp3_Bitrate.BR_384,format_mp3_Bitrate.BR_416,format_mp3_Bitrate.BR_448,format_mp3_Bitrate.BR_Bad]];
+format_mp3_MPEG.V2_Bitrates = [[format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_8,format_mp3_Bitrate.BR_16,format_mp3_Bitrate.BR_24,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_40,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_144,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_8,format_mp3_Bitrate.BR_16,format_mp3_Bitrate.BR_24,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_40,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_144,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_Bad],[format_mp3_Bitrate.BR_Free,format_mp3_Bitrate.BR_32,format_mp3_Bitrate.BR_48,format_mp3_Bitrate.BR_56,format_mp3_Bitrate.BR_64,format_mp3_Bitrate.BR_80,format_mp3_Bitrate.BR_96,format_mp3_Bitrate.BR_112,format_mp3_Bitrate.BR_128,format_mp3_Bitrate.BR_144,format_mp3_Bitrate.BR_160,format_mp3_Bitrate.BR_176,format_mp3_Bitrate.BR_192,format_mp3_Bitrate.BR_224,format_mp3_Bitrate.BR_256,format_mp3_Bitrate.BR_Bad]];
+format_mp3_MPEG.SamplingRates = [[format_mp3_SamplingRate.SR_11025,format_mp3_SamplingRate.SR_12000,format_mp3_SamplingRate.SR_8000,format_mp3_SamplingRate.SR_Bad],[format_mp3_SamplingRate.SR_Bad,format_mp3_SamplingRate.SR_Bad,format_mp3_SamplingRate.SR_Bad,format_mp3_SamplingRate.SR_Bad],[format_mp3_SamplingRate.SR_22050,format_mp3_SamplingRate.SR_24000,format_mp3_SamplingRate.SR_12000,format_mp3_SamplingRate.SR_Bad],[format_mp3_SamplingRate.SR_44100,format_mp3_SamplingRate.SR_48000,format_mp3_SamplingRate.SR_32000,format_mp3_SamplingRate.SR_Bad]];
+format_mp3_CLayer.LReserved = 0;
 h2d_Flow.PADDING_IGNORE_PARENT = -2147483444;
 h2d_HtmlText.REG_SPACES = new EReg("[\r\n\t ]+","g");
 h3d_impl_RenderContext.STRICT = true;
@@ -140561,6 +145868,16 @@ hxd_res_Image.ENABLE_AUTO_WATCH = true;
 hxd_res_Image.BLACK_1x1 = hxd_Pixels.alloc(1,1,hxd_PixelFormat.RGBA);
 hxd_res_Image.ASYNC_LOADER_MIPS = 0;
 hxd_res_Image.LOG_TEXTURE_LOAD = false;
+hxd_res_Sound.ENABLE_AUTO_WATCH = true;
+hxd_snd_Channel.ID = 0;
+hxd_snd_Source.ID = 0;
+hxd_snd_Manager.STREAM_DURATION = 5.;
+hxd_snd_Manager.STREAM_BUFFER_SAMPLE_COUNT = 44100;
+hxd_snd_Manager.BUFFER_QUEUE_LENGTH = 2;
+hxd_snd_Manager.MAX_SOURCES = 16;
+hxd_snd_Manager.SOUND_BUFFER_CACHE_SIZE = 256;
+hxd_snd_Manager.VIRTUAL_VOLUME_THRESHOLD = 1e-5;
+hxd_snd_Manager.BUFFER_STREAM_SPLIT = 16;
 hxsl_Tools.UID = 0;
 hxsl_Tools.SWIZ = hxsl_Component.__empty_constructs__.slice();
 hxsl_Tools.MAX_CHANNELS_BITS = 3;
@@ -140752,6 +146069,7 @@ screens_gamelike_SkillTreeDemoScreen.SKILL_NAMES = ["Helm","Plate","Axe","Aegis"
 screens_gamelike_SkillTreeDemoScreen.PATH_NAMES = ["WAR","ROG","MAG"];
 screens_gamelike_SkillTreeDemoScreen.PATH_SLOT_NAMES = ["warNode","rogNode","magNode"];
 screens_gamelike_SkillTreeDemoScreen.ICONS = ["helm","armor","axe","tshield","boots","gloves","bow","ring","staff","book","scroll","gem"];
+screens_gamelike_SoundDemoScreen.ITEMS = [{ name : "Stone"},{ name : "Grass"},{ name : "Wood"},{ name : "Water"}];
 screens_gamelike_StatusEffectsDemoScreen.ICON_TYPE_MAP = (function($this) {
 	var $r;
 	var _g = new haxe_ds_StringMap();

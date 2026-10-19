@@ -34,7 +34,8 @@ var bh_ui_screens_UIScreenBase = function(screenManager,layers) {
 	this.contentTarget = null;
 	this.initialSyncDone = false;
 	this._autoSyncInitialState = false;
-	this.music = null;
+	this.screenAmbience = null;
+	this.screenMusic = null;
 	this.modalOverlayConfig = null;
 	this.tabAutoWired = false;
 	this.tabGroup = null;
@@ -1142,10 +1143,20 @@ bh_ui_screens_UIScreenBase.prototype = {
 		return r;
 	}
 	,readMusicSetting: function(r) {
-		if(this.music == null && r.rootSettings != null && r.rootSettings.has("music")) {
-			var said = r.rootSettings.getStringOrDefault("music","");
+		var settings = r.rootSettings;
+		if(settings == null) {
+			return;
+		}
+		if(this.screenMusic == null && settings.has("music")) {
+			var said = settings.getStringOrDefault("music","");
 			if(said != "") {
-				this.music = said;
+				this.screenMusic = said;
+			}
+		}
+		if(this.screenAmbience == null && settings.has("ambience")) {
+			var said = settings.getStringOrDefault("ambience","");
+			if(said != "") {
+				this.screenAmbience = said;
 			}
 		}
 	}
@@ -3320,11 +3331,19 @@ bh_audio__$Audio_SoundEntry.prototype = {
 	__class__: bh_audio__$Audio_SoundEntry
 };
 var bh_audio_SoundInstance = function(name,startedAt,volume,fadeOut) {
+	this.onStop = null;
+	this.rate = 1;
+	this.gain = 1;
+	this.releasePending = 0;
+	this.release = [];
 	this.stopped = false;
 	this.pending = 0;
 	this.voices = [];
 	this.name = name;
+	var dot = name.indexOf(".");
+	this.bank = dot < 0 ? name : HxOverrides.substr(name,0,dot);
 	this.startedAt = startedAt;
+	this.loudest = volume;
 	this.volume = volume;
 	this.fadeOut = fadeOut;
 };
@@ -3349,6 +3368,31 @@ bh_audio_SoundInstance.prototype = {
 		}
 		return false;
 	}
+	,isReleasing: function() {
+		if(!this.stopped) {
+			return false;
+		}
+		if(this.releasePending > 0) {
+			return true;
+		}
+		var _g = 0;
+		var _g1 = this.release;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			if(v.isPlaying()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	,isDone: function() {
+		if(!this.isAlive()) {
+			return !this.isReleasing();
+		} else {
+			return false;
+		}
+	}
 	,stop: function(fadeOut) {
 		if(this.stopped) {
 			return;
@@ -3363,10 +3407,85 @@ bh_audio_SoundInstance.prototype = {
 			var tmp = fadeOut;
 			v.stop(tmp != null ? tmp : this.fadeOut);
 		}
+		if(this.onStop != null) {
+			this.onStop(this);
+		}
+	}
+	,cut: function(fadeOut) {
+		var tmp = fadeOut;
+		var fade = tmp != null ? tmp : this.fadeOut;
+		if(!this.stopped) {
+			this.stopped = true;
+			this.pending = 0;
+			var _g = 0;
+			var _g1 = this.voices;
+			while(_g < _g1.length) {
+				var v = _g1[_g];
+				++_g;
+				v.stop(fade);
+			}
+		}
+		this.releasePending = 0;
+		var _g = 0;
+		var _g1 = this.release;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			v.stop(fade);
+		}
+	}
+	,setPitch: function(rate) {
+		this.rate = rate;
+		var _g = 0;
+		var _g1 = this.voices;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			v.setPitch(rate);
+		}
+		var _g = 0;
+		var _g1 = this.release;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			v.setPitch(rate);
+		}
+	}
+	,setVolume: function(gain,fade) {
+		if(fade == null) {
+			fade = 0;
+		}
+		this.gain = gain;
+		this.volume = this.loudest * gain;
+		var _g = 0;
+		var _g1 = this.voices;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			v.setGain(gain,fade);
+		}
+		var _g = 0;
+		var _g1 = this.release;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			v.setGain(gain,fade);
+		}
+	}
+	,addVoice: function(voice,isRelease) {
+		if(this.rate != 1) {
+			voice.setPitch(this.rate);
+		}
+		if(this.gain != 1) {
+			voice.setGain(this.gain,0);
+		}
+		(isRelease ? this.release : this.voices).push(voice);
 	}
 	,__class__: bh_audio_SoundInstance
 };
 var bh_audio_Audio = function(backend) {
+	this.ambienceVoice = null;
+	this.ambiencePlaying = null;
 	this.onHistory = null;
 	this.nextHistoryId = 1;
 	this.history = [];
@@ -3477,6 +3596,20 @@ bh_audio_Audio.prototype = {
 		}
 		if(!tmp) {
 			return false;
+		}
+		var cut = 0;
+		var _g = 0;
+		var _g1 = this.instances;
+		while(_g < _g1.length) {
+			var i = _g1[_g];
+			++_g;
+			if(i.bank == name && !i.isDone()) {
+				i.cut();
+				++cut;
+			}
+		}
+		if(cut > 0) {
+			this.note("stop","" + name + ".*","" + cut);
 		}
 		var _g = 0;
 		var _g1 = [];
@@ -3888,6 +4021,32 @@ bh_audio_Audio.prototype = {
 		this.musicVoice = null;
 		this.musicPlaying = null;
 	}
+	,playAmbience: function(name,fade) {
+		if(this.ambiencePlaying == name && this.ambienceVoice != null && this.ambienceVoice.isAlive()) {
+			return;
+		}
+		if(!this.has(name)) {
+			throw haxe_Exception.thrown("audio: no sound \"" + name + "\" (the sounds are: " + this.soundNames().join(", ") + ")");
+		}
+		if(this.ambienceVoice != null) {
+			this.ambienceVoice.stop(fade);
+		}
+		this.ambiencePlaying = name;
+		this.ambienceVoice = this.play(name);
+		this.note("ambience",name,this.ambienceVoice != null ? "" : "dropped");
+	}
+	,stopAmbience: function(fade) {
+		var name = this.ambiencePlaying;
+		if(name == null) {
+			return;
+		}
+		if(this.ambienceVoice != null) {
+			this.ambienceVoice.stop(fade);
+		}
+		this.note("ambience",name,"stopped");
+		this.ambienceVoice = null;
+		this.ambiencePlaying = null;
+	}
 	,playUi: function(key,own) {
 		if(own != null) {
 			if(own == "none" || own == "") {
@@ -3926,6 +4085,7 @@ bh_audio_Audio.prototype = {
 		return _g;
 	}
 	,play: function(name) {
+		var _gthis = this;
 		var list = this.entries.h[name];
 		if(list == null) {
 			throw haxe_Exception.thrown("audio: no sound \"" + name + "\" (the sounds are: " + this.soundNames().join(", ") + ")");
@@ -3986,40 +4146,89 @@ bh_audio_Audio.prototype = {
 		}
 		entry.lastPlay = this.time;
 		var bank = this.banks.h[entry.block];
+		var bus;
 		var tmp = def.bus;
-		var bus = tmp != null ? tmp : bank != null ? bank.bus : null;
+		bus = tmp != null ? tmp : bank != null ? bank.bus : null;
 		var loudest = 0.0;
 		var starts = [];
+		var stopLayers = false;
 		var _g = 0;
 		var _g1 = def.layers.length;
 		while(_g < _g1) {
 			var li = _g++;
-			var layer = def.layers[li];
-			if(layer.chance < 1 && this.randomFunc() >= layer.chance) {
+			if(def.layers[li].onStop) {
+				stopLayers = true;
 				continue;
 			}
-			var path = this.pickFile(entry,li);
-			var volume = Math.pow(10,this.roll(layer.volumeMinDb,layer.volumeMaxDb) / 20);
-			if(volume > loudest) {
-				loudest = volume;
+			var s = this.rollLayer(name,entry,li,bus);
+			if(s == null) {
+				continue;
 			}
-			starts.push({ start : { sound : name, layer : layer.name, path : path, volume : volume, pitch : this.roll(layer.pitchMin,layer.pitchMax), bus : bus, priority : def.priority, fadeIn : def.fadeIn, loop : false}, delay : this.roll(layer.delayMin,layer.delayMax)});
+			if(s.start.volume > loudest) {
+				loudest = s.start.volume;
+			}
+			starts.push(s);
 		}
 		var instance = new bh_audio_SoundInstance(name,this.time,loudest,def.fadeOut);
+		if(stopLayers) {
+			instance.onStop = function(i) {
+				_gthis.startStopLayers(i,entry,bus);
+			};
+		}
 		this.instances.push(instance);
 		this.note("play",name,starts.length == 1 ? starts[0].start.path : "" + starts.length + " layers");
 		var _g = 0;
 		while(_g < starts.length) {
 			var s = starts[_g];
 			++_g;
-			if(s.delay <= 0) {
-				instance.voices.push(this.backend.play(s.start));
-			} else {
-				instance.pending++;
-				this.pending.push({ instance : instance, at : this.time + s.delay, start : s.start});
-			}
+			this.startVoice(instance,s,false);
 		}
 		return instance;
+	}
+	,rollLayer: function(name,entry,li,bus) {
+		var def = entry.def;
+		var layer = def.layers[li];
+		if(layer.chance < 1 && this.randomFunc() >= layer.chance) {
+			return null;
+		}
+		var path = this.pickFile(entry,li);
+		var volume = Math.pow(10,this.roll(layer.volumeMinDb,layer.volumeMaxDb) / 20);
+		var pitch = this.roll(layer.pitchMin,layer.pitchMax);
+		var delay = this.roll(layer.delayMin,layer.delayMax);
+		return { start : { sound : name, layer : layer.name, path : path, volume : volume, pitch : pitch, bus : bus, priority : def.priority, fadeIn : layer.onStop ? 0 : def.fadeIn, loop : layer.loop}, delay : delay};
+	}
+	,startVoice: function(instance,s,isRelease) {
+		if(s.delay <= 0) {
+			instance.addVoice(this.backend.play(s.start),isRelease);
+			return;
+		}
+		if(isRelease) {
+			instance.releasePending++;
+		} else {
+			instance.pending++;
+		}
+		this.pending.push({ instance : instance, at : this.time + s.delay, start : s.start, release : isRelease});
+	}
+	,startStopLayers: function(instance,entry,bus) {
+		var def = entry.def;
+		var n = 0;
+		var _g = 0;
+		var _g1 = def.layers.length;
+		while(_g < _g1) {
+			var li = _g++;
+			if(!def.layers[li].onStop) {
+				continue;
+			}
+			var s = this.rollLayer(instance.name,entry,li,bus);
+			if(s == null) {
+				continue;
+			}
+			this.startVoice(instance,s,true);
+			++n;
+		}
+		if(n > 0) {
+			this.note("play",instance.name,n == 1 ? "on stop" : "" + n + " layers on stop");
+		}
 	}
 	,update: function(dt) {
 		this.time += dt;
@@ -4029,19 +4238,24 @@ bh_audio_Audio.prototype = {
 			var p = this.pending[i];
 			if(p.at <= this.time) {
 				this.pending.splice(i,1);
-				if(!p.instance.stopped) {
+				if(p.release) {
+					if(p.instance.releasePending > 0) {
+						p.instance.releasePending--;
+						p.instance.addVoice(this.backend.play(p.start),true);
+					}
+				} else if(!p.instance.stopped) {
 					p.instance.pending--;
-					p.instance.voices.push(this.backend.play(p.start));
+					p.instance.addVoice(this.backend.play(p.start),false);
 				}
 			} else {
 				++i;
 			}
 		}
 		var j = 0;
-		while(j < this.instances.length) if(this.instances[j].isAlive()) {
-			++j;
-		} else {
+		while(j < this.instances.length) if(this.instances[j].isDone()) {
 			this.instances.splice(j,1);
+		} else {
+			++j;
 		}
 	}
 	,roll: function(min,max) {
@@ -4164,18 +4378,29 @@ bh_audio_AudioBackend.__isInterface__ = true;
 bh_audio_AudioBackend.prototype = {
 	__class__: bh_audio_AudioBackend
 };
-var bh_audio__$HeapsBackend_HeapsVoice = function(channel,bus,basePitch) {
+var bh_audio__$HeapsBackend_HeapsVoice = function(channel,bus,basePitch,baseVolume) {
 	this.pitchEffect = null;
+	this.ownPitch = 1;
+	this.busPitch = 1;
 	this.channel = channel;
 	this.bus = bus;
 	this.basePitch = basePitch;
+	this.baseVolume = baseVolume;
 };
 $hxClasses["bh.audio._HeapsBackend.HeapsVoice"] = bh_audio__$HeapsBackend_HeapsVoice;
 bh_audio__$HeapsBackend_HeapsVoice.__name__ = "bh.audio._HeapsBackend.HeapsVoice";
 bh_audio__$HeapsBackend_HeapsVoice.__interfaces__ = [bh_audio_AudioVoice];
 bh_audio__$HeapsBackend_HeapsVoice.prototype = {
 	setBusPitch: function(rate) {
-		var value = this.basePitch * rate;
+		this.busPitch = rate;
+		this.applyPitch();
+	}
+	,setPitch: function(rate) {
+		this.ownPitch = rate;
+		this.applyPitch();
+	}
+	,applyPitch: function() {
+		var value = this.basePitch * this.busPitch * this.ownPitch;
 		if(this.pitchEffect == null) {
 			if(value == 1) {
 				return;
@@ -4183,6 +4408,17 @@ bh_audio__$HeapsBackend_HeapsVoice.prototype = {
 			this.pitchEffect = this.channel.addEffect(new hxd_snd_effect_Pitch(value));
 		} else {
 			this.pitchEffect.value = value;
+		}
+	}
+	,setGain: function(gain,fade) {
+		if(this.channel.isReleased()) {
+			return;
+		}
+		var value = this.baseVolume * gain;
+		if(fade > 0) {
+			this.channel.fadeTo(value,fade);
+		} else {
+			this.channel.set_volume(value);
 		}
 	}
 	,isPlaying: function() {
@@ -4247,7 +4483,7 @@ bh_audio_HeapsBackend.prototype = {
 		if(start.fadeIn > 0) {
 			channel.fadeTo(start.volume,start.fadeIn);
 		}
-		var voice = new bh_audio__$HeapsBackend_HeapsVoice(channel,name,start.pitch);
+		var voice = new bh_audio__$HeapsBackend_HeapsVoice(channel,name,start.pitch,start.volume);
 		var state = this.states.h[name];
 		voice.setBusPitch(state != null ? state.pitch : 1);
 		if(state != null && state.paused) {
@@ -14481,6 +14717,34 @@ bh_multianim_KeepGraphics.prototype = $extend(h2d_Graphics.prototype,{
 	}
 	,__class__: bh_multianim_KeepGraphics
 });
+var bh_ui_UIInteractiveSource = function() { };
+$hxClasses["bh.ui.UIInteractiveSource"] = bh_ui_UIInteractiveSource;
+bh_ui_UIInteractiveSource.__name__ = "bh.ui.UIInteractiveSource";
+bh_ui_UIInteractiveSource.__isInterface__ = true;
+bh_ui_UIInteractiveSource.prototype = {
+	__class__: bh_ui_UIInteractiveSource
+};
+var bh_multianim_LiveProgrammable = function() { };
+$hxClasses["bh.multianim.LiveProgrammable"] = bh_multianim_LiveProgrammable;
+bh_multianim_LiveProgrammable.__name__ = "bh.multianim.LiveProgrammable";
+bh_multianim_LiveProgrammable.__isInterface__ = true;
+bh_multianim_LiveProgrammable.__interfaces__ = [bh_ui_UIInteractiveSource];
+var bh_multianim_LiveProgrammableTools = function() { };
+$hxClasses["bh.multianim.LiveProgrammableTools"] = bh_multianim_LiveProgrammableTools;
+bh_multianim_LiveProgrammableTools.__name__ = "bh.multianim.LiveProgrammableTools";
+bh_multianim_LiveProgrammableTools.isDrawnUnder = function(obj,root) {
+	var cur = obj;
+	while(cur != null) {
+		if(!cur.visible) {
+			return false;
+		}
+		if(cur == root) {
+			return true;
+		}
+		cur = cur.parent;
+	}
+	return false;
+};
 var bh_multianim_MacroBlendMode = $hxEnums["bh.multianim.MacroBlendMode"] = { __ename__:true,__constructs__:null
 	,MBNone: {_hx_name:"MBNone",_hx_index:0,__enum__:"bh.multianim.MacroBlendMode",toString:$estr}
 	,MBAlpha: {_hx_name:"MBAlpha",_hx_index:1,__enum__:"bh.multianim.MacroBlendMode",toString:$estr}
@@ -15148,6 +15412,7 @@ var bh_multianim_MacroManimParser = function(tokens,sourceName,resourceLoader) {
 	this.sourceName = sourceName;
 	this.nodes = new haxe_ds_StringMap();
 	this.imports = new haxe_ds_StringMap();
+	this.importPaths = new haxe_ds_StringMap();
 	this.resourceLoader = resourceLoader;
 	this.uniqueCounter = 654321;
 	this.activeDefs = null;
@@ -22262,6 +22527,7 @@ bh_multianim_MacroManimParser.prototype = {
 															this.expectKeyword("as");
 															var importName = this.expectIdentifierOrString();
 															this.eatSemicolon();
+															this.importPaths.h[importName] = file;
 															if(this.resourceLoader != null) {
 																var loadedFile = this.resourceLoader.loadMultiAnim(file);
 																if(loadedFile == null) {
@@ -22708,7 +22974,7 @@ bh_multianim_MacroManimParser.prototype = {
 		if(this.tokens[this.tpos].type._hx_index != 0) {
 			this.error("unexpected content after main body: " + Std.string(this.tokens[this.tpos].type));
 		}
-		return { nodes : this.nodes, imports : this.imports, customFilterRefs : this.customFilterRefs};
+		return { nodes : this.nodes, imports : this.imports, customFilterRefs : this.customFilterRefs, importPaths : this.importPaths};
 	}
 	,parseGraphicsElements: function() {
 		var elements = [];
@@ -24460,6 +24726,29 @@ bh_multianim_MacroManimParser.prototype = {
 					_gthis.error("" + where + ": files: [] is empty");
 				}
 				break;
+			case "loop":
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				layer.loop = _gthis.parseBool();
+				break;
+			case "on":
+				if(!inLayer) {
+					_gthis.error("" + where + ": on: is a layer's (put the files in a layer)");
+				}
+				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
+				var when = _gthis.expectIdentifierOrString().toLowerCase();
+				var parseLayerKey;
+				switch(when) {
+				case "start":
+					parseLayerKey = false;
+					break;
+				case "stop":
+					parseLayerKey = true;
+					break;
+				default:
+					parseLayerKey = _gthis.error("" + where + ": on: start or stop, got \"" + when + "\"");
+				}
+				layer.onStop = parseLayerKey;
+				break;
 			case "pick":
 				_gthis.expect(bh_multianim__$MacroManimParser_MacroTokenType.TColon);
 				var how = _gthis.expectIdentifierOrString().toLowerCase();
@@ -24506,7 +24795,7 @@ bh_multianim_MacroManimParser.prototype = {
 			return true;
 		};
 		var newLayer = function(name,line) {
-			return { name : name, files : [], pick : bh_multianim_SoundPick.PickRandom, volumeMinDb : 0, volumeMaxDb : 0, pitchMin : 1, pitchMax : 1, delayMin : 0, delayMax : 0, chance : 1, line : line};
+			return { name : name, files : [], pick : bh_multianim_SoundPick.PickRandom, volumeMinDb : 0, volumeMaxDb : 0, pitchMin : 1, pitchMax : 1, delayMin : 0, delayMax : 0, chance : 1, loop : false, onStop : false, line : line};
 		};
 		var parseSound = function(name,conditional,line) {
 			var where = "" + blockName + "." + name;
@@ -24578,11 +24867,14 @@ bh_multianim_MacroManimParser.prototype = {
 					while(!_gthis.match(bh_multianim__$MacroManimParser_MacroTokenType.TCurlyClosed)) {
 						var k = _gthis.expectIdentifierOrString();
 						if(!parseLayerKey(k,layer,"" + where + " layer " + layerName,true)) {
-							_gthis.error("" + where + " layer " + layerName + ": unknown key \"" + k + "\" (file, files, pick, volume, pitch, delay, chance)");
+							_gthis.error("" + where + " layer " + layerName + ": unknown key \"" + k + "\" (file, files, pick, volume, pitch, delay, chance, loop, on)");
 						}
 					}
 					if(layer.files.length == 0) {
 						_gthis.error("" + where + " layer " + layerName + ": no file");
+					}
+					if(layer.loop && layer.onStop) {
+						_gthis.error("" + where + " layer " + layerName + ": a layer on: stop plays once, it cannot loop");
 					}
 					sound.layers.push(layer);
 					break;
@@ -24636,7 +24928,7 @@ bh_multianim_MacroManimParser.prototype = {
 					break;
 				default:
 					if(!parseLayerKey(key,own,where,false)) {
-						_gthis.error("" + where + ": unknown key \"" + key + "\" (file, files, pick, volume, pitch, bus, voices, steal, cooldown, priority, fade, layer)");
+						_gthis.error("" + where + ": unknown key \"" + key + "\" (file, files, pick, volume, pitch, loop, bus, voices, steal, cooldown, priority, fade, layer)");
 					}
 					ownKeys = true;
 				}
@@ -24651,6 +24943,19 @@ bh_multianim_MacroManimParser.prototype = {
 			}
 			if(sound.layers.length == 0) {
 				_gthis.error("" + where + ": no file (file: \"…\", files: […] or a layer { })");
+			}
+			var startsWith = 0;
+			var _g = 0;
+			var _g1 = sound.layers;
+			while(_g < _g1.length) {
+				var l = _g1[_g];
+				++_g;
+				if(!l.onStop) {
+					++startsWith;
+				}
+			}
+			if(startsWith == 0) {
+				_gthis.error("" + where + ": every layer is on: stop, nothing plays at the start");
 			}
 			return sound;
 		};
@@ -28598,8 +28903,8 @@ bh_multianim_IncrementalUpdateContext.prototype = {
 				capturedEntry.wrapper.removeChildren();
 				_gthis.rebuildDeferredContent(capturedEntry);
 			},paramRefs,entry.wrapper);
-			HxOverrides.remove(this.deferredEntries,entry);
 		}
+		HxOverrides.remove(this.deferredEntries,entry);
 	}
 	,rebuildDeferredContent: function(entry) {
 		this.builder.incrementalMode = false;
@@ -29148,13 +29453,6 @@ bh_multianim_SlotHandle.prototype = {
 	}
 	,__class__: bh_multianim_SlotHandle
 };
-var bh_ui_UIInteractiveSource = function() { };
-$hxClasses["bh.ui.UIInteractiveSource"] = bh_ui_UIInteractiveSource;
-bh_ui_UIInteractiveSource.__name__ = "bh.ui.UIInteractiveSource";
-bh_ui_UIInteractiveSource.__isInterface__ = true;
-bh_ui_UIInteractiveSource.prototype = {
-	__class__: bh_ui_UIInteractiveSource
-};
 var bh_multianim_BuilderResult = function(object,name,names,interactives,layouts,palettes,rootSettings,gridCoordinateSystem,hexCoordinateSystem,slots,dynamicRefs,incrementalContext,htmlTextsWithLinks) {
 	this.object = object;
 	this.name = name;
@@ -29172,20 +29470,7 @@ var bh_multianim_BuilderResult = function(object,name,names,interactives,layouts
 };
 $hxClasses["bh.multianim.BuilderResult"] = bh_multianim_BuilderResult;
 bh_multianim_BuilderResult.__name__ = "bh.multianim.BuilderResult";
-bh_multianim_BuilderResult.__interfaces__ = [bh_ui_UIInteractiveSource];
-bh_multianim_BuilderResult.isDrawnUnder = function(obj,root) {
-	var cur = obj;
-	while(cur != null) {
-		if(!cur.visible) {
-			return false;
-		}
-		if(cur == root) {
-			return true;
-		}
-		cur = cur.parent;
-	}
-	return false;
-};
+bh_multianim_BuilderResult.__interfaces__ = [bh_multianim_LiveProgrammable];
 bh_multianim_BuilderResult.prototype = {
 	getInteractives: function() {
 		var _g = [];
@@ -29207,7 +29492,45 @@ bh_multianim_BuilderResult.prototype = {
 				_g.push(o);
 			}
 		}
-		return _g;
+		var out = _g;
+		var h = this.dynamicRefs.h;
+		var arr_h = h;
+		var arr_keys = Object.keys(h);
+		var arr_length = arr_keys.length;
+		var arr_current = 0;
+		while(arr_current < arr_length) {
+			var arr = arr_h[arr_keys[arr_current++]];
+			var _g = 0;
+			while(_g < arr.length) {
+				var r = arr[_g];
+				++_g;
+				var tmp;
+				if(r.object != null) {
+					var n = r.object;
+					var attached = false;
+					while(n != null) {
+						if(n == this.object) {
+							attached = true;
+							break;
+						}
+						n = n.parent;
+					}
+					tmp = attached;
+				} else {
+					tmp = false;
+				}
+				if(tmp) {
+					var _g1 = 0;
+					var _g2 = r.getInteractives();
+					while(_g1 < _g2.length) {
+						var o = _g2[_g1];
+						++_g1;
+						out.push(o);
+					}
+				}
+			}
+		}
+		return out;
 	}
 	,get_isIncremental: function() {
 		return this.incrementalContext != null;
@@ -29265,8 +29588,8 @@ bh_multianim_BuilderResult.prototype = {
 		}
 		return new bh_multianim_Updatable(namesArray);
 	}
-	,getNamedDrawn: function(name) {
-		var items = this.names.h[name];
+	,getNamedDrawn: function(name,index,indexY) {
+		var items = this.names.h[indexY != null ? "" + name + " " + index + " " + indexY : index != null ? "" + name + " " + index : name];
 		if(items == null) {
 			return null;
 		}
@@ -29275,7 +29598,7 @@ bh_multianim_BuilderResult.prototype = {
 			var item = items[_g];
 			++_g;
 			var obj = bh_multianim_MultiAnimParser_toh2dObject(bh_multianim_MultiAnimParser_getBuiltHeapsObject(item));
-			if(obj != null && bh_multianim_BuilderResult.isDrawnUnder(obj,this.object)) {
+			if(obj != null && bh_multianim_LiveProgrammableTools.isDrawnUnder(obj,this.object)) {
 				return obj;
 			}
 		}
@@ -29429,6 +29752,23 @@ bh_multianim_SwitchArmResults.prototype = {
 	,getUpdatable2D: function(name,x,y) {
 		return this.getUpdatable("" + name + " " + x + " " + y);
 	}
+	,namedObjects: function(key) {
+		var arr = this.ir.names.h[key];
+		if(arr == null) {
+			return [];
+		}
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < arr.length) {
+			var n = arr[_g1];
+			++_g1;
+			var o = bh_multianim_MultiAnimParser_toh2dObject(n.object);
+			if(o != null) {
+				_g.push(o);
+			}
+		}
+		return _g;
+	}
 	,getSlot: function(name,index,indexY) {
 		var _g = 0;
 		var _g1 = this.ir.slots;
@@ -29508,6 +29848,41 @@ bh_multianim_SwitchArmResults.prototype = {
 		} else {
 			return false;
 		}
+	}
+	,namedKeys: function() {
+		var _g = [];
+		var h = this.ir.names.h;
+		var key_h = h;
+		var key_keys = Object.keys(h);
+		var key_length = key_keys.length;
+		var key_current = 0;
+		while(key_current < key_length) {
+			var key = key_keys[key_current++];
+			_g.push(key);
+		}
+		return _g;
+	}
+	,slotEntries: function() {
+		return this.ir.slots.slice();
+	}
+	,dynamicRefKeys: function() {
+		var _g = [];
+		var h = this.ir.dynamicRefs.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var key1 = _g_key;
+			var arr = _g_value;
+			if(arr.length > 0) {
+				_g.push(key1);
+			}
+		}
+		return _g;
 	}
 	,__class__: bh_multianim_SwitchArmResults
 };
@@ -33947,8 +34322,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			_gthis.indexedParams = live;
 			try {
 				var reference = _gthis.resolveRefName(progRefRV);
-				var tmp = _gthis.importedBuilder(externalReference,node).buildWithParameters(reference,parameters,capturedBP,live);
-				var fresh = tmp != null ? tmp.object : null;
+				var freshResult = _gthis.importedBuilder(externalReference,node).buildWithParameters(reference,parameters,capturedBP,live);
+				var fresh = freshResult != null ? freshResult.object : null;
 				if(fresh == null) {
 					throw new bh_multianim_BuilderError("could not build staticRef " + reference,node,null);
 				}
@@ -33958,6 +34333,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 				container.addChild(fresh);
 				current = fresh;
+				var _g = 0;
+				var _g1 = freshResult.interactives;
+				while(_g < _g1.length) {
+					var o = _g1[_g];
+					++_g;
+					ir.interactives.push(o);
+				}
 			} catch( _g ) {
 				var e = haxe_Exception.caught(_g).unwrap();
 				_gthis.indexedParams = saved;
@@ -36559,6 +36941,13 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var object = result != null ? result.object : null;
 			if(object == null) {
 				throw new bh_multianim_BuilderError("could not build staticRef " + reference,node,null);
+			}
+			var _g1 = 0;
+			var _g2 = result.interactives;
+			while(_g1 < _g2.length) {
+				var o = _g2[_g1];
+				++_g1;
+				internalResults.interactives.push(o);
 			}
 			if(object.children.length == 1) {
 				var inner = object.getChildAt(0);
@@ -39565,6 +39954,8 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			this.incrementalContext = null;
 			this.deferredForwardingCtx = null;
 		}
+		var savedSuppressConditionalTracking = this.suppressConditionalTracking;
+		this.suppressConditionalTracking = false;
 		try {
 			if(builderParams == null) {
 				builderParams = { callback : $bind(this,this.defaultCallback)};
@@ -39599,12 +39990,14 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			this.popBuilderState();
 			this.deferredForwardingCtx = savedForwardingCtx;
+			this.suppressConditionalTracking = savedSuppressConditionalTracking;
 			this.buildingRefs.pop();
 			return retVal;
 		} catch( _g ) {
 			var e = haxe_Exception.caught(_g).unwrap();
 			this.popBuilderState();
 			this.deferredForwardingCtx = savedForwardingCtx;
+			this.suppressConditionalTracking = savedSuppressConditionalTracking;
 			this.buildingRefs.pop();
 			throw haxe_Exception.thrown(e);
 		}
@@ -44374,6 +44767,7 @@ var bh_stateanim_AnimParser = function(tokens,sourceName,resourceLoader,withSpan
 	this.defaultFps = null;
 	this.constants = new haxe_ds_StringMap();
 	this.soundsDefined = false;
+	this.holds = new haxe_ds_StringMap();
 	this.sounds = new haxe_ds_StringMap();
 	this.metadata = null;
 	this.metadataMap = new haxe_ds_StringMap();
@@ -45055,6 +45449,21 @@ bh_stateanim_AnimParser.prototype = {
 				this.unexpectedError();
 			}
 		}
+		var h = this.holds.h;
+		var _g_h = h;
+		var _g_keys = Object.keys(h);
+		var _g_length = _g_keys.length;
+		var _g_current = 0;
+		while(_g_current < _g_length) {
+			var key = _g_keys[_g_current++];
+			var _g_key = key;
+			var _g_value = _g_h[key];
+			var anim = _g_key;
+			var _ = _g_value;
+			if(this.animationNames.indexOf(anim) == -1) {
+				this.syntaxError("sounds: hold " + anim + ": no animation " + anim + " (" + this.animationNames.join(", ") + ")");
+			}
+		}
 		var h = this.definedStates.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -45091,10 +45500,9 @@ bh_stateanim_AnimParser.prototype = {
 					}
 				}
 				if(anim == null) {
-					this.syntaxError("no animation " + name + " defined for states " + (state == null ? "null" : haxe_ds_StringMap.stringify(state.h)));
-				} else {
-					anim.visited = true;
+					continue;
 				}
+				anim.visited = true;
 				var _g5 = 0;
 				var _g6 = this.allowedExtraPoints;
 				while(_g5 < _g6.length) {
@@ -45853,30 +46261,42 @@ bh_stateanim_AnimParser.prototype = {
 		}
 	}
 	,parseSounds: function() {
-		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
-			var key = this.expectIdentifier();
-			this.expect(bh_stateanim_APToken.APColon);
-			var value;
-			var _g = this.tokens[this.tpos].type;
+		var _gthis = this;
+		var soundName = function(what) {
+			var _g = _gthis.tokens[_gthis.tpos].type;
 			if(_g._hx_index == 7) {
 				var _g1 = _g.s;
 				var _g2 = _g.keyword;
 				switch(_g.identType._hx_index) {
 				case 0:case 2:
 					var s = _g1;
-					this.advance();
-					value = s;
-					break;
+					_gthis.advance();
+					return s;
 				default:
-					value = this.syntaxError("sounds: " + key + ": expected the sound's name in quotes (\"block.sound\")");
+					return _gthis.syntaxError("sounds: " + what + ": expected the sound's name in quotes (\"block.sound\")");
 				}
 			} else {
-				value = this.syntaxError("sounds: " + key + ": expected the sound's name in quotes (\"block.sound\")");
+				return _gthis.syntaxError("sounds: " + what + ": expected the sound's name in quotes (\"block.sound\")");
 			}
+		};
+		while(!this.match(bh_stateanim_APToken.APCurlyClosed)) {
+			var key = this.expectIdentifier();
+			if(key == "hold" && this.tokens[this.tpos].type._hx_index != 4) {
+				var anim = this.expectIdentifier();
+				this.expect(bh_stateanim_APToken.APColon);
+				var value = soundName("hold " + anim);
+				if(Object.prototype.hasOwnProperty.call(this.holds.h,anim)) {
+					this.syntaxError("sounds: hold " + anim + " is given twice");
+				}
+				this.holds.h[anim] = value;
+				continue;
+			}
+			this.expect(bh_stateanim_APToken.APColon);
+			var value1 = soundName(key);
 			if(Object.prototype.hasOwnProperty.call(this.sounds.h,key)) {
 				this.syntaxError("sounds: " + key + " is given twice");
 			}
-			this.sounds.h[key] = value;
+			this.sounds.h[key] = value1;
 		}
 	}
 	,parseMetadata: function() {
@@ -47366,7 +47786,7 @@ bh_stateanim_AnimParser.prototype = {
 				++_g;
 				var anim = bh_stateanim_AnimParser.findAnimation(name,stateSelector,this.definedStates,this.animations);
 				if(anim == null) {
-					throw haxe_Exception.thrown("null anim " + name);
+					continue;
 				}
 				var playlist = bh_stateanim_AnimParser.findPlaylist(stateSelector,anim,this.definedStates);
 				if(playlist == null) {
@@ -47519,6 +47939,7 @@ bh_stateanim_AnimParser.prototype = {
 		animSM.source = this;
 		if(this.soundsDefined) {
 			animSM.sounds = this.sounds;
+			animSM.holds = this.holds;
 			if(this.resourceLoader != null) {
 				animSM.audio = this.resourceLoader.getAudio();
 			}
@@ -47619,6 +48040,9 @@ var bh_stateanim_AnimationSM = function(selector,externallyDriven) {
 	if(externallyDriven == null) {
 		externallyDriven = false;
 	}
+	this.heldFor = null;
+	this.heldSound = null;
+	this.holds = null;
 	this.audio = null;
 	this.sounds = null;
 	this.eventListeners = null;
@@ -47747,6 +48171,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		this.loopsRemaining = state.loopCount;
 		this.clearDisplay();
 		this.applyAnimationLook(state);
+		this.updateHold();
 		this.handleCurrent(1e-10);
 	}
 	,setState: function(name,value) {
@@ -47818,12 +48243,14 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 		}
 		if(playing == null) {
 			this.current = null;
+			this.releaseHold();
 			this.clearDisplay();
 			return;
 		}
 		var desc = this.animationStates.h[playing.name];
 		if(desc == null) {
 			this.current = null;
+			this.releaseHold();
 			this.clearDisplay();
 			return;
 		}
@@ -47976,6 +48403,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 				parent.addChild(this.layerClips[i]);
 			}
 		}
+		this.updateHold();
 	}
 	,onRemove: function() {
 		var _g = 0;
@@ -47989,6 +48417,7 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 				}
 			}
 		}
+		this.releaseHold();
 		h2d_Object.prototype.onRemove.call(this);
 	}
 	,clearDisplay: function() {
@@ -48201,6 +48630,29 @@ bh_stateanim_AnimationSM.prototype = $extend(h2d_Object.prototype,{
 	,onFinished: function() {
 	}
 	,onAnimationEvent: function(event) {
+	}
+	,updateHold: function() {
+		var playing = this.current;
+		var map = this.holds;
+		var name = playing != null && map != null ? map.h[playing.name] : null;
+		var held = this.heldSound;
+		if(name != null && name == this.heldFor && held != null && held.isAlive()) {
+			return;
+		}
+		this.releaseHold();
+		var a = this.audio;
+		if(name != null && a != null) {
+			this.heldSound = a.play(name);
+			this.heldFor = name;
+		}
+	}
+	,releaseHold: function() {
+		var held = this.heldSound;
+		if(held != null) {
+			held.stop();
+		}
+		this.heldSound = null;
+		this.heldFor = null;
 	}
 	,fireAnimationEvent: function(event) {
 		this.onAnimationEvent(event);
@@ -58403,28 +58855,28 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		return "unknown";
 	}
-	,musicFor: function(screenMode) {
+	,screenAudioFor: function(screenMode,of) {
+		var say = function(screen) {
+			if(((screen) instanceof bh_ui_screens_UIScreenBase)) {
+				return of(js_Boot.__cast(screen , bh_ui_screens_UIScreenBase));
+			} else {
+				return null;
+			}
+		};
 		switch(screenMode._hx_index) {
 		case 0:
 			return null;
 		case 1:
 			var single = screenMode.single;
-			if(((single) instanceof bh_ui_screens_UIScreenBase)) {
-				return (js_Boot.__cast(single , bh_ui_screens_UIScreenBase)).music;
-			} else {
-				return null;
-			}
-			break;
+			return say(single);
 		case 2:
 			var master = screenMode.master;
 			var single = screenMode.single;
-			var tmp = ((single) instanceof bh_ui_screens_UIScreenBase) ? (js_Boot.__cast(single , bh_ui_screens_UIScreenBase)).music : null;
+			var tmp = say(single);
 			if(tmp != null) {
 				return tmp;
-			} else if(((master) instanceof bh_ui_screens_UIScreenBase)) {
-				return (js_Boot.__cast(master , bh_ui_screens_UIScreenBase)).music;
 			} else {
-				return null;
+				return say(master);
 			}
 			break;
 		case 3:
@@ -58432,14 +58884,24 @@ bh_ui_screens_ScreenManager.prototype = {
 			var _g = screenMode.dialogName;
 			var dialog = screenMode.dialog;
 			var previousMode = screenMode.previousMode;
-			var tmp = ((dialog) instanceof bh_ui_screens_UIScreenBase) ? (js_Boot.__cast(dialog , bh_ui_screens_UIScreenBase)).music : null;
+			var tmp = say(dialog);
 			if(tmp != null) {
 				return tmp;
 			} else {
-				return this.musicFor(previousMode);
+				return this.screenAudioFor(previousMode,of);
 			}
 			break;
 		}
+	}
+	,musicFor: function(screenMode) {
+		return this.screenAudioFor(screenMode,function(s) {
+			return s.screenMusic;
+		});
+	}
+	,ambienceFor: function(screenMode) {
+		return this.screenAudioFor(screenMode,function(s) {
+			return s.screenAmbience;
+		});
 	}
 	,applyScreenAudio: function(newMode) {
 		if(this.audio.hasSnapshot("dialog")) {
@@ -58456,13 +58918,16 @@ bh_ui_screens_ScreenManager.prototype = {
 			this.audio.snapshot("dialog",tmp);
 		}
 		var music = this.musicFor(newMode);
-		if(music == null) {
-			return;
-		}
 		if(music == "none") {
 			this.audio.stopMusic();
-		} else {
+		} else if(music != null) {
 			this.audio.playMusic(music);
+		}
+		var ambience = this.ambienceFor(newMode);
+		if(ambience == "none") {
+			this.audio.stopAmbience();
+		} else if(ambience != null) {
+			this.audio.playAmbience(ambience);
 		}
 	}
 	,notifyScreenChange: function(previousMode,newMode,entering,leaving) {
@@ -129760,7 +130225,7 @@ var screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance = function(
 };
 $hxClasses["screens.advanced.LoadoutCodegenProgrammables_LoadoutLabInstance"] = screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance;
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__name__ = "screens.advanced.LoadoutCodegenProgrammables_LoadoutLabInstance";
-screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
+screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__interfaces__ = [bh_multianim_LiveProgrammable];
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.__super__ = h2d_Object;
 screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function(_changedParam) {
@@ -130070,6 +130535,100 @@ screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance.prototype = $ex
 			return true;
 		}
 		return false;
+	}
+	,getRoot: function() {
+		return this;
+	}
+	,getProgrammableName: function() {
+		return "loadoutLab";
+	}
+	,getNamedKeys: function() {
+		var _keys = [];
+		_keys.push("yValue");
+		_keys.push("xValue");
+		_keys.push("hoverText");
+		var _g = 0;
+		var _g1 = this._swSink0.namedKeys();
+		while(_g < _g1.length) {
+			var _k = _g1[_g];
+			++_g;
+			if(_keys.indexOf(_k) < 0) {
+				_keys.push(_k);
+			}
+		}
+		return _keys;
+	}
+	,getNamedDrawn: function(name,index,indexY) {
+		if(name == "yValue" && index == null && indexY == null) {
+			if(this._e15 != null && bh_multianim_LiveProgrammableTools.isDrawnUnder(this._e15,this)) {
+				return this._e15;
+			}
+		}
+		if(name == "xValue" && index == null && indexY == null) {
+			if(this._e12 != null && bh_multianim_LiveProgrammableTools.isDrawnUnder(this._e12,this)) {
+				return this._e12;
+			}
+		}
+		if(name == "hoverText" && index == null && indexY == null) {
+			if(this._e22 != null && bh_multianim_LiveProgrammableTools.isDrawnUnder(this._e22,this)) {
+				return this._e22;
+			}
+		}
+		var _key = indexY != null ? "" + name + " " + index + " " + indexY : index != null ? "" + name + " " + index : name;
+		var _g = 0;
+		var _g1 = this._swSink0.namedObjects(_key);
+		while(_g < _g1.length) {
+			var _o = _g1[_g];
+			++_g;
+			if(bh_multianim_LiveProgrammableTools.isDrawnUnder(_o,this)) {
+				return _o;
+			}
+		}
+		return null;
+	}
+	,getSlotEntries: function() {
+		var _out = [];
+		var _g = 0;
+		var _g1 = this._swSink0.slotEntries();
+		while(_g < _g1.length) {
+			var _e = _g1[_g];
+			++_g;
+			_out.push(_e);
+		}
+		return _out;
+	}
+	,getDynamicRefKeys: function() {
+		var _out = [];
+		var _g = 0;
+		var _g1 = this._swSink0.dynamicRefKeys();
+		while(_g < _g1.length) {
+			var _k = _g1[_g];
+			++_g;
+			if(_out.indexOf(_k) < 0) {
+				_out.push(_k);
+			}
+		}
+		return _out;
+	}
+	,getParameterValues: function() {
+		var _out = new haxe_ds_StringMap();
+		var _v = this._theme >= 0 && this._theme < 3 ? ["a","b","c"][this._theme] : null;
+		if(_v != null) {
+			_out.h["theme"] = _v;
+		}
+		var _v = this._layout >= 0 && this._layout < 3 ? ["row","grid","nested"][this._layout] : null;
+		if(_v != null) {
+			_out.h["layout"] = _v;
+		}
+		var _v = this._countX;
+		if(_v != null) {
+			_out.h["countX"] = _v;
+		}
+		var _v = this._countY;
+		if(_v != null) {
+			_out.h["countY"] = _v;
+		}
+		return _out;
 	}
 	,__class__: screens_advanced_LoadoutCodegenProgrammables_$LoadoutLabInstance
 });
@@ -131020,7 +131579,7 @@ var screens_advanced_PerfProgrammables_$PerfComplexInstance = function(_pb,hp,ma
 };
 $hxClasses["screens.advanced.PerfProgrammables_PerfComplexInstance"] = screens_advanced_PerfProgrammables_$PerfComplexInstance;
 screens_advanced_PerfProgrammables_$PerfComplexInstance.__name__ = "screens.advanced.PerfProgrammables_PerfComplexInstance";
-screens_advanced_PerfProgrammables_$PerfComplexInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
+screens_advanced_PerfProgrammables_$PerfComplexInstance.__interfaces__ = [bh_multianim_LiveProgrammable];
 screens_advanced_PerfProgrammables_$PerfComplexInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function() {
@@ -131304,6 +131863,55 @@ screens_advanced_PerfProgrammables_$PerfComplexInstance.prototype = $extend(h2d_
 			return false;
 		}
 	}
+	,getRoot: function() {
+		return this;
+	}
+	,getProgrammableName: function() {
+		return "perfComplex";
+	}
+	,getNamedKeys: function() {
+		var _keys = [];
+		return _keys;
+	}
+	,getNamedDrawn: function(name,index,indexY) {
+		return null;
+	}
+	,getSlotEntries: function() {
+		var _out = [];
+		return _out;
+	}
+	,getDynamicRefKeys: function() {
+		var _out = [];
+		return _out;
+	}
+	,getParameterValues: function() {
+		var _out = new haxe_ds_StringMap();
+		var _v = this._hp;
+		if(_v != null) {
+			_out.h["hp"] = _v;
+		}
+		var _v = this._maxHp;
+		if(_v != null) {
+			_out.h["maxHp"] = _v;
+		}
+		var _v = this._mp;
+		if(_v != null) {
+			_out.h["mp"] = _v;
+		}
+		var _v = this._maxMp;
+		if(_v != null) {
+			_out.h["maxMp"] = _v;
+		}
+		var _v = this._name;
+		if(_v != null) {
+			_out.h["name"] = _v;
+		}
+		var _v = this._level;
+		if(_v != null) {
+			_out.h["level"] = _v;
+		}
+		return _out;
+	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfComplexInstance
 });
 var screens_advanced_PerfProgrammables_$PerfRepeatable = function(resourceLoader) {
@@ -131347,7 +131955,7 @@ var screens_advanced_PerfProgrammables_$PerfRepeatableInstance = function(_pb,va
 };
 $hxClasses["screens.advanced.PerfProgrammables_PerfRepeatableInstance"] = screens_advanced_PerfProgrammables_$PerfRepeatableInstance;
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__name__ = "screens.advanced.PerfProgrammables_PerfRepeatableInstance";
-screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
+screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__interfaces__ = [bh_multianim_LiveProgrammable];
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h2d_Object.prototype,{
 	_rebuildRepeat__e0: function(_rt_count,_rt_start,_rt_step,_rt_dx,_rt_dy,_rt_force) {
@@ -131532,6 +132140,70 @@ screens_advanced_PerfProgrammables_$PerfRepeatableInstance.prototype = $extend(h
 		}
 		return false;
 	}
+	,getRoot: function() {
+		return this;
+	}
+	,getProgrammableName: function() {
+		return "perfRepeatable";
+	}
+	,getNamedKeys: function() {
+		var _keys = [];
+		var _g = 0;
+		var _g1 = this._e0_sink.namedKeys();
+		while(_g < _g1.length) {
+			var _k = _g1[_g];
+			++_g;
+			if(_keys.indexOf(_k) < 0) {
+				_keys.push(_k);
+			}
+		}
+		return _keys;
+	}
+	,getNamedDrawn: function(name,index,indexY) {
+		var _key = indexY != null ? "" + name + " " + index + " " + indexY : index != null ? "" + name + " " + index : name;
+		var _g = 0;
+		var _g1 = this._e0_sink.namedObjects(_key);
+		while(_g < _g1.length) {
+			var _o = _g1[_g];
+			++_g;
+			if(bh_multianim_LiveProgrammableTools.isDrawnUnder(_o,this)) {
+				return _o;
+			}
+		}
+		return null;
+	}
+	,getSlotEntries: function() {
+		var _out = [];
+		var _g = 0;
+		var _g1 = this._e0_sink.slotEntries();
+		while(_g < _g1.length) {
+			var _e = _g1[_g];
+			++_g;
+			_out.push(_e);
+		}
+		return _out;
+	}
+	,getDynamicRefKeys: function() {
+		var _out = [];
+		var _g = 0;
+		var _g1 = this._e0_sink.dynamicRefKeys();
+		while(_g < _g1.length) {
+			var _k = _g1[_g];
+			++_g;
+			if(_out.indexOf(_k) < 0) {
+				_out.push(_k);
+			}
+		}
+		return _out;
+	}
+	,getParameterValues: function() {
+		var _out = new haxe_ds_StringMap();
+		var _v = this._value;
+		if(_v != null) {
+			_out.h["value"] = _v;
+		}
+		return _out;
+	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfRepeatableInstance
 });
 var screens_advanced_PerfProgrammables_$PerfSimple = function(resourceLoader) {
@@ -131593,7 +132265,7 @@ var screens_advanced_PerfProgrammables_$PerfSimpleInstance = function(_pb,value,
 };
 $hxClasses["screens.advanced.PerfProgrammables_PerfSimpleInstance"] = screens_advanced_PerfProgrammables_$PerfSimpleInstance;
 screens_advanced_PerfProgrammables_$PerfSimpleInstance.__name__ = "screens.advanced.PerfProgrammables_PerfSimpleInstance";
-screens_advanced_PerfProgrammables_$PerfSimpleInstance.__interfaces__ = [bh_ui_UIInteractiveSource];
+screens_advanced_PerfProgrammables_$PerfSimpleInstance.__interfaces__ = [bh_multianim_LiveProgrammable];
 screens_advanced_PerfProgrammables_$PerfSimpleInstance.__super__ = h2d_Object;
 screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_Object.prototype,{
 	_applyVisibility: function() {
@@ -131744,6 +132416,39 @@ screens_advanced_PerfProgrammables_$PerfSimpleInstance.prototype = $extend(h2d_O
 		default:
 			return false;
 		}
+	}
+	,getRoot: function() {
+		return this;
+	}
+	,getProgrammableName: function() {
+		return "perfSimple";
+	}
+	,getNamedKeys: function() {
+		var _keys = [];
+		return _keys;
+	}
+	,getNamedDrawn: function(name,index,indexY) {
+		return null;
+	}
+	,getSlotEntries: function() {
+		var _out = [];
+		return _out;
+	}
+	,getDynamicRefKeys: function() {
+		var _out = [];
+		return _out;
+	}
+	,getParameterValues: function() {
+		var _out = new haxe_ds_StringMap();
+		var _v = this._value;
+		if(_v != null) {
+			_out.h["value"] = _v;
+		}
+		var _v = this._color;
+		if(_v != null) {
+			_out.h["color"] = _v;
+		}
+		return _out;
 	}
 	,__class__: screens_advanced_PerfProgrammables_$PerfSimpleInstance
 });
@@ -140143,6 +140848,8 @@ screens_gamelike_SkillTreeDemoScreen.prototype = $extend(DemoScreenBase.prototyp
 var screens_gamelike_SoundDemoScreen = function(screenManager,scrollConfig,layers) {
 	this.lines = [];
 	this.lastHistoryId = 0;
+	this.throttle = 0.5;
+	this.engine = null;
 	DemoScreenBase.call(this,screenManager,scrollConfig,layers);
 };
 $hxClasses["screens.gamelike.SoundDemoScreen"] = screens_gamelike_SoundDemoScreen;
@@ -140151,14 +140858,16 @@ screens_gamelike_SoundDemoScreen.__super__ = DemoScreenBase;
 screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	load: function() {
 		var _gthis = this;
-		this.setupDemo("Sound","Six CC0 sounds: the widgets sound by themselves, the buttons fire sounds by name, the slider is a VCA, pause and slow motion are the clock");
+		this.setupDemo("Sound","Six CC0 sounds and a generated engine: the widgets sound by themselves, the buttons fire sounds by name, the engine is held and driven, the slider is a VCA, pause and slow motion are the clock");
 		this.demoBuilder = this.screenManager.buildFromResourceName("demos/gamelike/sound.manim",false);
-		var generatedByMacroBuildWithParametersload1727Builder = function() {
+		var generatedByMacroBuildWithParametersload2175Builder = function() {
 			var volumeSlider;
+			var throttleSlider;
 			var slowBox;
 			var pauseBox;
 			var jumpButton;
 			var hitButton;
+			var engineBox;
 			var dropdown;
 			var coinButton;
 			var boomButton;
@@ -140172,6 +140881,13 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 				return _el.getObject();
 			});
 			_g.h["volumeSlider"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addSlider(_gthis.stdBuilder,settings,50);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				throttleSlider = _el;
+				return _el.getObject();
+			});
+			_g.h["throttleSlider"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
@@ -140201,6 +140917,13 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["hitButton"] = value;
 			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
+				var _el = _gthis.addCheckbox(_gthis.stdBuilder,settings,false);
+				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
+				engineBox = _el;
+				return _el.getObject();
+			});
+			_g.h["engineBox"] = value;
+			var value = bh_multianim_PlaceholderValues.PVFactory(function(settings) {
 				var _el = _gthis.addDropdownWithSingleBuilder(_gthis.stdBuilder,"dropdown","list-panel","list-item-120","scrollbar","scrollbar",screens_gamelike_SoundDemoScreen.ITEMS,settings,0);
 				_gthis.addElement(_el,bh_ui_screens_LayersEnum.DefaultLayer);
 				dropdown = _el;
@@ -140222,9 +140945,12 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			});
 			_g.h["boomButton"] = value;
 			var builderResults1 = _gthis1.buildWithParameters("soundDemo",builderResults,{ placeholderObjects : _g});
-			var retVal = { volumeSlider : volumeSlider, slowBox : slowBox, pauseBox : pauseBox, jumpButton : jumpButton, hitButton : hitButton, dropdown : dropdown, coinButton : coinButton, boomButton : boomButton, builderResults : builderResults1};
+			var retVal = { volumeSlider : volumeSlider, throttleSlider : throttleSlider, slowBox : slowBox, pauseBox : pauseBox, jumpButton : jumpButton, hitButton : hitButton, engineBox : engineBox, dropdown : dropdown, coinButton : coinButton, boomButton : boomButton, builderResults : builderResults1};
 			if(retVal.volumeSlider == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "volumeSlider" + " is null (check if placeholder object is named correctly)");
+			}
+			if(retVal.throttleSlider == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "throttleSlider" + " is null (check if placeholder object is named correctly)");
 			}
 			if(retVal.slowBox == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "slowBox" + " is null (check if placeholder object is named correctly)");
@@ -140238,6 +140964,9 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			if(retVal.hitButton == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "hitButton" + " is null (check if placeholder object is named correctly)");
 			}
+			if(retVal.engineBox == null) {
+				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "engineBox" + " is null (check if placeholder object is named correctly)");
+			}
 			if(retVal.dropdown == null) {
 				throw haxe_Exception.thrown("macroBuildWithParameters UIElement value  " + "dropdown" + " is null (check if placeholder object is named correctly)");
 			}
@@ -140249,7 +140978,7 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			}
 			return retVal;
 		};
-		var ui = generatedByMacroBuildWithParametersload1727Builder();
+		var ui = generatedByMacroBuildWithParametersload2175Builder();
 		this.addBuilderResult(ui.builderResults);
 		this.panel = this.demoBuilder.buildWithParameters("soundLog",new haxe_ds_StringMap(),null,null,true);
 		this.addBuilderResult(this.panel);
@@ -140258,6 +140987,8 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 		this.hitButton = ui.hitButton;
 		this.boomButton = ui.boomButton;
 		this.dropdown = ui.dropdown;
+		this.engineBox = ui.engineBox;
+		this.throttleSlider = ui.throttleSlider;
 		this.volumeSlider = ui.volumeSlider;
 		this.pauseBox = ui.pauseBox;
 		this.slowBox = ui.slowBox;
@@ -140275,25 +141006,51 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 			audio.play("fx.explosion");
 		};
 	}
+	,applyThrottle: function() {
+		var e = this.engine;
+		if(e == null) {
+			return;
+		}
+		e.setPitch(0.7 + 0.8 * this.throttle);
+		e.setVolume(0.5 + 0.5 * this.throttle,0.1);
+	}
 	,onScreenEvent: function(event,source) {
 		switch(event._hx_index) {
 		case 6:
 			var _g = event.pressed;
 			var on = _g;
-			if(source == this.pauseBox) {
-				this.screenManager.clock.set_paused(on);
+			if(source == this.engineBox) {
+				if(on) {
+					this.engine = this.screenManager.audio.play("fx.engine");
+					this.applyThrottle();
+				} else if(this.engine != null) {
+					this.engine.stop();
+					this.engine = null;
+				}
 			} else {
 				var on = _g;
-				if(source == this.slowBox) {
-					this.screenManager.clock.set_scale(on ? 0.5 : 1.0);
-					this.screenManager.audio.snapshot("slow",on);
+				if(source == this.pauseBox) {
+					this.screenManager.clock.set_paused(on);
+				} else {
+					var on = _g;
+					if(source == this.slowBox) {
+						this.screenManager.clock.set_scale(on ? 0.5 : 1.0);
+						this.screenManager.audio.snapshot("slow",on);
+					}
 				}
 			}
 			break;
 		case 8:
-			var v = event.value;
-			if(source == this.volumeSlider) {
-				this.screenManager.audio.setVca("Effects",v / 100);
+			var _g = event.value;
+			var v = _g;
+			if(source == this.throttleSlider) {
+				this.throttle = v / 100;
+				this.applyThrottle();
+			} else {
+				var v = _g;
+				if(source == this.volumeSlider) {
+					this.screenManager.audio.setVca("Effects",v / 100);
+				}
 			}
 			break;
 		default:
@@ -140330,6 +141087,10 @@ screens_gamelike_SoundDemoScreen.prototype = $extend(DemoScreenBase.prototype,{
 	}
 	,onClear: function() {
 		DemoScreenBase.prototype.onClear.call(this);
+		if(this.engine != null) {
+			this.engine.stop();
+			this.engine = null;
+		}
 		this.screenManager.clock.set_paused(false);
 		this.screenManager.clock.set_scale(1.0);
 		if(this.screenManager.audio.hasSnapshot("slow")) {

@@ -7,3 +7,7 @@ License: Creative Commons Zero (CC0) — public domain dedication, no attributio
 http://creativecommons.org/publicdomain/zero/1.0/
 
 Used by the playground's Sound demo (demos/gamelike/sound.manim).
+
+engine_start.wav, engine_hum.wav, engine_off.wav: made here by make-engine.py (sine harmonics;
+the hum a whole number of cycles, so it loops without a seam), for the demo's held sound.
+Public domain (CC0) as above.

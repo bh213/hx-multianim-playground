@@ -25,6 +25,14 @@ version: 1.0
         layer boom   { file: "assets/sound/explosion.wav" }
         layer debris { file: "assets/sound/hurt.wav", delay: 80..160ms, chance: 70%, volume: -10db, pitch: -30% }
     }
+    // A held sound: its start once, its hum round and round until stopped, its stop as it is stopped.
+    // The game keeps the play and calls stop() on it; setPitch/setVolume drive the hum meanwhile.
+    engine {
+        voices: 1, fade: out 150ms
+        layer start { file: "assets/sound/engine_start.wav" }
+        layer hum   { file: "assets/sound/engine_hum.wav", loop: yes, delay: 350ms, volume: -3db }
+        layer stop  { file: "assets/sound/engine_off.wav", on: stop }
+    }
 }
 
 // ── The mix: two buses, one VCA for the slider, two snapshots the clock drives ──
@@ -50,6 +58,11 @@ version: 1.0
 
     text(m6x11, "A dropdown opens, picks and closes:", #dddddd): 0, 116
     placeholder(generated(cross(200, 30, #FF0000)), builderParameter("dropdown")) { pos: 0, 136 }
+
+    placeholder(generated(cross(20, 20, #FF0000)), builderParameter("engineBox")) { pos: 0, 176 }
+    text(m6x11, "Engine: a held sound (fx.engine)", #dddddd): 26, 178
+    text(m6x11, "Throttle: the hum's pitch and volume", #dddddd): 0, 202
+    placeholder(generated(cross(200, 20, #FF0000)), builderParameter("throttleSlider")) { pos: 0, 222 }
 
     text(m6x11, "Effects volume (a VCA over both buses):", #dddddd): 300, 116
     placeholder(generated(cross(200, 20, #FF0000)), builderParameter("volumeSlider")) { pos: 300, 140 }

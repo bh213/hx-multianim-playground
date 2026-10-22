@@ -6064,6 +6064,91 @@ layouts {
 }
 `,Lp=`version: 1.0
 
+// Tile Fill Demo
+// tilemap(fill(tileset, terrain: $t, cols: $c, rows: $r)) places a tile map with no rows written:
+// cols by rows cells of one terrain, in a ring of none one cell wide, so its edges are drawn as they
+// are in a written map. Its terrain and size are parameters of the programmable: drag a slider or
+// pick a terrain and the map is made again in place. An expression over the parameters works too:
+// the meadow around the patch is $cols + 4 by $rows + 4.
+// Tileset: Minifantasy - Forgotten Plains by Krishna Palacio
+
+#fp atlas2("Tileset/Minifantasy_ForgottenPlainsTiles.png") {
+    grass: 32, 24, 8, 8, index: 0
+    grass: 32, 40, 8, 8, index: 1
+    grass: 32, 48, 8, 8, index: 2
+    grass: 32, 32, 8, 8, index: 3
+}
+
+// The dirt patch of the sheet is a corner set: one tile per grid corner
+#dirtCorner autotile {
+    format: corner
+    tileSize: 8
+    file: "Tileset/Minifantasy_ForgottenPlainsTiles.png"
+    region: [56, 24, 24, 40]
+    mapping: [1:8, 2:6, 3:7, 4:2, 5:5, 6:11, 7:13, 8:0, 9:14, 10:3, 11:12, 12:1, 13:10, 14:9, 15:4]
+}
+
+// The sheet has no water: demo autotiles, two frames of it
+#water autotile { format: corner tileSize: 8 demo: #2A4A9A, #4A78D0 }
+#waterB autotile { format: corner tileSize: 8 demo: #2A4A9A, #5A88E0 }
+
+#meadowTiles tileset {
+    tileSize: 8
+    atlas: "fp"
+    terrain grass { cells: "grass" }
+    terrain dirt { autotile: dirtCorner }
+    terrain water { autotile: water, waterB duration: 600 }
+}
+
+#tilemapFillDemo programmable(terrain:[water, dirt, grass]=water, cols:uint=8, rows:uint=4) {
+    pos: 50, 80
+
+    text(exo2_16, "Tile Fill", #7fdbda): 0, 0
+    text(exo2_14, 'a fill of \${terrain}, \${cols} by \${rows} cells, in a meadow \${cols + 4} by \${rows + 4}', #aaaaaa, left, 560): 150, 4
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // The terrain: a parameter of the programmable
+    text(exo2_14, "Terrain:", #aaaaaa): 0, 38
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("waterBtn")) {
+        pos: 70, 33
+        settings{text=>"Water", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("dirtBtn")) {
+        pos: 150, 33
+        settings{text=>"Dirt", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("grassBtn")) {
+        pos: 230, 33
+        settings{text=>"Grass", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+
+    // Its size: two more parameters
+    text(exo2_14, "Cols:", #aaaaaa): 330, 38
+    placeholder(generated(cross(100, 16, #FF0000)), builderParameter("colsSlider")) {
+        pos: 375, 40
+        settings{size:int=>100}
+    }
+    text(exo2_14, "Rows:", #aaaaaa): 500, 38
+    placeholder(generated(cross(100, 16, #FF0000)), builderParameter("rowsSlider")) {
+        pos: 548, 40
+        settings{size:int=>100}
+    }
+
+    // Two fills, three times the size: the meadow, and the patch two cells in from its edge
+    point {
+        pos: 0, 80
+        scale: 3
+        tilemap(fill(meadowTiles, terrain: grass, cols: $cols + 4, rows: $rows + 4)): 0, 0
+        tilemap(fill(meadowTiles, terrain: $terrain, cols: $cols, rows: $rows)): 16, 16
+    }
+
+    text(exo2_14, "What is in the file", #7fdbda): 660, 90
+    text(exo2_light_14, "No #name tilemap and no rows: tilemap(fill(meadowTiles, terrain: $terrain, cols: $cols, rows: $rows)) makes the map where it is placed, cols by rows cells of the terrain in a ring of none, so its edges are drawn as in a written map.", #aaaaaa, left, 220): 660, 110
+    text(exo2_14, "Following its parameters", #7fdbda): 660, 250
+    text(exo2_light_14, "The sliders and buttons only call setParameter. Each map is made again in place, the same TileMap; the meadow's size is an expression over them ($cols + 4 by $rows + 4) and follows too.", #aaaaaa, left, 220): 660, 270
+}
+`,Wp=`version: 1.0
+
 // Tile Map Demo
 // A map of character rows drawn from a tileset: three terrains (grass variants, a dirt corner
 // autotile, animated water with a sandy shore where it meets grass), a plateau one level up with
@@ -6246,7 +6331,7 @@ layouts {
     text(exo2_14, "Painting", #7fdbda): 660, 240
     text(exo2_light_14, "setTerrain and setLevel change the map's own rows. The map is drawn in chunks of 8 cells here: only the chunk a cell is in is drawn again. Raise a cell next to the plateau and watch its side follow.", #aaaaaa, left, 220): 660, 260
 }
-`,Wp=`version: 1.0
+`,Mp=`version: 1.0
 
 // Inline atlas2: define named tile regions carved from the already-loaded "ui" sheet texture.
 #uiInline atlas2(sheet("ui")) {
@@ -6414,7 +6499,7 @@ layouts {
   }
   text(m6x11, "4 bitmaps batched into one TileGroup draw call", #888888): 0, 1190
 }
-`,Mp=`version: 1.0
+`,Hp=`version: 1.0
 
 paths {
     #straightLine path {
@@ -6517,7 +6602,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", $width, $height): 0, 0
     #sizeText(updatable) text(m6x11, "210 x 150", #ffffff, left, 200): 10, 10
 }
-`,Hp=`version: 1.0
+`,jp=`version: 1.0
 
 #pixelsGraphicsShowcase programmable() {
   // Section 1: Pixels primitives
@@ -6721,7 +6806,7 @@ paths {
     text(m6x11, "Arrow", #888888, center, 80): -40, 40
   }
 }
-`,jp=`version: 1.0
+`,Vp=`version: 1.0
 
 // Rich Text AutoFit Demo
 // Interactive autoFit mode explorer: choose bounds, fill mode, fonts, and text.
@@ -6790,7 +6875,7 @@ paths {
     // ─── Display Area ───────────────────────────────────
     #statusText(updatable) text(m6x11, "Mode: Width | Bounds: 200 | Fonts: pixellari, dd, m6x11, m5x7, m3x6, f7x5 | Selected: dd", #666666): 0, 225
 }
-`,Vp=`version: 1.0
+`,Gp=`version: 1.0
 
 #richTextShowcase programmable(dmg:1..5=3, dmgColor:color=#FF4444, quest:[accepted,progress,complete]=accepted, equip:[sword,shield,empty]=sword) {
 
@@ -6926,7 +7011,7 @@ paths {
   richText(dd, "First line[br]second line[br]third line", white, left, 600): 8, 882
   text(m6x11, "[br] forces a line break (self-closing markup tag)", #666666): 0, 944
 }
-`,Gp=`version: 1.0
+`,Up=`version: 1.0
 
 #textFontsShowcase programmable() {
   // Section 1: Bitmap fonts
@@ -7072,7 +7157,7 @@ paths {
   text(departuremono, "├─ item two",        #cccccc): 480, 1348
   text(departuremono, "└─ item three",      #cccccc): 480, 1360
 }
-`,Up=`version: 1.0
+`,Qp=`version: 1.0
 
 // Combo States Demo
 // Shows @if, @else, @default conditional patterns
@@ -7168,7 +7253,7 @@ paths {
   }
   text(exo2_light_14, "@switch shares the mode cycle button above", #888888, left, 300): 140, 342
 }
-`,Qp=`version: 1.0
+`,qp=`version: 1.0
 
 // A health bar that changes color based on value
 #healthBar programmable(value:uint=50, label:string="HP") {
@@ -7222,7 +7307,7 @@ paths {
   dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
   dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
 }
-`,qp=`version: 1.0
+`,Yp=`version: 1.0
 
 // Colored box for flow items
 #flowItem programmable(w:uint=40, h:uint=20, color:color=#448, num:uint=0) {
@@ -7446,7 +7531,7 @@ paths {
     }
   }
 }
-`,Yp=`version: 1.0
+`,Xp=`version: 1.0
 
 layouts {
     // Hex ring: 7 hexes (center + 6 neighbors) via cube coordinates
@@ -7578,7 +7663,7 @@ layouts {
     }
   }
 }
-`,Xp=`version: 1.0
+`,Kp=`version: 1.0
 
 // Item that goes into a slot - uses same icons as inventory demo
 #slotItem programmable(itemType:[empty, hpot, mpot, lsword, ssword, shield, ring, boots, scroll, helm, armor] = empty) {
@@ -7790,7 +7875,7 @@ layouts {
   #comboStatusText(updatable) text(exo2_light_14, "Click an enabled slot to add/remove an item.", #666666, left, 500): 0, 575
   #comboInfoText(updatable) text(exo2_light_14, "", #aaaaaa, left, 500): 0, 593
 }
-`,Kp=`version: 1.0
+`,Zp=`version: 1.0
 
 // Child programmable: a colored card with configurable size and color
 #colorCard programmable(w:uint=60, h:uint=40, cardColor:color=#4488cc, label:string="Card") {
@@ -7855,7 +7940,7 @@ layouts {
     }
   }
 }
-`,Zp=`version: 1.0
+`,Jp=`version: 1.0
 
 // Buttons Demo
 // Shows all button styles from buttons.manim builder: Normal, Warning, Small
@@ -7999,7 +8084,7 @@ layouts {
     }
     text(exo2_light_14, "Toggle to disable all buttons", #aaaaaa): 30, 852
 }
-`,Jp=`version: 1.0
+`,ef=`version: 1.0
 
 // Checkboxes Demo
 // Shows checkbox, tickbox, toggle, radio, and simple variants with selected count.
@@ -8088,7 +8173,7 @@ layouts {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 482
 }
-`,ef=`version: 1.0
+`,nf=`version: 1.0
 
 // Cursors Demo
 // A \`cursor { }\` block makes cursors from the file's art (atlas cells and images); the screen
@@ -8157,7 +8242,7 @@ layouts {
     #namesText(updatable) text(exo2_light_14, "", #cccccc, left, 700): 0, 285
     #statusText(updatable) text(exo2_light_14, "Hover a region", #ffffff, left, 700): 0, 330
 }
-`,nf=`version: 1.0
+`,tf=`version: 1.0
 
 // Dialogs Demo
 // Shows modal dialogs with different overlay configurations.
@@ -8323,7 +8408,7 @@ layouts {
     #historyText4(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 415
     #historyText5(updatable) text(exo2_light_14, "", #aaaaaa, left, 480): 15, 435
 }
-`,tf=`version: 1.0
+`,af=`version: 1.0
 
 // Draggable Demo
 // All drag & drop modes: snap zones, constraints, priority, layer, alpha/highlight.
@@ -8426,7 +8511,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all draggables", #aaaaaa): 380, 352
 }
-`,af=`version: 1.0
+`,rf=`version: 1.0
 
 // Dropdowns Demo
 // Shows dropdown modes: scrollable (fixed height) and scalable (auto-sizing).
@@ -8527,7 +8612,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all dropdowns", #aaaaaa): 30, 1012
 }
-`,rf=`version: 1.0
+`,of=`version: 1.0
 
 // Progress Bar Demo
 // Shows progress bars at various values with auto-animation.
@@ -8658,7 +8743,7 @@ paths {
     }
     text(exo2_light_14, "25%, 60%, 90%, and the animated value", #aaaaaa): 0, 690
 }
-`,of=`version: 1.0
+`,lf=`version: 1.0
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with selection feedback.
@@ -8701,7 +8786,7 @@ paths {
     ninepatch("ui", "Window_3x3_idle", 300, 40): 250, 410
     #radio2Text(updatable) text(exo2_16, "Selected: Easy", #ffffff, left, 280): 265, 420
 }
-`,lf=`version: 1.0
+`,sf=`version: 1.0
 
 // Radio Buttons Demo
 // Shows vertical and horizontal radio groups with different styles, selection feedback, and disabled state.
@@ -8765,7 +8850,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disabled state", #aaaaaa): 60, 772
 }
-`,sf=`version: 1.0
+`,df=`version: 1.0
 
 // Scrollable List Demo
 // Shows a scrollable list with 20+ items and selected item display.
@@ -8812,7 +8897,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable scrollable list", #aaaaaa): 30, 412
 }
-`,df=`version: 1.0
+`,cf=`version: 1.0
 
 // Sliders Demo
 // Shows sliders of different sizes, scales, and min/max/step combinations.
@@ -8941,7 +9026,7 @@ paths {
     }
     text(exo2_light_14, "Toggle to disable all sliders", #aaaaaa): 30, 752
 }
-`,cf=`version: 1.0
+`,uf=`version: 1.0
 
 // Tabs Demo
 // Shows tab bars with content switching, disabled tabs, and custom sizes.
@@ -8991,7 +9076,7 @@ paths {
     }
     text(exo2_light_14, "Toggle disable all tabs", #aaaaaa): 60, 792
 }
-`,uf=`version: 1.0
+`,pf=`version: 1.0
 
 // Text Input Demo
 // Shows text input variants, input filters, and tab navigation between fields.
@@ -9111,7 +9196,7 @@ paths {
         settings{buildName=>textInput, font=>dd, placeholder=>"Letters + digits...", filter=>alphanumeric, inputWidth=>140}
     }
 }
-`,pf=`version: 1.0
+`,ff=`version: 1.0
 
 // Tooltips & Panels Demo
 // Hover tooltips (UITooltipHelper), click panels (UIPanelHelper),
@@ -9445,7 +9530,7 @@ paths {
 
     #statusFade(updatable) text(m6x11, "Click to compare instant vs fading panels", #666666): 0, 810
 }
-`,ff=`version: 1.0
+`,mf=`version: 1.0
 
 // NavScreen Carousel — 7 feature highlight slides
 // Controlled by currentSlide parameter, switched via setParameter() in NavScreen.hx
@@ -9704,7 +9789,7 @@ paths {
   @(currentSlide => 5) bitmap(generated(color(10, 10, #7fdbda))): 188, 250
   @(currentSlide => 6) bitmap(generated(color(10, 10, #7fdbda))): 206, 250
 }
-`,mf=`version: 1.0
+`,hf=`version: 1.0
 
 // NavScreen layout — positions, info panel, control buttons
 // Carousel visual and particles are built separately, positioned via layouts
@@ -9776,7 +9861,7 @@ layouts {
         point: 40, 658
         point: 200, 658
         point: 360, 658
-        // Game-Like Demos (12, wraps to 2 rows)
+        // Game-Like Demos (13, wraps to 2 rows)
         point: 40, 716
         point: 200, 716
         point: 360, 716
@@ -9789,6 +9874,7 @@ layouts {
         point: 360, 748
         point: 520, 748
         point: 680, 748
+        point: 840, 748
     }
 }
 
@@ -9815,7 +9901,7 @@ layouts {
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("playBtn")): 70, 286
     placeholder(generated(cross(26, 22, #FF0000)), builderParameter("nextBtn")): 100, 286
 }
-`,hf=`version: 1.0
+`,gf=`version: 1.0
 
 // Radio Button Styles Builder
 // #radio    - Small radio button (ui atlas: RadioButton_off/on_*)
@@ -9857,7 +9943,7 @@ layouts {
         text(m6x11, callback("label", $index), 0xffffffff, left, 120): 24,4
     }
 }
-`,gf=`version: 1.0
+`,xf=`version: 1.0
 
       #main palette {
       #1a1a1a  #2c5f7c  #4a90a4  #7fdbda  #ff7f50  #ff4444  #4caf50  #ffeb3b  #ffffff  #666666  #b0b0b0  #000000
@@ -10295,7 +10381,7 @@ layouts {
     @(placeholder=>true) text(dd, $placeholderText, #888888): 6, 6
 
     #textArea point: 6, 6
-}`,xf=`sheet: crew2
+}`,bf=`sheet: crew2
 allowedExtraPoints: ["point", "text"]
 center: 64,64
 fps: 10
@@ -10365,7 +10451,7 @@ animation dir5 {
         text: -25, -60
     }
 }
-`,bf=`sheet: crew2
+`,vf=`sheet: crew2
 center: 32,48
 
 animation outline-blink {
@@ -10400,7 +10486,7 @@ animation brightness-blink {
         sheet: "marine_r_idle"
     }
 }
-`,vf=`sheet: crew2
+`,yf=`sheet: crew2
 allowedExtraPoints: [fire, targeting]
 states: direction(l, r)
 center: 32,48
@@ -10528,7 +10614,7 @@ animation dodge {
         sheet: "marine_\${direction}_dodging_\${direction}" frames: 0..3
     }
 }
-`,yf=`// A layered .anim for the tests: the marine's own frames stand in for a body, a hat and a glow.
+`,wf=`// A layered .anim for the tests: the marine's own frames stand in for a body, a hat and a glow.
 sheet: crew2
 states: direction(l, r), hat(none, cap), glow(off, on)
 layers: body, hat, glow
@@ -10547,7 +10633,7 @@ animation pose {
     layer hat @(hat != none) { sheet: "marine_\${direction}_dead" }
     layer glow @(glow => on) { sheet: "marine_\${direction}_standing" blend: add }
 }
-`,wf=`sheet: crew2
+`,_f=`sheet: crew2
 allowedExtraPoints: ["line_TR", "line_BR", "line_TL", "line_BL"]
 states: direction(l, r)
 center: 32,48
@@ -10581,7 +10667,7 @@ animation idle_1 {
         sheet: "shield_\${direction}_layer1"
     }
 }
-`,_f=`sheet: crew2
+`,Sf=`sheet: crew2
 center: 32,48
 
 animation explode {
@@ -10621,7 +10707,7 @@ animation destroyed {
         sheet: "Turret_Destroyed_SW"
     }
 }
-`,Sf=Object.assign({"../public/assets/buttons.manim":Qu,"../public/assets/checkbox.manim":qu,"../public/assets/demo-common.manim":Yu,"../public/assets/demos/advanced/conditionals.manim":Xu,"../public/assets/demos/advanced/expressions.manim":Ku,"../public/assets/demos/advanced/feature-showcase.manim":Zu,"../public/assets/demos/advanced/incremental.manim":Ju,"../public/assets/demos/advanced/interactives.manim":ep,"../public/assets/demos/advanced/loadout-lab.manim":np,"../public/assets/demos/advanced/macro-performance.manim":tp,"../public/assets/demos/advanced/settings.manim":ap,"../public/assets/demos/animation/anim-layers.manim":rp,"../public/assets/demos/animation/anim-path.manim":ip,"../public/assets/demos/animation/color-picker-dialog.manim":op,"../public/assets/demos/animation/curves.manim":lp,"../public/assets/demos/animation/filters.manim":sp,"../public/assets/demos/animation/floating-text.manim":dp,"../public/assets/demos/animation/particles-basics.manim":cp,"../public/assets/demos/animation/particles-bounds.manim":up,"../public/assets/demos/animation/particles-colors.manim":pp,"../public/assets/demos/animation/particles-demo.manim":fp,"../public/assets/demos/animation/particles-motion.manim":mp,"../public/assets/demos/animation/particles-paths.manim":hp,"../public/assets/demos/animation/particles-subemitters.manim":gp,"../public/assets/demos/animation/particles.manim":xp,"../public/assets/demos/animation/paths.manim":bp,"../public/assets/demos/animation/screen-shake.manim":vp,"../public/assets/demos/animation/state-anim-filters.manim":yp,"../public/assets/demos/animation/state-anim-gallery.manim":wp,"../public/assets/demos/animation/state-anim-interactive.manim":_p,"../public/assets/demos/animation/state-anim-points.manim":Sp,"../public/assets/demos/animation/state-anim.manim":Fp,"../public/assets/demos/animation/transitions.manim":kp,"../public/assets/demos/gamelike/autotile.manim":Cp,"../public/assets/demos/gamelike/battle-hud.manim":$p,"../public/assets/demos/gamelike/card-hand.manim":Pp,"../public/assets/demos/gamelike/card-states.manim":Tp,"../public/assets/demos/gamelike/cards-demo.manim":Rp,"../public/assets/demos/gamelike/character-sheet.manim":Ap,"../public/assets/demos/gamelike/dialogue.manim":Ep,"../public/assets/demos/gamelike/grid-demo.manim":Bp,"../public/assets/demos/gamelike/inventory.manim":Dp,"../public/assets/demos/gamelike/project-list.manim":Ip,"../public/assets/demos/gamelike/skill-tree.manim":Np,"../public/assets/demos/gamelike/sound.manim":zp,"../public/assets/demos/gamelike/status-effects.manim":Op,"../public/assets/demos/gamelike/tilemap.manim":Lp,"../public/assets/demos/graphics/bitmaps-atlas.manim":Wp,"../public/assets/demos/graphics/ninepatch.manim":Mp,"../public/assets/demos/graphics/pixels-graphics.manim":Hp,"../public/assets/demos/graphics/rich-text-autofit.manim":jp,"../public/assets/demos/graphics/rich-text.manim":Vp,"../public/assets/demos/graphics/text-fonts.manim":Gp,"../public/assets/demos/layout/combo-states.manim":Up,"../public/assets/demos/layout/dynamic-refs.manim":Qp,"../public/assets/demos/layout/flow-layout.manim":qp,"../public/assets/demos/layout/repeatable.manim":Yp,"../public/assets/demos/layout/slots.manim":Xp,"../public/assets/demos/layout/static-refs.manim":Kp,"../public/assets/demos/ui/buttons-demo.manim":Zp,"../public/assets/demos/ui/checkboxes-demo.manim":Jp,"../public/assets/demos/ui/cursors.manim":ef,"../public/assets/demos/ui/dialogs.manim":nf,"../public/assets/demos/ui/draggable.manim":tf,"../public/assets/demos/ui/dropdowns.manim":af,"../public/assets/demos/ui/progress-bar.manim":rf,"../public/assets/demos/ui/radio.manim":of,"../public/assets/demos/ui/radios-demo.manim":lf,"../public/assets/demos/ui/scrollable-list.manim":sf,"../public/assets/demos/ui/sliders.manim":df,"../public/assets/demos/ui/tabs-demo.manim":cf,"../public/assets/demos/ui/textinput-demo.manim":uf,"../public/assets/demos/ui/tooltips-panels.manim":pf,"../public/assets/nav-carousel.manim":ff,"../public/assets/nav-screen.manim":mf,"../public/assets/radio.manim":hf,"../public/assets/std.manim":gf}),Ff=Object.assign({"../public/assets/arrows.anim":xf,"../public/assets/marine-blink.anim":bf,"../public/assets/marine.anim":vf,"../public/assets/marineLayers.anim":yf,"../public/assets/shield.anim":wf,"../public/assets/turret.anim":_f}),kf=Object.fromEntries([...Object.entries(Sf).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(Ff).map(([e,n])=>[e.replace("../public/assets/",""),n])]),Fa=e=>kf[e]||null,qi=[{name:"Advanced Features",screens:[{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"},{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"},{name:"loadoutRuntime",displayName:"Loadout Lab (runtime)",category:"Advanced Features",manimFile:"demos/advanced/loadout-lab.manim"},{name:"loadoutCodegen",displayName:"Loadout Lab (codegen)",category:"Advanced Features",manimFile:"demos/advanced/loadout-lab.manim"}]},{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radios-demo.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"cursors",displayName:"Cursors",category:"UI Components",manimFile:"demos/ui/cursors.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"},{name:"tabs",displayName:"Tabs",category:"UI Components",manimFile:"demos/ui/tabs-demo.manim"},{name:"textInput",displayName:"Text Input",category:"UI Components",manimFile:"demos/ui/textinput-demo.manim"},{name:"tooltipsPanels",displayName:"Tooltips & Panels",category:"UI Components",manimFile:"demos/ui/tooltips-panels.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"richText",displayName:"Rich Text",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text.manim"},{name:"richTextAutofit",displayName:"Rich Text AutoFit",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text-autofit.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"animLayers",displayName:"Layers in .anim",category:"Animation & Effects",manimFile:"demos/animation/anim-layers.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles-basics.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"},{name:"floatingText",displayName:"Floating Text",category:"Animation & Effects",manimFile:"demos/animation/floating-text.manim"},{name:"screenShake",displayName:"Screen Shake",category:"Animation & Effects",manimFile:"demos/animation/screen-shake.manim"},{name:"transitions",displayName:"Transitions",category:"Animation & Effects",manimFile:"demos/animation/transitions.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"autotile",displayName:"Autotile Terrain",category:"Game-Like Demos",manimFile:"demos/gamelike/autotile.manim"},{name:"tilemap",displayName:"Tile Map",category:"Game-Like Demos",manimFile:"demos/gamelike/tilemap.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"},{name:"cards",displayName:"Cards",category:"Game-Like Demos",manimFile:"demos/gamelike/cards-demo.manim"},{name:"gridComponent",displayName:"Grid Component",category:"Game-Like Demos",manimFile:"demos/gamelike/grid-demo.manim"},{name:"projectList",displayName:"Project List",category:"Game-Like Demos",manimFile:"demos/gamelike/project-list.manim"},{name:"sound",displayName:"Sound",category:"Game-Like Demos",manimFile:"demos/gamelike/sound.manim"}]}];class Cf{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:a=>{if(a.startsWith("http")||a.startsWith("//")||a.startsWith("file://"))return a;try{return new URL(a,n).href}catch{return n+a}},load:a=>this.loadFile(a),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){var t;const n=(t=window.PlaygroundMain)==null?void 0:t.instance;n&&n.screenManager?(this.mainApp=n,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const a=new XMLHttpRequest;return a.open("GET",n,!1),a.overrideMimeType("text/plain; charset=x-user-defined"),a.send(),a.status===200?this.binaryStringToArrayBuffer(a.responseText):new ArrayBuffer(0)}binaryStringToArrayBuffer(n){const t=new Uint8Array(n.length);for(let a=0;a<n.length;a++)t[a]=n.charCodeAt(a)&255;return t.buffer}findFileContent(n){const t=n.split("?")[0].split("#")[0];let a=Fa(t);if(a)return a;const r=t.indexOf("/assets/");if(r>=0&&(a=Fa(t.substring(r+8)),a))return a;const i=t.split("/"),o=i[i.length-1];return o&&(a=Fa(o),a)?a:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.navigateTo(n),{success:!0,error:null,file:null,line:null,col:null}}catch(a){return console.error("Failed to switch screen:",a),null}return null}getSourceForScreen(n){for(const t of qi){const a=t.screens.find(r=>r.name===n);if(a)return Fa(a.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function $f({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:a}){const[r,i]=be.useState(new Set(qi.map(l=>l.name))),o=l=>{i(c=>{const f=new Set(c);return f.has(l)?f.delete(l):f.add(l),f})};return t?D.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):D.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[D.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[D.jsx("button",{onClick:()=>n("nav"),className:"text-base font-bold text-gray-100 hover:text-blue-300 transition-colors",children:"Demos"}),D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),D.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:qi.map(l=>D.jsxs("div",{className:"mb-1",children:[D.jsxs("button",{onClick:()=>o(l.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[D.jsx("span",{className:"mr-1.5 text-[10px]",children:r.has(l.name)?"▾":"▸"}),l.name]}),r.has(l.name)&&D.jsx("div",{className:"ml-6",children:l.screens.map(c=>D.jsx("button",{onClick:()=>n(c.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===c.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:c.displayName},c.name))})]},l.name))})]})}var md={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
+`,Ff=Object.assign({"../public/assets/buttons.manim":Qu,"../public/assets/checkbox.manim":qu,"../public/assets/demo-common.manim":Yu,"../public/assets/demos/advanced/conditionals.manim":Xu,"../public/assets/demos/advanced/expressions.manim":Ku,"../public/assets/demos/advanced/feature-showcase.manim":Zu,"../public/assets/demos/advanced/incremental.manim":Ju,"../public/assets/demos/advanced/interactives.manim":ep,"../public/assets/demos/advanced/loadout-lab.manim":np,"../public/assets/demos/advanced/macro-performance.manim":tp,"../public/assets/demos/advanced/settings.manim":ap,"../public/assets/demos/animation/anim-layers.manim":rp,"../public/assets/demos/animation/anim-path.manim":ip,"../public/assets/demos/animation/color-picker-dialog.manim":op,"../public/assets/demos/animation/curves.manim":lp,"../public/assets/demos/animation/filters.manim":sp,"../public/assets/demos/animation/floating-text.manim":dp,"../public/assets/demos/animation/particles-basics.manim":cp,"../public/assets/demos/animation/particles-bounds.manim":up,"../public/assets/demos/animation/particles-colors.manim":pp,"../public/assets/demos/animation/particles-demo.manim":fp,"../public/assets/demos/animation/particles-motion.manim":mp,"../public/assets/demos/animation/particles-paths.manim":hp,"../public/assets/demos/animation/particles-subemitters.manim":gp,"../public/assets/demos/animation/particles.manim":xp,"../public/assets/demos/animation/paths.manim":bp,"../public/assets/demos/animation/screen-shake.manim":vp,"../public/assets/demos/animation/state-anim-filters.manim":yp,"../public/assets/demos/animation/state-anim-gallery.manim":wp,"../public/assets/demos/animation/state-anim-interactive.manim":_p,"../public/assets/demos/animation/state-anim-points.manim":Sp,"../public/assets/demos/animation/state-anim.manim":Fp,"../public/assets/demos/animation/transitions.manim":kp,"../public/assets/demos/gamelike/autotile.manim":Cp,"../public/assets/demos/gamelike/battle-hud.manim":$p,"../public/assets/demos/gamelike/card-hand.manim":Pp,"../public/assets/demos/gamelike/card-states.manim":Tp,"../public/assets/demos/gamelike/cards-demo.manim":Rp,"../public/assets/demos/gamelike/character-sheet.manim":Ap,"../public/assets/demos/gamelike/dialogue.manim":Ep,"../public/assets/demos/gamelike/grid-demo.manim":Bp,"../public/assets/demos/gamelike/inventory.manim":Dp,"../public/assets/demos/gamelike/project-list.manim":Ip,"../public/assets/demos/gamelike/skill-tree.manim":Np,"../public/assets/demos/gamelike/sound.manim":zp,"../public/assets/demos/gamelike/status-effects.manim":Op,"../public/assets/demos/gamelike/tilemap-fill.manim":Lp,"../public/assets/demos/gamelike/tilemap.manim":Wp,"../public/assets/demos/graphics/bitmaps-atlas.manim":Mp,"../public/assets/demos/graphics/ninepatch.manim":Hp,"../public/assets/demos/graphics/pixels-graphics.manim":jp,"../public/assets/demos/graphics/rich-text-autofit.manim":Vp,"../public/assets/demos/graphics/rich-text.manim":Gp,"../public/assets/demos/graphics/text-fonts.manim":Up,"../public/assets/demos/layout/combo-states.manim":Qp,"../public/assets/demos/layout/dynamic-refs.manim":qp,"../public/assets/demos/layout/flow-layout.manim":Yp,"../public/assets/demos/layout/repeatable.manim":Xp,"../public/assets/demos/layout/slots.manim":Kp,"../public/assets/demos/layout/static-refs.manim":Zp,"../public/assets/demos/ui/buttons-demo.manim":Jp,"../public/assets/demos/ui/checkboxes-demo.manim":ef,"../public/assets/demos/ui/cursors.manim":nf,"../public/assets/demos/ui/dialogs.manim":tf,"../public/assets/demos/ui/draggable.manim":af,"../public/assets/demos/ui/dropdowns.manim":rf,"../public/assets/demos/ui/progress-bar.manim":of,"../public/assets/demos/ui/radio.manim":lf,"../public/assets/demos/ui/radios-demo.manim":sf,"../public/assets/demos/ui/scrollable-list.manim":df,"../public/assets/demos/ui/sliders.manim":cf,"../public/assets/demos/ui/tabs-demo.manim":uf,"../public/assets/demos/ui/textinput-demo.manim":pf,"../public/assets/demos/ui/tooltips-panels.manim":ff,"../public/assets/nav-carousel.manim":mf,"../public/assets/nav-screen.manim":hf,"../public/assets/radio.manim":gf,"../public/assets/std.manim":xf}),kf=Object.assign({"../public/assets/arrows.anim":bf,"../public/assets/marine-blink.anim":vf,"../public/assets/marine.anim":yf,"../public/assets/marineLayers.anim":wf,"../public/assets/shield.anim":_f,"../public/assets/turret.anim":Sf}),Cf=Object.fromEntries([...Object.entries(Ff).map(([e,n])=>[e.replace("../public/assets/",""),n]),...Object.entries(kf).map(([e,n])=>[e.replace("../public/assets/",""),n])]),Fa=e=>Cf[e]||null,qi=[{name:"Advanced Features",screens:[{name:"featureShowcase",displayName:"Feature Showcase",category:"Advanced Features",manimFile:"demos/advanced/feature-showcase.manim"},{name:"incremental",displayName:"Incremental",category:"Advanced Features",manimFile:"demos/advanced/incremental.manim"},{name:"interactives",displayName:"Interactives",category:"Advanced Features",manimFile:"demos/advanced/interactives.manim"},{name:"conditionals",displayName:"Conditionals",category:"Advanced Features",manimFile:"demos/advanced/conditionals.manim"},{name:"expressions",displayName:"Expressions",category:"Advanced Features",manimFile:"demos/advanced/expressions.manim"},{name:"settings",displayName:"Settings",category:"Advanced Features",manimFile:"demos/advanced/settings.manim"},{name:"macroPerformance",displayName:"Macro Performance",category:"Advanced Features",manimFile:"demos/advanced/macro-performance.manim"},{name:"loadoutRuntime",displayName:"Loadout Lab (runtime)",category:"Advanced Features",manimFile:"demos/advanced/loadout-lab.manim"},{name:"loadoutCodegen",displayName:"Loadout Lab (codegen)",category:"Advanced Features",manimFile:"demos/advanced/loadout-lab.manim"}]},{name:"UI Components",screens:[{name:"buttons",displayName:"Buttons",category:"UI Components",manimFile:"demos/ui/buttons-demo.manim"},{name:"checkboxes",displayName:"Checkboxes",category:"UI Components",manimFile:"demos/ui/checkboxes-demo.manim"},{name:"sliders",displayName:"Sliders",category:"UI Components",manimFile:"demos/ui/sliders.manim"},{name:"dropdowns",displayName:"Dropdowns",category:"UI Components",manimFile:"demos/ui/dropdowns.manim"},{name:"scrollableList",displayName:"Scrollable List",category:"UI Components",manimFile:"demos/ui/scrollable-list.manim"},{name:"radio",displayName:"Radio Buttons",category:"UI Components",manimFile:"demos/ui/radios-demo.manim"},{name:"progressBar",displayName:"Progress Bars",category:"UI Components",manimFile:"demos/ui/progress-bar.manim"},{name:"cursors",displayName:"Cursors",category:"UI Components",manimFile:"demos/ui/cursors.manim"},{name:"draggable",displayName:"Draggable",category:"UI Components",manimFile:"demos/ui/draggable.manim"},{name:"dialogs",displayName:"Dialogs",category:"UI Components",manimFile:"demos/ui/dialogs.manim"},{name:"tabs",displayName:"Tabs",category:"UI Components",manimFile:"demos/ui/tabs-demo.manim"},{name:"textInput",displayName:"Text Input",category:"UI Components",manimFile:"demos/ui/textinput-demo.manim"},{name:"tooltipsPanels",displayName:"Tooltips & Panels",category:"UI Components",manimFile:"demos/ui/tooltips-panels.manim"}]},{name:"Layout & Composition",screens:[{name:"staticRefs",displayName:"Static Refs",category:"Layout & Composition",manimFile:"demos/layout/static-refs.manim"},{name:"dynamicRefs",displayName:"Dynamic Refs",category:"Layout & Composition",manimFile:"demos/layout/dynamic-refs.manim"},{name:"flowLayout",displayName:"Flow Layout",category:"Layout & Composition",manimFile:"demos/layout/flow-layout.manim"},{name:"repeatable",displayName:"Repeatable",category:"Layout & Composition",manimFile:"demos/layout/repeatable.manim"},{name:"slots",displayName:"Slots",category:"Layout & Composition",manimFile:"demos/layout/slots.manim"},{name:"comboStates",displayName:"Combo States",category:"Layout & Composition",manimFile:"demos/layout/combo-states.manim"}]},{name:"Graphics & Rendering",screens:[{name:"bitmapsAtlas",displayName:"Bitmaps & Atlas",category:"Graphics & Rendering",manimFile:"demos/graphics/bitmaps-atlas.manim"},{name:"ninepatch",displayName:"Ninepatch",category:"Graphics & Rendering",manimFile:"demos/graphics/ninepatch.manim"},{name:"textFonts",displayName:"Text & Fonts",category:"Graphics & Rendering",manimFile:"demos/graphics/text-fonts.manim"},{name:"richText",displayName:"Rich Text",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text.manim"},{name:"richTextAutofit",displayName:"Rich Text AutoFit",category:"Graphics & Rendering",manimFile:"demos/graphics/rich-text-autofit.manim"},{name:"pixelsGraphics",displayName:"Pixels & Graphics",category:"Graphics & Rendering",manimFile:"demos/graphics/pixels-graphics.manim"}]},{name:"Animation & Effects",screens:[{name:"stateAnim",displayName:"State Animations",category:"Animation & Effects",manimFile:"demos/animation/state-anim.manim"},{name:"animLayers",displayName:"Layers in .anim",category:"Animation & Effects",manimFile:"demos/animation/anim-layers.manim"},{name:"particles",displayName:"Particles",category:"Animation & Effects",manimFile:"demos/animation/particles-basics.manim"},{name:"paths",displayName:"Paths",category:"Animation & Effects",manimFile:"demos/animation/paths.manim"},{name:"curves",displayName:"Curves",category:"Animation & Effects",manimFile:"demos/animation/curves.manim"},{name:"animPath",displayName:"Anim Paths",category:"Animation & Effects",manimFile:"demos/animation/anim-path.manim"},{name:"filters",displayName:"Filters",category:"Animation & Effects",manimFile:"demos/animation/filters.manim"},{name:"floatingText",displayName:"Floating Text",category:"Animation & Effects",manimFile:"demos/animation/floating-text.manim"},{name:"screenShake",displayName:"Screen Shake",category:"Animation & Effects",manimFile:"demos/animation/screen-shake.manim"},{name:"transitions",displayName:"Transitions",category:"Animation & Effects",manimFile:"demos/animation/transitions.manim"}]},{name:"Game-Like Demos",screens:[{name:"inventory",displayName:"Inventory Grid",category:"Game-Like Demos",manimFile:"demos/gamelike/inventory.manim"},{name:"characterSheet",displayName:"Character Sheet",category:"Game-Like Demos",manimFile:"demos/gamelike/character-sheet.manim"},{name:"autotile",displayName:"Autotile Terrain",category:"Game-Like Demos",manimFile:"demos/gamelike/autotile.manim"},{name:"tilemap",displayName:"Tile Map",category:"Game-Like Demos",manimFile:"demos/gamelike/tilemap.manim"},{name:"tilemapFill",displayName:"Tile Fill",category:"Game-Like Demos",manimFile:"demos/gamelike/tilemap-fill.manim"},{name:"battleHud",displayName:"Battle HUD",category:"Game-Like Demos",manimFile:"demos/gamelike/battle-hud.manim"},{name:"skillTree",displayName:"Skill Tree",category:"Game-Like Demos",manimFile:"demos/gamelike/skill-tree.manim"},{name:"dialogue",displayName:"Dialogue Box",category:"Game-Like Demos",manimFile:"demos/gamelike/dialogue.manim"},{name:"statusEffects",displayName:"Status Effects",category:"Game-Like Demos",manimFile:"demos/gamelike/status-effects.manim"},{name:"cards",displayName:"Cards",category:"Game-Like Demos",manimFile:"demos/gamelike/cards-demo.manim"},{name:"gridComponent",displayName:"Grid Component",category:"Game-Like Demos",manimFile:"demos/gamelike/grid-demo.manim"},{name:"projectList",displayName:"Project List",category:"Game-Like Demos",manimFile:"demos/gamelike/project-list.manim"},{name:"sound",displayName:"Sound",category:"Game-Like Demos",manimFile:"demos/gamelike/sound.manim"}]}];class $f{constructor(){tn(this,"mainApp",null);tn(this,"currentScreen",null);this.setupFileLoader(),this.waitForMainApp()}setupFileLoader(){var t;const n=((t=window.location)==null?void 0:t.href)||"";window.FileLoader={baseUrl:n,resolveUrl:a=>{if(a.startsWith("http")||a.startsWith("//")||a.startsWith("file://"))return a;try{return new URL(a,n).href}catch{return n+a}},load:a=>this.loadFile(a),stringToArrayBuffer:this.stringToArrayBuffer}}waitForMainApp(){var t;const n=(t=window.PlaygroundMain)==null?void 0:t.instance;n&&n.screenManager?(this.mainApp=n,this.currentScreen&&this.currentScreen!=="nav"&&this.switchScreen(this.currentScreen)):setTimeout(()=>this.waitForMainApp(),100)}stringToArrayBuffer(n){return new TextEncoder().encode(n).buffer}loadFile(n){const t=this.findFileContent(n);if(t)return this.stringToArrayBuffer(t);const a=new XMLHttpRequest;return a.open("GET",n,!1),a.overrideMimeType("text/plain; charset=x-user-defined"),a.send(),a.status===200?this.binaryStringToArrayBuffer(a.responseText):new ArrayBuffer(0)}binaryStringToArrayBuffer(n){const t=new Uint8Array(n.length);for(let a=0;a<n.length;a++)t[a]=n.charCodeAt(a)&255;return t.buffer}findFileContent(n){const t=n.split("?")[0].split("#")[0];let a=Fa(t);if(a)return a;const r=t.indexOf("/assets/");if(r>=0&&(a=Fa(t.substring(r+8)),a))return a;const i=t.split("/"),o=i[i.length-1];return o&&(a=Fa(o),a)?a:null}switchScreen(n){var t;if(this.currentScreen=n,(t=window.PlaygroundMain)!=null&&t.instance)try{return window.PlaygroundMain.instance.navigateTo(n),{success:!0,error:null,file:null,line:null,col:null}}catch(a){return console.error("Failed to switch screen:",a),null}return null}getSourceForScreen(n){for(const t of qi){const a=t.screens.find(r=>r.name===n);if(a)return Fa(a.manimFile)}return null}dispose(){this.mainApp&&typeof this.mainApp.dispose=="function"&&this.mainApp.dispose()}}function Pf({currentScreen:e,onScreenSelect:n,collapsed:t,onToggleCollapse:a}){const[r,i]=be.useState(new Set(qi.map(l=>l.name))),o=l=>{i(c=>{const f=new Set(c);return f.has(l)?f.delete(l):f.add(l),f})};return t?D.jsx("div",{className:"w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3",children:D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-xs p-1",title:"Expand sidebar",children:"»"})}):D.jsxs("div",{className:"w-[250px] bg-gray-800 border-r border-gray-700 flex flex-col h-full",children:[D.jsxs("div",{className:"px-4 py-3 border-b border-gray-700 flex items-center justify-between",children:[D.jsx("button",{onClick:()=>n("nav"),className:"text-base font-bold text-gray-100 hover:text-blue-300 transition-colors",children:"Demos"}),D.jsx("button",{onClick:a,className:"text-gray-400 hover:text-white text-sm px-2 py-1",title:"Collapse sidebar",children:"«"})]}),D.jsx("div",{className:"flex-1 overflow-y-auto scrollable p-2",children:qi.map(l=>D.jsxs("div",{className:"mb-1",children:[D.jsxs("button",{onClick:()=>o(l.name),className:"w-full text-left px-2 py-1.5 text-sm font-medium text-gray-400 hover:text-gray-200 flex items-center",children:[D.jsx("span",{className:"mr-1.5 text-[10px]",children:r.has(l.name)?"▾":"▸"}),l.name]}),r.has(l.name)&&D.jsx("div",{className:"ml-6",children:l.screens.map(c=>D.jsx("button",{onClick:()=>n(c.name),className:`w-full text-left px-3 py-1 text-xs rounded transition-colors ${e===c.name?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`,children:c.displayName},c.name))})]},l.name))})]})}var md={exports:{}};(function(e){var n=typeof window<"u"?window:typeof WorkerGlobalScope<"u"&&self instanceof WorkerGlobalScope?self:{};/**
  * Prism: Lightweight, robust, elegant syntax highlighting
  *
  * @license MIT <https://opensource.org/licenses/MIT>
@@ -10629,5 +10715,5 @@ animation destroyed {
  * @namespace
  * @public
  */var t=function(a){var r=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,i=0,o={},l={manual:a.Prism&&a.Prism.manual,disableWorkerMessageHandler:a.Prism&&a.Prism.disableWorkerMessageHandler,util:{encode:function s(d){return d instanceof c?new c(d.type,s(d.content),d.alias):Array.isArray(d)?d.map(s):d.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++i}),s.__id},clone:function s(d,p){p=p||{};var h,g;switch(l.util.type(d)){case"Object":if(g=l.util.objId(d),p[g])return p[g];h={},p[g]=h;for(var v in d)d.hasOwnProperty(v)&&(h[v]=s(d[v],p));return h;case"Array":return g=l.util.objId(d),p[g]?p[g]:(h=[],p[g]=h,d.forEach(function(y,C){h[C]=s(y,p)}),h);default:return d}},getLanguage:function(s){for(;s;){var d=r.exec(s.className);if(d)return d[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,d){s.className=s.className.replace(RegExp(r,"gi"),""),s.classList.add("language-"+d)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var d=document.getElementsByTagName("script");for(var p in d)if(d[p].src==s)return d[p]}return null}},isActive:function(s,d,p){for(var h="no-"+d;s;){var g=s.classList;if(g.contains(d))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!p}},languages:{plain:o,plaintext:o,text:o,txt:o,extend:function(s,d){var p=l.util.clone(l.languages[s]);for(var h in d)p[h]=d[h];return p},insertBefore:function(s,d,p,h){h=h||l.languages;var g=h[s],v={};for(var y in g)if(g.hasOwnProperty(y)){if(y==d)for(var C in p)p.hasOwnProperty(C)&&(v[C]=p[C]);p.hasOwnProperty(y)||(v[y]=g[y])}var T=h[s];return h[s]=v,l.languages.DFS(l.languages,function(I,ue){ue===T&&I!=s&&(this[I]=v)}),v},DFS:function s(d,p,h,g){g=g||{};var v=l.util.objId;for(var y in d)if(d.hasOwnProperty(y)){p.call(d,y,d[y],h||y);var C=d[y],T=l.util.type(C);T==="Object"&&!g[v(C)]?(g[v(C)]=!0,s(C,p,null,g)):T==="Array"&&!g[v(C)]&&(g[v(C)]=!0,s(C,p,y,g))}}},plugins:{},highlightAll:function(s,d){l.highlightAllUnder(document,s,d)},highlightAllUnder:function(s,d,p){var h={callback:p,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};l.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),l.hooks.run("before-all-elements-highlight",h);for(var g=0,v;v=h.elements[g++];)l.highlightElement(v,d===!0,h.callback)},highlightElement:function(s,d,p){var h=l.util.getLanguage(s),g=l.languages[h];l.util.setLanguage(s,h);var v=s.parentElement;v&&v.nodeName.toLowerCase()==="pre"&&l.util.setLanguage(v,h);var y=s.textContent,C={element:s,language:h,grammar:g,code:y};function T(ue){C.highlightedCode=ue,l.hooks.run("before-insert",C),C.element.innerHTML=C.highlightedCode,l.hooks.run("after-highlight",C),l.hooks.run("complete",C),p&&p.call(C.element)}if(l.hooks.run("before-sanity-check",C),v=C.element.parentElement,v&&v.nodeName.toLowerCase()==="pre"&&!v.hasAttribute("tabindex")&&v.setAttribute("tabindex","0"),!C.code){l.hooks.run("complete",C),p&&p.call(C.element);return}if(l.hooks.run("before-highlight",C),!C.grammar){T(l.util.encode(C.code));return}if(d&&a.Worker){var I=new Worker(l.filename);I.onmessage=function(ue){T(ue.data)},I.postMessage(JSON.stringify({language:C.language,code:C.code,immediateClose:!0}))}else T(l.highlight(C.code,C.grammar,C.language))},highlight:function(s,d,p){var h={code:s,grammar:d,language:p};if(l.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=l.tokenize(h.code,h.grammar),l.hooks.run("after-tokenize",h),c.stringify(l.util.encode(h.tokens),h.language)},tokenize:function(s,d){var p=d.rest;if(p){for(var h in p)d[h]=p[h];delete d.rest}var g=new x;return m(g,g.head,s),b(s,g,d,g.head,0),S(g)},hooks:{all:{},add:function(s,d){var p=l.hooks.all;p[s]=p[s]||[],p[s].push(d)},run:function(s,d){var p=l.hooks.all[s];if(!(!p||!p.length))for(var h=0,g;g=p[h++];)g(d)}},Token:c};a.Prism=l;function c(s,d,p,h){this.type=s,this.content=d,this.alias=p,this.length=(h||"").length|0}c.stringify=function s(d,p){if(typeof d=="string")return d;if(Array.isArray(d)){var h="";return d.forEach(function(T){h+=s(T,p)}),h}var g={type:d.type,content:s(d.content,p),tag:"span",classes:["token",d.type],attributes:{},language:p},v=d.alias;v&&(Array.isArray(v)?Array.prototype.push.apply(g.classes,v):g.classes.push(v)),l.hooks.run("wrap",g);var y="";for(var C in g.attributes)y+=" "+C+'="'+(g.attributes[C]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function f(s,d,p,h){s.lastIndex=d;var g=s.exec(p);if(g&&h&&g[1]){var v=g[1].length;g.index+=v,g[0]=g[0].slice(v)}return g}function b(s,d,p,h,g,v){for(var y in p)if(!(!p.hasOwnProperty(y)||!p[y])){var C=p[y];C=Array.isArray(C)?C:[C];for(var T=0;T<C.length;++T){if(v&&v.cause==y+","+T)return;var I=C[T],ue=I.inside,nn=!!I.lookbehind,ht=!!I.greedy,Sr=I.alias;if(ht&&!I.pattern.global){var gt=I.pattern.toString().match(/[imsuy]*$/)[0];I.pattern=RegExp(I.pattern.source,gt+"g")}for(var On=I.pattern||I,k=h.next,R=g;k!==d.tail&&!(v&&R>=v.reach);R+=k.value.length,k=k.next){var A=k.value;if(d.length>s.length)return;if(!(A instanceof c)){var O=1,N;if(ht){if(N=f(On,R,s,nn),!N||N.index>=s.length)break;var Fe=N.index,Ln=N.index+N[0].length,te=R;for(te+=k.value.length;Fe>=te;)k=k.next,te+=k.value.length;if(te-=k.value.length,R=te,k.value instanceof c)continue;for(var je=k;je!==d.tail&&(te<Ln||typeof je.value=="string");je=je.next)O++,te+=je.value.length;O--,A=s.slice(R,te),N.index-=R}else if(N=f(On,0,A,nn),!N)continue;var Fe=N.index,Ve=N[0],Fr=A.slice(0,Fe),Uo=A.slice(Fe+Ve.length),kr=R+A.length;v&&kr>v.reach&&(v.reach=kr);var oa=k.prev;Fr&&(oa=m(d,oa,Fr),R+=Fr.length),_(d,oa,O);var xd=new c(y,ue?l.tokenize(Ve,ue):Ve,Sr,Ve);if(k=m(d,oa,xd),Uo&&m(d,k,Uo),O>1){var Cr={cause:y+","+T,reach:kr};b(s,d,p,k.prev,R,Cr),v&&Cr.reach>v.reach&&(v.reach=Cr.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},d={value:null,prev:s,next:null};s.next=d,this.head=s,this.tail=d,this.length=0}function m(s,d,p){var h=d.next,g={value:p,prev:d,next:h};return d.next=g,h.prev=g,s.length++,g}function _(s,d,p){for(var h=d.next,g=0;g<p&&h!==s.tail;g++)h=h.next;d.next=h,h.prev=d,s.length-=g}function S(s){for(var d=[],p=s.head.next;p!==s.tail;)d.push(p.value),p=p.next;return d}if(!a.document)return a.addEventListener&&(l.disableWorkerMessageHandler||a.addEventListener("message",function(s){var d=JSON.parse(s.data),p=d.language,h=d.code,g=d.immediateClose;a.postMessage(l.highlight(h,l.languages[p],p)),g&&a.close()},!1)),l;var w=l.util.currentScript();w&&(l.filename=w.src,w.hasAttribute("data-manual")&&(l.manual=!0));function P(){l.manual||l.highlightAll()}if(!l.manual){var u=document.readyState;u==="loading"||u==="interactive"&&w&&w.defer?document.addEventListener("DOMContentLoaded",P):window.requestAnimationFrame?window.requestAnimationFrame(P):window.setTimeout(P,16)}return l}(n);e.exports&&(e.exports=t),typeof ei<"u"&&(ei.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(a){a.type==="entity"&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(r,i){var o={};o["language-"+i]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[i]},o.cdata=/^<!\[CDATA\[|\]\]>$/i;var l={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:o}};l["language-"+i]={pattern:/[\s\S]+/,inside:t.languages[i]};var c={};c[r]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return r}),"i"),lookbehind:!0,greedy:!0,inside:l},t.languages.insertBefore("markup","cdata",c)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(a,r){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+a+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[r,"language-"+r],inside:t.languages[r]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(a){var r=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;a.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+r.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+r.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+r.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+r.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:r,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},a.languages.css.atrule.inside.rest=a.languages.css;var i=a.languages.markup;i&&(i.tag.addInlined("style","css"),i.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var a="Loading…",r=function(w,P){return"✖ Error "+w+" while fetching file: "+P},i="✖ Error: File does not exist or is empty",o={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},l="data-src-status",c="loading",f="loaded",b="failed",x="pre[data-src]:not(["+l+'="'+f+'"]):not(['+l+'="'+c+'"])';function m(w,P,u){var s=new XMLHttpRequest;s.open("GET",w,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?P(s.responseText):s.status>=400?u(r(s.status,s.statusText)):u(i))},s.send(null)}function _(w){var P=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(w||"");if(P){var u=Number(P[1]),s=P[2],d=P[3];return s?d?[u,Number(d)]:[u,void 0]:[u,u]}}t.hooks.add("before-highlightall",function(w){w.selector+=", "+x}),t.hooks.add("before-sanity-check",function(w){var P=w.element;if(P.matches(x)){w.code="",P.setAttribute(l,c);var u=P.appendChild(document.createElement("CODE"));u.textContent=a;var s=P.getAttribute("data-src"),d=w.language;if(d==="none"){var p=(/\.(\w+)$/.exec(s)||[,"none"])[1];d=o[p]||p}t.util.setLanguage(u,d),t.util.setLanguage(P,d);var h=t.plugins.autoloader;h&&h.loadLanguages(d),m(s,function(g){P.setAttribute(l,f);var v=_(P.getAttribute("data-range"));if(v){var y=g.split(/\r\n?|\n/g),C=v[0],T=v[1]==null?y.length:v[1];C<0&&(C+=y.length),C=Math.max(0,Math.min(C-1,y.length)),T<0&&(T+=y.length),T=Math.max(0,Math.min(T,y.length)),g=y.slice(C,T).join(`
-`),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,d;d=u[s++];)t.highlightElement(d)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(md);var Pf=md.exports;const Yi=Xi(Pf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@any|@all|@else|@default|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function Tf({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function Rf(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[c]=be.useState(()=>new Cf);be.useEffect(()=>{window.playgroundLoader=c;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{c.dispose()}},[c]),be.useEffect(()=>{const x=()=>{const _=window.location.hash.match(/screen=(\w+)/);if(_){const S=_[1];n(S),c.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[c]);const f=x=>{n(x),window.location.hash=`screen=${x}`,c.switchScreen(x);const m=c.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=c.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx($f,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(Tf,{source:o,visible:r})})]})]})]})}var hd={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,_){m=m.push?m:[m];var S=[],w=m.length,P=w,u,s,d,p;for(u=function(h,g){g.length&&S.push(h),P--,P||_(S)};w--;){if(s=m[w],d=r[s],d){u(s,d);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,_){if(m){var S=i[m];if(r[m]=_,!!S)for(;S.length;)S[0](m,_),S.splice(0,1)}}function c(m,_){m.call&&(m={success:m}),_.length?(m.error||t)(_):(m.success||t)(m)}function f(m,_,S,w){var P=document,u=S.async,s=(S.numRetries||0)+1,d=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(w=w||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return _(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return _(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(w+=1,w<s)return f(m,_,S,w)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";_(m,T,C.defaultPrevented)},d(m,y)!==!1&&P.head.appendChild(y)}function b(m,_,S){m=m.push?m:[m];var w=m.length,P=w,u=[],s,d;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;w--,w||_(u)},d=0;d<P;d++)f(m[d],s,S)}function x(m,_,S){var w,P;if(_&&_.trim&&(w=_),P=(w?S:_)||{},w){if(w in a)throw"LoadJS";a[w]=!0}function u(s,d){b(m,function(p){c(P,p),s&&c({success:s,error:d},p),l(w,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(_,S){return o(_,function(w){c(S,w)}),x},x.done=function(_){l(_,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(_){return _ in a},x})})(hd);var Af=hd.exports;const Ef=Xi(Af);class Bf{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);Ef("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gd=new Bf({maxRetries:5,retryDelay:2e3,timeout:1e4});gd.start();window.haxeLoader=gd;ni.createRoot(document.getElementById("root")).render(D.jsx(Id.StrictMode,{children:D.jsx(Rf,{})}));
-//# sourceMappingURL=index-BECkmoSH.js.map
+`),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,d;d=u[s++];)t.highlightElement(d)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(md);var Tf=md.exports;const Yi=Xi(Tf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@any|@all|@else|@default|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function Rf({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function Af(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[c]=be.useState(()=>new $f);be.useEffect(()=>{window.playgroundLoader=c;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{c.dispose()}},[c]),be.useEffect(()=>{const x=()=>{const _=window.location.hash.match(/screen=(\w+)/);if(_){const S=_[1];n(S),c.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[c]);const f=x=>{n(x),window.location.hash=`screen=${x}`,c.switchScreen(x);const m=c.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=c.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx(Pf,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(Rf,{source:o,visible:r})})]})]})]})}var hd={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,_){m=m.push?m:[m];var S=[],w=m.length,P=w,u,s,d,p;for(u=function(h,g){g.length&&S.push(h),P--,P||_(S)};w--;){if(s=m[w],d=r[s],d){u(s,d);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,_){if(m){var S=i[m];if(r[m]=_,!!S)for(;S.length;)S[0](m,_),S.splice(0,1)}}function c(m,_){m.call&&(m={success:m}),_.length?(m.error||t)(_):(m.success||t)(m)}function f(m,_,S,w){var P=document,u=S.async,s=(S.numRetries||0)+1,d=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(w=w||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return _(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return _(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(w+=1,w<s)return f(m,_,S,w)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";_(m,T,C.defaultPrevented)},d(m,y)!==!1&&P.head.appendChild(y)}function b(m,_,S){m=m.push?m:[m];var w=m.length,P=w,u=[],s,d;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;w--,w||_(u)},d=0;d<P;d++)f(m[d],s,S)}function x(m,_,S){var w,P;if(_&&_.trim&&(w=_),P=(w?S:_)||{},w){if(w in a)throw"LoadJS";a[w]=!0}function u(s,d){b(m,function(p){c(P,p),s&&c({success:s,error:d},p),l(w,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(_,S){return o(_,function(w){c(S,w)}),x},x.done=function(_){l(_,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(_){return _ in a},x})})(hd);var Ef=hd.exports;const Bf=Xi(Ef);class Df{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);Bf("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gd=new Df({maxRetries:5,retryDelay:2e3,timeout:1e4});gd.start();window.haxeLoader=gd;ni.createRoot(document.getElementById("root")).render(D.jsx(Id.StrictMode,{children:D.jsx(Af,{})}));
+//# sourceMappingURL=index-DXsLWKqa.js.map

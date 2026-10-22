@@ -1,0 +1,85 @@
+version: 1.0
+
+// Tile Fill Demo
+// tilemap(fill(tileset, terrain: $t, cols: $c, rows: $r)) places a tile map with no rows written:
+// cols by rows cells of one terrain, in a ring of none one cell wide, so its edges are drawn as they
+// are in a written map. Its terrain and size are parameters of the programmable: drag a slider or
+// pick a terrain and the map is made again in place. An expression over the parameters works too:
+// the meadow around the patch is $cols + 4 by $rows + 4.
+// Tileset: Minifantasy - Forgotten Plains by Krishna Palacio
+
+#fp atlas2("Tileset/Minifantasy_ForgottenPlainsTiles.png") {
+    grass: 32, 24, 8, 8, index: 0
+    grass: 32, 40, 8, 8, index: 1
+    grass: 32, 48, 8, 8, index: 2
+    grass: 32, 32, 8, 8, index: 3
+}
+
+// The dirt patch of the sheet is a corner set: one tile per grid corner
+#dirtCorner autotile {
+    format: corner
+    tileSize: 8
+    file: "Tileset/Minifantasy_ForgottenPlainsTiles.png"
+    region: [56, 24, 24, 40]
+    mapping: [1:8, 2:6, 3:7, 4:2, 5:5, 6:11, 7:13, 8:0, 9:14, 10:3, 11:12, 12:1, 13:10, 14:9, 15:4]
+}
+
+// The sheet has no water: demo autotiles, two frames of it
+#water autotile { format: corner tileSize: 8 demo: #2A4A9A, #4A78D0 }
+#waterB autotile { format: corner tileSize: 8 demo: #2A4A9A, #5A88E0 }
+
+#meadowTiles tileset {
+    tileSize: 8
+    atlas: "fp"
+    terrain grass { cells: "grass" }
+    terrain dirt { autotile: dirtCorner }
+    terrain water { autotile: water, waterB duration: 600 }
+}
+
+#tilemapFillDemo programmable(terrain:[water, dirt, grass]=water, cols:uint=8, rows:uint=4) {
+    pos: 50, 80
+
+    text(exo2_16, "Tile Fill", #7fdbda): 0, 0
+    text(exo2_14, 'a fill of ${terrain}, ${cols} by ${rows} cells, in a meadow ${cols + 4} by ${rows + 4}', #aaaaaa, left, 560): 150, 4
+    bitmap(generated(color(700, 1, #7fdbda33))): 0, 22
+
+    // The terrain: a parameter of the programmable
+    text(exo2_14, "Terrain:", #aaaaaa): 0, 38
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("waterBtn")) {
+        pos: 70, 33
+        settings{text=>"Water", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("dirtBtn")) {
+        pos: 150, 33
+        settings{text=>"Dirt", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+    placeholder(generated(cross(70, 22, #FF0000)), builderParameter("grassBtn")) {
+        pos: 230, 33
+        settings{text=>"Grass", width:int=>70, height:int=>22, font=>"m6x11"}
+    }
+
+    // Its size: two more parameters
+    text(exo2_14, "Cols:", #aaaaaa): 330, 38
+    placeholder(generated(cross(100, 16, #FF0000)), builderParameter("colsSlider")) {
+        pos: 375, 40
+        settings{size:int=>100}
+    }
+    text(exo2_14, "Rows:", #aaaaaa): 500, 38
+    placeholder(generated(cross(100, 16, #FF0000)), builderParameter("rowsSlider")) {
+        pos: 548, 40
+        settings{size:int=>100}
+    }
+
+    // Two fills, three times the size: the meadow, and the patch two cells in from its edge
+    point {
+        pos: 0, 80
+        scale: 3
+        tilemap(fill(meadowTiles, terrain: grass, cols: $cols + 4, rows: $rows + 4)): 0, 0
+        tilemap(fill(meadowTiles, terrain: $terrain, cols: $cols, rows: $rows)): 16, 16
+    }
+
+    text(exo2_14, "What is in the file", #7fdbda): 660, 90
+    text(exo2_light_14, "No #name tilemap and no rows: tilemap(fill(meadowTiles, terrain: $terrain, cols: $cols, rows: $rows)) makes the map where it is placed, cols by rows cells of the terrain in a ring of none, so its edges are drawn as in a written map.", #aaaaaa, left, 220): 660, 110
+    text(exo2_14, "Following its parameters", #7fdbda): 660, 250
+    text(exo2_light_14, "The sliders and buttons only call setParameter. Each map is made again in place, the same TileMap; the meadow's size is an expression over them ($cols + 4 by $rows + 4) and follows too.", #aaaaaa, left, 220): 660, 270
+}

@@ -70,7 +70,7 @@ layouts {
         point: 40, 658
         point: 200, 658
         point: 360, 658
-        // Game-Like Demos (12, wraps to 2 rows)
+        // Game-Like Demos (13, wraps to 2 rows)
         point: 40, 716
         point: 200, 716
         point: 360, 716
@@ -83,6 +83,7 @@ layouts {
         point: 360, 748
         point: 520, 748
         point: 680, 748
+        point: 840, 748
     }
 }
 

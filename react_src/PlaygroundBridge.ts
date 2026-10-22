@@ -78,6 +78,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'characterSheet', displayName: 'Character Sheet', category: 'Game-Like Demos', manimFile: 'demos/gamelike/character-sheet.manim' },
             { name: 'autotile', displayName: 'Autotile Terrain', category: 'Game-Like Demos', manimFile: 'demos/gamelike/autotile.manim' },
             { name: 'tilemap', displayName: 'Tile Map', category: 'Game-Like Demos', manimFile: 'demos/gamelike/tilemap.manim' },
+            { name: 'tilemapFill', displayName: 'Tile Fill', category: 'Game-Like Demos', manimFile: 'demos/gamelike/tilemap-fill.manim' },
             { name: 'battleHud', displayName: 'Battle HUD', category: 'Game-Like Demos', manimFile: 'demos/gamelike/battle-hud.manim' },
             { name: 'skillTree', displayName: 'Skill Tree', category: 'Game-Like Demos', manimFile: 'demos/gamelike/skill-tree.manim' },
             { name: 'dialogue', displayName: 'Dialogue Box', category: 'Game-Like Demos', manimFile: 'demos/gamelike/dialogue.manim' },

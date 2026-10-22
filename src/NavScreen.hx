@@ -162,6 +162,7 @@ class NavScreen extends UIScreenBase {
 				{id: "characterSheet", title: "Character Sheet"},
 				{id: "autotile", title: "Autotile Terrain"},
 				{id: "tilemap", title: "Tile Map"},
+				{id: "tilemapFill", title: "Tile Fill"},
 				{id: "battleHud", title: "Battle HUD"},
 				{id: "skillTree", title: "Equipment Tree"},
 				{id: "dialogue", title: "Dialogue Box"},

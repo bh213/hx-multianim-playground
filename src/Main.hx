@@ -34,7 +34,7 @@ class Main extends hxd.App {
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
 		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
 		"stateAnim", "animLayers", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
-		"inventory", "characterSheet", "autotile", "tilemap", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
+		"inventory", "characterSheet", "autotile", "tilemap", "tilemapFill", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
 		"sound",
 	];
 
@@ -233,6 +233,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("characterSheet", new CharacterSheetDemoScreen(screenManager));
 		screenManager.addScreen("autotile", new AutotileDemoScreen(screenManager));
 		screenManager.addScreen("tilemap", new TilemapDemoScreen(screenManager));
+		screenManager.addScreen("tilemapFill", new TilemapFillDemoScreen(screenManager));
 		screenManager.addScreen("battleHud", new BattleHudDemoScreen(screenManager));
 		screenManager.addScreen("sound", new SoundDemoScreen(screenManager));
 		screenManager.addScreen("skillTree", new SkillTreeDemoScreen(screenManager));

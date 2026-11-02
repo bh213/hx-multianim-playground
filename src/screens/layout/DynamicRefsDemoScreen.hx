@@ -12,7 +12,7 @@ class DynamicRefsDemoScreen extends DemoScreenBase {
 	var slider:Null<UIStandardMultiAnimSlider>;
 
 	override public function load():Void {
-		setupDemo("Dynamic Refs", "dynamicRef($ref) with runtime setParameter() updates via slider");
+		setupDemo("Dynamic Refs", "dynamicRef(name) with runtime setParameter() updates via slider");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/dynamic-refs.manim", false);
 

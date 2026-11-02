@@ -29,7 +29,7 @@ version: 1.0
     pos: 0, 30
     flow(minWidth: 60, layout: vertical, padding: 4, verticalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>50, h=>20, color=>#cc4444, num=>$i);
+        staticRef(flowItem, w=>50, h=>20, color=>#cc4444, num=>$i);
       }
     }
   }
@@ -40,7 +40,7 @@ version: 1.0
     pos: 200, 30
     flow(minHeight: 30, layout: horizontal, padding: 4, horizontalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>50, h=>25, color=>#44cc44, num=>$i);
+        staticRef(flowItem, w=>50, h=>25, color=>#44cc44, num=>$i);
       }
     }
   }
@@ -51,7 +51,7 @@ version: 1.0
     pos: 500, 30
     flow(minWidth: 90, minHeight: 90, layout: stack, padding: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        @alpha(0.3) staticRef($flowItem, w=>80 - $i * 12, h=>80 - $i * 12, color=>#553366, num=>$i);
+        @alpha(0.3) staticRef(flowItem, w=>80 - $i * 12, h=>80 - $i * 12, color=>#553366, num=>$i);
       }
     }
   }
@@ -63,7 +63,7 @@ version: 1.0
     pos: 0, 190
     flow(maxWidth: 80, layout: horizontal, overflow: expand) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#cc4488, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#cc4488, num=>$i);
       }
     }
   }
@@ -76,7 +76,7 @@ version: 1.0
     pos: 300, 190
     flow(maxWidth: 80, layout: horizontal, overflow: hidden) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#44cc88, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#44cc88, num=>$i);
       }
     }
   }
@@ -90,7 +90,7 @@ version: 1.0
     pos: 0, 270
     flow(maxWidth: 150, layout: horizontal, multiline: true, padding: 4, horizontalSpacing: 4, verticalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#8844cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#8844cc, num=>$i);
       }
     }
   }
@@ -102,7 +102,7 @@ version: 1.0
     pos: 600, 190
     flow(layout: horizontal, horizontalSpacing: 4, reverse: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#4444cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#4444cc, num=>$i);
       }
     }
   }
@@ -115,21 +115,21 @@ version: 1.0
     flow(layout: horizontal, horizontalSpacing: 2, padding: 4, debug: true) {
       // Group A
       repeatable($a, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#cc4444, num=>$a);
+        staticRef(flowItem, w=>20, h=>20, color=>#cc4444, num=>$a);
       }
       spacer(12, 0);
-      staticRef($flowItem, w=>2, h=>20, color=>#666666);
+      staticRef(flowItem, w=>2, h=>20, color=>#666666);
       spacer(12, 0);
       // Group B
       repeatable($b, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#44cc44, num=>$b);
+        staticRef(flowItem, w=>20, h=>20, color=>#44cc44, num=>$b);
       }
       spacer(12, 0);
-      staticRef($flowItem, w=>2, h=>20, color=>#666666);
+      staticRef(flowItem, w=>2, h=>20, color=>#666666);
       spacer(12, 0);
       // Group C
       repeatable($c, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#4444cc, num=>$c);
+        staticRef(flowItem, w=>20, h=>20, color=>#4444cc, num=>$c);
       }
     }
   }
@@ -141,7 +141,7 @@ version: 1.0
     pos: 400, 270
     flow(layout: vertical, verticalSpacing: 2, padding: 4, debug: true) {
       repeatable($d, range(0, $count)) {
-        staticRef($flowItem, w=>80, h=>15, color=>#cc8844, num=>$d);
+        staticRef(flowItem, w=>80, h=>15, color=>#cc8844, num=>$d);
         spacer(0, 4 + $d * 4);
       }
     }
@@ -166,7 +166,7 @@ version: 1.0
     pos: 0, 470
     flow(maxWidth: 80, layout: horizontal, overflow: scroll) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#4488cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#4488cc, num=>$i);
       }
     }
   }
@@ -179,7 +179,7 @@ version: 1.0
     pos: 300, 470
     flow(maxWidth: 80, layout: horizontal, overflow: limit) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#cc8844, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#cc8844, num=>$i);
       }
     }
   }
@@ -191,10 +191,10 @@ version: 1.0
   point {
     pos: 600, 470
     flow(minWidth: 90, layout: vertical, verticalSpacing: 3, padding: 3, debug: true) {
-      staticRef($flowItem, w=>80, h=>14, color=>#cc4444, num=>0);
-      @flow.halign(right) staticRef($flowItem, w=>40, h=>14, color=>#44cc44, num=>1);
-      @flow.halign(middle) @flow.offset(0, 4) staticRef($flowItem, w=>50, h=>14, color=>#8844cc, num=>2);
-      @flow.absolute staticRef($flowItem, w=>16, h=>16, color=>#ffcc00, num=>9): 70, 2
+      staticRef(flowItem, w=>80, h=>14, color=>#cc4444, num=>0);
+      @flow.halign(right) staticRef(flowItem, w=>40, h=>14, color=>#44cc44, num=>1);
+      @flow.halign(middle) @flow.offset(0, 4) staticRef(flowItem, w=>50, h=>14, color=>#8844cc, num=>2);
+      @flow.absolute staticRef(flowItem, w=>16, h=>16, color=>#ffcc00, num=>9): 70, 2
     }
   }
 
@@ -204,9 +204,9 @@ version: 1.0
   point {
     pos: 0, 590
     flow(minWidth: 120, minHeight: 60, layout: vertical, verticalSpacing: 3, padding: 4, horizontalAlign: middle, verticalAlign: middle, debug: true) {
-      staticRef($flowItem, w=>30, h=>14, color=>#4488cc, num=>0);
-      staticRef($flowItem, w=>70, h=>14, color=>#44cc88, num=>1);
-      staticRef($flowItem, w=>50, h=>14, color=>#cc8844, num=>2);
+      staticRef(flowItem, w=>30, h=>14, color=>#4488cc, num=>0);
+      staticRef(flowItem, w=>70, h=>14, color=>#44cc88, num=>1);
+      staticRef(flowItem, w=>50, h=>14, color=>#cc8844, num=>2);
     }
   }
 
@@ -216,9 +216,9 @@ version: 1.0
   point {
     pos: 300, 590
     flow(maxWidth: 140, layout: vertical, verticalSpacing: 3, padding: 4, fillWidth: true, background: ninepatch("ui", "Window_3x3_idle")) {
-      staticRef($flowItem, w=>20, h=>16, color=>#cc4488, num=>0);
-      staticRef($flowItem, w=>20, h=>16, color=>#44cc88, num=>1);
-      staticRef($flowItem, w=>20, h=>16, color=>#8844cc, num=>2);
+      staticRef(flowItem, w=>20, h=>16, color=>#cc4488, num=>0);
+      staticRef(flowItem, w=>20, h=>16, color=>#44cc88, num=>1);
+      staticRef(flowItem, w=>20, h=>16, color=>#8844cc, num=>2);
     }
   }
 }

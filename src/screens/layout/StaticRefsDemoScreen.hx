@@ -8,7 +8,7 @@ class StaticRefsDemoScreen extends DemoScreenBase {
 	var demoBuilder:Null<MultiAnimBuilder>;
 
 	override public function load():Void {
-		setupDemo("Static Refs", "Embed child programmables via staticRef($ref) with different parameters");
+		setupDemo("Static Refs", "Embed child programmables via staticRef(name) with different parameters");
 
 		demoBuilder = screenManager.buildFromResourceName("demos/layout/static-refs.manim", false);
 

@@ -477,13 +477,13 @@ Error generating stack: `+i.message+`
   point {
     pos: 340, 145
     text(m6x11, "alpha:0.4", #888888): 0, 0
-    staticRef($applyExample, state=>alpha): 0, 15
+    staticRef(applyExample, state=>alpha): 0, 15
 
     text(m6x11, "glow filter", #888888): 80, 0
-    staticRef($applyExample, state=>filter): 80, 15
+    staticRef(applyExample, state=>filter): 80, 15
 
     text(m6x11, "scale:0.7", #888888): 190, 0
-    staticRef($applyExample, state=>scale): 190, 15
+    staticRef(applyExample, state=>scale): 190, 15
   }
 
   // === Section 5: References with Parameters ===
@@ -491,10 +491,10 @@ Error generating stack: `+i.message+`
 
   point {
     pos: 560, 145
-    staticRef($refShape, width=>20, height=>20, shape=>rect, c1=>#ff7f50): 0, 0
-    staticRef($refShape, width=>40, height=>30, shape=>triangle, c1=>#44ff44): 30, 0
-    staticRef($refShape, width=>50, height=>20, shape=>rect, c1=>#4488cc): 80, 0
-    staticRef($refShape, width=>30, height=>30, shape=>triangle, c1=>#ffcc44): 140, 0
+    staticRef(refShape, width=>20, height=>20, shape=>rect, c1=>#ff7f50): 0, 0
+    staticRef(refShape, width=>40, height=>30, shape=>triangle, c1=>#44ff44): 30, 0
+    staticRef(refShape, width=>50, height=>20, shape=>rect, c1=>#4488cc): 80, 0
+    staticRef(refShape, width=>30, height=>30, shape=>triangle, c1=>#ffcc44): 140, 0
   }
 
   // === Section 6: Div/Mod Grid Layout ===
@@ -513,11 +513,11 @@ Error generating stack: `+i.message+`
   point {
     pos: 140, 270
     text(m6x11, "param=>A:", #888888): 0, 0
-    staticRef($condExample, param1=>A): 80, 0
+    staticRef(condExample, param1=>A): 80, 0
     text(m6x11, "param=>B:", #888888): 0, 15
-    staticRef($condExample, param1=>B): 80, 15
+    staticRef(condExample, param1=>B): 80, 15
     text(m6x11, "param=>C:", #888888): 0, 30
-    staticRef($condExample, param1=>C): 80, 30
+    staticRef(condExample, param1=>C): 80, 30
   }
 
   // === Section 8: Array Parameters ===
@@ -526,11 +526,11 @@ Error generating stack: `+i.message+`
   point {
     pos: 340, 270
     text(m6x11, "index 0:", #888888): 0, 0
-    staticRef($arrayExample, arr=>["first","second","third"], index=>0): 80, 0
+    staticRef(arrayExample, arr=>["first","second","third"], index=>0): 80, 0
     text(m6x11, "index 1:", #888888): 0, 15
-    staticRef($arrayExample, arr=>["first","second","third"], index=>1): 80, 15
+    staticRef(arrayExample, arr=>["first","second","third"], index=>1): 80, 15
     text(m6x11, "index 2:", #888888): 0, 30
-    staticRef($arrayExample, arr=>["first","second","third"], index=>2): 80, 30
+    staticRef(arrayExample, arr=>["first","second","third"], index=>2): 80, 30
   }
 
   // === Section 9: StateAnim Construct ===
@@ -1638,7 +1638,7 @@ curves {
     outlineSize:float=1.0, outlineColor:int=0xFFff0000) {
     point {
         filter: outline($outlineSize, $outlineColor)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1649,21 +1649,21 @@ curves {
     @(glowSmooth > 0) point {
         @(glowKnockout > 0) point {
             filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true, knockout: true)
-            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+            dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
         }
         @(glowKnockout <= 0) point {
             filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, smoothColor: true)
-            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+            dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
         }
     }
     @(glowSmooth <= 0) point {
         @(glowKnockout > 0) point {
             filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius, knockout: true)
-            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+            dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
         }
         @(glowKnockout <= 0) point {
             filter: glow(color: $glowColor, alpha: $glowAlpha, radius: $glowRadius)
-            dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+            dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
         }
     }
 }
@@ -1673,7 +1673,7 @@ curves {
     blurRadius:float=4, blurGain:float=1.0) {
     point {
         filter: blur($blurRadius, $blurGain)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1682,7 +1682,7 @@ curves {
     satValue:float=1.0) {
     point {
         filter: saturate($satValue)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1691,7 +1691,7 @@ curves {
     brightValue:float=1.5) {
     point {
         filter: brightness($brightValue)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1700,11 +1700,11 @@ curves {
     dsDist:float=3, dsAngle:float=30, dsAlpha:float=0.5, dsRadius:float=6, dsSmooth:uint=0, dsColor:int=0xFF000000) {
     @(dsSmooth > 0) point {
         filter: dropShadow(distance: $dsDist, angle: $dsAngle, color: $dsColor, alpha: $dsAlpha, radius: $dsRadius, smoothColor: true)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
     @(dsSmooth <= 0) point {
         filter: dropShadow(distance: $dsDist, angle: $dsAngle, color: $dsColor, alpha: $dsAlpha, radius: $dsRadius)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1713,7 +1713,7 @@ curves {
     gsValue:float=1.0) {
     point {
         filter: grayscale($gsValue)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1722,7 +1722,7 @@ curves {
     hueValue:float=0.0) {
     point {
         filter: hue($hueValue)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -1731,7 +1731,7 @@ curves {
     poStrength:float=0.5, poColor:int=0xFF0000ff) {
     point {
         filter: pixelOutline(knockout, $poColor, $poStrength)
-        dynamicRef($bitmapPreview, bitmapType=>$bitmapType): 0, 0
+        dynamicRef(bitmapPreview, bitmapType=>$bitmapType): 0, 0
     }
 }
 
@@ -3662,10 +3662,10 @@ paths {
     text(exo2_20, "Aethon", #ffffff, left, 350): 20, 76
 
     text(exo2_14, "HP", #ff4444): 20, 108
-    dynamicRef($hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
+    dynamicRef(hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
 
     text(exo2_14, "MP", #4488cc): 20, 140
-    dynamicRef($mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
+    dynamicRef(mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
 
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 360): 20, 170
 
@@ -3759,10 +3759,10 @@ paths {
     text(exo2_16, "Aethon", #ffffff): 10, 62
 
     text(exo2_14, "HP", #ff4444): 10, 90
-    dynamicRef($pixelHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 40, 88
+    dynamicRef(pixelHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 40, 88
 
     text(exo2_14, "MP", #4488cc): 10, 122
-    dynamicRef($pixelMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 40, 120
+    dynamicRef(pixelMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 40, 120
 
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 180): 10, 150
 
@@ -3812,10 +3812,10 @@ paths {
 
     // Vertical bars side by side
     text(exo2_14, "HP", #ff4444, center, 30): 30, 88
-    dynamicRef($verticalHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 30, 104
+    dynamicRef(verticalHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 30, 104
 
     text(exo2_14, "MP", #4488cc, center, 30): 110, 88
-    dynamicRef($verticalMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 110, 104
+    dynamicRef(verticalMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 110, 104
 
     // Values below bars
     text(exo2_14, '\${$hp}', #ffffff, center, 30): 30, 206
@@ -4918,10 +4918,10 @@ paths {
     bitmap(generated(color(360, 1, #7fdbda33))): 20, 110
 
     // HP bar via dynamicRef
-    dynamicRef($resourceBar, value=>$hp, maxValue=>$maxHp, barColor=>#ff4444, label=>"HP"): 20, 125
+    dynamicRef(resourceBar, value=>$hp, maxValue=>$maxHp, barColor=>#ff4444, label=>"HP"): 20, 125
 
     // MP bar via dynamicRef
-    dynamicRef($resourceBar, value=>$mp, maxValue=>$maxMp, barColor=>#4a90a4, label=>"MP"): 20, 150
+    dynamicRef(resourceBar, value=>$mp, maxValue=>$maxMp, barColor=>#4a90a4, label=>"MP"): 20, 150
 
     // Separator
     bitmap(generated(color(360, 1, #7fdbda33))): 20, 178
@@ -4929,9 +4929,9 @@ paths {
     // Attributes
     text(exo2_16, "Attributes", #7fdbda): 20, 190
 
-    dynamicRef($statBar, statName=>"STR", statValue=>$strStat, barColor=>#ff7f50, maxStat=>30): 30, 215
-    dynamicRef($statBar, statName=>"DEX", statValue=>$dexStat, barColor=>#4caf50, maxStat=>30): 30, 235
-    dynamicRef($statBar, statName=>"INT", statValue=>$intStat, barColor=>#4a90a4, maxStat=>30): 30, 255
+    dynamicRef(statBar, statName=>"STR", statValue=>$strStat, barColor=>#ff7f50, maxStat=>30): 30, 215
+    dynamicRef(statBar, statName=>"DEX", statValue=>$dexStat, barColor=>#4caf50, maxStat=>30): 30, 235
+    dynamicRef(statBar, statName=>"INT", statValue=>$intStat, barColor=>#4a90a4, maxStat=>30): 30, 255
 
     // Separator
     bitmap(generated(color(360, 1, #7fdbda33))): 20, 278
@@ -4939,7 +4939,7 @@ paths {
     // Experience
     text(exo2_14, "Experience", #7fdbda): 20, 292
 
-    dynamicRef($xpBar, xp=>$xp, xpMax=>$xpMax): 30, 312
+    dynamicRef(xpBar, xp=>$xp, xpMax=>$xpMax): 30, 312
 
     // Level Up button
     placeholder(generated(cross(200, 30, #FF0000)), builderParameter("levelUpButton")) {
@@ -4980,7 +4980,7 @@ paths {
 
     // Character portrait area (color driven by dynamicRef parameter)
     ninepatch("ui", "Window_3x3_idle", 100, 100): 0, 170
-    dynamicRef($dialoguePortrait, speaker=>$speaker): 10, 180
+    dynamicRef(dialoguePortrait, speaker=>$speaker): 10, 180
 
     // Dialogue panel
     ninepatch("ui", "Window_3x3_idle", 580, 120): 120, 170
@@ -6213,7 +6213,8 @@ layouts {
     terrain temperate { cells: "temperate" }
     terrain temperate_hill { cells: "temperate_hill" }
     terrain stone_mountain { cells: "stone_mountain" metadata { climb:bool => true } }
-    rise any { side: "desert" }
+    // every level under a raised hex is the plain stone frame: its side is grey rock with no band
+    rise any { side: "stone" }
 }
 
 #island tilemap {
@@ -6696,10 +6697,10 @@ paths {
 
   // Section 5: the sheet and the cell as parameters — one programmable, four styles
   text(exo2_16, "Sheet and cell from a parameter (\\"button-\\" + $style):", #cccccc): 0, 850
-  staticRef($styledButton, style => "idle"): 0, 880
-  staticRef($styledButton, style => "hover"): 140, 880
-  staticRef($styledButton, style => "pressed"): 280, 880
-  staticRef($styledButton, style => "disabled"): 420, 880
+  staticRef(styledButton, style => "idle"): 0, 880
+  staticRef(styledButton, style => "hover"): 140, 880
+  staticRef(styledButton, style => "pressed"): 280, 880
+  staticRef(styledButton, style => "disabled"): 420, 880
 
   // Section 6: the frames of an indexed name — one each, and all of them played in a loop
   text(exo2_16, "Frames of an indexed name (index: 0..3) and the loop (fps: 6):", #cccccc): 0, 940
@@ -7400,7 +7401,7 @@ paths {
   // Section 1: Dynamic health bar controlled by slider
   text(exo2_16, "Dynamic health bar (use slider):", #cccccc): 0, 0
 
-  dynamicRef($healthBar, value=>$barValue, label=>"Player HP"): 0, 30
+  dynamicRef(healthBar, value=>$barValue, label=>"Player HP"): 0, 30
 
   // Slider control
   placeholder(generated(cross(210, 20, #FF0000)), builderParameter("slider")) {
@@ -7411,19 +7412,19 @@ paths {
   // Section 2: Derived health bars (all driven by slider)
   text(exo2_16, "Derived bars (expressions of slider):", #cccccc): 0, 100
 
-  dynamicRef($healthBar, value=>100 - $barValue, label=>"Inverse"): 0, 130
-  dynamicRef($healthBar, value=>$barValue / 2 + 10, label=>"Half+10"): 0, 160
-  dynamicRef($healthBar, value=>$barValue * 3 / 4 + 10, label=>"3/4+10"): 0, 190
-  dynamicRef($healthBar, value=>($barValue + 30) % 100, label=>"Wrap"): 0, 220
+  dynamicRef(healthBar, value=>100 - $barValue, label=>"Inverse"): 0, 130
+  dynamicRef(healthBar, value=>$barValue / 2 + 10, label=>"Half+10"): 0, 160
+  dynamicRef(healthBar, value=>$barValue * 3 / 4 + 10, label=>"3/4+10"): 0, 190
+  dynamicRef(healthBar, value=>($barValue + 30) % 100, label=>"Wrap"): 0, 220
 
   // Section 3: Stat displays (derived from slider)
   text(exo2_16, "Stat displays (derived from slider):", #cccccc): 0, 260
 
-  dynamicRef($statDisplay, statName=>"Attack", statValue=>$barValue, barColor=>#cc4444): 0, 290
-  dynamicRef($statDisplay, statName=>"Defense", statValue=>100 - $barValue, barColor=>#4488cc): 0, 310
-  dynamicRef($statDisplay, statName=>"Speed", statValue=>$barValue / 2 + 25, barColor=>#44cc44): 0, 330
-  dynamicRef($statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
-  dynamicRef($statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
+  dynamicRef(statDisplay, statName=>"Attack", statValue=>$barValue, barColor=>#cc4444): 0, 290
+  dynamicRef(statDisplay, statName=>"Defense", statValue=>100 - $barValue, barColor=>#4488cc): 0, 310
+  dynamicRef(statDisplay, statName=>"Speed", statValue=>$barValue / 2 + 25, barColor=>#44cc44): 0, 330
+  dynamicRef(statDisplay, statName=>"Magic", statValue=>$barValue * 3 / 4, barColor=>#cc44cc): 0, 350
+  dynamicRef(statDisplay, statName=>"Luck", statValue=>($barValue + 60) % 100, barColor=>#cccc44): 0, 370
 }
 `,Xp=`version: 1.0
 
@@ -7456,7 +7457,7 @@ paths {
     pos: 0, 30
     flow(minWidth: 60, layout: vertical, padding: 4, verticalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>50, h=>20, color=>#cc4444, num=>$i);
+        staticRef(flowItem, w=>50, h=>20, color=>#cc4444, num=>$i);
       }
     }
   }
@@ -7467,7 +7468,7 @@ paths {
     pos: 200, 30
     flow(minHeight: 30, layout: horizontal, padding: 4, horizontalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>50, h=>25, color=>#44cc44, num=>$i);
+        staticRef(flowItem, w=>50, h=>25, color=>#44cc44, num=>$i);
       }
     }
   }
@@ -7478,7 +7479,7 @@ paths {
     pos: 500, 30
     flow(minWidth: 90, minHeight: 90, layout: stack, padding: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        @alpha(0.3) staticRef($flowItem, w=>80 - $i * 12, h=>80 - $i * 12, color=>#553366, num=>$i);
+        @alpha(0.3) staticRef(flowItem, w=>80 - $i * 12, h=>80 - $i * 12, color=>#553366, num=>$i);
       }
     }
   }
@@ -7490,7 +7491,7 @@ paths {
     pos: 0, 190
     flow(maxWidth: 80, layout: horizontal, overflow: expand) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#cc4488, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#cc4488, num=>$i);
       }
     }
   }
@@ -7503,7 +7504,7 @@ paths {
     pos: 300, 190
     flow(maxWidth: 80, layout: horizontal, overflow: hidden) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#44cc88, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#44cc88, num=>$i);
       }
     }
   }
@@ -7517,7 +7518,7 @@ paths {
     pos: 0, 270
     flow(maxWidth: 150, layout: horizontal, multiline: true, padding: 4, horizontalSpacing: 4, verticalSpacing: 4, debug: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#8844cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#8844cc, num=>$i);
       }
     }
   }
@@ -7529,7 +7530,7 @@ paths {
     pos: 600, 190
     flow(layout: horizontal, horizontalSpacing: 4, reverse: true) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#4444cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#4444cc, num=>$i);
       }
     }
   }
@@ -7542,21 +7543,21 @@ paths {
     flow(layout: horizontal, horizontalSpacing: 2, padding: 4, debug: true) {
       // Group A
       repeatable($a, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#cc4444, num=>$a);
+        staticRef(flowItem, w=>20, h=>20, color=>#cc4444, num=>$a);
       }
       spacer(12, 0);
-      staticRef($flowItem, w=>2, h=>20, color=>#666666);
+      staticRef(flowItem, w=>2, h=>20, color=>#666666);
       spacer(12, 0);
       // Group B
       repeatable($b, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#44cc44, num=>$b);
+        staticRef(flowItem, w=>20, h=>20, color=>#44cc44, num=>$b);
       }
       spacer(12, 0);
-      staticRef($flowItem, w=>2, h=>20, color=>#666666);
+      staticRef(flowItem, w=>2, h=>20, color=>#666666);
       spacer(12, 0);
       // Group C
       repeatable($c, range(0, $count)) {
-        staticRef($flowItem, w=>20, h=>20, color=>#4444cc, num=>$c);
+        staticRef(flowItem, w=>20, h=>20, color=>#4444cc, num=>$c);
       }
     }
   }
@@ -7568,7 +7569,7 @@ paths {
     pos: 400, 270
     flow(layout: vertical, verticalSpacing: 2, padding: 4, debug: true) {
       repeatable($d, range(0, $count)) {
-        staticRef($flowItem, w=>80, h=>15, color=>#cc8844, num=>$d);
+        staticRef(flowItem, w=>80, h=>15, color=>#cc8844, num=>$d);
         spacer(0, 4 + $d * 4);
       }
     }
@@ -7593,7 +7594,7 @@ paths {
     pos: 0, 470
     flow(maxWidth: 80, layout: horizontal, overflow: scroll) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#4488cc, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#4488cc, num=>$i);
       }
     }
   }
@@ -7606,7 +7607,7 @@ paths {
     pos: 300, 470
     flow(maxWidth: 80, layout: horizontal, overflow: limit) {
       repeatable($i, range(0, $count)) {
-        staticRef($flowItem, w=>40, h=>20, color=>#cc8844, num=>$i);
+        staticRef(flowItem, w=>40, h=>20, color=>#cc8844, num=>$i);
       }
     }
   }
@@ -7618,10 +7619,10 @@ paths {
   point {
     pos: 600, 470
     flow(minWidth: 90, layout: vertical, verticalSpacing: 3, padding: 3, debug: true) {
-      staticRef($flowItem, w=>80, h=>14, color=>#cc4444, num=>0);
-      @flow.halign(right) staticRef($flowItem, w=>40, h=>14, color=>#44cc44, num=>1);
-      @flow.halign(middle) @flow.offset(0, 4) staticRef($flowItem, w=>50, h=>14, color=>#8844cc, num=>2);
-      @flow.absolute staticRef($flowItem, w=>16, h=>16, color=>#ffcc00, num=>9): 70, 2
+      staticRef(flowItem, w=>80, h=>14, color=>#cc4444, num=>0);
+      @flow.halign(right) staticRef(flowItem, w=>40, h=>14, color=>#44cc44, num=>1);
+      @flow.halign(middle) @flow.offset(0, 4) staticRef(flowItem, w=>50, h=>14, color=>#8844cc, num=>2);
+      @flow.absolute staticRef(flowItem, w=>16, h=>16, color=>#ffcc00, num=>9): 70, 2
     }
   }
 
@@ -7631,9 +7632,9 @@ paths {
   point {
     pos: 0, 590
     flow(minWidth: 120, minHeight: 60, layout: vertical, verticalSpacing: 3, padding: 4, horizontalAlign: middle, verticalAlign: middle, debug: true) {
-      staticRef($flowItem, w=>30, h=>14, color=>#4488cc, num=>0);
-      staticRef($flowItem, w=>70, h=>14, color=>#44cc88, num=>1);
-      staticRef($flowItem, w=>50, h=>14, color=>#cc8844, num=>2);
+      staticRef(flowItem, w=>30, h=>14, color=>#4488cc, num=>0);
+      staticRef(flowItem, w=>70, h=>14, color=>#44cc88, num=>1);
+      staticRef(flowItem, w=>50, h=>14, color=>#cc8844, num=>2);
     }
   }
 
@@ -7643,9 +7644,9 @@ paths {
   point {
     pos: 300, 590
     flow(maxWidth: 140, layout: vertical, verticalSpacing: 3, padding: 4, fillWidth: true, background: ninepatch("ui", "Window_3x3_idle")) {
-      staticRef($flowItem, w=>20, h=>16, color=>#cc4488, num=>0);
-      staticRef($flowItem, w=>20, h=>16, color=>#44cc88, num=>1);
-      staticRef($flowItem, w=>20, h=>16, color=>#8844cc, num=>2);
+      staticRef(flowItem, w=>20, h=>16, color=>#cc4488, num=>0);
+      staticRef(flowItem, w=>20, h=>16, color=>#44cc88, num=>1);
+      staticRef(flowItem, w=>20, h=>16, color=>#8844cc, num=>2);
     }
   }
 }
@@ -8013,48 +8014,48 @@ layouts {
   // Section 1: Same child, different sizes
   text(exo2_16, "Same child, different sizes:", #cccccc): 0, 0
 
-  staticRef($colorCard, w=>80, h=>50, cardColor=>#2c5f7c, label=>"Small"): 0, 30
-  staticRef($colorCard, w=>150, h=>70, cardColor=>#4a90a4, label=>"Medium"): 100, 30
-  staticRef($colorCard, w=>250, h=>90, cardColor=>#7fdbda, label=>"Large"): 270, 30
+  staticRef(colorCard, w=>80, h=>50, cardColor=>#2c5f7c, label=>"Small"): 0, 30
+  staticRef(colorCard, w=>150, h=>70, cardColor=>#4a90a4, label=>"Medium"): 100, 30
+  staticRef(colorCard, w=>250, h=>90, cardColor=>#7fdbda, label=>"Large"): 270, 30
 
   // Section 2: Same child, different colors
   text(exo2_16, "Same child, different colors:", #cccccc): 0, 150
 
-  staticRef($colorCard, w=>100, h=>50, cardColor=>#ff7f50, label=>"Orange"): 0, 180
-  staticRef($colorCard, w=>100, h=>50, cardColor=>#4caf50, label=>"Green"): 120, 180
-  staticRef($colorCard, w=>100, h=>50, cardColor=>#ff4444, label=>"Red"): 240, 180
-  staticRef($colorCard, w=>100, h=>50, cardColor=>#ffeb3b, label=>"Yellow"): 360, 180
-  staticRef($colorCard, w=>100, h=>50, cardColor=>#9c27b0, label=>"Purple"): 480, 180
+  staticRef(colorCard, w=>100, h=>50, cardColor=>#ff7f50, label=>"Orange"): 0, 180
+  staticRef(colorCard, w=>100, h=>50, cardColor=>#4caf50, label=>"Green"): 120, 180
+  staticRef(colorCard, w=>100, h=>50, cardColor=>#ff4444, label=>"Red"): 240, 180
+  staticRef(colorCard, w=>100, h=>50, cardColor=>#ffeb3b, label=>"Yellow"): 360, 180
+  staticRef(colorCard, w=>100, h=>50, cardColor=>#9c27b0, label=>"Purple"): 480, 180
 
   // Section 3: Badge grid using staticRef
   text(exo2_16, "Badges via staticRef:", #cccccc): 0, 260
 
-  staticRef($badge, size=>40, badgeColor=>#cc4444, number=>1): 0, 290
-  staticRef($badge, size=>40, badgeColor=>#44cc44, number=>2): 50, 290
-  staticRef($badge, size=>40, badgeColor=>#4444cc, number=>3): 100, 290
-  staticRef($badge, size=>40, badgeColor=>#cc8844, number=>4): 150, 290
-  staticRef($badge, size=>40, badgeColor=>#cc44cc, number=>5): 200, 290
+  staticRef(badge, size=>40, badgeColor=>#cc4444, number=>1): 0, 290
+  staticRef(badge, size=>40, badgeColor=>#44cc44, number=>2): 50, 290
+  staticRef(badge, size=>40, badgeColor=>#4444cc, number=>3): 100, 290
+  staticRef(badge, size=>40, badgeColor=>#cc8844, number=>4): 150, 290
+  staticRef(badge, size=>40, badgeColor=>#cc44cc, number=>5): 200, 290
 
   // Section 4: Nested children
   text(exo2_16, "Nesting different children:", #cccccc): 0, 360
 
   point {
     pos: 0, 390
-    staticRef($colorCard, w=>300, h=>150, cardColor=>#333344, label=>"Outer Container"): 0, 0
+    staticRef(colorCard, w=>300, h=>150, cardColor=>#333344, label=>"Outer Container"): 0, 0
 
     point {
       pos: 15, 30
-      staticRef($colorCard, w=>120, h=>100, cardColor=>#2c5f7c, label=>"Inner A"): 0, 0
-      staticRef($badge, size=>25, badgeColor=>#ff4444, number=>1): 10, 60
-      staticRef($badge, size=>25, badgeColor=>#44ff44, number=>2): 45, 60
-      staticRef($badge, size=>25, badgeColor=>#4444ff, number=>3): 80, 60
+      staticRef(colorCard, w=>120, h=>100, cardColor=>#2c5f7c, label=>"Inner A"): 0, 0
+      staticRef(badge, size=>25, badgeColor=>#ff4444, number=>1): 10, 60
+      staticRef(badge, size=>25, badgeColor=>#44ff44, number=>2): 45, 60
+      staticRef(badge, size=>25, badgeColor=>#4444ff, number=>3): 80, 60
     }
 
     point {
       pos: 160, 30
-      staticRef($colorCard, w=>120, h=>100, cardColor=>#4a5a6a, label=>"Inner B"): 0, 0
-      staticRef($badge, size=>25, badgeColor=>#ffcc44, number=>4): 10, 60
-      staticRef($badge, size=>25, badgeColor=>#cc44ff, number=>5): 45, 60
+      staticRef(colorCard, w=>120, h=>100, cardColor=>#4a5a6a, label=>"Inner B"): 0, 0
+      staticRef(badge, size=>25, badgeColor=>#ffcc44, number=>4): 10, 60
+      staticRef(badge, size=>25, badgeColor=>#cc44ff, number=>5): 45, 60
     }
   }
 }
@@ -9780,7 +9781,7 @@ paths {
   @(currentSlide => 2) point {
     pos: 20, 15
 
-    dynamicRef($npPreview, w=>$npW, h=>$npH): 0, 0
+    dynamicRef(npPreview, w=>$npW, h=>$npH): 0, 0
     #npSizeText(updatable) text(m6x11, "200 x 80", #aaaaaa): 0, 90
 
     text(exo2_black_16, "9-Patch Panels", #7fdbda): 0, 110
@@ -9809,7 +9810,7 @@ paths {
 
     // Animated health bar
     text(m6x11, "value-driven bar:", #888888): 0, 52
-    dynamicRef($condBar, value=>$condValue): 0, 68
+    dynamicRef(condBar, value=>$condValue): 0, 68
     #condBarValue(updatable) text(m6x11, "50", #ffffff, right, 195): 0, 68
 
     text(exo2_black_16, "Runtime Conditionals", #7fdbda): 0, 110
@@ -10835,4 +10836,4 @@ animation destroyed {
  * @public
  */var t=function(a){var r=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,i=0,o={},l={manual:a.Prism&&a.Prism.manual,disableWorkerMessageHandler:a.Prism&&a.Prism.disableWorkerMessageHandler,util:{encode:function s(d){return d instanceof c?new c(d.type,s(d.content),d.alias):Array.isArray(d)?d.map(s):d.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(s){return Object.prototype.toString.call(s).slice(8,-1)},objId:function(s){return s.__id||Object.defineProperty(s,"__id",{value:++i}),s.__id},clone:function s(d,p){p=p||{};var h,g;switch(l.util.type(d)){case"Object":if(g=l.util.objId(d),p[g])return p[g];h={},p[g]=h;for(var v in d)d.hasOwnProperty(v)&&(h[v]=s(d[v],p));return h;case"Array":return g=l.util.objId(d),p[g]?p[g]:(h=[],p[g]=h,d.forEach(function(y,C){h[C]=s(y,p)}),h);default:return d}},getLanguage:function(s){for(;s;){var d=r.exec(s.className);if(d)return d[1].toLowerCase();s=s.parentElement}return"none"},setLanguage:function(s,d){s.className=s.className.replace(RegExp(r,"gi"),""),s.classList.add("language-"+d)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(h){var s=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(h.stack)||[])[1];if(s){var d=document.getElementsByTagName("script");for(var p in d)if(d[p].src==s)return d[p]}return null}},isActive:function(s,d,p){for(var h="no-"+d;s;){var g=s.classList;if(g.contains(d))return!0;if(g.contains(h))return!1;s=s.parentElement}return!!p}},languages:{plain:o,plaintext:o,text:o,txt:o,extend:function(s,d){var p=l.util.clone(l.languages[s]);for(var h in d)p[h]=d[h];return p},insertBefore:function(s,d,p,h){h=h||l.languages;var g=h[s],v={};for(var y in g)if(g.hasOwnProperty(y)){if(y==d)for(var C in p)p.hasOwnProperty(C)&&(v[C]=p[C]);p.hasOwnProperty(y)||(v[y]=g[y])}var T=h[s];return h[s]=v,l.languages.DFS(l.languages,function(I,ue){ue===T&&I!=s&&(this[I]=v)}),v},DFS:function s(d,p,h,g){g=g||{};var v=l.util.objId;for(var y in d)if(d.hasOwnProperty(y)){p.call(d,y,d[y],h||y);var C=d[y],T=l.util.type(C);T==="Object"&&!g[v(C)]?(g[v(C)]=!0,s(C,p,null,g)):T==="Array"&&!g[v(C)]&&(g[v(C)]=!0,s(C,p,y,g))}}},plugins:{},highlightAll:function(s,d){l.highlightAllUnder(document,s,d)},highlightAllUnder:function(s,d,p){var h={callback:p,container:s,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};l.hooks.run("before-highlightall",h),h.elements=Array.prototype.slice.apply(h.container.querySelectorAll(h.selector)),l.hooks.run("before-all-elements-highlight",h);for(var g=0,v;v=h.elements[g++];)l.highlightElement(v,d===!0,h.callback)},highlightElement:function(s,d,p){var h=l.util.getLanguage(s),g=l.languages[h];l.util.setLanguage(s,h);var v=s.parentElement;v&&v.nodeName.toLowerCase()==="pre"&&l.util.setLanguage(v,h);var y=s.textContent,C={element:s,language:h,grammar:g,code:y};function T(ue){C.highlightedCode=ue,l.hooks.run("before-insert",C),C.element.innerHTML=C.highlightedCode,l.hooks.run("after-highlight",C),l.hooks.run("complete",C),p&&p.call(C.element)}if(l.hooks.run("before-sanity-check",C),v=C.element.parentElement,v&&v.nodeName.toLowerCase()==="pre"&&!v.hasAttribute("tabindex")&&v.setAttribute("tabindex","0"),!C.code){l.hooks.run("complete",C),p&&p.call(C.element);return}if(l.hooks.run("before-highlight",C),!C.grammar){T(l.util.encode(C.code));return}if(d&&a.Worker){var I=new Worker(l.filename);I.onmessage=function(ue){T(ue.data)},I.postMessage(JSON.stringify({language:C.language,code:C.code,immediateClose:!0}))}else T(l.highlight(C.code,C.grammar,C.language))},highlight:function(s,d,p){var h={code:s,grammar:d,language:p};if(l.hooks.run("before-tokenize",h),!h.grammar)throw new Error('The language "'+h.language+'" has no grammar.');return h.tokens=l.tokenize(h.code,h.grammar),l.hooks.run("after-tokenize",h),c.stringify(l.util.encode(h.tokens),h.language)},tokenize:function(s,d){var p=d.rest;if(p){for(var h in p)d[h]=p[h];delete d.rest}var g=new x;return m(g,g.head,s),b(s,g,d,g.head,0),S(g)},hooks:{all:{},add:function(s,d){var p=l.hooks.all;p[s]=p[s]||[],p[s].push(d)},run:function(s,d){var p=l.hooks.all[s];if(!(!p||!p.length))for(var h=0,g;g=p[h++];)g(d)}},Token:c};a.Prism=l;function c(s,d,p,h){this.type=s,this.content=d,this.alias=p,this.length=(h||"").length|0}c.stringify=function s(d,p){if(typeof d=="string")return d;if(Array.isArray(d)){var h="";return d.forEach(function(T){h+=s(T,p)}),h}var g={type:d.type,content:s(d.content,p),tag:"span",classes:["token",d.type],attributes:{},language:p},v=d.alias;v&&(Array.isArray(v)?Array.prototype.push.apply(g.classes,v):g.classes.push(v)),l.hooks.run("wrap",g);var y="";for(var C in g.attributes)y+=" "+C+'="'+(g.attributes[C]||"").replace(/"/g,"&quot;")+'"';return"<"+g.tag+' class="'+g.classes.join(" ")+'"'+y+">"+g.content+"</"+g.tag+">"};function f(s,d,p,h){s.lastIndex=d;var g=s.exec(p);if(g&&h&&g[1]){var v=g[1].length;g.index+=v,g[0]=g[0].slice(v)}return g}function b(s,d,p,h,g,v){for(var y in p)if(!(!p.hasOwnProperty(y)||!p[y])){var C=p[y];C=Array.isArray(C)?C:[C];for(var T=0;T<C.length;++T){if(v&&v.cause==y+","+T)return;var I=C[T],ue=I.inside,nn=!!I.lookbehind,ht=!!I.greedy,Sr=I.alias;if(ht&&!I.pattern.global){var gt=I.pattern.toString().match(/[imsuy]*$/)[0];I.pattern=RegExp(I.pattern.source,gt+"g")}for(var On=I.pattern||I,k=h.next,R=g;k!==d.tail&&!(v&&R>=v.reach);R+=k.value.length,k=k.next){var A=k.value;if(d.length>s.length)return;if(!(A instanceof c)){var O=1,N;if(ht){if(N=f(On,R,s,nn),!N||N.index>=s.length)break;var Fe=N.index,Ln=N.index+N[0].length,te=R;for(te+=k.value.length;Fe>=te;)k=k.next,te+=k.value.length;if(te-=k.value.length,R=te,k.value instanceof c)continue;for(var je=k;je!==d.tail&&(te<Ln||typeof je.value=="string");je=je.next)O++,te+=je.value.length;O--,A=s.slice(R,te),N.index-=R}else if(N=f(On,0,A,nn),!N)continue;var Fe=N.index,Ve=N[0],Fr=A.slice(0,Fe),Uo=A.slice(Fe+Ve.length),kr=R+A.length;v&&kr>v.reach&&(v.reach=kr);var oa=k.prev;Fr&&(oa=m(d,oa,Fr),R+=Fr.length),_(d,oa,O);var xd=new c(y,ue?l.tokenize(Ve,ue):Ve,Sr,Ve);if(k=m(d,oa,xd),Uo&&m(d,k,Uo),O>1){var Cr={cause:y+","+T,reach:kr};b(s,d,p,k.prev,R,Cr),v&&Cr.reach>v.reach&&(v.reach=Cr.reach)}}}}}}function x(){var s={value:null,prev:null,next:null},d={value:null,prev:s,next:null};s.next=d,this.head=s,this.tail=d,this.length=0}function m(s,d,p){var h=d.next,g={value:p,prev:d,next:h};return d.next=g,h.prev=g,s.length++,g}function _(s,d,p){for(var h=d.next,g=0;g<p&&h!==s.tail;g++)h=h.next;d.next=h,h.prev=d,s.length-=g}function S(s){for(var d=[],p=s.head.next;p!==s.tail;)d.push(p.value),p=p.next;return d}if(!a.document)return a.addEventListener&&(l.disableWorkerMessageHandler||a.addEventListener("message",function(s){var d=JSON.parse(s.data),p=d.language,h=d.code,g=d.immediateClose;a.postMessage(l.highlight(h,l.languages[p],p)),g&&a.close()},!1)),l;var w=l.util.currentScript();w&&(l.filename=w.src,w.hasAttribute("data-manual")&&(l.manual=!0));function P(){l.manual||l.highlightAll()}if(!l.manual){var u=document.readyState;u==="loading"||u==="interactive"&&w&&w.defer?document.addEventListener("DOMContentLoaded",P):window.requestAnimationFrame?window.requestAnimationFrame(P):window.setTimeout(P,16)}return l}(n);e.exports&&(e.exports=t),typeof ei<"u"&&(ei.Prism=t),t.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},t.languages.markup.tag.inside["attr-value"].inside.entity=t.languages.markup.entity,t.languages.markup.doctype.inside["internal-subset"].inside=t.languages.markup,t.hooks.add("wrap",function(a){a.type==="entity"&&(a.attributes.title=a.content.replace(/&amp;/,"&"))}),Object.defineProperty(t.languages.markup.tag,"addInlined",{value:function(r,i){var o={};o["language-"+i]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:t.languages[i]},o.cdata=/^<!\[CDATA\[|\]\]>$/i;var l={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:o}};l["language-"+i]={pattern:/[\s\S]+/,inside:t.languages[i]};var c={};c[r]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return r}),"i"),lookbehind:!0,greedy:!0,inside:l},t.languages.insertBefore("markup","cdata",c)}}),Object.defineProperty(t.languages.markup.tag,"addAttribute",{value:function(a,r){t.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+a+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[r,"language-"+r],inside:t.languages[r]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),t.languages.html=t.languages.markup,t.languages.mathml=t.languages.markup,t.languages.svg=t.languages.markup,t.languages.xml=t.languages.extend("markup",{}),t.languages.ssml=t.languages.xml,t.languages.atom=t.languages.xml,t.languages.rss=t.languages.xml,function(a){var r=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;a.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+r.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+r.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+r.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+r.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:r,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},a.languages.css.atrule.inside.rest=a.languages.css;var i=a.languages.markup;i&&(i.tag.addInlined("style","css"),i.tag.addAttribute("style","css"))}(t),t.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},t.languages.javascript=t.languages.extend("clike",{"class-name":[t.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),t.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,t.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:t.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:t.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:t.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:t.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:t.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),t.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:t.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),t.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),t.languages.markup&&(t.languages.markup.tag.addInlined("script","javascript"),t.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),t.languages.js=t.languages.javascript,function(){if(typeof t>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var a="Loading…",r=function(w,P){return"✖ Error "+w+" while fetching file: "+P},i="✖ Error: File does not exist or is empty",o={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},l="data-src-status",c="loading",f="loaded",b="failed",x="pre[data-src]:not(["+l+'="'+f+'"]):not(['+l+'="'+c+'"])';function m(w,P,u){var s=new XMLHttpRequest;s.open("GET",w,!0),s.onreadystatechange=function(){s.readyState==4&&(s.status<400&&s.responseText?P(s.responseText):s.status>=400?u(r(s.status,s.statusText)):u(i))},s.send(null)}function _(w){var P=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(w||"");if(P){var u=Number(P[1]),s=P[2],d=P[3];return s?d?[u,Number(d)]:[u,void 0]:[u,u]}}t.hooks.add("before-highlightall",function(w){w.selector+=", "+x}),t.hooks.add("before-sanity-check",function(w){var P=w.element;if(P.matches(x)){w.code="",P.setAttribute(l,c);var u=P.appendChild(document.createElement("CODE"));u.textContent=a;var s=P.getAttribute("data-src"),d=w.language;if(d==="none"){var p=(/\.(\w+)$/.exec(s)||[,"none"])[1];d=o[p]||p}t.util.setLanguage(u,d),t.util.setLanguage(P,d);var h=t.plugins.autoloader;h&&h.loadLanguages(d),m(s,function(g){P.setAttribute(l,f);var v=_(P.getAttribute("data-range"));if(v){var y=g.split(/\r\n?|\n/g),C=v[0],T=v[1]==null?y.length:v[1];C<0&&(C+=y.length),C=Math.max(0,Math.min(C-1,y.length)),T<0&&(T+=y.length),T=Math.max(0,Math.min(T,y.length)),g=y.slice(C,T).join(`
 `),P.hasAttribute("data-start")||P.setAttribute("data-start",String(C+1))}u.textContent=g,t.highlightElement(u)},function(g){P.setAttribute(l,b),u.textContent=g})}}),t.plugins.fileHighlight={highlight:function(P){for(var u=(P||document).querySelectorAll(x),s=0,d;d=u[s++];)t.highlightElement(d)}};var S=!1;t.fileHighlight=function(){S||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),S=!0),t.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(md);var Rf=md.exports;const Yi=Xi(Rf);Yi.languages.manim||(Yi.languages.manim={comment:/\/\/.*/,string:/"[^"]*"/,keyword:/\b(version|programmable|bitmap|text|ninepatch|placeholder|staticRef|dynamicRef|slot|spacer|interactive|layers|mask|flow|repeatable|tilegroup|stateanim|point|apply|graphics|pixels|particles|import|filter|settings|curves|paths|atlas2|animatedPath|data)\b/,"attr-name":/\b(sheet|generated|color|file|center|left|right|grid|hex|layout|construct|emit|tiles|loop|count|maxLife|speed|speedRandom|speedRand|gravity|gravityAngle|size|sizeRandom|sizeRand|fadeIn|fadeOut|blendMode|rotationSpeed|rotSpeed|rotateAuto|autoRotate|forwardAngle|emitSync|emitDelay|delay|lifeRandom|lifeRand|bounds|colorStops|sizeCurve|velocityCurve|forceFields|relative|attachTo|spawnCurve|subEmitters|cone|box|circle|path|kill|bounce|wrap|none|dist|distRand|angle|angleSpread|deg|rad|turn|up|down|easeInQuad|easeOutQuad|easeInOutQuad|easeInCubic|easeOutCubic|easeInOutCubic|linear|attractor|repulsor|vortex|wind|turbulence|pathguide|styles|images|condenseWhite|dropShadowXY|dropShadowColor|dropShadowAlpha)\b/,boolean:/\b(true|false)\b/,number:/\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*\b/,operator:/=>|@\(|@if|@any|@all|@else|@default|@\)|!=|>=|<=|>|</,punctuation:/[{}():,;]/,variable:/\$\w+/,"class-name":/#\w+/,tag:/@\w+/});function Af({source:e,visible:n}){const t=be.useRef(null);return be.useEffect(()=>{t.current&&e&&(t.current.textContent=e,Yi.highlightElement(t.current))},[e]),!n||!e?null:D.jsxs("div",{className:"border-t border-gray-700 flex-1 min-h-0 flex flex-col",children:[D.jsx("div",{className:"px-3 py-1.5 border-b border-gray-700 text-xs font-medium text-gray-300 flex-shrink-0",children:".manim Source"}),D.jsx("div",{className:"flex-1 overflow-auto p-3 bg-gray-900",children:D.jsx("pre",{className:"text-xs leading-relaxed",style:{margin:0},children:D.jsx("code",{ref:t,className:"language-manim",children:e})})})]})}const Jr="nav";function Bf(){const[e,n]=be.useState(Jr),[t,a]=be.useState(!1),[r,i]=be.useState(!1),[o,l]=be.useState(null),[c]=be.useState(()=>new Pf);be.useEffect(()=>{window.playgroundLoader=c;const m=window.location.hash.match(/screen=(\w+)/);return window.defaultScreen=m?m[1]:Jr,()=>{c.dispose()}},[c]),be.useEffect(()=>{const x=()=>{const _=window.location.hash.match(/screen=(\w+)/);if(_){const S=_[1];n(S),c.switchScreen(S)}};return x(),window.addEventListener("hashchange",x),()=>window.removeEventListener("hashchange",x)},[c]);const f=x=>{n(x),window.location.hash=`screen=${x}`,c.switchScreen(x);const m=c.getSourceForScreen(x);l(m)},b=()=>{if(!r){const x=c.getSourceForScreen(e);l(x)}i(!r)};return D.jsxs("div",{className:"flex h-screen w-screen bg-gray-900 text-white",children:[D.jsx(Tf,{currentScreen:e,onScreenSelect:f,collapsed:t,onToggleCollapse:()=>a(!t)}),D.jsxs("div",{className:"flex-1 flex flex-col h-full min-h-0",children:[D.jsxs("div",{className:"border-b border-gray-700 flex-shrink-0 flex items-center justify-between px-6 py-3",children:[D.jsx("button",{onClick:()=>f(Jr),className:"text-sm font-semibold text-gray-200 hover:text-white transition-colors tracking-wide",children:"hx-multianim Showcase"}),D.jsx("div",{className:"flex items-center space-x-3",children:D.jsx("button",{onClick:b,className:`text-xs px-2 py-0.5 rounded transition-colors ${r?"bg-blue-600 text-white":"text-gray-400 hover:text-white"}`,children:r?"Hide Source":"View .manim"})})]}),D.jsxs("div",{className:"flex-1 flex min-h-0",children:[D.jsx("div",{className:`${r?"w-2/3":"w-full"} min-h-0`,children:D.jsx("canvas",{id:"webgl",className:"w-full h-full block"})}),r&&D.jsx("div",{className:"w-1/3 border-l border-gray-700 flex flex-col min-h-0",children:D.jsx(Af,{source:o,visible:r})})]})]})]})}var hd={exports:{}};(function(e,n){(function(t,a){e.exports=a()})(ei,function(){var t=function(){},a={},r={},i={};function o(m,_){m=m.push?m:[m];var S=[],w=m.length,P=w,u,s,d,p;for(u=function(h,g){g.length&&S.push(h),P--,P||_(S)};w--;){if(s=m[w],d=r[s],d){u(s,d);continue}p=i[s]=i[s]||[],p.push(u)}}function l(m,_){if(m){var S=i[m];if(r[m]=_,!!S)for(;S.length;)S[0](m,_),S.splice(0,1)}}function c(m,_){m.call&&(m={success:m}),_.length?(m.error||t)(_):(m.success||t)(m)}function f(m,_,S,w){var P=document,u=S.async,s=(S.numRetries||0)+1,d=S.before||t,p=m.replace(/[\?|#].*$/,""),h=m.replace(/^(css|img|module|nomodule)!/,""),g,v,y;if(w=w||0,/(^css!|\.css$)/.test(p))y=P.createElement("link"),y.rel="stylesheet",y.href=h,g="hideFocus"in y,g&&y.relList&&(g=0,y.rel="preload",y.as="style");else if(/(^img!|\.(png|gif|jpg|svg|webp)$)/.test(p))y=P.createElement("img"),y.src=h;else if(y=P.createElement("script"),y.src=h,y.async=u===void 0?!0:u,v="noModule"in y,/^module!/.test(p)){if(!v)return _(m,"l");y.type="module"}else if(/^nomodule!/.test(p)&&v)return _(m,"l");y.onload=y.onerror=y.onbeforeload=function(C){var T=C.type[0];if(g)try{y.sheet.cssText.length||(T="e")}catch(I){I.code!=18&&(T="e")}if(T=="e"){if(w+=1,w<s)return f(m,_,S,w)}else if(y.rel=="preload"&&y.as=="style")return y.rel="stylesheet";_(m,T,C.defaultPrevented)},d(m,y)!==!1&&P.head.appendChild(y)}function b(m,_,S){m=m.push?m:[m];var w=m.length,P=w,u=[],s,d;for(s=function(p,h,g){if(h=="e"&&u.push(p),h=="b")if(g)u.push(p);else return;w--,w||_(u)},d=0;d<P;d++)f(m[d],s,S)}function x(m,_,S){var w,P;if(_&&_.trim&&(w=_),P=(w?S:_)||{},w){if(w in a)throw"LoadJS";a[w]=!0}function u(s,d){b(m,function(p){c(P,p),s&&c({success:s,error:d},p),l(w,p)},P)}if(P.returnPromise)return new Promise(u);u()}return x.ready=function(_,S){return o(_,function(w){c(S,w)}),x},x.done=function(_){l(_,[])},x.reset=function(){a={},r={},i={}},x.isDefined=function(_){return _ in a},x})})(hd);var Ef=hd.exports;const Df=Xi(Ef);class If{constructor(n={}){tn(this,"maxRetries");tn(this,"retryDelay");tn(this,"timeout");tn(this,"retryCount",0);tn(this,"isLoaded",!1);this.maxRetries=n.maxRetries||5,this.retryDelay=n.retryDelay||2e3,this.timeout=n.timeout||1e4}waitForReactApp(){document.getElementById("root")&&window.playgroundLoader?(console.log("React app ready, loading Haxe application..."),this.loadHaxeApp()):setTimeout(()=>this.waitForReactApp(),300)}loadHaxeApp(){console.log(`Attempting to load playground.js (attempt ${this.retryCount+1}/${this.maxRetries+1})`);const n=setTimeout(()=>{console.error("Timeout loading playground.js"),this.handleLoadError()},this.timeout);Df("playground.js",{success:()=>{clearTimeout(n),console.log("playground.js loaded successfully"),this.isLoaded=!0,this.waitForPlaygroundMain()},error:t=>{clearTimeout(n),console.error("Failed to load playground.js:",t),this.handleLoadError()}})}handleLoadError(){this.retryCount++,this.retryCount<=this.maxRetries?(console.log(`Retrying in ${this.retryDelay}ms... (${this.retryCount}/${this.maxRetries})`),setTimeout(()=>this.loadHaxeApp(),this.retryDelay)):console.error(`Failed to load playground.js after ${this.maxRetries} retries`)}waitForPlaygroundMain(){typeof window.PlaygroundMain<"u"&&window.PlaygroundMain.instance?(console.log("Haxe application initialized successfully"),window.playgroundLoader&&(window.playgroundLoader.mainApp=window.PlaygroundMain.instance)):setTimeout(()=>this.waitForPlaygroundMain(),100)}start(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>this.waitForReactApp()):this.waitForReactApp()}}const gd=new If({maxRetries:5,retryDelay:2e3,timeout:1e4});gd.start();window.haxeLoader=gd;ni.createRoot(document.getElementById("root")).render(D.jsx(Id.StrictMode,{children:D.jsx(Bf,{})}));
-//# sourceMappingURL=index-WTRshNrm.js.map
+//# sourceMappingURL=index-B6jLheAq.js.map

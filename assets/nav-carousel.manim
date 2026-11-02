@@ -130,7 +130,7 @@ version: 1.0
   @(currentSlide => 2) point {
     pos: 20, 15
 
-    dynamicRef($npPreview, w=>$npW, h=>$npH): 0, 0
+    dynamicRef(npPreview, w=>$npW, h=>$npH): 0, 0
     #npSizeText(updatable) text(m6x11, "200 x 80", #aaaaaa): 0, 90
 
     text(exo2_black_16, "9-Patch Panels", #7fdbda): 0, 110
@@ -159,7 +159,7 @@ version: 1.0
 
     // Animated health bar
     text(m6x11, "value-driven bar:", #888888): 0, 52
-    dynamicRef($condBar, value=>$condValue): 0, 68
+    dynamicRef(condBar, value=>$condValue): 0, 68
     #condBarValue(updatable) text(m6x11, "50", #ffffff, right, 195): 0, 68
 
     text(exo2_black_16, "Runtime Conditionals", #7fdbda): 0, 110

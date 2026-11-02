@@ -141,13 +141,13 @@ version: 1.0
   point {
     pos: 340, 145
     text(m6x11, "alpha:0.4", #888888): 0, 0
-    staticRef($applyExample, state=>alpha): 0, 15
+    staticRef(applyExample, state=>alpha): 0, 15
 
     text(m6x11, "glow filter", #888888): 80, 0
-    staticRef($applyExample, state=>filter): 80, 15
+    staticRef(applyExample, state=>filter): 80, 15
 
     text(m6x11, "scale:0.7", #888888): 190, 0
-    staticRef($applyExample, state=>scale): 190, 15
+    staticRef(applyExample, state=>scale): 190, 15
   }
 
   // === Section 5: References with Parameters ===
@@ -155,10 +155,10 @@ version: 1.0
 
   point {
     pos: 560, 145
-    staticRef($refShape, width=>20, height=>20, shape=>rect, c1=>#ff7f50): 0, 0
-    staticRef($refShape, width=>40, height=>30, shape=>triangle, c1=>#44ff44): 30, 0
-    staticRef($refShape, width=>50, height=>20, shape=>rect, c1=>#4488cc): 80, 0
-    staticRef($refShape, width=>30, height=>30, shape=>triangle, c1=>#ffcc44): 140, 0
+    staticRef(refShape, width=>20, height=>20, shape=>rect, c1=>#ff7f50): 0, 0
+    staticRef(refShape, width=>40, height=>30, shape=>triangle, c1=>#44ff44): 30, 0
+    staticRef(refShape, width=>50, height=>20, shape=>rect, c1=>#4488cc): 80, 0
+    staticRef(refShape, width=>30, height=>30, shape=>triangle, c1=>#ffcc44): 140, 0
   }
 
   // === Section 6: Div/Mod Grid Layout ===
@@ -177,11 +177,11 @@ version: 1.0
   point {
     pos: 140, 270
     text(m6x11, "param=>A:", #888888): 0, 0
-    staticRef($condExample, param1=>A): 80, 0
+    staticRef(condExample, param1=>A): 80, 0
     text(m6x11, "param=>B:", #888888): 0, 15
-    staticRef($condExample, param1=>B): 80, 15
+    staticRef(condExample, param1=>B): 80, 15
     text(m6x11, "param=>C:", #888888): 0, 30
-    staticRef($condExample, param1=>C): 80, 30
+    staticRef(condExample, param1=>C): 80, 30
   }
 
   // === Section 8: Array Parameters ===
@@ -190,11 +190,11 @@ version: 1.0
   point {
     pos: 340, 270
     text(m6x11, "index 0:", #888888): 0, 0
-    staticRef($arrayExample, arr=>["first","second","third"], index=>0): 80, 0
+    staticRef(arrayExample, arr=>["first","second","third"], index=>0): 80, 0
     text(m6x11, "index 1:", #888888): 0, 15
-    staticRef($arrayExample, arr=>["first","second","third"], index=>1): 80, 15
+    staticRef(arrayExample, arr=>["first","second","third"], index=>1): 80, 15
     text(m6x11, "index 2:", #888888): 0, 30
-    staticRef($arrayExample, arr=>["first","second","third"], index=>2): 80, 30
+    staticRef(arrayExample, arr=>["first","second","third"], index=>2): 80, 30
   }
 
   // === Section 9: StateAnim Construct ===

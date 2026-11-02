@@ -47,10 +47,10 @@ version: 1.0
     text(exo2_20, "Aethon", #ffffff, left, 350): 20, 76
 
     text(exo2_14, "HP", #ff4444): 20, 108
-    dynamicRef($hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
+    dynamicRef(hpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 55, 106
 
     text(exo2_14, "MP", #4488cc): 20, 140
-    dynamicRef($mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
+    dynamicRef(mpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 55, 138
 
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 360): 20, 170
 
@@ -144,10 +144,10 @@ version: 1.0
     text(exo2_16, "Aethon", #ffffff): 10, 62
 
     text(exo2_14, "HP", #ff4444): 10, 90
-    dynamicRef($pixelHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 40, 88
+    dynamicRef(pixelHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 40, 88
 
     text(exo2_14, "MP", #4488cc): 10, 122
-    dynamicRef($pixelMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 40, 120
+    dynamicRef(pixelMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 40, 120
 
     @(dead > 0) text(exo2_20, "DEAD", #ff4444, center, 180): 10, 150
 
@@ -197,10 +197,10 @@ version: 1.0
 
     // Vertical bars side by side
     text(exo2_14, "HP", #ff4444, center, 30): 30, 88
-    dynamicRef($verticalHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 30, 104
+    dynamicRef(verticalHpBar, hp=>$hp, maxHp=>$maxHp, trail=>$hpTrail): 30, 104
 
     text(exo2_14, "MP", #4488cc, center, 30): 110, 88
-    dynamicRef($verticalMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 110, 104
+    dynamicRef(verticalMpBar, mp=>$mp, maxMp=>$maxMp, trail=>$mpTrail): 110, 104
 
     // Values below bars
     text(exo2_14, '${$hp}', #ffffff, center, 30): 30, 206

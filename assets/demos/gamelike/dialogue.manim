@@ -25,7 +25,7 @@ version: 1.0
 
     // Character portrait area (color driven by dynamicRef parameter)
     ninepatch("ui", "Window_3x3_idle", 100, 100): 0, 170
-    dynamicRef($dialoguePortrait, speaker=>$speaker): 10, 180
+    dynamicRef(dialoguePortrait, speaker=>$speaker): 10, 180
 
     // Dialogue panel
     ninepatch("ui", "Window_3x3_idle", 580, 120): 120, 170

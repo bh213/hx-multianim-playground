@@ -13,3 +13,17 @@
 - **Source:** https://brackeys.itch.io/brackeys-platformer-bundle
 - **License:** [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) — public domain, no attribution required
 - **Description:** `coin.wav`, `explosion.wav`, `hurt.wav`, `jump.wav`, `power_up.wav`, `tap.wav`, used by the Sound demo (`demos/gamelike/sound.manim`). See `public/assets/sound/CREDITS.txt`.
+
+## Kenney: Isometric Tiles City, Isometric Tiles Buildings (`res/isohex/isoCity.png`)
+
+- **Author:** Kenney ([www.kenney.nl](https://www.kenney.nl))
+- **Source:** https://kenney.nl/assets/isometric-tiles-city, https://kenney.nl/assets/isometric-tiles-buildings
+- **License:** [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) — public domain, no attribution required
+- **Description:** eight city blocks and a house packed into one sheet, used by the Iso & Hex Maps demo (`demos/gamelike/tilemap-grids.manim`). See `res/isohex/LICENSE.txt`.
+
+## Hexset v0.1.1 (`res/isohex/hexset.png`)
+
+- **Author:** mbartelsm
+- **Source:** https://opengameart.org/content/hexset-v011-hex-pixel-art-terrain-tileset
+- **License:** [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) — public domain, no attribution required
+- **Description:** five 32x48 hex terrain tiles, used by the Iso & Hex Maps demo (`demos/gamelike/tilemap-grids.manim`). See `res/isohex/LICENSE.txt`.

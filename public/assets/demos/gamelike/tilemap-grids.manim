@@ -1,0 +1,118 @@
+version: 1.0
+
+// Iso & Hex Maps Demo
+// The same tile maps on two other grids: the tileset says its grid, the map is rows of characters
+// as on the square one. Left, an isometric city: Kenney's blocks 132 wide whose top is a 132x66
+// diamond with 33 pixels of side under it (tileOffset: 0, 33 puts the top on the cell), every block
+// a terrain so each covers the sides of the ones behind it, houses sorted among the actors. Right,
+// an island on pointy hexes 32x28 whose upright sides are 12 (rows 20 apart), the Hexset's 32x48
+// frames with their face 14 rows above the bottom. A raised cell is drawn lifted, half a cell a
+// level, its side a rise's piece a level. Raise and lower cells live: setLevel draws the cell's
+// chunk again, and toCell finds the cell whose top or side is under the pointer.
+// Tiles: Kenney (www.kenney.nl), CC0; Hexset v0.1.1 by mbartelsm, CC0. See attribution.md.
+
+#cityTiles tileset {
+    grid: isometric, 132, 66
+    tileOffset: 0, 33
+    atlas: "isohex/isoCity"
+    terrain plaza { cells: "plaza" }
+    terrain asphalt { cells: "asphalt" }
+    terrain roadA { cells: "roadA" }
+    terrain roadB { cells: "roadB" }
+    terrain cross { cells: "cross" }
+    terrain park { cells: "treeBlock" metadata { park:bool => true } }
+    cell house { draw: actors metadata { building:bool => true } }
+    rise any { side: "cliff" }
+}
+
+#city tilemap {
+    tileset: cityTiles
+    size: 6, 6
+    legend { ".": plaza, "a": asphalt, "-": roadA, "|": roadB, "+": cross, "t": park }
+    terrain: [
+        "..|...",
+        "t.|.t.",
+        "--+---",
+        "..|aa.",
+        ".t|aa.",
+        "..|...",
+    ]
+    layer buildings { legend { "h": house } rows: [
+        "h     ",
+        "   h  ",
+        "      ",
+        "h     ",
+        "     h",
+        "   h  ",
+    ] }
+    levels: [
+        "000000",
+        "000000",
+        "000000",
+        "000110",
+        "000112",
+        "000000",
+    ]
+}
+
+#hexsetTiles tileset {
+    grid: hex, 32, 28, pointy, odd, 12
+    tileOffset: 0, 14
+    atlas: "isohex/hexset"
+    terrain deep_water { cells: "deep_water" metadata { swim:bool => true } }
+    terrain desert { cells: "desert" }
+    terrain temperate { cells: "temperate" }
+    terrain temperate_hill { cells: "temperate_hill" }
+    terrain stone_mountain { cells: "stone_mountain" metadata { climb:bool => true } }
+    rise any { side: "desert" }
+}
+
+#island tilemap {
+    tileset: hexsetTiles
+    size: 7, 6
+    legend { "~": deep_water, "d": desert, ".": temperate, "h": temperate_hill, "^": stone_mountain }
+    terrain: [
+        "~~~~~~~",
+        "~~..h~~",
+        "~d.^^.~",
+        "~~dh..~",
+        "~~~.d~~",
+        "~~~~~~~",
+    ]
+    levels: [
+        "0000000",
+        "0000100",
+        "0000000",
+        "0001000",
+        "0000000",
+        "0000000",
+    ]
+}
+
+#tilemapGridsDemo programmable() {
+    pos: 50, 80
+
+    text(exo2_16, "Iso & Hex Maps", #7fdbda): 0, 0
+    #statusText(updatable) text(exo2_14, "", #aaaaaa, left, 700): 170, 4
+    bitmap(generated(color(900, 1, #7fdbda33))): 0, 22
+
+    // A click raises (left button) or lowers (right button) the cell under the pointer by a level
+    text(exo2_14, "Left click raises a cell, right click lowers it", #aaaaaa): 0, 38
+    placeholder(generated(cross(80, 20, white)), builderParameter("resetBtn")) {
+        pos: 340, 30
+        settings{width:int=>80, height:int=>30, font=>"m6x11", fontColor=>#ffffff}
+    }
+
+    // The maps go here, built in Haxe so their cells can be read and raised
+    text(exo2_14, "grid: isometric, 132, 66 (at half size)", #7fdbda): 0, 76
+    #cityContainer(updatable) point: 0, 100
+    text(exo2_14, "grid: hex, 32, 28, pointy, odd, 12 (at twice its size)", #7fdbda): 440, 76
+    #islandContainer(updatable) point: 440, 100
+
+    #cellText(updatable) text(exo2_light_14, "Move over a map to read a cell", #aaaaaa, left, 900): 0, 440
+
+    text(exo2_14, "What is in the file", #7fdbda): 0, 475
+    text(exo2_light_14, "A tileset says its grid: grid: isometric or grid: hex with the hex's orientation, which rows or columns are pushed and the length of its sides; tileOffset: moves every frame onto its cell. The maps are written as square ones are: terrain, levels and layers of cells.", #aaaaaa, left, 420): 0, 495
+    text(exo2_14, "Drawn back to front", #7fdbda): 440, 475
+    text(exo2_light_14, "Off the square grid the ground is drawn back to front, so a block's side or a hex's face is covered by what is in front of it. A raised cell is lifted with its sides under it and sorts with the houses among the actors.", #aaaaaa, left, 420): 440, 495
+}

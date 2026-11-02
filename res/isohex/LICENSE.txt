@@ -8,7 +8,7 @@ isoCity.png / isoCity.atlas2
   www.kenney.nl) is welcome, not required.
 
 hexset.png / hexset.atlas2
-  mbartelsm, "Hexset v0.1.1" (temperate, deep_water, desert, stone_mountain, temperate_hill).
+  mbartelsm, "Hexset v0.1.1" (temperate, deep_water, desert, stone_mountain, temperate_hill, stone).
   https://opengameart.org/content/hexset-v011-hex-pixel-art-terrain-tileset. License: CC0 1.0.
 
 CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/

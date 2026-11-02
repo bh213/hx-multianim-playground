@@ -26,4 +26,4 @@
 - **Author:** mbartelsm
 - **Source:** https://opengameart.org/content/hexset-v011-hex-pixel-art-terrain-tileset
 - **License:** [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) — public domain, no attribution required
-- **Description:** five 32x48 hex terrain tiles, used by the Iso & Hex Maps demo (`demos/gamelike/tilemap-grids.manim`). See `res/isohex/LICENSE.txt`.
+- **Description:** six 32x48 hex terrain tiles, used by the Iso & Hex Maps demo (`demos/gamelike/tilemap-grids.manim`). See `res/isohex/LICENSE.txt`.

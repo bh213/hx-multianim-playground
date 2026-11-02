@@ -64,7 +64,8 @@ version: 1.0
     terrain temperate { cells: "temperate" }
     terrain temperate_hill { cells: "temperate_hill" }
     terrain stone_mountain { cells: "stone_mountain" metadata { climb:bool => true } }
-    rise any { side: "desert" }
+    // every level under a raised hex is the plain stone frame: its side is grey rock with no band
+    rise any { side: "stone" }
 }
 
 #island tilemap {

@@ -32,7 +32,7 @@ class Main extends hxd.App {
 		"featureShowcase", "incremental", "interactives", "conditionals", "expressions", "settings", "macroPerformance", "loadoutRuntime", "loadoutCodegen",
 		"buttons", "checkboxes", "sliders", "dropdowns", "scrollableList", "radio", "progressBar", "draggable", "dialogs", "tabs", "textInput", "tooltipsPanels",
 		"staticRefs", "dynamicRefs", "flowLayout", "repeatable", "slots", "comboStates",
-		"bitmapsAtlas", "ninepatch", "textFonts", "richText", "richTextAutofit", "pixelsGraphics",
+		"bitmapsAtlas", "ninepatch", "textFonts", "textCentring", "richText", "richTextAutofit", "pixelsGraphics",
 		"stateAnim", "animLayers", "particles", "paths", "curves", "animPath", "filters", "floatingText", "screenShake", "transitions",
 		"inventory", "characterSheet", "autotile", "tilemap", "tilemapFill", "tilemapGrids", "battleHud", "skillTree", "dialogue", "statusEffects", "cards", "gridComponent", "projectList",
 		"sound",
@@ -212,6 +212,7 @@ class Main extends hxd.App {
 		screenManager.addScreen("bitmapsAtlas", new BitmapsAtlasDemoScreen(screenManager));
 		screenManager.addScreen("ninepatch", new NinepatchDemoScreen(screenManager));
 		screenManager.addScreen("textFonts", new TextFontsDemoScreen(screenManager));
+		screenManager.addScreen("textCentring", new TextCentringDemoScreen(screenManager));
 		screenManager.addScreen("richText", new RichTextDemoScreen(screenManager));
 		screenManager.addScreen("richTextAutofit", new RichTextAutofitDemoScreen(screenManager));
 		screenManager.addScreen("pixelsGraphics", new PixelsGraphicsDemoScreen(screenManager));

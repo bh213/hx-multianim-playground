@@ -51,6 +51,7 @@ export const CATEGORIES: CategoryInfo[] = [
             { name: 'bitmapsAtlas', displayName: 'Bitmaps & Atlas', category: 'Graphics & Rendering', manimFile: 'demos/graphics/bitmaps-atlas.manim' },
             { name: 'ninepatch', displayName: 'Ninepatch', category: 'Graphics & Rendering', manimFile: 'demos/graphics/ninepatch.manim' },
             { name: 'textFonts', displayName: 'Text & Fonts', category: 'Graphics & Rendering', manimFile: 'demos/graphics/text-fonts.manim' },
+            { name: 'textCentring', displayName: 'Text Centring', category: 'Graphics & Rendering', manimFile: 'demos/graphics/text-centring.manim' },
             { name: 'richText', displayName: 'Rich Text', category: 'Graphics & Rendering', manimFile: 'demos/graphics/rich-text.manim' },
             { name: 'richTextAutofit', displayName: 'Rich Text AutoFit', category: 'Graphics & Rendering', manimFile: 'demos/graphics/rich-text-autofit.manim' },
             { name: 'pixelsGraphics', displayName: 'Pixels & Graphics', category: 'Graphics & Rendering', manimFile: 'demos/graphics/pixels-graphics.manim' },

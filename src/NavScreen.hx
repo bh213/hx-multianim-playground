@@ -135,6 +135,7 @@ class NavScreen extends UIScreenBase {
 				{id: "bitmapsAtlas", title: "Bitmaps & Atlas"},
 				{id: "ninepatch", title: "Ninepatch"},
 				{id: "textFonts", title: "Text & Fonts"},
+				{id: "textCentring", title: "Text Centring"},
 				{id: "richText", title: "Rich Text"},
 				{id: "richTextAutofit", title: "Rich Text Autofit"},
 				{id: "pixelsGraphics", title: "Pixels & Graphics"},

@@ -52,13 +52,14 @@ layouts {
         point: 520, 510
         point: 680, 510
         point: 840, 510
-        // Graphics & Rendering (6)
+        // Graphics & Rendering (7)
         point: 40, 568
         point: 200, 568
         point: 360, 568
         point: 520, 568
         point: 680, 568
         point: 840, 568
+        point: 1000, 568
         // Animation & Effects (10, wraps to 2 rows)
         point: 40, 626
         point: 200, 626

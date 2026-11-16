@@ -1,0 +1,78 @@
+version: 1.0
+
+// Text Centring Demo
+// Centring a label in a box with ($h - $ctx.font(f).lineHeight) div 2 sits most pixel fonts a pixel
+// or two high: the line is taller than the capitals, by the room above them and the descenders below.
+// $ctx.font(f).capTop and .capHeight give the box of the capital letters ('H': where its glyph starts
+// and how tall it is), so ($h - capHeight) div 2 - capTop centres the capitals for any font.
+// Every row below draws one font twice, at twice its size: by lineHeight (orange) and by the capitals
+// (cyan), the band behind the word being where its capitals are. The slider sets the box height:
+// a setParameter on the demo, forwarded to each row's dynamicRef.
+
+#capRow programmable(font:string="m6x11", h:uint=24) {
+    @final w = 80
+    @final capTop = $ctx.font($font).capTop
+    @final capHeight = $ctx.font($font).capHeight
+    @final byLine = ($h - $ctx.font($font).lineHeight) div 2
+    @final byCaps = ($h - $capHeight) div 2 - $capTop
+    @final lineAbove = $byLine + $capTop
+    @final capsAbove = $byCaps + $capTop
+    // In text the sums are written out: '${$lineAbove}' would read the @final as text, "4" + "-1"
+
+    // The font and its four numbers
+    text(exo2_14, $font, #ffffff): 0, 2
+    text(exo2_14, 'lineHeight ${$ctx.font($font).lineHeight}, baseLine ${$ctx.font($font).baseLine}', #888888): 0, 20
+    text(exo2_14, 'capTop ${$capTop}, capHeight ${$capHeight}', #888888): 0, 38
+
+    point {
+        pos: 160, 0
+        scale: 2
+
+        // By lineHeight
+        bitmap(generated(color($w, $h, #3a4660))): 0, 0
+        bitmap(generated(color($w, $capHeight, #ff884455))): 0, $lineAbove
+        text($font, "Start", #ffffff, center, $w): 0, $byLine
+
+        // By the capitals
+        bitmap(generated(color($w, $h, #3a4660))): 100, 0
+        bitmap(generated(color($w, $capHeight, #7fdbda55))): 100, $capsAbove
+        text($font, "Start", #ffffff, center, $w): 100, $byCaps
+    }
+
+    // The room above and below the capitals, in font pixels
+    text(exo2_14, 'above ${$byLine + $capTop}, below ${$h - $byLine - $capTop - $capHeight}', #ff8844): 160, $h * 2 + 4
+    text(exo2_14, 'above ${$byCaps + $capTop}, below ${$h - $byCaps - $capTop - $capHeight}', #7fdbda): 360, $h * 2 + 4
+}
+
+#textCentringDemo programmable(h:uint=24) {
+    pos: 50, 80
+
+    text(exo2_16, "Text Centring", #7fdbda): 0, 0
+    text(exo2_14, 'a label centred in a box ${h} px high, drawn twice the size', #aaaaaa, left, 500): 150, 4
+    bitmap(generated(color(1000, 1, #7fdbda33))): 0, 22
+
+    text(exo2_14, "Box height:", #aaaaaa): 0, 38
+    placeholder(generated(cross(200, 16, #FF0000)), builderParameter("heightSlider")) {
+        pos: 90, 40
+        settings{size:int=>200}
+    }
+
+    text(exo2_14, "by lineHeight", #ff8844): 160, 72
+    text(exo2_14, "($h - lineHeight) div 2", #888888): 160, 88
+    text(exo2_14, "by the capitals", #7fdbda): 360, 72
+    text(exo2_14, "($h - capHeight) div 2 - capTop", #888888): 360, 88
+
+    // One row a font; each row is $h * 2 + 36 high, so the rows move apart as the boxes grow
+    dynamicRef(capRow, font=>"m6x11", h=>$h): 0, 112
+    dynamicRef(capRow, font=>"m3x6", h=>$h): 0, 112 + 1 * ($h * 2 + 36)
+    dynamicRef(capRow, font=>"o4b03", h=>$h): 0, 112 + 2 * ($h * 2 + 36)
+    dynamicRef(capRow, font=>"pixellari", h=>$h): 0, 112 + 3 * ($h * 2 + 36)
+    dynamicRef(capRow, font=>"dd", h=>$h): 0, 112 + 4 * ($h * 2 + 36)
+    dynamicRef(capRow, font=>"exo2_16", h=>$h): 0, 112 + 5 * ($h * 2 + 36)
+    dynamicRef(capRow, font=>"kreon_16", h=>$h): 0, 112 + 6 * ($h * 2 + 36)
+
+    text(exo2_14, "Why lineHeight sits high", #7fdbda): 660, 72
+    text(exo2_light_14, "A line is taller than its capitals: there is room above them for accents, and below them for the descenders of g, p and y. Centring the whole line in a box puts the capitals above its middle, by a pixel or two in a small pixel font.", #aaaaaa, left, 300): 660, 92
+    text(exo2_14, "The capitals' box", #7fdbda): 660, 210
+    text(exo2_light_14, "$ctx.font(f).capTop is where the glyph of H starts, from the top of the line, and .capHeight how tall it is (whole numbers, with the offset the font was registered with; 0 and baseLine for a font without H). y = ($h - capHeight) div 2 - capTop leaves as much room above the capitals as below, give or take the one pixel an odd height cannot split.", #aaaaaa, left, 300): 660, 230
+}

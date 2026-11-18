@@ -15873,6 +15873,8 @@ h3d_shader_ScreenShader.prototype = $extend(hxsl_Shader.prototype,{
 	,__class__: h3d_shader_ScreenShader
 });
 var bh_base_filters_EngineScreenShader = function() {
+	this.loops__ = 0;
+	this.loopTime__ = 0;
 	this.time__ = 0;
 	this.size__ = new h3d_VectorImpl(0.,0.,0.);
 	h3d_shader_ScreenShader.call(this);
@@ -15881,7 +15883,13 @@ $hxClasses["bh.base.filters.EngineScreenShader"] = bh_base_filters_EngineScreenS
 bh_base_filters_EngineScreenShader.__name__ = "bh.base.filters.EngineScreenShader";
 bh_base_filters_EngineScreenShader.__super__ = h3d_shader_ScreenShader;
 bh_base_filters_EngineScreenShader.prototype = $extend(h3d_shader_ScreenShader.prototype,{
-	get_texture: function() {
+	setClock: function(now) {
+		this.time__ = now;
+		var loop = Math.floor(now / 32);
+		this.loopTime__ = now - loop * 32;
+		this.loops__ = loop - Math.floor(loop / 1024) * 1024;
+	}
+	,get_texture: function() {
 		return this.texture__;
 	}
 	,set_texture: function(_v) {
@@ -15899,6 +15907,18 @@ bh_base_filters_EngineScreenShader.prototype = $extend(h3d_shader_ScreenShader.p
 	,set_time: function(_v) {
 		return this.time__ = _v;
 	}
+	,get_loopTime: function() {
+		return this.loopTime__;
+	}
+	,set_loopTime: function(_v) {
+		return this.loopTime__ = _v;
+	}
+	,get_loops: function() {
+		return this.loops__;
+	}
+	,set_loops: function(_v) {
+		return this.loops__ = _v;
+	}
 	,updateConstants: function(globals) {
 		this.constBits = 0;
 		this.updateConstantsFinal(globals);
@@ -15913,6 +15933,10 @@ bh_base_filters_EngineScreenShader.prototype = $extend(h3d_shader_ScreenShader.p
 			return this.size__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
 		default:
 		}
 		return null;
@@ -15923,6 +15947,10 @@ bh_base_filters_EngineScreenShader.prototype = $extend(h3d_shader_ScreenShader.p
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
 		default:
 		}
 		return 0.;
@@ -15962,6 +15990,11 @@ h2d_filter_Filter.prototype = {
 	,__class__: h2d_filter_Filter
 };
 var bh_base_filters_EngineShaderFilter = function(name,shader,apply,boundsOf) {
+	this.wholeDy = 0;
+	this.wholeDx = 0;
+	this.wholeH = 0;
+	this.wholeW = 0;
+	this.wholeBounds = new h2d_col_Bounds();
 	this.values = new haxe_ds_StringMap();
 	h2d_filter_Filter.call(this);
 	this.shaderName = name.toLowerCase();
@@ -16010,9 +16043,14 @@ bh_base_filters_EngineShaderFilter.prototype = $extend(h2d_filter_Filter.prototy
 			return false;
 		}
 	}
+	,sync: function(ctx,s) {
+		h2d_filter_Filter.prototype.sync.call(this,ctx,s);
+		this.owner = s;
+	}
 	,draw: function(ctx,t) {
-		var texture = t.innerTex;
-		var out = ctx.textures.allocTileTarget(this.target,t);
+		var whole = this.findWhole(ctx,t);
+		var texture = whole ? this.placedInWhole(ctx,t) : t.innerTex;
+		var out = whole ? ctx.textures.allocTarget(this.target,this.wholeW,this.wholeH,false) : ctx.textures.allocTileTarget(this.target,t);
 		ctx.engine.pushTarget(out);
 		this.shader.texture__ = texture;
 		var _this = this.shader.size__;
@@ -16028,12 +16066,144 @@ bh_base_filters_EngineShaderFilter.prototype = $extend(h2d_filter_Filter.prototy
 		_this.y = y;
 		_this.z = 0.;
 		var at = bh_base_ShaderClock.fixed;
-		this.shader.time__ = at != null ? at : bh_base_ShaderClock.seconds;
+		this.shader.setClock(at != null ? at : bh_base_ShaderClock.seconds);
 		this.pass.render();
 		ctx.engine.popTarget();
-		return h2d_Tile.fromTexture(out);
+		var drawn = h2d_Tile.fromTexture(out);
+		if(whole) {
+			drawn.dx = this.wholeDx;
+			drawn.dy = this.wholeDy;
+		}
+		return drawn;
+	}
+	,findWhole: function(ctx,t) {
+		var s = this.owner;
+		if(s == null || !this.autoBounds || this.boundsExtend < 0) {
+			return false;
+		}
+		var stack = ctx.inFilter;
+		if(stack == null || stack.spr != s) {
+			return false;
+		}
+		var sx = stack.scaleX;
+		var sy = stack.scaleY;
+		var b = s.getBounds(s,this.wholeBounds);
+		if(b.xMax <= b.xMin || b.yMax <= b.yMin) {
+			return false;
+		}
+		var xMin = Math.floor(b.xMin * sx - this.boundsExtend + 1e-10);
+		var yMin = Math.floor(b.yMin * sy - this.boundsExtend + 1e-10);
+		var w = Math.ceil(b.xMax * sx + this.boundsExtend - xMin - 1e-10);
+		var h = Math.ceil(b.yMax * sy + this.boundsExtend - yMin - 1e-10);
+		var cx = Math.round(t.dx * sx);
+		var cy = Math.round(t.dy * sy);
+		var cw = t.innerTex.width;
+		var ch = t.innerTex.height;
+		if(cx <= xMin && cy <= yMin && cx + cw >= xMin + w && cy + ch >= yMin + h) {
+			return false;
+		}
+		if(w <= 0 || h <= 0 || w > bh_base_filters_EngineShaderFilter.wholeLimit || h > bh_base_filters_EngineShaderFilter.wholeLimit) {
+			return false;
+		}
+		this.wholeW = w;
+		this.wholeH = h;
+		this.wholeDx = xMin - cx;
+		this.wholeDy = yMin - cy;
+		return true;
+	}
+	,placedInWhole: function(ctx,t) {
+		var place = this.place;
+		if(place == null) {
+			place = new h3d_pass_ScreenFx(new bh_base_filters__$EngineShaderFilter_PlaceShader());
+			this.place = place;
+		}
+		var part = t.innerTex;
+		var full = ctx.textures.allocTarget(this.target + "Whole",this.wholeW,this.wholeH,false);
+		ctx.engine.pushTarget(full);
+		ctx.engine.clear(0);
+		place.shader.texture__ = part;
+		var _this = place.shader.scale__;
+		var x = this.wholeW / part.width;
+		var y = this.wholeH / part.height;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		_this.x = x;
+		_this.y = y;
+		_this.z = 0.;
+		var _this = place.shader.offset__;
+		var x = -this.wholeDx / part.width;
+		var y = -this.wholeDy / part.height;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		_this.x = x;
+		_this.y = y;
+		_this.z = 0.;
+		place.render();
+		ctx.engine.popTarget();
+		return full;
 	}
 	,__class__: bh_base_filters_EngineShaderFilter
+});
+var bh_base_filters__$EngineShaderFilter_PlaceShader = function() {
+	this.offset__ = new h3d_VectorImpl(0.,0.,0.);
+	this.scale__ = new h3d_VectorImpl(0.,0.,0.);
+	h3d_shader_ScreenShader.call(this);
+};
+$hxClasses["bh.base.filters._EngineShaderFilter.PlaceShader"] = bh_base_filters__$EngineShaderFilter_PlaceShader;
+bh_base_filters__$EngineShaderFilter_PlaceShader.__name__ = "bh.base.filters._EngineShaderFilter.PlaceShader";
+bh_base_filters__$EngineShaderFilter_PlaceShader.__super__ = h3d_shader_ScreenShader;
+bh_base_filters__$EngineShaderFilter_PlaceShader.prototype = $extend(h3d_shader_ScreenShader.prototype,{
+	get_texture: function() {
+		return this.texture__;
+	}
+	,set_texture: function(_v) {
+		return this.texture__ = _v;
+	}
+	,get_scale: function() {
+		return this.scale__;
+	}
+	,set_scale: function(_v) {
+		return this.scale__ = _v;
+	}
+	,get_offset: function() {
+		return this.offset__;
+	}
+	,set_offset: function(_v) {
+		return this.offset__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 1:
+			return this.texture__;
+		case 2:
+			return this.scale__;
+		case 3:
+			return this.offset__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		if(index == 0) {
+			return this.flipY__;
+		}
+		return 0.;
+	}
+	,__class__: bh_base_filters__$EngineShaderFilter_PlaceShader
 });
 var bh_base_filters_PixelOutlineFilterMode = $hxEnums["bh.base.filters.PixelOutlineFilterMode"] = { __ename__:true,__constructs__:null
 	,Knockout: ($_=function(color,knockout) { return {_hx_index:0,color:color,knockout:knockout,__enum__:"bh.base.filters.PixelOutlineFilterMode",toString:$estr}; },$_._hx_name="Knockout",$_.__params__ = ["color","knockout"],$_)
@@ -16997,16 +17167,20 @@ bh_base_shaders__$BuiltinShaders_CrtShader.prototype = $extend(bh_base_filters_E
 		case 3:
 			return this.time__;
 		case 4:
-			return this.curve__;
+			return this.loopTime__;
 		case 5:
-			return this.scanlines__;
+			return this.loops__;
 		case 6:
-			return this.lineSize__;
+			return this.curve__;
 		case 7:
-			return this.vignette__;
+			return this.scanlines__;
 		case 8:
-			return this.shift__;
+			return this.lineSize__;
 		case 9:
+			return this.vignette__;
+		case 10:
+			return this.shift__;
+		case 11:
 			return this.flicker__;
 		default:
 		}
@@ -17019,16 +17193,20 @@ bh_base_shaders__$BuiltinShaders_CrtShader.prototype = $extend(bh_base_filters_E
 		case 3:
 			return this.time__;
 		case 4:
-			return this.curve__;
+			return this.loopTime__;
 		case 5:
-			return this.scanlines__;
+			return this.loops__;
 		case 6:
-			return this.lineSize__;
+			return this.curve__;
 		case 7:
-			return this.vignette__;
+			return this.scanlines__;
 		case 8:
-			return this.shift__;
+			return this.lineSize__;
 		case 9:
+			return this.vignette__;
+		case 10:
+			return this.shift__;
+		case 11:
 			return this.flicker__;
 		default:
 		}
@@ -17072,8 +17250,12 @@ bh_base_shaders__$BuiltinShaders_ScanlinesShader.prototype = $extend(bh_base_fil
 		case 3:
 			return this.time__;
 		case 4:
-			return this.strength__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.strength__;
+		case 7:
 			return this.spacing__;
 		default:
 		}
@@ -17086,8 +17268,12 @@ bh_base_shaders__$BuiltinShaders_ScanlinesShader.prototype = $extend(bh_base_fil
 		case 3:
 			return this.time__;
 		case 4:
-			return this.strength__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.strength__;
+		case 7:
 			return this.spacing__;
 		default:
 		}
@@ -17145,12 +17331,16 @@ bh_base_shaders__$BuiltinShaders_VignetteShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
-			return this.strength__;
+			return this.loopTime__;
 		case 5:
-			return this.radius__;
+			return this.loops__;
 		case 6:
-			return this.softness__;
+			return this.strength__;
 		case 7:
+			return this.radius__;
+		case 8:
+			return this.softness__;
+		case 9:
 			return this.color__;
 		default:
 		}
@@ -17163,10 +17353,14 @@ bh_base_shaders__$BuiltinShaders_VignetteShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
-			return this.strength__;
+			return this.loopTime__;
 		case 5:
-			return this.radius__;
+			return this.loops__;
 		case 6:
+			return this.strength__;
+		case 7:
+			return this.radius__;
+		case 8:
 			return this.softness__;
 		default:
 		}
@@ -17231,14 +17425,18 @@ bh_base_shaders__$BuiltinShaders_GradeShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.brightness__;
+			return this.loopTime__;
 		case 5:
-			return this.contrast__;
+			return this.loops__;
 		case 6:
-			return this.saturation__;
+			return this.brightness__;
 		case 7:
-			return this.tint__;
+			return this.contrast__;
 		case 8:
+			return this.saturation__;
+		case 9:
+			return this.tint__;
+		case 10:
 			return this.tintAmount__;
 		default:
 		}
@@ -17251,12 +17449,16 @@ bh_base_shaders__$BuiltinShaders_GradeShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.brightness__;
+			return this.loopTime__;
 		case 5:
-			return this.contrast__;
+			return this.loops__;
 		case 6:
-			return this.saturation__;
+			return this.brightness__;
+		case 7:
+			return this.contrast__;
 		case 8:
+			return this.saturation__;
+		case 10:
 			return this.tintAmount__;
 		default:
 		}
@@ -17306,10 +17508,14 @@ bh_base_shaders__$BuiltinShaders_PaletteLockShader.prototype = $extend(bh_base_f
 		case 3:
 			return this.time__;
 		case 4:
-			return this.palette__;
+			return this.loopTime__;
 		case 5:
-			return this.count__;
+			return this.loops__;
 		case 6:
+			return this.palette__;
+		case 7:
+			return this.count__;
+		case 8:
 			return this.dither__;
 		default:
 		}
@@ -17321,9 +17527,13 @@ bh_base_shaders__$BuiltinShaders_PaletteLockShader.prototype = $extend(bh_base_f
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 7:
 			return this.count__;
-		case 6:
+		case 8:
 			return this.dither__;
 		default:
 		}
@@ -17360,6 +17570,10 @@ bh_base_shaders__$BuiltinShaders_PixelateShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
+		case 6:
 			return this.block__;
 		default:
 		}
@@ -17372,6 +17586,10 @@ bh_base_shaders__$BuiltinShaders_PixelateShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
+		case 6:
 			return this.block__;
 		default:
 		}
@@ -17415,8 +17633,12 @@ bh_base_shaders__$BuiltinShaders_DitherShader.prototype = $extend(bh_base_filter
 		case 3:
 			return this.time__;
 		case 4:
-			return this.levels__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.levels__;
+		case 7:
 			return this.cell__;
 		default:
 		}
@@ -17429,8 +17651,12 @@ bh_base_shaders__$BuiltinShaders_DitherShader.prototype = $extend(bh_base_filter
 		case 3:
 			return this.time__;
 		case 4:
-			return this.levels__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.levels__;
+		case 7:
 			return this.cell__;
 		default:
 		}
@@ -17467,6 +17693,10 @@ bh_base_shaders__$BuiltinShaders_AberrationShader.prototype = $extend(bh_base_fi
 		case 3:
 			return this.time__;
 		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
+		case 6:
 			return this.offset__;
 		default:
 		}
@@ -17478,6 +17708,10 @@ bh_base_shaders__$BuiltinShaders_AberrationShader.prototype = $extend(bh_base_fi
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
 		default:
 		}
 		return 0.;
@@ -17527,10 +17761,14 @@ bh_base_shaders__$BuiltinShaders_WaveShader.prototype = $extend(bh_base_filters_
 		case 3:
 			return this.time__;
 		case 4:
-			return this.amplitude__;
+			return this.loopTime__;
 		case 5:
-			return this.frequency__;
+			return this.loops__;
 		case 6:
+			return this.amplitude__;
+		case 7:
+			return this.frequency__;
+		case 8:
 			return this.speed__;
 		default:
 		}
@@ -17543,10 +17781,14 @@ bh_base_shaders__$BuiltinShaders_WaveShader.prototype = $extend(bh_base_filters_
 		case 3:
 			return this.time__;
 		case 4:
-			return this.amplitude__;
+			return this.loopTime__;
 		case 5:
-			return this.frequency__;
+			return this.loops__;
 		case 6:
+			return this.amplitude__;
+		case 7:
+			return this.frequency__;
+		case 8:
 			return this.speed__;
 		default:
 		}
@@ -17604,12 +17846,16 @@ bh_base_shaders__$BuiltinShaders_ShockwaveShader.prototype = $extend(bh_base_fil
 		case 3:
 			return this.time__;
 		case 4:
-			return this.centre__;
+			return this.loopTime__;
 		case 5:
-			return this.radius__;
+			return this.loops__;
 		case 6:
-			return this.thickness__;
+			return this.centre__;
 		case 7:
+			return this.radius__;
+		case 8:
+			return this.thickness__;
+		case 9:
 			return this.strength__;
 		default:
 		}
@@ -17621,11 +17867,15 @@ bh_base_shaders__$BuiltinShaders_ShockwaveShader.prototype = $extend(bh_base_fil
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
-			return this.radius__;
-		case 6:
-			return this.thickness__;
+			return this.loops__;
 		case 7:
+			return this.radius__;
+		case 8:
+			return this.thickness__;
+		case 9:
 			return this.strength__;
 		default:
 		}
@@ -17690,14 +17940,18 @@ bh_base_shaders__$BuiltinShaders_FogShader.prototype = $extend(bh_base_filters_E
 		case 3:
 			return this.time__;
 		case 4:
-			return this.color__;
+			return this.loopTime__;
 		case 5:
-			return this.amount__;
+			return this.loops__;
 		case 6:
-			return this.scale__;
+			return this.color__;
 		case 7:
-			return this.speed__;
+			return this.amount__;
 		case 8:
+			return this.scale__;
+		case 9:
+			return this.speed__;
+		case 10:
 			return this.ground__;
 		default:
 		}
@@ -17709,13 +17963,17 @@ bh_base_shaders__$BuiltinShaders_FogShader.prototype = $extend(bh_base_filters_E
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
-			return this.amount__;
-		case 6:
-			return this.scale__;
+			return this.loops__;
 		case 7:
-			return this.speed__;
+			return this.amount__;
 		case 8:
+			return this.scale__;
+		case 9:
+			return this.speed__;
+		case 10:
 			return this.ground__;
 		default:
 		}
@@ -17759,8 +18017,12 @@ bh_base_shaders__$BuiltinShaders_FlashShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.color__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.color__;
+		case 7:
 			return this.amount__;
 		default:
 		}
@@ -17772,7 +18034,11 @@ bh_base_shaders__$BuiltinShaders_FlashShader.prototype = $extend(bh_base_filters
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 7:
 			return this.amount__;
 		default:
 		}
@@ -17837,14 +18103,18 @@ bh_base_shaders__$BuiltinShaders_DissolveShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
-			return this.amount__;
+			return this.loopTime__;
 		case 5:
-			return this.edge__;
+			return this.loops__;
 		case 6:
-			return this.edgeColor__;
+			return this.amount__;
 		case 7:
-			return this.grain__;
+			return this.edge__;
 		case 8:
+			return this.edgeColor__;
+		case 9:
+			return this.grain__;
+		case 10:
 			return this.seed__;
 		default:
 		}
@@ -17857,12 +18127,16 @@ bh_base_shaders__$BuiltinShaders_DissolveShader.prototype = $extend(bh_base_filt
 		case 3:
 			return this.time__;
 		case 4:
-			return this.amount__;
+			return this.loopTime__;
 		case 5:
-			return this.edge__;
+			return this.loops__;
+		case 6:
+			return this.amount__;
 		case 7:
+			return this.edge__;
+		case 9:
 			return this.grain__;
-		case 8:
+		case 10:
 			return this.seed__;
 		default:
 		}
@@ -17920,12 +18194,16 @@ bh_base_shaders__$BuiltinShaders_ShimmerShader.prototype = $extend(bh_base_filte
 		case 3:
 			return this.time__;
 		case 4:
-			return this.color__;
+			return this.loopTime__;
 		case 5:
-			return this.strength__;
+			return this.loops__;
 		case 6:
-			return this.width__;
+			return this.color__;
 		case 7:
+			return this.strength__;
+		case 8:
+			return this.width__;
+		case 9:
 			return this.every__;
 		default:
 		}
@@ -17937,11 +18215,15 @@ bh_base_shaders__$BuiltinShaders_ShimmerShader.prototype = $extend(bh_base_filte
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
-			return this.strength__;
-		case 6:
-			return this.width__;
+			return this.loops__;
 		case 7:
+			return this.strength__;
+		case 8:
+			return this.width__;
+		case 9:
 			return this.every__;
 		default:
 		}
@@ -17992,10 +18274,14 @@ bh_base_shaders__$BuiltinShaders_PulseShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.color__;
+			return this.loopTime__;
 		case 5:
-			return this.amount__;
+			return this.loops__;
 		case 6:
+			return this.color__;
+		case 7:
+			return this.amount__;
+		case 8:
 			return this.speed__;
 		default:
 		}
@@ -18007,9 +18293,13 @@ bh_base_shaders__$BuiltinShaders_PulseShader.prototype = $extend(bh_base_filters
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 7:
 			return this.amount__;
-		case 6:
+		case 8:
 			return this.speed__;
 		default:
 		}
@@ -18053,8 +18343,12 @@ bh_base_shaders__$BuiltinShaders_SilhouetteShader.prototype = $extend(bh_base_fi
 		case 3:
 			return this.time__;
 		case 4:
-			return this.color__;
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 6:
+			return this.color__;
+		case 7:
 			return this.amount__;
 		default:
 		}
@@ -18066,7 +18360,11 @@ bh_base_shaders__$BuiltinShaders_SilhouetteShader.prototype = $extend(bh_base_fi
 			return this.flipY__;
 		case 3:
 			return this.time__;
+		case 4:
+			return this.loopTime__;
 		case 5:
+			return this.loops__;
+		case 7:
 			return this.amount__;
 		default:
 		}
@@ -18124,12 +18422,16 @@ bh_base_shaders__$BuiltinShaders_WaterShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.deep__;
+			return this.loopTime__;
 		case 5:
-			return this.shallow__;
+			return this.loops__;
 		case 6:
-			return this.scale__;
+			return this.deep__;
 		case 7:
+			return this.shallow__;
+		case 8:
+			return this.scale__;
+		case 9:
 			return this.speed__;
 		default:
 		}
@@ -18141,9 +18443,13 @@ bh_base_shaders__$BuiltinShaders_WaterShader.prototype = $extend(bh_base_filters
 			return this.flipY__;
 		case 3:
 			return this.time__;
-		case 6:
+		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
+		case 8:
 			return this.scale__;
-		case 7:
+		case 9:
 			return this.speed__;
 		default:
 		}
@@ -18208,14 +18514,18 @@ bh_base_shaders__$BuiltinShaders_SkyShader.prototype = $extend(bh_base_filters_E
 		case 3:
 			return this.time__;
 		case 4:
-			return this.top__;
+			return this.loopTime__;
 		case 5:
-			return this.bottom__;
+			return this.loops__;
 		case 6:
-			return this.clouds__;
+			return this.top__;
 		case 7:
-			return this.scale__;
+			return this.bottom__;
 		case 8:
+			return this.clouds__;
+		case 9:
+			return this.scale__;
+		case 10:
 			return this.speed__;
 		default:
 		}
@@ -18227,11 +18537,15 @@ bh_base_shaders__$BuiltinShaders_SkyShader.prototype = $extend(bh_base_filters_E
 			return this.flipY__;
 		case 3:
 			return this.time__;
-		case 6:
-			return this.clouds__;
-		case 7:
-			return this.scale__;
+		case 4:
+			return this.loopTime__;
+		case 5:
+			return this.loops__;
 		case 8:
+			return this.clouds__;
+		case 9:
+			return this.scale__;
+		case 10:
 			return this.speed__;
 		default:
 		}
@@ -18289,12 +18603,16 @@ bh_base_shaders__$BuiltinShaders_StarsShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.density__;
+			return this.loopTime__;
 		case 5:
-			return this.twinkle__;
+			return this.loops__;
 		case 6:
-			return this.speed__;
+			return this.density__;
 		case 7:
+			return this.twinkle__;
+		case 8:
+			return this.speed__;
+		case 9:
 			return this.color__;
 		default:
 		}
@@ -18307,10 +18625,14 @@ bh_base_shaders__$BuiltinShaders_StarsShader.prototype = $extend(bh_base_filters
 		case 3:
 			return this.time__;
 		case 4:
-			return this.density__;
+			return this.loopTime__;
 		case 5:
-			return this.twinkle__;
+			return this.loops__;
 		case 6:
+			return this.density__;
+		case 7:
+			return this.twinkle__;
+		case 8:
 			return this.speed__;
 		default:
 		}
@@ -20549,6 +20871,17 @@ bh_multianim__$MacroManimParser_MacroLexer.prototype = {
 						break;
 					}
 				}
+				if(this.pos < this.len && (HxOverrides.cca(this.src,this.pos) == 101 || HxOverrides.cca(this.src,this.pos) == 69)) {
+					var at = this.pos + 1;
+					if(at < this.len && (HxOverrides.cca(this.src,at) == 43 || HxOverrides.cca(this.src,at) == 45)) {
+						++at;
+					}
+					if(at < this.len && HxOverrides.cca(this.src,at) >= 48 && HxOverrides.cca(this.src,at) <= 57) {
+						this.pos = at;
+						while(this.pos < this.len && HxOverrides.cca(this.src,this.pos) >= 48 && HxOverrides.cca(this.src,this.pos) <= 57) this.pos++;
+						isFloat = true;
+					}
+				}
 				var numStr = this.src.substring(numStart,this.pos);
 				return new bh_multianim__$MacroManimParser_Token(isFloat ? bh_multianim__$MacroManimParser_MacroTokenType.TFloat(numStr) : bh_multianim__$MacroManimParser_MacroTokenType.TInteger(numStr),startLine,startCol);
 			}
@@ -21877,6 +22210,17 @@ bh_multianim_MacroManimParser.prototype = {
 				var n = _g1.s;
 				this.advance();
 				return bh_multianim_ReferenceableValue.RVInteger(-this.stringToInt(n));
+			case 30:
+				var _g2 = _g1.s;
+				var n = _g2;
+				if(this.floatBesideOperator(false)) {
+					this.advance();
+					return bh_multianim_ReferenceableValue.RVFloat(-this.stringToFloat(n));
+				} else {
+					var n = _g2;
+					return this.error("expected a whole number, got -" + n + ": a float can be part of an expression here ($" + "r * -" + n + "), not alone");
+				}
+				break;
 			case 31:
 				var n = _g1.s;
 				this.advance();
@@ -21893,6 +22237,17 @@ bh_multianim_MacroManimParser.prototype = {
 			var n = _g.s;
 			this.advance();
 			return bh_multianim_ReferenceableValue.RVInteger(this.stringToInt(n));
+		case 30:
+			var _g1 = _g.s;
+			var n = _g1;
+			if(this.floatBesideOperator(true)) {
+				this.advance();
+				return bh_multianim_ReferenceableValue.RVFloat(this.stringToFloat(n));
+			} else {
+				var n = _g1;
+				return this.error("expected a whole number, got " + n + ": a float can be part of an expression here ($" + "r * " + n + "), not alone");
+			}
+			break;
 		case 31:
 			var n = _g.s;
 			this.advance();
@@ -21912,6 +22267,108 @@ bh_multianim_MacroManimParser.prototype = {
 			return this.parseRefExpr(s,bh_multianim__$MacroManimParser_ExprType.EInt);
 		default:
 			return this.error("expected integer or expression, got " + Std.string(this.tokens[this.tpos].type));
+		}
+	}
+	,floatBesideOperator: function(afterOperator) {
+		var tmp;
+		if(afterOperator && this.tpos > 0) {
+			var token = this.tokens[this.tpos - 1].type;
+			var tmp1;
+			switch(token._hx_index) {
+			case 16:
+				tmp1 = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMul};
+				break;
+			case 17:
+				tmp1 = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMod};
+				break;
+			case 18:
+				tmp1 = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpAdd};
+				break;
+			case 19:
+				tmp1 = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpDiv};
+				break;
+			case 20:
+				tmp1 = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpSub};
+				break;
+			case 22:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLess};
+				break;
+			case 23:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreater};
+				break;
+			case 24:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLessEq};
+				break;
+			case 25:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreaterEq};
+				break;
+			case 26:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpNotEq};
+				break;
+			case 27:
+				tmp1 = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpEq};
+				break;
+			case 32:
+				var s = token.s;
+				tmp1 = bh_multianim_MacroManimParser.isKeyword(s,"div") ? { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpIntegerDiv} : null;
+				break;
+			default:
+				tmp1 = null;
+			}
+			tmp = tmp1 != null;
+		} else {
+			tmp = false;
+		}
+		if(tmp) {
+			return true;
+		}
+		if(this.tpos + 1 < this.tokens.length) {
+			var token = this.tokens[this.tpos + 1].type;
+			var tmp;
+			switch(token._hx_index) {
+			case 16:
+				tmp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMul};
+				break;
+			case 17:
+				tmp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpMod};
+				break;
+			case 18:
+				tmp = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpAdd};
+				break;
+			case 19:
+				tmp = { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpDiv};
+				break;
+			case 20:
+				tmp = { lbp : 20, rbp : 21, op : bh_multianim_RvOp.OpSub};
+				break;
+			case 22:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLess};
+				break;
+			case 23:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreater};
+				break;
+			case 24:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpLessEq};
+				break;
+			case 25:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpGreaterEq};
+				break;
+			case 26:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpNotEq};
+				break;
+			case 27:
+				tmp = { lbp : 10, rbp : 11, op : bh_multianim_RvOp.OpEq};
+				break;
+			case 32:
+				var s = token.s;
+				tmp = bh_multianim_MacroManimParser.isKeyword(s,"div") ? { lbp : 30, rbp : 31, op : bh_multianim_RvOp.OpIntegerDiv} : null;
+				break;
+			default:
+				tmp = null;
+			}
+			return tmp != null;
+		} else {
+			return false;
 		}
 	}
 	,parseAtomFloat: function() {
@@ -24360,21 +24817,26 @@ bh_multianim_MacroManimParser.prototype = {
 					return { value : bh_multianim_ReferenceableValue.RVFloat(0.0), type : bh_multianim_CustomFilterArgType.CFBool};
 				} else {
 					var s = _g1;
-					if(bh_multianim_MacroManimParser.isKeyword(s,"external")) {
-						this.advance();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
-						var alias = this.externalAlias();
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
-						this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
-						var name = this.expectIdentifierOrString();
-						return { value : bh_multianim_ReferenceableValue.RVString("" + alias + "." + name), type : bh_multianim_CustomFilterArgType.CFWord};
+					if(bh_multianim_MacroManimParser.isKeyword(s,"palette") && this.tpos + 1 < this.tokens.length && this.tokens[this.tpos + 1].type._hx_index == 1) {
+						return { value : this.parseColorOrReference(), type : bh_multianim_CustomFilterArgType.CFColor};
 					} else {
 						var s = _g1;
-						if(!bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
+						if(bh_multianim_MacroManimParser.isKeyword(s,"external")) {
 							this.advance();
-							return { value : bh_multianim_ReferenceableValue.RVString(s), type : bh_multianim_CustomFilterArgType.CFWord};
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TOpen);
+							var alias = this.externalAlias();
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TClosed);
+							this.expect(bh_multianim__$MacroManimParser_MacroTokenType.TComma);
+							var name = this.expectIdentifierOrString();
+							return { value : bh_multianim_ReferenceableValue.RVString("" + alias + "." + name), type : bh_multianim_CustomFilterArgType.CFWord};
 						} else {
-							return { value : this.parseFloatOrReference(), type : bh_multianim_CustomFilterArgType.CFFloat};
+							var s = _g1;
+							if(!bh_multianim_MacroManimParser.isKeyword(s,"callback")) {
+								this.advance();
+								return { value : bh_multianim_ReferenceableValue.RVString(s), type : bh_multianim_CustomFilterArgType.CFWord};
+							} else {
+								return { value : this.parseFloatOrReference(), type : bh_multianim_CustomFilterArgType.CFFloat};
+							}
 						}
 					}
 				}
@@ -39578,82 +40040,91 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			}
 			break;
 		case 16:
-			var op = v.op;
-			var e1 = v.e1;
-			var e2 = v.e2;
-			switch(op._hx_index) {
-			case 0:
-				return this.resolveAsInteger(e1) + this.resolveAsInteger(e2);
-			case 1:
-				return this.resolveAsInteger(e1) * this.resolveAsInteger(e2);
-			case 2:
-				return this.resolveAsInteger(e1) - this.resolveAsInteger(e2);
-			case 3:
-				var d = this.resolveAsInteger(e2);
-				if(d == 0) {
-					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
+			if(bh_multianim_ReferenceableValueTools.hasFloatLiteral(v)) {
+				return this.resolveAsNumber(v) | 0;
+			} else {
+				var op = v.op;
+				var e1 = v.e1;
+				var e2 = v.e2;
+				switch(op._hx_index) {
+				case 0:
+					return this.resolveAsInteger(e1) + this.resolveAsInteger(e2);
+				case 1:
+					return this.resolveAsInteger(e1) * this.resolveAsInteger(e2);
+				case 2:
+					return this.resolveAsInteger(e1) - this.resolveAsInteger(e2);
+				case 3:
+					var d = this.resolveAsInteger(e2);
+					if(d == 0) {
+						throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
+					}
+					return this.resolveAsInteger(e1) / d | 0;
+				case 4:
+					var d = this.resolveAsInteger(e2);
+					if(d == 0) {
+						throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
+					}
+					return this.resolveAsInteger(e1) / d | 0;
+				case 5:
+					var d = this.resolveAsInteger(e2);
+					if(d == 0) {
+						throw new bh_multianim_BuilderError("Modulo by zero",this.currentNode,null);
+					}
+					return this.resolveAsInteger(e1) % d | 0;
+				case 6:
+					if(this.resolveAsInteger(e1) == this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
+				case 7:
+					if(this.resolveAsInteger(e1) != this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
+				case 8:
+					if(this.resolveAsInteger(e1) < this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
+				case 9:
+					if(this.resolveAsInteger(e1) > this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
+				case 10:
+					if(this.resolveAsInteger(e1) <= this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
+				case 11:
+					if(this.resolveAsInteger(e1) >= this.resolveAsInteger(e2)) {
+						return 1;
+					} else {
+						return 0;
+					}
+					break;
 				}
-				return this.resolveAsInteger(e1) / d | 0;
-			case 4:
-				var d = this.resolveAsInteger(e2);
-				if(d == 0) {
-					throw new bh_multianim_BuilderError("Division by zero",this.currentNode,null);
-				}
-				return this.resolveAsInteger(e1) / d | 0;
-			case 5:
-				var d = this.resolveAsInteger(e2);
-				if(d == 0) {
-					throw new bh_multianim_BuilderError("Modulo by zero",this.currentNode,null);
-				}
-				return this.resolveAsInteger(e1) % d | 0;
-			case 6:
-				if(this.resolveAsInteger(e1) == this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
-			case 7:
-				if(this.resolveAsInteger(e1) != this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
-			case 8:
-				if(this.resolveAsInteger(e1) < this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
-			case 9:
-				if(this.resolveAsInteger(e1) > this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
-			case 10:
-				if(this.resolveAsInteger(e1) <= this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
-			case 11:
-				if(this.resolveAsInteger(e1) >= this.resolveAsInteger(e2)) {
-					return 1;
-				} else {
-					return 0;
-				}
-				break;
 			}
 			break;
 		case 17:
-			var op = v.op;
-			var e = v.e;
-			return -this.resolveAsInteger(e);
+			if(bh_multianim_ReferenceableValueTools.hasFloatLiteral(v)) {
+				return this.resolveAsNumber(v) | 0;
+			} else {
+				var op = v.op;
+				var e = v.e;
+				return -this.resolveAsInteger(e);
+			}
+			break;
 		}
 	}
 	,resolveAsNumber: function(v) {
@@ -40672,6 +41143,52 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			return _gthis.resourceLoader.loadFont(name);
 		};
 		return t;
+	}
+	,applyTextAlignWidth: function(t,textDef,node,grid) {
+		if(textDef.textAlignWidth == null) {
+			return;
+		}
+		var scaleAdjust = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
+		var _g = textDef.textAlignWidth;
+		switch(_g._hx_index) {
+		case 0:
+			t.set_maxWidth(null);
+			break;
+		case 1:
+			var value = _g.value;
+			t.set_maxWidth(this.resolveAsNumber(value) / scaleAdjust);
+			break;
+		case 2:
+			if(grid != null) {
+				t.set_maxWidth(grid.spacingX / scaleAdjust);
+			}
+			break;
+		}
+	}
+	,collectTextBoxRefs: function(textDef,refs) {
+		var _g = textDef.textAlignWidth;
+		if(_g._hx_index == 1) {
+			var value = _g.value;
+			bh_multianim_MultiAnimBuilder.collectParamRefs(value,refs);
+		}
+		var _g = textDef.autoFitMode;
+		if(_g != null) {
+			switch(_g._hx_index) {
+			case 1:
+				var w = _g.w;
+				var h = _g.h;
+				bh_multianim_MultiAnimBuilder.collectParamRefs(w,refs);
+				bh_multianim_MultiAnimBuilder.collectParamRefs(h,refs);
+				break;
+			case 3:
+				var w = _g.w;
+				var h = _g.h;
+				bh_multianim_MultiAnimBuilder.collectParamRefs(w,refs);
+				bh_multianim_MultiAnimBuilder.collectParamRefs(h,refs);
+				break;
+			default:
+			}
+		}
 	}
 	,applyAutoFit: function(t,textDef,node) {
 		var autoFitFonts = textDef.autoFitFonts;
@@ -41849,6 +42366,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 			var textRefs = [];
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.text,textRefs);
 			bh_multianim_MultiAnimBuilder.collectParamRefs(textDef.color,textRefs);
+			this.collectTextBoxRefs(textDef,textRefs);
 			if(textRefs.length > 0) {
 				var t;
 				if(builtObject._hx_index == 4) {
@@ -41861,6 +42379,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var textDefCapture = textDef;
 					var nodeCapture = node;
 					ctx.trackExpression(function() {
+						_gthis.applyTextAlignWidth(t,textDefCapture,nodeCapture,bh_multianim_MultiAnimParser.getGridCoordinateSystem(nodeCapture));
 						t.set_text(_gthis.resolveAsString(textDefCapture.text));
 						t.set_textColor(_gthis.resolveAsColorInteger(textDefCapture.color));
 						if(textDefCapture.autoFitFonts != null) {
@@ -41904,6 +42423,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					}
 				}
 			}
+			this.collectTextBoxRefs(textDef,textRefs);
 			if(textRefs.length > 0) {
 				var t1;
 				if(builtObject._hx_index == 4) {
@@ -41916,6 +42436,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 					var textDefCapture1 = textDef;
 					var nodeCapture1 = node;
 					ctx.trackExpression(function() {
+						_gthis.applyTextAlignWidth(t1,textDefCapture1,nodeCapture1,bh_multianim_MultiAnimParser.getGridCoordinateSystem(nodeCapture1));
 						var rawText = _gthis.resolveAsString(textDefCapture1.text);
 						t1.set_text(bh_multianim_TextMarkupConverter.convert(rawText));
 						t1.set_textColor(_gthis.resolveAsColorInteger(textDefCapture1.color));
@@ -44122,24 +44643,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			t.set_textAlign(builtObject1);
-			if(textDef.textAlignWidth != null) {
-				var scaleAdjust = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
-				var _g1 = textDef.textAlignWidth;
-				switch(_g1._hx_index) {
-				case 0:
-					t.set_maxWidth(null);
-					break;
-				case 1:
-					var value = _g1.value;
-					t.set_maxWidth(this.resolveAsNumber(value) / scaleAdjust);
-					break;
-				case 2:
-					if(gridCoordinateSystem != null) {
-						t.set_maxWidth(gridCoordinateSystem.spacingX / scaleAdjust);
-					}
-					break;
-				}
-			}
+			this.applyTextAlignWidth(t,textDef,node,gridCoordinateSystem);
 			t.set_letterSpacing(textDef.letterSpacing);
 			t.set_lineSpacing(textDef.lineSpacing);
 			t.set_lineBreak(textDef.lineBreak);
@@ -44219,24 +44723,7 @@ bh_multianim_MultiAnimBuilder.prototype = {
 				}
 			}
 			ht.set_textAlign(builtObject1);
-			if(textDef.textAlignWidth != null) {
-				var scaleAdjust = node.scale != null ? this.resolveAsNumber(node.scale) : 1.0;
-				var _g1 = textDef.textAlignWidth;
-				switch(_g1._hx_index) {
-				case 0:
-					ht.set_maxWidth(null);
-					break;
-				case 1:
-					var value = _g1.value;
-					ht.set_maxWidth(this.resolveAsNumber(value) / scaleAdjust);
-					break;
-				case 2:
-					if(gridCoordinateSystem != null) {
-						ht.set_maxWidth(gridCoordinateSystem.spacingX / scaleAdjust);
-					}
-					break;
-				}
-			}
+			this.applyTextAlignWidth(ht,textDef,node,gridCoordinateSystem);
 			ht.set_letterSpacing(textDef.letterSpacing);
 			ht.set_lineSpacing(textDef.lineSpacing);
 			ht.set_lineBreak(textDef.lineBreak);
@@ -50700,6 +51187,52 @@ var bh_multianim_ReferenceableValue = $hxEnums["bh.multianim.ReferenceableValue"
 };
 bh_multianim_ReferenceableValue.__constructs__ = [bh_multianim_ReferenceableValue.RVElementOfArray,bh_multianim_ReferenceableValue.RVString,bh_multianim_ReferenceableValue.RVInteger,bh_multianim_ReferenceableValue.RVArray,bh_multianim_ReferenceableValue.RVArrayReference,bh_multianim_ReferenceableValue.RVFloat,bh_multianim_ReferenceableValue.RVReference,bh_multianim_ReferenceableValue.RVPropertyAccess,bh_multianim_ReferenceableValue.RVMethodCall,bh_multianim_ReferenceableValue.RVChainedMethodCall,bh_multianim_ReferenceableValue.RVParenthesis,bh_multianim_ReferenceableValue.RVCallbacksWithIndex,bh_multianim_ReferenceableValue.RVCallbacks,bh_multianim_ReferenceableValue.RVColorXY,bh_multianim_ReferenceableValue.RVColor,bh_multianim_ReferenceableValue.RVTernary,bh_multianim_ReferenceableValue.EBinop,bh_multianim_ReferenceableValue.EUnaryOp];
 bh_multianim_ReferenceableValue.__empty_constructs__ = [];
+var bh_multianim_ReferenceableValueTools = function() { };
+$hxClasses["bh.multianim.ReferenceableValueTools"] = bh_multianim_ReferenceableValueTools;
+bh_multianim_ReferenceableValueTools.__name__ = "bh.multianim.ReferenceableValueTools";
+bh_multianim_ReferenceableValueTools.hasFloatLiteral = function(v) {
+	if(v == null) {
+		return false;
+	}
+	if(v == null) {
+		return false;
+	} else {
+		switch(v._hx_index) {
+		case 5:
+			var _g = v.f;
+			return true;
+		case 10:
+			var e = v.e;
+			return bh_multianim_ReferenceableValueTools.hasFloatLiteral(e);
+		case 15:
+			var _g = v.condition;
+			var ifTrue = v.ifTrue;
+			var ifFalse = v.ifFalse;
+			if(!bh_multianim_ReferenceableValueTools.hasFloatLiteral(ifTrue)) {
+				return bh_multianim_ReferenceableValueTools.hasFloatLiteral(ifFalse);
+			} else {
+				return true;
+			}
+			break;
+		case 16:
+			var _g = v.op;
+			var e1 = v.e1;
+			var e2 = v.e2;
+			if(!bh_multianim_ReferenceableValueTools.hasFloatLiteral(e1)) {
+				return bh_multianim_ReferenceableValueTools.hasFloatLiteral(e2);
+			} else {
+				return true;
+			}
+			break;
+		case 17:
+			var _g = v.op;
+			var e = v.e;
+			return bh_multianim_ReferenceableValueTools.hasFloatLiteral(e);
+		default:
+			return false;
+		}
+	}
+};
 var bh_multianim_TextAlignWidth = $hxEnums["bh.multianim.TextAlignWidth"] = { __ename__:true,__constructs__:null
 	,TAWAuto: {_hx_name:"TAWAuto",_hx_index:0,__enum__:"bh.multianim.TextAlignWidth",toString:$estr}
 	,TAWValue: ($_=function(value) { return {_hx_index:1,value:value,__enum__:"bh.multianim.TextAlignWidth",toString:$estr}; },$_._hx_name="TAWValue",$_.__params__ = ["value"],$_)
@@ -70183,6 +70716,8 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 		var oldBuilders = this.builders.copy();
 		this.builders.h = { __keys__ : { }};
+		this.loader.clearCache();
+		this.importsTaken.length = 0;
 		try {
 			var map = oldBuilders;
 			var _g_map = map;
@@ -70218,8 +70753,6 @@ bh_ui_screens_ScreenManager.prototype = {
 			return { success : false, error : e.toString(), file : null, line : null, col : null};
 		}
 		var reloadedScreenNames = [];
-		this.loader.clearCache();
-		this.importsTaken.length = 0;
 		var h = this.configuredScreens.h;
 		var _g_h = h;
 		var _g_keys = Object.keys(h);
@@ -70315,6 +70848,7 @@ bh_ui_screens_ScreenManager.prototype = {
 		}
 	}
 	,modalDialog: function(dialog,caller,dialogName,data) {
+		this.finalizeTransition();
 		bh_ui_screens_ScreenManager.takeExitResponse(dialog);
 		dialog.load();
 		this.updateScreenMode(bh_ui_screens__$ScreenManager_ScreenManagerMode.Dialog(dialog,caller,this.mode,dialogName),data);
@@ -135464,7 +135998,7 @@ hxsl_GlslOut.prototype = {
 			if(this.isVertex) {
 				this.decl("precision highp float;");
 			} else {
-				this.decl("precision mediump float;");
+				this.decl("// fragment precision: highp where the GPU has it (hx-multianim)\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif");
 			}
 		}
 		this.initVars(s);
@@ -158177,11 +158711,14 @@ bh_base_TweenPropertyEntry._pool = [];
 bh_base_Tween._pool = [];
 h3d_shader_ScreenShader.SRC = "HXSMF2gzZC5zaGFkZXIuU2NyZWVuU2hhZGVyBwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACghfX2luaXRfXw4GAAALBnZlcnRleA4GAAACAgoAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAALAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAA";
 h3d_shader_ScreenShader._MODULE = "h3d.shader.ScreenShader";
-bh_base_filters_EngineScreenShader.SRC = "HXSMImJoLmJhc2UuZmlsdGVycy5FbmdpbmVTY3JlZW5TaGFkZXIKAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IX19pbml0X18OBgAADgZ2ZXJ0ZXgOBgAAAgINAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAADgAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAA";
+bh_base_filters_EngineScreenShader.SRC = "HXSMImJoLmJhc2UuZmlsdGVycy5FbmdpbmVTY3JlZW5TaGFkZXIMAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPCF9faW5pdF9fDgYAABAGdmVydGV4DgYAAAICDwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABAAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwA";
 bh_base_filters_EngineScreenShader._MODULE = "bh.base.filters.EngineScreenShader";
 h2d_filter_Filter.defaultUseScreenResolution = false;
 bh_base_filters_EngineShaderFilter.made = 0;
 bh_base_filters_EngineShaderFilter.off = false;
+bh_base_filters_EngineShaderFilter.wholeLimit = 4096;
+bh_base_filters__$EngineShaderFilter_PlaceShader.SRC = "HXSML2JoLmJhc2UuZmlsdGVycy5fRW5naW5lU2hhZGVyRmlsdGVyLlBsYWNlU2hhZGVyCwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBXNjYWxlBQoCAAAMBm9mZnNldAUKAgAADQhfX2luaXRfXw4GAAAOBnZlcnRleA4GAAAPCGZyYWdtZW50DgYAAAMCDQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAAA4AAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAQ8AAAUDCBACdXYFCgQAAAYDBgECCQUKAgsFCgUKAgwFCgUKAAgRBmluc2lkZQMEAAAGAQYBBgEJAxoOAgEDAAAAAAAAAAADCgIQBQoAAAMDCQMaDgIKAhAFCgAAAwEDAAAAAAAA8D8DAwMJAxoOAgEDAAAAAAAAAAADCgIQBQoEAAMDAwkDGg4CCgIQBQoEAAMBAwAAAAAAAPA/AwMDAAYEAggFDAYBCQMiDgICCgoCAhAFCgUMAhEDBQwFDAA";
+bh_base_filters__$EngineShaderFilter_PlaceShader._MODULE = "bh.base.filters.EngineShaderFilter";
 bh_base_filters__$PixelOutline_PixelOutlinePass.__meta__ = { obj : { ignore : ["shader"]}};
 bh_base_filters__$PixelOutline_PixelOutlineShader.SRC = "HXSMMGJoLmJhc2UuZmlsdGVycy5fUGl4ZWxPdXRsaW5lLlBpeGVsT3V0bGluZVNoYWRlcg0BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwlwaXhlbFNpemUFCgIAAAwMb3V0bGluZUNvbG9yBQsCAAANC2lubGluZUNvbG9yBQwCAAAOC2tub2NrT3V0TXVsAwIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAERAAAFAggSCGN1ckNvbG9yBQwEAAAJAyIOAgIKCgICAwUKBQwACwYFCgISBQwMAAMBAwAAAAAAAAAAAwIFAQsGDwYPBg8GBgoJAyIOAgIKCgIJAykOAgYACgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwIGBgoJAyIOAgIKCgIJAykOAgYDCgIDBQoAAAMKAgsFCgAAAwMKAgMFCgQAAwUKBQwMAAMBAwAAAAAAAAAAAwICBgYKCQMiDgICCgoCCQMpDgIKAgMFCgAAAwYACgIDBQoEAAMKAgsFCgQAAwMFCgUMDAADAQMAAAAAAAAAAAMCAgYGCgkDIg4CAgoKAgkDKQ4CCgIDBQoAAAMGAwoCAwUKBAADCgILBQoEAAMDBQoFDAwAAwEDAAAAAAAAAAADAgIGBAIHBQwJAysOAgIMBQsBAwAAAAAAAPA/AwUMBQwGBAIHBQwCEgUMBQwAAAsGBgkDHA4BAg0FDAMBAwAAAAAAAAAAAwIFAQYEAgcFDAINBQwFDAAGBAIHBQwGAQISBQwCDgMFDAUMAAAA";
 bh_base_filters__$PixelOutline_PixelOutlineShader._MODULE = "bh.base.filters.PixelOutline";
@@ -158190,43 +158727,43 @@ bh_base_filters_ReplacePaletteShader._MODULE = "bh.base.filters.ReplacePaletteSh
 bh_base_filters__$StageFade_StageFadeShader.SRC = "HXSMKmJoLmJhc2UuZmlsdGVycy5fU3RhZ2VGYWRlLlN0YWdlRmFkZVNoYWRlcgsBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoEZnJvbQoCAgAACwJ0bwoCAgAADAF0AwIAAA0IX19pbml0X18OBgAADgZ2ZXJ0ZXgOBgAADwhmcmFnbWVudA4GAAADAg0AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAOAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAEPAAAFAQYEAggFDAkDGA4DCQMiDgICCgoCAgkFCgUMCQMiDgICCwoCAgkFCgUMAgwDBQwFDAA";
 bh_base_filters__$StageFade_StageFadeShader._MODULE = "bh.base.filters.StageFade";
 bh_base_shaders_BuiltinShaders.palettes = new haxe_ds_StringMap();
-bh_base_shaders__$BuiltinShaders_CrtShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuQ3J0U2hhZGVyEQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANBWN1cnZlAwIAAA4Jc2NhbmxpbmVzAwIAAA8IbGluZVNpemUDAgAAEAh2aWduZXR0ZQMCAAARBXNoaWZ0AwIAABIHZmxpY2tlcgMCAAATCF9faW5pdF9fDgYAABQGdmVydGV4DgYAABUIZnJhZ21lbnQOBgAAAwITAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAFAAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABFQAABQ8IFgFjBQoEAAAGAwYBAgkFCgEDAAAAAAAAAEADBQoBAwAAAAAAAPA/AwUKAAYEAhYFCgYBAhYFCgQGAAEDAAAAAAAA8D8DBgECDQMJAx4OAgIWBQoCFgUKAwMDAwUKBQoIFwJ1dgUKBAAABgAGAQIWBQoBAwAAAAAAAOA/AwUKAQMAAAAAAADgPwMFCgAIGAZpbnNpZGUDBAAABgEGAQYBCQMaDgIBAwAAAAAAAAAAAwoCFwUKAAADAwkDGg4CCgIXBQoAAAMBAwAAAAAAAPA/AwMDCQMaDgIBAwAAAAAAAAAAAwoCFwUKBAADAwMJAxoOAgoCFwUKBAADAQMAAAAAAADwPwMDAwAIGQJkeAUKBAAACQMpDgIGAgIRAwoCCwUKAAADAwEDAAAAAAAAAAADBQoACBoBZwUMBAAACQMiDgICCgoCAhcFCgUMAAgbAXIFDAQAAAkDIg4CAgoKAgYAAhcFCgIZBQoFCgUMAAgcAWIFDAQAAAkDIg4CAgoKAgYDAhcFCgIZBQoFCgUMAAgdA3JnYgULBAAACQMqDgMKAhsFDAAAAwoCGgUMBAADCgIcBQwIAAMFCwAIHgFhAwQAAAkDFg4CCgIaBQwMAAMJAxYOAgoCGwUMDAADCgIcBQwMAAMDAwAIHwNyb3cDBAAACQMTDgEGAgYBCgIXBQoEAAMKAgsFCgQAAwMCDwMDAwAIIARsaW5lAwQAAAYDAQMAAAAAAADwPwMGAQIOAwQGAwEDAAAAAAAA8D8DCQMPDgEGAwYBAh8DAQMAAAAAAAAAQAMDAQMAAAAAAADwPwMDAwMDAwMACCEEZGFyawMEAAAGAwEDAAAAAAAA8D8DBgECEAMJAxsOAwEDAAAAAAAA4D8DAQMAAAAAAAD4PwMJAxwOAQIWBQoDAwMDAAgiAWYDBAAABgMBAwAAAAAAAPA/AwYBAhIDCQMTDgEGAQkDEQ4BBgECDAMBAwAAAAAAADhAAwMDAQP9N4oH78bjPwMDAwMDAAYEAggFDAkDKw4CBgEGAQYBBgECHQULAiADBQsCIQMFCwIiAwULAhgDBQsJAxgOAwEDAAAAAAAA8D8DAh4DAhgDAwUMBQwA";
+bh_base_shaders__$BuiltinShaders_CrtShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuQ3J0U2hhZGVyEwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwVjdXJ2ZQMCAAAQCXNjYW5saW5lcwMCAAARCGxpbmVTaXplAwIAABIIdmlnbmV0dGUDAgAAEwVzaGlmdAMCAAAUB2ZsaWNrZXIDAgAAFQhfX2luaXRfXw4GAAAWBnZlcnRleA4GAAAXCGZyYWdtZW50DgYAAAMCFQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABYAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARcAAAUPCBgBYwUKBAAABgMGAQIJBQoBAwAAAAAAAABAAwUKAQMAAAAAAADwPwMFCgAGBAIYBQoGAQIYBQoEBgABAwAAAAAAAPA/AwYBAg8DCQMeDgICGAUKAhgFCgMDAwMFCgUKCBkCdXYFCgQAAAYABgECGAUKAQMAAAAAAADgPwMFCgEDAAAAAAAA4D8DBQoACBoGaW5zaWRlAwQAAAYBBgEGAQkDGg4CAQMAAAAAAAAAAAMKAhkFCgAAAwMJAxoOAgoCGQUKAAADAQMAAAAAAADwPwMDAwkDGg4CAQMAAAAAAAAAAAMKAhkFCgQAAwMDCQMaDgIKAhkFCgQAAwEDAAAAAAAA8D8DAwMACBsCZHgFCgQAAAkDKQ4CBgICEwMKAgsFCgAAAwMBAwAAAAAAAAAAAwUKAAgcAWcFDAQAAAkDIg4CAgoKAgIZBQoFDAAIHQFyBQwEAAAJAyIOAgIKCgIGAAIZBQoCGwUKBQoFDAAIHgFiBQwEAAAJAyIOAgIKCgIGAwIZBQoCGwUKBQoFDAAIHwNyZ2IFCwQAAAkDKg4DCgIdBQwAAAMKAhwFDAQAAwoCHgUMCAADBQsACCABYQMEAAAJAxYOAgoCHAUMDAADCQMWDgIKAh0FDAwAAwoCHgUMDAADAwMACCEDcm93AwQAAAkDEw4BBgIGAQoCGQUKBAADCgILBQoEAAMDAhEDAwMACCIEbGluZQMEAAAGAwEDAAAAAAAA8D8DBgECEAMEBgMBAwAAAAAAAPA/AwkDDw4BBgMGAQIhAwEDAAAAAAAAAEADAwEDAAAAAAAA8D8DAwMDAwMDAAgjBGRhcmsDBAAABgMBAwAAAAAAAPA/AwYBAhIDCQMbDgMBAwAAAAAAAOA/AwEDAAAAAAAA+D8DCQMcDgECGAUKAwMDAwAIJAFmAwQAAAYDAQMAAAAAAADwPwMGAQIUAwkDEw4BBgEJAxEOAQYBAgwDAQMAAAAAAAA4QAMDAwED/TeKB+/G4z8DAwMDAwAGBAIIBQwJAysOAgYBBgEGAQYBAh8FCwIiAwULAiMDBQsCJAMFCwIaAwULCQMYDgMBAwAAAAAAAPA/AwIgAwIaAwMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_CrtShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_ScanlinesShader.SRC = "HXSML2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2NhbmxpbmVzU2hhZGVyDQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCHN0cmVuZ3RoAwIAAA4Hc3BhY2luZwMCAAAPCF9faW5pdF9fDgYAABAGdmVydGV4DgYAABEIZnJhZ21lbnQOBgAAAwIPAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEAAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEQAABQQIEgFjBQwEAAAJAyIOAgIKCgICCQUKBQwACBMDcm93AwQAAAkDEw4BBgIGAQoCCQUKBAADCgILBQoEAAMDAg4DAwMACBQEZGFyawMEAAAJAxoOAgYDAQMAAAAAAADwPwMGAgEDAAAAAAAA8D8DAg4DAwMCEwMDAAYEAggFDAkDKw4CBgEKAhIFDJIABQsEBgMBAwAAAAAAAPA/AwYBAg0DAhQDAwMDBQsKAhIFDAwAAwUMBQwA";
+bh_base_shaders__$BuiltinShaders_ScanlinesShader.SRC = "HXSML2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2NhbmxpbmVzU2hhZGVyDwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwhzdHJlbmd0aAMCAAAQB3NwYWNpbmcDAgAAEQhfX2luaXRfXw4GAAASBnZlcnRleA4GAAATCGZyYWdtZW50DgYAAAMCEQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABIAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARMAAAUECBQBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgVA3JvdwMEAAAJAxMOAQYCBgEKAgkFCgQAAwoCCwUKBAADAwIQAwMDAAgWBGRhcmsDBAAACQMaDgIGAwEDAAAAAAAA8D8DBgIBAwAAAAAAAPA/AwIQAwMDAhUDAwAGBAIIBQwJAysOAgYBCgIUBQySAAULBAYDAQMAAAAAAADwPwMGAQIPAwIWAwMDAwULCgIUBQwMAAMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_ScanlinesShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_VignetteShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuVmlnbmV0dGVTaGFkZXIPAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0Ic3RyZW5ndGgDAgAADgZyYWRpdXMDAgAADwhzb2Z0bmVzcwMCAAAQBWNvbG9yBQsCAAARCF9faW5pdF9fDgYAABIGdmVydGV4DgYAABMIZnJhZ21lbnQOBgAAAwIRAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEgAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEwAABQUIFAFjBQwEAAAJAyIOAgIKCgICCQUKBQwACBUBZAMEAAAGAQkDHA4BBgMCCQUKAQMAAAAAAADgPwMFCgMBA1DvmHCeoPY/AwMACBYBawMEAAAJAxcOAwYCBAYDAhUDBAYDAg4DAg8DAwMDAwIPAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DAwAGBAIWAwYBBgECFgMCFgMDBAYDAQMAAAAAAAAIQAMGAQEDAAAAAAAAAEADAhYDAwMDAwMGBAIIBQwJAysOAgkDGA4DCgIUBQySAAULBgECEAULCgIUBQwMAAMFCwYBAg0DAhYDAwULCgIUBQwMAAMFDAUMAA";
+bh_base_shaders__$BuiltinShaders_VignetteShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuVmlnbmV0dGVTaGFkZXIRAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPCHN0cmVuZ3RoAwIAABAGcmFkaXVzAwIAABEIc29mdG5lc3MDAgAAEgVjb2xvcgULAgAAEwhfX2luaXRfXw4GAAAUBnZlcnRleA4GAAAVCGZyYWdtZW50DgYAAAMCEwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABQAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARUAAAUFCBYBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgXAWQDBAAABgEJAxwOAQYDAgkFCgEDAAAAAAAA4D8DBQoDAQNQ75hwnqD2PwMDAAgYAWsDBAAACQMXDgMGAgQGAwIXAwQGAwIQAwIRAwMDAwMCEQMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwMABgQCGAMGAQYBAhgDAhgDAwQGAwEDAAAAAAAACEADBgEBAwAAAAAAAABAAwIYAwMDAwMDBgQCCAUMCQMrDgIJAxgOAwoCFgUMkgAFCwYBAhIFCwoCFgUMDAADBQsGAQIPAwIYAwMFCwoCFgUMDAADBQwFDAA";
 bh_base_shaders__$BuiltinShaders_VignetteShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_GradeShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuR3JhZGVTaGFkZXIQAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0KYnJpZ2h0bmVzcwMCAAAOCGNvbnRyYXN0AwIAAA8Kc2F0dXJhdGlvbgMCAAAQBHRpbnQFCwIAABEKdGludEFtb3VudAMCAAASCF9faW5pdF9fDgYAABMGdmVydGV4DgYAABQIZnJhZ21lbnQOBgAAAwISAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEwAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABFAAABQgIFQFjBQwEAAAJAyIOAgIKCgICCQUKBQwACBYDcmdiBQsEAAAGAgoCFQUMkgAFCwkDFg4CCgIVBQwMAAMBAy1DHOviNho/AwMFCwAGBAIWBQsGAQIWBQsCDQMFCwULBgQCFgULBgAGAQQGAwIWBQsBAwAAAAAAAOA/AwULBQsCDgMFCwEDAAAAAAAA4D8DBQsFCwgXBGx1bWEDBAAACQMeDgICFgULCQMqDgMBA4lBYOXQItM/AwEDYhBYObTI4j8DAQPJdr6fGi+9PwMFCwMABgQCFgULCQMYDgMJAyoOAwIXAwIXAwIXAwULAhYFCwIPAwULBQsGBAIWBQsJAxgOAwIWBQsGAQIWBQsCEAULBQsCEQMFCwULBgQCCAUMCQMrDgIGAQkDFw4DAhYFCwEDAAAAAAAAAAADAQMAAAAAAADwPwMFCwoCFQUMDAADBQsKAhUFDAwAAwUMBQwA";
+bh_base_shaders__$BuiltinShaders_GradeShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuR3JhZGVTaGFkZXISAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPCmJyaWdodG5lc3MDAgAAEAhjb250cmFzdAMCAAARCnNhdHVyYXRpb24DAgAAEgR0aW50BQsCAAATCnRpbnRBbW91bnQDAgAAFAhfX2luaXRfXw4GAAAVBnZlcnRleA4GAAAWCGZyYWdtZW50DgYAAAMCFAAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABUAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARYAAAUICBcBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgYA3JnYgULBAAABgIKAhcFDJIABQsJAxYOAgoCFwUMDAADAQMtQxzr4jYaPwMDBQsABgQCGAULBgECGAULAg8DBQsFCwYEAhgFCwYABgEEBgMCGAULAQMAAAAAAADgPwMFCwULAhADBQsBAwAAAAAAAOA/AwULBQsIGQRsdW1hAwQAAAkDHg4CAhgFCwkDKg4DAQOJQWDl0CLTPwMBA2IQWDm0yOI/AwEDyXa+nxovvT8DBQsDAAYEAhgFCwkDGA4DCQMqDgMCGQMCGQMCGQMFCwIYBQsCEQMFCwULBgQCGAULCQMYDgMCGAULBgECGAULAhIFCwULAhMDBQsFCwYEAggFDAkDKw4CBgEJAxcOAwIYBQsBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQsKAhcFDAwAAwULCgIXBQwMAAMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_GradeShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_PaletteLockShader.SRC = "HXSMMWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUGFsZXR0ZUxvY2tTaGFkZXIPAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0HcGFsZXR0ZQoCAgAADgVjb3VudAMCAAAPBmRpdGhlcgMCAAAQCF9faW5pdF9fDgYAABEGdmVydGV4DgYAABIGYmF5ZXIyDgYAABMIZnJhZ21lbnQOBgAABAIQAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEQAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAADEgEUAXAFCgQAAAMFAggVAXEFCgQAAAkDEQ4BAhQFCgUKAA0JAxMOAQYABgEKAhUFCgAAAwEDAAAAAAAA4D8DAwYBBgEKAhUFCgQAAwoCFQUKBAADAwEDAAAAAAAA6D8DAwMDAAABEwAABQoIFgFjBQwEAAAJAyIOAgIKCgICCQUKBQwACBcDcmdiBQsEAAAGAgoCFgUMkgAFCwkDFg4CCgIWBQwMAAMBAy1DHOviNho/AwMFCwAIGAVwaXhlbAUKBAAABgECCQUKAgsFCgUKAAgZAWIDBAAABgAGAQkCEg4BBgECGAUKAQMAAAAAAADgPwMFCgMBAwAAAAAAANA/AwMJAhIOAQIYBQoDAwAGBAIXBQsGAAIXBQsGAQYBBAYDAhkDAQMAAAAAAADgPwMDAwIPAwMBAwAAAAAAANA/AwMFCwULCBoEYmVzdAULBAAACQMqDgMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAAAAAAMFCwAIGwViZXN0RAMEAAABAwAAAAAAQI9AAwAIHAJmaQMEAAABAwAAAAAAAAAAAwAOHQFpAQQAAAYVAQIAAAAAAQECQAAAAAEPAQAABQcIHgNjb2wFCwQAAAoJAyIOAgINCgIJAykOAgYCBAYAAhwDAQMAAAAAAADgPwMDAwIOAwMBAwAAAAAAAOA/AwUKBQySAAULAAgfAWUFCwQAAAYDAhcFCwIeBQsFCwAIIAFkAwQAAAYACQMeDgICHwULAh8FCwMGAQkDGg4CBgMCDgMBAwAAAAAAAOA/AwMCHAMDAQMAAAAAAECPQAMDAwAIIQZuZWFyZXIDBAAACQMaDgICIAMCGwMDAAYEAhoFCwkDGA4DAhoFCwIeBQsCIQMFCwULBgQCGwMJAxUOAgIgAwIbAwMDBgQCHAMGAAIcAwEDAAAAAAAA8D8DAwMAAAYEAggFDAkDKw4CBgECGgULCgIWBQwMAAMFCwoCFgUMDAADBQwFDAA";
+bh_base_shaders__$BuiltinShaders_PaletteLockShader.SRC = "HXSMMWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUGFsZXR0ZUxvY2tTaGFkZXIRAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPB3BhbGV0dGUKAgIAABAFY291bnQDAgAAEQZkaXRoZXIDAgAAEghfX2luaXRfXw4GAAATBnZlcnRleA4GAAAUBmJheWVyMg4GAAAVCGZyYWdtZW50DgYAAAQCEgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABMAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxQBFgFwBQoEAAADBQIIFwFxBQoEAAAJAxEOAQIWBQoFCgANCQMTDgEGAAYBCgIXBQoAAAMBAwAAAAAAAOA/AwMGAQYBCgIXBQoEAAMKAhcFCgQAAwMBAwAAAAAAAOg/AwMDAwAAARUAAAUKCBgBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgZA3JnYgULBAAABgIKAhgFDJIABQsJAxYOAgoCGAUMDAADAQMtQxzr4jYaPwMDBQsACBoFcGl4ZWwFCgQAAAYBAgkFCgILBQoFCgAIGwFiAwQAAAYABgEJAhQOAQYBAhoFCgEDAAAAAAAA4D8DBQoDAQMAAAAAAADQPwMDCQIUDgECGgUKAwMABgQCGQULBgACGQULBgEGAQQGAwIbAwEDAAAAAAAA4D8DAwMCEQMDAQMAAAAAAADQPwMDBQsFCwgcBGJlc3QFCwQAAAkDKg4DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBQsACB0FYmVzdEQDBAAAAQMAAAAAAECPQAMACB4CZmkDBAAAAQMAAAAAAAAAAAMADh8BaQEEAAAGFQECAAAAAAEBAkAAAAABDwEAAAUHCCADY29sBQsEAAAKCQMiDgICDwoCCQMpDgIGAgQGAAIeAwEDAAAAAAAA4D8DAwMCEAMDAQMAAAAAAADgPwMFCgUMkgAFCwAIIQFlBQsEAAAGAwIZBQsCIAULBQsACCIBZAMEAAAGAAkDHg4CAiEFCwIhBQsDBgEJAxoOAgYDAhADAQMAAAAAAADgPwMDAh4DAwEDAAAAAABAj0ADAwMACCMGbmVhcmVyAwQAAAkDGg4CAiIDAh0DAwAGBAIcBQsJAxgOAwIcBQsCIAULAiMDBQsFCwYEAh0DCQMVDgICIgMCHQMDAwYEAh4DBgACHgMBAwAAAAAAAPA/AwMDAAAGBAIIBQwJAysOAgYBAhwFCwoCGAUMDAADBQsKAhgFDAwAAwUMBQwA";
 bh_base_shaders__$BuiltinShaders_PaletteLockShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_PixelateShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUGl4ZWxhdGVTaGFkZXIMAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0FYmxvY2sDAgAADghfX2luaXRfXw4GAAAPBnZlcnRleA4GAAAQCGZyYWdtZW50DgYAAAMCDgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAAA8AAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARAAAAUCCBEEY2VsbAUKBAAABgIGAQQGAAkDEQ4BBgIGAQIJBQoCCwUKBQoCDQMFCgUKAQMAAAAAAADgPwMFCgUKAg0DBQoCCwUKBQoABgQCCAUMCQMiDgICCgoCAhEFCgUMBQwA";
+bh_base_shaders__$BuiltinShaders_PixelateShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUGl4ZWxhdGVTaGFkZXIOAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPBWJsb2NrAwIAABAIX19pbml0X18OBgAAEQZ2ZXJ0ZXgOBgAAEghmcmFnbWVudA4GAAADAhAAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAARAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAESAAAFAggTBGNlbGwFCgQAAAYCBgEEBgAJAxEOAQYCBgECCQUKAgsFCgUKAg8DBQoFCgEDAAAAAAAA4D8DBQoFCgIPAwUKAgsFCgUKAAYEAggFDAkDIg4CAgoKAgITBQoFDAUMAA";
 bh_base_shaders__$BuiltinShaders_PixelateShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_DitherShader.SRC = "HXSMLGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRGl0aGVyU2hhZGVyDgEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANBmxldmVscwMCAAAOBGNlbGwDAgAADwhfX2luaXRfXw4GAAAQBnZlcnRleA4GAAARBmJheWVyMg4GAAASCGZyYWdtZW50DgYAAAQCDwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABAAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxEBEwFwBQoEAAADBQIIFAFxBQoEAAAJAxEOAQITBQoFCgANCQMTDgEGAAYBCgIUBQoAAAMBAwAAAAAAAOA/AwMGAQYBCgIUBQoEAAMKAhQFCgQAAwMBAwAAAAAAAOg/AwMDAwAAARIAAAUHCBUBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgWA3JnYgULBAAABgIKAhUFDJIABQsJAxYOAgoCFQUMDAADAQMtQxzr4jYaPwMDBQsACBcBcAUKBAAACQMRDgEGAgYBAgkFCgILBQoFCgIOAwUKBQoACBgBYgMEAAAGAAYBCQIRDgEGAQIXBQoBAwAAAAAAAOA/AwUKAwEDAAAAAAAA0D8DAwkCEQ4BAhcFCgMDAAgZBXN0ZXBzAwQAAAYDAg0DAQMAAAAAAADwPwMDAAYEAhYFCwYCCQMRDgEGAAYBAhYFCwIZAwULAhgDBQsFCwIZAwULBQsGBAIIBQwJAysOAgYBCQMXDgMCFgULAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwULCgIVBQwMAAMFCwoCFQUMDAADBQwFDAA";
+bh_base_shaders__$BuiltinShaders_DitherShader.SRC = "HXSMLGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRGl0aGVyU2hhZGVyEAEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwZsZXZlbHMDAgAAEARjZWxsAwIAABEIX19pbml0X18OBgAAEgZ2ZXJ0ZXgOBgAAEwZiYXllcjIOBgAAFAhmcmFnbWVudA4GAAAEAhEAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAASAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMTARUBcAUKBAAAAwUCCBYBcQUKBAAACQMRDgECFQUKBQoADQkDEw4BBgAGAQoCFgUKAAADAQMAAAAAAADgPwMDBgEGAQoCFgUKBAADCgIWBQoEAAMDAQMAAAAAAADoPwMDAwMAAAEUAAAFBwgXAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAIGANyZ2IFCwQAAAYCCgIXBQySAAULCQMWDgIKAhcFDAwAAwEDLUMc6+I2Gj8DAwULAAgZAXAFCgQAAAkDEQ4BBgIGAQIJBQoCCwUKBQoCEAMFCgUKAAgaAWIDBAAABgAGAQkCEw4BBgECGQUKAQMAAAAAAADgPwMFCgMBAwAAAAAAANA/AwMJAhMOAQIZBQoDAwAIGwVzdGVwcwMEAAAGAwIPAwEDAAAAAAAA8D8DAwAGBAIYBQsGAgkDEQ4BBgAGAQIYBQsCGwMFCwIaAwULBQsCGwMFCwULBgQCCAUMCQMrDgIGAQkDFw4DAhgFCwEDAAAAAAAAAAADAQMAAAAAAADwPwMFCwoCFwUMDAADBQsKAhcFDAwAAwUMBQwA";
 bh_base_shaders__$BuiltinShaders_DitherShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_AberrationShader.SRC = "HXSMMGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuQWJlcnJhdGlvblNoYWRlcgwBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQZvZmZzZXQFCgIAAA4IX19pbml0X18OBgAADwZ2ZXJ0ZXgOBgAAEAhmcmFnbWVudA4GAAADAg4AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAPAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAEQAAAFBggRA2ZhcgMEAAAGAQkDHA4BBgMCCQUKAQMAAAAAAADgPwMFCgMBAwAAAAAAAABAAwMACBIBZAUKBAAABgEGAgINBQoCCwUKBQoCEQMFCgAIEwFyBQwEAAAJAyIOAgIKCgIGAAIJBQoCEgUKBQoFDAAIFAFnBQwEAAAJAyIOAgIKCgICCQUKBQwACBUBYgUMBAAACQMiDgICCgoCBgMCCQUKAhIFCgUKBQwABgQCCAUMCQMrDgQKAhMFDAAAAwoCFAUMBAADCgIVBQwIAAMJAxYOAgoCFAUMDAADCQMWDgIKAhMFDAwAAwoCFQUMDAADAwMFDAUMAA";
+bh_base_shaders__$BuiltinShaders_AberrationShader.SRC = "HXSMMGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuQWJlcnJhdGlvblNoYWRlcg4BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQhsb29wVGltZQMCAAAOBWxvb3BzAwIAAA8Gb2Zmc2V0BQoCAAAQCF9faW5pdF9fDgYAABEGdmVydGV4DgYAABIIZnJhZ21lbnQOBgAAAwIQAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEQAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEgAABQYIEwNmYXIDBAAABgEJAxwOAQYDAgkFCgEDAAAAAAAA4D8DBQoDAQMAAAAAAAAAQAMDAAgUAWQFCgQAAAYBBgICDwUKAgsFCgUKAhMDBQoACBUBcgUMBAAACQMiDgICCgoCBgACCQUKAhQFCgUKBQwACBYBZwUMBAAACQMiDgICCgoCAgkFCgUMAAgXAWIFDAQAAAkDIg4CAgoKAgYDAgkFCgIUBQoFCgUMAAYEAggFDAkDKw4ECgIVBQwAAAMKAhYFDAQAAwoCFwUMCAADCQMWDgIKAhYFDAwAAwkDFg4CCgIVBQwMAAMKAhcFDAwAAwMDBQwFDAA";
 bh_base_shaders__$BuiltinShaders_AberrationShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_WaveShader.SRC = "HXSMKmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuV2F2ZVNoYWRlcg4BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQlhbXBsaXR1ZGUDAgAADglmcmVxdWVuY3kDAgAADwVzcGVlZAMCAAAQCF9faW5pdF9fDgYAABEGdmVydGV4DgYAABIIZnJhZ21lbnQOBgAAAwIQAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEQAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEgAABQMIEwVwaGFzZQMEAAAGAQkDEw4BBgAGAQoCCQUKBAADAg4DAwYBAgwDAg8DAwMDAQPx1MhT+yEZQAMDAAgUAmR4AwQAAAYBBgICDQMKAgsFCgAAAwMJAwIOAQITAwMDAAYEAggFDAkDIg4CAgoKAgYAAgkFCgkDKQ4CAhQDAQMAAAAAAAAAAAMFCgUKBQwFDAA";
+bh_base_shaders__$BuiltinShaders_WaveShader.SRC = "HXSMKmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuV2F2ZVNoYWRlchABBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQhsb29wVGltZQMCAAAOBWxvb3BzAwIAAA8JYW1wbGl0dWRlAwIAABAJZnJlcXVlbmN5AwIAABEFc3BlZWQDAgAAEghfX2luaXRfXw4GAAATBnZlcnRleA4GAAAUCGZyYWdtZW50DgYAAAMCEgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABMAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARQAAAUDCBUFcGhhc2UDBAAABgEJAxMOAQYABgEKAgkFCgQAAwIQAwMGAQIMAwIRAwMDAwED8dTIU/shGUADAwAIFgJkeAMEAAAGAQYCAg8DCgILBQoAAAMDCQMCDgECFQMDAwAGBAIIBQwJAyIOAgIKCgIGAAIJBQoJAykOAgIWAwEDAAAAAAAAAAADBQoFCgUMBQwA";
 bh_base_shaders__$BuiltinShaders_WaveShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_ShockwaveShader.SRC = "HXSML2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2hvY2t3YXZlU2hhZGVyDwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANBmNlbnRyZQUKAgAADgZyYWRpdXMDAgAADwl0aGlja25lc3MDAgAAEAhzdHJlbmd0aAMCAAARCF9faW5pdF9fDgYAABIGdmVydGV4DgYAABMIZnJhZ21lbnQOBgAAAwIRAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEgAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEwAABQcIFAZhc3BlY3QDBAAABgIKAgsFCgAAAwoCCwUKBAADAwAIFQFwBQoEAAAGAQQGAwIJBQoCDQUKBQoFCgkDKQ4CAhQDAQMAAAAAAADwPwMFCgUKAAgWAWQDBAAACQMcDgECFQUKAwAIFwRyaW5nAwQAAAYDAQMAAAAAAADwPwMJAxsOAwEDAAAAAAAAAAADAg8DCQMPDgEGAwIWAwIOAwMDAwMACBgDZGlyBQoEAAAGAgIVBQoJAxYOAgIWAwEDLUMc6+I2Gj8DAwUKAAgZBHB1c2gFCgQAAAYCBgEGAQIYBQoCEAMFCgIXAwUKCQMpDgICFAMBAwAAAAAAAPA/AwUKBQoABgQCCAUMCQMiDgICCgoCBgMCCQUKAhkFCgUKBQwFDAA";
+bh_base_shaders__$BuiltinShaders_ShockwaveShader.SRC = "HXSML2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2hvY2t3YXZlU2hhZGVyEQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwZjZW50cmUFCgIAABAGcmFkaXVzAwIAABEJdGhpY2tuZXNzAwIAABIIc3RyZW5ndGgDAgAAEwhfX2luaXRfXw4GAAAUBnZlcnRleA4GAAAVCGZyYWdtZW50DgYAAAMCEwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABQAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARUAAAUHCBYGYXNwZWN0AwQAAAYCCgILBQoAAAMKAgsFCgQAAwMACBcBcAUKBAAABgEEBgMCCQUKAg8FCgUKBQoJAykOAgIWAwEDAAAAAAAA8D8DBQoFCgAIGAFkAwQAAAkDHA4BAhcFCgMACBkEcmluZwMEAAAGAwEDAAAAAAAA8D8DCQMbDgMBAwAAAAAAAAAAAwIRAwkDDw4BBgMCGAMCEAMDAwMDAAgaA2RpcgUKBAAABgICFwUKCQMWDgICGAMBAy1DHOviNho/AwMFCgAIGwRwdXNoBQoEAAAGAgYBBgECGgUKAhIDBQoCGQMFCgkDKQ4CAhYDAQMAAAAAAADwPwMFCgUKAAYEAggFDAkDIg4CAgoKAgYDAgkFCgIbBQoFCgUMBQwA";
 bh_base_shaders__$BuiltinShaders_ShockwaveShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_FogShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRm9nU2hhZGVyEgEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANBWNvbG9yBQsCAAAOBmFtb3VudAMCAAAPBXNjYWxlAwIAABAFc3BlZWQDAgAAEQZncm91bmQDAgAAEghfX2luaXRfXw4GAAATBnZlcnRleA4GAAAUBGhhc2gOBgAAFQVub2lzZQ4GAAAWCGZyYWdtZW50DgYAAAUCEgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABMAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxQBFwFwBQoEAAADBQMIGAJwMwULBAAACQMTDgEGAQkDKg4DCgIXBQoAAAMKAhcFCgQAAwoCFwUKAAADBQsBA6K0N/jCZLo/AwULBQsABgQCGAULBgACGAULCQMeDgICGAULBgAJAyoOAwoCGAULBAADCgIYBQsIAAMKAhgFCwAAAwULAQMK16NwPapAQAMFCwMFCwULDQkDEw4BBgEEBgAKAhgFCwAAAwoCGAULBAADAwMKAhgFCwgAAwMDAAADFQEZAXAFCgQAAAMFBAgaAWkFCgQAAAkDEQ4BAhkFCgUKAAgbAWYFCgQAAAkDEw4BAhkFCgUKAAgcAXUFCgQAAAYBBgECGwUKAhsFCgUKBAYDAQMAAAAAAAAIQAMGAQEDAAAAAAAAAEADAhsFCgUKBQoFCgUKAA0JAxgOAwkDGA4DCQIUDgECGgUKAwkCFA4BBgACGgUKCQMpDgIBAwAAAAAAAPA/AwEDAAAAAAAAAAADBQoFCgMKAhwFCgAAAwMJAxgOAwkCFA4BBgACGgUKCQMpDgIBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQoFCgMJAhQOAQYAAhoFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAPA/AwUKBQoDCgIcBQoAAAMDCgIcBQoEAAMDAAABFgAABQcIHQFjBQwEAAAJAyIOAgIKCgICCQUKBQwACB4BcAUKBAAABgAGAgYBAgkFCgILBQoFCgQGAQIPAwEDAAAAAAAAIEADAwMFCgkDKQ4CBgECDAMCEAMDBgEGAQIMAwIQAwMBAzMzMzMzM9M/AwMFCgUKAAgfAW4DBAAABgAGAAYBCQIVDgECHgUKAwEDAAAAAAAA4D8DAwYBCQIVDgEGAAYBAh4FCgEDPQrXo3A9AEADBQoJAykOAgEDMzMzMzMz+z8DAQNmZmZmZmYiQAMFCgUKAwEDMzMzMzMz0z8DAwMGAQkCFQ4BBgAGAQIeBQoBAwrXo3A9ChBAAwUKCQMpDgIBA5qZmZmZmSBAAwEDZmZmZmZmBkADBQoFCgMBA5qZmZmZmck/AwMDAAggAWsDBAAACQMXDgMGAwYBBgECHwMCDgMDAQOamZmZmZn5PwMDBgEEBgMBAwAAAAAAAPA/AwIOAwMDAQOamZmZmZnJPwMDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMDAAghBG92ZXIFDAQAAAkDKw4CCQMYDgMKAh0FDJIABQsGAQINBQsKAh0FDAwAAwULAiADBQsKAh0FDAwAAwUMAAgiBWRyYXduBQwEAAAJAysOAgYBAg0FCwIgAwULAiADBQwABgQCCAUMCQMYDgMCIQUMAiIFDAIRAwUMBQwA";
+bh_base_shaders__$BuiltinShaders_FogShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRm9nU2hhZGVyFAEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwVjb2xvcgULAgAAEAZhbW91bnQDAgAAEQVzY2FsZQMCAAASBXNwZWVkAwIAABMGZ3JvdW5kAwIAABQIX19pbml0X18OBgAAFQZ2ZXJ0ZXgOBgAAFgRoYXNoDgYAABcFbm9pc2UOBgAAGAhmcmFnbWVudA4GAAAFAhQAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAVAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMWARkBcAUKBAAAAwUDCBoCcDMFCwQAAAkDEw4BBgEJAyoOAwoCGQUKAAADCgIZBQoEAAMKAhkFCgAAAwULAQOitDf4wmS6PwMFCwULAAYEAhoFCwYAAhoFCwkDHg4CAhoFCwYACQMqDgMKAhoFCwQAAwoCGgULCAADCgIaBQsAAAMFCwEDCtejcD2qQEADBQsDBQsFCw0JAxMOAQYBBAYACgIaBQsAAAMKAhoFCwQAAwMDCgIaBQsIAAMDAwAAAxcBGwFwBQoEAAADBQQIHAFpBQoEAAAJAxEOAQIbBQoFCgAIHQFmBQoEAAAJAxMOAQIbBQoFCgAIHgF1BQoEAAAGAQYBAh0FCgIdBQoFCgQGAwEDAAAAAAAACEADBgEBAwAAAAAAAABAAwIdBQoFCgUKBQoFCgANCQMYDgMJAxgOAwkCFg4BAhwFCgMJAhYOAQYAAhwFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAAAAAwUKBQoDCgIeBQoAAAMDCQMYDgMJAhYOAQYAAhwFCgkDKQ4CAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUKBQoDCQIWDgEGAAIcBQoJAykOAgEDAAAAAAAA8D8DAQMAAAAAAADwPwMFCgUKAwoCHgUKAAADAwoCHgUKBAADAwAAARgAAAUHCB8BYwUMBAAACQMiDgICCgoCAgkFCgUMAAggAXAFCgQAAAYABgIGAQIJBQoCCwUKBQoEBgECEQMBAwAAAAAAACBAAwMDBQoJAykOAgYBAgwDAhIDAwYBBgECDAMCEgMDAQMzMzMzMzPTPwMDBQoFCgAIIQFuAwQAAAYABgAGAQkCFw4BAiAFCgMBAwAAAAAAAOA/AwMGAQkCFw4BBgAGAQIgBQoBAz0K16NwPQBAAwUKCQMpDgIBAzMzMzMzM/s/AwEDZmZmZmZmIkADBQoFCgMBAzMzMzMzM9M/AwMDBgEJAhcOAQYABgECIAUKAQMK16NwPQoQQAMFCgkDKQ4CAQOamZmZmZkgQAMBA2ZmZmZmZgZAAwUKBQoDAQOamZmZmZnJPwMDAwAIIgFrAwQAAAkDFw4DBgMGAQYBAiEDAhADAwEDmpmZmZmZ+T8DAwYBBAYDAQMAAAAAAADwPwMCEAMDAwEDmpmZmZmZyT8DAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DAwAIIwRvdmVyBQwEAAAJAysOAgkDGA4DCgIfBQySAAULBgECDwULCgIfBQwMAAMFCwIiAwULCgIfBQwMAAMFDAAIJAVkcmF3bgUMBAAACQMrDgIGAQIPBQsCIgMFCwIiAwUMAAYEAggFDAkDGA4DAiMFDAIkBQwCEwMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_FogShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_FlashShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRmxhc2hTaGFkZXINAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0FY29sb3IFCwIAAA4GYW1vdW50AwIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAERAAAFAggSAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAGBAIIBQwJAysOAgkDGA4DCgISBQySAAULBgECDQULCgISBQwMAAMFCwIOAwULCgISBQwMAAMFDAUMAA";
+bh_base_shaders__$BuiltinShaders_FlashShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRmxhc2hTaGFkZXIPAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPBWNvbG9yBQsCAAAQBmFtb3VudAMCAAARCF9faW5pdF9fDgYAABIGdmVydGV4DgYAABMIZnJhZ21lbnQOBgAAAwIRAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEgAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAABEwAABQIIFAFjBQwEAAAJAyIOAgIKCgICCQUKBQwABgQCCAUMCQMrDgIJAxgOAwoCFAUMkgAFCwYBAg8FCwoCFAUMDAADBQsCEAMFCwoCFAUMDAADBQwFDAA";
 bh_base_shaders__$BuiltinShaders_FlashShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_DissolveShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRGlzc29sdmVTaGFkZXIRAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0GYW1vdW50AwIAAA4EZWRnZQMCAAAPCWVkZ2VDb2xvcgULAgAAEAVncmFpbgMCAAARBHNlZWQDAgAAEghfX2luaXRfXw4GAAATBnZlcnRleA4GAAAUBGhhc2gOBgAAFQhmcmFnbWVudA4GAAAEAhIAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAATAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMUARYBcAUKBAAAAwUDCBcCcDMFCwQAAAkDEw4BBgEJAyoOAwoCFgUKAAADCgIWBQoEAAMKAhYFCgAAAwULAQOitDf4wmS6PwMFCwULAAYEAhcFCwYAAhcFCwkDHg4CAhcFCwYACQMqDgMKAhcFCwQAAwoCFwULCAADCgIXBQsAAAMFCwEDCtejcD2qQEADBQsDBQsFCw0JAxMOAQYBBAYACgIXBQsAAAMKAhcFCwQAAwMDCgIXBQsIAAMDAwAAARUAAAUHCBgBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgZAW4DBAAACQIUDgEGAAkDEQ4BBgIGAQIJBQoCCwUKBQoCEAMFCgUKCQMpDgIGAQIRAwEDhetRuB6FHEADAwYBAhEDAQOuR+F6FK4NQAMDBQoFCgMACBoEa2VwdAMEAAAGAQkDGg4CAg0DAhkDAwkDGg4CAQMtQxzr4jYaPwMGAwEDAAAAAAAA8D8DAg0DAwMDAAgbAWUDBAAABgECDgMJAxoOAgEDLUMc6+I2Gj8DAg0DAwMACBwHYnVybmluZwMEAAAGAQIaAwQGAwEDAAAAAAAA8D8DCQMaDgIGAAINAwIbAwMCGQMDAwMDAAgdA3JnYgULBAAACQMYDgMKAhgFDJIABQsGAQIPBQsKAhgFDAwAAwULAhwDBQsABgQCCAUMBgEJAysOAgIdBQsKAhgFDAwAAwUMAhoDBQwFDAA";
+bh_base_shaders__$BuiltinShaders_DissolveShader.SRC = "HXSMLmJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuRGlzc29sdmVTaGFkZXITAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPBmFtb3VudAMCAAAQBGVkZ2UDAgAAEQllZGdlQ29sb3IFCwIAABIFZ3JhaW4DAgAAEwRzZWVkAwIAABQIX19pbml0X18OBgAAFQZ2ZXJ0ZXgOBgAAFgRoYXNoDgYAABcIZnJhZ21lbnQOBgAABAIUAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAFQAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAADFgEYAXAFCgQAAAMFAwgZAnAzBQsEAAAJAxMOAQYBCQMqDgMKAhgFCgAAAwoCGAUKBAADCgIYBQoAAAMFCwEDorQ3+MJkuj8DBQsFCwAGBAIZBQsGAAIZBQsJAx4OAgIZBQsGAAkDKg4DCgIZBQsEAAMKAhkFCwgAAwoCGQULAAADBQsBAwrXo3A9qkBAAwULAwULBQsNCQMTDgEGAQQGAAoCGQULAAADCgIZBQsEAAMDAwoCGQULCAADAwMAAAEXAAAFBwgaAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAIGwFuAwQAAAkCFg4BBgAJAxEOAQYCBgECCQUKAgsFCgUKAhIDBQoFCgkDKQ4CBgECEwMBA4XrUbgehRxAAwMGAQITAwEDrkfhehSuDUADAwUKBQoDAAgcBGtlcHQDBAAABgEJAxoOAgIPAwIbAwMJAxoOAgEDLUMc6+I2Gj8DBgMBAwAAAAAAAPA/AwIPAwMDAwAIHQFlAwQAAAYBAhADCQMaDgIBAy1DHOviNho/AwIPAwMDAAgeB2J1cm5pbmcDBAAABgECHAMEBgMBAwAAAAAAAPA/AwkDGg4CBgACDwMCHQMDAhsDAwMDAwAIHwNyZ2IFCwQAAAkDGA4DCgIaBQySAAULBgECEQULCgIaBQwMAAMFCwIeAwULAAYEAggFDAYBCQMrDgICHwULCgIaBQwMAAMFDAIcAwUMBQwA";
 bh_base_shaders__$BuiltinShaders_DissolveShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_ShimmerShader.SRC = "HXSMLWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2hpbW1lclNoYWRlcg8BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQVjb2xvcgULAgAADghzdHJlbmd0aAMCAAAPBXdpZHRoAwIAABAFZXZlcnkDAgAAEQhfX2luaXRfXw4GAAASBnZlcnRleA4GAAATCGZyYWdtZW50DgYAAAMCEQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABIAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARMAAAUHCBQBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgVBXN3ZWVwAwQAAAkDFQ4CAQMzMzMzMzPjPwMCEAMDAAgWAXQDBAAACQMXDgMGAgYBCQMTDgEGAgIMAwIQAwMDAhADAwIVAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DAwAIFwZjZW50cmUDBAAABgMGAQIWAwQGAAEDAAAAAAAA8D8DBgEBAwAAAAAAAABAAwIPAwMDAwMCDwMDAAgYAWQDBAAACQMPDgEGAwYBBAYACgIJBQoAAAMKAgkFCgQAAwMDAQMAAAAAAADgPwMDAhcDAwMACBkBawMEAAAGAQQGAwEDAAAAAAAA8D8DCQMbDgMBAwAAAAAAAAAAAwIPAwIYAwMDAwIOAwMABgQCCAUMCQMrDgIJAxgOAwoCFAUMkgAFCwYBAg0FCwoCFAUMDAADBQsCGQMFCwoCFAUMDAADBQwFDAA";
+bh_base_shaders__$BuiltinShaders_ShimmerShader.SRC = "HXSMLWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2hpbW1lclNoYWRlchEBBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQhsb29wVGltZQMCAAAOBWxvb3BzAwIAAA8FY29sb3IFCwIAABAIc3RyZW5ndGgDAgAAEQV3aWR0aAMCAAASBWV2ZXJ5AwIAABMIX19pbml0X18OBgAAFAZ2ZXJ0ZXgOBgAAFQhmcmFnbWVudA4GAAADAhMAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAUAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAEVAAAFBwgWAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAIFwVzd2VlcAMEAAAJAxUOAgEDMzMzMzMz4z8DAhIDAwAIGAF0AwQAAAkDFw4DBgIGAQkDEw4BBgICDAMCEgMDAwISAwMCFwMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwMACBkGY2VudHJlAwQAAAYDBgECGAMEBgABAwAAAAAAAPA/AwYBAQMAAAAAAAAAQAMCEQMDAwMDAhEDAwAIGgFkAwQAAAkDDw4BBgMGAQQGAAoCCQUKAAADCgIJBQoEAAMDAwEDAAAAAAAA4D8DAwIZAwMDAAgbAWsDBAAABgEEBgMBAwAAAAAAAPA/AwkDGw4DAQMAAAAAAAAAAAMCEQMCGgMDAwMCEAMDAAYEAggFDAkDKw4CCQMYDgMKAhYFDJIABQsGAQIPBQsKAhYFDAwAAwULAhsDBQsKAhYFDAwAAwUMBQwA";
 bh_base_shaders__$BuiltinShaders_ShimmerShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_PulseShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUHVsc2VTaGFkZXIOAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0FY29sb3IFCwIAAA4GYW1vdW50AwIAAA8Fc3BlZWQDAgAAEAhfX2luaXRfXw4GAAARBnZlcnRleA4GAAASCGZyYWdtZW50DgYAAAMCEAAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABEAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAARIAAAUDCBMBYwUMBAAACQMiDgICCgoCAgkFCgUMAAgUAWsDBAAABgECDgMEBgMBAwAAAAAAAOA/AwYBAQMAAAAAAADgPwMJAwMOAQYBCQMTDgEGAQIMAwIPAwMDAQPx1MhT+yEZQAMDAwMDAwMABgQCCAUMCQMrDgIJAxgOAwoCEwUMkgAFCwYBAg0FCwoCEwUMDAADBQsCFAMFCwoCEwUMDAADBQwFDAA";
+bh_base_shaders__$BuiltinShaders_PulseShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuUHVsc2VTaGFkZXIQAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPBWNvbG9yBQsCAAAQBmFtb3VudAMCAAARBXNwZWVkAwIAABIIX19pbml0X18OBgAAEwZ2ZXJ0ZXgOBgAAFAhmcmFnbWVudA4GAAADAhIAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAATAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAEUAAAFAwgVAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAIFgFrAwQAAAYBAhADBAYDAQMAAAAAAADgPwMGAQEDAAAAAAAA4D8DCQMDDgEGAQkDEw4BBgECDAMCEQMDAwED8dTIU/shGUADAwMDAwMDAAYEAggFDAkDKw4CCQMYDgMKAhUFDJIABQsGAQIPBQsKAhUFDAwAAwULAhYDBQsKAhUFDAwAAwUMBQwA";
 bh_base_shaders__$BuiltinShaders_PulseShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_SilhouetteShader.SRC = "HXSMMGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2lsaG91ZXR0ZVNoYWRlcg0BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQVjb2xvcgULAgAADgZhbW91bnQDAgAADwhfX2luaXRfXw4GAAAQBnZlcnRleA4GAAARCGZyYWdtZW50DgYAAAMCDwAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABAAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAREAAAUCCBIBYwUMBAAACQMiDgICCgoCAgkFCgUMAAYEAggFDAkDKw4CCQMYDgMKAhIFDJIABQsGAQINBQsKAhIFDAwAAwULAg4DBQsKAhIFDAwAAwUMBQwA";
+bh_base_shaders__$BuiltinShaders_SilhouetteShader.SRC = "HXSMMGJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2lsaG91ZXR0ZVNoYWRlcg8BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoHdGV4dHVyZQoCAgAACwRzaXplBQoCAAAMBHRpbWUDAgAADQhsb29wVGltZQMCAAAOBWxvb3BzAwIAAA8FY29sb3IFCwIAABAGYW1vdW50AwIAABEIX19pbml0X18OBgAAEgZ2ZXJ0ZXgOBgAAEwhmcmFnbWVudA4GAAADAhEAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAASAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAETAAAFAggUAWMFDAQAAAkDIg4CAgoKAgIJBQoFDAAGBAIIBQwJAysOAgkDGA4DCgIUBQySAAULBgECDwULCgIUBQwMAAMFCwIQAwULCgIUBQwMAAMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_SilhouetteShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_WaterShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuV2F0ZXJTaGFkZXIRAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0EZGVlcAULAgAADgdzaGFsbG93BQsCAAAPBXNjYWxlAwIAABAFc3BlZWQDAgAAEQhfX2luaXRfXw4GAAASBnZlcnRleA4GAAATBGhhc2gOBgAAFAVub2lzZQ4GAAAVCGZyYWdtZW50DgYAAAUCEQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABIAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxMBFgFwBQoEAAADBQMIFwJwMwULBAAACQMTDgEGAQkDKg4DCgIWBQoAAAMKAhYFCgQAAwoCFgUKAAADBQsBA6K0N/jCZLo/AwULBQsABgQCFwULBgACFwULCQMeDgICFwULBgAJAyoOAwoCFwULBAADCgIXBQsIAAMKAhcFCwAAAwULAQMK16NwPapAQAMFCwMFCwULDQkDEw4BBgEEBgAKAhcFCwAAAwoCFwULBAADAwMKAhcFCwgAAwMDAAADFAEYAXAFCgQAAAMFBAgZAWkFCgQAAAkDEQ4BAhgFCgUKAAgaAWYFCgQAAAkDEw4BAhgFCgUKAAgbAXUFCgQAAAYBBgECGgUKAhoFCgUKBAYDAQMAAAAAAAAIQAMGAQEDAAAAAAAAAEADAhoFCgUKBQoFCgUKAA0JAxgOAwkDGA4DCQITDgECGQUKAwkCEw4BBgACGQUKCQMpDgIBAwAAAAAAAPA/AwEDAAAAAAAAAAADBQoFCgMKAhsFCgAAAwMJAxgOAwkCEw4BBgACGQUKCQMpDgIBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQoFCgMJAhMOAQYAAhkFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAPA/AwUKBQoDCgIbBQoAAAMDCgIbBQoEAAMDAAABFQAABQYIHAFwBQoEAAAGAgYBAgkFCgILBQoFCgIPAwUKAAgdAXQDBAAABgECDAMCEAMDAAgeAW4DBAAABgAGAQkCFA4BBgACHAUKCQMpDgIGAQIdAwEDMzMzMzMz0z8DAwYBAh0DAQOamZmZmZnJPwMDBQoFCgMBAzMzMzMzM+M/AwMGAQkCFA4BBgAGAQIcBQoBA83MzMzMzABAAwUKCQMpDgIGAQcDAh0DAwEDmpmZmZmZyT8DAwYBAh0DAQNmZmZmZmbWPwMDBQoFCgMBA5qZmZmZmdk/AwMDAAgfBWNyZXN0AwQAAAkDGw4DAQPXo3A9CtfjPwMBA/YoXI/C9eg/AwIeAwMACCADcmdiBQsEAAAGAAkDGA4DAg0FCwIOBQsCHgMFCwYBCQMqDgMCHwMCHwMCHwMFCwEDCtejcD0Kxz8DBQsFCwAGBAIIBQwJAysOAgkDFw4DAiAFCwEDAAAAAAAAAAADAQMAAAAAAADwPwMFCwEDAAAAAAAA8D8DBQwFDAA";
+bh_base_shaders__$BuiltinShaders_WaterShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuV2F0ZXJTaGFkZXITAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPBGRlZXAFCwIAABAHc2hhbGxvdwULAgAAEQVzY2FsZQMCAAASBXNwZWVkAwIAABMIX19pbml0X18OBgAAFAZ2ZXJ0ZXgOBgAAFQRoYXNoDgYAABYFbm9pc2UOBgAAFwhmcmFnbWVudA4GAAAFAhMAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAUAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMVARgBcAUKBAAAAwUDCBkCcDMFCwQAAAkDEw4BBgEJAyoOAwoCGAUKAAADCgIYBQoEAAMKAhgFCgAAAwULAQOitDf4wmS6PwMFCwULAAYEAhkFCwYAAhkFCwkDHg4CAhkFCwYACQMqDgMKAhkFCwQAAwoCGQULCAADCgIZBQsAAAMFCwEDCtejcD2qQEADBQsDBQsFCw0JAxMOAQYBBAYACgIZBQsAAAMKAhkFCwQAAwMDCgIZBQsIAAMDAwAAAxYBGgFwBQoEAAADBQQIGwFpBQoEAAAJAxEOAQIaBQoFCgAIHAFmBQoEAAAJAxMOAQIaBQoFCgAIHQF1BQoEAAAGAQYBAhwFCgIcBQoFCgQGAwEDAAAAAAAACEADBgEBAwAAAAAAAABAAwIcBQoFCgUKBQoFCgANCQMYDgMJAxgOAwkCFQ4BAhsFCgMJAhUOAQYAAhsFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAAAAAwUKBQoDCgIdBQoAAAMDCQMYDgMJAhUOAQYAAhsFCgkDKQ4CAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUKBQoDCQIVDgEGAAIbBQoJAykOAgEDAAAAAAAA8D8DAQMAAAAAAADwPwMFCgUKAwoCHQUKAAADAwoCHQUKBAADAwAAARcAAAUGCB4BcAUKBAAABgIGAQIJBQoCCwUKBQoCEQMFCgAIHwF0AwQAAAYBAgwDAhIDAwAIIAFuAwQAAAYABgEJAhYOAQYAAh4FCgkDKQ4CBgECHwMBAzMzMzMzM9M/AwMGAQIfAwEDmpmZmZmZyT8DAwUKBQoDAQMzMzMzMzPjPwMDBgEJAhYOAQYABgECHgUKAQPNzMzMzMwAQAMFCgkDKQ4CBgEHAwIfAwMBA5qZmZmZmck/AwMGAQIfAwEDZmZmZmZm1j8DAwUKBQoDAQOamZmZmZnZPwMDAwAIIQVjcmVzdAMEAAAJAxsOAwED16NwPQrX4z8DAQP2KFyPwvXoPwMCIAMDAAgiA3JnYgULBAAABgAJAxgOAwIPBQsCEAULAiADBQsGAQkDKg4DAiEDAiEDAiEDBQsBAwrXo3A9Csc/AwULBQsABgQCCAUMCQMrDgIJAxcOAwIiBQsBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQsBAwAAAAAAAPA/AwUMBQwA";
 bh_base_shaders__$BuiltinShaders_WaterShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_SkyShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2t5U2hhZGVyEgEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANA3RvcAULAgAADgZib3R0b20FCwIAAA8GY2xvdWRzAwIAABAFc2NhbGUDAgAAEQVzcGVlZAMCAAASCF9faW5pdF9fDgYAABMGdmVydGV4DgYAABQEaGFzaA4GAAAVBW5vaXNlDgYAABYIZnJhZ21lbnQOBgAABQISAAAFAgYEAgcFDAIIBQwFDAYEAgkFCgIDBQoFCgAAEwAABQEGBAIGBQwJAysOBAoCAgUKAAADBgEKAgIFCgQAAwIEAwMBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAADFAEXAXAFCgQAAAMFAwgYAnAzBQsEAAAJAxMOAQYBCQMqDgMKAhcFCgAAAwoCFwUKBAADCgIXBQoAAAMFCwEDorQ3+MJkuj8DBQsFCwAGBAIYBQsGAAIYBQsJAx4OAgIYBQsGAAkDKg4DCgIYBQsEAAMKAhgFCwgAAwoCGAULAAADBQsBAwrXo3A9qkBAAwULAwULBQsNCQMTDgEGAQQGAAoCGAULAAADCgIYBQsEAAMDAwoCGAULCAADAwMAAAMVARkBcAUKBAAAAwUECBoBaQUKBAAACQMRDgECGQUKBQoACBsBZgUKBAAACQMTDgECGQUKBQoACBwBdQUKBAAABgEGAQIbBQoCGwUKBQoEBgMBAwAAAAAAAAhAAwYBAQMAAAAAAAAAQAMCGwUKBQoFCgUKBQoADQkDGA4DCQMYDgMJAhQOAQIaBQoDCQIUDgEGAAIaBQoJAykOAgEDAAAAAAAA8D8DAQMAAAAAAAAAAAMFCgUKAwoCHAUKAAADAwkDGA4DCQIUDgEGAAIaBQoJAykOAgEDAAAAAAAAAAADAQMAAAAAAADwPwMFCgUKAwkCFA4BBgACGgUKCQMpDgIBAwAAAAAAAPA/AwEDAAAAAAAA8D8DBQoFCgMKAhwFCgAAAwMKAhwFCgQAAwMAAAEWAAAFBggdA3JnYgULBAAACQMYDgMCDQULAg4FCwoCCQUKBAADBQsACB4BcAUKBAAABgAGAQYCBgECCQUKAgsFCgUKAhADBQoJAykOAgEDAAAAAAAA8D8DAQMAAAAAAAAAQAMFCgUKCQMpDgIGAQIMAwIRAwMBAwAAAAAAAAAAAwUKBQoACB8BbgMEAAAGAAYABgEJAhUOAQIeBQoDAQOamZmZmZnhPwMDBgEJAhUOAQYABgECHgUKAQM9CtejcD0AQAMFCgkDKQ4CAQMzMzMzMzP7PwMBA2ZmZmZmZiJAAwUKBQoDAQMzMzMzMzPTPwMDAwYBCQIVDgEGAAYBAh4FCgEDSOF6FK5HEEADBQoJAykOAgEDzczMzMzMFEADAQPNzMzMzMz0PwMFCgUKAwEDMzMzMzMzwz8DAwMACCAFY292ZXIDBAAACQMbDgMGAwEDAAAAAAAA8D8DAg8DAwYABgMBAwAAAAAAAPA/AwIPAwMBAwAAAAAAANA/AwMCHwMDAAYEAh0FCwkDGA4DAh0FCwkDKg4DAQMAAAAAAADwPwMBAwAAAAAAAPA/AwEDAAAAAAAA8D8DBQsGAQIgAwEDzczMzMzM7D8DAwULBQsGBAIIBQwJAysOAgIdBQsBAwAAAAAAAPA/AwUMBQwA";
+bh_base_shaders__$BuiltinShaders_SkyShader.SRC = "HXSMKWJoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU2t5U2hhZGVyFAEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgd0ZXh0dXJlCgICAAALBHNpemUFCgIAAAwEdGltZQMCAAANCGxvb3BUaW1lAwIAAA4FbG9vcHMDAgAADwN0b3AFCwIAABAGYm90dG9tBQsCAAARBmNsb3VkcwMCAAASBXNjYWxlAwIAABMFc3BlZWQDAgAAFAhfX2luaXRfXw4GAAAVBnZlcnRleA4GAAAWBGhhc2gOBgAAFwVub2lzZQ4GAAAYCGZyYWdtZW50DgYAAAUCFAAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABUAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxYBGQFwBQoEAAADBQMIGgJwMwULBAAACQMTDgEGAQkDKg4DCgIZBQoAAAMKAhkFCgQAAwoCGQUKAAADBQsBA6K0N/jCZLo/AwULBQsABgQCGgULBgACGgULCQMeDgICGgULBgAJAyoOAwoCGgULBAADCgIaBQsIAAMKAhoFCwAAAwULAQMK16NwPapAQAMFCwMFCwULDQkDEw4BBgEEBgAKAhoFCwAAAwoCGgULBAADAwMKAhoFCwgAAwMDAAADFwEbAXAFCgQAAAMFBAgcAWkFCgQAAAkDEQ4BAhsFCgUKAAgdAWYFCgQAAAkDEw4BAhsFCgUKAAgeAXUFCgQAAAYBBgECHQUKAh0FCgUKBAYDAQMAAAAAAAAIQAMGAQEDAAAAAAAAAEADAh0FCgUKBQoFCgUKAA0JAxgOAwkDGA4DCQIWDgECHAUKAwkCFg4BBgACHAUKCQMpDgIBAwAAAAAAAPA/AwEDAAAAAAAAAAADBQoFCgMKAh4FCgAAAwMJAxgOAwkCFg4BBgACHAUKCQMpDgIBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQoFCgMJAhYOAQYAAhwFCgkDKQ4CAQMAAAAAAADwPwMBAwAAAAAAAPA/AwUKBQoDCgIeBQoAAAMDCgIeBQoEAAMDAAABGAAABQYIHwNyZ2IFCwQAAAkDGA4DAg8FCwIQBQsKAgkFCgQAAwULAAggAXAFCgQAAAYABgEGAgYBAgkFCgILBQoFCgISAwUKCQMpDgIBAwAAAAAAAPA/AwEDAAAAAAAAAEADBQoFCgkDKQ4CBgECDAMCEwMDAQMAAAAAAAAAAAMFCgUKAAghAW4DBAAABgAGAAYBCQIXDgECIAUKAwEDmpmZmZmZ4T8DAwYBCQIXDgEGAAYBAiAFCgEDPQrXo3A9AEADBQoJAykOAgEDMzMzMzMz+z8DAQNmZmZmZmYiQAMFCgUKAwEDMzMzMzMz0z8DAwMGAQkCFw4BBgAGAQIgBQoBA0jhehSuRxBAAwUKCQMpDgIBA83MzMzMzBRAAwEDzczMzMzM9D8DBQoFCgMBAzMzMzMzM8M/AwMDAAgiBWNvdmVyAwQAAAkDGw4DBgMBAwAAAAAAAPA/AwIRAwMGAAYDAQMAAAAAAADwPwMCEQMDAQMAAAAAAADQPwMDAiEDAwAGBAIfBQsJAxgOAwIfBQsJAyoOAwEDAAAAAAAA8D8DAQMAAAAAAADwPwMBAwAAAAAAAPA/AwULBgECIgMBA83MzMzMzOw/AwMFCwULBgQCCAUMCQMrDgICHwULAQMAAAAAAADwPwMFDAUMAA";
 bh_base_shaders__$BuiltinShaders_SkyShader._MODULE = "bh.base.shaders.BuiltinShaders";
-bh_base_shaders__$BuiltinShaders_StarsShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU3RhcnNTaGFkZXIQAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0HZGVuc2l0eQMCAAAOB3R3aW5rbGUDAgAADwVzcGVlZAMCAAAQBWNvbG9yBQsCAAARCF9faW5pdF9fDgYAABIGdmVydGV4DgYAABMEaGFzaA4GAAAUCGZyYWdtZW50DgYAAAQCEQAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAABIAAAUBBgQCBgUMCQMrDgQKAgIFCgAAAwYBCgICBQoEAAMCBAMDAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwAAxMBFQFwBQoEAAADBQMIFgJwMwULBAAACQMTDgEGAQkDKg4DCgIVBQoAAAMKAhUFCgQAAwoCFQUKAAADBQsBA6K0N/jCZLo/AwULBQsABgQCFgULBgACFgULCQMeDgICFgULBgAJAyoOAwoCFgULBAADCgIWBQsIAAMKAhYFCwAAAwULAQMK16NwPapAQAMFCwMFCwULDQkDEw4BBgEEBgAKAhYFCwAAAwoCFgULBAADAwMKAhYFCwgAAwMDAAABFAAABQkIFwFwBQoEAAAGAAYBAgkFCgILBQoFCgkDKQ4CBgEGAQIMAwIPAwMBAwAAAAAAAChAAwMBAwAAAAAAAAAAAwUKBQoACBgEY2VsbAUKBAAACQMRDgEGAgIXBQoBAwAAAAAAACBAAwUKBQoACBkBaAMEAAAJAhMOAQIYBQoDAAgaAmF0BQoEAAAGAAYABgECGAUKAQMAAAAAAAAgQAMFCgEDAAAAAAAA+D8DBQoGAQkDKQ4CCQITDgEGAAIYBQoJAykOAgEDMzMzMzMz+z8DAQMAAAAAAAAAAAMFCgUKAwkCEw4BBgACGAUKCQMpDgIBAwAAAAAAAAAAAwEDzczMzMzMCEADBQoFCgMFCgEDAAAAAAAAFEADBQoFCgAIGwZpc1N0YXIDBAAACQMaDgIGAwEDAAAAAAAA8D8DBgECDQMBAzMzMzMzM9M/AwMDAhkDAwAIHAVsaWdodAMEAAAGAwEDAAAAAAAA8D8DCQMbDgMBAwAAAAAAANA/AwEDAAAAAAAA8D8DCQMcDgEGAwIXBQoCGgUKBQoDAwMACB0EZ2xvdwMEAAAGAwEDAAAAAAAA8D8DBgECDgMEBgABAwAAAAAAAOA/AwYBAQMAAAAAAADgPwMJAwIOAQYBCQMTDgEGAAYBAgwDAQNmZmZmZmbmPwMDBgECGQMBAwAAAAAAACpAAwMDAwED8dTIU/shGUADAwMDAwMDAwAIHgZicmlnaHQDBAAABgEGAQYBAhsDAhwDAwIdAwMEBgABA5qZmZmZmeE/AwYBAQPNzMzMzMzcPwMJAhMOAQYAAhgFCgkDKQ4CAQMzMzMzMzMVQAMBA83MzMzMzB5AAwUKBQoDAwMDAwAGBAIIBQwJAysOAgkDGA4DAhAFCwkDKg4DAQMAAAAAAADwPwMBAwAAAAAAAPA/AwEDAAAAAAAA8D8DBQsCHgMFCwEDAAAAAAAA8D8DBQwFDAA";
+bh_base_shaders__$BuiltinShaders_StarsShader.SRC = "HXSMK2JoLmJhc2Uuc2hhZGVycy5fQnVpbHRpblNoYWRlcnMuU3RhcnNTaGFkZXISAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKB3RleHR1cmUKAgIAAAsEc2l6ZQUKAgAADAR0aW1lAwIAAA0IbG9vcFRpbWUDAgAADgVsb29wcwMCAAAPB2RlbnNpdHkDAgAAEAd0d2lua2xlAwIAABEFc3BlZWQDAgAAEgVjb2xvcgULAgAAEwhfX2luaXRfXw4GAAAUBnZlcnRleA4GAAAVBGhhc2gOBgAAFghmcmFnbWVudA4GAAAEAhMAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAUAAAFAQYEAgYFDAkDKw4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAAMVARcBcAUKBAAAAwUDCBgCcDMFCwQAAAkDEw4BBgEJAyoOAwoCFwUKAAADCgIXBQoEAAMKAhcFCgAAAwULAQOitDf4wmS6PwMFCwULAAYEAhgFCwYAAhgFCwkDHg4CAhgFCwYACQMqDgMKAhgFCwQAAwoCGAULCAADCgIYBQsAAAMFCwEDCtejcD2qQEADBQsDBQsFCw0JAxMOAQYBBAYACgIYBQsAAAMKAhgFCwQAAwMDCgIYBQsIAAMDAwAAARYAAAUJCBkBcAUKBAAABgAGAQIJBQoCCwUKBQoJAykOAgYBBgECDAMCEQMDAQMAAAAAAAAoQAMDAQMAAAAAAAAAAAMFCgUKAAgaBGNlbGwFCgQAAAkDEQ4BBgICGQUKAQMAAAAAAAAgQAMFCgUKAAgbAWgDBAAACQIVDgECGgUKAwAIHAJhdAUKBAAABgAGAAYBAhoFCgEDAAAAAAAAIEADBQoBAwAAAAAAAPg/AwUKBgEJAykOAgkCFQ4BBgACGgUKCQMpDgIBAzMzMzMzM/s/AwEDAAAAAAAAAAADBQoFCgMJAhUOAQYAAhoFCgkDKQ4CAQMAAAAAAAAAAAMBA83MzMzMzAhAAwUKBQoDBQoBAwAAAAAAABRAAwUKBQoACB0GaXNTdGFyAwQAAAkDGg4CBgMBAwAAAAAAAPA/AwYBAg8DAQMzMzMzMzPTPwMDAwIbAwMACB4FbGlnaHQDBAAABgMBAwAAAAAAAPA/AwkDGw4DAQMAAAAAAADQPwMBAwAAAAAAAPA/AwkDHA4BBgMCGQUKAhwFCgUKAwMDAAgfBGdsb3cDBAAABgMBAwAAAAAAAPA/AwYBAhADBAYAAQMAAAAAAADgPwMGAQEDAAAAAAAA4D8DCQMCDgEGAQkDEw4BBgAGAQIMAwEDZmZmZmZm5j8DAwYBAhsDAQMAAAAAAAAqQAMDAwMBA/HUyFP7IRlAAwMDAwMDAwMACCAGYnJpZ2h0AwQAAAYBBgEGAQIdAwIeAwMCHwMDBAYAAQOamZmZmZnhPwMGAQEDzczMzMzM3D8DCQIVDgEGAAIaBQoJAykOAgEDMzMzMzMzFUADAQPNzMzMzMweQAMFCgUKAwMDAwMABgQCCAUMCQMrDgIJAxgOAwISBQsJAyoOAwEDAAAAAAAA8D8DAQMAAAAAAADwPwMBAwAAAAAAAPA/AwULAiADBQsBAwAAAAAAAPA/AwUMBQwA";
 bh_base_shaders__$BuiltinShaders_StarsShader._MODULE = "bh.base.shaders.BuiltinShaders";
 bh_multianim_MacroBlendModes.NAMES = ["none","alpha","add","alphaAdd","softAdd","multiply","alphaMultiply","erase","screen","sub","max","min"];
 bh_multianim__$MacroManimParser_MacroLexer.interpolationKeywords = ["callback","function","div","true","false","yes","no"];

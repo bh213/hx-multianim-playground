@@ -1,7 +1,9 @@
 version: 1.0
 
 // Expressions Demo
-// Arithmetic, ternary, and string interpolation
+// Arithmetic, ternary, string interpolation, and numbers (exponents, floats in whole-number expressions)
+
+#night palette { #0b1026 #3a4a8c #ffe9a8 }
 
 #expressionsDemo programmable(value:0..100=25) {
     pos: 50, 140
@@ -59,6 +61,26 @@ version: 1.0
 
     text(m6x11, "multi:", #888888, left, 80): 20, 376
    text(m6x11, '${$value} and ${$value + 10}', #ffffff, left, 300): 100, 376
+
+    // Numbers: exponents, a float inside a whole-number expression, a width that follows $value
+    text(m6x11, "Numbers:", #cccccc, left, 400): 480, 60
+
+    text(m6x11, "(1.5e2 + 2.5e-1) =", #888888, left, 200): 500, 80
+    text(m6x11, '${(1.5e2 + 2.5e-1)}', #ffffff, left, 100): 650, 80
+
+    text(m6x11, "line to $value * 0.8, -$value * 0.5:", #888888, left, 300): 500, 100
+    graphics(line(#ffdd44, 1, 0, 0, $value * 0.8, -$value * 0.5)): 500, 170
+
+    text(m6x11, "ellipse $value * 0.6 by $value * 0.3:", #888888, left, 300): 500, 185
+    graphics(ellipse(#44ddff, filled, $value * 0.6, $value * 0.3)): 560, 230
+
+    text(m6x11, "right-aligned in width $value * 3:", #888888, left, 300): 500, 270
+    bitmap(generated(color($value * 3, 14, #333344))): 500, 288
+    text(m6x11, "right edge", #ffffff, right, $value * 3): 500, 290
+
+    // A shader's colour from a palette, as any other colour
+    text(m6x11, "stars(color: palette(night, 0)):", #888888, left, 300): 500, 315
+    bitmap(generated(shader(stars, 200, 60, density: 0.6, color: palette(night, 0)))): 500, 333
 
     // Visual expression result
     text(m6x11, "Visual width = $value * 3:", #cccccc, left, 400): 0, 406
